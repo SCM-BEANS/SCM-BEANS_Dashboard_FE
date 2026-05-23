@@ -33,9 +33,27 @@ export interface Production {
 
 export interface Thermodynamics {
   boiler1Temp: number;
+  boiler1Target: number;
   boiler2Temp: number;
+  boiler2Target: number;
   outputTemp: number;
+  outputTarget: number;
   brewPressure: number;
+  brewPressureTarget: number;
   milkCh1Temp: number;
+  milkCh1Target: number;
   milkCh2Temp: number;
+  milkCh2Target: number;
+}
+
+export interface AnalyticsDataPoint {
+  label: string;
+  cups: number;
+}
+
+export interface Analytics {
+  day: AnalyticsDataPoint[];
+  week: AnalyticsDataPoint[];
+  month: AnalyticsDataPoint[];
+  year: AnalyticsDataPoint[];
 }

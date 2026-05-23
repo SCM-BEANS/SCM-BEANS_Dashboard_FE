@@ -4,6 +4,7 @@ import { useIoTStore } from "@/store/useIoTStore";
 import { useI18nStore } from "@/store/useI18nStore";
 import { ProductionWidget } from "@/components/features/ProductionWidget";
 import { ConfigWidget } from "@/components/features/ConfigWidget";
+import { AnalyticsWidget } from "@/components/features/AnalyticsWidget";
 
 export default function OverviewPage() {
   const { status } = useIoTStore();
@@ -31,6 +32,9 @@ export default function OverviewPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-12">
+          <AnalyticsWidget />
+        </div>
         <div className="md:col-span-6">
           <ProductionWidget />
         </div>

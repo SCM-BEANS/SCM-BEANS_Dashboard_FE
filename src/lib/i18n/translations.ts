@@ -78,6 +78,16 @@ export const translations = {
     optimal: "Optimal",
     chamber: "Chamber",
 
+    // Analytics Widget
+    analytics: "Analytics & Trends",
+    time_range: "Time Range",
+    day: "Day",
+    week: "Week",
+    month: "Month",
+    year: "Year",
+    peak_brewing_time: "Peak Brewing Time",
+    total_cups: "Total Cups",
+
     // Pages
     dashboard: "Dashboard",
     inventory_management: "Inventory Management",
@@ -162,6 +172,16 @@ export const translations = {
     tank_mode: "Chế độ bình chứa",
     optimal: "Tối ưu",
     chamber: "Khoang",
+
+    // Analytics Widget
+    analytics: "Phân tích & Xu hướng",
+    time_range: "Khoảng thời gian",
+    day: "Ngày",
+    week: "Tuần",
+    month: "Tháng",
+    year: "Năm",
+    peak_brewing_time: "Thời gian cao điểm",
+    total_cups: "Tổng số ly",
 
     // Pages
     dashboard: "Bảng điều khiển",
