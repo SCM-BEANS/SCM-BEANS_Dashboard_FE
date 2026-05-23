@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface min-h-screen font-sans;
+    background-size: 8px 8px;
+    background-image: 
+      linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+  }
+}
+
+@layer components {
+  .bento-border {
+    @apply border border-outline-variant bg-surface-container-lowest shadow-sm rounded-md;
+  }
+  
+  .bento-border-light {
+    @apply border border-outline-variant/50;
+  }
+}
