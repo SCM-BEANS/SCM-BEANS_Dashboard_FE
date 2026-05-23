@@ -2,7 +2,7 @@ export interface SystemStatus {
   id: string;
   name: string;
   status: "Online" | "Offline" | "Maintenance";
-  state: "Brewing" | "Ready" | "Heating" | "Cooling";
+  state: "Brewing" | "Ready" | "Heating" | "Cooling" | "Maintenance";
   lastSync: string;
   uptime: string;
   firmware: string;
