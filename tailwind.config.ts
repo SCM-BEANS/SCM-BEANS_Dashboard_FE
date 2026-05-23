@@ -36,7 +36,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-hanken)", "sans-serif"],
-        mono: ["var(--font-jetbrains)", "monospace"],
+        mono: ["var(--font-hanken)", "sans-serif"],
       },
       spacing: {
         base: "8px",

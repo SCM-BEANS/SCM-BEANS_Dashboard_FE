@@ -1,6 +1,7 @@
 "use client";
 
 import { useIoTStore } from "@/store/useIoTStore";
+import { useI18nStore } from "@/store/useI18nStore";
 import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -9,16 +10,17 @@ import { cn } from "@/lib/utils";
 
 export const Sidebar = () => {
   const { status, emergencyStop, isMobileMenuOpen, toggleMobileMenu } = useIoTStore();
+  const { t } = useI18nStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Overview", href: "/", icon: LayoutDashboard },
-    { name: "Inventory", href: "/inventory", icon: Box },
-    { name: "Thermodynamics", href: "/thermodynamics", icon: ThermometerSun },
-    { name: "Diagnostic", href: "#", icon: Wrench },
-    { name: "Calibration", href: "#", icon: Settings },
-    { name: "Logs", href: "#", icon: HelpCircle },
+    { name: t("nav_overview"), href: "/", icon: LayoutDashboard },
+    { name: t("nav_inventory"), href: "/inventory", icon: Box },
+    { name: t("nav_thermodynamics"), href: "/thermodynamics", icon: ThermometerSun },
+    { name: t("nav_diagnostic"), href: "#", icon: Wrench },
+    { name: t("nav_calibration"), href: "#", icon: Settings },
+    { name: t("nav_logs"), href: "#", icon: HelpCircle },
   ];
 
   return (
@@ -51,7 +53,7 @@ export const Sidebar = () => {
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${status.status === 'Online' ? 'bg-tertiary' : 'bg-error'}`}></div>
-                  <p className="font-mono text-xs text-on-surface-variant uppercase">System {status.status}</p>
+                  <p className="font-mono text-xs text-on-surface-variant uppercase">{t("system_status")} {status.status === 'Online' ? t('online') : t('offline')}</p>
                 </div>
               </div>
               <div className="w-10 h-10 bg-primary text-on-primary flex items-center justify-center rounded-sm">
@@ -65,14 +67,14 @@ export const Sidebar = () => {
                   <div className="p-3 border-b border-primary bg-surface-container flex justify-between items-center">
                     <div>
                       <div className="font-bold font-mono text-sm uppercase">DEER_01</div>
-                      <div className="text-[10px] uppercase text-on-surface-variant">Brewing</div>
+                      <div className="text-[10px] uppercase text-on-surface-variant">{t("brewing")}</div>
                     </div>
                     <div className="w-2 h-2 rounded-full bg-primary" />
                   </div>
                   <div className="p-3 border-b border-outline hover:bg-surface-container transition-colors flex justify-between items-center">
                     <div>
                       <div className="font-bold font-mono text-sm uppercase">BEAVER_05</div>
-                      <div className="text-[10px] uppercase text-on-surface-variant">Ready</div>
+                      <div className="text-[10px] uppercase text-on-surface-variant">{t("ready")}</div>
                     </div>
                   </div>
                 </div>
@@ -114,17 +116,17 @@ export const Sidebar = () => {
             onClick={emergencyStop}
             className="w-full border-2 border-error text-error font-mono text-sm py-2 uppercase font-bold hover:bg-error hover:text-on-error transition-colors"
           >
-            Emergency Stop
+            {t("emergency_stop")}
           </button>
         </div>
         <div className="flex border-t-2 border-outline">
           <a className="flex-1 flex flex-col items-center justify-center py-3 border-r-2 border-outline hover:bg-surface-container transition-colors" href="#">
             <Wrench className="w-5 h-5 text-on-surface-variant" />
-            <span className="font-mono text-xs mt-1 uppercase text-on-surface-variant">Maintenance</span>
+            <span className="font-mono text-xs mt-1 uppercase text-on-surface-variant">{t("maintenance")}</span>
           </a>
           <a className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-surface-container transition-colors" href="#">
             <HelpCircle className="w-5 h-5 text-on-surface-variant" />
-            <span className="font-mono text-xs mt-1 uppercase text-on-surface-variant">Help</span>
+            <span className="font-mono text-xs mt-1 uppercase text-on-surface-variant">{t("help")}</span>
           </a>
         </div>
       </aside>
