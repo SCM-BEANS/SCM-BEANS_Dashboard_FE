@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
 
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken" });
 
@@ -18,16 +16,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hanken.variable} font-sans`}>
-        <div className="flex min-h-screen overflow-hidden">
-          <Sidebar />
-          <div className="flex flex-col flex-1 relative w-full md:pl-64">
-            <Header />
-            <main className="flex-1 overflow-y-auto p-4 md:p-10">
-              {children}
-            </main>
-          </div>
-        </div>
+      <body className={`${hanken.variable} font-sans bg-surface text-on-surface`}>
+        {children}
       </body>
     </html>
   );

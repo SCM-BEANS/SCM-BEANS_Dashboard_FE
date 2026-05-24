@@ -18,7 +18,9 @@ src/
 │   ├── features/      # Các module độc lập (Inventory, Thermodynamics, Production, v.v.)
 │   ├── layout/        # Cấu trúc giao diện chung (Sidebar, Header)
 │   └── ui/            # UI cơ bản (Button, Card, Input) - Tương tự shadcn/ui
-├── store/             # 🗄️ Quản lý State toàn cục (Zustand)
+├── hooks/             # 🪝 Custom Hooks (TanStack Query, WebSockets)
+├── schemas/           # 📝 Zod Schemas & Types (Validation)
+├── store/             # 🗄️ Quản lý Client State (Zustand)
 ├── types/             # 🏷️ Định nghĩa TypeScript (Interfaces)
 └── lib/               # 🛠️ Các hàm tiện ích (utilities, formatters, twMerge)
 ```
@@ -30,13 +32,13 @@ src/
 - **Server Components:** Được ưu tiên sử dụng mặc định trong `src/app` (như `layout.tsx`, `page.tsx`) trừ khi cần tính năng phía client.
 - **Tên Component:** Sử dụng PascalCase (VD: `InventoryWidget.tsx`, `Sidebar.tsx`).
 
-### 2.2. Quản lý trạng thái (State Management)
-- Không dùng `useState` lồng nhau nhiều cấp (Prop Drilling).
-- Sử dụng **Zustand** (tại `src/store/useIoTStore.ts`) để lưu trữ dữ liệu IoT (Nhiệt độ, Áp suất, Inventory). Các Widgets gọi trực tiếp `useIoTStore()` để lấy dữ liệu.
+### 2.2. Quản lý trạng thái & Data Fetching (State & API Layer)
+- **Client State:** Sử dụng **Zustand** để quản lý state cục bộ phía UI (ví dụ: `selectedMachineId`, `statusFilter`). Không dùng `useState` lồng nhau nhiều cấp.
+- **Server State:** Sử dụng **TanStack Query (React Query)** kết hợp với **Axios** (hoặc native Fetch) để gọi REST API, quản lý caching, và background refetching. Không gọi API trực tiếp trong UI components.
 
-### 2.3. Kiểu dữ liệu (TypeScript)
+### 2.3. Kiểu dữ liệu & Validation (Zod + TypeScript)
 - Tuyệt đối tránh sử dụng kiểu `any`.
-- Mọi mô hình dữ liệu (SystemStatus, Thermodynamics) phải được định nghĩa trong `src/types/index.ts`.
+- Sử dụng **Zod** để định nghĩa schema và ép kiểu dữ liệu chặt chẽ từ API hoặc WebSockets. Các schema được đặt tại thư mục `src/schemas`.
 
 ### 2.4. Styling & Tailwind CSS
 - Không viết inline-CSS. Luôn sử dụng Utility Classes của Tailwind.
@@ -49,6 +51,6 @@ src/
 
 ## 3. Quản lý Dữ liệu thời gian thực (IoT Data Flow)
 
-Trong thực tế doanh nghiệp, các dữ liệu nhiệt độ/áp suất từ máy pha cà phê sẽ truyền về qua WebSocket hoặc MQTT.
-- Hiện tại dữ liệu đang được "Mock" trong Zustand Store.
-- Khi tích hợp API thật, hãy gọi custom hook (vd: `useIoTStream()`) ở mức Global Layout hoặc Root Store để cập nhật vào Zustand. Các Widget bên dưới sẽ tự động render lại (reactively) mà không cần viết lại mã giao diện.
+Trong thực tế doanh nghiệp, các dữ liệu tần số cao (nhiệt độ, áp suất, lưu lượng) từ máy pha cà phê sẽ truyền về qua **WebSocket** hoặc **MQTT.js**.
+- Sử dụng custom hook (vd: `useLiveTelemetry`) để kết nối WebSocket/MQTT, lắng nghe và xử lý sự kiện.
+- **Quan trọng:** Với dữ liệu thời gian thực cập nhật liên tục (để vẽ Real-time charts), hãy lưu vào local state của custom hook (`useState` array) để render UI thay vì mutate liên tục vào cache của TanStack Query gây giảm hiệu năng. Khi unmount Component, nhớ dọn dẹp (cleanup) các kết nối WebSocket/MQTT.
