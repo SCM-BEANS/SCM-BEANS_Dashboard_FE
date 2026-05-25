@@ -17,6 +17,50 @@ interface ModelViewerProps {
 
 const Model = ({ url }: { url: string }) => {
   const { scene } = useGLTF(url);
+
+  React.useLayoutEffect(() => {
+    scene.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        const mesh = node as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        // Nhận diện màn hình dựa trên số lượng đỉnh (đặc trưng của mesh màn hình trong file này là 7094)
+        const isScreen = mesh.geometry?.attributes?.position?.count === 7094;
+
+        if (isScreen) {
+          // Vật liệu cho màn hình: Đen hoàn toàn (Kính đen bóng)
+          mesh.material = new THREE.MeshPhysicalMaterial({
+            color: '#000000',
+            roughness: 0.1,
+            metalness: 0.8,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            side: THREE.DoubleSide
+          });
+        } else {
+          // Vật liệu cho vỏ máy: Xám đen (Dark Gray)
+          mesh.material = new THREE.MeshStandardMaterial({
+            color: '#2d3748', // Xám đen
+            roughness: 0.5,
+            metalness: 0.6,
+            side: THREE.DoubleSide
+          });
+        }
+
+        // Thêm viền (edges) cho từng chi tiết để làm nổi bật hình khối (đặc trưng CAD)
+        if (!mesh.userData.hasEdges) {
+          const edgesGeometry = new THREE.EdgesGeometry(mesh.geometry, 15); // Góc 15 độ để tạo viền
+          const edgeColor = isScreen ? '#1f2937' : '#111827'; // Viền đen nhạt cho màn hình, đen đậm cho thân máy
+          const edgesMaterial = new THREE.LineBasicMaterial({ color: edgeColor, transparent: true, opacity: 0.6 });
+          const lineSegments = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+          mesh.add(lineSegments);
+          mesh.userData.hasEdges = true;
+        }
+      }
+    });
+  }, [scene]);
+
   return <primitive object={scene} />;
 };
 
@@ -95,7 +139,10 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
       <Canvas camera={{ position: [1.2, 0.8, 2.2], fov: 45 }}>
         <Suspense fallback={<Loader />}>
 
-          {/* Môi trường đổ bóng cao cấp */}
+          {/* Màu nền giống phần mềm CAD */}
+          <color attach="background" args={['#eaedf2']} />
+
+          {/* Môi trường 3D tạo phản xạ ánh sáng */}
           <Environment preset="studio" />
 
           {/* Đèn tạo điểm nhấn */}
