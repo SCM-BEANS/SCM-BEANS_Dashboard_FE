@@ -26,7 +26,6 @@ export const translations = {
     coming_soon: "Coming Soon",
     digital_menu_sync: "Digital Menu Sync",
     recipe_dosage_editor: "Recipe & Dosage Editor",
-    barista_login: "Barista Login",
 
     // Header
     start_cycle: "Start Cycle",
@@ -124,7 +123,6 @@ export const translations = {
     coming_soon: "Sắp ra mắt",
     digital_menu_sync: "Đồng bộ menu điện tử",
     recipe_dosage_editor: "Chỉnh sửa công thức & định lượng",
-    barista_login: "Đăng nhập Barista",
 
     // Header
     start_cycle: "Bắt đầu pha",

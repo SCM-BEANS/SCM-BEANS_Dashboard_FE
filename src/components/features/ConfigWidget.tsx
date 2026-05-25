@@ -1,4 +1,4 @@
-import { CloudCog, FileEdit, Users } from "lucide-react";
+import { CloudCog, FileEdit } from "lucide-react";
 import { useI18nStore } from "@/store/useI18nStore";
 
 export const ConfigWidget = () => {
@@ -17,10 +17,6 @@ export const ConfigWidget = () => {
         <div className="flex items-center p-4 border-b border-outline gap-3">
           <FileEdit className="w-5 h-5 text-primary" />
           <span className="font-mono text-sm uppercase">{t("recipe_dosage_editor")}</span>
-        </div>
-        <div className="flex items-center p-4 gap-3">
-          <Users className="w-5 h-5 text-primary" />
-          <span className="font-mono text-sm uppercase">{t("barista_login")}</span>
         </div>
       </div>
     </section>

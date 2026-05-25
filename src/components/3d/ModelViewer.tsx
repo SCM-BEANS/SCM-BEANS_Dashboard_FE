@@ -167,9 +167,11 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             enableZoom={true}
             enableRotate={true}
             autoRotate={false}
+            enableDamping={true}
+            dampingFactor={0.05}
             makeDefault
-            minDistance={0.5}
-            maxDistance={10}
+            minDistance={0.8}
+            maxDistance={8}
           />
 
           {/* 3D Orientation Cube */}
