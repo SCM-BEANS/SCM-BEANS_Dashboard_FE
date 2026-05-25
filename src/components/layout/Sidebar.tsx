@@ -2,7 +2,7 @@
 
 import { useIoTStore } from "@/store/useIoTStore";
 import { useI18nStore } from "@/store/useI18nStore";
-import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers } from "lucide-react";
+import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers, Users } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ export const Sidebar = () => {
     { name: t("nav_overview"), href: "/", icon: LayoutDashboard },
     { name: t("nav_inventory"), href: "/inventory", icon: Box },
     { name: t("nav_thermodynamics"), href: "/thermodynamics", icon: ThermometerSun },
+    { name: "Users", href: "/users", icon: Users },
     { name: t("nav_diagnostic"), href: "#", icon: Wrench },
     { name: t("nav_calibration"), href: "#", icon: Settings },
     { name: t("nav_logs"), href: "#", icon: HelpCircle },
