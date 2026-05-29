@@ -2,7 +2,7 @@
 
 import { useIoTStore } from "@/store/useIoTStore";
 import { useI18nStore } from "@/store/useI18nStore";
-import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers } from "lucide-react";
+import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers, Users, ShieldAlert, Store } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,15 +14,29 @@ export const Sidebar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { name: t("nav_overview"), href: "/", icon: LayoutDashboard },
+  const isAdmin = pathname.startsWith("/admin");
+
+  const userNavItems = [
+    { name: t("nav_overview"), href: "/dashboard", icon: LayoutDashboard },
+    { name: "My Businesses", href: "/dashboard/businesses", icon: Store },
+    { name: "My Machines", href: "/dashboard/machines", icon: Coffee },
     { name: t("nav_inventory"), href: "/inventory", icon: Box },
     { name: t("nav_thermodynamics"), href: "/thermodynamics", icon: ThermometerSun },
+    { name: t("nav_model"), href: "/model", icon: Layers },
     { name: t("nav_diagnostic"), href: "#", icon: Wrench },
     { name: t("nav_calibration"), href: "#", icon: Settings },
     { name: t("nav_logs"), href: "#", icon: HelpCircle },
-    { name: t("nav_model"), href: "/model", icon: Layers },
   ];
+
+  const adminNavItems = [
+    { name: "Admin Dashboard", href: "/admin", icon: ShieldAlert },
+    { name: "Manage Users", href: "/admin/users", icon: Users },
+    { name: "Manage Businesses", href: "/admin/businesses", icon: Store },
+    { name: "Manage Machines", href: "/admin/machines", icon: Coffee },
+    { name: t("nav_logs"), href: "#", icon: HelpCircle },
+  ];
+
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   return (
     <>
