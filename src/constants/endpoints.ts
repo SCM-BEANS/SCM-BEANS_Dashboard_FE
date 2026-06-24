@@ -1,0 +1,16 @@
+export const AUTH = {
+  LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
+  VERIFY: '/auth/verify',
+  LOGIN_MFA: '/auth/login/mfa',
+  REFRESH: '/auth/refresh',
+  RESEND: '/auth/resend',
+  MFA_SETUP: '/auth/mfa/setup',
+  MFA_QRCODE_BASE64: '/auth/mfa/qrcode/base64',
+  MFA_QRCODE: '/auth/mfa/qrcode',
+  MFA_CONFIRM: '/auth/mfa/confirm',
+  FORGOT_PASSWORD_SEND_OTP: '/auth/forgot-password/send-otp',
+  FORGOT_PASSWORD_RESET: '/auth/forgot-password/reset',
+  PASSWORD_CHANGE_SEND_OTP: '/auth/password-change/send-otp',
+  PASSWORD_CHANGE: '/auth/password-change',
+} as const;

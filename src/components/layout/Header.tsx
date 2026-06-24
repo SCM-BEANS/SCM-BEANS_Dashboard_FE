@@ -2,11 +2,13 @@
 
 import { useIoTStore } from "@/store/useIoTStore";
 import { useI18nStore } from "@/store/useI18nStore";
-import { Bell, CircleUser, Menu, LogOut, Settings, User } from "lucide-react";
+import { Bell, CircleUser, Menu, LogOut, Settings, User, Lock } from "lucide-react";
 import { LanguageToggle } from "./LanguageToggle";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { authService } from "@/services/auth.service";
+import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
 
 export const Header = () => {
   const { startCycle, toggleMobileMenu } = useIoTStore();
@@ -15,17 +17,21 @@ export const Header = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Function to check auth state
     const checkAuth = () => {
-      const token = document.cookie.split('; ').find(row => row.startsWith('token='));
-      if (token) {
+      // access_token is HttpOnly in the future? No, access_token is set via JS. refresh_token is HttpOnly.
+      // We can also just check if localStorage has 'email' as a proxy for logged in state
+      const token = document.cookie.split('; ').find(row => row.startsWith('access_token='));
+      const storedEmail = localStorage.getItem('email');
+      
+      if (token || storedEmail) {
         setIsLoggedIn(true);
-        const storedName = localStorage.getItem('username');
-        if (storedName) setUsername(storedName);
+        if (storedEmail) setEmail(storedEmail);
       } else {
         setIsLoggedIn(false);
       }
@@ -54,12 +60,12 @@ export const Header = () => {
   }, []);
 
   const handleLogout = () => {
-    document.cookie = "token=; path=/; max-age=0";
-    localStorage.removeItem("username");
-    window.dispatchEvent(new Event('auth-change'));
+    authService.logout();
+    localStorage.removeItem("email");
+    window.dispatchEvent(new CustomEvent('auth-change'));
     setIsLoggedIn(false);
     setIsDropdownOpen(false);
-    router.push('/');
+    router.push('/login');
   };
 
   return (
@@ -96,8 +102,8 @@ export const Header = () => {
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-surface border border-outline rounded-xl shadow-xl overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-outline">
-                <p className="text-sm font-semibold text-on-surface truncate">{isLoggedIn ? (username || "User") : "Demo User"}</p>
-                <p className="text-xs text-on-surface-variant truncate">{isLoggedIn ? "Logged In" : "Demo Mode"}</p>
+                <p className="text-sm font-semibold text-on-surface truncate">{isLoggedIn ? (email || "User") : "Guest User"}</p>
+                <p className="text-xs text-on-surface-variant truncate">{isLoggedIn ? "Authorized" : "Not Logged In"}</p>
               </div>
               <div className="py-1">
                 <Link href="/users" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors">
@@ -108,6 +114,18 @@ export const Header = () => {
                   <Settings className="w-4 h-4" />
                   <span>Settings</span>
                 </Link>
+                {isLoggedIn && (
+                  <button 
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsChangePasswordOpen(true);
+                    }} 
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Change Password</span>
+                  </button>
+                )}
               </div>
               <div className="border-t border-outline py-1">
                 {isLoggedIn ? (
@@ -133,6 +151,11 @@ export const Header = () => {
           )}
         </div>
       </div>
+      
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
     </header>
   );
 };
