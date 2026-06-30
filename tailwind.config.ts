@@ -33,10 +33,20 @@ const config: Config = {
         "outline-variant": "#eeeeee",
         error: "#ff0000",
         "on-error": "#ffffff",
+        // Coffee Landing Page Theme
+        "coffee-cream": "#F5F0EB",
+        "coffee-latte": "#E8DDD3",
+        "coffee-roast": "#3C2415",
+        "coffee-espresso": "#1A0E07",
+        "coffee-bronze": "#B8860B",
+        "coffee-gold": "#D4A847",
+        "coffee-mocha": "#6F4E37",
+        "coffee-steam": "#C4B5A4",
       },
       fontFamily: {
         sans: ["var(--font-hanken)", "sans-serif"],
         mono: ["var(--font-hanken)", "sans-serif"],
+        serif: ["var(--font-playfair)", "Georgia", "serif"],
       },
       spacing: {
         base: "8px",

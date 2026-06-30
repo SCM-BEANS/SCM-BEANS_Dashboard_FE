@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk } from "next/font/google";
+import { Hanken_Grotesk, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const metadata: Metadata = {
   title: "DEER_01 - Precision Brew Dashboard",
@@ -17,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hanken.variable} font-sans bg-surface text-on-surface`}>
+      <body className={`${hanken.variable} ${playfair.variable} font-sans bg-surface text-on-surface`}>
         <QueryProvider>
           {children}
         </QueryProvider>

@@ -24,4 +24,76 @@
       linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
   }
+
+  /* ===== Landing Page Utilities ===== */
+
+  /* Subtle film grain texture overlay */
+  .landing-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+    z-index: 1;
+  }
+
+  /* Coffee gradient backgrounds */
+  .landing-gradient-warm {
+    background: linear-gradient(180deg, #F5F0EB 0%, #E8DDD3 50%, #F5F0EB 100%);
+  }
+
+  .landing-gradient-dark {
+    background: linear-gradient(180deg, #1A0E07 0%, #3C2415 50%, #1A0E07 100%);
+  }
+
+  /* Glassmorphism card for real-time widgets */
+  .glass-card {
+    background: rgba(245, 240, 235, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(184, 134, 11, 0.15);
+  }
+}
+
+@layer utilities {
+  /* Scroll-triggered reveal animation */
+  .reveal-up {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  .reveal-up.revealed {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Landing page keyframes — outside @layer for global scope */
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes landing-steam {
+  0% { opacity: 0; transform: translateY(0) scaleX(1); }
+  50% { opacity: 0.6; transform: translateY(-20px) scaleX(1.2); }
+  100% { opacity: 0; transform: translateY(-40px) scaleX(0.8); }
+}
+
+@keyframes landing-pulse-bronze {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes landing-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes landing-line-grow {
+  from { width: 0; }
+  to { width: 100%; }
 }

@@ -2,9 +2,10 @@
 
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 
-// RAF-based animated counter — chỉ chạy khi element visible
-function useCountUp(target: number, duration = 1800) {
+// RAF-based animated counter — runs only when element is visible
+function useCountUp(target: number, duration = 2000) {
   const ref = useRef<HTMLSpanElement>(null);
   const hasRun = useRef(false);
 
@@ -23,7 +24,6 @@ function useCountUp(target: number, duration = 1800) {
             if (!startTime) startTime = now;
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            // easeOut cubic
             const eased = 1 - Math.pow(1 - progress, 3);
             if (el) el.textContent = Math.floor(eased * target).toString();
             if (progress < 1) requestAnimationFrame(tick);
@@ -42,213 +42,162 @@ function useCountUp(target: number, duration = 1800) {
   return ref;
 }
 
-// Static machine illustration — memoised outside component
-const MachineIllustration = () => (
-  <div className="relative w-full max-w-[520px] aspect-[4/3]">
-    {/* Outer Frame */}
-    <div className="absolute inset-0 border border-[#111]/10 bg-[#fafafa]" />
-
-    {/* Top Status Bar */}
-    <div className="absolute top-0 left-0 right-0 h-8 bg-[#111] flex items-center px-4 gap-3">
-      <div className="flex gap-1.5">
-        <div className="w-2 h-2 rounded-full border border-white/30" />
-        <div className="w-2 h-2 rounded-full border border-white/30" />
-        <div className="w-2 h-2 rounded-full border border-white/30" />
-      </div>
-      <span className="text-[10px] text-white/60 font-mono tracking-wider ml-2">
-        DEER_01 — REMOTE CONTROL CONSOLE
-      </span>
-      <div className="ml-auto flex items-center gap-2">
-        {/* Replaced animate-pulse with CSS animation via inline style for GPU compositing */}
-        <div
-          className="w-1.5 h-1.5 rounded-full bg-white"
-          style={{ animation: "pulse-dot 2s ease-in-out infinite" }}
-        />
-        <span className="text-[10px] text-white/50 font-mono">LIVE</span>
-      </div>
-    </div>
-
-    {/* Main Content Area */}
-    <div className="absolute top-8 bottom-0 left-0 right-0 grid grid-cols-5">
-      {/* Left Panel */}
-      <div className="col-span-2 border-r border-[#111]/10 flex flex-col items-center justify-center p-4 gap-3">
-        <span className="text-[9px] uppercase tracking-[0.2em] text-[#888] font-mono">Machine A-01</span>
-        <svg viewBox="0 0 80 100" className="w-16 h-20" fill="none">
-          <rect x="10" y="20" width="60" height="65" rx="2" fill="#111" />
-          <rect x="18" y="28" width="44" height="22" fill="#333" />
-          <rect x="20" y="30" width="40" height="18" fill="#111" />
-          <line x1="23" y1="35" x2="45" y2="35" stroke="#555" strokeWidth="1" />
-          <line x1="23" y1="39" x2="38" y2="39" stroke="#555" strokeWidth="1" />
-          <line x1="23" y1="43" x2="42" y2="43" stroke="#555" strokeWidth="1" />
-          <rect x="24" y="56" width="32" height="8" rx="1" fill="#333" />
-          <rect x="30" y="64" width="20" height="4" rx="1" fill="#444" />
-          <rect x="32" y="68" width="16" height="3" rx="1" fill="#555" />
-          <rect x="6" y="85" width="68" height="8" rx="2" fill="#222" />
-          <rect x="14" y="80" width="52" height="5" rx="1" fill="#333" />
-          <line x1="65" y1="55" x2="72" y2="68" stroke="#444" strokeWidth="2" />
-          <circle cx="72" cy="70" r="2" fill="#444" />
-          <circle cx="62" cy="64" r="4" fill="#444" />
-          <circle cx="62" cy="64" r="2" fill="#555" />
-          <path d="M 14 26 Q 20 20 26 26" stroke="white" strokeWidth="1" fill="none" opacity="0.6" />
-          <path d="M 11 23 Q 20 14 29 23" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
-          <circle cx="20" cy="28" r="1.5" fill="white" opacity="0.8" />
-        </svg>
-        <div className="flex items-center gap-1.5 px-2 py-0.5 border border-[#111]/20 bg-white">
-          <div
-            className="w-1.5 h-1.5 rounded-full bg-[#111]"
-            style={{ animation: "pulse-dot 2s ease-in-out infinite" }}
-          />
-          <span className="text-[9px] font-mono text-[#111] uppercase">Online</span>
-        </div>
-        <div className="w-full space-y-1 mt-1">
-          {([ ["TEMP","93°C"], ["PRESS","9 bar"], ["SHOTS","42"] ] as const).map(([k, v]) => (
-            <div key={k} className="flex justify-between text-[8px] font-mono">
-              <span className="text-[#888]">{k}</span>
-              <span className="text-[#111]">{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right Panel */}
-      <div className="col-span-3 p-3 flex flex-col gap-2">
-        <div className="border border-[#111]/8 p-2 bg-white">
-          <div className="text-[8px] font-mono text-[#888] uppercase tracking-wider mb-1.5">
-            Shot Pressure — 24h
-          </div>
-          <svg viewBox="0 0 160 40" className="w-full h-8" preserveAspectRatio="none">
-            <polyline points="0,30 20,20 40,25 60,10 80,15 100,8 120,18 140,12 160,20" fill="none" stroke="#111" strokeWidth="1.5" />
-            <polyline points="0,30 20,20 40,25 60,10 80,15 100,8 120,18 140,12 160,20 160,40 0,40" fill="#111" fillOpacity="0.04" />
-            <line x1="0" y1="10" x2="160" y2="10" stroke="#111" strokeOpacity="0.05" strokeWidth="1" />
-            <line x1="0" y1="20" x2="160" y2="20" stroke="#111" strokeOpacity="0.05" strokeWidth="1" />
-            <line x1="0" y1="30" x2="160" y2="30" stroke="#111" strokeOpacity="0.05" strokeWidth="1" />
-          </svg>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {([ ["Extractions","1,247","this week"], ["Avg. Temp","92.4°C","±0.3°C"], ["Uptime","99.7%","30-day avg"], ["Next Service","12 days","scheduled"] ] as const).map(([label, val, sub]) => (
-            <div key={label} className="border border-[#111]/8 p-2 bg-white">
-              <div className="text-[7px] font-mono text-[#888] uppercase tracking-wider">{label}</div>
-              <div className="text-xs font-bold text-[#111] mt-0.5">{val}</div>
-              <div className="text-[7px] text-[#aaa] font-mono">{sub}</div>
-            </div>
-          ))}
-        </div>
-        <div className="border border-[#111] p-2 bg-[#111] flex items-center gap-2">
-          <div className="w-1 h-8 bg-white/20 flex-shrink-0" />
-          <div>
-            <div className="text-[8px] font-mono text-white uppercase tracking-wider">Alert</div>
-            <div className="text-[9px] text-white/70 font-mono">Descaling due in 3 days</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="absolute bottom-3 right-3 text-[8px] font-mono text-[#bbb] tracking-wider">
-      SCM-BEANS™ CLOUD v2.1
-    </div>
-  </div>
-);
-
 export function HeroSection() {
   const c1 = useCountUp(3200);
   const c2 = useCountUp(99);
   const c3 = useCountUp(47);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center bg-white overflow-hidden pt-16">
-      {/* Architectural grid lines — will-change hint for GPU */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ willChange: "auto" }}>
-        <div className="absolute left-[8.33%] top-0 bottom-0 w-px bg-[#111]/[0.04]" />
-        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#111]/[0.04]" />
-        <div className="absolute right-[8.33%] top-0 bottom-0 w-px bg-[#111]/[0.04]" />
-        <div className="absolute left-0 right-0 top-1/3 h-px bg-[#111]/[0.04]" />
-        <div className="absolute left-0 right-0 top-2/3 h-px bg-[#111]/[0.04]" />
+    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-16 landing-gradient-warm landing-grain">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {/* Soft curved line decoration */}
+        <svg className="absolute top-0 right-0 w-1/2 h-full opacity-[0.04]" viewBox="0 0 600 800" fill="none" preserveAspectRatio="none">
+          <path d="M0,200 Q300,100 600,300 T600,600" stroke="#B8860B" strokeWidth="1" fill="none"/>
+          <path d="M0,400 Q300,300 600,500 T600,800" stroke="#B8860B" strokeWidth="1" fill="none"/>
+          <path d="M0,100 Q300,0 600,200 T600,500" stroke="#3C2415" strokeWidth="0.5" fill="none"/>
+        </svg>
+        {/* Warm radial glow behind hero image */}
+        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-coffee-bronze/5 blur-3xl" />
       </div>
 
-      {/* Keyframe for pulse — defined once, no Tailwind animate-pulse overhead */}
+      {/* Steam animation keyframe */}
       <style>{`
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+        @keyframes steam-rise {
+          0% { opacity: 0; transform: translateY(0) scaleX(1); }
+          30% { opacity: 0.15; }
+          70% { opacity: 0.08; }
+          100% { opacity: 0; transform: translateY(-60px) scaleX(0.6); }
         }
       `}</style>
 
-      <div className="max-w-[1200px] mx-auto px-6 md:px-10 w-full">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-10 w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[calc(100vh-64px)] py-16">
 
           {/* Left — Copy */}
           <div className="lg:col-span-6 flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-8 h-px bg-[#111]" />
-              <span className="text-[11px] font-semibold tracking-[0.2em] text-[#555] uppercase">
+              <div className="w-10 h-px bg-coffee-bronze" />
+              <span className="text-[11px] font-semibold tracking-[0.2em] text-coffee-mocha/70 uppercase">
                 IoT SaaS Platform — v2.1
               </span>
             </div>
 
-            <h1 className="text-[clamp(2.5rem,5vw,4rem)] font-bold text-[#111] leading-[1.05] tracking-tight mb-6">
-              Cloud Integration
+            <h1 className="font-serif text-[clamp(2.8rem,5.5vw,4.5rem)] font-bold text-coffee-roast leading-[1.05] tracking-tight mb-6" style={{ textWrap: "balance" }}>
+              Precision in
               <br />
-              <span className="text-[#888]">for Existing</span>
-              <br />
-              Coffee Fleets
+              <span className="text-coffee-bronze">Every Drop</span>
             </h1>
 
-            <p className="text-base md:text-lg text-[#555] leading-relaxed mb-10 max-w-[480px] font-light">
-              Retrofit any espresso machine with plug-and-play hardware. Monitor,
-              configure, and maintain your entire fleet from a single cloud dashboard
-              — no replacement required.
+            <p className="text-base md:text-lg text-coffee-mocha/80 leading-relaxed mb-10 max-w-[480px] font-light">
+              Master the art of espresso with cloud-connected intelligence.
+              Monitor, configure, and optimize your entire coffee fleet from
+              a single elegant dashboard.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <a
                 href="#dashboard"
-                className="group inline-flex items-center justify-center gap-2 bg-[#111] text-white text-sm font-semibold px-7 py-3.5 hover:bg-black transition-colors duration-200"
+                className="group inline-flex items-center justify-center gap-2 bg-coffee-roast text-coffee-cream text-sm font-semibold px-8 py-4 rounded-sm hover:bg-coffee-espresso transition-colors duration-300"
               >
                 Explore Dashboard
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
               </a>
               <a
                 href="#workflow"
-                className="inline-flex items-center justify-center gap-2 text-[#111] text-sm font-semibold px-7 py-3.5 border border-[#111]/20 hover:border-[#111] transition-colors duration-200"
+                className="inline-flex items-center justify-center gap-2 text-coffee-roast text-sm font-semibold px-8 py-4 border border-coffee-roast/20 rounded-sm hover:border-coffee-bronze hover:text-coffee-bronze transition-all duration-300"
               >
-                See How It Works
+                How It Works
               </a>
             </div>
 
             {/* Stats Row */}
-            <div className="flex gap-8 mt-12 pt-8 border-t border-[#111]/8">
+            <div className="flex gap-8 mt-14 pt-8 border-t border-coffee-bronze/15">
               <div>
-                <div className="text-2xl font-bold text-[#111] tabular-nums">
+                <div className="text-2xl font-bold text-coffee-roast" style={{ fontVariantNumeric: "tabular-nums" }}>
                   <span ref={c1}>0</span>+
                 </div>
-                <div className="text-xs text-[#888] uppercase tracking-widest mt-1">Machines Online</div>
+                <div className="text-xs text-coffee-mocha/60 uppercase tracking-widest mt-1">Machines Online</div>
               </div>
-              <div className="w-px bg-[#111]/10" />
+              <div className="w-px bg-coffee-bronze/20" />
               <div>
-                <div className="text-2xl font-bold text-[#111] tabular-nums">
+                <div className="text-2xl font-bold text-coffee-roast" style={{ fontVariantNumeric: "tabular-nums" }}>
                   <span ref={c2}>0</span>.9%
                 </div>
-                <div className="text-xs text-[#888] uppercase tracking-widest mt-1">Uptime SLA</div>
+                <div className="text-xs text-coffee-mocha/60 uppercase tracking-widest mt-1">Uptime SLA</div>
               </div>
-              <div className="w-px bg-[#111]/10" />
+              <div className="w-px bg-coffee-bronze/20" />
               <div>
-                <div className="text-2xl font-bold text-[#111] tabular-nums">
+                <div className="text-2xl font-bold text-coffee-roast" style={{ fontVariantNumeric: "tabular-nums" }}>
                   <span ref={c3}>0</span>ms
                 </div>
-                <div className="text-xs text-[#888] uppercase tracking-widest mt-1">Avg. Latency</div>
+                <div className="text-xs text-coffee-mocha/60 uppercase tracking-widest mt-1">Avg. Latency</div>
               </div>
             </div>
           </div>
 
-          {/* Right — Illustration */}
-          <div className="lg:col-span-6 flex items-center justify-center">
-            <MachineIllustration />
+          {/* Right — Hero Image + Real-time Teaser */}
+          <div className="lg:col-span-6 flex items-center justify-center relative">
+            {/* Main image container with float animation */}
+            <div
+              className="relative w-full max-w-[520px]"
+              style={{ animation: "landing-float 6s ease-in-out infinite" }}
+            >
+              {/* Image with warm shadow */}
+              <div className="relative rounded-lg overflow-hidden shadow-[0_32px_80px_-12px_rgba(60,36,21,0.25)]">
+                <Image
+                  src="/images/hero-espresso.png"
+                  alt="Professional espresso machine with steam rising from freshly brewed coffee"
+                  width={520}
+                  height={390}
+                  priority
+                  className="w-full h-auto object-cover"
+                />
+                {/* Warm overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-coffee-espresso/20 via-transparent to-transparent" />
+              </div>
+
+              {/* Real-time Teaser Widget — Glassmorphism */}
+              <div className="absolute -bottom-4 -left-4 sm:-left-8 glass-card rounded-lg p-4 shadow-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="w-2 h-2 rounded-full bg-coffee-bronze"
+                    style={{ animation: "landing-pulse-bronze 2s ease-in-out infinite" }}
+                  />
+                  <span className="text-[10px] font-mono text-coffee-mocha/70 uppercase tracking-wider">Live Telemetry</span>
+                </div>
+                <div className="space-y-1.5">
+                  {([
+                    ["Boiler", "93\u00a0°C"],
+                    ["Pressure", "9\u00a0bar"],
+                    ["Today", "42 shots"],
+                  ] as const).map(([label, val]) => (
+                    <div key={label} className="flex justify-between gap-6 text-xs">
+                      <span className="text-coffee-mocha/50 font-mono">{label}</span>
+                      <span className="text-coffee-roast font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Steam decorative elements */}
+              <div className="absolute -top-6 right-1/4 flex gap-3" aria-hidden="true">
+                {[0, 0.6, 1.2].map((delay) => (
+                  <div
+                    key={delay}
+                    className="w-1 h-8 rounded-full bg-coffee-steam/30"
+                    style={{
+                      animation: `steam-rise 3s ease-out infinite`,
+                      animationDelay: `${delay}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
         </div>
       </div>
-
-
     </section>
   );
 }
