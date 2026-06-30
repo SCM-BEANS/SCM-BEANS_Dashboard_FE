@@ -16,6 +16,9 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react"],
   },
 
+  // Fix Next.js 15 / React 19 compatibility issues with Three.js / Fiber
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+
   // Image domains (extend when adding external images)
   images: {
     formats: ["image/avif", "image/webp"],
@@ -26,7 +29,7 @@ const nextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://idaas.netbird.cloud:4000/api/v1/:path*', // Proxy to Golang Backend
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://idaas.netbird.cloud:4000/api/v1'}/:path*`, // Proxy to Golang Backend
       },
     ];
   },
