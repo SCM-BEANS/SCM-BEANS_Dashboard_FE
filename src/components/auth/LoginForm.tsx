@@ -402,15 +402,13 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
   if (showBackground) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center relative overflow-hidden landing-grain"
+        className="min-h-screen flex items-center justify-center relative overflow-hidden"
         style={{
-          backgroundImage: "url('/images/hero-espresso.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundImage: "url('/images/coffee-doodle-bg-light.png')",
+          backgroundSize: '400px',
+          backgroundRepeat: 'repeat'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-coffee-roast/80 to-coffee-espresso/90 backdrop-blur-sm" />
         {formContent}
       </div>
     );

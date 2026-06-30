@@ -62,9 +62,9 @@ export function DashboardPreview() {
               <span className="text-coffee-bronze">UI Preview</span>
             </h2>
           </div>
-          <p className="text-coffee-mocha/70 text-sm leading-relaxed font-light max-w-xs md:max-w-sm md:text-right">
-            A unified control surface designed for operators, technicians, and
-            fleet managers — accessible from any browser.
+          <p className="text-coffee-roast/90 text-sm leading-relaxed font-medium max-w-xs md:max-w-sm md:text-right">
+            Get complete visibility into extraction curves, pressure profiles, and 
+            machine health across your entire fleet, all in real time.
           </p>
         </div>
 

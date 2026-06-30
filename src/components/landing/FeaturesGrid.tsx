@@ -119,7 +119,7 @@ const FeatureCard = memo(function FeatureCard({
   return (
     <div
       ref={ref}
-      className="group p-8 bg-white hover:shadow-[0_8px_32px_-8px_rgba(60,36,21,0.1)] cursor-default transition-shadow duration-500"
+      className="group p-8 h-full flex flex-col bg-white hover:shadow-[0_8px_32px_-8px_rgba(60,36,21,0.1)] cursor-default transition-shadow duration-500"
       style={{
         opacity: 0,
         transform: "translateY(24px)",
@@ -143,7 +143,7 @@ const FeatureCard = memo(function FeatureCard({
         {feature.title}
       </h3>
 
-      <p className="text-sm text-coffee-mocha/70 leading-relaxed font-light">
+      <p className="text-sm text-coffee-roast/90 leading-relaxed font-medium flex-grow">
         {feature.description}
       </p>
 
@@ -173,7 +173,7 @@ export function FeaturesGrid() {
             </h2>
           </div>
           <div className="lg:col-span-5 lg:col-start-7 flex items-end">
-            <p className="text-coffee-mocha/70 text-base leading-relaxed font-light">
+            <p className="text-coffee-roast/90 text-base leading-relaxed font-medium">
               Every feature is engineered for the demanding requirements of commercial
               coffee operations — from a single boutique café to a nationwide chain
               of thousands of machines.

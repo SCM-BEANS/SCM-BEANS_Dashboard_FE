@@ -116,7 +116,7 @@ const StepCard = memo(function StepCard({
         {step.title}
       </h3>
 
-      <p className="text-sm text-coffee-mocha/70 leading-relaxed font-light mb-6">
+      <p className="text-sm text-coffee-roast/90 leading-relaxed font-medium mb-6">
         {step.description}
       </p>
 
@@ -185,9 +185,9 @@ export function WorkflowSection() {
             <br />
             <span className="text-coffee-bronze">in Three Steps</span>
           </h2>
-          <p className="text-coffee-mocha/70 text-base max-w-lg mx-auto font-light leading-relaxed">
-            A streamlined, hardware-agnostic onboarding process that gets any
-            machine connected in under five minutes.
+          <p className="text-coffee-roast/90 text-base max-w-lg mx-auto font-medium leading-relaxed">
+            From physical sensors on the boiler to cloud-based predictive maintenance, 
+            understand the data journey of your espresso fleet.
           </p>
         </div>
 

@@ -89,10 +89,9 @@ export function HeroSection() {
               <span className="text-coffee-bronze">Every Drop</span>
             </h1>
 
-            <p className="text-base md:text-lg text-coffee-mocha/80 leading-relaxed mb-10 max-w-[480px] font-light">
-              Master the art of espresso with cloud-connected intelligence.
-              Monitor, configure, and optimize your entire coffee fleet from
-              a single elegant dashboard.
+            <p className="text-base md:text-lg text-coffee-roast/90 leading-relaxed mb-10 max-w-[480px] font-normal">
+              Industrial telemetry and predictive maintenance for modern espresso fleets. 
+              Connect any machine, monitor every extraction, and reduce downtime.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -157,28 +156,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-coffee-espresso/20 via-transparent to-transparent" />
               </div>
 
-              {/* Real-time Teaser Widget — Glassmorphism */}
-              <div className="absolute -bottom-4 -left-4 sm:-left-8 glass-card rounded-lg p-4 shadow-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-2 h-2 rounded-full bg-coffee-bronze"
-                    style={{ animation: "landing-pulse-bronze 2s ease-in-out infinite" }}
-                  />
-                  <span className="text-[10px] font-mono text-coffee-mocha/70 uppercase tracking-wider">Live Telemetry</span>
-                </div>
-                <div className="space-y-1.5">
-                  {([
-                    ["Boiler", "93\u00a0°C"],
-                    ["Pressure", "9\u00a0bar"],
-                    ["Today", "42 shots"],
-                  ] as const).map(([label, val]) => (
-                    <div key={label} className="flex justify-between gap-6 text-xs">
-                      <span className="text-coffee-mocha/50 font-mono">{label}</span>
-                      <span className="text-coffee-roast font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
 
               {/* Steam decorative elements */}
               <div className="absolute -top-6 right-1/4 flex gap-3" aria-hidden="true">
