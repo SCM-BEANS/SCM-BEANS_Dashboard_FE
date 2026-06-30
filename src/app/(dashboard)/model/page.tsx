@@ -3,7 +3,11 @@
 import { useI18nStore } from "@/store/useI18nStore";
 import Link from "next/link";
 import { Layers, ArrowRight, Activity, Settings, Info, Box } from "lucide-react";
-import { ModelViewer } from "@/components/3d/ModelViewer";
+import dynamic from "next/dynamic";
+const ModelViewer = dynamic(
+  () => import("@/components/3d/ModelViewer").then((mod) => mod.ModelViewer),
+  { ssr: false }
+);
 
 export default function ModelPreviewPage() {
   const { t } = useI18nStore();

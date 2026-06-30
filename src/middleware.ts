@@ -62,6 +62,16 @@ export function middleware(req: NextRequest) {
   //   }
   // }
 
+  if (pathname.startsWith("/dashboard")) {
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -69,5 +79,6 @@ export const config = {
   // Run middleware on these paths only (excludes _next, api, static files)
   matcher: [
     "/admin/:path*",
+    "/dashboard/:path*",
   ],
 };

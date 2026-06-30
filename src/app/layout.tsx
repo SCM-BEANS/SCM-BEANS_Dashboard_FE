@@ -1,13 +1,29 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk } from "next/font/google";
+import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 
-const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken" });
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "DEER_01 - Precision Brew Dashboard",
-  description: "Zenith Brew - IoT Espresso Machine Dashboard",
+  title: "SCM-BEANS — Precision IoT Espresso Fleet Management",
+  description: "Monitor, control, and optimise your commercial espresso machine fleet in real time.",
 };
 
 export default function RootLayout({
@@ -17,10 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${hanken.variable} font-sans bg-surface text-on-surface`}>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+      <body
+        className={`${playfair.variable} ${inter.variable} ${jetbrains.variable} font-sans bg-warm-50 text-ink`}
+      >
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );

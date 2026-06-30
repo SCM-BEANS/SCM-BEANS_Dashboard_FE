@@ -4,24 +4,80 @@
 
 @layer base {
   body {
-    @apply bg-background text-on-surface min-h-screen font-sans;
+    @apply bg-warm-50 text-ink font-sans antialiased;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
 @layer components {
+  /* ── Legacy dashboard tokens ─────────────────────────────────────── */
   .bento-border {
-    @apply border border-outline-variant bg-surface-container-lowest shadow-sm rounded-md;
+    @apply border border-outline bg-surface shadow-sm rounded-md;
   }
-  
+
   .bento-border-light {
-    @apply border border-outline-variant/50;
+    @apply border border-outline/50;
   }
 
   /* Grid background for dashboard pages */
   .dashboard-bg {
     background-size: 8px 8px;
-    background-image: 
-      linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+  }
+
+  /* ── Espresso Moderne — landing page tokens ───────────────────────── */
+
+  /* Section container */
+  .em-container {
+    @apply max-w-content mx-auto px-6 md:px-10;
+  }
+
+  /* Overline label (small caps above heading) */
+  .em-overline {
+    @apply text-[11px] font-sans font-semibold tracking-label uppercase text-espresso;
+  }
+
+  /* Display heading (Playfair) */
+  .em-heading {
+    @apply font-display text-ink leading-tight tracking-tighter;
+  }
+
+  /* Body text */
+  .em-body {
+    @apply font-sans text-ink-muted leading-relaxed font-light;
+  }
+
+  /* Section divider */
+  .em-divider {
+    @apply border-b border-warm-300;
+  }
+
+  /* Card */
+  .em-card {
+    @apply bg-white border border-warm-300 rounded-lg;
+  }
+
+  /* Primary button */
+  .em-btn-primary {
+    @apply inline-flex items-center gap-2 bg-ink text-white font-sans text-sm font-semibold px-6 py-3 rounded-sm
+           hover:bg-ink-soft transition-colors duration-200;
+  }
+
+  /* Secondary button */
+  .em-btn-secondary {
+    @apply inline-flex items-center gap-2 text-ink font-sans text-sm font-semibold px-6 py-3 rounded-sm border border-warm-300
+           hover:border-ink transition-colors duration-200;
+  }
+
+  /* Espresso accent button */
+  .em-btn-accent {
+    @apply inline-flex items-center gap-2 bg-espresso text-white font-sans text-sm font-semibold px-6 py-3 rounded-sm
+           hover:bg-espresso-600 transition-colors duration-200;
   }
 }

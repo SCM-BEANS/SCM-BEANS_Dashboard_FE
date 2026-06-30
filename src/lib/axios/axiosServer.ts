@@ -12,9 +12,9 @@ const axiosServer = axios.create({
 
 // Request Interceptor
 axiosServer.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     // Note: cookies() is a server-only function and must be called during request time
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('access_token')?.value;
 
     if (token && config.headers) {

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import axiosServer from "@/lib/axios/axiosServer";
 
 export default async function UsersPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const tokenCookie = cookieStore.get("access_token");
 
   // Redirect to login if no token is found
