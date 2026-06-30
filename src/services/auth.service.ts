@@ -104,4 +104,11 @@ export const authService = {
   passwordChange: async (data: Record<string, string>): Promise<ApiResponse<any>> => {
     return axiosClient.post(AUTH.PASSWORD_CHANGE, data);
   },
+
+  /**
+   * Get User Profile
+   */
+  getProfile: async (client: any = axiosClient): Promise<ApiResponse<User>> => {
+    return client.get('/users/me');
+  },
 };

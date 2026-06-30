@@ -63,7 +63,7 @@ export const Sidebar = () => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold uppercase tracking-tighter text-primary">{status.id}</h2>
+                  <h2 className="text-2xl font-bold font-serif uppercase tracking-tighter text-primary">{status.id}</h2>
                   <ChevronDown className={`w-5 h-5 text-primary transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
@@ -81,14 +81,14 @@ export const Sidebar = () => {
                 <div className="flex flex-col">
                   <div className="p-3 border-b border-primary bg-surface-container flex justify-between items-center">
                     <div>
-                      <div className="font-bold font-mono text-sm uppercase">DEER_01</div>
+                      <div className="font-bold font-serif text-base uppercase">DEER_01</div>
                       <div className="text-[10px] uppercase text-on-surface-variant">{t("brewing")}</div>
                     </div>
                     <div className="w-2 h-2 rounded-full bg-primary" />
                   </div>
                   <div className="p-3 border-b border-outline hover:bg-surface-container transition-colors flex justify-between items-center">
                     <div>
-                      <div className="font-bold font-mono text-sm uppercase">BEAVER_05</div>
+                      <div className="font-bold font-serif text-base uppercase">BEAVER_05</div>
                       <div className="text-[10px] uppercase text-on-surface-variant">{t("ready")}</div>
                     </div>
                   </div>

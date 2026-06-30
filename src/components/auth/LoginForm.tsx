@@ -190,10 +190,10 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
       <div className="absolute -inset-4 bg-black/40 blur-2xl rounded-[2.5rem]" />
       <div className="relative p-8 bg-surface/90 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-16 h-16 bg-surface-container border border-white/10 rounded-2xl flex items-center justify-center mb-4 shadow-xl">
+          <div className="w-16 h-16 bg-surface-container border border-outline/30 rounded-2xl flex items-center justify-center mb-4 shadow-xl">
             <Coffee className="text-primary w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-on-surface tracking-tight mb-2">
+          <h1 className="text-3xl font-bold font-serif text-on-surface tracking-tight mb-2">
             Deer Coffee
           </h1>
           <p className="text-on-surface-variant text-sm text-center">
@@ -402,13 +402,15 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
   if (showBackground) {
     return (
       <div
-        className="min-h-[calc(100vh-4rem)] flex items-center justify-center relative overflow-hidden"
+        className="min-h-screen flex items-center justify-center relative overflow-hidden landing-grain"
         style={{
-          backgroundImage: "url('/images/coffee-doodle-bg-light.png')",
-          backgroundSize: '400px',
-          backgroundRepeat: 'repeat'
+          backgroundImage: "url('/images/hero-espresso.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }}
       >
+        <div className="absolute inset-0 bg-gradient-to-br from-coffee-roast/80 to-coffee-espresso/90 backdrop-blur-sm" />
         {formContent}
       </div>
     );

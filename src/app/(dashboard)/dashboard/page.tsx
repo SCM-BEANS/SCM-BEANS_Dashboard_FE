@@ -15,7 +15,7 @@ export default function OverviewPage() {
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-outline pb-4">
         <div>
-          <h2 className="text-4xl font-bold uppercase mb-2 tracking-tighter text-primary">{status.id}</h2>
+          <h2 className="text-4xl font-bold font-serif uppercase mb-2 tracking-tighter text-primary">{status.id}</h2>
           <div className="flex items-center gap-3 font-mono text-sm uppercase">
             <span className={`flex items-center gap-2 px-2 py-1 ${status.status === 'Online' ? 'bg-primary text-on-primary' : 'bg-error text-on-error'}`}>
               <div className="w-2 h-2 bg-current rounded-full animate-pulse"></div>
