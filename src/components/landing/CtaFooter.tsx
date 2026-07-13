@@ -107,8 +107,8 @@ export function LandingFooter() {
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-coffee-roast rounded-full flex items-center justify-center">
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M8 2C5.5 2 3.5 4 3.5 6.5C3.5 8 4 9 5 10.5C5.5 11.2 6 12 6 13H10C10 12 10.5 11.2 11 10.5C12 9 12.5 8 12.5 6.5C12.5 4 10.5 2 8 2Z" fill="#D4A847"/>
-                  <rect x="6" y="13" width="4" height="1" rx="0.5" fill="#D4A847"/>
+                  <path d="M8 2C5.5 2 3.5 4 3.5 6.5C3.5 8 4 9 5 10.5C5.5 11.2 6 12 6 13H10C10 12 10.5 11.2 11 10.5C12 9 12.5 8 12.5 6.5C12.5 4 10.5 2 8 2Z" fill="#D4A847" />
+                  <rect x="6" y="13" width="4" height="1" rx="0.5" fill="#D4A847" />
                 </svg>
               </div>
               <span className="text-sm font-serif font-bold text-coffee-roast tracking-tight">

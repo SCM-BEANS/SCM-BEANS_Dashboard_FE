@@ -5,6 +5,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import { ProductionWidget } from "@/components/features/ProductionWidget";
 import { ConfigWidget } from "@/components/features/ConfigWidget";
 import { AnalyticsWidget } from "@/components/features/AnalyticsWidget";
+import { Button } from "@astryxdesign/core/Button";
 
 export default function OverviewPage() {
   const { status } = useIoTStore();
@@ -24,9 +25,12 @@ export default function OverviewPage() {
             <span className="text-on-surface-variant">{t('last_sync')}: {status.lastSync}</span>
           </div>
         </div>
-        <div className="mt-4 md:mt-0 font-mono text-sm text-right uppercase text-on-surface-variant">
-          <div>{t('uptime')}: {status.uptime}</div>
-          <div>{t('firmware_version')}: {status.firmware}</div>
+        <div className="mt-4 md:mt-0 font-mono text-sm text-right uppercase text-on-surface-variant flex flex-col items-end gap-2">
+          <div>
+            <div>{t('uptime')}: {status.uptime}</div>
+            <div>{t('firmware_version')}: {status.firmware}</div>
+          </div>
+          <Button label="Test Astryx" variant="primary" />
         </div>
       </div>
 
