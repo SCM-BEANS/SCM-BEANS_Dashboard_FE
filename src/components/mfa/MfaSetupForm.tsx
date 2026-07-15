@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldCheck, Smartphone, QrCode, KeyRound, Copy, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { mfaService } from '@/services/mfa.service';
 

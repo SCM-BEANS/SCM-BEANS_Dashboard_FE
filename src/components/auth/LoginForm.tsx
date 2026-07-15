@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Coffee, Lock, Mail, ArrowRight, User, KeyRound } from 'lucide-react';
 import { authService } from '@/services/auth.service';

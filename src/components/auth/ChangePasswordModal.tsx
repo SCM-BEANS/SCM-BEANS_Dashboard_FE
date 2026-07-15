@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lock, KeyRound, ArrowRight, X } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 

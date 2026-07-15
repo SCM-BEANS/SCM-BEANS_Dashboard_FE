@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { Suspense, useState, useRef, useCallback, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Center, Html, ContactShadows, GizmoHelper, GizmoViewcube, Bounds, useBounds } from "@react-three/drei";
 import { Activity, Layers, Settings, Eye, EyeOff, Home } from "lucide-react";

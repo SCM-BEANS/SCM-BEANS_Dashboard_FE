@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { MfaSetupForm } from '@/components/mfa/MfaSetupForm';
 import { Shield } from 'lucide-react';
 
