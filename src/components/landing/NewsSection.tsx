@@ -43,7 +43,7 @@ export function NewsSection() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
           <div>
             <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-6">
-              Tin tức & Cập nhật
+              Tin tức &amp; Cập nhật
             </h2>
             <div className="flex gap-6 border-b border-black/10">
               {tabs.map((tab) => (
@@ -52,18 +52,18 @@ export function NewsSection() {
                   onClick={() => setActiveTab(tab)}
                   id={`news-tab-${tab.replace(" ", "-").toLowerCase()}`}
                   className={`pb-3 text-sm font-bold uppercase tracking-widest transition-colors relative ${
-                    activeTab === tab ? "text-black" : "text-black/40 hover:text-black/60"
+                    activeTab === tab ? "text-black" : "text-black/50 hover:text-black/75"
                   }`}
                 >
                   {tab}
                   {activeTab === tab && (
-                    <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-black"></span>
+                    <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-black" />
                   )}
                 </button>
               ))}
             </div>
           </div>
-          <a href="#" className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-black">
+          <a href="#" className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-black/75 hover:text-black transition-colors">
             Xem tất cả <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </a>
         </div>
@@ -75,22 +75,26 @@ export function NewsSection() {
               href="#"
               id={`news-card-${idx}`}
               className={`group rounded-2xl p-8 flex flex-col gap-4 min-h-[240px] hover:scale-[1.02] transition-all duration-300 ${
-                item.dark ? "bg-black text-white" : "bg-lp-card text-black"
+                item.dark ? "bg-[#1A0E07] text-white" : "bg-[#f4f0eb] text-black"
               }`}
             >
               <div className={`text-xs font-bold px-3 py-1 rounded-full w-fit ${
-                item.dark ? "bg-white/10 text-white/70" : "bg-black/10 text-black/70"
+                item.dark ? "bg-white/15 text-white/90" : "bg-black/10 text-black/75"
               }`}>
                 {item.category}
               </div>
-              <h3 className="text-lg font-bold leading-snug flex-1">{item.title}</h3>
+              <h3 className={`text-lg font-bold leading-snug flex-1 ${item.dark ? "text-white" : "text-black"}`}>
+                {item.title}
+              </h3>
               <div className="flex items-center justify-between mt-auto">
                 <span className={`text-xs font-semibold tracking-wider ${
-                  item.dark ? "text-white/40" : "text-black/50"
+                  item.dark ? "text-white/70" : "text-black/65"
                 }`}>
                   {item.date}
                 </span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform opacity-50" />
+                <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-transform ${
+                  item.dark ? "text-white/70" : "text-black/65"
+                }`} />
               </div>
             </Link>
           ))}

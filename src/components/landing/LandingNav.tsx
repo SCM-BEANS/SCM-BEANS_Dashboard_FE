@@ -60,7 +60,7 @@ export function LandingNav() {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white shadow-sm" : "bg-white/95 backdrop-blur-sm"
+        scrolled ? "bg-white shadow-sm" : `bg-white/95 ${menuOpen ? "" : "backdrop-blur-sm"}`
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
@@ -119,34 +119,36 @@ export function LandingNav() {
           aria-expanded={menuOpen}
           id="nav-mobile-menu-btn"
         >
-          <span className="block w-6 h-0.5 bg-black transition-transform duration-300 origin-center" style={{ transform: menuOpen ? "rotate(45deg) translateY(6px)" : undefined }} />
-          <span className="block w-6 h-0.5 bg-black transition-opacity duration-300" style={{ opacity: menuOpen ? 0 : 1 }} />
-          <span className="block w-6 h-0.5 bg-black transition-transform duration-300 origin-center" style={{ transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : undefined }} />
+          <span className={`block w-6 h-0.5 transition-all duration-300 ${menuOpen ? "bg-white translate-y-2 rotate-45" : "bg-black"}`} />
+          <span className={`block w-6 h-0.5 transition-all duration-300 ${menuOpen ? "opacity-0 bg-white" : "bg-black opacity-100"}`} />
+          <span className={`block w-6 h-0.5 transition-all duration-300 ${menuOpen ? "bg-white -translate-y-2 -rotate-45" : "bg-black"}`} />
         </button>
       </div>
 
       {/* Mobile Menu */}
       <div
-        className={`fixed inset-0 bg-white z-40 transition-transform duration-500 flex flex-col justify-center items-center gap-8 md:hidden ${
-          menuOpen ? "translate-y-0" : "-translate-y-full"
+        className={`fixed inset-0 bg-coffee-espresso z-40 transition-all duration-500 flex flex-col items-center pt-28 pb-10 overflow-y-auto md:hidden ${
+          menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        <DeerLogo className="w-16 h-16 text-black mb-4" />
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={closeMenu}
-            className="text-2xl font-bold uppercase tracking-widest text-black/80 hover:text-black transition-colors"
-          >
-            {item.name}
-          </Link>
-        ))}
-        <div className="flex flex-col gap-3 mt-4 w-48">
-          <Link href="/login" onClick={closeMenu} className="text-center py-3 border border-black rounded-full font-semibold text-sm tracking-widest uppercase hover:bg-black hover:text-white transition-all">
+        <DeerLogo className="w-16 h-16 text-white mb-8 shrink-0" />
+        <div className="flex flex-col items-center gap-6 w-full">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={closeMenu}
+              className="text-2xl font-bold uppercase tracking-widest text-white/90 hover:text-white transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-col gap-4 mt-10 w-64 shrink-0">
+          <Link href="/login" onClick={closeMenu} className="text-center py-4 border border-white/30 text-white rounded-full font-bold text-sm tracking-widest uppercase hover:bg-white/10 transition-all">
             Login
           </Link>
-          <Link href="/login" onClick={closeMenu} className="text-center py-3 bg-black text-white rounded-full font-semibold text-sm tracking-widest uppercase hover:bg-black/80 transition-all">
+          <Link href="/login" onClick={closeMenu} className="text-center py-4 bg-white text-coffee-espresso rounded-full font-bold text-sm tracking-widest uppercase hover:bg-white/90 transition-all">
             Get Started
           </Link>
         </div>

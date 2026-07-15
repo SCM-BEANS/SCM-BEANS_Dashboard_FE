@@ -18,7 +18,7 @@ const servicePoints = [
 
 export function DistributionSection() {
   return (
-    <section id="distribution" className="bg-lp-bg py-32 px-6">
+    <section id="distribution" className="bg-[#f4f0eb] py-32 px-6">
       <div className="max-w-[1400px] mx-auto">
 
         {/* Top stats */}
@@ -26,7 +26,7 @@ export function DistributionSection() {
           {stats.map((s, i) => (
             <div key={i} className="bg-white p-8 text-center">
               <div className="text-4xl md:text-5xl font-black text-black mb-2">{s.value}</div>
-              <div className="text-xs text-black/40 uppercase tracking-widest font-semibold">{s.label}</div>
+              <div className="text-xs text-black/70 uppercase tracking-widest font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
@@ -34,16 +34,18 @@ export function DistributionSection() {
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-          {/* Left: Map illustration */}
-          <div className="relative w-full rounded-2xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center">
+          {/* Left: Map — lighter overlay for better visibility */}
+          <div className="relative w-full rounded-2xl overflow-hidden bg-[#3C2415] aspect-[4/3] flex items-center justify-center">
+            {/* Map background image — higher opacity for visibility */}
             <div
-              className="absolute inset-0 opacity-25 bg-cover bg-center"
+              className="absolute inset-0 opacity-50 bg-cover bg-center"
               style={{ backgroundImage: "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200')" }}
             />
-            <div className="absolute inset-0 bg-black/65" />
+            {/* Lighter brown overlay instead of black */}
+            <div className="absolute inset-0 bg-[#2C1810]/50" />
 
             <div className="relative z-10 w-full h-full p-8">
-              <div className="text-white/30 text-xs tracking-widest uppercase mb-4">Service Coverage · Vietnam</div>
+              <div className="text-white/80 text-xs tracking-widest uppercase mb-4 font-semibold">Service Coverage · Vietnam</div>
               <div className="relative w-full h-[250px]">
                 {[
                   { top: "5%", left: "48%", label: "Hà Nội" },
@@ -55,10 +57,10 @@ export function DistributionSection() {
                 ].map((point, i) => (
                   <div key={i} className="absolute flex flex-col items-center" style={{ top: point.top, left: point.left }}>
                     <div className="relative">
-                      <div className="w-3 h-3 rounded-full bg-lp-card animate-ping absolute" />
-                      <div className="w-3 h-3 rounded-full bg-lp-card relative z-10" />
+                      <div className="w-3 h-3 rounded-full bg-amber-300 animate-ping absolute" />
+                      <div className="w-3 h-3 rounded-full bg-amber-300 relative z-10" />
                     </div>
-                    <span className="text-white/60 text-[10px] mt-1 whitespace-nowrap">{point.label}</span>
+                    <span className="text-white text-[11px] mt-1.5 whitespace-nowrap font-bold drop-shadow-lg">{point.label}</span>
                   </div>
                 ))}
               </div>
@@ -68,23 +70,23 @@ export function DistributionSection() {
           {/* Right: Content */}
           <div className="flex flex-col gap-8">
             <div>
-              <div className="w-10 h-1 bg-lp-card mb-6"></div>
-              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-5 leading-tight">
-                Dịch vụ phủ rộng<br />
-                <span className="text-black/30">toàn quốc</span>
+              <div className="w-10 h-1 bg-black/40 mb-6 rounded-full" />
+              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-5 leading-tight flex flex-col gap-3">
+                <span>Dịch vụ phủ rộng</span>
+                <span className="text-black/35">toàn quốc</span>
               </h2>
-              <p className="text-black/50 text-lg font-light max-w-lg leading-relaxed">
+              <p className="text-black/80 text-lg font-light max-w-lg leading-relaxed">
                 Từ Hà Nội đến TP.HCM, đội ngũ kỹ thuật viên của DEER COFFEE sẵn sàng triển khai và hỗ trợ các doanh nghiệp vừa và lớn trong toàn bộ chuỗi dịch vụ máy pha cà phê.
               </p>
             </div>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
               {servicePoints.map((sp, i) => (
-                <div key={i} className="flex gap-4 p-5 bg-white rounded-xl border border-black/5 hover:border-lp-card/60 transition-colors">
-                  <div className="text-lp-card mt-0.5 shrink-0">{sp.icon}</div>
+                <div key={i} className="flex gap-4 p-5 bg-white rounded-xl border border-black/8 hover:border-black/20 transition-colors">
+                  <div className="text-black/60 mt-0.5 shrink-0">{sp.icon}</div>
                   <div>
-                    <div className="font-bold text-black mb-1">{sp.title}</div>
-                    <div className="text-black/50 text-sm font-light leading-relaxed">{sp.desc}</div>
+                    <div className="font-bold text-black mb-1.5 text-base">{sp.title}</div>
+                    <div className="text-black/75 text-sm leading-relaxed">{sp.desc}</div>
                   </div>
                 </div>
               ))}
@@ -93,9 +95,9 @@ export function DistributionSection() {
             <Link
               href="/about"
               id="distribution-cta-btn"
-              className="group inline-flex items-center gap-3 border-b-2 border-black pb-2 text-black uppercase tracking-widest font-bold text-sm w-fit hover:pr-4 transition-all duration-300"
+              className="group inline-flex items-center gap-3 border-b-2 border-black/40 pb-2 text-black uppercase tracking-widest font-bold text-sm w-fit hover:border-black hover:gap-4 transition-all duration-300"
             >
-              Liên hệ triển khai <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+              Liên hệ triển khai <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>

@@ -1,11 +1,26 @@
 "use client";
 
-import React, { Suspense, useState, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import React, { Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Center, Html, ContactShadows, GizmoHelper, GizmoViewcube, Bounds, useBounds } from "@react-three/drei";
 import { Activity, Layers, Settings, Eye, EyeOff, Home } from "lucide-react";
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+
+// Pre-create shared materials to avoid re-creation on every render
+const screenMaterial = new THREE.MeshStandardMaterial({
+  color: '#0a0a0a',
+  roughness: 0.05,
+  metalness: 0.9,
+  side: THREE.FrontSide,
+});
+
+const bodyMaterial = new THREE.MeshStandardMaterial({
+  color: '#2d3748',
+  roughness: 0.5,
+  metalness: 0.6,
+  side: THREE.FrontSide, // FrontSide only — halves polygon count
+});
 
 interface ModelViewerProps {
   url: string;
@@ -22,41 +37,16 @@ const Model = ({ url }: { url: string }) => {
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+        // Disable shadow casting/receiving for performance (ContactShadows handles this)
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        // Frustum culling — skip rendering meshes outside the camera view
+        mesh.frustumCulled = true;
 
-        // Nhận diện màn hình dựa trên số lượng đỉnh (đặc trưng của mesh màn hình trong file này là 7094)
+        // Screen mesh identification (vertex count 7094 is unique to this model's screen)
         const isScreen = mesh.geometry?.attributes?.position?.count === 7094;
-
-        if (isScreen) {
-          // Vật liệu cho màn hình: Đen hoàn toàn (Kính đen bóng)
-          mesh.material = new THREE.MeshPhysicalMaterial({
-            color: '#000000',
-            roughness: 0.1,
-            metalness: 0.8,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.1,
-            side: THREE.DoubleSide
-          });
-        } else {
-          // Vật liệu cho vỏ máy: Xám đen (Dark Gray)
-          mesh.material = new THREE.MeshStandardMaterial({
-            color: '#2d3748', // Xám đen
-            roughness: 0.5,
-            metalness: 0.6,
-            side: THREE.DoubleSide
-          });
-        }
-
-        // Thêm viền (edges) cho từng chi tiết để làm nổi bật hình khối (đặc trưng CAD)
-        if (!mesh.userData.hasEdges) {
-          const edgesGeometry = new THREE.EdgesGeometry(mesh.geometry, 15); // Góc 15 độ để tạo viền
-          const edgeColor = isScreen ? '#1f2937' : '#111827'; // Viền đen nhạt cho màn hình, đen đậm cho thân máy
-          const edgesMaterial = new THREE.LineBasicMaterial({ color: edgeColor, transparent: true, opacity: 0.6 });
-          const lineSegments = new THREE.LineSegments(edgesGeometry, edgesMaterial);
-          mesh.add(lineSegments);
-          mesh.userData.hasEdges = true;
-        }
+        // Reuse shared materials — no new allocations per mesh
+        mesh.material = isScreen ? screenMaterial : bodyMaterial;
       }
     });
   }, [scene]);
@@ -71,6 +61,15 @@ function BoundsFitter({ fitBoundsRef }: { fitBoundsRef: React.MutableRefObject<(
       bounds.refresh().clip().fit();
     };
   }, [bounds, fitBoundsRef]);
+  return null;
+}
+
+// Exposes invalidate() from inside the Canvas context to the outer component
+function SceneInvalidator({ invalidateRef }: { invalidateRef: React.MutableRefObject<(() => void) | null> }) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    invalidateRef.current = invalidate;
+  }, [invalidate, invalidateRef]);
   return null;
 }
 
@@ -121,35 +120,57 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
   version = "v4.0.2",
   show3DInfo = true
 }) => {
-  const [isInfoOpen, setIsInfoOpen] = useState(false); // Mặc định đóng
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const fitBoundsRef = useRef<(() => void) | null>(null);
+  const invalidateRef = useRef<(() => void) | null>(null);
 
-  const handleResetCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset(); // Đưa camera về góc xem ban đầu
+  const handleResetCamera = useCallback(() => {
+    const controls = controlsRef.current;
+    if (controls) {
+      // Reset orbit pivot (target) back to world center — fixes off-center rotation
+      controls.target.set(0, 0, 0);
+      controls.update();
     }
+    // Re-fit the camera to the model bounding box
     if (fitBoundsRef.current) {
-      fitBoundsRef.current(); // Scale vừa khung hình theo góc nhìn ban đầu
+      fitBoundsRef.current();
     }
-  };
+    // demand mode: manually trigger a re-render after reset
+    if (invalidateRef.current) {
+      invalidateRef.current();
+    }
+  }, []);
 
   return (
     <div className="w-full h-full relative bg-surface-container overflow-hidden font-sans">
-      <Canvas camera={{ position: [1.2, 0.8, 2.2], fov: 45 }}>
+      <Canvas
+        camera={{ position: [1.2, 0.8, 2.2], fov: 45 }}
+        // Only re-render when user interacts — biggest FPS win when idle
+        frameloop="demand"
+        // Cap pixel ratio: 1 on low-end, 1.5 max (prevents GPU overload on Retina/4K)
+        dpr={[1, 1.5]}
+        gl={{
+          // Disable antialiasing via gl — let post-process or DPR handle it
+          antialias: false,
+          // Powerpreference hint for discrete GPU
+          powerPreference: "high-performance",
+          // Disable logarithmic depth buffer (not needed here, saves cost)
+          logarithmicDepthBuffer: false,
+        }}
+      >
         <Suspense fallback={<Loader />}>
 
-          {/* Màu nền giống phần mềm CAD */}
+          {/* CAD-style background */}
           <color attach="background" args={['#eaedf2']} />
 
-          {/* Môi trường 3D tạo phản xạ ánh sáng */}
-          <Environment preset="studio" />
+          {/* Environment — backgroundIntensity=0 means only reflections, no bg render */}
+          <Environment preset="studio" background={false} />
 
-          {/* Đèn tạo điểm nhấn */}
-          <ambientLight intensity={0.4} />
-          <spotLight position={[5, 10, 5]} intensity={2} angle={0.3} penumbra={1} castShadow />
-          <spotLight position={[-5, 5, -5]} intensity={1} color="#60a5fa" angle={0.5} penumbra={1} />
-          <spotLight position={[0, 5, 5]} intensity={1} color="#f472b6" angle={0.5} penumbra={1} />
+          {/* Simple lights — no castShadow on spot lights (very expensive) */}
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[5, 10, 5]} intensity={1.5} />
+          <directionalLight position={[-5, 5, -5]} intensity={0.6} color="#60a5fa" />
 
           <Bounds fit clip observe margin={1.2}>
             <Center>
@@ -158,8 +179,19 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             <BoundsFitter fitBoundsRef={fitBoundsRef} />
           </Bounds>
 
-          {/* Bóng dưới mặt đất chân thực */}
-          <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={2.5} far={4} color="#000000" />
+          <SceneInvalidator invalidateRef={invalidateRef} />
+
+          {/* Baked shadow (frames=1): rendered once, not per-frame */}
+          <ContactShadows
+            position={[0, -1.2, 0]}
+            opacity={0.5}
+            scale={8}
+            blur={2}
+            far={4}
+            color="#000000"
+            resolution={256}
+            frames={1}
+          />
 
           <OrbitControls
             ref={controlsRef}
@@ -167,16 +199,16 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             enableZoom={true}
             enableRotate={true}
             autoRotate={false}
+            enableDamping={false}
             makeDefault
             minDistance={0.5}
             maxDistance={10}
+            // regress: drop quality during interaction for smoother dragging
+            regress
           />
 
           {/* 3D Orientation Cube */}
-          <GizmoHelper
-            alignment="bottom-right"
-            margin={[60, 60]}
-          >
+          <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
             <GizmoViewcube
               color="gray"
               strokeColor="white"
@@ -188,7 +220,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
         </Suspense>
       </Canvas>
 
-      {/* Nút Home để reset camera */}
+      {/* Reset camera button */}
       <button
         onClick={handleResetCamera}
         className="absolute bottom-8 left-8 z-50 w-10 h-10 bg-surface border-2 border-outline rounded-full shadow-lg flex items-center justify-center hover:bg-primary hover:text-on-primary hover:border-primary transition-all duration-300"
@@ -197,11 +229,10 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
         <Home className="w-5 h-5" />
       </button>
 
-      {/* 2D Overlay: Menu góc phải - Luôn hiển thị khi show3DInfo là true */}
+      {/* 2D Overlay — only when show3DInfo is true */}
       {show3DInfo && (
         <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50 flex items-start gap-4 animate-in fade-in slide-in-from-top-4 slide-in-from-right-4 duration-300">
 
-          {/* Info Card - Chỉ hiện khi đang Open */}
           {isInfoOpen && (
             <div className="relative animate-in fade-in zoom-in duration-300">
               <InfoCard machineName={machineName} status={status} version={version} is2D={true} />
@@ -209,7 +240,6 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
             </div>
           )}
 
-          {/* 2D Eye Toggle luôn hiển thị để bật tắt Menu góc phải */}
           <button
             onClick={() => setIsInfoOpen(!isInfoOpen)}
             className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center shadow-lg border-2 transition-all duration-300 hover:scale-105 ${isInfoOpen ? 'bg-primary text-on-primary border-primary' : 'bg-surface text-on-surface border-outline hover:border-primary'

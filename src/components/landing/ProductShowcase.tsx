@@ -36,17 +36,17 @@ const solutions = [
 
 export function ProductShowcase() {
   return (
-    <section id="solutions" className="bg-lp-bg py-28 px-6">
+    <section id="solutions" className="bg-[#f4f0eb] py-28 px-6">
       <div className="max-w-[1400px] mx-auto">
         <div className="text-center mb-16">
-          <span className="text-xs font-bold tracking-[0.3em] uppercase text-black/40 mb-3 block">
+          <span className="text-xs font-bold tracking-[0.3em] uppercase text-black/60 mb-3 block">
             What We Offer
           </span>
-          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-4">
+          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-5">
             Giải pháp toàn diện
           </h2>
-          <p className="text-black/50 max-w-xl mx-auto text-base font-light">
-            Từ cho thuê máy đến tích hợp Cloud & IoT — DEER COFFEE cung cấp hệ sinh thái quản lý cà phê đầy đủ nhất.
+          <p className="text-black/75 max-w-xl mx-auto text-base leading-relaxed">
+            Từ cho thuê máy đến tích hợp Cloud &amp; IoT — DEER COFFEE cung cấp hệ sinh thái quản lý cà phê đầy đủ nhất.
           </p>
         </div>
 
@@ -56,19 +56,19 @@ export function ProductShowcase() {
               key={idx}
               href={s.href}
               id={`solution-card-${idx}`}
-              className="group bg-lp-card rounded-2xl p-8 flex flex-col gap-6 hover:scale-[1.02] hover:brightness-95 transition-all duration-300 shadow-sm hover:shadow-lg"
+              className="group bg-white rounded-2xl p-8 flex flex-col gap-6 hover:scale-[1.02] transition-all duration-300 shadow-sm hover:shadow-xl border border-black/5"
             >
-              <div className="text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full w-fit bg-black/10 text-black/70">
+              <div className="text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full w-fit bg-black/8 text-black/75">
                 {s.tag}
               </div>
-              <div className="text-black/80">{s.icon}</div>
+              <div className="text-black/75">{s.icon}</div>
               <div>
                 <h3 className="text-xl font-bold mb-3 leading-snug text-black">{s.title}</h3>
-                <p className="text-sm font-light leading-relaxed text-black/60">
+                <p className="text-sm leading-relaxed text-black/75">
                   {s.desc}
                 </p>
               </div>
-              <div className="mt-auto flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-black/70">
+              <div className="mt-auto flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-black/75 group-hover:text-black transition-colors">
                 Xem thêm <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
