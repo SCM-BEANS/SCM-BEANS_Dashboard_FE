@@ -34,7 +34,7 @@ function getRoleFromPayload(payload: Record<string, unknown>): string | null {
   return String(raw);
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ── Protected: /admin/** — Admin only ─────────────────────────────────────
@@ -66,7 +66,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Run middleware on these paths only (excludes _next, api, static files)
+  // Run proxy on these paths only (excludes _next, api, static files)
   matcher: [
     "/admin/:path*",
   ],
