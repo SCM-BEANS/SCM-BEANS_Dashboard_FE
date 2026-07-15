@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export function CtaSection() {
   return (
@@ -96,11 +97,10 @@ export function LandingFooter() {
         <div className="flex flex-col lg:flex-row justify-between gap-16 mb-20">
           {/* Brand */}
           <div className="lg:w-1/4">
-            <Link href="/" id="footer-logo" className="flex items-center gap-2.5 mb-6">
-              <DeerLogoMini />
+            <Link href="/" id="footer-logo" className="flex items-center gap-2.5 mb-6 group">
               <div className="flex flex-col leading-none">
-                <span className="font-black text-base text-white tracking-[0.15em] uppercase">DEER</span>
-                <span className="font-light text-[10px] text-white/65 tracking-[0.25em] uppercase -mt-0.5">COFFEE</span>
+                <span className="font-black text-[70px] text-white tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">DEER</span>
+                <span className="font-light text-[70px] text-white/65 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">COFFEE</span>
               </div>
             </Link>
             <p className="text-white/70 text-sm leading-relaxed max-w-xs mb-8">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { Search, User } from "lucide-react";
 
@@ -23,19 +24,19 @@ function DeerLogo({ className = "" }: { className?: string }) {
       aria-label="Deer Coffee Logo"
     >
       {/* Antlers */}
-      <path d="M17 6 L17 18 M17 10 L13 6 M17 10 L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M31 6 L31 18 M31 10 L35 6 M31 10 L28 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 6 L17 18 M17 10 L13 6 M17 10 L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M31 6 L31 18 M31 10 L35 6 M31 10 L28 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       {/* Head */}
-      <ellipse cx="24" cy="22" rx="8" ry="9" fill="currentColor"/>
+      <ellipse cx="24" cy="22" rx="8" ry="9" fill="currentColor" />
       {/* Eyes */}
-      <circle cx="21" cy="20" r="1.2" fill="white"/>
-      <circle cx="27" cy="20" r="1.2" fill="white"/>
+      <circle cx="21" cy="20" r="1.2" fill="white" />
+      <circle cx="27" cy="20" r="1.2" fill="white" />
       {/* Nose */}
-      <ellipse cx="24" cy="26" rx="2" ry="1.2" fill="white" opacity="0.7"/>
+      <ellipse cx="24" cy="26" rx="2" ry="1.2" fill="white" opacity="0.7" />
       {/* Neck / Body */}
-      <path d="M18 30 Q24 35 30 30 L32 44 Q24 48 16 44 Z" fill="currentColor" opacity="0.8"/>
+      <path d="M18 30 Q24 35 30 30 L32 44 Q24 48 16 44 Z" fill="currentColor" opacity="0.8" />
       {/* Coffee cup detail */}
-      <rect x="20" y="36" width="8" height="5" rx="1" fill="white" opacity="0.3"/>
+      <rect x="20" y="36" width="8" height="5" rx="1" fill="white" opacity="0.3" />
     </svg>
   );
 }
@@ -59,19 +60,17 @@ export function LandingNav() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white shadow-sm" : `bg-white/95 ${menuOpen ? "" : "backdrop-blur-sm"}`
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-sm" : `bg-white/95 ${menuOpen ? "" : "backdrop-blur-sm"}`
+        }`}
     >
-      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group" id="nav-logo">
-          <DeerLogo className="w-9 h-9 text-black group-hover:scale-105 transition-transform duration-300" />
           <div className="flex flex-col leading-none">
-            <span className="font-black text-base text-black tracking-[0.15em] uppercase">
+            <span className="font-black text-4xl tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">
               DEER
             </span>
-            <span className="font-light text-[10px] text-black/60 tracking-[0.25em] uppercase -mt-0.5">
+            <span className=" font-light text-[21px] text-black/60 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">
               COFFEE
             </span>
           </div>
@@ -127,11 +126,17 @@ export function LandingNav() {
 
       {/* Mobile Menu */}
       <div
-        className={`fixed inset-0 bg-coffee-espresso z-40 transition-all duration-500 flex flex-col items-center pt-28 pb-10 overflow-y-auto md:hidden ${
-          menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-coffee-espresso z-40 transition-all duration-500 flex flex-col items-center pt-28 pb-10 overflow-y-auto md:hidden ${menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+          }`}
       >
-        <DeerLogo className="w-16 h-16 text-white mb-8 shrink-0" />
+        <div className="flex flex-col leading-none text-center mb-10">
+          <span className="font-black text-3xl text-white tracking-[0.15em] uppercase">
+            DEER
+          </span>
+          <span className="font-light text-sm text-white/60 tracking-[0.25em] uppercase mt-1">
+            COFFEE
+          </span>
+        </div>
         <div className="flex flex-col items-center gap-6 w-full">
           {NAV_ITEMS.map((item) => (
             <Link
