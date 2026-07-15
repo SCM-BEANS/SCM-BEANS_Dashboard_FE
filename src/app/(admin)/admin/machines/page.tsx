@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Coffee, Plus, Search, MoreHorizontal } from "lucide-react";
 
 export default function AdminMachinesPage() {

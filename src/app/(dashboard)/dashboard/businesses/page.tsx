@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Store, Plus, MapPin, MoreHorizontal } from "lucide-react";
 
 export default function UserBusinessesPage() {
