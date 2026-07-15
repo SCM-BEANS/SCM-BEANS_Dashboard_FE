@@ -1,3 +1,4 @@
+"use client";
 
 import { Coffee, Plus, Search, MoreHorizontal } from "lucide-react";
 

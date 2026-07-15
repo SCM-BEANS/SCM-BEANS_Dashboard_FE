@@ -1,3 +1,4 @@
+"use client";
 
 import { Coffee, Plus, Store, Activity, MoreHorizontal } from "lucide-react";
 

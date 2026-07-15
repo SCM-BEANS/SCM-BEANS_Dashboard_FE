@@ -1,3 +1,5 @@
+"use client";
+
 import { Store, Plus, Search, MoreHorizontal } from "lucide-react";
 
 export default function AdminBusinessesPage() {

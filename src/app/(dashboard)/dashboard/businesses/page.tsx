@@ -1,3 +1,4 @@
+"use client";
 
 import { Store, Plus, MapPin, MoreHorizontal } from "lucide-react";
 
