@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Coffee, Lock, Mail, ArrowRight, User, KeyRound } from 'lucide-react';
 import { authService } from '@/services/auth.service';
@@ -49,7 +49,7 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   Users,
   Coffee,
@@ -54,7 +54,7 @@ const MOCK_DEVICES: Device[] = [
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
+function StatCard({ icon, label, value, sub }: { icon: ReactNode; label: string; value: string | number; sub?: string }) {
   return (
     <div className="border border-outline p-5 bg-surface flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ function StatusDot({ status }: { status: Device["status"] | User["status"] }) {
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-surface border border-outline w-full max-w-md shadow-2xl">

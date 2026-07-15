@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { ShieldCheck, Smartphone, QrCode, KeyRound, Copy, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { mfaService } from '@/services/mfa.service';
 
@@ -54,7 +54,7 @@ export function MfaSetupForm() {
     // Could show a mini toast here if desired
   };
 
-  const handleConfirm = async (e: React.FormEvent) => {
+  const handleConfirm = async (e: FormEvent) => {
     e.preventDefault();
     if (tokenInput.length !== 6) {
       setErrorMsg('Vui lòng nhập đủ 6 số.');

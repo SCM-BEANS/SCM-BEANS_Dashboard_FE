@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { Suspense, useState, useRef, useCallback, useEffect, useLayoutEffect, type MutableRefObject, type FC } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF, Center, Html, ContactShadows, GizmoHelper, GizmoViewcube, Bounds, useBounds } from "@react-three/drei";
 import { Activity, Layers, Settings, Eye, EyeOff, Home } from "lucide-react";
@@ -33,7 +33,7 @@ interface ModelViewerProps {
 const Model = ({ url }: { url: string }) => {
   const { scene } = useGLTF(url);
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     scene.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
@@ -54,9 +54,9 @@ const Model = ({ url }: { url: string }) => {
   return <primitive object={scene} />;
 };
 
-function BoundsFitter({ fitBoundsRef }: { fitBoundsRef: React.MutableRefObject<(() => void) | null> }) {
+function BoundsFitter({ fitBoundsRef }: { fitBoundsRef: MutableRefObject<(() => void) | null> }) {
   const bounds = useBounds();
-  React.useEffect(() => {
+  useEffect(() => {
     fitBoundsRef.current = () => {
       bounds.refresh().clip().fit();
     };
@@ -65,7 +65,7 @@ function BoundsFitter({ fitBoundsRef }: { fitBoundsRef: React.MutableRefObject<(
 }
 
 // Exposes invalidate() from inside the Canvas context to the outer component
-function SceneInvalidator({ invalidateRef }: { invalidateRef: React.MutableRefObject<(() => void) | null> }) {
+function SceneInvalidator({ invalidateRef }: { invalidateRef: MutableRefObject<(() => void) | null> }) {
   const { invalidate } = useThree();
   useEffect(() => {
     invalidateRef.current = invalidate;
@@ -113,7 +113,7 @@ const InfoCard = ({ machineName, status, version, is2D = false }: { machineName:
 
 
 
-export const ModelViewer: React.FC<ModelViewerProps> = ({
+export const ModelViewer: FC<ModelViewerProps> = ({
   url,
   machineName = "DEER_01",
   status = "Online",

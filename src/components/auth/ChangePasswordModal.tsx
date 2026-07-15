@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Lock, KeyRound, ArrowRight, X } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 
@@ -47,7 +47,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
