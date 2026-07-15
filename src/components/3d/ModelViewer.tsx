@@ -146,16 +146,14 @@ export const ModelViewer: FC<ModelViewerProps> = ({
     <div className="w-full h-full relative bg-surface-container overflow-hidden font-sans">
       <Canvas
         camera={{ position: [1.2, 0.8, 2.2], fov: 45 }}
-        // Only re-render when user interacts — biggest FPS win when idle
-        frameloop="demand"
-        // Cap pixel ratio: 1 on low-end, 1.5 max (prevents GPU overload on Retina/4K)
+        // Use continuous rendering for smooth damping and auto-rotation
+        // (demand mode causes choppy mouse event stalling on heavy models)
+        frameloop="always"
+        // Cap pixel ratio to prevent GPU overload on 4K/Retina displays
         dpr={[1, 1.5]}
         gl={{
-          // Disable antialiasing via gl — let post-process or DPR handle it
-          antialias: false,
-          // Powerpreference hint for discrete GPU
+          antialias: true,
           powerPreference: "high-performance",
-          // Disable logarithmic depth buffer (not needed here, saves cost)
           logarithmicDepthBuffer: false,
         }}
       >
@@ -172,7 +170,7 @@ export const ModelViewer: FC<ModelViewerProps> = ({
           <directionalLight position={[5, 10, 5]} intensity={1.5} />
           <directionalLight position={[-5, 5, -5]} intensity={0.6} color="#60a5fa" />
 
-          <Bounds fit clip observe margin={1.2}>
+          <Bounds fit clip margin={1.2}>
             <Center>
               <Model url={url} />
             </Center>
@@ -198,13 +196,13 @@ export const ModelViewer: FC<ModelViewerProps> = ({
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
-            autoRotate={false}
-            enableDamping={false}
+            autoRotate={true}
+            autoRotateSpeed={0.5}
+            enableDamping={true}
+            dampingFactor={0.05}
             makeDefault
             minDistance={0.5}
             maxDistance={10}
-            // regress: drop quality during interaction for smoother dragging
-            regress
           />
 
           {/* 3D Orientation Cube */}
