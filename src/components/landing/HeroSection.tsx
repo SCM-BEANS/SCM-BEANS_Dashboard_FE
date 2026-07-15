@@ -58,7 +58,7 @@ export function HeroSection() {
         </div>
 
         {/* Stats row */}
-        <div className="flex gap-8 sm:gap-16 mt-16 pt-8 border-t border-white/20 text-center">
+        <div className="flex flex-wrap justify-center gap-8 sm:gap-16 mt-16 pt-8 border-t border-white/20 text-center">
           <div>
             <div className="text-white text-3xl font-black">500+</div>
             <div className="text-white/75 text-xs tracking-widest uppercase mt-1">Máy đang hoạt động</div>
