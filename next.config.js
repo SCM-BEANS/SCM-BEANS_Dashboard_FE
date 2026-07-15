@@ -22,6 +22,16 @@ const nextConfig = {
   // Image domains (extend when adding external images)
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.caye.com',
+      },
+    ],
   },
 
   // Proxy API requests to avoid CORS issues during development

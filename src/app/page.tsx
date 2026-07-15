@@ -1,8 +1,9 @@
 import { LandingNav } from "@/components/landing/LandingNav";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { FeaturesGrid } from "@/components/landing/FeaturesGrid";
-import { DashboardPreview } from "@/components/landing/DashboardPreview";
-import { WorkflowSection } from "@/components/landing/WorkflowSection";
+import { ProductShowcase } from "@/components/landing/ProductShowcase";
+import { InnovationSection } from "@/components/landing/InnovationSection";
+import { DistributionSection } from "@/components/landing/DistributionSection";
+import { NewsSection } from "@/components/landing/NewsSection";
 import { CtaSection, LandingFooter } from "@/components/landing/CtaFooter";
 
 export default function LandingPage() {
@@ -10,9 +11,10 @@ export default function LandingPage() {
     <>
       <LandingNav />
       <HeroSection />
-      <FeaturesGrid />
-      <DashboardPreview />
-      <WorkflowSection />
+      <ProductShowcase />
+      <InnovationSection />
+      <DistributionSection />
+      <NewsSection />
       <CtaSection />
       <LandingFooter />
     </>

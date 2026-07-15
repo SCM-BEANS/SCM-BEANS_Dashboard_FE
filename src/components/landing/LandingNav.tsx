@@ -2,8 +2,43 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
+import { Search, User } from "lucide-react";
 
-const NAV_ITEMS = ["Features", "Dashboard", "Workflow", "Documentation"] as const;
+const NAV_ITEMS = [
+  { name: "Solutions", href: "/solutions" },
+  { name: "Products", href: "/products" },
+  { name: "Technology", href: "/technology" },
+  { name: "Pricing", href: "/pricing" },
+  { name: "About", href: "/about" },
+];
+
+// Minimalist Deer SVG Logo
+function DeerLogo({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Deer Coffee Logo"
+    >
+      {/* Antlers */}
+      <path d="M17 6 L17 18 M17 10 L13 6 M17 10 L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M31 6 L31 18 M31 10 L35 6 M31 10 L28 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Head */}
+      <ellipse cx="24" cy="22" rx="8" ry="9" fill="currentColor"/>
+      {/* Eyes */}
+      <circle cx="21" cy="20" r="1.2" fill="white"/>
+      <circle cx="27" cy="20" r="1.2" fill="white"/>
+      {/* Nose */}
+      <ellipse cx="24" cy="26" rx="2" ry="1.2" fill="white" opacity="0.7"/>
+      {/* Neck / Body */}
+      <path d="M18 30 Q24 35 30 30 L32 44 Q24 48 16 44 Z" fill="currentColor" opacity="0.8"/>
+      {/* Coffee cup detail */}
+      <rect x="20" y="36" width="8" height="5" rx="1" fill="white" opacity="0.3"/>
+    </svg>
+  );
+}
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -24,27 +59,20 @@ export function LandingNav() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-coffee-cream/95 backdrop-blur-md border-b border-coffee-bronze/10 shadow-sm"
-          : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-white shadow-sm" : "bg-white/95 backdrop-blur-sm"
       }`}
     >
-      <div className="max-w-[1200px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-full bg-coffee-roast flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M8 2C5.5 2 3.5 4 3.5 6.5C3.5 8 4 9 5 10.5C5.5 11.2 6 12 6 13H10C10 12 10.5 11.2 11 10.5C12 9 12.5 8 12.5 6.5C12.5 4 10.5 2 8 2Z" fill="#D4A847"/>
-              <rect x="6" y="13" width="4" height="1" rx="0.5" fill="#D4A847"/>
-            </svg>
-          </div>
-          <div>
-            <span className="font-serif text-base font-bold text-coffee-roast tracking-tight">
-              Deer Coffee
+        <Link href="/" className="flex items-center gap-2.5 group" id="nav-logo">
+          <DeerLogo className="w-9 h-9 text-black group-hover:scale-105 transition-transform duration-300" />
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-base text-black tracking-[0.15em] uppercase">
+              DEER
             </span>
-            <span className="block text-[10px] font-sans font-medium text-coffee-mocha/60 tracking-[0.15em] uppercase -mt-0.5">
-              IoT Platform
+            <span className="font-light text-[10px] text-black/60 tracking-[0.25em] uppercase -mt-0.5">
+              COFFEE
             </span>
           </div>
         </Link>
@@ -52,90 +80,75 @@ export function LandingNav() {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
-              className="relative text-coffee-mocha/80 hover:text-coffee-roast text-sm font-medium tracking-wide transition-colors duration-300 after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[1.5px] after:bg-coffee-bronze after:transition-[width] after:duration-300 hover:after:w-full"
+            <Link
+              key={item.name}
+              href={item.href}
+              className="text-black/70 hover:text-black text-sm font-medium tracking-wider transition-colors duration-200 relative group"
+              id={`nav-${item.name.toLowerCase()}`}
             >
-              {item}
-            </a>
+              {item.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-black transition-all duration-300 group-hover:w-full"></span>
+            </Link>
           ))}
         </div>
 
         {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           <Link
-            href="/dashboard"
-            className="text-sm font-medium text-coffee-roast border border-coffee-roast/20 px-5 py-2 rounded-sm hover:bg-coffee-roast hover:text-coffee-cream transition-all duration-300"
+            href="/login"
+            id="nav-login-btn"
+            className="flex items-center gap-2 text-sm font-semibold text-black border border-black/20 px-5 py-2 hover:bg-black hover:text-white transition-all duration-300 rounded-full"
           >
-            Dashboard Demo
+            <User size={14} />
+            Login
           </Link>
           <Link
             href="/login"
-            className="text-sm font-medium text-coffee-cream bg-coffee-roast border border-coffee-roast px-5 py-2 rounded-sm hover:bg-coffee-espresso transition-all duration-300"
+            id="nav-getstarted-btn"
+            className="text-sm font-semibold text-white bg-black px-5 py-2 rounded-full hover:bg-black/80 transition-all duration-300"
           >
-            Sign In
+            Get Started
           </Link>
         </div>
 
         {/* Mobile Hamburger */}
         <button
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          className="md:hidden flex flex-col gap-1.5 p-2 z-50 relative"
           onClick={toggleMenu}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
+          id="nav-mobile-menu-btn"
         >
-          <span
-            className="block w-5 h-[1.5px] bg-coffee-roast transition-transform duration-300 origin-center"
-            style={{ transform: menuOpen ? "rotate(45deg) translateY(6px)" : undefined }}
-          />
-          <span
-            className="block w-5 h-[1.5px] bg-coffee-roast transition-opacity duration-300"
-            style={{ opacity: menuOpen ? 0 : 1 }}
-          />
-          <span
-            className="block w-5 h-[1.5px] bg-coffee-roast transition-transform duration-300 origin-center"
-            style={{ transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : undefined }}
-          />
+          <span className="block w-6 h-0.5 bg-black transition-transform duration-300 origin-center" style={{ transform: menuOpen ? "rotate(45deg) translateY(6px)" : undefined }} />
+          <span className="block w-6 h-0.5 bg-black transition-opacity duration-300" style={{ opacity: menuOpen ? 0 : 1 }} />
+          <span className="block w-6 h-0.5 bg-black transition-transform duration-300 origin-center" style={{ transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : undefined }} />
         </button>
       </div>
 
       {/* Mobile Menu */}
       <div
-        className="md:hidden overflow-hidden bg-coffee-cream border-b border-coffee-bronze/10"
-        style={{
-          maxHeight: menuOpen ? "360px" : "0",
-          opacity: menuOpen ? 1 : 0,
-          transition: "max-height 0.35s ease, opacity 0.3s ease",
-        }}
+        className={`fixed inset-0 bg-white z-40 transition-transform duration-500 flex flex-col justify-center items-center gap-8 md:hidden ${
+          menuOpen ? "translate-y-0" : "-translate-y-full"
+        }`}
       >
-        <div className="px-6 py-5 flex flex-col gap-4">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
-              onClick={closeMenu}
-              className="text-sm font-medium text-coffee-mocha hover:text-coffee-roast transition-colors duration-200"
-            >
-              {item}
-            </a>
-          ))}
-          <div className="pt-3 border-t border-coffee-latte flex flex-col gap-2">
-            <Link
-              href="/dashboard"
-              onClick={closeMenu}
-              className="block text-center text-sm font-medium text-coffee-roast border border-coffee-roast/20 px-4 py-2.5 rounded-sm hover:bg-coffee-roast hover:text-coffee-cream transition-all duration-300"
-            >
-              Dashboard Demo
-            </Link>
-            <Link
-              href="/login"
-              onClick={closeMenu}
-              className="block text-center text-sm font-medium text-coffee-cream bg-coffee-roast px-4 py-2.5 rounded-sm hover:bg-coffee-espresso transition-all duration-300"
-            >
-              Sign In
-            </Link>
-          </div>
+        <DeerLogo className="w-16 h-16 text-black mb-4" />
+        {NAV_ITEMS.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            onClick={closeMenu}
+            className="text-2xl font-bold uppercase tracking-widest text-black/80 hover:text-black transition-colors"
+          >
+            {item.name}
+          </Link>
+        ))}
+        <div className="flex flex-col gap-3 mt-4 w-48">
+          <Link href="/login" onClick={closeMenu} className="text-center py-3 border border-black rounded-full font-semibold text-sm tracking-widest uppercase hover:bg-black hover:text-white transition-all">
+            Login
+          </Link>
+          <Link href="/login" onClick={closeMenu} className="text-center py-3 bg-black text-white rounded-full font-semibold text-sm tracking-widest uppercase hover:bg-black/80 transition-all">
+            Get Started
+          </Link>
         </div>
       </div>
     </nav>
