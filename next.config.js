@@ -11,13 +11,12 @@ const nextConfig = {
 
   // Experimental features for better performance
   experimental: {
-    // Turbopack-style optimised package imports — tree-shakes icon libs
-    // (optimizeCss removed — requires 'critters' peer dep not installed)
+    // Turbopack-style optimised package imports
     optimizePackageImports: ["lucide-react"],
   },
 
   // Fix Next.js 15 / React 19 compatibility issues with Three.js / Fiber
-  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei', '@astryxdesign/core', '@astryxdesign/theme-neutral'],
 
   // Image domains (extend when adding external images)
   images: {

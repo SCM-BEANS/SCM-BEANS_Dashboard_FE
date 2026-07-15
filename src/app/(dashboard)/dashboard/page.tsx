@@ -5,7 +5,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import { ProductionWidget } from "@/components/features/ProductionWidget";
 import { ConfigWidget } from "@/components/features/ConfigWidget";
 import { AnalyticsWidget } from "@/components/features/AnalyticsWidget";
-import { Button } from "@astryxdesign/core/Button";
+
 
 export default function OverviewPage() {
   const { status } = useIoTStore();
@@ -30,7 +30,7 @@ export default function OverviewPage() {
             <div>{t('uptime')}: {status.uptime}</div>
             <div>{t('firmware_version')}: {status.firmware}</div>
           </div>
-          <Button label="Test Astryx" variant="primary" />
+
         </div>
       </div>
 
