@@ -7,14 +7,14 @@
  */
 
 const partners = [
-  { name: "The Coffee House", short: "TCH" },
-  { name: "Highlands Coffee", short: "HLC" },
-  { name: "Phúc Long", short: "PHL" },
-  { name: "Trung Nguyên Legend", short: "TNL" },
-  { name: "Cộng Cà Phê", short: "CCP" },
-  { name: "Milano Coffee", short: "MLC" },
-  { name: "King Coffee", short: "KNG" },
-  { name: "Starbucks VN", short: "SBK" },
+  { name: "Deer Coffee", short: "DC" },
+  { name: "Beatea", short: "BT" },
+  { name: "Deer Coffee", short: "DC" },
+  { name: "Beatea", short: "BT" },
+  { name: "Deer Coffee", short: "DC" },
+  { name: "Beatea", short: "BT" },
+  { name: "Deer Coffee", short: "DC" },
+  { name: "Beatea", short: "BT" },
 ];
 
 // Duplicated for seamless infinite marquee
