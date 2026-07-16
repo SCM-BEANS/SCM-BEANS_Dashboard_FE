@@ -9,7 +9,7 @@
 
 @layer base {
   body {
-    @apply bg-background text-on-surface min-h-screen font-sans;
+    @apply bg-background text-on-surface min-h-screen font-sans overflow-x-hidden;
   }
 }
 

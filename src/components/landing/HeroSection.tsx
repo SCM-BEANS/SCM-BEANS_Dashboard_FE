@@ -29,7 +29,7 @@ export function HeroSection() {
           <div className="w-8 h-px bg-white/60" />
         </div>
 
-        <h1 className="text-white text-5xl md:text-7xl font-black tracking-tight uppercase mb-6 drop-shadow-lg leading-tight flex flex-col gap-4">
+        <h1 className="text-white text-4xl sm:text-5xl md:text-7xl font-black tracking-tight uppercase mb-6 drop-shadow-lg leading-tight flex flex-col gap-4">
           <span>Rent. Connect.</span>
           <span className="text-white/70">Brew Smarter.</span>
         </h1>
@@ -57,21 +57,7 @@ export function HeroSection() {
           </Link>
         </div>
 
-        {/* Stats row */}
-        <div className="flex flex-wrap justify-center gap-8 sm:gap-16 mt-16 pt-8 border-t border-white/20 text-center">
-          <div>
-            <div className="text-white text-3xl font-black">500+</div>
-            <div className="text-white/75 text-xs tracking-widest uppercase mt-1">Máy đang hoạt động</div>
-          </div>
-          <div>
-            <div className="text-white text-3xl font-black">99.9%</div>
-            <div className="text-white/75 text-xs tracking-widest uppercase mt-1">Uptime SLA</div>
-          </div>
-          <div>
-            <div className="text-white text-3xl font-black">50+</div>
-            <div className="text-white/75 text-xs tracking-widest uppercase mt-1">Khách hàng doanh nghiệp</div>
-          </div>
-        </div>
+
       </div>
 
       {/* Scroll indicator */}

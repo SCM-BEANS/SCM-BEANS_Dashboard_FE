@@ -99,8 +99,8 @@ export function LandingFooter() {
           <div className="lg:w-1/4">
             <Link href="/" id="footer-logo" className="flex items-center gap-2.5 mb-6 group">
               <div className="flex flex-col leading-none">
-                <span className="font-black text-[70px] text-white tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">DEER</span>
-                <span className="font-light text-[70px] text-white/65 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">COFFEE</span>
+                <span className="font-black text-5xl md:text-[70px] text-white tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">DEER</span>
+                <span className="font-light text-5xl md:text-[70px] text-white/65 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">COFFEE</span>
               </div>
             </Link>
             <p className="text-white/70 text-sm leading-relaxed max-w-xs mb-8">

@@ -67,10 +67,10 @@ export function LandingNav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group" id="nav-logo">
           <div className="flex flex-col leading-none">
-            <span className="font-black text-4xl tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">
+            <span className="font-black text-2xl md:text-4xl tracking-[0.15em] uppercase group-hover:scale-105 transition-transform origin-left duration-300">
               DEER
             </span>
-            <span className=" font-light text-[21px] text-black/60 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">
+            <span className="font-light text-xs md:text-[21px] text-black/60 tracking-[0.25em] uppercase -mt-0.5 group-hover:scale-105 transition-transform">
               COFFEE
             </span>
           </div>

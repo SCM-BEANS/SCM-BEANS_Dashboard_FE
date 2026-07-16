@@ -42,7 +42,7 @@ export function NewsSection() {
       <div className="max-w-[1400px] mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
           <div>
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-6">
               Tin tức &amp; Cập nhật
             </h2>
             <div className="flex gap-6 border-b border-black/10">

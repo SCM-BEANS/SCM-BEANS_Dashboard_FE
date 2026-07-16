@@ -24,9 +24,9 @@ export function DistributionSection() {
         {/* Top stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-black/10 border border-black/10 rounded-2xl overflow-hidden mb-20">
           {stats.map((s, i) => (
-            <div key={i} className="bg-white p-8 text-center">
-              <div className="text-4xl md:text-5xl font-black text-black mb-2">{s.value}</div>
-              <div className="text-xs text-black/70 uppercase tracking-widest font-semibold">{s.label}</div>
+            <div key={i} className="bg-white p-4 sm:p-8 text-center">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-black text-black mb-2">{s.value}</div>
+              <div className="text-[10px] sm:text-xs text-black/70 uppercase tracking-widest font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
@@ -71,7 +71,7 @@ export function DistributionSection() {
           <div className="flex flex-col gap-8">
             <div>
               <div className="w-10 h-1 bg-black/40 mb-6 rounded-full" />
-              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-5 leading-tight flex flex-col gap-3">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-5 leading-tight flex flex-col gap-3">
                 <span>Dịch vụ phủ rộng</span>
                 <span className="text-black/35">toàn quốc</span>
               </h2>

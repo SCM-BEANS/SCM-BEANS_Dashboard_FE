@@ -22,7 +22,7 @@ export function InnovationSection() {
             <span className="text-white/80 tracking-[0.2em] uppercase text-xs font-bold">Technology</span>
           </div>
 
-          <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tight text-white mb-8 leading-tight flex flex-col gap-4">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white mb-8 leading-tight flex flex-col gap-4">
             <span>IoT &amp; Cloud</span>
             <span className="text-white/45">cho máy pha cà phê</span>
           </h2>
