@@ -1,20 +1,18 @@
+"use client";
+
 import { LandingNav } from "@/components/landing/LandingNav";
-import { LandingFooter } from "@/components/landing/CtaFooter";
+import { LandingFooter, CtaSection } from "@/components/landing/CtaFooter";
+import { AnimateOnScroll } from "@/components/landing/AnimateOnScroll";
 import Link from "next/link";
 import { ArrowRight, Cpu, Cloud, Activity, Zap, Lock, Code } from "lucide-react";
 
-export const metadata = {
-  title: "Công nghệ IoT & Cloud | DEER COFFEE",
-  description: "Hạ tầng IoT và Cloud của DEER COFFEE — kết nối mỗi chiếc máy pha cà phê vào một hệ sinh thái dữ liệu thông minh.",
-};
-
 const techStack = [
-  { icon: <Cpu className="w-7 h-7" />, title: "Edge Computing", desc: "Xử lý và phân tích dữ liệu ngay tại máy, không cần phụ thuộc vào kết nối internet liên tục. Đảm bảo máy hoạt động ổn định dù mạng yếu." },
-  { icon: <Cloud className="w-7 h-7" />, title: "Cloud Infrastructure", desc: "Hạ tầng cloud đa vùng với SLA 99.99% uptime. Dữ liệu được mã hóa và lưu trữ an toàn tuân thủ tiêu chuẩn ISO 27001." },
-  { icon: <Activity className="w-7 h-7" />, title: "Real-time Streaming", desc: "Dữ liệu từ cảm biến được truyền lên cloud mỗi giây. Dashboard hiển thị trạng thái tất cả các máy theo thời gian thực." },
-  { icon: <Zap className="w-7 h-7" />, title: "AI Predictive Engine", desc: "Mô hình machine learning được huấn luyện trên hàng triệu lần brew để dự đoán hỏng hóc và tối ưu lịch bảo trì." },
-  { icon: <Lock className="w-7 h-7" />, title: "Security First", desc: "Bảo mật đầu cuối với mã hóa TLS 1.3, xác thực 2 yếu tố và kiểm soát phân quyền theo từng máy và từng người dùng." },
-  { icon: <Code className="w-7 h-7" />, title: "Open API Integration", desc: "REST API đầy đủ cho phép tích hợp với hệ thống POS, ERP, CRM của doanh nghiệp. Hỗ trợ Webhook và WebSocket real-time." },
+  { icon: <Cpu className="w-6 h-6" />, title: "Edge Computing", desc: "Xử lý và phân tích dữ liệu ngay tại máy, không cần phụ thuộc vào kết nối internet liên tục. Đảm bảo máy hoạt động ổn định dù mạng yếu." },
+  { icon: <Cloud className="w-6 h-6" />, title: "Cloud Infrastructure", desc: "Hạ tầng cloud đa vùng với SLA 99.99% uptime. Dữ liệu được mã hóa và lưu trữ an toàn tuân thủ tiêu chuẩn ISO 27001." },
+  { icon: <Activity className="w-6 h-6" />, title: "Real-time Streaming", desc: "Dữ liệu từ cảm biến được truyền lên cloud mỗi giây. Dashboard hiển thị trạng thái tất cả các máy theo thời gian thực." },
+  { icon: <Zap className="w-6 h-6" />, title: "AI Predictive Engine", desc: "Mô hình machine learning được huấn luyện trên hàng triệu lần brew để dự đoán hỏng hóc và tối ưu lịch bảo trì." },
+  { icon: <Lock className="w-6 h-6" />, title: "Security First", desc: "Bảo mật đầu cuối với mã hóa TLS 1.3, xác thực 2 yếu tố và kiểm soát phân quyền theo từng máy và từng người dùng." },
+  { icon: <Code className="w-6 h-6" />, title: "Open API Integration", desc: "REST API đầy đủ cho phép tích hợp với hệ thống POS, ERP, CRM của doanh nghiệp. Hỗ trợ Webhook và WebSocket real-time." },
 ];
 
 const sensors = [
@@ -26,98 +24,145 @@ const sensors = [
   { name: "Trạng thái hoạt động", range: "ON/OFF/ERROR", update: "Realtime" },
 ];
 
+const archLines = [
+  { text: "[ Coffee Machine ]", isMain: true },
+  { text: "↓  IoT Sensors", isMain: false },
+  { text: "[ Edge Gateway ]", isMain: true },
+  { text: "↓  MQTT / TLS 1.3", isMain: false },
+  { text: "[ Cloud Broker ]", isMain: true },
+  { text: "↓  Stream Processing", isMain: false },
+  { text: "[ Time-Series DB ]", isMain: true },
+  { text: "↓  REST API / WS", isMain: false },
+  { text: "[ Dashboard / Apps ]", isMain: true },
+];
+
 export default function TechnologyPage() {
   return (
     <>
       <LandingNav />
-      <main className="pt-16">
-        {/* Hero */}
-        <section className="bg-black text-white py-28 px-6">
-          <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <main className="pt-[72px]">
+
+        {/* ── Hero ── */}
+        <section className="bg-white border-b border-[#ABBED1]/30 py-16 sm:py-20 lg:py-28 px-4 sm:px-6">
+          <div className="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-              <span className="text-white/30 text-xs tracking-[0.3em] uppercase font-bold mb-6 block">Technology</span>
-              <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight text-white mb-6 leading-tight">
-                IoT & Cloud<br />cho máy pha cà phê
-              </h1>
-              <p className="text-white/50 text-xl font-light leading-relaxed mb-10">
-                Chúng tôi gắn kết từng chiếc máy pha cà phê với hạ tầng IoT hiện đại, biến mỗi chiếc máy thành một nguồn dữ liệu thông minh.
-              </p>
-              <Link href="/solutions" className="group inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-black uppercase tracking-widest text-sm hover:bg-white/90 transition-all">
-                Xem giải pháp <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <AnimateOnScroll delay={0}>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0671E0]/8 rounded-full mb-5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0671E0]" />
+                  <span className="text-[#0671E0] text-xs font-semibold tracking-wider uppercase">Technology</span>
+                </div>
+              </AnimateOnScroll>
+              <AnimateOnScroll delay={80}>
+                <h1 className="text-[#18191F] font-semibold mb-5 leading-tight" style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: "1.15" }}>
+                  IoT &amp; Cloud cho{" "}
+                  <span className="text-[#0671E0]">máy pha cà phê</span>
+                </h1>
+              </AnimateOnScroll>
+              <AnimateOnScroll delay={180}>
+                <p className="text-[#89939E] mb-8 max-w-[480px]" style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}>
+                  Chúng tôi gắn kết từng chiếc máy pha cà phê với hạ tầng IoT hiện đại,
+                  biến mỗi chiếc máy thành một nguồn dữ liệu thông minh.
+                </p>
+              </AnimateOnScroll>
+              <AnimateOnScroll delay={280}>
+                <Link href="/solutions" className="btn-primary group">
+                  Xem giải pháp <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </AnimateOnScroll>
             </div>
 
             {/* Architecture diagram */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 font-mono text-xs text-white/60">
-              <div className="mb-4 text-white/30 tracking-widest uppercase text-[10px]">System Architecture</div>
-              <div className="flex flex-col gap-2">
-                {[
-                  "[ Coffee Machine ]",
-                  "    ↓ IoT Sensors",
-                  "[ Edge Gateway ]",
-                  "    ↓ MQTT / TLS",
-                  "[ Cloud Broker ]",
-                  "    ↓ Stream Processing",
-                  "[ Time-Series DB ]",
-                  "    ↓ REST API",
-                  "[ Dashboard / Apps ]",
-                ].map((line, i) => (
-                  <div key={i} className={line.startsWith("    ") ? "text-white/30" : "text-white/70"}>
-                    {line}
-                  </div>
-                ))}
+            <AnimateOnScroll delay={150} direction="right">
+              <div className="bg-[#F5F7FA] border border-[#ABBED1]/40 rounded-2xl p-6 sm:p-8 font-mono shadow-[0px_8px_16px_rgba(171,190,209,0.4)]">
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="w-2 h-2 rounded-full bg-[#0671E0] animate-[pulse-dot_2s_ease-in-out_infinite]" />
+                  <div className="text-[#89939E] tracking-widest uppercase text-[10px] font-semibold">System Architecture</div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {archLines.map((line, i) => (
+                    <div
+                      key={i}
+                      className={`text-xs sm:text-sm transition-colors ${
+                        line.isMain
+                          ? "text-[#18191F] font-semibold bg-white border border-[#ABBED1]/30 px-4 py-2 rounded-lg shadow-[0px_2px_4px_rgba(171,190,209,0.4)]"
+                          : "text-[#0671E0] pl-4 opacity-60 text-[10px] sm:text-xs"
+                      }`}
+                    >
+                      {line.text}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </AnimateOnScroll>
           </div>
         </section>
 
-        {/* Tech Stack */}
-        <section className="bg-white py-24 px-6">
-          <div className="max-w-[1400px] mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-black uppercase tracking-tight text-black mb-4">Hạ tầng công nghệ</h2>
-              <p className="text-black/40 font-light text-lg max-w-xl mx-auto">Được xây dựng trên các công nghệ cloud-native hiện đại nhất.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* ── Tech Stack ── */}
+        <section className="bg-[#F5F7FA] py-16 sm:py-20 lg:py-24 px-4 sm:px-6">
+          <div className="max-w-[1320px] mx-auto">
+            <AnimateOnScroll>
+              <div className="text-center mb-12">
+                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Tech Stack</span>
+                <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
+                  Hạ tầng công nghệ
+                </h2>
+              </div>
+            </AnimateOnScroll>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {techStack.map((t, i) => (
-                <div key={i} className="border border-black/10 rounded-2xl p-8 hover:border-black/30 hover:shadow-lg transition-all duration-300">
-                  <div className="text-black/30 mb-5">{t.icon}</div>
-                  <h3 className="text-lg font-black text-black mb-3">{t.title}</h3>
-                  <p className="text-black/50 text-sm font-light leading-relaxed">{t.desc}</p>
-                </div>
+                <AnimateOnScroll key={i} delay={i * 80}>
+                  <div className="group bg-white border border-[#ABBED1]/40 rounded-xl p-6 hover:border-[#0671E0]/30 shadow-[0px_4px_8px_rgba(171,190,209,0.4)] hover:shadow-[0px_8px_16px_rgba(6,113,224,0.1)] transition-all duration-300">
+                    <div className="w-11 h-11 rounded-xl bg-[#0671E0]/8 flex items-center justify-center text-[#0671E0] mb-5 group-hover:bg-[#0671E0] group-hover:text-white transition-all duration-300">
+                      {t.icon}
+                    </div>
+                    <h3 className="font-semibold text-[#18191F] mb-3" style={{ fontSize: "clamp(15px, 2vw, 18px)" }}>{t.title}</h3>
+                    <p className="text-[#89939E] text-sm leading-relaxed">{t.desc}</p>
+                  </div>
+                </AnimateOnScroll>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Sensor table */}
-        <section className="bg-[#f9f9f9] py-24 px-6">
-          <div className="max-w-[1400px] mx-auto">
-            <h2 className="text-4xl font-black uppercase tracking-tight text-black mb-12 text-center">Cảm biến tích hợp</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b-2 border-black">
-                    <th className="text-left py-4 px-6 font-black uppercase tracking-widest text-xs text-black/40">Cảm biến</th>
-                    <th className="text-left py-4 px-6 font-black uppercase tracking-widest text-xs text-black/40">Dải đo</th>
-                    <th className="text-left py-4 px-6 font-black uppercase tracking-widest text-xs text-black/40">Tần suất cập nhật</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sensors.map((s, i) => (
-                    <tr key={i} className="border-b border-black/5 hover:bg-black/5 transition-colors">
-                      <td className="py-5 px-6 font-semibold text-black">{s.name}</td>
-                      <td className="py-5 px-6 font-mono text-black/50 text-xs">{s.range}</td>
-                      <td className="py-5 px-6">
-                        <span className="bg-black text-white text-[10px] px-3 py-1 rounded-full font-bold">{s.update}</span>
-                      </td>
+        {/* ── Sensor Table ── */}
+        <section className="bg-white py-16 sm:py-20 lg:py-24 px-4 sm:px-6">
+          <div className="max-w-[1320px] mx-auto">
+            <AnimateOnScroll>
+              <div className="text-center mb-12">
+                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Sensors</span>
+                <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
+                  Cảm biến tích hợp
+                </h2>
+              </div>
+            </AnimateOnScroll>
+            <AnimateOnScroll delay={100}>
+              <div className="overflow-x-auto rounded-2xl border border-[#ABBED1]/40 shadow-[0px_4px_8px_rgba(171,190,209,0.4)]">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-[#F5F7FA] border-b border-[#ABBED1]/40">
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Cảm biến</th>
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Dải đo</th>
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Tần suất cập nhật</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sensors.map((s, i) => (
+                      <tr key={i} className="border-b border-[#F5F7FA] hover:bg-[#0671E0]/3 transition-colors">
+                        <td className="py-4 px-5 sm:px-6 font-semibold text-[#18191F]">{s.name}</td>
+                        <td className="py-4 px-5 sm:px-6 font-mono text-[#89939E] text-xs">{s.range}</td>
+                        <td className="py-4 px-5 sm:px-6">
+                          <span className="bg-[#0671E0]/8 text-[#0671E0] text-[10px] px-3 py-1 rounded-full font-semibold">{s.update}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </AnimateOnScroll>
           </div>
         </section>
+
+        <CtaSection />
       </main>
       <LandingFooter />
     </>
