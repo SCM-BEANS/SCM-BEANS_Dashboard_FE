@@ -1,0 +1,4583 @@
+{
+  "schemaVersion": "1.0",
+  "exportedAtUtc": "2026-08-28T15:33:49.5545801+00:00",
+  "source": {
+    "fullPath": "C:\\3D file\\may-nen\\Assem1.SLDASM",
+    "fileName": "Assem1.SLDASM",
+    "solidWorksRevision": "32.0.1",
+    "openErrors": 0,
+    "openWarnings": 0,
+    "readOnly": true
+  },
+  "coordinateSystem": {
+    "units": "meters",
+    "source": "SOLIDWORKS assembly coordinate system",
+    "transformFormat": "SOLIDWORKS ArrayData (9 rotation values, 3 translation values, scale, 3 unused values)",
+    "threeJsMatrixFormat": "4x4 row-major matrix; use new THREE.Matrix4().set(...matrix4RowMajor)"
+  },
+  "webReconstructionGuide": {
+    "intendedConsumer": "AI and Three.js assembly reconstruction",
+    "stableObjectKey": "component.id",
+    "sourceInstanceName": "component.instanceName",
+    "loadOrder": [
+      "Load or generate mesh geometry for each component.requiredGeometryFiles entry.",
+      "Create one Three.js object per component using component.id as the stable key.",
+      "Apply component.transform.matrix4RowMajor with Matrix4.set(...values), then disable matrixAutoUpdate.",
+      "Use mates and mate.entities as native SOLIDWORKS constraint data; threeJsJointHint is only a helper for web playback or physics.",
+      "Use motionStudies.frames when present; each frame stores per-component transforms keyed by component.id."
+    ],
+    "accuracyNotes": [
+      ".SLDASM stores assembly structure, transforms, mates, configurations, and references to part files; exact visible geometry is in the referenced part files or a mesh export such as GLB.",
+      "All transform and mate entity positions are in meters in the SOLIDWORKS assembly coordinate system.",
+      "This exporter opens the assembly read-only and closes it without saving, so the source CAD files are not modified."
+    ],
+    "requiredGeometryFiles": [
+      "C:\\3D file\\may-nen\\1.SLDPRT",
+      "C:\\3D file\\may-nen\\12.SLDPRT",
+      "C:\\3D file\\may-nen\\13.SLDPRT",
+      "C:\\3D file\\may-nen\\backcover.SLDPRT",
+      "C:\\3D file\\may-nen\\base.SLDPRT",
+      "C:\\3D file\\may-nen\\gear_piston.SLDPRT",
+      "C:\\3D file\\may-nen\\left_arm.SLDPRT",
+      "C:\\3D file\\may-nen\\left_cover.SLDPRT",
+      "C:\\3D file\\may-nen\\mouth.SLDPRT",
+      "C:\\3D file\\may-nen\\oc1.SLDPRT",
+      "C:\\3D file\\may-nen\\piston.SLDPRT",
+      "C:\\3D file\\may-nen\\right_arm.SLDPRT",
+      "C:\\3D file\\may-nen\\right_cover.SLDPRT",
+      "C:\\3D file\\may-nen\\top_block.SLDPRT",
+      "C:\\3D file\\may-nen\\truc.SLDPRT",
+      "C:\\3D file\\may-nen\\wiper.SLDPRT",
+      "C:\\3D file\\may-nen\\wiper_gear.SLDPRT"
+    ],
+    "hasMotionFrames": false
+  },
+  "components": [
+    {
+      "id": "wiper-1",
+      "instanceName": "wiper-1",
+      "filePath": "C:\\3D file\\may-nen\\wiper.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -1,
+          -7.866205392991927E-15,
+          5.55111512312725E-16,
+          -5.551115123127203E-16,
+          -4.440892098500626E-16,
+          -1.0000000000000002,
+          7.866205392991927E-15,
+          -1.0000000000000002,
+          4.440892098500626E-16,
+          -0.013240454170429716,
+          -0.13658469518315944,
+          0.0021301725057324868,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -1,
+          -7.866205392991927E-15,
+          5.55111512312725E-16,
+          -0.013240454170429716,
+          -5.551115123127203E-16,
+          -4.440892098500626E-16,
+          -1.0000000000000002,
+          -0.13658469518315944,
+          7.866205392991927E-15,
+          -1.0000000000000002,
+          4.440892098500626E-16,
+          0.0021301725057324868,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.013240454170429716,
+          -0.13658469518315944,
+          0.0021301725057324868
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "backcover-1",
+      "instanceName": "backcover-1",
+      "filePath": "C:\\3D file\\may-nen\\backcover.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": true,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -1,
+          -8.049116928532385E-15,
+          4.793097461777312E-16,
+          -8.1601392309949E-15,
+          1,
+          -1.6653345369376944E-16,
+          -4.793097461777298E-16,
+          -1.6653345369377336E-16,
+          -1,
+          -0.026799358840164166,
+          -0.0012846951831594227,
+          0.031341961036652335,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -1,
+          -8.049116928532385E-15,
+          4.793097461777312E-16,
+          -0.026799358840164166,
+          -8.1601392309949E-15,
+          1,
+          -1.6653345369376944E-16,
+          -0.0012846951831594227,
+          -4.793097461777298E-16,
+          -1.6653345369377336E-16,
+          -1,
+          0.031341961036652335,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.026799358840164166,
+          -0.0012846951831594227,
+          0.031341961036652335
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "mouth-1",
+      "instanceName": "mouth-1",
+      "filePath": "C:\\3D file\\may-nen\\mouth.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": true,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -3.12776292484008E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          7.866205392991929E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -1,
+          -7.86620539299193E-15,
+          3.1277629248401176E-16,
+          -0.0464038633446684,
+          -0.042884695183159655,
+          -0.006871993128369618,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -3.12776292484008E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          -0.0464038633446684,
+          7.866205392991929E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -0.042884695183159655,
+          -1,
+          -7.86620539299193E-15,
+          3.1277629248401176E-16,
+          -0.006871993128369618,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.0464038633446684,
+          -0.042884695183159655,
+          -0.006871993128369618
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "top-block-1",
+      "instanceName": "top_block-1",
+      "filePath": "C:\\3D file\\may-nen\\top_block.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -1,
+          -8.246493745084259E-15,
+          2.698076933124205E-16,
+          -7.0051647189419975E-15,
+          0.8658412655535066,
+          0.5003188012304777,
+          -4.3594864995288875E-15,
+          0.5003188012304777,
+          -0.8658412655535066,
+          -0.027849358840162937,
+          -0.15769583974197454,
+          -0.05694517600234404,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -1,
+          -8.246493745084259E-15,
+          2.698076933124205E-16,
+          -0.027849358840162937,
+          -7.0051647189419975E-15,
+          0.8658412655535066,
+          0.5003188012304777,
+          -0.15769583974197454,
+          -4.3594864995288875E-15,
+          0.5003188012304777,
+          -0.8658412655535066,
+          -0.05694517600234404,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.027849358840162937,
+          -0.15769583974197454,
+          -0.05694517600234404
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "left-arm-2",
+      "instanceName": "left_arm-2",
+      "filePath": "C:\\3D file\\may-nen\\left_arm.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -4.332571100036458E-15,
+          0.49378170198442084,
+          -0.869585896151363,
+          -1,
+          -7.93016446161136E-15,
+          4.793097461795545E-16,
+          -6.659284787731743E-15,
+          0.869585896151363,
+          0.49378170198442084,
+          -0.05664935884016337,
+          -0.10674498760609347,
+          -0.01802822382934177,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -4.332571100036458E-15,
+          0.49378170198442084,
+          -0.869585896151363,
+          -0.05664935884016337,
+          -1,
+          -7.93016446161136E-15,
+          4.793097461795545E-16,
+          -0.10674498760609347,
+          -6.659284787731743E-15,
+          0.869585896151363,
+          0.49378170198442084,
+          -0.01802822382934177,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.05664935884016337,
+          -0.10674498760609347,
+          -0.01802822382934177
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "right-arm-3",
+      "instanceName": "right_arm-3",
+      "filePath": "C:\\3D file\\may-nen\\right_arm.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -4.090804393067294E-15,
+          0.5003188012304777,
+          -0.8658412655535066,
+          -1,
+          -8.03430395645969E-15,
+          8.210635329866173E-17,
+          -6.915352553246809E-15,
+          0.8658412655535066,
+          0.5003188012304777,
+          0.004550641159836686,
+          -0.1064474797840911,
+          -0.01826543255333471,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -4.090804393067294E-15,
+          0.5003188012304777,
+          -0.8658412655535066,
+          0.004550641159836686,
+          -1,
+          -8.03430395645969E-15,
+          8.210635329866173E-17,
+          -0.1064474797840911,
+          -6.915352553246809E-15,
+          0.8658412655535066,
+          0.5003188012304777,
+          -0.01826543255333471,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.004550641159836686,
+          -0.1064474797840911,
+          -0.01826543255333471
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "oc1-1",
+      "instanceName": "oc1-1",
+      "filePath": "C:\\3D file\\may-nen\\oc1.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -2.266325745620241E-15,
+          0.34485621238863334,
+          0.9386555240219736,
+          -1,
+          -7.920417366733956E-15,
+          4.954739796512364E-16,
+          7.60541079380405E-15,
+          -0.9386555240219736,
+          0.34485621238863334,
+          -0.054649358840163476,
+          -0.09312943920862131,
+          -0.0193241180519054,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -2.266325745620241E-15,
+          0.34485621238863334,
+          0.9386555240219736,
+          -0.054649358840163476,
+          -1,
+          -7.920417366733956E-15,
+          4.954739796512364E-16,
+          -0.09312943920862131,
+          7.60541079380405E-15,
+          -0.9386555240219736,
+          0.34485621238863334,
+          -0.0193241180519054,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.054649358840163476,
+          -0.09312943920862131,
+          -0.0193241180519054
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "1-4",
+      "instanceName": "1-4",
+      "filePath": "C:\\3D file\\may-nen\\1.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -7.087520960929685E-15,
+          0.8632199149398653,
+          -0.5048280682085853,
+          -1,
+          -7.930212339015857E-15,
+          4.793785358411513E-16,
+          -3.58958467665647E-15,
+          0.5048280682085853,
+          0.8632199149398653,
+          -0.058549358840163566,
+          -0.08041782297352056,
+          0.012422875142926108,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -7.087520960929685E-15,
+          0.8632199149398653,
+          -0.5048280682085853,
+          -0.058549358840163566,
+          -1,
+          -7.930212339015857E-15,
+          4.793785358411513E-16,
+          -0.08041782297352056,
+          -3.58958467665647E-15,
+          0.5048280682085853,
+          0.8632199149398653,
+          0.012422875142926108,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.058549358840163566,
+          -0.08041782297352056,
+          0.012422875142926108
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "wiper-gear-2",
+      "instanceName": "wiper_gear-2",
+      "filePath": "C:\\3D file\\may-nen\\wiper_gear.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -4.269944884174735E-15,
+          0.5765277354160435,
+          0.8170775791172149,
+          -1,
+          -7.983021935692551E-15,
+          4.0692424157069527E-16,
+          6.7573513487339364E-15,
+          -0.8170775791172149,
+          0.5765277354160435,
+          0.020550641159694124,
+          -0.06195469518313872,
+          -0.00162199312837985,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -4.269944884174735E-15,
+          0.5765277354160435,
+          0.8170775791172149,
+          0.020550641159694124,
+          -1,
+          -7.983021935692551E-15,
+          4.0692424157069527E-16,
+          -0.06195469518313872,
+          6.7573513487339364E-15,
+          -0.8170775791172149,
+          0.5765277354160435,
+          -0.00162199312837985,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.020550641159694124,
+          -0.06195469518313872,
+          -0.00162199312837985
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "13-1",
+      "instanceName": "13-1",
+      "filePath": "C:\\3D file\\may-nen\\13.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -7.05862953892677E-15,
+          0.8657175244575288,
+          -0.5005328838818968,
+          -1,
+          -7.906331033124256E-15,
+          4.2750479794489016E-16,
+          -3.587280277564051E-15,
+          0.5005328838818968,
+          0.8657175244575288,
+          0.006550641159694279,
+          -0.08026883227652172,
+          0.012351043743757485,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -7.05862953892677E-15,
+          0.8657175244575288,
+          -0.5005328838818968,
+          0.006550641159694279,
+          -1,
+          -7.906331033124256E-15,
+          4.2750479794489016E-16,
+          -0.08026883227652172,
+          -3.587280277564051E-15,
+          0.5005328838818968,
+          0.8657175244575288,
+          0.012351043743757485,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.006550641159694279,
+          -0.08026883227652172,
+          0.012351043743757485
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "oc1-2",
+      "instanceName": "oc1-2",
+      "filePath": "C:\\3D file\\may-nen\\oc1.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -1.5874170155923998E-15,
+          0.26520390506488045,
+          0.9641923504873587,
+          1,
+          7.930159119209047E-15,
+          -5.348436443693546E-16,
+          -7.788041383974813E-15,
+          0.9641923504873587,
+          -0.26520390506488045,
+          0.0006506411598365063,
+          -0.09282255502021677,
+          -0.019458715914229086,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -1.5874170155923998E-15,
+          0.26520390506488045,
+          0.9641923504873587,
+          0.0006506411598365063,
+          1,
+          7.930159119209047E-15,
+          -5.348436443693546E-16,
+          -0.09282255502021677,
+          -7.788041383974813E-15,
+          0.9641923504873587,
+          -0.26520390506488045,
+          -0.019458715914229086,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.0006506411598365063,
+          -0.09282255502021677,
+          -0.019458715914229086
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "right-cover-2",
+      "instanceName": "right_cover-2",
+      "filePath": "C:\\3D file\\may-nen\\right_cover.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": true,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -5.348208974089675E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          7.930164461608288E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -1,
+          -7.930164461608288E-15,
+          5.348208974089713E-16,
+          0.0026506411598359128,
+          -0.01679365164585631,
+          0.004978006871630323,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -5.348208974089675E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          0.0026506411598359128,
+          7.930164461608288E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -0.01679365164585631,
+          -1,
+          -7.930164461608288E-15,
+          5.348208974089713E-16,
+          0.004978006871630323,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.0026506411598359128,
+          -0.01679365164585631,
+          0.004978006871630323
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "12-1",
+      "instanceName": "12-1",
+      "filePath": "C:\\3D file\\may-nen\\12.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          1.0341602194285533E-15,
+          -0.09046860358209997,
+          0.9958993080457004,
+          -1,
+          -7.915633886036286E-15,
+          3.193534453958115E-16,
+          7.854282849592544E-15,
+          -0.9958993080457004,
+          -0.09046860358209997,
+          -0.06204935884016353,
+          -0.08132982104255938,
+          0.015367770260953578,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          1.0341602194285533E-15,
+          -0.09046860358209997,
+          0.9958993080457004,
+          -0.06204935884016353,
+          -1,
+          -7.915633886036286E-15,
+          3.193534453958115E-16,
+          -0.08132982104255938,
+          7.854282849592544E-15,
+          -0.9958993080457004,
+          -0.09046860358209997,
+          0.015367770260953578,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.06204935884016353,
+          -0.08132982104255938,
+          0.015367770260953578
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "12-2",
+      "instanceName": "12-2",
+      "filePath": "C:\\3D file\\may-nen\\12.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          1.0859911681602296E-15,
+          -0.09000942273632219,
+          0.9959409138190248,
+          -1,
+          -7.907547305809573E-15,
+          3.7576268258469854E-16,
+          7.841627725089469E-15,
+          -0.9959409138190248,
+          -0.09000942273632219,
+          0.010550641159694283,
+          -0.08132198565045905,
+          0.015376701587434146,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          1.0859911681602296E-15,
+          -0.09000942273632219,
+          0.9959409138190248,
+          0.010550641159694283,
+          -1,
+          -7.907547305809573E-15,
+          3.7576268258469854E-16,
+          -0.08132198565045905,
+          7.841627725089469E-15,
+          -0.9959409138190248,
+          -0.09000942273632219,
+          0.015376701587434146,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          0.010550641159694283,
+          -0.08132198565045905,
+          0.015376701587434146
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "left-cover-2",
+      "instanceName": "left_cover-2",
+      "filePath": "C:\\3D file\\may-nen\\left_cover.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": true,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -4.793097461777279E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          7.930164461608288E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -1,
+          -7.930164461608286E-15,
+          4.793097461777313E-16,
+          -0.05464935884016407,
+          -0.016793651645856795,
+          0.0049780068716303435,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -4.793097461777279E-16,
+          -1.6653345369377348E-16,
+          -1.0000000000000002,
+          -0.05464935884016407,
+          7.930164461608288E-15,
+          -1.0000000000000002,
+          1.6653345369377348E-16,
+          -0.016793651645856795,
+          -1,
+          -7.930164461608286E-15,
+          4.793097461777313E-16,
+          0.0049780068716303435,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.05464935884016407,
+          -0.016793651645856795,
+          0.0049780068716303435
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "truc-1",
+      "instanceName": "truc-1",
+      "filePath": "C:\\3D file\\may-nen\\truc.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          1.0364074166004699E-15,
+          -0.09046860359074783,
+          0.9958993080449148,
+          1,
+          7.91583718678231E-15,
+          -3.215914274398878E-16,
+          -7.854282849545466E-15,
+          0.9958993080449148,
+          0.09046860359074783,
+          -0.06834935884030136,
+          -0.061954695183139424,
+          -0.0016219931283798204,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          1.0364074166004699E-15,
+          -0.09046860359074783,
+          0.9958993080449148,
+          -0.06834935884030136,
+          1,
+          7.91583718678231E-15,
+          -3.215914274398878E-16,
+          -0.061954695183139424,
+          -7.854282849545466E-15,
+          0.9958993080449148,
+          0.09046860359074783,
+          -0.0016219931283798204,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.06834935884030136,
+          -0.061954695183139424,
+          -0.0016219931283798204
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "piston-1",
+      "instanceName": "piston-1",
+      "filePath": "C:\\3D file\\may-nen\\piston.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -4.718447854656915E-16,
+          -1.6653345369231862E-16,
+          -1,
+          7.86620539299424E-15,
+          -1,
+          1.6653345369231954E-16,
+          -1,
+          -7.866205392994242E-15,
+          4.718447854656915E-16,
+          -0.026999358840164422,
+          0.024309783663946236,
+          -0.0019219931283696336,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -4.718447854656915E-16,
+          -1.6653345369231862E-16,
+          -1,
+          -0.026999358840164422,
+          7.86620539299424E-15,
+          -1,
+          1.6653345369231954E-16,
+          0.024309783663946236,
+          -1,
+          -7.866205392994242E-15,
+          4.718447854656915E-16,
+          -0.0019219931283696336,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.026999358840164422,
+          0.024309783663946236,
+          -0.0019219931283696336
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "gear-piston-1",
+      "instanceName": "gear_piston-1",
+      "filePath": "C:\\3D file\\may-nen\\gear_piston.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": false,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -0.9211577618259381,
+          -7.306367337952012E-15,
+          0.3891893855539075,
+          7.0898347379853504E-15,
+          -1,
+          -1.9926315253688287E-15,
+          0.3891893855539075,
+          9.237604293027118E-16,
+          0.9211577618259381,
+          -0.0269993588401641,
+          0.04501530481684152,
+          -0.0019219931283660943,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -0.9211577618259381,
+          -7.306367337952012E-15,
+          0.3891893855539075,
+          -0.0269993588401641,
+          7.0898347379853504E-15,
+          -1,
+          -1.9926315253688287E-15,
+          0.04501530481684152,
+          0.3891893855539075,
+          9.237604293027118E-16,
+          0.9211577618259381,
+          -0.0019219931283660943,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.0269993588401641,
+          0.04501530481684152,
+          -0.0019219931283660943
+        ],
+        "scale": 1
+      }
+    },
+    {
+      "id": "base-1",
+      "instanceName": "base-1",
+      "filePath": "C:\\3D file\\may-nen\\base.SLDPRT",
+      "referencedConfiguration": "Default",
+      "isFixed": true,
+      "suppressionState": 2,
+      "visibilityState": 1,
+      "transform": {
+        "solidWorksArrayData": [
+          -1,
+          -7.930164461608286E-15,
+          7.771561172376096E-16,
+          7.94298052300309E-15,
+          -1,
+          1.578009183946273E-16,
+          8.881784197001252E-16,
+          1.387778780781485E-16,
+          0.9999999999999998,
+          -0.02699935884016439,
+          0.07701530481684149,
+          -0.001921993128366205,
+          1,
+          0,
+          0,
+          0
+        ],
+        "matrix4RowMajor": [
+          -1,
+          -7.930164461608286E-15,
+          7.771561172376096E-16,
+          -0.02699935884016439,
+          7.94298052300309E-15,
+          -1,
+          1.578009183946273E-16,
+          0.07701530481684149,
+          8.881784197001252E-16,
+          1.387778780781485E-16,
+          0.9999999999999998,
+          -0.001921993128366205,
+          0,
+          0,
+          0,
+          1
+        ],
+        "translationMeters": [
+          -0.02699935884016439,
+          0.07701530481684149,
+          -0.001921993128366205
+        ],
+        "scale": 1
+      }
+    }
+  ],
+  "mates": [
+    {
+      "id": "mate-0001",
+      "name": "Coincident12",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.04640386334466762,
+            -0.1428846951831597,
+            -0.006871993128369601,
+            7.866205392991927E-15,
+            -1,
+            1.6653345369377343E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.04640386334466762,
+            -0.1428846951831597,
+            -0.006871993128369601
+          ],
+          "direction": [
+            7.866205392991927E-15,
+            -1,
+            1.6653345369377343E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-1",
+          "componentInstanceName": "wiper-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.013240454170429666,
+            -0.14288469518315944,
+            0.0021301725057324894,
+            -7.866205392991926E-15,
+            1,
+            -4.440892098500625E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.013240454170429666,
+            -0.14288469518315944,
+            0.0021301725057324894
+          ],
+          "direction": [
+            -7.866205392991926E-15,
+            1,
+            -4.440892098500625E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0002",
+      "name": "Coincident13",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05414935884016386,
+            -0.04288469518315972,
+            -0.006871993128369615,
+            -1,
+            -7.86620539299193E-15,
+            3.1277629248401176E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05414935884016386,
+            -0.04288469518315972,
+            -0.006871993128369615
+          ],
+          "direction": [
+            -1,
+            -7.86620539299193E-15,
+            3.1277629248401176E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-1",
+          "componentInstanceName": "wiper-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05414935884016307,
+            -0.14288469518315977,
+            0.0021301725057325123,
+            1,
+            7.866205392991927E-15,
+            -5.55111512312725E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05414935884016307,
+            -0.14288469518315977,
+            0.0021301725057325123
+          ],
+          "direction": [
+            1,
+            7.866205392991927E-15,
+            -5.55111512312725E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0003",
+      "name": "Coincident34",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016314,
+            -0.13388469518315976,
+            -0.006871993128369567,
+            -7.866205392991927E-15,
+            1,
+            -5.202278163090432E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016314,
+            -0.13388469518315976,
+            -0.006871993128369567
+          ],
+          "direction": [
+            -7.866205392991927E-15,
+            1,
+            -5.202278163090432E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.056649358840163144,
+            -0.13388469518315974,
+            0.004978006871630364,
+            7.930164461608286E-15,
+            -1,
+            1.6653345369377343E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.056649358840163144,
+            -0.13388469518315974,
+            0.004978006871630364
+          ],
+          "direction": [
+            7.930164461608286E-15,
+            -1,
+            1.6653345369377343E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0004",
+      "name": "Coincident35",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.054649358840163836,
+            -0.042884695183159724,
+            0.06537800687163038,
+            -3.1277629248400964E-16,
+            4.6970974118756715E-17,
+            -1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.054649358840163836,
+            -0.042884695183159724,
+            0.06537800687163038
+          ],
+          "direction": [
+            -3.1277629248400964E-16,
+            4.6970974118756715E-17,
+            -1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.056649358840164046,
+            -0.016793651645856802,
+            0.06537800687163035,
+            4.793097461777278E-16,
+            1.6653345369377343E-16,
+            1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.056649358840164046,
+            -0.016793651645856802,
+            0.06537800687163035
+          ],
+          "direction": [
+            4.793097461777278E-16,
+            1.6653345369377343E-16,
+            1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0005",
+      "name": "Coincident37",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016386,
+            -0.04288469518315972,
+            -0.006871993128369615,
+            -1,
+            -7.86620539299193E-15,
+            3.1277629248401176E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016386,
+            -0.04288469518315972,
+            -0.006871993128369615
+          ],
+          "direction": [
+            -1,
+            -7.86620539299193E-15,
+            3.1277629248401176E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435,
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0006",
+      "name": "Coincident38",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598368525,
+            -0.13388469518315932,
+            -0.006871993128369585,
+            -7.866205392991927E-15,
+            1,
+            -5.202278163090432E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598368525,
+            -0.13388469518315932,
+            -0.006871993128369585
+          ],
+          "direction": [
+            -7.866205392991927E-15,
+            1,
+            -5.202278163090432E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598368412,
+            -0.13388469518315924,
+            0.0049780068716303435,
+            7.930164461608286E-15,
+            -1,
+            1.6653345369377343E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598368412,
+            -0.13388469518315924,
+            0.0049780068716303435
+          ],
+          "direction": [
+            7.930164461608286E-15,
+            -1,
+            1.6653345369377343E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0007",
+      "name": "Coincident39",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598361586,
+            -0.04288469518315929,
+            0.06537800687163037,
+            -3.1277629248400964E-16,
+            4.6970974118756715E-17,
+            -1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598361586,
+            -0.04288469518315929,
+            0.06537800687163037
+          ],
+          "direction": [
+            -3.1277629248400964E-16,
+            4.6970974118756715E-17,
+            -1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598359448,
+            -0.016793651645856316,
+            0.06537800687163034,
+            5.348208974089674E-16,
+            1.6653345369377343E-16,
+            1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598359448,
+            -0.016793651645856316,
+            0.06537800687163034
+          ],
+          "direction": [
+            5.348208974089674E-16,
+            1.6653345369377343E-16,
+            1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0008",
+      "name": "Coincident40",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598361378,
+            -0.04288469518315929,
+            -0.0068719931283696325,
+            1,
+            7.86620539299193E-15,
+            -3.1277629248401176E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598361378,
+            -0.04288469518315929,
+            -0.0068719931283696325
+          ],
+          "direction": [
+            1,
+            7.86620539299193E-15,
+            -3.1277629248401176E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598359127,
+            -0.016793651645856326,
+            0.004978006871630324,
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598359127,
+            -0.016793651645856326,
+            0.004978006871630324
+          ],
+          "direction": [
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0009",
+      "name": "Coincident49",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.002650641159836686,
+            -0.10644747978409111,
+            -0.01826543255333471,
+            -1,
+            -8.03430395645969E-15,
+            8.210635329866173E-17,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.002650641159836686,
+            -0.10644747978409111,
+            -0.01826543255333471
+          ],
+          "direction": [
+            -1,
+            -8.03430395645969E-15,
+            8.210635329866173E-17
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0026506411598359128,
+            -0.01679365164585631,
+            0.004978006871630323,
+            1,
+            7.930164461608288E-15,
+            -5.348208974089713E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0026506411598359128,
+            -0.01679365164585631,
+            0.004978006871630323
+          ],
+          "direction": [
+            1,
+            7.930164461608288E-15,
+            -5.348208974089713E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0010",
+      "name": "Slot2",
+      "featureType": "MateSlot",
+      "mateTypeCode": 21,
+      "threeJsJointHint": "prismatic",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.002650641159836295,
+            -0.057582815512204885,
+            0.0009042592959320819,
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17,
+            0.008100000000000005,
+            0
+          ],
+          "pointMeters": [
+            0.002650641159836295,
+            -0.057582815512204885,
+            0.0009042592959320819
+          ],
+          "direction": [
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17
+          ],
+          "radius1Meters": 0.008100000000000005,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.008050641159836268,
+            -0.06195469518315916,
+            -0.0016219931283696842,
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16,
+            0.008,
+            0
+          ],
+          "pointMeters": [
+            0.008050641159836268,
+            -0.06195469518315916,
+            -0.0016219931283696842
+          ],
+          "direction": [
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16
+          ],
+          "radius1Meters": 0.008,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0011",
+      "name": "Coincident50",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-arm-2",
+          "componentInstanceName": "left_arm-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05664935884016337,
+            -0.10674498760609347,
+            -0.01802822382934177,
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05664935884016337,
+            -0.10674498760609347,
+            -0.01802822382934177
+          ],
+          "direction": [
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.056649358840164074,
+            -0.016793651645856812,
+            0.004978006871630344,
+            -1,
+            -7.930164461608286E-15,
+            4.793097461777313E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.056649358840164074,
+            -0.016793651645856812,
+            0.004978006871630344
+          ],
+          "direction": [
+            -1,
+            -7.930164461608286E-15,
+            4.793097461777313E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0012",
+      "name": "Slot3",
+      "featureType": "MateSlot",
+      "mateTypeCode": 21,
+      "threeJsJointHint": "prismatic",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-arm-2",
+          "componentInstanceName": "left_arm-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.058549358840163754,
+            -0.05773729323526005,
+            0.0007727972188615005,
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16,
+            0.0081,
+            0
+          ],
+          "pointMeters": [
+            -0.058549358840163754,
+            -0.05773729323526005,
+            0.0007727972188615005
+          ],
+          "direction": [
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16
+          ],
+          "radius1Meters": 0.0081,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.062049358840163715,
+            -0.06195469518315974,
+            -0.0016219931283696573,
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16,
+            0.008,
+            0
+          ],
+          "pointMeters": [
+            -0.062049358840163715,
+            -0.06195469518315974,
+            -0.0016219931283696573
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16
+          ],
+          "radius1Meters": 0.008,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0013",
+      "name": "Coincident52",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435,
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "oc1-1",
+          "componentInstanceName": "oc1-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.054649358840163476,
+            -0.09312943920862131,
+            -0.0193241180519054,
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.054649358840163476,
+            -0.09312943920862131,
+            -0.0193241180519054
+          ],
+          "direction": [
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0014",
+      "name": "PathMate8",
+      "featureType": "MatePath",
+      "mateTypeCode": 15,
+      "threeJsJointHint": "prismatic",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "oc1-1",
+          "componentInstanceName": "oc1-1",
+          "referenceTypeCode": 0,
+          "rawParameters": [
+            -0.054649358840163476,
+            -0.09312943920862131,
+            -0.0193241180519054,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.054649358840163476,
+            -0.09312943920862131,
+            -0.0193241180519054
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 13,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0015",
+      "name": "Concentric3",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-arm-2",
+          "componentInstanceName": "left_arm-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.05854935884016348,
+            -0.09312943920862053,
+            -0.019324118051904458,
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16,
+            0.004000000000000001,
+            0
+          ],
+          "pointMeters": [
+            -0.05854935884016348,
+            -0.09312943920862053,
+            -0.019324118051904458
+          ],
+          "direction": [
+            1,
+            7.93016446161136E-15,
+            -4.793097461795545E-16
+          ],
+          "radius1Meters": 0.004000000000000001,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "oc1-1",
+          "componentInstanceName": "oc1-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06264935884016348,
+            -0.09312943920862138,
+            -0.019324118051905398,
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            -0.06264935884016348,
+            -0.09312943920862138,
+            -0.019324118051905398
+          ],
+          "direction": [
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0016",
+      "name": "Coincident58",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.062049358840163715,
+            -0.06195469518315974,
+            -0.0016219931283696573,
+            -1,
+            -7.930164461608286E-15,
+            4.793097461777313E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.062049358840163715,
+            -0.06195469518315974,
+            -0.0016219931283696573
+          ],
+          "direction": [
+            -1,
+            -7.930164461608286E-15,
+            4.793097461777313E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.06204935884016353,
+            -0.08132982104255938,
+            0.015367770260953578,
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.06204935884016353,
+            -0.08132982104255938,
+            0.015367770260953578
+          ],
+          "direction": [
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0017",
+      "name": "Concentric7",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.05664935884016372,
+            -0.0619546951831597,
+            -0.00162199312836966,
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16,
+            0.005124999999999998,
+            0
+          ],
+          "pointMeters": [
+            -0.05664935884016372,
+            -0.0619546951831597,
+            -0.00162199312836966
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16
+          ],
+          "radius1Meters": 0.005124999999999998,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06404935884016369,
+            -0.06195469518325984,
+            -0.0016219931282738936,
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16,
+            0.005000000000000002,
+            0
+          ],
+          "pointMeters": [
+            -0.06404935884016369,
+            -0.06195469518325984,
+            -0.0016219931282738936
+          ],
+          "direction": [
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16
+          ],
+          "radius1Meters": 0.005000000000000002,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0018",
+      "name": "PathMate9",
+      "featureType": "MatePath",
+      "mateTypeCode": 15,
+      "threeJsJointHint": "prismatic",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-arm-2",
+          "componentInstanceName": "left_arm-2",
+          "referenceTypeCode": 0,
+          "rawParameters": [
+            -0.053349358840162946,
+            -0.16122555663723653,
+            -0.020761143155420474,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.053349358840162946,
+            -0.16122555663723653,
+            -0.020761143155420474
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-1",
+          "componentInstanceName": "wiper-1",
+          "referenceTypeCode": 1,
+          "rawParameters": [
+            -0.05334935884016288,
+            -0.16908469518315977,
+            -0.02076114315542047,
+            -7.866205392991926E-15,
+            1,
+            -4.4408920985006257E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05334935884016288,
+            -0.16908469518315977,
+            -0.02076114315542047
+          ],
+          "direction": [
+            -7.866205392991926E-15,
+            1,
+            -4.4408920985006257E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0019",
+      "name": "Coincident60",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "left-arm-2",
+          "componentInstanceName": "left_arm-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05854935884016337,
+            -0.10674498760609348,
+            -0.01802822382934177,
+            -1,
+            -7.93016446161136E-15,
+            4.793097461795545E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05854935884016337,
+            -0.10674498760609348,
+            -0.01802822382934177
+          ],
+          "direction": [
+            -1,
+            -7.93016446161136E-15,
+            4.793097461795545E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "1-4",
+          "componentInstanceName": "1-4",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.058549358840163566,
+            -0.08041782297352056,
+            0.012422875142926108,
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.058549358840163566,
+            -0.08041782297352056,
+            0.012422875142926108
+          ],
+          "direction": [
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0020",
+      "name": "Concentric8",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06404935884016365,
+            -0.06556164117464604,
+            0.03863678033311242,
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16,
+            0.004150000000000001,
+            0
+          ],
+          "pointMeters": [
+            -0.06404935884016365,
+            -0.06556164117464604,
+            0.03863678033311242
+          ],
+          "direction": [
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16
+          ],
+          "radius1Meters": 0.004150000000000001,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "1-4",
+          "componentInstanceName": "1-4",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06434935884016367,
+            -0.0655616411746489,
+            0.03863678033310758,
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16,
+            0.003950000000000001,
+            0
+          ],
+          "pointMeters": [
+            -0.06434935884016367,
+            -0.0655616411746489,
+            0.03863678033310758
+          ],
+          "direction": [
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16
+          ],
+          "radius1Meters": 0.003950000000000001,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0021",
+      "name": "Concentric9",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "oc1-1",
+          "componentInstanceName": "oc1-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06264935884016348,
+            -0.09312943920862138,
+            -0.019324118051905398,
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            -0.06264935884016348,
+            -0.09312943920862138,
+            -0.019324118051905398
+          ],
+          "direction": [
+            1,
+            7.920417366733956E-15,
+            -4.954739796512364E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "1-4",
+          "componentInstanceName": "1-4",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06054935884016348,
+            -0.09312943920862125,
+            -0.019324118051901013,
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16,
+            0.004049999999999997,
+            0
+          ],
+          "pointMeters": [
+            -0.06054935884016348,
+            -0.09312943920862125,
+            -0.019324118051901013
+          ],
+          "direction": [
+            1,
+            7.930212339015857E-15,
+            -4.793785358411513E-16
+          ],
+          "radius1Meters": 0.004049999999999997,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0022",
+      "name": "Coincident63",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598359127,
+            -0.016793651645856326,
+            0.004978006871630324,
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598359127,
+            -0.016793651645856326,
+            0.004978006871630324
+          ],
+          "direction": [
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "oc1-2",
+          "componentInstanceName": "oc1-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0006506411598365063,
+            -0.09282255502021677,
+            -0.019458715914229086,
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598365063,
+            -0.09282255502021677,
+            -0.019458715914229086
+          ],
+          "direction": [
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0023",
+      "name": "Concentric11",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.0026506411598365763,
+            -0.0928225550202326,
+            -0.01945871591414839,
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17,
+            0.004000000000000001,
+            0
+          ],
+          "pointMeters": [
+            0.0026506411598365763,
+            -0.0928225550202326,
+            -0.01945871591414839
+          ],
+          "direction": [
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17
+          ],
+          "radius1Meters": 0.004000000000000001,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "oc1-2",
+          "componentInstanceName": "oc1-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.008650641159836506,
+            -0.0928225550202167,
+            -0.01945871591422909,
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.008650641159836506,
+            -0.0928225550202167,
+            -0.01945871591422909
+          ],
+          "direction": [
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0024",
+      "name": "Coincident64",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.004550641159836686,
+            -0.1064474797840911,
+            -0.01826543255333471,
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.004550641159836686,
+            -0.1064474797840911,
+            -0.01826543255333471
+          ],
+          "direction": [
+            1,
+            8.03430395645969E-15,
+            -8.210635329866173E-17
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "13-1",
+          "componentInstanceName": "13-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.004550641159694279,
+            -0.08026883227652173,
+            0.012351043743757485,
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.004550641159694279,
+            -0.08026883227652173,
+            0.012351043743757485
+          ],
+          "direction": [
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0025",
+      "name": "Concentric12",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "oc1-2",
+          "componentInstanceName": "oc1-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.008650641159836506,
+            -0.0928225550202167,
+            -0.01945871591422909,
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.008650641159836506,
+            -0.0928225550202167,
+            -0.01945871591422909
+          ],
+          "direction": [
+            -1,
+            -7.930159119209047E-15,
+            5.348436443693546E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "13-1",
+          "componentInstanceName": "13-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.004550641159694365,
+            -0.09282255502022836,
+            -0.01945871591416854,
+            1,
+            7.906331033124256E-15,
+            -4.2750479794489016E-16,
+            0.004049999999999997,
+            0
+          ],
+          "pointMeters": [
+            0.004550641159694365,
+            -0.09282255502022836,
+            -0.01945871591416854
+          ],
+          "direction": [
+            1,
+            7.906331033124256E-15,
+            -4.2750479794489016E-16
+          ],
+          "radius1Meters": 0.004049999999999997,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0026",
+      "name": "Concentric13",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.008050641159836268,
+            -0.06195469518315916,
+            -0.0016219931283696842,
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16,
+            0.008,
+            0
+          ],
+          "pointMeters": [
+            0.008050641159836268,
+            -0.06195469518315916,
+            -0.0016219931283696842
+          ],
+          "direction": [
+            -1,
+            -7.930164461608288E-15,
+            5.348208974089713E-16
+          ],
+          "radius1Meters": 0.008,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "12-2",
+          "componentInstanceName": "12-2",
+          "referenceTypeCode": 2,
+          "rawParameters": [
+            0.008550641159694124,
+            -0.06195469518315933,
+            -0.0016219931283631174,
+            -1,
+            -7.907547305809573E-15,
+            3.7576268258469854E-16,
+            0.005000000000000002,
+            0
+          ],
+          "pointMeters": [
+            0.008550641159694124,
+            -0.06195469518315933,
+            -0.0016219931283631174
+          ],
+          "direction": [
+            -1,
+            -7.907547305809573E-15,
+            3.7576268258469854E-16
+          ],
+          "radius1Meters": 0.005000000000000002,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0027",
+      "name": "Coincident65",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "13-1",
+          "componentInstanceName": "13-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.008550641159694174,
+            -0.06554307900444954,
+            0.03863843907937424,
+            1,
+            7.906331033124256E-15,
+            -4.2750479794489016E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.008550641159694174,
+            -0.06554307900444954,
+            0.03863843907937424
+          ],
+          "direction": [
+            1,
+            7.906331033124256E-15,
+            -4.2750479794489016E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "12-2",
+          "componentInstanceName": "12-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.008550641159694283,
+            -0.08132198565045906,
+            0.015376701587434146,
+            -1,
+            -7.907547305809573E-15,
+            3.7576268258469854E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.008550641159694283,
+            -0.08132198565045906,
+            0.015376701587434146
+          ],
+          "direction": [
+            -1,
+            -7.907547305809573E-15,
+            3.7576268258469854E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0028",
+      "name": "Concentric14",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "13-1",
+          "componentInstanceName": "13-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.021550641159694173,
+            -0.06554307900444944,
+            0.03863843907937424,
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.021550641159694173,
+            -0.06554307900444944,
+            0.03863843907937424
+          ],
+          "direction": [
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "12-2",
+          "componentInstanceName": "12-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.008550641159694167,
+            -0.06554307900447053,
+            0.03863843907933868,
+            1,
+            7.907547305809573E-15,
+            -3.7576268258469854E-16,
+            0.004150000000000001,
+            0
+          ],
+          "pointMeters": [
+            0.008550641159694167,
+            -0.06554307900447053,
+            0.03863843907933868
+          ],
+          "direction": [
+            1,
+            7.907547305809573E-15,
+            -3.7576268258469854E-16
+          ],
+          "radius1Meters": 0.004150000000000001,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0029",
+      "name": "Coincident69",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.06404935884016352,
+            -0.0813298210425594,
+            0.015367770260953578,
+            -1,
+            -7.915633886036286E-15,
+            3.193534453958115E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.06404935884016352,
+            -0.0813298210425594,
+            0.015367770260953578
+          ],
+          "direction": [
+            -1,
+            -7.915633886036286E-15,
+            3.193534453958115E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "truc-1",
+          "componentInstanceName": "truc-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.06404935884030136,
+            -0.06195469518313939,
+            -0.0016219931283798217,
+            -1,
+            -7.91583718678231E-15,
+            3.215914274398878E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.06404935884030136,
+            -0.06195469518313939,
+            -0.0016219931283798217
+          ],
+          "direction": [
+            -1,
+            -7.91583718678231E-15,
+            3.215914274398878E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0030",
+      "name": "Concentric15",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.06404935884016369,
+            -0.06195469518325984,
+            -0.0016219931282738936,
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16,
+            0.005000000000000002,
+            0
+          ],
+          "pointMeters": [
+            -0.06404935884016369,
+            -0.06195469518325984,
+            -0.0016219931282738936
+          ],
+          "direction": [
+            1,
+            7.915633886036286E-15,
+            -3.193534453958115E-16
+          ],
+          "radius1Meters": 0.005000000000000002,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "truc-1",
+          "componentInstanceName": "truc-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.023450641159698637,
+            -0.061954695183138696,
+            -0.00162199312837985,
+            -1,
+            -7.91583718678231E-15,
+            3.215914274398878E-16,
+            0.005,
+            0
+          ],
+          "pointMeters": [
+            0.023450641159698637,
+            -0.061954695183138696,
+            -0.00162199312837985
+          ],
+          "direction": [
+            -1,
+            -7.91583718678231E-15,
+            3.215914274398878E-16
+          ],
+          "radius1Meters": 0.005,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0031",
+      "name": "Lock1",
+      "featureType": "MateLock",
+      "mateTypeCode": 16,
+      "threeJsJointHint": "fixed",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-2",
+          "componentInstanceName": "12-2",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "truc-1",
+          "componentInstanceName": "truc-1",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0032",
+      "name": "Lock2",
+      "featureType": "MateLock",
+      "mateTypeCode": 16,
+      "threeJsJointHint": "fixed",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-1",
+          "componentInstanceName": "12-1",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "truc-1",
+          "componentInstanceName": "truc-1",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0033",
+      "name": "PathMate10",
+      "featureType": "MatePath",
+      "mateTypeCode": 15,
+      "threeJsJointHint": "prismatic",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "oc1-2",
+          "componentInstanceName": "oc1-2",
+          "referenceTypeCode": 0,
+          "rawParameters": [
+            0.0006506411598365063,
+            -0.09282255502021677,
+            -0.019458715914229086,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0006506411598365063,
+            -0.09282255502021677,
+            -0.019458715914229086
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 13,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0034",
+      "name": "Coincident70",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "12-2",
+          "componentInstanceName": "12-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.010550641159694283,
+            -0.08132198565045905,
+            0.015376701587434146,
+            1,
+            7.907547305809573E-15,
+            -3.7576268258469854E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.010550641159694283,
+            -0.08132198565045905,
+            0.015376701587434146
+          ],
+          "direction": [
+            1,
+            7.907547305809573E-15,
+            -3.7576268258469854E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-gear-2",
+          "componentInstanceName": "wiper_gear-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.010550641159694124,
+            -0.0619546951831388,
+            -0.0016219931283798458,
+            -1,
+            -7.983021935692551E-15,
+            4.0692424157069527E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.010550641159694124,
+            -0.0619546951831388,
+            -0.0016219931283798458
+          ],
+          "direction": [
+            -1,
+            -7.983021935692551E-15,
+            4.0692424157069527E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0035",
+      "name": "Concentric16",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "truc-1",
+          "componentInstanceName": "truc-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.012750641159698636,
+            -0.06195469518313878,
+            -0.0016219931283798464,
+            1,
+            7.91583718678231E-15,
+            -3.215914274398878E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.012750641159698636,
+            -0.06195469518313878,
+            -0.0016219931283798464
+          ],
+          "direction": [
+            1,
+            7.91583718678231E-15,
+            -3.215914274398878E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-gear-2",
+          "componentInstanceName": "wiper_gear-2",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.010550641159694124,
+            -0.0619546951831388,
+            -0.0016219931283798458,
+            1,
+            7.983021935692551E-15,
+            -4.0692424157069527E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.010550641159694124,
+            -0.0619546951831388,
+            -0.0016219931283798458
+          ],
+          "direction": [
+            1,
+            7.983021935692551E-15,
+            -4.0692424157069527E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0036",
+      "name": "Tangent3",
+      "featureType": "MateTangent",
+      "mateTypeCode": 4,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "13-1",
+          "componentInstanceName": "13-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            0.021550641159694173,
+            -0.06554307900444944,
+            0.03863843907937424,
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16,
+            0.004,
+            0
+          ],
+          "pointMeters": [
+            0.021550641159694173,
+            -0.06554307900444944,
+            0.03863843907937424
+          ],
+          "direction": [
+            -1,
+            -7.906331033124256E-15,
+            4.2750479794489016E-16
+          ],
+          "radius1Meters": 0.004,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "wiper-gear-2",
+          "componentInstanceName": "wiper_gear-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.02055064115969415,
+            -0.0653061609771186,
+            -0.0019734517015671657,
+            -7.897045338398724E-15,
+            0.9945463828718311,
+            0.1042952171317425,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.02055064115969415,
+            -0.0653061609771186,
+            -0.0019734517015671657
+          ],
+          "direction": [
+            -7.897045338398724E-15,
+            0.9945463828718311,
+            0.1042952171317425
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0037",
+      "name": "Coincident71",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "backcover-1",
+          "componentInstanceName": "backcover-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026799358840164166,
+            -0.001284695183159423,
+            0.029841961036652334,
+            -4.793097461777298E-16,
+            -1.6653345369377336E-16,
+            -1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026799358840164166,
+            -0.001284695183159423,
+            0.029841961036652334
+          ],
+          "direction": [
+            -4.793097461777298E-16,
+            -1.6653345369377336E-16,
+            -1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.007349358840164074,
+            -0.016793651645856385,
+            0.029841961036652324,
+            5.348208974089674E-16,
+            1.6653345369377343E-16,
+            1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.007349358840164074,
+            -0.016793651645856385,
+            0.029841961036652324
+          ],
+          "direction": [
+            5.348208974089674E-16,
+            1.6653345369377343E-16,
+            1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0038",
+      "name": "Coincident72",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "backcover-1",
+          "componentInstanceName": "backcover-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016418,
+            -0.0012846951831596426,
+            0.029841961036652348,
+            -1,
+            -7.885720682757489E-15,
+            4.793097461777312E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016418,
+            -0.0012846951831596426,
+            0.029841961036652348
+          ],
+          "direction": [
+            -1,
+            -7.885720682757489E-15,
+            4.793097461777312E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435,
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05464935884016407,
+            -0.016793651645856795,
+            0.0049780068716303435
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -4.793097461777313E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0039",
+      "name": "Coincident74",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "backcover-1",
+          "componentInstanceName": "backcover-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026799358840164798,
+            0.07621530481684054,
+            0.029841961036652324,
+            -8.1601392309949E-15,
+            1,
+            -1.6653345369376944E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026799358840164798,
+            0.07621530481684054,
+            0.029841961036652324
+          ],
+          "direction": [
+            -8.1601392309949E-15,
+            1,
+            -1.6653345369376944E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "left-cover-2",
+          "componentInstanceName": "left_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.05664935884016481,
+            0.0762153048168403,
+            0.004978006871630329,
+            -7.930164461608286E-15,
+            1,
+            -1.6653345369377343E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.05664935884016481,
+            0.0762153048168403,
+            0.004978006871630329
+          ],
+          "direction": [
+            -7.930164461608286E-15,
+            1,
+            -1.6653345369377343E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0040",
+      "name": "Parallel1",
+      "featureType": "MateParallel",
+      "mateTypeCode": 3,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "backcover-1",
+          "componentInstanceName": "backcover-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026799358840164166,
+            -0.0012846951831594227,
+            0.031341961036652335,
+            4.793097461777298E-16,
+            1.6653345369377336E-16,
+            1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026799358840164166,
+            -0.0012846951831594227,
+            0.031341961036652335
+          ],
+          "direction": [
+            4.793097461777298E-16,
+            1.6653345369377336E-16,
+            1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "piston-1",
+          "componentInstanceName": "piston-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026999358840164144,
+            -0.009690216336053745,
+            0.021078006871630372,
+            4.718447854656915E-16,
+            1.6653345369231862E-16,
+            1,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840164144,
+            -0.009690216336053745,
+            0.021078006871630372
+          ],
+          "direction": [
+            4.718447854656915E-16,
+            1.6653345369231862E-16,
+            1
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0041",
+      "name": "Coincident77",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "base-1",
+          "componentInstanceName": "base-1",
+          "referenceTypeCode": 0,
+          "rawParameters": [
+            -0.026999358840164137,
+            0.04501530481684149,
+            -0.0019219931283662,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840164137,
+            0.04501530481684149,
+            -0.0019219931283662
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "gear-piston-1",
+          "componentInstanceName": "gear_piston-1",
+          "referenceTypeCode": 0,
+          "rawParameters": [
+            -0.0269993588401641,
+            0.04501530481684152,
+            -0.0019219931283660943,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.0269993588401641,
+            0.04501530481684152,
+            -0.0019219931283660943
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0042",
+      "name": "Parallel4",
+      "featureType": "MateParallel",
+      "mateTypeCode": 3,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "piston-1",
+          "componentInstanceName": "piston-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026999358840164422,
+            0.024309783663946236,
+            -0.0019219931283696336,
+            -7.86620539299424E-15,
+            1,
+            -1.6653345369231954E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840164422,
+            0.024309783663946236,
+            -0.0019219931283696336
+          ],
+          "direction": [
+            -7.86620539299424E-15,
+            1,
+            -1.6653345369231954E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "gear-piston-1",
+          "componentInstanceName": "gear_piston-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.02699935884016399,
+            0.030015304816841518,
+            -0.0019219931283661242,
+            7.0898347379853504E-15,
+            -1,
+            -1.9926315253688287E-15,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.02699935884016399,
+            0.030015304816841518,
+            -0.0019219931283661242
+          ],
+          "direction": [
+            7.0898347379853504E-15,
+            -1,
+            -1.9926315253688287E-15
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0043",
+      "name": "Parallel5",
+      "featureType": "MateParallel",
+      "mateTypeCode": 3,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "base-1",
+          "componentInstanceName": "base-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.02699935884016416,
+            0.04801530481684149,
+            -0.0019219931283662004,
+            7.94298052300309E-15,
+            -1,
+            1.578009183946273E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.02699935884016416,
+            0.04801530481684149,
+            -0.0019219931283662004
+          ],
+          "direction": [
+            7.94298052300309E-15,
+            -1,
+            1.578009183946273E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "gear-piston-1",
+          "componentInstanceName": "gear_piston-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.0269993588401641,
+            0.04501530481684152,
+            -0.0019219931283660943,
+            -7.0898347379853504E-15,
+            1,
+            1.9926315253688287E-15,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.0269993588401641,
+            0.04501530481684152,
+            -0.0019219931283660943
+          ],
+          "direction": [
+            -7.0898347379853504E-15,
+            1,
+            1.9926315253688287E-15
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0044",
+      "name": "Parallel6",
+      "featureType": "MateParallel",
+      "mateTypeCode": 3,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0026506411598359128,
+            -0.01679365164585631,
+            0.004978006871630323,
+            1,
+            7.930164461608288E-15,
+            -5.348208974089713E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0026506411598359128,
+            -0.01679365164585631,
+            0.004978006871630323
+          ],
+          "direction": [
+            1,
+            7.930164461608288E-15,
+            -5.348208974089713E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "base-1",
+          "componentInstanceName": "base-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.004500641159835818,
+            0.04801530481684174,
+            -0.02192199312836622,
+            1,
+            7.930164461608286E-15,
+            -6.036837696399289E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.004500641159835818,
+            0.04801530481684174,
+            -0.02192199312836622
+          ],
+          "direction": [
+            1,
+            7.930164461608286E-15,
+            -6.036837696399289E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0045",
+      "name": "Coincident80",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "right-cover-2",
+          "componentInstanceName": "right_cover-2",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.007349358840164648,
+            0.05251530481684073,
+            -0.013708038963347702,
+            -7.930164461608286E-15,
+            1,
+            -1.6653345369377343E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.007349358840164648,
+            0.05251530481684073,
+            -0.013708038963347702
+          ],
+          "direction": [
+            -7.930164461608286E-15,
+            1,
+            -1.6653345369377343E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "base-1",
+          "componentInstanceName": "base-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            -0.026999358840164214,
+            0.05251530481684149,
+            -0.0199219931283662,
+            7.94298052300309E-15,
+            -1,
+            1.578009183946273E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840164214,
+            0.05251530481684149,
+            -0.0199219931283662
+          ],
+          "direction": [
+            7.94298052300309E-15,
+            -1,
+            1.578009183946273E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0046",
+      "name": "Concentric17",
+      "featureType": "MateConcentric",
+      "mateTypeCode": 1,
+      "threeJsJointHint": "revolute",
+      "alignmentCode": 0,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "mouth-1",
+          "componentInstanceName": "mouth-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.026999358840163072,
+            -0.14288469518315955,
+            -0.0019219931283696104,
+            -7.866205392991927E-15,
+            1,
+            -1.6653345369377343E-16,
+            0.0214,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840163072,
+            -0.14288469518315955,
+            -0.0019219931283696104
+          ],
+          "direction": [
+            -7.866205392991927E-15,
+            1,
+            -1.6653345369377343E-16
+          ],
+          "radius1Meters": 0.0214,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "piston-1",
+          "componentInstanceName": "piston-1",
+          "referenceTypeCode": 4,
+          "rawParameters": [
+            -0.026999358840164217,
+            -0.0016902163360537625,
+            -0.0019219931283696293,
+            -7.86620539299424E-15,
+            1,
+            -1.6653345369231954E-16,
+            0.0205,
+            0
+          ],
+          "pointMeters": [
+            -0.026999358840164217,
+            -0.0016902163360537625,
+            -0.0019219931283696293
+          ],
+          "direction": [
+            -7.86620539299424E-15,
+            1,
+            -1.6653345369231954E-16
+          ],
+          "radius1Meters": 0.0205,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0047",
+      "name": "Coincident81",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "top-block-1",
+          "componentInstanceName": "top_block-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.006150641159836996,
+            -0.1514418547265933,
+            -0.06776819182176289,
+            -4.511989662252122E-15,
+            0.5003188012304776,
+            -0.8658412655535067,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.006150641159836996,
+            -0.1514418547265933,
+            -0.06776819182176289
+          ],
+          "direction": [
+            -4.511989662252122E-15,
+            0.5003188012304776,
+            -0.8658412655535067
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0026506411598366027,
+            -0.0962659921790509,
+            -0.035885302307348564,
+            4.090804393067294E-15,
+            -0.5003188012304777,
+            0.8658412655535066,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0026506411598366027,
+            -0.0962659921790509,
+            -0.035885302307348564
+          ],
+          "direction": [
+            4.090804393067294E-15,
+            -0.5003188012304777,
+            0.8658412655535066
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0048",
+      "name": "Coincident82",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "top-block-1",
+          "componentInstanceName": "top_block-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.006150641159837114,
+            -0.16394982475735523,
+            -0.04612216018292522,
+            4.511989662252122E-15,
+            -0.5003188012304776,
+            0.8658412655535067,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.006150641159837114,
+            -0.16394982475735523,
+            -0.04612216018292522
+          ],
+          "direction": [
+            4.511989662252122E-15,
+            -0.5003188012304776,
+            0.8658412655535067
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.002650641159836705,
+            -0.10877396220981284,
+            -0.014239270668510884,
+            -4.090804393067294E-15,
+            0.5003188012304777,
+            -0.8658412655535066,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.002650641159836705,
+            -0.10877396220981284,
+            -0.014239270668510884
+          ],
+          "direction": [
+            -4.090804393067294E-15,
+            0.5003188012304777,
+            -0.8658412655535066
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0049",
+      "name": "Coincident83",
+      "featureType": "MateCoincident",
+      "mateTypeCode": 0,
+      "threeJsJointHint": "constraint",
+      "alignmentCode": 1,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "top-block-1",
+          "componentInstanceName": "top_block-1",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.0026506411598370312,
+            -0.15262710842445104,
+            -0.02774122998762271,
+            1,
+            8.322793944641804E-15,
+            -4.0185122472561937E-16,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.0026506411598370312,
+            -0.15262710842445104,
+            -0.02774122998762271
+          ],
+          "direction": [
+            1,
+            8.322793944641804E-15,
+            -4.0185122472561937E-16
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 3,
+          "rawParameters": [
+            0.002650641159836686,
+            -0.10644747978409111,
+            -0.01826543255333471,
+            -1,
+            -8.03430395645969E-15,
+            8.210635329866173E-17,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0.002650641159836686,
+            -0.10644747978409111,
+            -0.01826543255333471
+          ],
+          "direction": [
+            -1,
+            -8.03430395645969E-15,
+            8.210635329866173E-17
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    },
+    {
+      "id": "mate-0050",
+      "name": "Lock3",
+      "featureType": "MateLock",
+      "mateTypeCode": 16,
+      "threeJsJointHint": "fixed",
+      "alignmentCode": 2,
+      "isFlipped": false,
+      "canBeFlipped": false,
+      "minimumVariation": 0,
+      "maximumVariation": 0,
+      "entities": [
+        {
+          "index": 0,
+          "componentId": "top-block-1",
+          "componentInstanceName": "top_block-1",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        },
+        {
+          "index": 1,
+          "componentId": "right-arm-3",
+          "componentInstanceName": "right_arm-3",
+          "referenceTypeCode": 6,
+          "rawParameters": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pointMeters": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "radius1Meters": 0,
+          "radius2Meters": 0
+        }
+      ]
+    }
+  ],
+  "motionStudies": [
+    {
+      "name": "Motion Study 1",
+      "studyTypeCode": 1,
+      "isActive": true,
+      "durationSeconds": 0,
+      "features": [],
+      "frames": []
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "scope": "motion:Motion Study 1",
+      "message": "SOLIDWORKS reported this Motion Study duration as 0. Re-run with --motion-duration \u003Cseconds\u003E to force transform sampling."
+    }
+  ]
+}
