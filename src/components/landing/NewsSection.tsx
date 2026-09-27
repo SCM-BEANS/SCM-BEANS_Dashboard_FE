@@ -6,7 +6,7 @@ import { AnimateOnScroll } from "./AnimateOnScroll";
 
 const articles = [
   {
-    title: "DEER COFFEE công bố giải pháp IoT thế hệ mới",
+    title: "DOLORES COFFEE công bố giải pháp IoT thế hệ mới",
     category: "Product Update",
     date: "12 Oct 2023",
     author: "Admin",
@@ -20,7 +20,7 @@ const articles = [
     date: "05 Oct 2023",
     author: "PR Team",
     excerpt:
-      "Đáp ứng nhu cầu ngày càng tăng, DEER COFFEE chính thức mở trung tâm bảo hành tại Đà Nẵng, Nha Trang, Huế...",
+      "Đáp ứng nhu cầu ngày càng tăng, DOLORES COFFEE chính thức mở trung tâm bảo hành tại Đà Nẵng, Nha Trang, Huế...",
     img: "https://images.unsplash.com/photo-1556740714-a8395b3bf30f?auto=format&fit=crop&q=80&w=600",
   },
   {
@@ -36,8 +36,34 @@ const articles = [
 
 export function NewsSection() {
   return (
-    <section id="news" className="bg-white py-24 px-6">
-      <div className="max-w-[1320px] mx-auto">
+    <section id="news" className="relative bg-white py-24 px-6 overflow-hidden border-b border-[#ABBED1]/20">
+      {/* ── Ambient Blue Glow: Ánh xanh tỏa sáng mờ dần từ 2 bên vào trong ── */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 35% 80% at 0% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            radial-gradient(ellipse 35% 80% at 100% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            linear-gradient(to right, rgba(6, 113, 224, 0.15) 0%, rgba(6, 113, 224, 0.05) 16%, rgba(6, 113, 224, 0.01) 32%, transparent 45%, transparent 55%, rgba(6, 113, 224, 0.01) 68%, rgba(6, 113, 224, 0.05) 84%, rgba(6, 113, 224, 0.15) 100%)
+          `
+        }}
+      />
+
+      {/* ── Blue Grid: Bold at outer edges, fading softly in the center ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, #0671E0 1px, transparent 1px),
+            linear-gradient(to bottom, #0671E0 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-[1320px] mx-auto">
         <AnimateOnScroll>
           <div className="flex flex-col sm:flex-row justify-between items-end gap-6 mb-14 border-b border-[#F5F7FA] pb-8">
             <div className="max-w-[600px]">
@@ -51,7 +77,7 @@ export function NewsSection() {
                 Tin tức &amp; Cập nhật
               </h2>
               <p className="text-[#89939E]" style={{ fontSize: "16px", lineHeight: "26px" }}>
-                Khám phá tính năng mới, sự kiện công ty và các báo cáo ngành F&B từ đội ngũ DEER COFFEE.
+                Khám phá tính năng mới, sự kiện công ty và các báo cáo ngành F&B từ đội ngũ DOLORES COFFEE.
               </p>
             </div>
             <Link

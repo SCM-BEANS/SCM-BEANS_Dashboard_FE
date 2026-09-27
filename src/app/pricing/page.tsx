@@ -15,7 +15,7 @@ const plans = [
     period: "tháng / máy",
     featured: false,
     features: [
-      "1 máy DeerX-100",
+      "1 máy Dolores-100",
       "Kết nối IoT cơ bản",
       "Dashboard theo dõi cơ bản",
       "Bảo trì định kỳ 3 tháng/lần",
@@ -32,7 +32,7 @@ const plans = [
     period: "tháng / máy",
     featured: true,
     features: [
-      "Máy DeerX-100 hoặc DeerX-Pro",
+      "Máy Dolores-100 hoặc Dolores-Pro",
       "Full IoT Suite — tất cả cảm biến",
       "Dashboard nâng cao + báo cáo tự động",
       "Bảo trì định kỳ hàng tháng",
@@ -50,7 +50,7 @@ const plans = [
     period: "tùy chỉnh",
     featured: false,
     features: [
-      "Tất cả dòng máy DeerX",
+      "Tất cả dòng máy Dolores",
       "Hạ tầng IoT riêng biệt",
       "Dashboard đa địa điểm",
       "Bảo trì theo SLA tùy chỉnh",

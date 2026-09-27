@@ -35,7 +35,7 @@ export default function AboutPage() {
             </AnimateOnScroll>
             <AnimateOnScroll delay={80}>
               <h1 className="text-[#18191F] font-semibold mb-4 leading-tight" style={{ fontSize: "clamp(32px, 5vw, 60px)" }}>
-                Chúng tôi là <span className="text-[#0671E0]">DEER COFFEE</span>
+                Chúng tôi là <span className="text-[#0671E0]">DOLORES COFFEE</span>
               </h1>
             </AnimateOnScroll>
             <AnimateOnScroll delay={160}>
@@ -59,7 +59,7 @@ export default function AboutPage() {
                 Đơn giản hóa vận hành
               </h2>
               <p className="text-[#89939E] mb-5 text-sm sm:text-base leading-relaxed">
-                DEER COFFEE được thành lập với mục tiêu đơn giản hóa việc vận hành máy pha cà phê cho các doanh nghiệp Việt Nam — từ quán cà phê nhỏ đến chuỗi khách sạn lớn.
+                DOLORES COFFEE được thành lập với mục tiêu đơn giản hóa việc vận hành máy pha cà phê cho các doanh nghiệp Việt Nam — từ quán cà phê nhỏ đến chuỗi khách sạn lớn.
               </p>
               <p className="text-[#89939E] mb-10 text-sm sm:text-base leading-relaxed">
                 Chúng tôi kết hợp dịch vụ cho thuê máy linh hoạt với công nghệ IoT và Cloud để tạo ra một nền tảng quản lý thông minh, giúp doanh nghiệp tối ưu chi phí và nâng cao chất lượng dịch vụ.
@@ -97,7 +97,7 @@ export default function AboutPage() {
               <div className="text-center mb-12">
                 <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Đội ngũ lãnh đạo</span>
                 <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
-                  Những người đứng sau DEER COFFEE
+                  Những người đứng sau DOLORES COFFEE
                 </h2>
               </div>
             </AnimateOnScroll>
@@ -132,7 +132,7 @@ export default function AboutPage() {
               
               <div className="flex flex-col gap-6">
                 {[
-                  { icon: <Mail className="w-5 h-5" />, label: "Email", value: "hello@deercoffee.vn" },
+                  { icon: <Mail className="w-5 h-5" />, label: "Email", value: "hello@dolorescoffee.vn" },
                   { icon: <Phone className="w-5 h-5" />, label: "Hotline", value: "1800 1234 (Miễn phí)" },
                   { icon: <MapPin className="w-5 h-5" />, label: "Địa chỉ", value: "123 Nguyễn Đình Chiểu, Q.3, TP.HCM" },
                 ].map((c, i) => (

@@ -194,7 +194,7 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
             <Coffee className="text-primary w-8 h-8" />
           </div>
           <h1 className="text-3xl font-bold font-serif text-on-surface tracking-tight mb-2">
-            Deer Coffee
+            Dolores Coffee
           </h1>
           <p className="text-on-surface-variant text-sm text-center">
             {mode === 'login' ? 'Sign in to access the Dashboard' : 

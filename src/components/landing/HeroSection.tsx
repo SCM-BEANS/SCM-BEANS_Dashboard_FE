@@ -1,167 +1,205 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, BarChart3, Wifi, Zap } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { CheckCircle2, RotateCcw } from "lucide-react";
 
-const highlights = [
-  "Tích hợp IoT cho từng máy",
-  "Dashboard quản lý thời gian thực",
-  "Bảo trì dự đoán bằng AI",
-  "Hỗ trợ kỹ thuật 24/7",
-];
-
-const stats = [
-  { value: "500+", label: "Máy đang vận hành" },
-  { value: "50+", label: "Doanh nghiệp đối tác" },
-  { value: "99.9%", label: "Uptime đảm bảo" },
-];
-
-function useEntranceAnimation(refs: React.RefObject<HTMLElement | null>[], delays: number[]) {
-  useEffect(() => {
-    refs.forEach((ref, i) => {
-      const el = ref.current;
-      if (!el) return;
-      el.style.opacity = "0";
-      el.style.transform = "translateY(24px)";
-      el.style.transition = `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delays[i]}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delays[i]}ms`;
-      requestAnimationFrame(() => setTimeout(() => {
-        el.style.opacity = "1";
-        el.style.transform = "none";
-      }, 80));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+interface HeroSectionProps {
+  videoEnded?: boolean;
+  onVideoEnded?: () => void;
 }
 
-export function HeroSection() {
-  const badgeRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const descRef = useRef<HTMLParagraphElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-  const mockupRef = useRef<HTMLDivElement>(null);
+export function HeroSection({ 
+  videoEnded: externalVideoEnded, 
+  onVideoEnded 
+}: HeroSectionProps) {
+  const [internalVideoEnded, setInternalVideoEnded] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEntranceAnimation(
-    [badgeRef, titleRef, descRef, listRef, ctaRef, statsRef, mockupRef],
-    [0, 80, 180, 280, 380, 500, 200]
-  );
+  const isEnded = externalVideoEnded !== undefined ? externalVideoEnded : internalVideoEnded;
+
+  const handleVideoEnded = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    setInternalVideoEnded(true);
+    onVideoEnded?.();
+  }, [onVideoEnded]);
+
+  const handleSkip = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = videoRef.current.duration || 9999;
+      videoRef.current.pause();
+    }
+    handleVideoEnded();
+  }, [handleVideoEnded]);
+
+  const handleReplay = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+      setInternalVideoEnded(false);
+    }
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) return;
+
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    }, 600);
+  };
+
+  // Track scroll to slide out content when scrolling down, and slide back in when at the top
+  const [isScrolledOut, setIsScrolledOut] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolledOut(window.scrollY > 60);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const isVisible = isEnded && !isScrolledOut;
+
+  // Fallback: If autoplay is blocked or fails, safely transition after a timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (videoRef.current && videoRef.current.paused && !isEnded && videoRef.current.currentTime === 0) {
+        videoRef.current.play().catch(() => {
+          handleVideoEnded();
+        });
+      }
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isEnded, handleVideoEnded]);
 
   return (
-    <section className="w-full bg-white pt-[72px]" id="home">
-      {/* Subtle grid bg */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "linear-gradient(#0671E0 1px,transparent 1px),linear-gradient(90deg,#0671E0 1px,transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
+    <section 
+      id="home" 
+      className="relative w-full min-h-screen flex items-center overflow-hidden bg-black"
+    >
+      {/* ── Background Video: 100% natural, crisp 1080p, no blur, no darkening ── */}
+      <video
+        ref={videoRef}
+        src="/video/espresso_intro.mp4?v=1080p"
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleVideoEnded}
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
       />
 
-      <div className="relative max-w-[1320px] mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      {/* ── Minimalist Video Controls ── */}
+      <div className={`absolute z-30 bottom-6 right-6 sm:bottom-8 sm:right-8 transition-opacity duration-500 ${isScrolledOut ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        {!isEnded ? (
+          <button
+            onClick={handleSkip}
+            className="px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/15 text-white/70 hover:text-white text-xs tracking-wider uppercase font-light transition-all duration-300"
+            title="Bỏ qua video"
+          >
+            Bỏ qua →
+          </button>
+        ) : (
+          <button
+            onClick={handleReplay}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/15 text-white/70 hover:text-white text-xs tracking-wider font-light transition-all duration-300 group"
+            title="Xem lại video"
+          >
+            <RotateCcw className="w-3 h-3 group-hover:-rotate-45 transition-transform duration-300" />
+            <span>Xem lại</span>
+          </button>
+        )}
+      </div>
 
-          {/* ── LEFT ── */}
-          <div className="flex flex-col items-start">
-            {/* Eyebrow */}
-            <div
-              ref={badgeRef}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0671E0]/8 rounded-full mb-5"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0671E0] animate-[pulse-dot_2s_ease-in-out_infinite]" />
-              <span className="text-[#0671E0] text-xs font-semibold tracking-wider uppercase">
-                Coffee Machine as a Service
-              </span>
-            </div>
-
-            {/* H1 */}
-            <h1
-              ref={titleRef}
-              className="text-[#18191F] font-semibold mb-5 leading-tight"
-              style={{ fontSize: "clamp(32px, 5vw, 60px)", lineHeight: "1.15" }}
-            >
-              Thuê máy pha cà phê{" "}
-              <span className="text-[#0671E0]">thông minh</span>{" "}
-              cho doanh nghiệp
-            </h1>
-
-            {/* Description */}
-            <p
-              ref={descRef}
-              className="text-[#89939E] mb-7 max-w-[480px]"
-              style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}
-            >
-              Giải pháp tích hợp IoT &amp; Cloud hàng đầu. Quản lý toàn bộ đội máy từ
-              một nền tảng duy nhất — theo dõi thời gian thực, bảo trì dự đoán, vận hành không gián đoạn.
-            </p>
-
-            {/* Highlights */}
-            <ul ref={listRef} className="flex flex-col gap-2 mb-8">
-              {highlights.map((item, i) => (
-                <li key={i} className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#0671E0] shrink-0" />
-                  <span className="text-[#4D4D4D] text-sm font-medium">{item}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* CTA */}
-            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3 w-full">
-              <Link
-                href="/solutions"
-                id="hero-explore-btn"
-                className="btn-primary group text-base px-7 py-3.5"
-              >
-                Khám phá giải pháp
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-              </Link>
-              <Link
-                href="/login"
-                id="hero-login-btn"
-                className="btn-secondary text-base px-7 py-3.5"
-              >
-                Đăng nhập Dashboard
-              </Link>
-            </div>
-
-
-          </div>
-
-          {/* ── RIGHT: Single Image Floating Composition ── */}
-          <div ref={mockupRef} className="relative w-full aspect-square max-w-[540px] mx-auto mt-12 lg:mt-0 flex items-center justify-center pointer-events-none">
-            {/* Glow blob background */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] aspect-square rounded-full bg-[#0671E0]/10 blur-[80px] -z-10" />
-
-            {/* Base Layer: Main Image (herosection1) */}
-            <div className="relative w-[100%] h-[100%] rounded-[32px] overflow-hidden shadow-[0px_24px_48px_rgba(171,190,209,0.4)] border-[8px] border-white z-10">
-              <video
-                src="/video/hero.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover pointer-events-none"
-              />
-            </div>
-
-            {/* Independent Floating Entity 1: Code / Analytics */}
-            <div className="absolute top-[5%] right-[0%] bg-white rounded-2xl p-3 shadow-[0px_12px_24px_rgba(171,190,209,0.25)] flex items-center justify-center z-40 animate-[wave_5s_ease-in-out_infinite_0.2s]">
-              <div className="w-12 h-12 rounded-xl bg-[#2E7D31]/10 flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-[#2E7D31]" />
+      {/* ── Main Content: Clean, Luxurious, Minimalist ── */}
+      <div className="relative z-20 w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-[100px] pb-16 min-h-screen flex items-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Content Column: Slides in when video ends, slides out when scrolling down */}
+          <div 
+            className={`w-full lg:col-span-8 xl:col-span-7 flex flex-col justify-center transition-all duration-700 ease-out ${
+              isVisible 
+                ? "opacity-100 translate-x-0 pointer-events-auto" 
+                : "opacity-0 -translate-x-16 pointer-events-none"
+            }`}
+          >
+            <div className="max-w-[720px]">
+              
+              {/* Refined Luxury Label with Warm Amber Accent */}
+              <div className="inline-flex items-center gap-3 mb-6">
+                <span className="w-8 h-[1.5px] bg-[#D4A373]" />
+                <span className="text-xs sm:text-sm uppercase tracking-[0.3em] font-medium text-[#E8C59C] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  Dolores Coffee • Enterprise Solution
+                </span>
               </div>
-            </div>
 
+              {/* Grand Headline with Playfair Display Serif */}
+              <h1 className="font-serif text-4xl sm:text-6xl lg:text-[66px] xl:text-[72px] font-semibold text-[#FAF7F2] tracking-[-0.01em] leading-[1.1] mb-6 drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)]">
+                Thuê máy pha cà phê{" "}
+                <span className="italic font-normal bg-gradient-to-r from-[#F5D0A9] via-[#E8B884] to-[#F3D7B5] bg-clip-text text-transparent">
+                  thông minh
+                </span>
+                <br />
+                cho doanh nghiệp
+              </h1>
 
+              {/* Sophisticated Description */}
+              <p className="text-[#E8E1D9] text-base sm:text-lg lg:text-[19px] leading-[1.8] font-light max-w-[580px] mb-10 drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)]">
+                Giải pháp tích hợp IoT &amp; Cloud hàng đầu. Quản lý toàn bộ đội máy từ
+                một nền tảng duy nhất — theo dõi thời gian thực, bảo trì dự đoán, vận hành không gián đoạn.
+              </p>
 
-            {/* Independent Floating Entity 3: Wifi/IoT Badge */}
-            <div className="absolute top-[45%] right-[-5%] bg-[#0671E0] rounded-xl px-4 py-2.5 shadow-[0px_12px_24px_rgba(6,113,224,0.3)] flex items-center gap-2 z-50 animate-[landing-float_3s_ease-in-out_infinite_0.8s]">
-              <Wifi className="w-4 h-4 text-white" />
-              <span className="text-white text-xs font-bold tracking-wider">SYNCING...</span>
+              {/* Email Form: Warm Crema Gold & Frosted Glass */}
+              <div className="max-w-[500px]">
+                {!isSubmitted ? (
+                  <form 
+                    onSubmit={handleSubmit} 
+                    className="relative flex items-center p-1.5 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 hover:border-[#D4A373]/60 focus-within:border-[#E8B884] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-all duration-300"
+                  >
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Nhập email doanh nghiệp của bạn..."
+                      required
+                      className="w-full bg-transparent pl-5 pr-3 py-3 text-sm sm:text-base text-white placeholder-white/45 focus:outline-none tracking-wide font-light"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="shrink-0 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#E5B887] via-[#D4A373] to-[#C68D57] hover:brightness-110 active:scale-95 text-[#1A0E07] font-semibold text-sm tracking-wide transition-all duration-300 shadow-[0_4px_24px_rgba(212,163,115,0.45)] flex items-center justify-center min-w-[110px]"
+                    >
+                      {isSubmitting ? (
+                        <span className="w-4 h-4 border-2 border-[#1A0E07]/40 border-t-[#1A0E07] rounded-full animate-spin" />
+                      ) : (
+                        <span>Xác nhận</span>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="inline-flex items-center gap-3 px-6 py-4 rounded-full bg-black/60 backdrop-blur-2xl border border-[#D4A373]/50 text-[#FAF7F2] shadow-xl">
+                    <CheckCircle2 className="w-5 h-5 text-[#E8B884] shrink-0" />
+                    <span className="text-sm font-light text-white/95">
+                      Cảm ơn bạn. Đội ngũ chuyên gia của chúng tôi sẽ liên hệ trong 15 phút.
+                    </span>
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
+
+          {/* Right Spacer (Leaves the espresso video visually open) */}
+          <div className="hidden lg:block lg:col-span-4 xl:col-span-5" />
+
         </div>
       </div>
     </section>

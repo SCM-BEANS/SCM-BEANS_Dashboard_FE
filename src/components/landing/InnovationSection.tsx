@@ -29,8 +29,34 @@ const features = [
 
 export function InnovationSection() {
   return (
-    <section id="technology" className="bg-[#F5F7FA] py-24 px-6 overflow-hidden">
-      <div className="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+    <section id="technology" className="relative bg-white py-24 px-6 overflow-hidden border-b border-[#ABBED1]/20">
+      {/* ── Ambient Blue Glow: Ánh xanh tỏa sáng mờ dần từ 2 bên vào trong ── */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 35% 80% at 0% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            radial-gradient(ellipse 35% 80% at 100% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            linear-gradient(to right, rgba(6, 113, 224, 0.15) 0%, rgba(6, 113, 224, 0.05) 16%, rgba(6, 113, 224, 0.01) 32%, transparent 45%, transparent 55%, rgba(6, 113, 224, 0.01) 68%, rgba(6, 113, 224, 0.05) 84%, rgba(6, 113, 224, 0.15) 100%)
+          `
+        }}
+      />
+
+      {/* ── Blue Grid: Bold at outer edges, fading softly in the center ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, #0671E0 1px, transparent 1px),
+            linear-gradient(to bottom, #0671E0 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
         {/* ── LEFT: Dashboard Mockup (light) ── */}
         <AnimateOnScroll direction="left" className="relative w-full flex items-center justify-center order-2 lg:order-1">

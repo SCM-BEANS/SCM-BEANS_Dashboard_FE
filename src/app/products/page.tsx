@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 
 const products = [
   {
-    name: "DeerX-100",
+    name: "Dolores-100",
     category: "Espresso Tự Động",
     tag: "Phổ biến nhất",
     desc: "Máy espresso tự động hoàn toàn phù hợp cho văn phòng và quán cà phê nhỏ. Tích hợp cảm biến IoT cơ bản, kết nối Cloud, quản lý từ xa.",
@@ -18,7 +18,7 @@ const products = [
     featured: false,
   },
   {
-    name: "DeerX-Pro",
+    name: "Dolores-Pro",
     category: "Dual Group Head",
     tag: "Dành cho chuỗi quán",
     desc: "Dòng máy đôi cho chuỗi quán cà phê hoặc khách sạn. Sản lượng cao, hai đầu brew độc lập, tích hợp IoT đầy đủ và màn hình cảm ứng.",
@@ -28,7 +28,7 @@ const products = [
     featured: true,
   },
   {
-    name: "DeerX-Enterprise",
+    name: "Dolores-Enterprise",
     category: "Commercial Grade",
     tag: "Chuỗi lớn & Doanh nghiệp",
     desc: "Giải pháp doanh nghiệp cho hệ thống hàng trăm máy. Quản lý tập trung, API tích hợp POS, báo cáo thời gian thực trên toàn bộ chuỗi.",
@@ -153,9 +153,9 @@ export default function ProductsPage() {
           <div className="max-w-[1320px] mx-auto">
             <AnimateOnScroll>
               <div className="text-center mb-12">
-                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Why DEER COFFEE</span>
+                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Why DOLORES COFFEE</span>
                 <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
-                  Tại sao chọn máy DEER COFFEE?
+                  Tại sao chọn máy DOLORES COFFEE?
                 </h2>
               </div>
             </AnimateOnScroll>

@@ -37,8 +37,34 @@ const solutions = [
 
 export function ProductShowcase() {
   return (
-    <section id="solutions" className="bg-white py-24 px-6">
-      <div className="max-w-[1320px] mx-auto">
+    <section id="solutions" className="relative bg-white py-24 px-6 overflow-hidden border-b border-[#ABBED1]/20">
+      {/* ── Ambient Blue Glow: Ánh xanh tỏa sáng mờ dần từ 2 bên vào trong ── */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 35% 80% at 0% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            radial-gradient(ellipse 35% 80% at 100% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
+            linear-gradient(to right, rgba(6, 113, 224, 0.15) 0%, rgba(6, 113, 224, 0.05) 16%, rgba(6, 113, 224, 0.01) 32%, transparent 45%, transparent 55%, rgba(6, 113, 224, 0.01) 68%, rgba(6, 113, 224, 0.05) 84%, rgba(6, 113, 224, 0.15) 100%)
+          `
+        }}
+      />
+
+      {/* ── Blue Grid: Bold at outer edges, fading softly in the center ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, #0671E0 1px, transparent 1px),
+            linear-gradient(to bottom, #0671E0 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-[1320px] mx-auto">
         <AnimateOnScroll>
           <div className="text-center mb-14">
             <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">
@@ -51,7 +77,7 @@ export function ProductShowcase() {
               Giải pháp toàn diện cho doanh nghiệp
             </h2>
             <p className="text-[#89939E] max-w-[540px] mx-auto" style={{ fontSize: "18px", lineHeight: "28px" }}>
-              Từ cho thuê máy đến tích hợp Cloud &amp; IoT — DEER COFFEE cung cấp hệ sinh thái
+              Từ cho thuê máy đến tích hợp Cloud &amp; IoT — DOLORES COFFEE cung cấp hệ sinh thái
               quản lý cà phê đầy đủ nhất.
             </p>
           </div>

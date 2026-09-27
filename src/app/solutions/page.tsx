@@ -80,7 +80,7 @@ export default function SolutionsPage() {
                 className="text-[#89939E] max-w-[600px] mb-10"
                 style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}
               >
-                DEER COFFEE cung cấp hệ sinh thái đầy đủ từ cho thuê máy, tích hợp IoT đến
+                DOLORES COFFEE cung cấp hệ sinh thái đầy đủ từ cho thuê máy, tích hợp IoT đến
                 quản lý vận hành thông minh — tất cả trong một nền tảng duy nhất.
               </p>
             </AnimateOnScroll>
