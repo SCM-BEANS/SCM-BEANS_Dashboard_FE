@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { User, Menu, X } from "lucide-react";
 
@@ -59,40 +58,22 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
             : "bg-white/95 backdrop-blur-xl shadow-[0px_6px_20px_rgba(171,190,209,0.3)] border-b border-[#ABBED1]/30"
         }`}
       >
-        <div className="max-w-[1440px] mx-auto px-6 sm:px-10 h-[88px] flex items-center justify-between">
-
-          {/* ── Logo ── */}
-          <Link
-            href="/"
-            className="flex items-center gap-3.5 group shrink-0"
-            id="nav-logo"
-          >
-            <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 shadow-[0px_4px_12px_rgba(0,0,0,0.25)] border border-white/10 group-hover:scale-105 group-hover:border-[#0671E0]/50 transition-all duration-300">
-              <Image
-                src="/images/logo.jpg"
-                alt="DOLORES COFFEE Logo"
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-            <div className="flex flex-col leading-none">
-              <span className={`font-bold text-xl tracking-[0.1em] transition-colors duration-500 font-serif ${
-                isDarkHeader ? "text-white group-hover:text-[#38bdf8]" : "text-[#18191F] group-hover:text-[#0671E0]"
-              }`}>
-                DOLORES
-              </span>
-              <span className={`font-medium text-[11px] tracking-[0.24em] uppercase mt-1 transition-colors duration-500 ${
-                isDarkHeader ? "text-white/75" : "text-[#89939E]"
-              }`}>
-                COFFEE
-              </span>
-            </div>
+        <div className="relative max-w-[1440px] mx-auto px-6 sm:px-10 h-[88px] flex items-center justify-between">
+          <Link href="/" className="group flex shrink-0 flex-col leading-none" id="nav-logo" aria-label="DOLORES COFFEE">
+            <span className={`font-serif text-xl font-bold tracking-[0.1em] transition-colors duration-500 ${
+              isDarkHeader ? "text-white group-hover:text-[#38bdf8]" : "text-[#18191F] group-hover:text-[#0671E0]"
+            }`}>
+              DOLORES
+            </span>
+            <span className={`mt-1 text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-500 ${
+              isDarkHeader ? "text-white/75" : "text-[#89939E]"
+            }`}>
+              COFFEE
+            </span>
           </Link>
 
           {/* ── Desktop Nav ── */}
-          <div className="hidden md:flex items-center gap-1.5 lg:gap-2.5">
+          <div className="hidden md:flex items-center gap-1.5 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:gap-2.5">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.name}

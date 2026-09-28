@@ -13,12 +13,23 @@ export function HeroSection({
   onVideoEnded 
 }: HeroSectionProps) {
   const [internalVideoEnded, setInternalVideoEnded] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const transitionRef = useRef<HTMLDivElement>(null);
 
   const isEnded = externalVideoEnded !== undefined ? externalVideoEnded : internalVideoEnded;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
 
   const handleVideoEnded = useCallback(() => {
     if (videoRef.current) {
@@ -59,12 +70,33 @@ export function HeroSection({
   const [isScrolledOut, setIsScrolledOut] = useState(false);
 
   useEffect(() => {
+    let frame = 0;
     const handleScroll = () => {
       setIsScrolledOut(window.scrollY > 60);
+
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const section = sectionRef.current;
+        const transition = transitionRef.current;
+        if (!section || !transition) return;
+
+        const viewportHeight = window.innerHeight;
+        const fadeHeight = Math.max(160, Math.min(320, viewportHeight * 0.24));
+        const sectionBottom = section.getBoundingClientRect().bottom + window.scrollY;
+        const fadeStart = sectionBottom - fadeHeight * 2;
+        const progress = Math.max(0, Math.min(1, (window.scrollY - fadeStart) / fadeHeight));
+        transition.style.opacity = String(progress);
+      });
     };
 
+    handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, []);
 
   const isVisible = isEnded && !isScrolledOut;
@@ -83,19 +115,34 @@ export function HeroSection({
 
   return (
     <section 
+      ref={sectionRef}
       id="home" 
       className="relative w-full min-h-screen flex items-center overflow-hidden bg-black"
     >
       {/* ── Background Video: 100% natural, crisp 1080p, no blur, no darkening ── */}
       <video
         ref={videoRef}
-        src="/video/espresso_intro.mp4?v=1080p"
+        src={isMobileViewport === null ? undefined : isMobileViewport ? "/video/espresso_intro_mobile.mp4" : "/video/espresso_intro.mp4?v=1080p"}
         autoPlay
         muted
         playsInline
         onEnded={handleVideoEnded}
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
       />
+
+      <div
+        ref={transitionRef}
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[clamp(160px,24vh,320px)]"
+        aria-hidden="true"
+        style={{ opacity: 0 }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(180deg, transparent 0%, rgba(6, 113, 224, .035) 34%, rgba(232, 243, 255, .68) 76%, #F9FCFF 100%)",
+          }}
+        />
+      </div>
 
       {/* ── Minimalist Video Controls ── */}
       <div className={`absolute z-30 bottom-6 right-6 sm:bottom-8 sm:right-8 transition-opacity duration-500 ${isScrolledOut ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
@@ -120,15 +167,15 @@ export function HeroSection({
       </div>
 
       {/* ── Main Content: Clean, Luxurious, Minimalist ── */}
-      <div className="relative z-20 w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-[100px] pb-16 min-h-screen flex items-center">
+      <div className="relative z-20 w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-[100px] pb-16 min-h-screen flex items-start md:items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Left Content Column: Slides in when video ends, slides out when scrolling down */}
           <div 
             className={`w-full lg:col-span-8 xl:col-span-7 flex flex-col justify-center transition-all duration-700 ease-out ${
               isVisible 
-                ? "opacity-100 translate-x-0 pointer-events-auto" 
-                : "opacity-0 -translate-x-16 pointer-events-none"
+                ? "opacity-100 translate-x-0 translate-y-0 pointer-events-auto"
+                : "opacity-0 -translate-y-12 md:translate-y-0 md:-translate-x-16 pointer-events-none"
             }`}
           >
             <div className="max-w-[720px]">
