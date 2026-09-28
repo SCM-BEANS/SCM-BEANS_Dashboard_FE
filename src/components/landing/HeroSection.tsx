@@ -8,9 +8,9 @@ interface HeroSectionProps {
   onVideoEnded?: () => void;
 }
 
-export function HeroSection({ 
-  videoEnded: externalVideoEnded, 
-  onVideoEnded 
+export function HeroSection({
+  videoEnded: externalVideoEnded,
+  onVideoEnded
 }: HeroSectionProps) {
   const [internalVideoEnded, setInternalVideoEnded] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
@@ -50,7 +50,7 @@ export function HeroSection({
   const handleReplay = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
       setInternalVideoEnded(false);
     }
   }, []);
@@ -114,9 +114,9 @@ export function HeroSection({
   }, [isEnded, handleVideoEnded]);
 
   return (
-    <section 
+    <section
       ref={sectionRef}
-      id="home" 
+      id="home"
       className="relative w-full min-h-screen flex items-center overflow-hidden bg-black"
     >
       {/* ── Background Video: 100% natural, crisp 1080p, no blur, no darkening ── */}
@@ -139,7 +139,7 @@ export function HeroSection({
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(180deg, transparent 0%, rgba(6, 113, 224, .035) 34%, rgba(232, 243, 255, .68) 76%, #F9FCFF 100%)",
+            background: "linear-gradient(180deg, transparent 0%, rgba(114, 28, 36, .035) 34%, rgba(253, 251, 247, .75) 76%, #FDFBF7 100%)",
           }}
         />
       </div>
@@ -169,17 +169,16 @@ export function HeroSection({
       {/* ── Main Content: Clean, Luxurious, Minimalist ── */}
       <div className="relative z-20 w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-12 xl:px-16 pt-[100px] pb-16 min-h-screen flex items-start md:items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
+
           {/* Left Content Column: Slides in when video ends, slides out when scrolling down */}
-          <div 
-            className={`w-full lg:col-span-8 xl:col-span-7 flex flex-col justify-center transition-all duration-700 ease-out ${
-              isVisible 
+          <div
+            className={`w-full lg:col-span-8 xl:col-span-7 flex flex-col justify-center transition-all duration-700 ease-out ${isVisible
                 ? "opacity-100 translate-x-0 translate-y-0 pointer-events-auto"
                 : "opacity-0 -translate-y-12 md:translate-y-0 md:-translate-x-16 pointer-events-none"
-            }`}
+              }`}
           >
             <div className="max-w-[720px]">
-              
+
               {/* Refined Luxury Label with Warm Amber Accent */}
               <div className="inline-flex items-center gap-3 mb-6">
                 <span className="w-8 h-[1.5px] bg-[#D4A373]" />
@@ -207,8 +206,8 @@ export function HeroSection({
               {/* Email Form: Warm Crema Gold & Frosted Glass */}
               <div className="max-w-[500px]">
                 {!isSubmitted ? (
-                  <form 
-                    onSubmit={handleSubmit} 
+                  <form
+                    onSubmit={handleSubmit}
                     className="relative flex items-center p-1.5 rounded-full bg-black/50 backdrop-blur-2xl border border-white/25 hover:border-[#D4A373]/60 focus-within:border-[#E8B884] shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-all duration-300"
                   >
                     <input

@@ -26,47 +26,48 @@
   .dashboard-bg {
     background-size: 8px 8px;
     background-image: 
-      linear-gradient(to right, rgba(60,36,21,0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(60,36,21,0.06) 1px, transparent 1px);
+      linear-gradient(to right, rgba(114, 28, 36, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(114, 28, 36, 0.04) 1px, transparent 1px);
   }
 
   /* ===== Landing Page Utilities ===== */
 
-  /* Landing gradient backgrounds — Figma-aligned light/blue theme */
+  /* Landing gradient backgrounds — Dolores UI warm cream & wine red theme */
   .landing-gradient-light {
-    background: linear-gradient(180deg, #F5F7FA 0%, #EEF2F8 50%, #F5F7FA 100%);
+    background: linear-gradient(180deg, #FDFBF7 0%, #FAF5EE 50%, #FDFBF7 100%);
   }
 
   .landing-gradient-dark {
     background: linear-gradient(180deg, #18191F 0%, #263238 50%, #18191F 100%);
   }
 
-  .landing-gradient-blue {
-    background: linear-gradient(135deg, #0671E0 0%, #0557B0 100%);
+  .landing-gradient-blue,
+  .landing-gradient-hero {
+    background: linear-gradient(135deg, #721C24 0%, #52141A 100%);
   }
 
-  /* Glassmorphism card — light theme */
+  /* Glassmorphism card — Dolores light theme */
   .glass-card {
-    background: rgba(255, 255, 255, 0.80);
+    background: rgba(255, 255, 255, 0.90);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(6, 113, 224, 0.10);
+    border: 1px solid rgba(114, 28, 36, 0.12);
   }
 
   /* Figma shadow tokens */
-  .shadow-figma-2 { box-shadow: 0px 2px 4px 0px rgba(171, 190, 209, 0.6); }
-  .shadow-figma-4 { box-shadow: 0px 4px 8px 0px rgba(171, 190, 209, 0.4); }
-  .shadow-figma-8 { box-shadow: 0px 8px 16px 0px rgba(171, 190, 209, 0.4); }
-  .shadow-figma-16 { box-shadow: 0px 16px 32px 0px rgba(171, 190, 209, 0.3); }
+  .shadow-figma-2 { box-shadow: 0px 2px 4px 0px rgba(114, 28, 36, 0.06); }
+  .shadow-figma-4 { box-shadow: 0px 4px 8px 0px rgba(114, 28, 36, 0.08); }
+  .shadow-figma-8 { box-shadow: 0px 8px 16px 0px rgba(114, 28, 36, 0.10); }
+  .shadow-figma-16 { box-shadow: 0px 16px 32px 0px rgba(114, 28, 36, 0.12); }
 
-  /* Landing button styles — Figma Brand/Primary = #0671E0 */
+  /* Landing button styles — Dolores Brand/Primary = #721C24 */
   .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     padding: 12px 24px;
-    background-color: #0671E0;
+    background-color: #721C24;
     color: #ffffff;
     font-weight: 600;
     font-size: 16px;
@@ -76,8 +77,8 @@
     transition: background-color 0.2s ease, transform 0.15s ease;
     text-decoration: none;
   }
-  .btn-primary:hover { background-color: #0557B0; transform: translateY(-1px); }
-  .btn-primary:active { background-color: #0446A0; transform: translateY(0); }
+  .btn-primary:hover { background-color: #5A141A; transform: translateY(-1px); }
+  .btn-primary:active { background-color: #420E13; transform: translateY(0); }
 
   .btn-secondary {
     display: inline-flex;
@@ -86,16 +87,16 @@
     gap: 8px;
     padding: 12px 24px;
     background-color: transparent;
-    color: #263238;
+    color: rgba(0, 0, 0, 0.87);
     font-weight: 600;
     font-size: 16px;
     border-radius: 4px;
-    border: 1.5px solid #ABBED1;
+    border: 1.5px solid #E0E0E0;
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;
   }
-  .btn-secondary:hover { background-color: #F5F7FA; border-color: #263238; }
+  .btn-secondary:hover { background-color: #FDFBF7; border-color: #721C24; color: #721C24; }
 
   .btn-outline-blue {
     display: inline-flex;
@@ -104,16 +105,16 @@
     gap: 8px;
     padding: 12px 24px;
     background-color: transparent;
-    color: #0671E0;
+    color: #721C24;
     font-weight: 600;
     font-size: 16px;
     border-radius: 4px;
-    border: 1.5px solid #0671E0;
+    border: 1.5px solid #721C24;
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none;
   }
-  .btn-outline-blue:hover { background-color: #0671E0; color: #ffffff; }
+  .btn-outline-blue:hover { background-color: #721C24; color: #ffffff; }
 }
 
 @layer utilities {

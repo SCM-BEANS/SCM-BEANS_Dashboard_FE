@@ -5,6 +5,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers, Users, ShieldAlert, Store } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -71,8 +72,14 @@ export const Sidebar = () => {
                   <p className="font-mono text-xs text-on-surface-variant uppercase">{t("system_status")} {status.status === 'Online' ? t('online') : t('offline')}</p>
                 </div>
               </div>
-              <div className="w-10 h-10 bg-primary text-on-primary flex items-center justify-center rounded-sm">
-                <Coffee className="w-6 h-6" />
+              <div className="w-11 h-11 bg-white border border-[#E0E0E0] rounded-xl flex items-center justify-center p-1 shadow-sm overflow-hidden shrink-0">
+                <Image
+                  src="/images/logo.png"
+                  alt="Dolores Logo"
+                  width={44}
+                  height={44}
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
 

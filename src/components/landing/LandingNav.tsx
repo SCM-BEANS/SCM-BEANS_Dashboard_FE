@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { User, Menu, X } from "lucide-react";
 
@@ -55,21 +56,25 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
           isDarkHeader
             ? "bg-black/55 backdrop-blur-xl border-b border-white/15 shadow-none"
-            : "bg-white/95 backdrop-blur-xl shadow-[0px_6px_20px_rgba(171,190,209,0.3)] border-b border-[#ABBED1]/30"
+            : "bg-[#FDFBF7]/95 backdrop-blur-xl shadow-[0px_6px_20px_rgba(114,28,36,0.06)] border-b border-[#E0E0E0]"
         }`}
       >
         <div className="relative max-w-[1440px] mx-auto px-6 sm:px-10 h-[88px] flex items-center justify-between">
-          <Link href="/" className="group flex shrink-0 flex-col leading-none" id="nav-logo" aria-label="DOLORES COFFEE">
-            <span className={`font-serif text-xl font-bold tracking-[0.1em] transition-colors duration-500 ${
-              isDarkHeader ? "text-white group-hover:text-[#38bdf8]" : "text-[#18191F] group-hover:text-[#0671E0]"
+          <Link href="/" className="group flex shrink-0 items-center" id="nav-logo" aria-label="DOLORES COFFEE">
+            <div className={`relative overflow-hidden transition-all duration-300 group-hover:scale-105 rounded-2xl p-1.5 ${
+              isDarkHeader 
+                ? "bg-white/95 shadow-[0_4px_24px_rgba(0,0,0,0.45)] border border-white/20" 
+                : "bg-white shadow-[0_4px_16px_rgba(114,28,36,0.08)] border border-[#E0E0E0]"
             }`}>
-              DOLORES
-            </span>
-            <span className={`mt-1 text-[11px] font-medium uppercase tracking-[0.24em] transition-colors duration-500 ${
-              isDarkHeader ? "text-white/75" : "text-[#89939E]"
-            }`}>
-              COFFEE
-            </span>
+              <Image
+                src="/images/logo.png"
+                alt="DOLORES COFFEE"
+                width={80}
+                height={80}
+                priority
+                className="h-14 w-14 sm:h-[68px] sm:w-[68px] object-contain rounded-xl"
+              />
+            </div>
           </Link>
 
           {/* ── Desktop Nav ── */}
@@ -81,7 +86,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
                 className={`text-[15px] font-semibold tracking-wide transition-all duration-300 px-4 py-2 rounded-full relative group ${
                   isDarkHeader
                     ? "text-white/85 hover:text-white hover:bg-white/10"
-                    : "text-[#4D4D4D] hover:text-[#0671E0] hover:bg-[#0671E0]/8"
+                    : "text-[rgba(0,0,0,0.87)] hover:text-[#721C24] hover:bg-[#721C24]/8"
                 }`}
                 id={`nav-${item.name.toLowerCase()}`}
               >
@@ -98,7 +103,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
               className={`flex items-center gap-2 text-[15px] font-semibold px-6 py-2.5 transition-all duration-300 rounded-full ${
                 isDarkHeader
                   ? "text-white border border-white/25 bg-white/5 hover:bg-white/15 hover:border-white/60 shadow-sm"
-                  : "text-[#18191F] border border-[#ABBED1]/60 bg-transparent hover:bg-[#F5F7FA] hover:border-[#0671E0] hover:text-[#0671E0] shadow-sm"
+                  : "text-[rgba(0,0,0,0.87)] border border-[#E0E0E0] bg-transparent hover:bg-white hover:border-[#721C24] hover:text-[#721C24] shadow-sm"
               }`}
             >
               <User size={15} />
@@ -107,7 +112,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
             <Link
               href="/login"
               id="nav-getstarted-btn"
-              className="text-[15px] font-semibold text-white bg-gradient-to-r from-[#0671E0] to-[#005bbd] hover:from-[#0557B0] hover:to-[#004a9e] px-7 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_16px_rgba(6,113,224,0.35)] hover:shadow-[0_6px_22px_rgba(6,113,224,0.48)] hover:-translate-y-0.5 active:translate-y-0"
+              className="text-[15px] font-semibold text-white bg-gradient-to-r from-[#721C24] to-[#5A141A] hover:from-[#5A141A] hover:to-[#420E13] px-7 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_16px_rgba(114,28,36,0.3)] hover:shadow-[0_6px_22px_rgba(114,28,36,0.45)] hover:-translate-y-0.5 active:translate-y-0"
             >
               Get Started
             </Link>
@@ -116,7 +121,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
           {/* ── Mobile hamburger ── */}
           <button
             className={`md:hidden p-2.5 rounded-xl transition-colors duration-300 ${
-              isDarkHeader ? "text-white hover:bg-white/10" : "text-[#263238] hover:bg-gray-100"
+              isDarkHeader ? "text-white hover:bg-white/10" : "text-[#18191F] hover:bg-gray-100"
             }`}
             onClick={toggleMenu}
             aria-label="Toggle menu"
@@ -135,25 +140,25 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
 
       {/* ── Mobile Menu Overlay ── */}
       <div
-        className={`fixed inset-0 z-40 bg-white transition-all duration-300 md:hidden flex flex-col pt-[88px] ${
+        className={`fixed inset-0 z-40 bg-[#FDFBF7] transition-all duration-300 md:hidden flex flex-col pt-[88px] ${
           menuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="flex flex-col px-6 py-6 gap-1 border-b border-[#F5F7FA]">
+        <div className="flex flex-col px-6 py-6 gap-1 border-b border-[#E0E0E0]">
           {NAV_ITEMS.map((item, i) => (
             <Link
               key={item.name}
               href={item.href}
               onClick={closeMenu}
-              className={`flex items-center justify-between text-base font-semibold text-[#263238] hover:text-[#0671E0] py-4 border-b border-[#F5F7FA] last:border-0 transition-all duration-200 ${
+              className={`flex items-center justify-between text-base font-semibold text-[rgba(0,0,0,0.87)] hover:text-[#721C24] py-4 border-b border-[#E0E0E0]/60 last:border-0 transition-all duration-200 ${
                 menuOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"
               }`}
               style={{ transitionDelay: menuOpen ? `${i * 50}ms` : "0ms" }}
             >
               {item.name}
-              <span className="text-[#ABBED1] text-lg">›</span>
+              <span className="text-[#9E9E9E] text-lg">›</span>
             </Link>
           ))}
         </div>
@@ -161,14 +166,14 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
           <Link
             href="/login"
             onClick={closeMenu}
-            className="text-center py-3.5 border border-[#ABBED1] text-[#263238] rounded-full font-semibold text-sm hover:bg-[#F5F7FA] transition-all"
+            className="text-center py-3.5 border border-[#E0E0E0] text-[rgba(0,0,0,0.87)] rounded-full font-semibold text-sm hover:bg-white transition-all"
           >
             Login
           </Link>
           <Link
             href="/login"
             onClick={closeMenu}
-            className="text-center py-3.5 bg-gradient-to-r from-[#0671E0] to-[#005bbd] text-white rounded-full font-semibold text-sm shadow-[0_4px_14px_rgba(6,113,224,0.35)] transition-all"
+            className="text-center py-3.5 bg-gradient-to-r from-[#721C24] to-[#5A141A] text-white rounded-full font-semibold text-sm shadow-[0_4px_14px_rgba(114,28,36,0.3)] transition-all"
           >
             Get Started
           </Link>

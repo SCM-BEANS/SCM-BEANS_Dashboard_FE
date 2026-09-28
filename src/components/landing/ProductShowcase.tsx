@@ -6,39 +6,74 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 
 function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
+  if (mobile) {
+    return (
+      <article className="relative flex w-full flex-col items-center overflow-hidden rounded-[28px] border border-[#721C24]/35 bg-white/90 p-6 sm:p-8 text-center text-[#18191F] shadow-[0_24px_64px_rgba(114,28,36,0.10)]">
+        {/* Background Gradients & Glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 70% 60% at 50% 60%, rgba(114, 28, 36, .12) 0%, rgba(140, 43, 52, .06) 40%, transparent 80%), linear-gradient(135deg, #FFFFFF 0%, #FDFBF7 50%, #FAF7F2 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(114,28,36,.18) 1px, transparent 1.5px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        {/* Content Header */}
+        <div className="relative z-10 flex flex-col items-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#721C24]/15 bg-white/80 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#721C24] shadow-sm backdrop-blur-md">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#721C24]/35" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#721C24]" />
+            </span>
+            Cloud Connection
+          </span>
+          <h3 className="mt-4 font-serif text-3xl font-extrabold leading-tight tracking-tight text-[#721C24]">
+            Theo dõi <span className="font-medium italic text-[#721C24]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>mọi lúc</span>
+          </h3>
+          <p className="mt-3 max-w-[340px] text-xs font-normal leading-relaxed text-[#757575]">
+            Thống kê hoạt động qua dashboard kết nối máy pha cà phê.
+          </p>
+          <span className="mt-4 block h-[3px] w-12 rounded-full bg-gradient-to-r from-[#721C24] to-[#8C2B34]" aria-hidden="true" />
+        </div>
+
+        {/* Floating Coffee Machine Image */}
+        <div className="relative z-10 mt-6 h-[320px] sm:h-[380px] w-full max-w-[360px]">
+          <Image
+            src="/images/coffee-machine-float.png"
+            alt="Máy pha cà phê DOLORES COFFEE"
+            fill
+            priority
+            sizes="90vw"
+            className="object-contain object-center drop-shadow-[0_20px_35px_rgba(114,28,36,0.18)]"
+          />
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
-      className={`${mobile
-        ? "relative flex min-h-[600px] w-full flex-col items-center justify-center rounded-[28px] border border-[#0671E0]/35 bg-white/70 shadow-[0_24px_64px_rgba(6,113,224,0.12)]"
-        : "product-story-feature absolute z-20 hidden items-center justify-center md:flex"
-      } overflow-hidden text-center text-[#13233A]`}
-      style={mobile ? {
-        "--feature-title-size": "40px",
-        "--feature-subtitle-size": "12px",
-        "--copy-x": "50%",
-        "--copy-y": "29%",
-        "--copy-width": "92%",
-        "--copy-reveal-opacity": 1,
-        "--copy-reveal-y": "0px",
-        "--machine-x": "55%",
-        "--machine-y": "76%",
-        "--machine-width": "76%",
-        "--machine-height": "65%",
-        "--machine-opacity": 1,
-      } as CSSProperties : {
+      className="product-story-feature absolute z-20 hidden items-center justify-center md:flex overflow-hidden text-center text-[#18191F]"
+      style={{
         left: "var(--feature-x, 0px)",
         top: "var(--feature-y, 0px)",
         width: "var(--feature-width, 100vw)",
         height: "var(--feature-height, 100svh)",
         borderRadius: "var(--feature-radius, 0px)",
-        border: "var(--feature-border-width, 0px) solid rgba(6, 113, 224, .42)",
-        boxShadow: "0 24px 72px rgba(6, 113, 224, var(--feature-shadow-opacity, 0))",
+        border: "var(--feature-border-width, 0px) solid rgba(114, 28, 36, .35)",
+        boxShadow: "0 24px 72px rgba(114, 28, 36, var(--feature-shadow-opacity, 0))",
       }}
     >
       <div
         className="absolute inset-0"
         style={{
-          background: "radial-gradient(ellipse 42% 62% at 78% 57%, rgba(6, 113, 224, .20) 0%, rgba(88, 167, 255, .13) 38%, transparent 76%), radial-gradient(ellipse 70% 75% at 50% 108%, rgba(123, 183, 255, .20) 0%, transparent 70%), radial-gradient(ellipse 55% 75% at 8% 4%, #ffffff 0%, rgba(255, 255, 255, .72) 42%, transparent 100%), linear-gradient(125deg, #F9FCFF 0%, #F0F7FF 48%, #E4F0FF 100%)",
+          background: "radial-gradient(ellipse 42% 62% at 78% 57%, rgba(114, 28, 36, .12) 0%, rgba(140, 43, 52, .08) 38%, transparent 76%), radial-gradient(ellipse 70% 75% at 50% 108%, rgba(162, 50, 61, .10) 0%, transparent 70%), radial-gradient(ellipse 55% 75% at 8% 4%, #ffffff 0%, rgba(253, 251, 247, .85) 42%, transparent 100%), linear-gradient(125deg, #FFFFFF 0%, #FDFBF7 48%, #FAF7F2 100%)",
         }}
       />
       <div
@@ -48,9 +83,9 @@ function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
         }}
       />
       <div
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-60"
         style={{
-          backgroundImage: "radial-gradient(circle, rgba(6,113,224,.22) 1px, transparent 1.5px), radial-gradient(circle, rgba(6,113,224,.13) 1px, transparent 1.5px)",
+          backgroundImage: "radial-gradient(circle, rgba(114,28,36,.18) 1px, transparent 1.5px), radial-gradient(circle, rgba(114,28,36,.10) 1px, transparent 1.5px)",
           backgroundSize: "28px 28px, 42px 42px",
           backgroundPosition: "7% 18%, 91% 72%",
           maskImage: "radial-gradient(ellipse at 82% 53%, #000 0%, transparent 60%)",
@@ -58,19 +93,19 @@ function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
         }}
       />
       <svg className="pointer-events-none absolute inset-0 hidden h-full w-full md:block" viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M710 120C860 40 1040 56 1150 146C1260 236 1292 374 1218 480" fill="none" stroke="#0671E0" strokeOpacity=".13" strokeWidth="1.5" />
-        <path d="M675 92C850 0 1060 22 1188 128C1310 230 1340 390 1268 510" fill="none" stroke="#0671E0" strokeOpacity=".08" strokeWidth="1" />
-        <path d="M570 780C750 690 980 700 1135 790C1218 838 1286 850 1384 826" fill="none" stroke="#0671E0" strokeOpacity=".10" strokeWidth="1.2" />
+        <path d="M710 120C860 40 1040 56 1150 146C1260 236 1292 374 1218 480" fill="none" stroke="#721C24" strokeOpacity=".12" strokeWidth="1.5" />
+        <path d="M675 92C850 0 1060 22 1188 128C1310 230 1340 390 1268 510" fill="none" stroke="#721C24" strokeOpacity=".08" strokeWidth="1" />
+        <path d="M570 780C750 690 980 700 1135 790C1218 838 1286 850 1384 826" fill="none" stroke="#721C24" strokeOpacity=".10" strokeWidth="1.2" />
       </svg>
       <div
-        className="pointer-events-none absolute left-[69%] top-[54%] aspect-square w-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#0671E0]/[0.10]"
+        className="pointer-events-none absolute left-[69%] top-[54%] aspect-square w-[68%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#721C24]/[0.10]"
         aria-hidden="true"
       >
         <span className="absolute inset-[9%] rounded-full border border-white/70" />
-        <span className="absolute inset-[19%] rounded-full border border-[#0671E0]/[0.08]" />
+        <span className="absolute inset-[19%] rounded-full border border-[#721C24]/[0.08]" />
       </div>
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#0671E0]/25 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#721C24]/20 to-transparent"
         aria-hidden="true"
       />
       <div
@@ -85,7 +120,7 @@ function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
         }}
       >
         <Image
-          src="/images/coffee-machine-float-20260928.png"
+          src="/images/coffee-machine-float.png"
           alt="Máy pha cà phê DOLORES COFFEE"
           fill
           priority
@@ -98,26 +133,26 @@ function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
         style={{ left: "var(--copy-x, 50%)", top: "var(--copy-y, 50%)", width: "var(--copy-width, 88%)" }}
       >
         <div style={{ opacity: "var(--copy-reveal-opacity, 1)", transform: "translateY(var(--copy-reveal-y, 0px))" }}>
-          <span className="inline-flex items-center gap-2.5 rounded-full border border-[#0671E0]/15 bg-white/65 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#0671E0] shadow-[0_8px_28px_rgba(6,113,224,0.08)] backdrop-blur-md sm:text-xs">
+          <span className="inline-flex items-center gap-2.5 rounded-full border border-[#721C24]/15 bg-white/80 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#721C24] shadow-[0_8px_28px_rgba(114,28,36,0.06)] backdrop-blur-md sm:text-xs">
             <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0671E0]/35" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#0671E0]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#721C24]/35" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#721C24]" />
             </span>
             Cloud Connection
           </span>
           <h3
-            className="mt-6 font-extrabold leading-[0.98] tracking-[-0.065em] text-[#13233A]"
+            className="mt-6 font-serif font-extrabold leading-[0.98] tracking-[-0.04em] text-[#721C24]"
             style={{ fontSize: "clamp(34px, var(--feature-title-size, 92px), 92px)" }}
           >
-            Theo dõi <span className="font-medium italic text-[#0671E0]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>mọi lúc</span>
+            Theo dõi <span className="font-medium italic text-[#721C24]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>mọi lúc</span>
           </h3>
           <p
-            className="mt-5 whitespace-nowrap font-normal leading-[1.65] tracking-[0.005em] text-[#52657D]"
+            className="mt-5 whitespace-nowrap font-normal leading-[1.65] tracking-[0.005em] text-[#757575]"
             style={{ fontSize: "clamp(10px, var(--feature-subtitle-size, 24px), 24px)" }}
           >
             Thống kê hoạt động qua dashboard kết nối máy pha cà phê.
           </p>
-          <span className="mt-7 block h-[3px] w-14 rounded-full bg-gradient-to-r from-[#0671E0] to-[#83BBFF]" aria-hidden="true" />
+          <span className="mt-7 block h-[3px] w-14 rounded-full bg-gradient-to-r from-[#721C24] to-[#8C2B34]" aria-hidden="true" />
         </div>
       </div>
     </article>
@@ -127,17 +162,17 @@ function CloudConnectionCard({ mobile = false }: { mobile?: boolean }) {
 function StoryHeading() {
   return (
     <div className="text-center" aria-hidden="true">
-      <span className="inline-flex items-center gap-2 rounded-full border border-[#0671E0]/15 bg-white/80 px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.24em] text-[#0671E0] shadow-[0_8px_24px_rgba(6,113,224,.08)] backdrop-blur-sm sm:text-[10px]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#0671E0] shadow-[0_0_10px_rgba(6,113,224,.5)]" />
+      <span className="inline-flex items-center gap-2 rounded-full border border-[#721C24]/15 bg-white/90 px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.24em] text-[#721C24] shadow-[0_8px_24px_rgba(114,28,36,.06)] backdrop-blur-sm sm:text-[10px]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#721C24] shadow-[0_0_10px_rgba(114,28,36,.4)]" />
         Giải pháp cho quán cà phê
       </span>
-      <span className="mt-2 block whitespace-nowrap text-[23px] font-extrabold leading-tight tracking-[-0.05em] text-[#13233A] sm:text-[27px] lg:text-[32px]">
+      <span className="mt-2 block whitespace-nowrap text-[23px] font-extrabold leading-tight tracking-[-0.04em] text-[#18191F] sm:text-[27px] lg:text-[32px]">
         Tối ưu đầu tư,
-        <span className="ml-2 bg-gradient-to-r from-[#0671E0] via-[#2588F0] to-[#69AEFF] bg-clip-text font-semibold italic text-transparent">
+        <span className="ml-2 bg-gradient-to-r from-[#721C24] via-[#8C2B34] to-[#A2323D] bg-clip-text font-semibold italic text-transparent">
           làm chủ vận hành.
         </span>
       </span>
-      <span className="mx-auto mt-2.5 block h-[3px] w-12 rounded-full bg-gradient-to-r from-[#0671E0] to-[#83BBFF] shadow-[0_0_14px_rgba(6,113,224,.24)]" />
+      <span className="mx-auto mt-2.5 block h-[3px] w-12 rounded-full bg-gradient-to-r from-[#721C24] to-[#8C2B34] shadow-[0_0_14px_rgba(114,28,36,.2)]" />
     </div>
   );
 }
@@ -145,15 +180,15 @@ function StoryHeading() {
 function CardArtwork({ imageSrc, imageAlt }: { imageSrc?: string; imageAlt?: string }) {
   return (
     <div
-      className="group/art relative min-h-0 flex-1 overflow-hidden rounded-xl border border-[#0671E0]/20"
+      className="group/art relative min-h-0 flex-1 overflow-hidden rounded-xl border border-[#E0E0E0]"
       style={{
-        background: "radial-gradient(ellipse at 78% 24%, rgba(6,113,224,.12) 0%, transparent 44%), linear-gradient(145deg, #F4F9FF 0%, #EAF3FF 100%)",
+        background: "radial-gradient(ellipse at 78% 24%, rgba(114,28,36,.08) 0%, transparent 44%), linear-gradient(145deg, #FAF7F2 0%, #F5EBE6 100%)",
       }}
       aria-hidden={imageSrc ? undefined : true}
     >
-      <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full border border-[#0671E0]/10" />
+      <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full border border-[#721C24]/10" />
       <span className="pointer-events-none absolute -right-5 -top-7 h-28 w-28 rounded-full border border-white/80" />
-      <span className="pointer-events-none absolute bottom-4 left-4 h-2 w-2 rounded-full bg-[#0671E0]/30 shadow-[12px_-7px_0_rgba(6,113,224,.16),24px_1px_0_rgba(6,113,224,.12)]" />
+      <span className="pointer-events-none absolute bottom-4 left-4 h-2 w-2 rounded-full bg-[#721C24]/25 shadow-[12px_-7px_0_rgba(114,28,36,.12),24px_1px_0_rgba(114,28,36,.08)]" />
       {imageSrc && (
         <Image
           src={imageSrc}
@@ -180,7 +215,7 @@ function ImagePlaceholderCard({
 }) {
   return (
     <article
-      className="product-story-support absolute z-10 flex flex-col overflow-hidden rounded-2xl border border-[#0671E0]/40 bg-white p-3 shadow-[0_16px_40px_rgba(6,113,224,.10)] md:p-4"
+      className="product-story-support absolute z-10 flex flex-col overflow-hidden rounded-2xl border border-[#E0E0E0] bg-white p-3 shadow-[0_16px_40px_rgba(114,28,36,.06)] md:p-4"
       style={{
         left: "var(--support-x, 0px)",
         top: index === 0 ? "var(--support-top-y, 0px)" : "var(--support-bottom-y, 0px)",
@@ -190,19 +225,29 @@ function ImagePlaceholderCard({
         transform: "translateY(var(--supporting-shift, 30px))",
       }}
     >
-      <span className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#0671E0]/[0.06] blur-2xl" />
+      <span className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#721C24]/[0.04] blur-2xl" />
       <CardArtwork imageSrc={imageSrc} imageAlt={imageAlt} />
-      <h3 className="relative px-2 pb-1 pt-3 text-sm font-semibold text-[#18191F]">{title}</h3>
+      <h3 className="relative px-2 pb-1 pt-3 text-sm font-semibold text-[rgba(0,0,0,0.87)]">{title}</h3>
     </article>
   );
 }
 
 function MobileImagePlaceholderCard({ title, imageSrc, imageAlt }: { title: string; imageSrc?: string; imageAlt?: string }) {
   return (
-    <article className="relative isolate flex min-h-[240px] flex-col overflow-hidden rounded-2xl border border-[#0671E0]/40 bg-white p-3 shadow-[0_16px_40px_rgba(6,113,224,.10)]">
-      <span className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#0671E0]/[0.06] blur-2xl" />
-      <CardArtwork imageSrc={imageSrc} imageAlt={imageAlt} />
-      <h3 className="relative px-2 pb-1 pt-3 text-sm font-semibold text-[#18191F]">{title}</h3>
+    <article className="relative isolate flex flex-col overflow-hidden rounded-2xl border border-[#E0E0E0] bg-white p-3.5 sm:p-4 shadow-[0_16px_40px_rgba(114,28,36,.06)]">
+      <span className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#721C24]/[0.04] blur-2xl" />
+      <div className="relative h-[220px] sm:h-[260px] w-full overflow-hidden rounded-xl border border-[#E0E0E0] bg-[#FAF7F2]">
+        {imageSrc && (
+          <Image
+            src={imageSrc}
+            alt={imageAlt ?? ""}
+            fill
+            sizes="(max-width: 767px) 90vw, 34vw"
+            className="object-cover object-center transition-transform duration-700 hover:scale-[1.025]"
+          />
+        )}
+      </div>
+      <h3 className="relative px-1 pb-1 pt-3.5 text-base font-semibold text-[rgba(0,0,0,0.87)]">{title}</h3>
     </article>
   );
 }
@@ -337,9 +382,9 @@ export function ProductShowcase() {
       ref={sectionRef}
       id="solutions"
       aria-labelledby="product-showcase-title"
-      className="relative min-h-screen overflow-clip border-b border-[#ABBED1]/20 bg-[#F5F7FA] md:h-[240svh] md:min-h-0"
+      className="relative min-h-screen overflow-clip border-b border-[#E0E0E0] bg-[#FDFBF7] md:h-[240svh] md:min-h-0"
       style={{
-        backgroundImage: "radial-gradient(circle, rgba(6,113,224,.14) 1px, transparent 1.5px), radial-gradient(circle at 9% 22%, rgba(6,113,224,.08), transparent 24%), radial-gradient(circle at 91% 78%, rgba(6,113,224,.08), transparent 26%)",
+        backgroundImage: "radial-gradient(circle, rgba(114,28,36,.10) 1px, transparent 1.5px), radial-gradient(circle at 9% 22%, rgba(114,28,36,.05), transparent 24%), radial-gradient(circle at 91% 78%, rgba(114,28,36,.05), transparent 26%)",
         backgroundSize: "34px 34px, 100% 100%, 100% 100%",
         "--feature-x": "0px",
         "--feature-y": "0px",
@@ -382,13 +427,13 @@ export function ProductShowcase() {
           <MobileImagePlaceholderCard
             title="Tiết kiệm chi phí đầu tư"
             imageSrc="/images/investment-savings.png"
-            imageAlt="Không gian quán cà phê với máy pha DOLORES COFFEE"
+            imageAlt="Tiết kiệm chi phí đầu tư với máy pha cà phê DOLORES COFFEE"
           />
         </RevealOnScroll>
         <RevealOnScroll delay={170}>
           <MobileImagePlaceholderCard
             title="Theo dõi trực tiếp"
-            imageSrc="/images/coffee-live-monitoring-20260928.jpg"
+            imageSrc="/images/coffee-live-monitoring-20260928.png"
             imageAlt="Chủ quán theo dõi hoạt động kinh doanh cà phê trên điện thoại"
           />
         </RevealOnScroll>
@@ -405,12 +450,12 @@ export function ProductShowcase() {
         <ImagePlaceholderCard
           title="Tiết kiệm chi phí đầu tư"
           imageSrc="/images/investment-savings.png"
-          imageAlt="Không gian quán cà phê với máy pha DOLORES COFFEE"
+          imageAlt="Tiết kiệm chi phí đầu tư với máy pha cà phê DOLORES COFFEE"
           index={0}
         />
         <ImagePlaceholderCard
           title="Theo dõi trực tiếp"
-          imageSrc="/images/coffee-live-monitoring-20260928.jpg"
+          imageSrc="/images/coffee-live-monitoring-20260928.png"
           imageAlt="Chủ quán theo dõi hoạt động kinh doanh cà phê trên điện thoại"
           index={1}
         />

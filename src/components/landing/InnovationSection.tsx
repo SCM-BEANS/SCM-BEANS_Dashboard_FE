@@ -29,30 +29,30 @@ const features = [
 
 export function InnovationSection() {
   return (
-    <section id="technology" className="relative bg-white py-24 px-6 overflow-hidden border-b border-[#ABBED1]/20">
-      {/* ── Ambient Blue Glow: Ánh xanh tỏa sáng mờ dần từ 2 bên vào trong ── */}
+    <section id="technology" className="relative bg-[#FDFBF7] py-24 px-6 overflow-hidden border-b border-[#E0E0E0]">
+      {/* ── Ambient Wine Glow ── */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(ellipse 35% 80% at 0% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
-            radial-gradient(ellipse 35% 80% at 100% 50%, rgba(6, 113, 224, 0.18) 0%, rgba(6, 113, 224, 0.04) 55%, transparent 100%),
-            linear-gradient(to right, rgba(6, 113, 224, 0.15) 0%, rgba(6, 113, 224, 0.05) 16%, rgba(6, 113, 224, 0.01) 32%, transparent 45%, transparent 55%, rgba(6, 113, 224, 0.01) 68%, rgba(6, 113, 224, 0.05) 84%, rgba(6, 113, 224, 0.15) 100%)
+            radial-gradient(ellipse 35% 80% at 0% 50%, rgba(114, 28, 36, 0.12) 0%, rgba(114, 28, 36, 0.02) 55%, transparent 100%),
+            radial-gradient(ellipse 35% 80% at 100% 50%, rgba(114, 28, 36, 0.12) 0%, rgba(114, 28, 36, 0.02) 55%, transparent 100%),
+            linear-gradient(to right, rgba(114, 28, 36, 0.08) 0%, rgba(114, 28, 36, 0.03) 16%, rgba(114, 28, 36, 0.01) 32%, transparent 45%, transparent 55%, rgba(114, 28, 36, 0.01) 68%, rgba(114, 28, 36, 0.03) 84%, rgba(114, 28, 36, 0.08) 100%)
           `
         }}
       />
 
-      {/* ── Blue Grid: Bold at outer edges, fading softly in the center ── */}
+      {/* ── Wine Grid ── */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(to right, #0671E0 1px, transparent 1px),
-            linear-gradient(to bottom, #0671E0 1px, transparent 1px)
+            linear-gradient(to right, #721C24 1px, transparent 1px),
+            linear-gradient(to bottom, #721C24 1px, transparent 1px)
           `,
           backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
-          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.2) 82%, rgba(0,0,0,0.6) 100%)",
+          maskImage: "linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.1) 82%, rgba(0,0,0,0.3) 100%)",
+          WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 18%, rgba(0,0,0,0.015) 35%, rgba(0,0,0,0.015) 65%, rgba(0,0,0,0.1) 82%, rgba(0,0,0,0.3) 100%)",
         }}
       />
 
@@ -61,21 +61,21 @@ export function InnovationSection() {
         {/* ── LEFT: Dashboard Mockup (light) ── */}
         <AnimateOnScroll direction="left" className="relative w-full flex items-center justify-center order-2 lg:order-1">
           {/* Background glow */}
-          <div className="absolute inset-0 bg-[#0671E0]/5 rounded-3xl blur-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-[#721C24]/5 rounded-3xl blur-2xl pointer-events-none" />
 
           {/* Main mockup card */}
-          <div className="relative z-10 w-full max-w-[460px] bg-white border border-[#ABBED1]/40 rounded-2xl shadow-figma-16 overflow-hidden">
+          <div className="relative z-10 w-full max-w-[460px] bg-white border border-[#E0E0E0] rounded-2xl shadow-figma-16 overflow-hidden">
             {/* Window chrome */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#F5F7FA] bg-[#FAFBFC]">
+            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#E0E0E0]/60 bg-[#FAF7F2]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#E53835]/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#FBC02D]/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#2E7D31]/70" />
-              <span className="text-[#89939E] text-xs ml-3 font-medium tracking-wider">
+              <span className="text-[#9E9E9E] text-xs ml-3 font-medium tracking-wider">
                 IoT Monitor · Live
               </span>
               <div className="ml-auto flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0671E0] animate-[pulse-dot_2s_ease-in-out_infinite]" />
-                <span className="text-[10px] text-[#0671E0] font-semibold">LIVE</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#721C24] animate-[pulse-dot_2s_ease-in-out_infinite]" />
+                <span className="text-[10px] text-[#721C24] font-semibold">LIVE</span>
               </div>
             </div>
 
@@ -83,34 +83,34 @@ export function InnovationSection() {
               {/* Status row */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Machines Online", value: "23/25", color: "text-[#0671E0]", bg: "bg-[#0671E0]/8", icon: <Wifi className="w-3.5 h-3.5" /> },
+                  { label: "Machines Online", value: "23/25", color: "text-[#721C24]", bg: "bg-[#721C24]/8", icon: <Wifi className="w-3.5 h-3.5" /> },
                   { label: "Today's Brews", value: "1,247", color: "text-[#2E7D31]", bg: "bg-[#2E7D31]/8", icon: <BarChart3 className="w-3.5 h-3.5" /> },
                   { label: "Alerts", value: "2", color: "text-[#FBC02D]", bg: "bg-[#FBC02D]/10", icon: <Zap className="w-3.5 h-3.5" /> },
                 ].map((stat, i) => (
-                  <div key={i} className="bg-[#F5F7FA] rounded-xl p-3 border border-[#ABBED1]/30">
+                  <div key={i} className="bg-[#FAF7F2] rounded-xl p-3 border border-[#E0E0E0]">
                     <div className={`inline-flex p-1 rounded-md mb-2 ${stat.bg} ${stat.color}`}>
                       {stat.icon}
                     </div>
                     <div className={`text-lg font-bold ${stat.color}`}>{stat.value}</div>
-                    <div className="text-[#89939E] text-[10px] mt-0.5 tracking-wide">{stat.label}</div>
+                    <div className="text-[#9E9E9E] text-[10px] mt-0.5 tracking-wide">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Chart */}
-              <div className="bg-[#F5F7FA] border border-[#ABBED1]/30 rounded-xl p-4">
+              <div className="bg-[#FAF7F2] border border-[#E0E0E0] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-[#89939E] text-[10px] tracking-widest uppercase font-semibold">
+                  <div className="text-[#9E9E9E] text-[10px] tracking-widest uppercase font-semibold">
                     Hourly Extraction Volume
                   </div>
-                  <span className="text-[10px] text-[#0671E0] font-semibold">+12.4%</span>
+                  <span className="text-[10px] text-[#721C24] font-semibold">+12.4%</span>
                 </div>
                 <div className="flex items-end gap-1 h-16">
                   {[30, 55, 45, 70, 90, 65, 80, 75, 55, 85, 60, 45].map((h, i) => (
                     <div
                       key={i}
                       className={`flex-1 rounded-sm transition-colors ${
-                        h === 90 ? "bg-[#0671E0]" : "bg-[#0671E0]/20"
+                        h === 90 ? "bg-[#721C24]" : "bg-[#721C24]/20"
                       }`}
                       style={{ height: `${h}%` }}
                     />
@@ -123,7 +123,7 @@ export function InnovationSection() {
                 <Zap className="w-4 h-4 text-[#FBC02D] mt-0.5 shrink-0" />
                 <div>
                   <div className="text-xs font-semibold text-[#4D4D4D]">AI Predictive Alert</div>
-                  <div className="text-[11px] text-[#89939E] mt-0.5">Machine #A03 — Maintenance due in 2 days</div>
+                  <div className="text-[11px] text-[#9E9E9E] mt-0.5">Machine #A03 — Maintenance due in 2 days</div>
                 </div>
               </div>
 
@@ -135,10 +135,10 @@ export function InnovationSection() {
                 ].map((m, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between bg-[#F5F7FA] border border-[#ABBED1]/30 px-3 py-2.5 rounded-lg"
+                    className="flex items-center justify-between bg-[#FAF7F2] border border-[#E0E0E0] px-3 py-2.5 rounded-lg"
                   >
                     <span className="text-[#4D4D4D] text-xs font-medium">{m.name}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0671E0]/10 text-[#0671E0]">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#721C24]/10 text-[#721C24]">
                       {m.status}
                     </span>
                   </div>
@@ -152,18 +152,18 @@ export function InnovationSection() {
         <AnimateOnScroll direction="right" className="order-1 lg:order-2 flex flex-col items-start">
           {/* Eyebrow */}
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-0.5 bg-[#0671E0]" />
-            <span className="text-[#0671E0] tracking-[0.2em] uppercase text-xs font-semibold">Technology</span>
+            <div className="w-10 h-0.5 bg-[#721C24]" />
+            <span className="text-[#721C24] tracking-[0.2em] uppercase text-xs font-semibold">Technology</span>
           </div>
 
           <h2
-            className="text-[#18191F] font-semibold mb-5 leading-tight"
+            className="text-[#721C24] font-serif font-semibold mb-5 leading-tight"
             style={{ fontSize: "clamp(28px, 4vw, 36px)", lineHeight: "44px" }}
           >
             IoT &amp; Cloud cho máy pha cà phê
           </h2>
 
-          <p className="text-[#89939E] mb-10 max-w-[480px]" style={{ fontSize: "18px", lineHeight: "28px" }}>
+          <p className="text-[#9E9E9E] mb-10 max-w-[480px]" style={{ fontSize: "18px", lineHeight: "28px" }}>
             Nền tảng của chúng tôi gắn kết mỗi chiếc máy pha cà phê vào một hệ sinh thái
             dữ liệu thông minh — từ cảm biến IoT đến dashboard quản lý doanh nghiệp.
           </p>
@@ -173,13 +173,13 @@ export function InnovationSection() {
             {features.map((f, i) => (
               <div
                 key={i}
-                className="flex flex-col gap-3 bg-white hover:bg-[#0671E0]/3 transition-colors p-5 rounded-xl border border-[#ABBED1]/40 hover:border-[#0671E0]/30 shadow-figma-2 hover:shadow-figma-4 h-full group"
+                className="flex flex-col gap-3 bg-white hover:bg-[#721C24]/5 transition-colors p-5 rounded-xl border border-[#E0E0E0] hover:border-[#721C24]/30 shadow-figma-2 hover:shadow-figma-4 h-full group"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#0671E0]/8 flex items-center justify-center text-[#0671E0] group-hover:bg-[#0671E0] group-hover:text-white transition-colors duration-300">
+                <div className="w-9 h-9 rounded-lg bg-[#721C24]/8 flex items-center justify-center text-[#721C24] group-hover:bg-[#721C24] group-hover:text-white transition-colors duration-300">
                   {f.icon}
                 </div>
-                <div className="text-[#18191F] font-semibold text-sm">{f.title}</div>
-                <div className="text-[#89939E] text-sm leading-relaxed">{f.desc}</div>
+                <div className="text-[rgba(0,0,0,0.87)] font-semibold text-sm">{f.title}</div>
+                <div className="text-[#9E9E9E] text-sm leading-relaxed">{f.desc}</div>
               </div>
             ))}
           </StaggerContainer>

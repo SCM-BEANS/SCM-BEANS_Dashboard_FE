@@ -55,7 +55,7 @@ export function PageHero({
 
   return (
     <section
-      className={`w-full pt-[72px] ${isBlue ? "bg-[#0671E0]" : "bg-white border-b border-[#ABBED1]/30"}`}
+      className={`w-full pt-[72px] ${isBlue ? "bg-[#721C24]" : "bg-[#FDFBF7] border-b border-[#E0E0E0]"}`}
     >
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 py-16 sm:py-20 lg:py-28">
         <div
@@ -70,12 +70,12 @@ export function PageHero({
               className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5 ${
                 isBlue
                   ? "bg-white/15 text-white"
-                  : "bg-[#0671E0]/8 text-[#0671E0]"
+                  : "bg-[#721C24]/8 text-[#721C24]"
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isBlue ? "bg-white" : "bg-[#0671E0]"
+                  isBlue ? "bg-white" : "bg-[#721C24]"
                 }`}
               />
               <span className="text-xs font-semibold tracking-wider uppercase">
@@ -85,8 +85,8 @@ export function PageHero({
 
             {/* Title */}
             <h1
-              className={`font-semibold mb-5 leading-tight ${
-                isBlue ? "text-white" : "text-[#18191F]"
+              className={`font-serif font-semibold mb-5 leading-tight ${
+                isBlue ? "text-white" : "text-[#721C24]"
               }`}
               style={{ fontSize: "clamp(32px, 5vw, 60px)", lineHeight: "1.15" }}
             >
@@ -97,7 +97,7 @@ export function PageHero({
             {subtitle && (
               <p
                 className={`mb-8 max-w-[520px] ${
-                  isBlue ? "text-white/80" : "text-[#89939E]"
+                  isBlue ? "text-white/80" : "text-[#9E9E9E]"
                 }`}
                 style={{ fontSize: "clamp(16px, 2vw, 18px)", lineHeight: "28px" }}
               >
@@ -113,7 +113,7 @@ export function PageHero({
                     href={ctaHref}
                     className={`group inline-flex items-center gap-2 px-6 py-3 font-semibold text-sm rounded-[4px] transition-all duration-200 ${
                       isBlue
-                        ? "bg-white text-[#0671E0] hover:bg-white/90"
+                        ? "bg-white text-[#721C24] hover:bg-white/90"
                         : "btn-primary"
                     }`}
                   >

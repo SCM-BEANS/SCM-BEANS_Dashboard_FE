@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   title: "DOLORES COFFEE — Coffee Machine as a Service",
   description: "Giải pháp thuê máy pha cà phê tích hợp IoT & Cloud hàng đầu Việt Nam. Quản lý toàn bộ đội máy từ một nền tảng duy nhất.",
   keywords: "thuê máy pha cà phê, IoT, cloud, dashboard, DOLORES COFFEE",
+  icons: {
+    icon: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -32,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="scroll-smooth">
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-white text-[#18191F] antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans bg-[#FDFBF7] text-[rgba(0,0,0,0.87)] antialiased`}>
         <Providers>
           <QueryProvider>
             {children}

@@ -58,26 +58,26 @@ export default function SolutionsPage() {
       <main className="pt-[72px]">
 
         {/* ── Hero ── */}
-        <section className="bg-[#F5F7FA] border-b border-[#ABBED1]/30 py-16 sm:py-20 lg:py-28 px-4 sm:px-6">
+        <section className="bg-[#FAF7F2] border-b border-[#E0E0E0] py-16 sm:py-20 lg:py-28 px-4 sm:px-6">
           <div className="max-w-[1320px] mx-auto">
             <AnimateOnScroll delay={0}>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0671E0]/8 rounded-full mb-5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0671E0]" />
-                <span className="text-[#0671E0] text-xs font-semibold tracking-wider uppercase">Solutions</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#721C24]/8 rounded-full mb-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#721C24]" />
+                <span className="text-[#721C24] text-xs font-semibold tracking-wider uppercase">Solutions</span>
               </div>
             </AnimateOnScroll>
             <AnimateOnScroll delay={80}>
               <h1
-                className="text-[#18191F] font-semibold mb-5 max-w-[800px] leading-tight"
+                className="text-[#721C24] font-serif font-semibold mb-5 max-w-[800px] leading-tight"
                 style={{ fontSize: "clamp(32px, 5vw, 60px)", lineHeight: "1.15" }}
               >
                 Giải pháp toàn diện{" "}
-                <span className="text-[#0671E0]">cho doanh nghiệp</span>
+                <span className="text-[#8C2B34] italic">cho doanh nghiệp</span>
               </h1>
             </AnimateOnScroll>
             <AnimateOnScroll delay={180}>
               <p
-                className="text-[#89939E] max-w-[600px] mb-10"
+                className="text-[#9E9E9E] max-w-[600px] mb-10"
                 style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}
               >
                 DOLORES COFFEE cung cấp hệ sinh thái đầy đủ từ cho thuê máy, tích hợp IoT đến
@@ -87,22 +87,22 @@ export default function SolutionsPage() {
 
             {/* Stats */}
             <AnimateOnScroll delay={280}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border border-[#ABBED1]/40 rounded-2xl overflow-hidden shadow-[0px_4px_8px_rgba(171,190,209,0.4)]">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border border-[#E0E0E0] rounded-2xl overflow-hidden shadow-[0px_4px_8px_rgba(114,28,36,0.06)] bg-white">
                 {stats.map((s, i) => (
                   <div
                     key={i}
                     className={`bg-white p-5 sm:p-8 flex flex-col items-center text-center gap-2 ${
-                      i < stats.length - 1 ? "border-r border-[#ABBED1]/40" : ""
+                      i < stats.length - 1 ? "border-r border-[#E0E0E0]" : ""
                     }`}
                   >
-                    <div className="text-[#0671E0]/50">{s.icon}</div>
+                    <div className="text-[#721C24]/50">{s.icon}</div>
                     <div
-                      className="font-bold text-[#0671E0]"
+                      className="font-bold text-[#721C24]"
                       style={{ fontSize: "clamp(22px, 3vw, 36px)" }}
                     >
                       {s.value}
                     </div>
-                    <div className="text-[#89939E] text-[10px] sm:text-xs uppercase tracking-widest font-semibold">{s.label}</div>
+                    <div className="text-[#9E9E9E] text-[10px] sm:text-xs uppercase tracking-widest font-semibold">{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -114,29 +114,29 @@ export default function SolutionsPage() {
         {solutions.map((s, i) => (
           <section
             key={i}
-            className={`py-20 sm:py-24 lg:py-28 px-4 sm:px-6 ${i % 2 === 0 ? "bg-white" : "bg-[#F5F7FA]"}`}
+            className={`py-20 sm:py-24 lg:py-28 px-4 sm:px-6 ${i % 2 === 0 ? "bg-[#FDFBF7]" : "bg-[#FAF7F2]"}`}
           >
             <div className="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
               {/* Text side */}
               <AnimateOnScroll delay={0} direction={i % 2 === 0 ? "left" : "right"} className={i % 2 === 1 ? "lg:order-2" : ""}>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-5 bg-[#0671E0]/8 text-[#0671E0]">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-5 bg-[#721C24]/8 text-[#721C24]">
                   {s.subtitle}
                 </span>
-                <div className="text-[80px] sm:text-[100px] font-black leading-none text-[#0671E0]/5 -mb-4 select-none">{s.number}</div>
+                <div className="text-[80px] sm:text-[100px] font-black leading-none text-[#721C24]/5 -mb-4 select-none">{s.number}</div>
                 <h2
-                  className="text-[#18191F] font-semibold mb-4 leading-tight"
+                  className="text-[#721C24] font-serif font-semibold mb-4 leading-tight"
                   style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "1.25" }}
                 >
                   {s.title}
                 </h2>
-                <p className="text-[#89939E] leading-relaxed mb-7" style={{ fontSize: "clamp(14px, 1.8vw, 16px)", lineHeight: "1.7" }}>
+                <p className="text-[#9E9E9E] leading-relaxed mb-7" style={{ fontSize: "clamp(14px, 1.8vw, 16px)", lineHeight: "1.7" }}>
                   {s.desc}
                 </p>
                 <ul className="flex flex-col gap-2.5 mb-8">
                   {s.features.map((f, fi) => (
-                    <li key={fi} className="flex items-center gap-3 text-sm font-medium text-[#4D4D4D]">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-[#0671E0]" />
+                    <li key={fi} className="flex items-center gap-3 text-sm font-medium text-[rgba(0,0,0,0.87)]">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-[#721C24]" />
                       {f}
                     </li>
                   ))}
@@ -151,20 +151,20 @@ export default function SolutionsPage() {
 
               {/* Visual side */}
               <AnimateOnScroll delay={150} direction={i % 2 === 0 ? "right" : "left"} className={`${i % 2 === 1 ? "lg:order-1" : ""} flex items-center justify-center`}>
-                <div className="w-full aspect-square max-w-[420px] rounded-2xl flex flex-col items-center justify-center gap-6 relative overflow-hidden bg-[#0671E0]/5 border border-[#0671E0]/10 shadow-[0px_8px_16px_rgba(171,190,209,0.4)] group hover:shadow-[0px_16px_32px_rgba(6,113,224,0.12)] transition-all duration-500">
+                <div className="w-full aspect-square max-w-[420px] rounded-2xl flex flex-col items-center justify-center gap-6 relative overflow-hidden bg-[#721C24]/5 border border-[#721C24]/10 shadow-[0px_8px_16px_rgba(114,28,36,0.06)] group hover:shadow-[0px_16px_32px_rgba(114,28,36,0.12)] transition-all duration-500">
                   {/* Watermark number */}
-                  <div className="absolute text-[160px] sm:text-[200px] font-black leading-none select-none pointer-events-none text-[#0671E0]/5">
+                  <div className="absolute text-[160px] sm:text-[200px] font-black leading-none select-none pointer-events-none text-[#721C24]/5">
                     {s.number}
                   </div>
                   {/* Icon */}
-                  <div className="relative z-10 p-6 sm:p-8 rounded-2xl bg-[#0671E0]/8 text-[#0671E0] group-hover:bg-[#0671E0] group-hover:text-white transition-all duration-300">
+                  <div className="relative z-10 p-6 sm:p-8 rounded-2xl bg-[#721C24]/8 text-[#721C24] group-hover:bg-[#721C24] group-hover:text-white transition-all duration-300">
                     {s.icon}
                   </div>
                   {/* Feature pills */}
                   <div className="relative z-10 flex flex-col gap-2 w-full max-w-[260px] sm:max-w-[300px] px-4">
                     {s.features.slice(0, 3).map((f, fi) => (
-                      <div key={fi} className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-[#ABBED1]/30 text-[#4D4D4D] shadow-[0px_2px_4px_rgba(171,190,209,0.4)]">
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#0671E0]" />
+                      <div key={fi} className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-[#E0E0E0] text-[rgba(0,0,0,0.87)] shadow-[0px_2px_4px_rgba(114,28,36,0.04)]">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#721C24]" />
                         {f}
                       </div>
                     ))}

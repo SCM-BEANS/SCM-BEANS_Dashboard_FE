@@ -82,35 +82,35 @@ export const AnalyticsWidget = () => {
         <div className="h-64 md:h-80 w-full md:w-3/4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eeeeee" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E0E0E0" />
               <XAxis 
                 dataKey="label" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#666666", fontSize: 12, fontFamily: "monospace" }} 
+                tick={{ fill: "#9E9E9E", fontSize: 12, fontFamily: "monospace" }} 
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: "#666666", fontSize: 12, fontFamily: "monospace" }}
+                tick={{ fill: "#9E9E9E", fontSize: 12, fontFamily: "monospace" }}
               />
               <Tooltip 
-                cursor={{ fill: '#f4f4f4' }}
+                cursor={{ fill: 'rgba(114, 28, 36, 0.05)' }}
                 contentStyle={{ 
                   backgroundColor: '#ffffff', 
-                  border: '2px solid #000000',
+                  border: '2px solid #721C24',
                   borderRadius: '4px',
                   fontFamily: 'monospace',
                   textTransform: 'uppercase'
                 }}
-                itemStyle={{ color: '#000000', fontWeight: 'bold' }}
+                itemStyle={{ color: '#721C24', fontWeight: 'bold' }}
               />
               <Bar dataKey="cups" radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={entry.cups === peak.cups ? '#000000' : '#cccccc'} 
+                    fill={entry.cups === peak.cups ? '#721C24' : '#E0E0E0'} 
                   />
                 ))}
               </Bar>
