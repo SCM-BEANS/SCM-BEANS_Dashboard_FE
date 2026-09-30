@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Coffee, Lock, Mail, ArrowRight, User, KeyRound } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 
@@ -190,11 +191,18 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
       <div className="absolute -inset-4 bg-black/40 blur-2xl rounded-[2.5rem]" />
       <div className="relative p-8 bg-surface/90 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-16 h-16 bg-surface-container border border-outline/30 rounded-2xl flex items-center justify-center mb-4 shadow-xl">
-            <Coffee className="text-primary w-8 h-8" />
+          <div className="w-20 h-20 bg-white border border-[#E0E0E0] rounded-2xl flex items-center justify-center mb-4 shadow-xl overflow-hidden p-1.5">
+            <Image
+              src="/images/logo.png"
+              alt="Dolores Coffee Logo"
+              width={80}
+              height={80}
+              priority
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold font-serif text-on-surface tracking-tight mb-2">
-            Deer Coffee
+            Dolores Coffee
           </h1>
           <p className="text-on-surface-variant text-sm text-center">
             {mode === 'login' ? 'Sign in to access the Dashboard' : 

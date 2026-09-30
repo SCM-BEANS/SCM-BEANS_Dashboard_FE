@@ -43,23 +43,23 @@ export default function TechnologyPage() {
       <main className="pt-[72px]">
 
         {/* ── Hero ── */}
-        <section className="bg-white border-b border-[#ABBED1]/30 py-16 sm:py-20 lg:py-28 px-4 sm:px-6">
+        <section className="bg-white border-b border-[#E0E0E0] py-16 sm:py-20 lg:py-28 px-4 sm:px-6">
           <div className="max-w-[1320px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
               <AnimateOnScroll delay={0}>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0671E0]/8 rounded-full mb-5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0671E0]" />
-                  <span className="text-[#0671E0] text-xs font-semibold tracking-wider uppercase">Technology</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#721C24]/10 rounded-full mb-5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#721C24]" />
+                  <span className="text-[#721C24] text-xs font-semibold tracking-wider uppercase">Technology</span>
                 </div>
               </AnimateOnScroll>
               <AnimateOnScroll delay={80}>
-                <h1 className="text-[#18191F] font-semibold mb-5 leading-tight" style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: "1.15" }}>
+                <h1 className="text-[#721C24] font-semibold mb-5 leading-tight" style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: "1.15" }}>
                   IoT &amp; Cloud cho{" "}
-                  <span className="text-[#0671E0]">máy pha cà phê</span>
+                  <span className="text-[#721C24]">máy pha cà phê</span>
                 </h1>
               </AnimateOnScroll>
               <AnimateOnScroll delay={180}>
-                <p className="text-[#89939E] mb-8 max-w-[480px]" style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}>
+                <p className="text-[#9E9E9E] mb-8 max-w-[480px]" style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: "1.7" }}>
                   Chúng tôi gắn kết từng chiếc máy pha cà phê với hạ tầng IoT hiện đại,
                   biến mỗi chiếc máy thành một nguồn dữ liệu thông minh.
                 </p>
@@ -73,10 +73,10 @@ export default function TechnologyPage() {
 
             {/* Architecture diagram */}
             <AnimateOnScroll delay={150} direction="right">
-              <div className="bg-[#F5F7FA] border border-[#ABBED1]/40 rounded-2xl p-6 sm:p-8 font-mono shadow-[0px_8px_16px_rgba(171,190,209,0.4)]">
+              <div className="bg-[#FAF7F2] border border-[#E0E0E0] rounded-2xl p-6 sm:p-8 font-mono shadow-[0px_8px_16px_rgba(114,28,36,0.06)]">
                 <div className="flex items-center gap-2 mb-5">
-                  <span className="w-2 h-2 rounded-full bg-[#0671E0] animate-[pulse-dot_2s_ease-in-out_infinite]" />
-                  <div className="text-[#89939E] tracking-widest uppercase text-[10px] font-semibold">System Architecture</div>
+                  <span className="w-2 h-2 rounded-full bg-[#721C24] animate-[pulse-dot_2s_ease-in-out_infinite]" />
+                  <div className="text-[#9E9E9E] tracking-widest uppercase text-[10px] font-semibold">System Architecture</div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {archLines.map((line, i) => (
@@ -84,8 +84,8 @@ export default function TechnologyPage() {
                       key={i}
                       className={`text-xs sm:text-sm transition-colors ${
                         line.isMain
-                          ? "text-[#18191F] font-semibold bg-white border border-[#ABBED1]/30 px-4 py-2 rounded-lg shadow-[0px_2px_4px_rgba(171,190,209,0.4)]"
-                          : "text-[#0671E0] pl-4 opacity-60 text-[10px] sm:text-xs"
+                          ? "text-[#721C24] font-semibold bg-white border border-[#E0E0E0] px-4 py-2 rounded-lg shadow-sm"
+                          : "text-[#721C24] pl-4 opacity-75 text-[10px] sm:text-xs"
                       }`}
                     >
                       {line.text}
@@ -98,12 +98,12 @@ export default function TechnologyPage() {
         </section>
 
         {/* ── Tech Stack ── */}
-        <section className="bg-[#F5F7FA] py-16 sm:py-20 lg:py-24 px-4 sm:px-6">
+        <section className="bg-[#FAF7F2] py-16 sm:py-20 lg:py-24 px-4 sm:px-6">
           <div className="max-w-[1320px] mx-auto">
             <AnimateOnScroll>
               <div className="text-center mb-12">
-                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Tech Stack</span>
-                <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
+                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#721C24] mb-3 block">Tech Stack</span>
+                <h2 className="text-[#721C24] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
                   Hạ tầng công nghệ
                 </h2>
               </div>
@@ -111,12 +111,12 @@ export default function TechnologyPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {techStack.map((t, i) => (
                 <AnimateOnScroll key={i} delay={i * 80}>
-                  <div className="group bg-white border border-[#ABBED1]/40 rounded-xl p-6 hover:border-[#0671E0]/30 shadow-[0px_4px_8px_rgba(171,190,209,0.4)] hover:shadow-[0px_8px_16px_rgba(6,113,224,0.1)] transition-all duration-300">
-                    <div className="w-11 h-11 rounded-xl bg-[#0671E0]/8 flex items-center justify-center text-[#0671E0] mb-5 group-hover:bg-[#0671E0] group-hover:text-white transition-all duration-300">
+                  <div className="group bg-white border border-[#E0E0E0] rounded-xl p-6 hover:border-[#721C24]/40 shadow-sm hover:shadow-[0px_8px_16px_rgba(114,28,36,0.08)] transition-all duration-300">
+                    <div className="w-11 h-11 rounded-xl bg-[#721C24]/10 flex items-center justify-center text-[#721C24] mb-5 group-hover:bg-[#721C24] group-hover:text-white transition-all duration-300">
                       {t.icon}
                     </div>
-                    <h3 className="font-semibold text-[#18191F] mb-3" style={{ fontSize: "clamp(15px, 2vw, 18px)" }}>{t.title}</h3>
-                    <p className="text-[#89939E] text-sm leading-relaxed">{t.desc}</p>
+                    <h3 className="font-semibold text-black/87 mb-3" style={{ fontSize: "clamp(15px, 2vw, 18px)" }}>{t.title}</h3>
+                    <p className="text-[#9E9E9E] text-sm leading-relaxed">{t.desc}</p>
                   </div>
                 </AnimateOnScroll>
               ))}
@@ -129,29 +129,29 @@ export default function TechnologyPage() {
           <div className="max-w-[1320px] mx-auto">
             <AnimateOnScroll>
               <div className="text-center mb-12">
-                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#0671E0] mb-3 block">Sensors</span>
-                <h2 className="text-[#18191F] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
+                <span className="text-xs font-semibold tracking-[0.25em] uppercase text-[#721C24] mb-3 block">Sensors</span>
+                <h2 className="text-[#721C24] font-semibold" style={{ fontSize: "clamp(24px, 3.5vw, 36px)", lineHeight: "44px" }}>
                   Cảm biến tích hợp
                 </h2>
               </div>
             </AnimateOnScroll>
             <AnimateOnScroll delay={100}>
-              <div className="overflow-x-auto rounded-2xl border border-[#ABBED1]/40 shadow-[0px_4px_8px_rgba(171,190,209,0.4)]">
+              <div className="overflow-x-auto rounded-2xl border border-[#E0E0E0] shadow-sm">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-[#F5F7FA] border-b border-[#ABBED1]/40">
-                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Cảm biến</th>
-                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Dải đo</th>
-                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#89939E]">Tần suất cập nhật</th>
+                    <tr className="bg-[#FAF7F2] border-b border-[#E0E0E0]">
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#9E9E9E]">Cảm biến</th>
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#9E9E9E]">Dải đo</th>
+                      <th className="text-left py-4 px-5 sm:px-6 font-semibold text-xs uppercase tracking-widest text-[#9E9E9E]">Tần suất cập nhật</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sensors.map((s, i) => (
-                      <tr key={i} className="border-b border-[#F5F7FA] hover:bg-[#0671E0]/3 transition-colors">
-                        <td className="py-4 px-5 sm:px-6 font-semibold text-[#18191F]">{s.name}</td>
-                        <td className="py-4 px-5 sm:px-6 font-mono text-[#89939E] text-xs">{s.range}</td>
+                      <tr key={i} className="border-b border-[#FAF7F2] hover:bg-[#721C24]/5 transition-colors">
+                        <td className="py-4 px-5 sm:px-6 font-semibold text-black/87">{s.name}</td>
+                        <td className="py-4 px-5 sm:px-6 font-mono text-[#9E9E9E] text-xs">{s.range}</td>
                         <td className="py-4 px-5 sm:px-6">
-                          <span className="bg-[#0671E0]/8 text-[#0671E0] text-[10px] px-3 py-1 rounded-full font-semibold">{s.update}</span>
+                          <span className="bg-[#721C24]/10 text-[#721C24] text-[10px] px-3 py-1 rounded-full font-semibold">{s.update}</span>
                         </td>
                       </tr>
                     ))}
