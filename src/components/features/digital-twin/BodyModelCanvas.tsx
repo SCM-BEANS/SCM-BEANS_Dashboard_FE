@@ -5,11 +5,24 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 const BODY_MODEL_URL = "/models/digital-twin/body/Body.glb";
+const MAYXOAY_MODEL_URL = "/models/digital-twin/cluster-02/may_xoay.glb";
+const MAYXOAY_NODE_NAME = "Mayxoay1-2";
 const DRACO_DECODER_PATH = "/draco-gltf/";
+const BODY_METALLIC_COATING = {
+  color: "#b9c1c8",
+  metalness: 0.86,
+  roughness: 0.36,
+};
+const MAYXOAY_METALLIC_ACCENT = {
+  color: "#e8752b",
+  metalness: 0.62,
+  roughness: 0.3,
+};
 
 interface BodyModelCanvasProps {
   onLoadStart: () => void;
@@ -18,22 +31,201 @@ interface BodyModelCanvasProps {
   canvasLabel: string;
   cameraResetVersion: number;
   zoomLevel: number;
+  excludedNodeNames: readonly string[];
+  includeMayxoayNode: boolean;
 }
 
-function disposeModel(root: THREE.Object3D) {
+interface ModelResources {
+  geometries: Set<THREE.BufferGeometry>;
+  materials: Set<THREE.Material>;
+  textures: Set<THREE.Texture>;
+}
+
+function collectModelResources(root: THREE.Object3D): ModelResources {
+  const resources: ModelResources = {
+    geometries: new Set(),
+    materials: new Set(),
+    textures: new Set(),
+  };
+
   root.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
-    object.geometry.dispose();
+    resources.geometries.add(object.geometry);
     const materials = Array.isArray(object.material)
       ? object.material
       : [object.material];
     for (const material of materials) {
+      resources.materials.add(material);
       for (const value of Object.values(material)) {
-        if (value instanceof THREE.Texture) value.dispose();
+        if (value instanceof THREE.Texture) resources.textures.add(value);
+      }
+    }
+  });
+
+  return resources;
+}
+
+function disposeModel(
+  root: THREE.Object3D,
+  preservedResources: Partial<{
+    geometries: ReadonlySet<THREE.BufferGeometry>;
+    materials: ReadonlySet<THREE.Material>;
+    textures: ReadonlySet<THREE.Texture>;
+  }> = {},
+) {
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    if (!preservedResources.geometries?.has(object.geometry)) {
+      object.geometry.dispose();
+    }
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+    for (const material of materials) {
+      if (preservedResources.materials?.has(material)) continue;
+      for (const value of Object.values(material)) {
+        if (
+          value instanceof THREE.Texture &&
+          !preservedResources.textures?.has(value)
+        ) {
+          value.dispose();
+        }
       }
       material.dispose();
     }
   });
+}
+
+function attachMayxoayNode(
+  sourceRoot: THREE.Object3D,
+  targetRoot: THREE.Object3D,
+) {
+  const matches: THREE.Object3D[] = [];
+  sourceRoot.traverse((candidate) => {
+    if (candidate.userData.name === MAYXOAY_NODE_NAME) matches.push(candidate);
+  });
+
+  if (matches.length === 0) {
+    throw new Error(`GLB node not found: ${MAYXOAY_NODE_NAME}.`);
+  }
+  if (matches.length > 1) {
+    throw new Error(`Multiple GLB nodes found for ${MAYXOAY_NODE_NAME}.`);
+  }
+  const mayxoayNode = matches[0];
+
+  mayxoayNode.updateWorldMatrix(true, false);
+  const sourceWorldMatrix = mayxoayNode.matrixWorld.clone();
+  mayxoayNode.removeFromParent();
+  mayxoayNode.matrix.copy(sourceWorldMatrix);
+  mayxoayNode.matrixAutoUpdate = false;
+  mayxoayNode.matrixWorldNeedsUpdate = true;
+  targetRoot.add(mayxoayNode);
+  mayxoayNode.updateMatrixWorld(true);
+
+  return mayxoayNode;
+}
+
+function applyBodyMetallicCoating(
+  root: THREE.Object3D,
+  environmentMap: THREE.Texture | null,
+) {
+  const styledMaterials = new Set<THREE.Material>();
+
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+    for (const material of materials) {
+      if (styledMaterials.has(material)) continue;
+      styledMaterials.add(material);
+
+      const pbrMaterial = material as THREE.Material & {
+        color?: THREE.Color;
+        envMap?: THREE.Texture | null;
+        envMapIntensity?: number;
+        metalness?: number;
+        roughness?: number;
+      };
+      if (pbrMaterial.color instanceof THREE.Color) {
+        pbrMaterial.color.set(BODY_METALLIC_COATING.color);
+      }
+      if (typeof pbrMaterial.metalness === "number") {
+        pbrMaterial.metalness = BODY_METALLIC_COATING.metalness;
+      }
+      if (typeof pbrMaterial.roughness === "number") {
+        pbrMaterial.roughness = BODY_METALLIC_COATING.roughness;
+      }
+      if (environmentMap && "envMap" in pbrMaterial) {
+        pbrMaterial.envMap = environmentMap;
+        if (typeof pbrMaterial.envMapIntensity === "number") {
+          pbrMaterial.envMapIntensity = 0.65;
+        }
+        pbrMaterial.needsUpdate = true;
+      }
+    }
+  });
+}
+
+function applyMayxoayMetallicAccent(root: THREE.Object3D) {
+  const styledMaterials = new Set<THREE.Material>();
+
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+    for (const material of materials) {
+      if (styledMaterials.has(material)) continue;
+      styledMaterials.add(material);
+
+      const pbrMaterial = material as THREE.Material & {
+        color?: THREE.Color;
+        metalness?: number;
+        roughness?: number;
+      };
+      if (pbrMaterial.color instanceof THREE.Color) {
+        pbrMaterial.color.set(MAYXOAY_METALLIC_ACCENT.color);
+      }
+      if (typeof pbrMaterial.metalness === "number") {
+        pbrMaterial.metalness = MAYXOAY_METALLIC_ACCENT.metalness;
+      }
+      if (typeof pbrMaterial.roughness === "number") {
+        pbrMaterial.roughness = MAYXOAY_METALLIC_ACCENT.roughness;
+      }
+    }
+  });
+}
+
+function detachExcludedNodes(
+  root: THREE.Object3D,
+  excludedNodeNames: readonly string[],
+) {
+  const requestedNames = new Set(excludedNodeNames);
+  const foundNames = new Set<string>();
+  const excludedNodes: THREE.Object3D[] = [];
+
+  root.traverse((candidate) => {
+    // GLTFLoader sanitizes Object3D.name; userData.name retains the GLB name.
+    const sourceName = candidate.userData.name;
+    if (typeof sourceName !== "string" || !requestedNames.has(sourceName)) {
+      return;
+    }
+
+    foundNames.add(sourceName);
+    excludedNodes.push(candidate);
+  });
+
+  const missingNames = excludedNodeNames.filter((name) => !foundNames.has(name));
+  if (missingNames.length > 0) {
+    throw new Error(`Excluded GLB node(s) not found: ${missingNames.join(", ")}.`);
+  }
+
+  for (const node of excludedNodes) node.removeFromParent();
+
+  return excludedNodes;
 }
 
 function fitCameraToBody(
@@ -74,51 +266,135 @@ function BodyScene({
   onError,
   cameraResetVersion,
   zoomLevel,
+  excludedNodeNames,
+  includeMayxoayNode,
 }: Omit<BodyModelCanvasProps, "canvasLabel">) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const [model, setModel] = useState<THREE.Group | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const environmentMapRef = useRef<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    const room = new RoomEnvironment();
+    const pmremGenerator = new THREE.PMREMGenerator(gl);
+    const environment = pmremGenerator.fromScene(room, 0.04);
+    environmentMapRef.current = environment.texture;
+
+    return () => {
+      if (environmentMapRef.current === environment.texture) {
+        environmentMapRef.current = null;
+      }
+      environment.dispose();
+      pmremGenerator.dispose();
+      room.dispose();
+    };
+  }, [gl]);
 
   useEffect(() => {
     let active = true;
     let loadedScene: THREE.Group | null = null;
+    let loadedMayxoayScene: THREE.Group | null = null;
+    let excludedNodes: THREE.Object3D[] = [];
     const manager = new THREE.LoadingManager();
     const dracoLoader = new DRACOLoader(manager);
     dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
 
     const loader = new GLTFLoader(manager);
     loader.setDRACOLoader(dracoLoader);
+    const environmentResources = () => {
+      const environmentMap = environmentMapRef.current;
+      return environmentMap ? { textures: new Set([environmentMap]) } : {};
+    };
+    const disposeLoadedScenes = () => {
+      if (loadedScene) {
+        disposeModel(loadedScene, environmentResources());
+        loadedScene = null;
+      }
+      if (loadedMayxoayScene) {
+        disposeModel(loadedMayxoayScene, environmentResources());
+        loadedMayxoayScene = null;
+      }
+      for (const excludedNode of excludedNodes) {
+        disposeModel(excludedNode, environmentResources());
+      }
+      excludedNodes = [];
+    };
+
     onLoadStart();
+    const bodyLoad = loader.loadAsync(BODY_MODEL_URL).then((gltf) => {
+      loadedScene = gltf.scene;
+      return gltf;
+    });
+    const mayxoayLoad = includeMayxoayNode
+      ? loader.loadAsync(MAYXOAY_MODEL_URL).then((gltf) => {
+          loadedMayxoayScene = gltf.scene;
+          return gltf;
+        })
+      : Promise.resolve(null);
 
-    loader.load(
-      BODY_MODEL_URL,
-      (gltf) => {
-        loadedScene = gltf.scene;
-        if (!active) {
-          disposeModel(gltf.scene);
-          return;
-        }
+    void Promise.allSettled([bodyLoad, mayxoayLoad]).then((results) => {
+      const [bodyResult, mayxoayResult] = results;
+      if (!active) {
+        disposeLoadedScenes();
+        return;
+      }
 
+      if (
+        bodyResult.status === "rejected" ||
+        mayxoayResult.status === "rejected"
+      ) {
+        const error =
+          bodyResult.status === "rejected"
+            ? bodyResult.reason
+            : mayxoayResult.status === "rejected"
+              ? mayxoayResult.reason
+              : new Error("A required 3D model could not be loaded.");
+        console.error("Failed to load the combined machine model.", error);
+        disposeLoadedScenes();
+        onError(error);
+        return;
+      }
+
+      try {
+        const bodyScene = bodyResult.value.scene;
         // Display-only half-turn around the view axis: keep the open face toward
         // the fixed camera while correcting the machine's top/foot orientation.
-        gltf.scene.rotateZ(Math.PI);
-        gltf.scene.updateMatrixWorld(true);
-        setModel(gltf.scene);
+        bodyScene.rotateZ(Math.PI);
+
+        let mayxoayNode: THREE.Object3D | null = null;
+        if (mayxoayResult.value) {
+          mayxoayNode = attachMayxoayNode(
+            mayxoayResult.value.scene,
+            bodyScene,
+          );
+          const preservedResources = collectModelResources(mayxoayNode);
+          disposeModel(mayxoayResult.value.scene, {
+            ...environmentResources(),
+            ...preservedResources,
+          });
+          loadedMayxoayScene = null;
+        }
+
+        excludedNodes = detachExcludedNodes(bodyScene, excludedNodeNames);
+        applyBodyMetallicCoating(bodyScene, environmentMapRef.current);
+        if (mayxoayNode) applyMayxoayMetallicAccent(mayxoayNode);
+        bodyScene.updateMatrixWorld(true);
+        setModel(bodyScene);
         onReady();
-      },
-      undefined,
-      (error) => {
-        if (active) onError(error);
-      },
-    );
+      } catch (error) {
+        console.error("Failed to prepare the combined machine model.", error);
+        disposeLoadedScenes();
+        onError(error);
+      }
+    });
 
     return () => {
       active = false;
       manager.abort();
-      if (loadedScene) disposeModel(loadedScene);
+      disposeLoadedScenes();
       dracoLoader.dispose();
     };
-  }, [onError, onLoadStart, onReady]);
+  }, [excludedNodeNames, includeMayxoayNode, onError, onLoadStart, onReady]);
 
   const bounds = useMemo(() => {
     if (!model) return null;
@@ -173,6 +449,8 @@ export default function BodyModelCanvas({
   canvasLabel,
   cameraResetVersion,
   zoomLevel,
+  excludedNodeNames,
+  includeMayxoayNode,
 }: BodyModelCanvasProps) {
   return (
     <Canvas
@@ -188,6 +466,8 @@ export default function BodyModelCanvas({
         onError={onError}
         cameraResetVersion={cameraResetVersion}
         zoomLevel={zoomLevel}
+        excludedNodeNames={excludedNodeNames}
+        includeMayxoayNode={includeMayxoayNode}
       />
     </Canvas>
   );

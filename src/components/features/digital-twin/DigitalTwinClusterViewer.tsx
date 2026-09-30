@@ -4,19 +4,12 @@ import dynamic from "next/dynamic";
 import { Component, useCallback, useState, type ReactNode } from "react";
 import { useI18nStore } from "@/store/useI18nStore";
 
-const BodyModelCanvas = dynamic(() => import("./BodyModelCanvas"), {
-  ssr: false,
-  loading: () => null,
-});
+const DigitalTwinClusterCanvas = dynamic(
+  () => import("./DigitalTwinClusterCanvas"),
+  { ssr: false, loading: () => null },
+);
 
 type ViewerStatus = "loading" | "ready" | "error";
-
-const NO_EXCLUDED_NODE_NAMES: readonly string[] = [];
-
-export interface BodyModelViewerProps {
-  excludedNodeNames?: readonly string[];
-  includeMayxoayNode?: boolean;
-}
 
 interface CanvasErrorBoundaryProps {
   children: ReactNode;
@@ -46,10 +39,7 @@ class CanvasErrorBoundary extends Component<
   }
 }
 
-export function BodyModelViewer({
-  excludedNodeNames = NO_EXCLUDED_NODE_NAMES,
-  includeMayxoayNode = false,
-}: BodyModelViewerProps = {}) {
+export function DigitalTwinClusterViewer() {
   const t = useI18nStore((state) => state.t);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ViewerStatus>("loading");
@@ -72,15 +62,13 @@ export function BodyModelViewer({
   return (
     <div className="relative isolate h-[min(62vh,700px)] min-h-[320px] overflow-hidden bento-border bg-surface-container md:min-h-[380px]">
       <CanvasErrorBoundary key={attempt} onError={handleError}>
-        <BodyModelCanvas
+        <DigitalTwinClusterCanvas
           onLoadStart={handleLoadStart}
           onReady={handleReady}
           onError={handleError}
-          canvasLabel={t("digital_twin_body_canvas_label")}
+          canvasLabel={t("digital_twin_mayxoay_canvas_label")}
           cameraResetVersion={cameraResetVersion}
           zoomLevel={zoomLevel}
-          excludedNodeNames={excludedNodeNames}
-          includeMayxoayNode={includeMayxoayNode}
         />
       </CanvasErrorBoundary>
 
@@ -114,7 +102,7 @@ export function BodyModelViewer({
           onClick={handleReset}
           className="min-h-11 min-w-11 rounded-md text-lg text-on-surface transition-colors hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
-          <span aria-hidden="true">↺</span>
+          <span aria-hidden="true">↻</span>
         </button>
       </div>
 
@@ -131,7 +119,7 @@ export function BodyModelViewer({
               className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent motion-reduce:animate-none"
             />
             <span className="text-sm font-medium text-on-surface">
-              {t("digital_twin_body_loading")}
+              {t("digital_twin_mayxoay_loading")}
             </span>
           </div>
         </div>
@@ -143,7 +131,7 @@ export function BodyModelViewer({
           aria-live="polite"
           className="absolute left-3 top-3 z-10 rounded-md border border-outline-variant bg-surface/90 px-3 py-1.5 text-xs font-semibold text-on-surface shadow-sm"
         >
-          {t("digital_twin_body_ready")}
+          {t("digital_twin_mayxoay_ready")}
         </div>
       ) : null}
 
@@ -154,7 +142,7 @@ export function BodyModelViewer({
         >
           <div className="flex max-w-sm flex-col items-center gap-4 text-center">
             <p className="text-sm text-on-surface">
-              {t("digital_twin_body_load_error")}
+              {t("digital_twin_mayxoay_load_error")}
             </p>
             <button
               type="button"
