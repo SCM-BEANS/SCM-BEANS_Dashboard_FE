@@ -1,0 +1,220 @@
+{
+  "schemaVersion": "cluster-03-oc-right-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "oc_right-1",
+  "nodeName": "oc_right-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "path-follow",
+    "property": "translation",
+    "preserveInitialOrientation": true,
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0
+  },
+  "anchor": {
+    "kind": "point",
+    "space": "solidworks-assembly",
+    "point": [
+      0.0033243096155192164,
+      -0.034311241963348865,
+      0.0903355693116261
+    ],
+    "localPoint": [
+      -0.03100000000000004,
+      0.22294305745404178,
+      0.17776608177156333
+    ],
+    "sourceMate": "PathMate12",
+    "targetReferenceType2": 25
+  },
+  "path": {
+    "sourcePartId": "body_may-1",
+    "sourceFeature": "Sketch2",
+    "sourceSegments": [
+      "Arc1",
+      "Line2"
+    ],
+    "segmentDirections": [
+      "reverse",
+      "reverse"
+    ],
+    "coordinateFrame": "solidworks-assembly",
+    "segments": [
+      {
+        "kind": "arc",
+        "sourceSegmentIndex": 0,
+        "sourceSegmentName": "Arc1",
+        "center": [
+          0.003324309615519265,
+          -0.0572542994173908,
+          0.05756948754006651
+        ],
+        "start": [
+          0.0033243096155192234,
+          -0.034311241963348865,
+          0.09033556931162613
+        ],
+        "end": [
+          0.003324309615519265,
+          -0.05725429941739063,
+          0.09756948754006652
+        ],
+        "radius": 0.04000000000000001,
+        "normal": [
+          -1,
+          -2e-15,
+          0
+        ],
+        "sweepRadians": -0.6108652381980136,
+        "lengthMeters": 0.02443460952792055
+      },
+      {
+        "kind": "line",
+        "sourceSegmentIndex": 1,
+        "sourceSegmentName": "Line2",
+        "start": [
+          0.003324309615519265,
+          -0.05725429941739063,
+          0.09756948754006652
+        ],
+        "end": [
+          0.003324309615519265,
+          -0.057254299417390686,
+          0.0825694875400665
+        ],
+        "direction": [
+          0,
+          -3.7007434154171856e-15,
+          -1
+        ],
+        "lengthMeters": 0.015000000000000013
+      }
+    ],
+    "lengthMeters": 0.039434609527920564,
+    "start": [
+      0.0033243096155192234,
+      -0.034311241963348865,
+      0.09033556931162613
+    ],
+    "end": [
+      0.003324309615519265,
+      -0.057254299417390686,
+      0.0825694875400665
+    ]
+  },
+  "samples": [
+    {
+      "progress": 0,
+      "point": [
+        0.0033243096155192234,
+        -0.034311241963348865,
+        0.09033556931162613
+      ]
+    },
+    {
+      "progress": 0.5,
+      "point": [
+        0.0033243096155192594,
+        -0.05254792184498282,
+        0.09729164772988921
+      ]
+    },
+    {
+      "progress": 1,
+      "point": [
+        0.003324309615519265,
+        -0.057254299417390686,
+        0.0825694875400665
+      ]
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-oc-right-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "oc_right-1",
+    "parentComponent": "body_may-1",
+    "mateFeature": "PathMate12",
+    "targetSketch": "oc_right-1:Sketch1",
+    "pathSketch": "body_may-1:Sketch2",
+    "readOnlyIntent": true
+  },
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "anchorToCadArcStartMeters": 2.8609792490763984e-17,
+    "arcToLineJoinMeters": 0,
+    "anchorTransformResidualMeters": 0,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "samplePoints": [
+      [
+        0.0033243096155192234,
+        -0.034311241963348865,
+        0.09033556931162613
+      ],
+      [
+        0.0033243096155192594,
+        -0.05254792184498282,
+        0.09729164772988921
+      ],
+      [
+        0.003324309615519265,
+        -0.057254299417390686,
+        0.0825694875400665
+      ]
+    ]
+  },
+  "targetInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.03432430961551926,
+    -0.25725429941739064,
+    -0.08743051245993723,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "targetSketchEvidence": {
+    "featureName": "Sketch1",
+    "segmentCount": 2,
+    "sourceFile": "oc_right.SLDPRT"
+  }
+}

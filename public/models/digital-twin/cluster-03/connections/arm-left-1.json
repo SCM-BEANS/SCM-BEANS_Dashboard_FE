@@ -1,0 +1,458 @@
+{
+  "schemaVersion": "cluster-03-arm-left-1-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "arm_left_1-1",
+  "nodeName": "arm_left_1-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "driver-follow",
+    "property": "translation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "preserveInitialOrientation": true,
+    "showGuide": false
+  },
+  "driver": {
+    "partId": "oc_left-1",
+    "motionFile": "/models/digital-twin/cluster-03/connections/oc-left.json",
+    "relation": "rigid-translation",
+    "sourceMates": [
+      "Coincident1",
+      "Concentric1"
+    ],
+    "pathConstraint": "PathMate8",
+    "sourcePath": "Sketch1:Arc3+Line1"
+  },
+  "bodyConnection": {
+    "kind": "point-on-path",
+    "status": "verified",
+    "mate": "PathMate8",
+    "sourcePartId": "arm_left_1-1",
+    "targetPartId": "body_may-1",
+    "sourcePoint": [
+      -0.054675690384480745,
+      -0.04807707643577436,
+      0.07067592024869035
+    ],
+    "targetReferencePoint": [
+      -0.05467569038448073,
+      -0.05725429941739091,
+      0.05756948754006651
+    ],
+    "targetPath": {
+      "sourceFeature": "Sketch1",
+      "sourceSegments": [
+        "Arc3",
+        "Line1"
+      ],
+      "coordinateFrame": "solidworks-assembly"
+    },
+    "validation": {
+      "pathDriverStartResidualMeters": 0,
+      "toleranceMeters": 1e-8
+    }
+  },
+  "anchor": {
+    "kind": "point",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.0546756903844808,
+      -0.02369034312930654,
+      0.10927415880540917
+    ],
+    "localPoint": [
+      -0.09000000000000107,
+      0.23356395628808482,
+      0.19670467126534674
+    ],
+    "sourceMate": "Coincident1",
+    "targetReferenceType2": 2,
+    "driverPoint": [
+      -0.054675690384480766,
+      -0.036361280728386486,
+      0.09377029507387322
+    ],
+    "driverLocalPoint": [
+      -0.09000000000000104,
+      0.22089301841221323,
+      0.18120080736860586
+    ],
+    "driverPathStart": [
+      -0.05267569038448078,
+      -0.03431124196334906,
+      0.09033556931162615
+    ],
+    "driverPathOffset": [
+      -0.001999999999999988,
+      -0.0020500387650374263,
+      0.0034347257622470706
+    ],
+    "armDriverOffset": [
+      -3.469446951953614e-17,
+      0.012670937599079946,
+      0.01550386373153595
+    ]
+  },
+  "path": {
+    "sourcePartId": "body_may-1",
+    "sourceFeature": "Sketch1",
+    "sourceSegments": [
+      "Arc3",
+      "Line1"
+    ],
+    "coordinateFrame": "solidworks-assembly",
+    "segments": [
+      {
+        "kind": "arc",
+        "sourceSegmentIndex": 0,
+        "sourceSegmentName": "Arc3",
+        "center": [
+          -0.05267569038448073,
+          -0.05725429941739091,
+          0.05756948754006651
+        ],
+        "start": [
+          -0.05267569038448077,
+          -0.034311241963348976,
+          0.09033556931162613
+        ],
+        "end": [
+          -0.05267569038448073,
+          -0.05725429941739074,
+          0.09756948754006652
+        ],
+        "radius": 0.04000000000000001,
+        "normal": [
+          1,
+          2e-15,
+          0
+        ],
+        "sweepRadians": 0.6108652381980136,
+        "lengthMeters": 0.02443460952792055
+      },
+      {
+        "kind": "line",
+        "sourceSegmentIndex": 1,
+        "sourceSegmentName": "Line1",
+        "start": [
+          -0.05267569038448073,
+          -0.05725429941739074,
+          0.09756948754006652
+        ],
+        "end": [
+          -0.05267569038448073,
+          -0.0572542994173908,
+          0.0825694875400665
+        ],
+        "direction": [
+          0,
+          -3.7007434154171856e-15,
+          -1
+        ],
+        "lengthMeters": 0.015000000000000013
+      }
+    ],
+    "lengthMeters": 0.039434609527920564,
+    "start": [
+      -0.05267569038448077,
+      -0.034311241963348976,
+      0.09033556931162613
+    ],
+    "end": [
+      -0.05267569038448073,
+      -0.0572542994173908,
+      0.0825694875400665
+    ]
+  },
+  "constraints": [
+    {
+      "name": "PathMate8",
+      "type": "MatePath",
+      "mateType": 15,
+      "entityCount": 2,
+      "participants": [
+        "body_may-1",
+        "arm_left_1-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.05467569038448073,
+            -0.05725429941739091,
+            0.05756948754006651,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "arm_left_1-1",
+          "referenceType": 1,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.054675690384480745,
+            -0.04807707643577436,
+            0.07067592024869035,
+            8.068481283613092e-16,
+            -0.573576436351049,
+            -0.8191520442889899,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Coincident1",
+      "type": "MateCoincident",
+      "mateType": 0,
+      "entityCount": 2,
+      "participants": [
+        "arm_left_1-1",
+        "oc_left-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_1-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.0546756903844808,
+            -0.02369034312930654,
+            0.10927415880540917,
+            1,
+            2e-15,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "oc_left-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.054675690384480766,
+            -0.036361280728386486,
+            0.09377029507387322,
+            -1,
+            -2.0004182824601233e-15,
+            4.246242551636781e-19,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Concentric1",
+      "type": "MateConcentric",
+      "mateType": 1,
+      "entityCount": 2,
+      "participants": [
+        "arm_left_1-1",
+        "oc_left-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_1-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.05467569038448077,
+            -0.03431124196334914,
+            0.09033556931162612,
+            -1,
+            -2e-15,
+            0,
+            0.004,
+            0
+          ]
+        },
+        {
+          "componentId": "oc_left-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.056725690384480776,
+            -0.03431124196334909,
+            0.09033556931162615,
+            -1,
+            -2.0004182824601233e-15,
+            4.246242551636781e-19,
+            0.004,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "driverPathPoint": [
+        -0.05267569038448077,
+        -0.034311241963348976,
+        0.09033556931162613
+      ],
+      "armAnchorPoint": [
+        -0.05467569038448079,
+        -0.023690343129306457,
+        0.10927415880540915
+      ],
+      "translationDelta": [
+        6.938893903907228e-18,
+        8.326672684688674e-17,
+        -1.3877787807814457e-17
+      ]
+    },
+    {
+      "progress": 0.5,
+      "driverPathPoint": [
+        -0.052675690384480736,
+        -0.05254792184498293,
+        0.09729164772988921
+      ],
+      "armAnchorPoint": [
+        -0.05467569038448076,
+        -0.04192702301094041,
+        0.11623023722367223
+      ],
+      "translationDelta": [
+        4.163336342344337e-17,
+        -0.01823667988163387,
+        0.0069560784182630675
+      ]
+    },
+    {
+      "progress": 1,
+      "driverPathPoint": [
+        -0.05267569038448073,
+        -0.0572542994173908,
+        0.0825694875400665
+      ],
+      "armAnchorPoint": [
+        -0.05467569038448075,
+        -0.04663340058334828,
+        0.10150807703384952
+      ],
+      "translationDelta": [
+        4.85722573273506e-17,
+        -0.022943057454041738,
+        -0.007766081771559644
+      ]
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-arm-left-1-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "arm_left_1-1",
+    "parentComponent": "body_may-1",
+    "driverComponent": "oc_left-1",
+    "pathMate": "PathMate8",
+    "driverMates": [
+      "Coincident1",
+      "Concentric1"
+    ],
+    "readOnlyIntent": true
+  },
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "glbMatrixResidual": 2.994173913806186e-7,
+    "concentricAxisAlignmentDot": 1,
+    "initialMatingPointResidualMeters": 8.469999434971913e-17,
+    "pathDriverStartResidualMeters": 0,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "sampleArmAnchorPoints": [
+      [
+        -0.05467569038448079,
+        -0.023690343129306457,
+        0.10927415880540915
+      ],
+      [
+        -0.05467569038448076,
+        -0.04192702301094041,
+        0.11623023722367223
+      ],
+      [
+        -0.05467569038448075,
+        -0.04663340058334828,
+        0.10150807703384952
+      ]
+    ],
+    "preservedOrientation": true
+  },
+  "targetInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.035324309615520265,
+    -0.25725429941739136,
+    -0.08743051245993758,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "driverInitialTransform": [
+    1,
+    4.1828246012928427e-19,
+    -4.2446308304679884e-19,
+    -1.9041125301867026e-18,
+    0.9999999999999968,
+    -8.058605843961317e-8,
+    9.841744992812016e-20,
+    8.058605851301038e-8,
+    0.9999999999999969,
+    0.03532430961552027,
+    -0.2572543137428579,
+    -0.08743049449383439,
+    1,
+    0,
+    0,
+    0
+  ]
+}

@@ -1,0 +1,1276 @@
+{
+  "schemaVersion": "cluster-03-connections.v1",
+  "clusterId": "cluster-03",
+  "phase": "phase-6",
+  "status": "partial-runtime-ready",
+  "runtimeReady": false,
+  "checks": [
+    {
+      "id": "component-id-set",
+      "passed": true,
+      "detail": "Every SolidWorks component has one manifest part record."
+    },
+    {
+      "id": "final-glb-node-set",
+      "passed": true,
+      "detail": "The aggregate final.glb owns exactly the 18 mapped mesh nodes."
+    },
+    {
+      "id": "single-render-owner",
+      "passed": true,
+      "detail": "No separate oc_left/oc_right overlay is runtime-owned in this phase."
+    },
+    {
+      "id": "cad-source-evidence",
+      "passed": true,
+      "detail": "Every part carries source evidence without exposing an absolute local path."
+    },
+    {
+      "id": "pending-state-explicit",
+      "passed": true,
+      "detail": "Unresolved CAD relationships remain explicit; oc_left-1, oc_right-1, truc_chinh-1, truc_nen-1 and gear_motor_chinh-1 are the only resolved motion parts."
+    },
+    {
+      "id": "root-frame-alignment",
+      "passed": true,
+      "detail": "CAD and GLB node transforms are aligned within the root-frame tolerance."
+    },
+    {
+      "id": "oc-left-cad-connection",
+      "passed": true,
+      "detail": "oc_left-1 is connected to body_may-1 through the verified SolidWorks PathMate7 evidence."
+    },
+    {
+      "id": "oc-left-sketch-path-continuity",
+      "passed": true,
+      "detail": "The manifest-derived arc and line meet at the CAD Sketch1 endpoints without a gap."
+    },
+    {
+      "id": "oc-left-initial-anchor",
+      "passed": true,
+      "detail": "The GLB node initial transform reconstructs the CAD PathMate7 anchor at progress 0."
+    },
+    {
+      "id": "oc-left-single-render-owner",
+      "passed": true,
+      "detail": "oc_left-1 remains owned by final.glb; oc_left.glb is not loaded as an overlay."
+    },
+    {
+      "id": "oc-right-cad-connection",
+      "passed": true,
+      "detail": "oc_right-1 is connected to body_may-1 through the verified SolidWorks PathMate12 evidence."
+    },
+    {
+      "id": "oc-right-sketch-path-continuity",
+      "passed": true,
+      "detail": "The manifest-derived reversed Arc1 and Line2 path from body_may Sketch2 is continuous at the CAD endpoints."
+    },
+    {
+      "id": "oc-right-initial-anchor",
+      "passed": true,
+      "detail": "The GLB node initial transform reconstructs the CAD PathMate12 anchor at progress 0."
+    },
+    {
+      "id": "oc-right-single-render-owner",
+      "passed": true,
+      "detail": "oc_right-1 remains owned by final.glb; no separate detail GLB is loaded as an overlay."
+    },
+    {
+      "id": "oc-motion-pair-ready",
+      "passed": true,
+      "detail": "Both independent oc motion definitions are available for the same cluster-03 scene without marking remaining parts complete."
+    },
+    {
+      "id": "truc-chinh-cad-axis",
+      "passed": true,
+      "detail": "truc_chinh-1 is connected to fixed body_may-1 through the verified Concentric3 axis evidence."
+    },
+    {
+      "id": "truc-chinh-initial-transform",
+      "passed": true,
+      "detail": "The final.glb node transform and the CAD axis pivot round-trip within the recorded tolerances."
+    },
+    {
+      "id": "truc-chinh-diagnostic-rotation",
+      "passed": true,
+      "detail": "The runtime test range is explicit and diagnostic-only because SolidWorks supplied no angular limit for this checkpoint."
+    },
+    {
+      "id": "truc-chinh-preserves-oc-pivots",
+      "passed": true,
+      "detail": "The two previously verified oc path connections remain unchanged while truc_chinh-1 is added."
+    },
+    {
+      "id": "truc-chinh-single-render-owner",
+      "passed": true,
+      "detail": "truc_chinh-1 remains owned by final.glb; no duplicate shaft overlay is loaded."
+    },
+    {
+      "id": "truc-nen-cad-axis",
+      "passed": true,
+      "detail": "truc_nen-1 is connected to fixed body_may-1 through the verified Concentric23 axis evidence."
+    },
+    {
+      "id": "truc-nen-screw-evidence",
+      "passed": true,
+      "detail": "Screw2 contributes an extracted 0.004 m/revolution pitch and reverse direction; no pitch was invented in runtime."
+    },
+    {
+      "id": "truc-nen-initial-transform",
+      "passed": true,
+      "detail": "The final.glb node transform and CAD axis pivot round-trip within the recorded tolerances."
+    },
+    {
+      "id": "truc-nen-screw-test-range",
+      "passed": true,
+      "detail": "The runtime test covers one CAD-measured screw revolution with its derived translation, while physical limits remain explicit as unavailable."
+    },
+    {
+      "id": "truc-nen-preserves-previous-parts",
+      "passed": true,
+      "detail": "The previously verified oc paths and truc_chinh axis remain ready while truc_nen-1 is added."
+    },
+    {
+      "id": "truc-nen-single-render-owner",
+      "passed": true,
+      "detail": "truc_nen-1 remains owned by final.glb; no duplicate shaft overlay is loaded."
+    },
+    {
+      "id": "gear-motor-chinh-cad-axis",
+      "passed": true,
+      "detail": "gear_motor_chinh-1 is connected to fixed body_may-1 through the verified Concentric12 axis evidence."
+    },
+    {
+      "id": "gear-motor-chinh-ratio-evidence",
+      "passed": true,
+      "detail": "GearMate2 supplies the runtime 1:1 reversed relation from gear_motor_chinh-1 to wiper_gear-1."
+    },
+    {
+      "id": "gear-motor-chinh-initial-transform",
+      "passed": true,
+      "detail": "The final.glb node transform and CAD axis pivot round-trip within the recorded tolerances."
+    },
+    {
+      "id": "gear-motor-chinh-diagnostic-rotation",
+      "passed": true,
+      "detail": "One rotation is exposed for local testing; CAD did not provide a physical angular limit."
+    },
+    {
+      "id": "gear-motor-chinh-preserves-previous-parts",
+      "passed": true,
+      "detail": "The verified oc and shaft connections remain ready while gear_motor_chinh-1 is added."
+    },
+    {
+      "id": "gear-motor-chinh-single-render-owner",
+      "passed": true,
+      "detail": "gear_motor_chinh-1 remains owned by final.glb; no duplicate gear overlay is loaded."
+    },
+    {
+      "id": "gear-motor-nen-cad-axis",
+      "passed": true,
+      "detail": "gear_motor_nen-1 is connected to fixed body_may-1 through the verified Concentric30 axis evidence."
+    },
+    {
+      "id": "gear-motor-nen-ratio-evidence",
+      "passed": true,
+      "detail": "GearMate4 supplies the runtime extracted ratio and reverse direction to gear_nen-1 in the independent lower-drive branch."
+    },
+    {
+      "id": "gear-motor-nen-initial-transform",
+      "passed": true,
+      "detail": "The final.glb node transform and CAD axis pivot round-trip within the recorded tolerances."
+    },
+    {
+      "id": "gear-motor-nen-diagnostic-rotation",
+      "passed": true,
+      "detail": "One rotation is exposed for local testing; CAD did not provide a physical angular limit."
+    },
+    {
+      "id": "gear-motor-nen-preserves-previous-parts",
+      "passed": true,
+      "detail": "The verified oc, shaft and first gear motor connections remain ready while gear_motor_nen-1 is added."
+    },
+    {
+      "id": "gear-motor-nen-single-render-owner",
+      "passed": true,
+      "detail": "gear_motor_nen-1 remains owned by final.glb; no duplicate gear overlay is loaded."
+    },
+    {
+      "id": "gear-nen-cad-axis",
+      "passed": true,
+      "detail": "gear_nen-1 is connected to fixed body_may-1 through the verified Concentric27 axis evidence."
+    },
+    {
+      "id": "gear-nen-ratio-evidence",
+      "passed": true,
+      "detail": "GearMate4 records the reverse relation between gear_nen-1 and gear_motor_nen-1 for the independent lower-drive branch."
+    },
+    {
+      "id": "gear-nen-distance-limit-evidence",
+      "passed": true,
+      "detail": "LimitDistance4 is preserved as an axial constraint; it is not converted into an invented angular limit."
+    },
+    {
+      "id": "gear-nen-initial-transform",
+      "passed": true,
+      "detail": "The final.glb node transform and CAD axis pivot round-trip within the recorded tolerances."
+    },
+    {
+      "id": "gear-nen-diagnostic-rotation",
+      "passed": true,
+      "detail": "One rotation is exposed for local testing; CAD did not provide a physical angular limit."
+    },
+    {
+      "id": "gear-nen-preserves-previous-parts",
+      "passed": true,
+      "detail": "The verified oc, shaft and motor gear connections remain ready while gear_nen-1 is added."
+    },
+    {
+      "id": "gear-nen-single-render-owner",
+      "passed": true,
+      "detail": "gear_nen-1 remains owned by final.glb; no duplicate gear overlay is loaded."
+    },
+    {
+      "id": "arm-left-1-cad-parent",
+      "passed": true,
+      "detail": "arm_left_1-1 is anchored to body_may-1 through the verified PathMate8 evidence."
+    },
+    {
+      "id": "arm-left-1-driver-mates",
+      "passed": true,
+      "detail": "Coincident1 and Concentric1 preserve the arm_left_1-1 to oc_left-1 rigid relation."
+    },
+    {
+      "id": "arm-left-1-initial-transform",
+      "passed": true,
+      "detail": "The final.glb arm node and the CAD mating point agree at progress 0."
+    },
+    {
+      "id": "arm-left-1-cumulative-samples",
+      "passed": true,
+      "detail": "The arm is tested at progress 0, 0.5 and 1 using the verified oc_left CAD path."
+    },
+    {
+      "id": "arm-left-1-single-render-owner",
+      "passed": true,
+      "detail": "arm_left_1-1 remains owned by final.glb; no separate overlay is loaded."
+    },
+    {
+      "id": "arm-left-1-preserves-previous-parts",
+      "passed": true,
+      "detail": "Previously verified oc_left-1 and oc_right-1 records remain unchanged and ready."
+    },
+    {
+      "id": "arm-left-2-cad-chain",
+      "passed": true,
+      "detail": "arm_left_2-1 is chained to the verified arm_left_1-1 checkpoint by Coincident3."
+    },
+    {
+      "id": "arm-left-2-driver-mates",
+      "passed": true,
+      "detail": "Concentric2 preserves the arm_left_2-1 to oc_left-1 axis relation."
+    },
+    {
+      "id": "arm-left-2-initial-transform",
+      "passed": true,
+      "detail": "The final.glb arm node and the CAD Coincident3 point agree at progress 0."
+    },
+    {
+      "id": "arm-left-2-cumulative-samples",
+      "passed": true,
+      "detail": "The arm is tested at progress 0, 0.5 and 1 using the verified CAD chain."
+    },
+    {
+      "id": "arm-left-2-single-render-owner",
+      "passed": true,
+      "detail": "arm_left_2-1 remains owned by final.glb; no separate overlay is loaded."
+    },
+    {
+      "id": "arm-left-2-preserves-previous-parts",
+      "passed": true,
+      "detail": "The previously verified arm_left_1-1 and oc_left-1 records remain ready."
+    },
+    {
+      "id": "arm-left-3-cad-parent",
+      "passed": true,
+      "detail": "arm_left_3-1 is anchored to fixed body_may-1 by Coincident5."
+    },
+    {
+      "id": "arm-left-3-driver-axis",
+      "passed": true,
+      "detail": "Concentric6 and Parallel1 make arm_left_3-1 follow the verified truc_chinh-1 axis."
+    },
+    {
+      "id": "arm-left-3-initial-transform",
+      "passed": true,
+      "detail": "The final.glb arm node and CAD axis pivot agree at progress 0."
+    },
+    {
+      "id": "arm-left-3-diagnostic-samples",
+      "passed": true,
+      "detail": "The arm is tested against the same explicit diagnostic rotation envelope as truc_chinh-1."
+    },
+    {
+      "id": "arm-left-3-single-render-owner",
+      "passed": true,
+      "detail": "arm_left_3-1 remains owned by final.glb; no separate overlay is loaded."
+    },
+    {
+      "id": "arm-left-3-preserves-previous-parts",
+      "passed": true,
+      "detail": "The verified arm_left_2-1 and truc_chinh-1 records remain ready."
+    },
+    {
+      "id": "arm-left-3-wiper-connection",
+      "passed": true,
+      "detail": "The PathMate10 point-on-path connection and Coincident7 wiper coupling are explicit and verified."
+    },
+    {
+      "id": "arm-left-2-arm-left-3-connection",
+      "passed": true,
+      "detail": "PathMate10 now records the arm_left_2-1 point on arm_left_3-1 Sketch1 Line1, with LimitDistance1 checked at the same CAD position."
+    },
+    {
+      "id": "arm-left-2-wiper-connection",
+      "passed": true,
+      "detail": "PathMate11 and LimitDistance2 record the arm_left_2-1 point on the wiper_gear-1 Sketch1 Line1 with zero initial residual."
+    },
+    {
+      "id": "gear-motor-chinh-main-drive-calibration",
+      "passed": true,
+      "detail": "gear_motor_chinh-1 is calibrated against the complete oc_left-1 CAD path; the motor envelope is about 0 to 1.66819 rad and LimitDistance1/2 remain ranges."
+    },
+    {
+      "id": "arm-left-3-deferred-mates-recorded",
+      "passed": true,
+      "detail": "The PathMate10 point-on-path connection and Coincident7 wiper coupling are explicit and resolved."
+    },
+    {
+      "id": "arm-left-1-body-pathmate8",
+      "passed": true,
+      "detail": "PathMate8 explicitly connects arm_left_1-1 to body_may-1 Sketch1 Arc3+Line1; the body path is the runtime anchor authority."
+    }
+  ],
+  "rootFrame": {
+    "file": "/models/digital-twin/cluster-03/connections/root-frame.json",
+    "status": "verified",
+    "maxTranslationErrorMillimeters": 0.000465459448983907,
+    "maxMatrixEntryError": 4.947491722973041e-7
+  },
+  "runtimeBlockers": [
+    "The remaining cluster-03 components still require later CAD normalization phases.",
+    "PathMate10, LimitDistance1 and Coincident7 are resolved for the arm_left_2/arm_left_3/wiper linkage; collision verification remains outside this checkpoint."
+  ],
+  "motionReady": true,
+  "ocLeft": {
+    "file": "/models/digital-twin/cluster-03/connections/oc-left.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "point": [
+          -0.05267569038448077,
+          -0.034311241963348976,
+          0.09033556931162613
+        ]
+      },
+      {
+        "progress": 0.5,
+        "point": [
+          -0.052675690384480736,
+          -0.05254792184498293,
+          0.09729164772988921
+        ]
+      },
+      {
+        "progress": 1,
+        "point": [
+          -0.05267569038448073,
+          -0.0572542994173908,
+          0.0825694875400665
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "ocRight": {
+    "file": "/models/digital-twin/cluster-03/connections/oc-right.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "point": [
+          0.0033243096155192234,
+          -0.034311241963348865,
+          0.09033556931162613
+        ]
+      },
+      {
+        "progress": 0.5,
+        "point": [
+          0.0033243096155192594,
+          -0.05254792184498282,
+          0.09729164772988921
+        ]
+      },
+      {
+        "progress": 1,
+        "point": [
+          0.003324309615519265,
+          -0.057254299417390686,
+          0.0825694875400665
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "motionPair": {
+    "status": "verified",
+    "files": [
+      "/models/digital-twin/cluster-03/connections/oc-left.json",
+      "/models/digital-twin/cluster-03/connections/oc-right.json"
+    ],
+    "nodes": [
+      "oc_left-1",
+      "oc_right-1"
+    ]
+  },
+  "trucChinh": {
+    "file": "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+    "status": "verified",
+    "axis": [
+      -1,
+      -1.999992770446049e-15,
+      -1.1865823933669593e-21
+    ],
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "toleranceMeters": 1e-8,
+    "rangeIsDiagnosticOnly": true
+  },
+  "trucNen": {
+    "file": "/models/digital-twin/cluster-03/connections/truc-nen.json",
+    "status": "verified",
+    "axis": [
+      6.165890344762365e-16,
+      4.261501286010193e-15,
+      1
+    ],
+    "screwMate": "Screw2",
+    "pitchMeters": 0.004,
+    "translationPerRevolutionMeters": -0.004,
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0,
+        "translationMeters": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793,
+        "translationMeters": -0.002
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586,
+        "translationMeters": -0.004
+      }
+    ],
+    "toleranceMeters": 1e-8,
+    "rangeIsDiagnosticOnly": true
+  },
+  "gearMotorChinh": {
+    "file": "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+    "status": "verified",
+    "axis": [
+      1,
+      -2.0166173804045197e-15,
+      -6.938942623752423e-16
+    ],
+    "gearMate": "GearMate2",
+    "ratio": 1,
+    "reverse": true,
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "driveCalibration": {
+      "kind": "cam-path-master",
+      "camPathPartId": "oc_left-1",
+      "camProgressRange": [
+        0,
+        1
+      ],
+      "motorAngleRangeRadians": [
+        0,
+        1.66818569905618
+      ],
+      "wiperAngleRangeRadians": [
+        0,
+        -1.66818569905618
+      ],
+      "distanceMode": "LimitDistance-range",
+      "sourceMates": [
+        "GearMate2",
+        "PathMate11",
+        "LimitDistance2",
+        "PathMate10",
+        "LimitDistance1"
+      ],
+      "samples": [
+        {
+          "camProgress": 0,
+          "motorAngleRadians": 0
+        },
+        {
+          "camProgress": 0.01,
+          "motorAngleRadians": 0.00942477796076938
+        },
+        {
+          "camProgress": 0.02,
+          "motorAngleRadians": 0.01884955592153876
+        },
+        {
+          "camProgress": 0.03,
+          "motorAngleRadians": 0.02827433388230814
+        },
+        {
+          "camProgress": 0.04,
+          "motorAngleRadians": 0.03769911184307752
+        },
+        {
+          "camProgress": 0.05,
+          "motorAngleRadians": 0.047123889803846894
+        },
+        {
+          "camProgress": 0.06,
+          "motorAngleRadians": 0.05654866776461628
+        },
+        {
+          "camProgress": 0.07,
+          "motorAngleRadians": 0.06597344572538566
+        },
+        {
+          "camProgress": 0.08,
+          "motorAngleRadians": 0.07853981633974483
+        },
+        {
+          "camProgress": 0.09,
+          "motorAngleRadians": 0.0879645943005142
+        },
+        {
+          "camProgress": 0.1,
+          "motorAngleRadians": 0.09738937226128358
+        },
+        {
+          "camProgress": 0.11,
+          "motorAngleRadians": 0.10681415022205297
+        },
+        {
+          "camProgress": 0.12,
+          "motorAngleRadians": 0.11623892818282235
+        },
+        {
+          "camProgress": 0.13,
+          "motorAngleRadians": 0.12566370614359174
+        },
+        {
+          "camProgress": 0.14,
+          "motorAngleRadians": 0.1350884841043611
+        },
+        {
+          "camProgress": 0.15,
+          "motorAngleRadians": 0.14765485471872028
+        },
+        {
+          "camProgress": 0.16,
+          "motorAngleRadians": 0.15707963267948966
+        },
+        {
+          "camProgress": 0.17,
+          "motorAngleRadians": 0.16650441064025903
+        },
+        {
+          "camProgress": 0.18,
+          "motorAngleRadians": 0.1759291886010284
+        },
+        {
+          "camProgress": 0.19,
+          "motorAngleRadians": 0.18535396656179778
+        },
+        {
+          "camProgress": 0.2,
+          "motorAngleRadians": 0.19477874452256716
+        },
+        {
+          "camProgress": 0.21,
+          "motorAngleRadians": 0.20420352248333654
+        },
+        {
+          "camProgress": 0.22,
+          "motorAngleRadians": 0.21676989309769573
+        },
+        {
+          "camProgress": 0.23,
+          "motorAngleRadians": 0.2261946710584651
+        },
+        {
+          "camProgress": 0.24,
+          "motorAngleRadians": 0.23561944901923448
+        },
+        {
+          "camProgress": 0.25,
+          "motorAngleRadians": 0.24504422698000386
+        },
+        {
+          "camProgress": 0.26,
+          "motorAngleRadians": 0.25446900494077324
+        },
+        {
+          "camProgress": 0.27,
+          "motorAngleRadians": 0.26389378290154264
+        },
+        {
+          "camProgress": 0.28,
+          "motorAngleRadians": 0.273318560862312
+        },
+        {
+          "camProgress": 0.29,
+          "motorAngleRadians": 0.2827433388230814
+        },
+        {
+          "camProgress": 0.3,
+          "motorAngleRadians": 0.29530970943744056
+        },
+        {
+          "camProgress": 0.31,
+          "motorAngleRadians": 0.3047344873982099
+        },
+        {
+          "camProgress": 0.32,
+          "motorAngleRadians": 0.3141592653589793
+        },
+        {
+          "camProgress": 0.33,
+          "motorAngleRadians": 0.32358404331974866
+        },
+        {
+          "camProgress": 0.34,
+          "motorAngleRadians": 0.33300882128051806
+        },
+        {
+          "camProgress": 0.35,
+          "motorAngleRadians": 0.3424335992412874
+        },
+        {
+          "camProgress": 0.36,
+          "motorAngleRadians": 0.3518583772020568
+        },
+        {
+          "camProgress": 0.37,
+          "motorAngleRadians": 0.36442474781641604
+        },
+        {
+          "camProgress": 0.38,
+          "motorAngleRadians": 0.3738495257771854
+        },
+        {
+          "camProgress": 0.39,
+          "motorAngleRadians": 0.3832743037379548
+        },
+        {
+          "camProgress": 0.4,
+          "motorAngleRadians": 0.39269908169872414
+        },
+        {
+          "camProgress": 0.41,
+          "motorAngleRadians": 0.40212385965949354
+        },
+        {
+          "camProgress": 0.42,
+          "motorAngleRadians": 0.41154863762026295
+        },
+        {
+          "camProgress": 0.43,
+          "motorAngleRadians": 0.4209734155810323
+        },
+        {
+          "camProgress": 0.44,
+          "motorAngleRadians": 0.43353978619539146
+        },
+        {
+          "camProgress": 0.45,
+          "motorAngleRadians": 0.4429645641561608
+        },
+        {
+          "camProgress": 0.46,
+          "motorAngleRadians": 0.4523893421169302
+        },
+        {
+          "camProgress": 0.47,
+          "motorAngleRadians": 0.4618141200776996
+        },
+        {
+          "camProgress": 0.48,
+          "motorAngleRadians": 0.47123889803846897
+        },
+        {
+          "camProgress": 0.49,
+          "motorAngleRadians": 0.48066367599923837
+        },
+        {
+          "camProgress": 0.5,
+          "motorAngleRadians": 0.4900884539600077
+        },
+        {
+          "camProgress": 0.51,
+          "motorAngleRadians": 0.4995132319207771
+        },
+        {
+          "camProgress": 0.52,
+          "motorAngleRadians": 0.5120796025351363
+        },
+        {
+          "camProgress": 0.53,
+          "motorAngleRadians": 0.5215043804959058
+        },
+        {
+          "camProgress": 0.54,
+          "motorAngleRadians": 0.5309291584566751
+        },
+        {
+          "camProgress": 0.55,
+          "motorAngleRadians": 0.5403539364174444
+        },
+        {
+          "camProgress": 0.56,
+          "motorAngleRadians": 0.5497787143782138
+        },
+        {
+          "camProgress": 0.57,
+          "motorAngleRadians": 0.5592034923389833
+        },
+        {
+          "camProgress": 0.58,
+          "motorAngleRadians": 0.5686282702997526
+        },
+        {
+          "camProgress": 0.59,
+          "motorAngleRadians": 0.5811946409141117
+        },
+        {
+          "camProgress": 0.6,
+          "motorAngleRadians": 0.5906194188748811
+        },
+        {
+          "camProgress": 0.61,
+          "motorAngleRadians": 0.6000441968356505
+        },
+        {
+          "camProgress": 0.62,
+          "motorAngleRadians": 0.6094689747964198
+        },
+        {
+          "camProgress": 0.63,
+          "motorAngleRadians": 0.6283185307179586
+        },
+        {
+          "camProgress": 0.64,
+          "motorAngleRadians": 0.6440264939859076
+        },
+        {
+          "camProgress": 0.65,
+          "motorAngleRadians": 0.6628760499074464
+        },
+        {
+          "camProgress": 0.66,
+          "motorAngleRadians": 0.6817256058289851
+        },
+        {
+          "camProgress": 0.67,
+          "motorAngleRadians": 0.7005751617505239
+        },
+        {
+          "camProgress": 0.68,
+          "motorAngleRadians": 0.7194247176720626
+        },
+        {
+          "camProgress": 0.69,
+          "motorAngleRadians": 0.7414158662471911
+        },
+        {
+          "camProgress": 0.7,
+          "motorAngleRadians": 0.7602654221687299
+        },
+        {
+          "camProgress": 0.71,
+          "motorAngleRadians": 0.7822565707438585
+        },
+        {
+          "camProgress": 0.72,
+          "motorAngleRadians": 0.8042477193189871
+        },
+        {
+          "camProgress": 0.73,
+          "motorAngleRadians": 0.8262388678941156
+        },
+        {
+          "camProgress": 0.74,
+          "motorAngleRadians": 0.8482300164692441
+        },
+        {
+          "camProgress": 0.75,
+          "motorAngleRadians": 0.8733627576979625
+        },
+        {
+          "camProgress": 0.76,
+          "motorAngleRadians": 0.8984954989266809
+        },
+        {
+          "camProgress": 0.77,
+          "motorAngleRadians": 0.9236282401553992
+        },
+        {
+          "camProgress": 0.78,
+          "motorAngleRadians": 0.9519025740377073
+        },
+        {
+          "camProgress": 0.79,
+          "motorAngleRadians": 0.9801769079200154
+        },
+        {
+          "camProgress": 0.8,
+          "motorAngleRadians": 1.0084512418023235
+        },
+        {
+          "camProgress": 0.81,
+          "motorAngleRadians": 1.0398671683382215
+        },
+        {
+          "camProgress": 0.82,
+          "motorAngleRadians": 1.0744246875277093
+        },
+        {
+          "camProgress": 0.83,
+          "motorAngleRadians": 1.108982206717197
+        },
+        {
+          "camProgress": 0.84,
+          "motorAngleRadians": 1.1466813185602747
+        },
+        {
+          "camProgress": 0.85,
+          "motorAngleRadians": 1.1875220230569419
+        },
+        {
+          "camProgress": 0.86,
+          "motorAngleRadians": 1.231504320207199
+        },
+        {
+          "camProgress": 0.87,
+          "motorAngleRadians": 1.2817698026646356
+        },
+        {
+          "camProgress": 0.88,
+          "motorAngleRadians": 1.338318470429252
+        },
+        {
+          "camProgress": 0.89,
+          "motorAngleRadians": 1.4074335088082273
+        },
+        {
+          "camProgress": 0.9,
+          "motorAngleRadians": 1.4953981031087415
+        },
+        {
+          "camProgress": 0.91,
+          "motorAngleRadians": 1.6524777357882312
+        },
+        {
+          "camProgress": 0.92,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.93,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.94,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.95,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.96,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.97,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.98,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.99,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 1,
+          "motorAngleRadians": 1.66818569905618
+        }
+      ]
+    },
+    "toleranceMeters": 1e-8,
+    "rangeIsDiagnosticOnly": true
+  },
+  "gearMotorNen": {
+    "file": "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+    "status": "verified",
+    "axis": [
+      9.35079158259422e-17,
+      1.129095829703111e-15,
+      1
+    ],
+    "gearMate": "GearMate4",
+    "ratio": 0.9924218574502,
+    "reverse": true,
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "toleranceMeters": 1e-8,
+    "rangeIsDiagnosticOnly": true
+  },
+  "gearNen": {
+    "file": "/models/digital-twin/cluster-03/connections/gear-nen.json",
+    "status": "verified",
+    "axis": [
+      -2.0780419536897073e-16,
+      -3.848548080272432e-15,
+      -1
+    ],
+    "gearMate": "GearMate4",
+    "ratio": 0.9924218574502,
+    "reverse": true,
+    "limits": {
+      "sourceMate": "LimitDistance4",
+      "kind": "distance",
+      "appliesTo": [
+        "box_nen-1",
+        "gear_nen-1"
+      ],
+      "distanceMeters": 0.055779999999999996,
+      "minimumDistanceMeters": 0.0010000000000000009,
+      "maximumDistanceMeters": 0.055779999999999996,
+      "runtimeUse": "constraint-evidence-only"
+    },
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "toleranceMeters": 1e-8,
+    "rangeIsDiagnosticOnly": true
+  },
+  "armLeft1": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "driverPathPoint": [
+          -0.05267569038448077,
+          -0.034311241963348976,
+          0.09033556931162613
+        ],
+        "armAnchorPoint": [
+          -0.05467569038448079,
+          -0.023690343129306457,
+          0.10927415880540915
+        ],
+        "translationDelta": [
+          6.938893903907228e-18,
+          8.326672684688674e-17,
+          -1.3877787807814457e-17
+        ]
+      },
+      {
+        "progress": 0.5,
+        "driverPathPoint": [
+          -0.052675690384480736,
+          -0.05254792184498293,
+          0.09729164772988921
+        ],
+        "armAnchorPoint": [
+          -0.05467569038448076,
+          -0.04192702301094041,
+          0.11623023722367223
+        ],
+        "translationDelta": [
+          4.163336342344337e-17,
+          -0.01823667988163387,
+          0.0069560784182630675
+        ]
+      },
+      {
+        "progress": 1,
+        "driverPathPoint": [
+          -0.05267569038448073,
+          -0.0572542994173908,
+          0.0825694875400665
+        ],
+        "armAnchorPoint": [
+          -0.05467569038448075,
+          -0.04663340058334828,
+          0.10150807703384952
+        ],
+        "translationDelta": [
+          4.85722573273506e-17,
+          -0.022943057454041738,
+          -0.007766081771559644
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "armLeft2": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "driverPathPoint": [
+          -0.05267569038448077,
+          -0.034311241963348976,
+          0.09033556931162613
+        ],
+        "armAnchorPoint": [
+          -0.056675690384481926,
+          -0.06311496490734786,
+          0.08085434034089585
+        ],
+        "translationDelta": [
+          6.938893903907228e-18,
+          8.326672684688674e-17,
+          -1.3877787807814457e-17
+        ]
+      },
+      {
+        "progress": 0.5,
+        "driverPathPoint": [
+          -0.052675690384480736,
+          -0.05254792184498293,
+          0.09729164772988921
+        ],
+        "armAnchorPoint": [
+          -0.05667569038448189,
+          -0.08135164478898181,
+          0.08781041875915893
+        ],
+        "translationDelta": [
+          4.163336342344337e-17,
+          -0.01823667988163387,
+          0.0069560784182630675
+        ]
+      },
+      {
+        "progress": 1,
+        "driverPathPoint": [
+          -0.05267569038448073,
+          -0.0572542994173908,
+          0.0825694875400665
+        ],
+        "armAnchorPoint": [
+          -0.056675690384481885,
+          -0.08605802236138968,
+          0.07308825856933622
+        ],
+        "translationDelta": [
+          4.85722573273506e-17,
+          -0.022943057454041738,
+          -0.007766081771559644
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "armLeft3": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "toleranceMeters": 1e-8,
+    "driver": "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+    "connection": {
+      "kind": "point-on-path",
+      "status": "verified",
+      "mate": "PathMate10",
+      "sourcePartId": "arm_left_2-1",
+      "targetPartId": "arm_left_3-1",
+      "sourcePoint": [
+        -0.060675690384481465,
+        -0.09229695662598972,
+        0.06324946780065155
+      ],
+      "sourceLocalPoint": [
+        -0.09605000000000054,
+        0.16179280745364888,
+        0.15888098381339902
+      ],
+      "targetPath": {
+        "sourceFeature": "Sketch1",
+        "sourceSegment": "Line1",
+        "point": [
+          -0.06067569038448221,
+          -0.09229695662598972,
+          0.06324946780065152
+        ],
+        "direction": [
+          1.974234208935155e-15,
+          -0.9871171044675737,
+          0.15999944396013782
+        ],
+        "start": [
+          -0.06067569038448221,
+          -0.09229695662598972,
+          0.06324946780065152
+        ],
+        "end": [
+          -0.060675690384482193,
+          -0.09723254214832766,
+          0.06404946502045225
+        ],
+        "localPoint": [
+          -0.15714171508806504,
+          0.16664091196210035,
+          0
+        ],
+        "localDirection": [
+          -0.34202014332566116,
+          -0.9396926207859112,
+          0
+        ],
+        "localStart": [
+          -0.15714171508806504,
+          0.16664091196210035,
+          0
+        ],
+        "localEnd": [
+          -0.15885181580469337,
+          0.16194244885817072,
+          0
+        ],
+        "parameterRange": [
+          0,
+          1
+        ],
+        "lengthMeters": 0.00500000000000008,
+        "coordinateFrame": "solidworks-assembly"
+      },
+      "driverAxis": {
+        "sourceMate": "Concentric2",
+        "partId": "oc_left-1",
+        "point": [
+          -0.056725690384480776,
+          -0.03431124196334909,
+          0.09033556931162615
+        ],
+        "axis": [
+          -1,
+          -2.0004182824601233e-15,
+          4.246242551636781e-19
+        ],
+        "localPoint": [
+          -0.09205000000000105,
+          0.22294305745404164,
+          0.17776608177156333
+        ],
+        "localAxis": [
+          -1,
+          -1.998514169964149e-15,
+          3.2604559941079578e-19
+        ]
+      },
+      "limit": {
+        "mate": "LimitDistance1",
+        "sourcePoint": [
+          -0.060675690384481465,
+          -0.09229695662598972,
+          0.06324946780065155
+        ],
+        "targetPoint": [
+          -0.060675690384482193,
+          -0.09723254214832766,
+          0.06404946502045225
+        ],
+        "distanceMeters": 0.005000000000000074,
+        "minimumDistanceMeters": 0.0010023467014082278,
+        "maximumDistanceMeters": 0.005002130598430025
+      },
+      "validation": {
+        "pathResidualMeters": 7.429669904675679e-16,
+        "limitDistanceResidualMeters": 1.734723475976807e-18,
+        "lineProjectionMeters": 4.440876665295652e-18,
+        "toleranceMeters": 1e-8
+      }
+    },
+    "deferredMates": []
+  }
+}

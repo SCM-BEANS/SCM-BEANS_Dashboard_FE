@@ -1,0 +1,1442 @@
+{
+  "schemaVersion": "cluster-03-connections.v1",
+  "clusterId": "cluster-03",
+  "status": "phase-6-arm-left-3-ready",
+  "runtimeReady": false,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "solidWorksRevision": "32.1.0",
+    "componentCount": 18
+  },
+  "loader": {
+    "contract": "cluster-03-connection-loader",
+    "version": "1.0.0",
+    "entry": "deferred-to-phase-9",
+    "requiredFiles": [
+      "/models/digital-twin/cluster-03/connections/cluster-03.manifest.json",
+      "/models/digital-twin/cluster-03/connections/constraints.json",
+      "/models/digital-twin/cluster-03/connections/sketches.json",
+      "/models/digital-twin/cluster-03/connections/validation.json",
+      "/models/digital-twin/cluster-03/connections/root-frame.json",
+      "/models/digital-twin/cluster-03/connections/oc-left.json",
+      "/models/digital-twin/cluster-03/connections/oc-right.json",
+      "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+      "/models/digital-twin/cluster-03/connections/truc-nen.json",
+      "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+      "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+      "/models/digital-twin/cluster-03/connections/gear-nen.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+      "/models/digital-twin/cluster-03/connections/wiper-gear.json"
+    ]
+  },
+  "artifactMatrix": [
+    {
+      "kind": "cad-source",
+      "file": "Final.SLDASM",
+      "runtimeServed": false,
+      "status": "read-only-evidence"
+    },
+    {
+      "kind": "aggregate-glb",
+      "file": "/models/digital-twin/cluster-03/final.glb",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "active-render-owner"
+    },
+    {
+      "kind": "derived-json",
+      "file": "/models/digital-twin/cluster-03/connections/cluster-03.manifest.json",
+      "runtimeServed": true,
+      "status": "phase-1-contract"
+    },
+    {
+      "kind": "derived-json",
+      "file": "/models/digital-twin/cluster-03/connections/sketches.json",
+      "runtimeServed": true,
+      "status": "phase-1-contract"
+    },
+    {
+      "kind": "derived-json",
+      "file": "/models/digital-twin/cluster-03/connections/constraints.json",
+      "runtimeServed": true,
+      "status": "inventory-only"
+    },
+    {
+      "kind": "derived-json",
+      "file": "/models/digital-twin/cluster-03/connections/validation.json",
+      "runtimeServed": true,
+      "status": "phase-1-contract"
+    },
+    {
+      "kind": "derived-json",
+      "file": "/models/digital-twin/cluster-03/connections/root-frame.json",
+      "runtimeServed": true,
+      "status": "phase-2-verified"
+    },
+    {
+      "kind": "detail-glb",
+      "file": "/models/digital-twin/cluster-03/oc_left.glb",
+      "runtimeServed": false,
+      "owner": "deferred-until-overlay-ownership-is-proven",
+      "status": "not-loaded-by-default"
+    },
+    {
+      "kind": "motion-definition",
+      "file": "/models/digital-twin/cluster-03/connections/oc-right.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-4-oc-right-verified"
+    },
+    {
+      "kind": "motion-definition-truc-chinh",
+      "file": "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-5-truc-chinh-verified"
+    },
+    {
+      "kind": "motion-definition-truc-nen",
+      "file": "/models/digital-twin/cluster-03/connections/truc-nen.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-5-truc-nen-verified"
+    },
+    {
+      "kind": "motion-definition-gear-motor-chinh",
+      "file": "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-5-gear-motor-chinh-verified"
+    },
+    {
+      "kind": "motion-definition-gear-motor-nen",
+      "file": "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-5-gear-motor-nen-verified"
+    },
+    {
+      "kind": "motion-definition-gear-nen",
+      "file": "/models/digital-twin/cluster-03/connections/gear-nen.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-5-gear-nen-verified"
+    },
+    {
+      "kind": "motion-definition-arm-left-1",
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-6-arm-left-1-verified"
+    },
+    {
+      "kind": "motion-definition-arm-left-2",
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-6-arm-left-2-verified"
+    },
+    {
+      "kind": "motion-definition-arm-left-3",
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-6-arm-left-3-verified"
+    }
+  ],
+  "render": {
+    "asset": "/models/digital-twin/cluster-03/final.glb",
+    "meshOwnership": "aggregate-final-glb",
+    "duplicateMeshPolicy": "never-load-a-separate-part-overlay-when-the-node-is-already-in-final-glb"
+  },
+  "rollback": {
+    "trigger": "manifest-or-asset-load-failure",
+    "action": "disable-cluster-03-motion-and-report-the-error-while-retaining-the-aggregate-model",
+    "safeAsset": "/models/digital-twin/cluster-03/final.glb",
+    "generatedFiles": [
+      "/models/digital-twin/cluster-03/connections/cluster-03.manifest.json",
+      "/models/digital-twin/cluster-03/connections/sketches.json",
+      "/models/digital-twin/cluster-03/connections/constraints.json",
+      "/models/digital-twin/cluster-03/connections/validation.json",
+      "/models/digital-twin/cluster-03/connections/oc-left.json",
+      "/models/digital-twin/cluster-03/connections/oc-right.json",
+      "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+      "/models/digital-twin/cluster-03/connections/truc-nen.json",
+      "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+      "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+      "/models/digital-twin/cluster-03/connections/gear-nen.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+      "/models/digital-twin/cluster-03/connections/arm-left-3.json"
+    ]
+  },
+  "parts": [
+    {
+      "id": "wiper_gear-1",
+      "sourceFile": "wiper_gear.SLDPRT",
+      "gltfNode": "wiper_gear-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 11,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          3.603666454568918e-17,
+          -3.779595868497689e-16,
+          3.603949515337522e-17,
+          0.981980931460573,
+          0.1889800260552046,
+          3.7795931695397613e-16,
+          -0.1889800260552046,
+          0.981980931460573,
+          0.03507430961554854,
+          -0.22624838193150026,
+          -0.1226137527327616,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "verified",
+        "reason": "Concentric7 and GearMate2 resolve wiper_gear-1 as the driven upper-chain gear."
+      },
+      "pivot": {
+        "status": "verified",
+        "point": [
+          -0.06317660667070882,
+          -0.05725429941739091,
+          0.057569487540066494
+        ],
+        "axis": [
+          -1,
+          -1.999998527466835e-15,
+          -4.652606402989229e-22
+        ],
+        "sourceFeature": "Concentric7+GearMate2"
+      },
+      "connectionStatus": "runtime-wiper-gear-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "wiper_gear-1",
+        "sourceFile": "wiper_gear.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "truc_chinh-1",
+      "sourceFile": "truc_chinh.SLDPRT",
+      "gltfNode": "truc_chinh-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 5,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          3.3789300835231067e-16,
+          -4.2356076672362004e-16,
+          -2.525980473008751e-16,
+          0.9823096916750056,
+          0.18726363673002794,
+          4.793429197356113e-16,
+          -0.18726363673002794,
+          0.9823096916750056,
+          0.03507430961551563,
+          -0.2265630104265375,
+          -0.12231814509881911,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric3",
+        "reason": "Concentric3 resolves the moving shaft axis against fixed body_may-1; the aggregate GLB root remains the runtime scene parent to preserve CAD transforms."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.024425690384481738,
+          -0.0572542994173908,
+          0.05756948754006651
+        ],
+        "axis": [
+          -1,
+          -1.999992770446049e-15,
+          -1.1865823933669593e-21
+        ],
+        "localPoint": [
+          -0.0594999999999974,
+          0.20000000000000018,
+          0.14500000000000401
+        ],
+        "localAxis": [
+          -1,
+          -1.7120144565919576e-15,
+          -1.0481816569950516e-16
+        ],
+        "sourceFeature": "Concentric3",
+        "reason": "Concentric3 supplies the shaft axis and a CAD point on that axis; no hidden runtime offset is introduced."
+      },
+      "connectionStatus": "runtime-truc-chinh-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "truc_chinh-1",
+        "sourceFile": "truc_chinh.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "body_may-1",
+      "sourceFile": "body_may.SLDPRT",
+      "gltfNode": "body_may-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 1,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.034824309615519265,
+          -0.25725429941739086,
+          -0.08743051245993748,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "assembly-root",
+        "reason": "body_may-1 is the fixed assembly anchor recorded by SolidWorks."
+      },
+      "pivot": {
+        "status": "root-frame",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "The fixed assembly anchor has no moving pivot."
+      },
+      "connectionStatus": "root-anchor",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "body_may-1",
+        "sourceFile": "body_may.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "oc_right-1",
+      "sourceFile": "oc_right.SLDPRT",
+      "gltfNode": "oc_right-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 7,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03432430961551926,
+          -0.25725429941739064,
+          -0.08743051245993723,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "PathMate12",
+        "reason": "PathMate12 connects oc_right-1 to fixed body_may-1; runtime parent is resolved from CAD evidence."
+      },
+      "pivot": {
+        "status": "cad-anchor-resolved",
+        "point": [
+          0.0033243096155192164,
+          -0.034311241963348865,
+          0.0903355693116261
+        ],
+        "axis": null,
+        "localPoint": [
+          -0.03100000000000004,
+          0.22294305745404178,
+          0.17776608177156333
+        ],
+        "sourceFeature": "PathMate12",
+        "reason": "The SolidWorks PathMate12 target reference is the translation anchor that must stay on body_may Sketch2."
+      },
+      "connectionStatus": "runtime-oc-right-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "oc_right-1",
+        "sourceFile": "oc_right.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_right_3-1",
+      "sourceFile": "arm_right_3.SLDPRT",
+      "gltfNode": "arm_right_3-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 13,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          3.5380616011556815e-17,
+          -3.7452727583378426e-16,
+          3.538061772163771e-17,
+          0.9823096916750068,
+          0.1872636367300203,
+          3.745272756722374e-16,
+          -0.1872636367300203,
+          0.9823096916750068,
+          0.03457430961551821,
+          -0.22656301042653879,
+          -0.12231814509881775,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_right_3-1",
+        "sourceFile": "arm_right_3.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "gear_nen-1",
+      "sourceFile": "gear_nen.SLDPRT",
+      "gltfNode": "gear_nen-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 16,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          0.6374935052508277,
+          -0.7704557292687318,
+          2.832662092900481e-15,
+          0.7704557292687318,
+          0.6374935052508277,
+          1.386471661292683e-15,
+          -2.874018721705957e-15,
+          1.2985740592691205e-15,
+          1,
+          -0.14083597267588946,
+          -0.23059511635915547,
+          -0.08743051245993759,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric27",
+        "reason": "Concentric27 resolves the gear axis against fixed body_may-1; GearMate4 records coupling to gear_motor_nen-1."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.024675690384567503,
+          -0.057254299417500376,
+          -0.03893051245993158
+        ],
+        "axis": [
+          -2.0780419536897073e-16,
+          -3.848548080272432e-15,
+          -1
+        ],
+        "localPoint": [
+          -0.05950000000000001,
+          0.20000000000000004,
+          0.0485000000000059
+        ],
+        "localAxis": [
+          3.944304526105059e-31,
+          -4.000000000000002e-15,
+          -1
+        ],
+        "sourceFeature": "Concentric27",
+        "reason": "Concentric27 supplies the gear axis; LimitDistance4 remains an axial constraint evidence record."
+      },
+      "connectionStatus": "runtime-gear-nen-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "gear_nen-1",
+        "sourceFile": "gear_nen.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "oc_left-1",
+      "sourceFile": "oc_left.SLDPRT",
+      "gltfNode": "oc_left-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 3,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          4.1828246012928427e-19,
+          -4.2446308304679884e-19,
+          -1.9041125301867026e-18,
+          0.9999999999999968,
+          -8.058605843961317e-8,
+          9.841744992812016e-20,
+          8.058605851301038e-8,
+          0.9999999999999969,
+          0.03532430961552027,
+          -0.2572543137428579,
+          -0.08743049449383439,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "PathMate7",
+        "reason": "PathMate7 connects oc_left-1 to fixed body_may-1; runtime parent is resolved from CAD evidence."
+      },
+      "pivot": {
+        "status": "cad-anchor-resolved",
+        "point": [
+          -0.05267569038448078,
+          -0.03431124196334906,
+          0.09033556931162615
+        ],
+        "axis": null,
+        "localPoint": [
+          -0.08800000000000105,
+          0.22294305745404167,
+          0.17776608177156333
+        ],
+        "sourceFeature": "PathMate7",
+        "reason": "The SolidWorks PathMate7 target reference is the translation anchor that must stay on body_may Sketch1."
+      },
+      "connectionStatus": "runtime-oc-left-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "oc_left-1",
+        "sourceFile": "oc_left.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_left_1-1",
+      "sourceFile": "arm_left_1.SLDPRT",
+      "gltfNode": "arm_left_1-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 2,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.035324309615520265,
+          -0.25725429941739136,
+          -0.08743051245993758,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "PathMate8+Coincident1+Concentric1",
+        "reason": "PathMate8 anchors the arm to body_may-1 while Coincident1 and Concentric1 preserve its rigid relation to oc_left-1."
+      },
+      "pivot": {
+        "status": "cad-anchor-resolved",
+        "point": [
+          -0.0546756903844808,
+          -0.02369034312930654,
+          0.10927415880540917
+        ],
+        "axis": null,
+        "localPoint": [
+          -0.09000000000000107,
+          0.23356395628808482,
+          0.19670467126534674
+        ],
+        "sourceFeature": "Coincident1",
+        "reason": "The arm anchor is the SolidWorks Coincident1 point; its translation is driven by the already verified oc_left path without a hidden runtime offset."
+      },
+      "connectionStatus": "runtime-arm-left-1-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_left_1-1",
+        "sourceFile": "arm_left_1.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "gac_coffee-1",
+      "sourceFile": "gac_coffee.SLDPRT",
+      "gltfNode": "gac_coffee-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 4,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03482430961551853,
+          -0.2577086780362075,
+          -0.08743051245993747,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "gac_coffee-1",
+        "sourceFile": "gac_coffee.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_left_2-1",
+      "sourceFile": "arm_left_2.SLDPRT",
+      "gltfNode": "arm_left_2-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 0,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          1.8872946316965273e-17,
+          -2.740475537210256e-16,
+          1.88565436486335e-17,
+          0.9905675362332655,
+          0.13702538509618786,
+          2.7404868283717185e-16,
+          -0.13702538509618784,
+          0.9905675362332654,
+          0.03537430961551884,
+          -0.23079293129412182,
+          -0.11630259863683425,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Coincident3+Concentric2+PathMate10",
+        "reason": "Coincident3 chains arm_left_2-1 to arm_left_1-1, Concentric2 preserves the oc_left-1 axis relation, and PathMate10 supplies the explicit point-on-path connection to arm_left_3-1."
+      },
+      "pivot": {
+        "status": "cad-anchor-resolved",
+        "point": [
+          -0.05667569038448193,
+          -0.06311496490734794,
+          0.08085434034089586
+        ],
+        "axis": null,
+        "localPoint": [
+          -0.092050000000001,
+          0.19311185553215968,
+          0.17232112537816885
+        ],
+        "sourceFeature": "Coincident3",
+        "reason": "The arm anchor is the SolidWorks Coincident3 point; its translation is driven by the verified oc_left path through the CAD chain."
+      },
+      "connectionStatus": "runtime-arm-left-2-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_left_2-1",
+        "sourceFile": "arm_left_2.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_left_3-1",
+      "sourceFile": "arm_left_3.SLDPRT",
+      "gltfNode": "arm_left_3-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 14,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          3.538061664998786e-17,
+          -3.7452727346007823e-16,
+          3.538061664999161e-17,
+          0.9823096916750069,
+          0.18726363673002078,
+          3.7452727346007783e-16,
+          -0.18726363673002078,
+          0.9823096916750069,
+          0.035074309615548235,
+          -0.22656301042653876,
+          -0.12231814509881785,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Coincident5",
+        "reason": "Coincident5 resolves arm_left_3-1 against fixed body_may-1; the aggregate GLB root remains the runtime scene parent."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.06067569038448228,
+          -0.05725429941739091,
+          0.05756948754006652
+        ],
+        "axis": [
+          -1,
+          -2.0000000000000017e-15,
+          3.6632728286200736e-29
+        ],
+        "localPoint": [
+          -0.09575000000003002,
+          0.2,
+          0.14500000000000401
+        ],
+        "localAxis": [
+          -1,
+          -2.0000000000000005e-15,
+          4.220903389979636e-32
+        ],
+        "sourceFeature": "Concentric6",
+        "reason": "Concentric6 supplies the arm_left_3-1 axis shared with truc_chinh-1; Parallel1 preserves the shaft orientation."
+      },
+      "connectionStatus": "runtime-arm-left-3-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_left_3-1",
+        "sourceFile": "arm_left_3.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "gear_motor_chinh-1",
+      "sourceFile": "gear_motor_chinh.SLDPRT",
+      "gltfNode": "gear_motor_chinh-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 9,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          -3.867888063227625e-15,
+          -1.7468402454904687e-15,
+          2.989413842204227e-15,
+          0.3497825943687306,
+          0.9368309007908954,
+          -3.0125427454165207e-15,
+          -0.9368309007908954,
+          0.3497825943687306,
+          0.034824438674705124,
+          0.06337884363196403,
+          -0.25531594885303455,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric12",
+        "reason": "Concentric12 resolves the gear motor axis against fixed body_may-1; GearMate2 records its ratio to wiper_gear-1."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.06972556132529363,
+          0.024006638748103118,
+          0.059610309329433286
+        ],
+        "axis": [
+          1,
+          -2.0166173804045197e-15,
+          -6.938942623752423e-16
+        ],
+        "localPoint": [
+          -0.10454999999999916,
+          0.2812609381654931,
+          0.1470408217893717
+        ],
+        "localAxis": [
+          1,
+          1.6339745961626289e-15,
+          -1.3660254036927676e-15
+        ],
+        "sourceFeature": "Concentric12",
+        "reason": "Concentric12 supplies the gear motor axis; dependent GearMate2 coupling remains deferred until the driven gear checkpoint."
+      },
+      "connectionStatus": "runtime-gear-motor-chinh-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "gear_motor_chinh-1",
+        "sourceFile": "gear_motor_chinh.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "head_nen-1",
+      "sourceFile": "head_nen.SLDPRT",
+      "gltfNode": "head_nen-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 8,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03532430961551921,
+          -0.25725429941739136,
+          -0.08743051245993758,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "head_nen-1",
+        "sourceFile": "head_nen.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_right_1-1",
+      "sourceFile": "arm_right_1.SLDPRT",
+      "gltfNode": "arm_right_1-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 10,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03432430961551926,
+          -0.2572542994173911,
+          -0.08743051245993758,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_right_1-1",
+        "sourceFile": "arm_right_1.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "arm_right_2-1",
+      "sourceFile": "arm_right_2.SLDPRT",
+      "gltfNode": "arm_right_2-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 12,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          1.8864991968273004e-17,
+          -2.740506761585856e-16,
+          1.8864850821428006e-17,
+          0.9905675362332654,
+          0.13702538509618667,
+          2.740506858747597e-16,
+          -0.13702538509618667,
+          0.9905675362332654,
+          0.03427430961551921,
+          -0.23079293129412173,
+          -0.11630259863683401,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "arm_right_2-1",
+        "sourceFile": "arm_right_2.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "truc_nen-1",
+      "sourceFile": "truc_nen.SLDPRT",
+      "gltfNode": "truc_nen-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 15,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          -0.4890736716619372,
+          0.8722424798684776,
+          -3.5378840325448963e-15,
+          -0.8722424798684776,
+          -0.4890736716619372,
+          6.509948313243795e-15,
+          3.947967526848507e-15,
+          6.2697370659216275e-15,
+          0.9999999999999999,
+          0.12067292212532904,
+          0.09245886246717017,
+          -0.08741033010564221,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric23",
+        "reason": "Concentric23 resolves the moving shaft axis against fixed body_may-1; Screw2 supplies the measured one-revolution translation relation."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.024675690384480725,
+          -0.05725429941739127,
+          -0.05591306053158573
+        ],
+        "axis": [
+          6.165890344762365e-16,
+          4.261501286010193e-15,
+          1
+        ],
+        "localPoint": [
+          -0.05949999999999998,
+          0.19999999999999954,
+          0.031497269574054965
+        ],
+        "localAxis": [
+          -1.2237904587044098e-16,
+          3.88794508401146e-15,
+          1
+        ],
+        "sourceFeature": "Concentric23",
+        "reason": "Concentric23 supplies the shaft axis; Screw2 is recorded separately so the runtime test can preserve its pitch and reverse direction."
+      },
+      "connectionStatus": "runtime-truc-nen-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "truc_nen-1",
+        "sourceFile": "truc_nen.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "box_nen-1",
+      "sourceFile": "box_nen.SLDPRT",
+      "gltfNode": "box_nen-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 6,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03482430961551925,
+          -0.25725429941739064,
+          -0.03225051245993559,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": null,
+        "status": "pending-cad-mate-normalization",
+        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+      },
+      "pivot": {
+        "status": "pending-cad-reference-extraction",
+        "point": null,
+        "axis": null,
+        "sourceFeature": null,
+        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+      },
+      "connectionStatus": "pending-mate-entity-normalization",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "box_nen-1",
+        "sourceFile": "box_nen.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    },
+    {
+      "id": "gear_motor_nen-1",
+      "sourceFile": "gear_motor_nen.SLDPRT",
+      "gltfNode": "gear_motor_nen-1",
+      "render": {
+        "asset": "/models/digital-twin/cluster-03/final.glb",
+        "mode": "aggregate-node",
+        "meshIndex": 17,
+        "duplicateMeshPolicy": "final-glb-owns-mesh"
+      },
+      "coordinateFrame": "solidworks-assembly",
+      "initialTransform": {
+        "format": "solidworks-transform-array",
+        "units": "meters",
+        "values": [
+          0.6731320234072456,
+          -0.7395223316869257,
+          7.308309592769748e-16,
+          0.7395223316869257,
+          0.6731320234072456,
+          2.971084399474573e-16,
+          -7.116640486605766e-16,
+          3.4047260972017986e-16,
+          1,
+          -0.16491987945702147,
+          -0.221565465459449,
+          -0.08743051245993749,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "parent": {
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric30",
+        "reason": "Concentric30 resolves the gear motor axis against fixed body_may-1; GearMate4 records its ratio to gear_nen-1."
+      },
+      "pivot": {
+        "status": "cad-axis-resolved",
+        "point": [
+          -0.024675690384481336,
+          -0.013454299417389931,
+          -0.041480512459933706
+        ],
+        "axis": [
+          9.35079158259422e-17,
+          1.129095829703111e-15,
+          1
+        ],
+        "localPoint": [
+          -0.05949999999999909,
+          0.24379999999999966,
+          0.04595000000000381
+        ],
+        "localAxis": [
+          7.485787091720324e-26,
+          1.1715728751789565e-15,
+          1
+        ],
+        "sourceFeature": "Concentric30",
+        "reason": "Concentric30 supplies the gear motor axis; dependent GearMate4 coupling remains deferred until the driven gear checkpoint."
+      },
+      "connectionStatus": "runtime-gear-motor-nen-ready",
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "componentId": "gear_motor_nen-1",
+        "sourceFile": "gear_motor_nen.SLDPRT",
+        "inventorySchema": "cluster-03-cad-inventory.v1",
+        "solidWorksRevision": "32.1.0"
+      }
+    }
+  ],
+  "connectionFile": "/models/digital-twin/cluster-03/connections/constraints.json",
+  "sketchFile": "/models/digital-twin/cluster-03/connections/sketches.json",
+  "validationFile": "/models/digital-twin/cluster-03/connections/validation.json",
+  "rootFrameFile": "/models/digital-twin/cluster-03/connections/root-frame.json",
+  "rootFrameStatus": "verified",
+  "motion": {
+    "status": "verified",
+    "runtimeReady": true,
+    "file": "/models/digital-twin/cluster-03/connections/oc-left.json",
+    "nodeName": "oc_left-1",
+    "parentId": "body_may-1",
+    "sourceFeature": "PathMate7"
+  },
+  "motionFile": "/models/digital-twin/cluster-03/connections/oc-left.json",
+  "motions": [
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/oc-left.json",
+      "nodeName": "oc_left-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "PathMate7"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/oc-right.json",
+      "nodeName": "oc_right-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "PathMate12"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+      "nodeName": "truc_chinh-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric3",
+      "kind": "axis-rotation"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/truc-nen.json",
+      "nodeName": "truc_nen-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric23+Screw2",
+      "kind": "screw-axis"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+      "nodeName": "gear_motor_chinh-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric12+GearMate2",
+      "kind": "axis-rotation"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+      "nodeName": "gear_motor_nen-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric30+GearMate4",
+      "kind": "axis-rotation"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/gear-nen.json",
+      "nodeName": "gear_nen-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric27+GearMate4+LimitDistance4",
+      "kind": "axis-rotation"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+      "nodeName": "arm_left_1-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "PathMate8+Coincident1+Concentric1",
+      "kind": "driver-follow"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+      "nodeName": "arm_left_2-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Coincident3+Concentric2+PathMate10",
+      "kind": "driver-follow"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+      "nodeName": "arm_left_3-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric6+Parallel1",
+      "kind": "axis-rotation",
+      "driver": "truc_chinh-1"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/wiper-gear.json",
+      "nodeName": "wiper_gear-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric7+GearMate2",
+      "kind": "axis-rotation",
+      "driver": "gear_motor_chinh-1"
+    }
+  ],
+  "motionFiles": [
+    "/models/digital-twin/cluster-03/connections/oc-left.json",
+    "/models/digital-twin/cluster-03/connections/oc-right.json",
+    "/models/digital-twin/cluster-03/connections/truc-chinh.json",
+    "/models/digital-twin/cluster-03/connections/truc-nen.json",
+    "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json",
+    "/models/digital-twin/cluster-03/connections/gear-motor-nen.json",
+    "/models/digital-twin/cluster-03/connections/gear-nen.json",
+    "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+    "/models/digital-twin/cluster-03/connections/arm-left-2.json",
+    "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+    "/models/digital-twin/cluster-03/connections/wiper-gear.json"
+  ],
+  "phase": "phase-6"
+}

@@ -1,0 +1,267 @@
+{
+  "schemaVersion": "cluster-03-root-frame.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "rootFrameReady": true,
+  "motionRuntimeReady": false,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "glbFile": "/models/digital-twin/cluster-03/final.glb",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "solidWorksRevision": "32.1.0",
+    "generator": "SOLIDWORKSGLTF"
+  },
+  "rootTransform": {
+    "format": "three-matrix4-column-major",
+    "values": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "translationMeters": [
+      0,
+      0,
+      0
+    ],
+    "rotationQuaternion": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "handedness": "CAD-and-GLB-frame-aligned",
+    "apply": "once-at-aggregate-root"
+  },
+  "modelPolicy": {
+    "preserveGlbNodeTransforms": true,
+    "recenterModel": false,
+    "cameraFitMayMoveCameraOnly": true,
+    "hiddenPerPartOffsetsAllowed": false
+  },
+  "tolerance": {
+    "matrixEntry": 0.0001,
+    "translationMeters": 0.0001,
+    "translationMillimeters": 0.1
+  },
+  "alignment": {
+    "componentCount": 18,
+    "maxMatrixEntryError": 4.947491722973041e-7,
+    "maxTranslationErrorMeters": 4.65459448983907e-7,
+    "maxTranslationErrorMillimeters": 0.000465459448983907,
+    "bodyMay": {
+      "componentId": "body_may-1",
+      "nodeName": "body_may-1",
+      "meshIndex": 1,
+      "fixedComponent": true,
+      "maxMatrixEntryError": 2.9941739088101826e-7,
+      "maxTranslationErrorMeters": 2.9941739088101826e-7,
+      "passed": true
+    },
+    "comparisons": [
+      {
+        "componentId": "wiper_gear-1",
+        "nodeName": "wiper_gear-1",
+        "meshIndex": 11,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.81931500259558e-7,
+        "maxTranslationErrorMeters": 3.81931500259558e-7,
+        "passed": true
+      },
+      {
+        "componentId": "truc_chinh-1",
+        "nodeName": "truc_chinh-1",
+        "meshIndex": 5,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.632699720756971e-7,
+        "maxTranslationErrorMeters": 1.4509881911262124e-7,
+        "passed": true
+      },
+      {
+        "componentId": "body_may-1",
+        "nodeName": "body_may-1",
+        "meshIndex": 1,
+        "fixedComponent": true,
+        "maxMatrixEntryError": 2.9941739088101826e-7,
+        "maxTranslationErrorMeters": 2.9941739088101826e-7,
+        "passed": true
+      },
+      {
+        "componentId": "oc_right-1",
+        "nodeName": "oc_right-1",
+        "meshIndex": 7,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 2.9941739065897366e-7,
+        "maxTranslationErrorMeters": 2.9941739065897366e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_right_3-1",
+        "nodeName": "arm_right_3-1",
+        "meshIndex": 13,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.632699797084804e-7,
+        "maxTranslationErrorMeters": 1.4509881775259803e-7,
+        "passed": true
+      },
+      {
+        "componentId": "gear_nen-1",
+        "nodeName": "gear_nen-1",
+        "meshIndex": 16,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.947491722973041e-7,
+        "maxTranslationErrorMeters": 1.1635915547758557e-7,
+        "passed": true
+      },
+      {
+        "componentId": "oc_left-1",
+        "nodeName": "oc_left-1",
+        "meshIndex": 3,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.137428579158552e-7,
+        "maxTranslationErrorMeters": 3.137428579158552e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_left_1-1",
+        "nodeName": "arm_left_1-1",
+        "meshIndex": 2,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 2.994173913806186e-7,
+        "maxTranslationErrorMeters": 2.994173913806186e-7,
+        "passed": true
+      },
+      {
+        "componentId": "gac_coffee-1",
+        "nodeName": "gac_coffee-1",
+        "meshIndex": 4,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.219637925155894e-7,
+        "maxTranslationErrorMeters": 3.219637925155894e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_left_2-1",
+        "nodeName": "arm_left_2-1",
+        "meshIndex": 0,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.637667345708252e-7,
+        "maxTranslationErrorMeters": 4.0136316575845044e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_left_3-1",
+        "nodeName": "arm_left_3-1",
+        "meshIndex": 14,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 3.632699792366356e-7,
+        "maxTranslationErrorMeters": 1.4509881784974255e-7,
+        "passed": true
+      },
+      {
+        "componentId": "gear_motor_chinh-1",
+        "nodeName": "gear_motor_chinh-1",
+        "meshIndex": 9,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.0563126940673655e-7,
+        "maxTranslationErrorMeters": 5.1146965440729275e-8,
+        "passed": true
+      },
+      {
+        "componentId": "head_nen-1",
+        "nodeName": "head_nen-1",
+        "meshIndex": 8,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 2.994173913806186e-7,
+        "maxTranslationErrorMeters": 2.994173913806186e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_right_1-1",
+        "nodeName": "arm_right_1-1",
+        "meshIndex": 10,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 2.9941739110306287e-7,
+        "maxTranslationErrorMeters": 2.9941739110306287e-7,
+        "passed": true
+      },
+      {
+        "componentId": "arm_right_2-1",
+        "nodeName": "arm_right_2-1",
+        "meshIndex": 12,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.637667345708252e-7,
+        "maxTranslationErrorMeters": 4.0136316599437283e-7,
+        "passed": true
+      },
+      {
+        "componentId": "truc_nen-1",
+        "nodeName": "truc_nen-1",
+        "meshIndex": 15,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.798684776208262e-7,
+        "maxTranslationErrorMeters": 7.787467096176393e-8,
+        "passed": true
+      },
+      {
+        "componentId": "box_nen-1",
+        "nodeName": "box_nen-1",
+        "meshIndex": 6,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 2.9941739065897366e-7,
+        "maxTranslationErrorMeters": 2.9941739065897366e-7,
+        "passed": true
+      },
+      {
+        "componentId": "gear_motor_nen-1",
+        "nodeName": "gear_motor_nen-1",
+        "meshIndex": 17,
+        "fixedComponent": false,
+        "maxMatrixEntryError": 4.65459448983907e-7,
+        "maxTranslationErrorMeters": 4.65459448983907e-7,
+        "passed": true
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "cad-component-to-glb-node-set",
+      "passed": true,
+      "detail": "Every CAD component has one named mesh node in final.glb."
+    },
+    {
+      "id": "cad-to-glb-transform-residual",
+      "passed": true,
+      "detail": "All node matrices match the SolidWorks component transforms within tolerance."
+    },
+    {
+      "id": "body-may-fixed-root",
+      "passed": true,
+      "detail": "body_may-1 is the fixed CAD root used to authorize the aggregate frame."
+    },
+    {
+      "id": "no-runtime-recenter",
+      "passed": true,
+      "detail": "The web scene must preserve the GLB/CAD frame; camera fitting is camera-only."
+    }
+  ]
+}

@@ -1,0 +1,774 @@
+{
+  "schemaVersion": "cluster-03-gear-motor-chinh-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "gear_motor_chinh-1",
+  "nodeName": "gear_motor_chinh-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "axis-rotation",
+    "property": "rotation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "angleRangeRadians": [
+      0,
+      6.283185307179586
+    ],
+    "angleRangeKind": "diagnostic-test-envelope",
+    "cadAngularLimit": null,
+    "driver": "normalized-progress",
+    "preserveInitialMeshScale": true
+  },
+  "pivot": {
+    "kind": "axis",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.06972556132529363,
+      0.024006638748103118,
+      0.059610309329433286
+    ],
+    "localPoint": [
+      -0.10454999999999916,
+      0.2812609381654931,
+      0.1470408217893717
+    ],
+    "axis": [
+      1,
+      -2.0166173804045197e-15,
+      -6.938942623752423e-16
+    ],
+    "localAxis": [
+      1,
+      1.6339745961626289e-15,
+      -1.3660254036927676e-15
+    ],
+    "sourceMate": "Concentric12",
+    "targetReferenceType2": 2,
+    "parentReferenceType2": 2
+  },
+  "gear": {
+    "sourceMate": "GearMate2",
+    "drivenComponent": "wiper_gear-1",
+    "ratioNumerator": 0.008,
+    "ratioDenominator": 0.008,
+    "ratio": 1,
+    "reverse": true,
+    "targetAxis": [
+      1,
+      -2.0166173804045197e-15,
+      -6.938942623752423e-16
+    ],
+    "drivenAxis": [
+      -1,
+      -1.999998527466835e-15,
+      -4.652606402989229e-22
+    ],
+    "couplingStatus": "runtime-gear-follow",
+    "driveCalibration": {
+      "kind": "cam-path-master",
+      "camPathPartId": "oc_left-1",
+      "camProgressRange": [
+        0,
+        1
+      ],
+      "motorAngleRangeRadians": [
+        0,
+        1.66818569905618
+      ],
+      "wiperAngleRangeRadians": [
+        0,
+        -1.66818569905618
+      ],
+      "distanceMode": "LimitDistance-range",
+      "sourceMates": [
+        "GearMate2",
+        "PathMate11",
+        "LimitDistance2",
+        "PathMate10",
+        "LimitDistance1"
+      ],
+      "samples": [
+        {
+          "camProgress": 0,
+          "motorAngleRadians": 0
+        },
+        {
+          "camProgress": 0.01,
+          "motorAngleRadians": 0.00942477796076938
+        },
+        {
+          "camProgress": 0.02,
+          "motorAngleRadians": 0.01884955592153876
+        },
+        {
+          "camProgress": 0.03,
+          "motorAngleRadians": 0.02827433388230814
+        },
+        {
+          "camProgress": 0.04,
+          "motorAngleRadians": 0.03769911184307752
+        },
+        {
+          "camProgress": 0.05,
+          "motorAngleRadians": 0.047123889803846894
+        },
+        {
+          "camProgress": 0.06,
+          "motorAngleRadians": 0.05654866776461628
+        },
+        {
+          "camProgress": 0.07,
+          "motorAngleRadians": 0.06597344572538566
+        },
+        {
+          "camProgress": 0.08,
+          "motorAngleRadians": 0.07853981633974483
+        },
+        {
+          "camProgress": 0.09,
+          "motorAngleRadians": 0.0879645943005142
+        },
+        {
+          "camProgress": 0.1,
+          "motorAngleRadians": 0.09738937226128358
+        },
+        {
+          "camProgress": 0.11,
+          "motorAngleRadians": 0.10681415022205297
+        },
+        {
+          "camProgress": 0.12,
+          "motorAngleRadians": 0.11623892818282235
+        },
+        {
+          "camProgress": 0.13,
+          "motorAngleRadians": 0.12566370614359174
+        },
+        {
+          "camProgress": 0.14,
+          "motorAngleRadians": 0.1350884841043611
+        },
+        {
+          "camProgress": 0.15,
+          "motorAngleRadians": 0.14765485471872028
+        },
+        {
+          "camProgress": 0.16,
+          "motorAngleRadians": 0.15707963267948966
+        },
+        {
+          "camProgress": 0.17,
+          "motorAngleRadians": 0.16650441064025903
+        },
+        {
+          "camProgress": 0.18,
+          "motorAngleRadians": 0.1759291886010284
+        },
+        {
+          "camProgress": 0.19,
+          "motorAngleRadians": 0.18535396656179778
+        },
+        {
+          "camProgress": 0.2,
+          "motorAngleRadians": 0.19477874452256716
+        },
+        {
+          "camProgress": 0.21,
+          "motorAngleRadians": 0.20420352248333654
+        },
+        {
+          "camProgress": 0.22,
+          "motorAngleRadians": 0.21676989309769573
+        },
+        {
+          "camProgress": 0.23,
+          "motorAngleRadians": 0.2261946710584651
+        },
+        {
+          "camProgress": 0.24,
+          "motorAngleRadians": 0.23561944901923448
+        },
+        {
+          "camProgress": 0.25,
+          "motorAngleRadians": 0.24504422698000386
+        },
+        {
+          "camProgress": 0.26,
+          "motorAngleRadians": 0.25446900494077324
+        },
+        {
+          "camProgress": 0.27,
+          "motorAngleRadians": 0.26389378290154264
+        },
+        {
+          "camProgress": 0.28,
+          "motorAngleRadians": 0.273318560862312
+        },
+        {
+          "camProgress": 0.29,
+          "motorAngleRadians": 0.2827433388230814
+        },
+        {
+          "camProgress": 0.3,
+          "motorAngleRadians": 0.29530970943744056
+        },
+        {
+          "camProgress": 0.31,
+          "motorAngleRadians": 0.3047344873982099
+        },
+        {
+          "camProgress": 0.32,
+          "motorAngleRadians": 0.3141592653589793
+        },
+        {
+          "camProgress": 0.33,
+          "motorAngleRadians": 0.32358404331974866
+        },
+        {
+          "camProgress": 0.34,
+          "motorAngleRadians": 0.33300882128051806
+        },
+        {
+          "camProgress": 0.35,
+          "motorAngleRadians": 0.3424335992412874
+        },
+        {
+          "camProgress": 0.36,
+          "motorAngleRadians": 0.3518583772020568
+        },
+        {
+          "camProgress": 0.37,
+          "motorAngleRadians": 0.36442474781641604
+        },
+        {
+          "camProgress": 0.38,
+          "motorAngleRadians": 0.3738495257771854
+        },
+        {
+          "camProgress": 0.39,
+          "motorAngleRadians": 0.3832743037379548
+        },
+        {
+          "camProgress": 0.4,
+          "motorAngleRadians": 0.39269908169872414
+        },
+        {
+          "camProgress": 0.41,
+          "motorAngleRadians": 0.40212385965949354
+        },
+        {
+          "camProgress": 0.42,
+          "motorAngleRadians": 0.41154863762026295
+        },
+        {
+          "camProgress": 0.43,
+          "motorAngleRadians": 0.4209734155810323
+        },
+        {
+          "camProgress": 0.44,
+          "motorAngleRadians": 0.43353978619539146
+        },
+        {
+          "camProgress": 0.45,
+          "motorAngleRadians": 0.4429645641561608
+        },
+        {
+          "camProgress": 0.46,
+          "motorAngleRadians": 0.4523893421169302
+        },
+        {
+          "camProgress": 0.47,
+          "motorAngleRadians": 0.4618141200776996
+        },
+        {
+          "camProgress": 0.48,
+          "motorAngleRadians": 0.47123889803846897
+        },
+        {
+          "camProgress": 0.49,
+          "motorAngleRadians": 0.48066367599923837
+        },
+        {
+          "camProgress": 0.5,
+          "motorAngleRadians": 0.4900884539600077
+        },
+        {
+          "camProgress": 0.51,
+          "motorAngleRadians": 0.4995132319207771
+        },
+        {
+          "camProgress": 0.52,
+          "motorAngleRadians": 0.5120796025351363
+        },
+        {
+          "camProgress": 0.53,
+          "motorAngleRadians": 0.5215043804959058
+        },
+        {
+          "camProgress": 0.54,
+          "motorAngleRadians": 0.5309291584566751
+        },
+        {
+          "camProgress": 0.55,
+          "motorAngleRadians": 0.5403539364174444
+        },
+        {
+          "camProgress": 0.56,
+          "motorAngleRadians": 0.5497787143782138
+        },
+        {
+          "camProgress": 0.57,
+          "motorAngleRadians": 0.5592034923389833
+        },
+        {
+          "camProgress": 0.58,
+          "motorAngleRadians": 0.5686282702997526
+        },
+        {
+          "camProgress": 0.59,
+          "motorAngleRadians": 0.5811946409141117
+        },
+        {
+          "camProgress": 0.6,
+          "motorAngleRadians": 0.5906194188748811
+        },
+        {
+          "camProgress": 0.61,
+          "motorAngleRadians": 0.6000441968356505
+        },
+        {
+          "camProgress": 0.62,
+          "motorAngleRadians": 0.6094689747964198
+        },
+        {
+          "camProgress": 0.63,
+          "motorAngleRadians": 0.6283185307179586
+        },
+        {
+          "camProgress": 0.64,
+          "motorAngleRadians": 0.6440264939859076
+        },
+        {
+          "camProgress": 0.65,
+          "motorAngleRadians": 0.6628760499074464
+        },
+        {
+          "camProgress": 0.66,
+          "motorAngleRadians": 0.6817256058289851
+        },
+        {
+          "camProgress": 0.67,
+          "motorAngleRadians": 0.7005751617505239
+        },
+        {
+          "camProgress": 0.68,
+          "motorAngleRadians": 0.7194247176720626
+        },
+        {
+          "camProgress": 0.69,
+          "motorAngleRadians": 0.7414158662471911
+        },
+        {
+          "camProgress": 0.7,
+          "motorAngleRadians": 0.7602654221687299
+        },
+        {
+          "camProgress": 0.71,
+          "motorAngleRadians": 0.7822565707438585
+        },
+        {
+          "camProgress": 0.72,
+          "motorAngleRadians": 0.8042477193189871
+        },
+        {
+          "camProgress": 0.73,
+          "motorAngleRadians": 0.8262388678941156
+        },
+        {
+          "camProgress": 0.74,
+          "motorAngleRadians": 0.8482300164692441
+        },
+        {
+          "camProgress": 0.75,
+          "motorAngleRadians": 0.8733627576979625
+        },
+        {
+          "camProgress": 0.76,
+          "motorAngleRadians": 0.8984954989266809
+        },
+        {
+          "camProgress": 0.77,
+          "motorAngleRadians": 0.9236282401553992
+        },
+        {
+          "camProgress": 0.78,
+          "motorAngleRadians": 0.9519025740377073
+        },
+        {
+          "camProgress": 0.79,
+          "motorAngleRadians": 0.9801769079200154
+        },
+        {
+          "camProgress": 0.8,
+          "motorAngleRadians": 1.0084512418023235
+        },
+        {
+          "camProgress": 0.81,
+          "motorAngleRadians": 1.0398671683382215
+        },
+        {
+          "camProgress": 0.82,
+          "motorAngleRadians": 1.0744246875277093
+        },
+        {
+          "camProgress": 0.83,
+          "motorAngleRadians": 1.108982206717197
+        },
+        {
+          "camProgress": 0.84,
+          "motorAngleRadians": 1.1466813185602747
+        },
+        {
+          "camProgress": 0.85,
+          "motorAngleRadians": 1.1875220230569419
+        },
+        {
+          "camProgress": 0.86,
+          "motorAngleRadians": 1.231504320207199
+        },
+        {
+          "camProgress": 0.87,
+          "motorAngleRadians": 1.2817698026646356
+        },
+        {
+          "camProgress": 0.88,
+          "motorAngleRadians": 1.338318470429252
+        },
+        {
+          "camProgress": 0.89,
+          "motorAngleRadians": 1.4074335088082273
+        },
+        {
+          "camProgress": 0.9,
+          "motorAngleRadians": 1.4953981031087415
+        },
+        {
+          "camProgress": 0.91,
+          "motorAngleRadians": 1.6524777357882312
+        },
+        {
+          "camProgress": 0.92,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.93,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.94,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.95,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.96,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.97,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.98,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 0.99,
+          "motorAngleRadians": 1.66818569905618
+        },
+        {
+          "camProgress": 1,
+          "motorAngleRadians": 1.66818569905618
+        }
+      ]
+    }
+  },
+  "constraints": [
+    {
+      "name": "Parallel2",
+      "type": "MateParallel",
+      "mateType": 3,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "gear_motor_chinh-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.06267569038448037,
+            0.011728141902222322,
+            0.04838457978682613,
+            -1,
+            -1.6761895639506852e-15,
+            6.615505063452184e-17,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_motor_chinh-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.06322556132529362,
+            0.024006638748103104,
+            0.05961030932943334,
+            1,
+            -2.0166173804045276e-15,
+            -6.93894262375197e-16,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Distance4",
+      "type": "MateDistanceDim",
+      "mateType": 5,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "gear_motor_chinh-1",
+        "body_may-1"
+      ],
+      "entities": [
+        {
+          "componentId": "gear_motor_chinh-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.07872556132529362,
+            0.02400663874810345,
+            0.05961030932943345,
+            -1,
+            2.0166173804045276e-15,
+            6.93894262375197e-16,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "body_may-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.07997569038447988,
+            0.024006638748103104,
+            0.0596103093294333,
+            -1,
+            2e-15,
+            -1.6e-29,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Concentric12",
+      "type": "MateConcentric",
+      "mateType": 1,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "gear_motor_chinh-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.0719756903844799,
+            0.024006638748103104,
+            0.0596103093294333,
+            -1,
+            2e-15,
+            -1.6e-29,
+            0.004,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_motor_chinh-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.06972556132529363,
+            0.024006638748103118,
+            0.059610309329433286,
+            1,
+            -2.0166173804045197e-15,
+            -6.938942623752423e-16,
+            0.004030544037267661,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GearMate2",
+      "type": "MateGearDim",
+      "mateType": 10,
+      "entityCount": 2,
+      "definitionType": "IGearMateFeatureData",
+      "definitionValues": {
+        "gearRatioNumerator": 0.008,
+        "gearRatioDenominator": 0.008,
+        "reverse": true
+      },
+      "participants": [
+        "gear_motor_chinh-1",
+        "wiper_gear-1"
+      ],
+      "entities": [
+        {
+          "componentId": "gear_motor_chinh-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.06972556132529363,
+            0.024006638748103118,
+            0.059610309329433286,
+            1,
+            -2.0166173804045197e-15,
+            -6.938942623752423e-16,
+            0.004030544037267661,
+            0
+          ]
+        },
+        {
+          "componentId": "wiper_gear-1",
+          "referenceType": 7,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.06317660667070882,
+            -0.05725429941739091,
+            0.057569487540066494,
+            -1,
+            -1.999998527466835e-15,
+            -4.652606402989229e-22,
+            0.008726646259969245,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "angleRadians": 0
+    },
+    {
+      "progress": 0.5,
+      "angleRadians": 3.141592653589793
+    },
+    {
+      "progress": 1,
+      "angleRadians": 6.283185307179586
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-gear-motor-chinh-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "gear_motor_chinh-1",
+    "parentComponent": "body_may-1",
+    "axisMate": "Concentric12",
+    "gearMate": "GearMate2",
+    "drivenComponent": "wiper_gear-1",
+    "readOnlyIntent": true
+  },
+  "targetInitialTransform": [
+    1,
+    -3.867888063227625e-15,
+    -1.7468402454904687e-15,
+    2.989413842204227e-15,
+    0.3497825943687306,
+    0.9368309007908954,
+    -3.0125427454165207e-15,
+    -0.9368309007908954,
+    0.3497825943687306,
+    0.034824438674705124,
+    0.06337884363196403,
+    -0.25531594885303455,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "glbMatrixTolerance": 0.00001,
+    "glbMatrixResidual": 4.0563126940673655e-7,
+    "pivotTransformResidualMeters": 1.6653345369377348e-16,
+    "axisAlignmentDot": 1,
+    "gearTargetAxisAlignmentDot": 1,
+    "gearDrivenAxisAlignmentDot": 1,
+    "ratio": 1,
+    "ratioNumerator": 0.008,
+    "ratioDenominator": 0.008,
+    "reverse": true,
+    "cadAngularLimit": null,
+    "rangeIsDiagnosticOnly": true,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "sampleAnglesRadians": [
+      0,
+      3.141592653589793,
+      6.283185307179586
+    ]
+  }
+}

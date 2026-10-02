@@ -11,9 +11,53 @@ const DIGITAL_TWIN_TABS = [
   { id: "body", labelKey: "digital_twin_tab_body" },
   { id: "mechanism", labelKey: "digital_twin_tab_mechanism" },
   { id: "cluster-02", labelKey: "digital_twin_tab_mayxoay" },
+  { id: "cluster-03", labelKey: "digital_twin_tab_maynen" },
   { id: "combined", labelKey: "digital_twin_tab_combined" },
 ] as const satisfies ReadonlyArray<{ id: string; labelKey: TranslationKey }>;
 const COMBINED_MODEL_EXCLUDED_NODES = ["Mayphacafe1.STEP-1"] as const;
+const CLUSTER_02_MODEL_URLS = [
+  "/models/digital-twin/cluster-02/may_xoay.glb",
+] as const;
+const CLUSTER_03_MODEL_URLS = [
+  "/models/digital-twin/cluster-03/final.glb",
+] as const;
+const CLUSTER_03_ROOT_FRAME_URL =
+  "/models/digital-twin/cluster-03/connections/root-frame.json";
+const CLUSTER_03_OC_LEFT_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/oc-left.json";
+const CLUSTER_03_OC_RIGHT_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/oc-right.json";
+const CLUSTER_03_TRUC_CHINH_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/truc-chinh.json";
+const CLUSTER_03_TRUC_NEN_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/truc-nen.json";
+const CLUSTER_03_GEAR_MOTOR_CHINH_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/gear-motor-chinh.json";
+const CLUSTER_03_GEAR_MOTOR_NEN_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/gear-motor-nen.json";
+const CLUSTER_03_GEAR_NEN_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/gear-nen.json";
+const CLUSTER_03_ARM_LEFT_1_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-left-1.json";
+const CLUSTER_03_ARM_LEFT_2_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-left-2.json";
+const CLUSTER_03_ARM_LEFT_3_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-left-3.json";
+const CLUSTER_03_WIPER_GEAR_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/wiper-gear.json";
+const CLUSTER_03_MOTION_URLS = [
+  CLUSTER_03_OC_LEFT_MOTION_URL,
+  CLUSTER_03_OC_RIGHT_MOTION_URL,
+  CLUSTER_03_TRUC_CHINH_MOTION_URL,
+  CLUSTER_03_TRUC_NEN_MOTION_URL,
+  CLUSTER_03_GEAR_MOTOR_CHINH_MOTION_URL,
+  CLUSTER_03_GEAR_MOTOR_NEN_MOTION_URL,
+  CLUSTER_03_GEAR_NEN_MOTION_URL,
+  CLUSTER_03_ARM_LEFT_1_MOTION_URL,
+  CLUSTER_03_ARM_LEFT_2_MOTION_URL,
+  CLUSTER_03_ARM_LEFT_3_MOTION_URL,
+  CLUSTER_03_WIPER_GEAR_MOTION_URL,
+] as const;
 
 type DigitalTwinTab = (typeof DIGITAL_TWIN_TABS)[number]["id"];
 
@@ -109,7 +153,25 @@ export function DigitalTwinWorkspace() {
         ) : activeTab === "mechanism" ? (
           <DigitalTwinViewer />
         ) : activeTab === "cluster-02" ? (
-          <DigitalTwinClusterViewer />
+          <DigitalTwinClusterViewer
+            modelUrls={CLUSTER_02_MODEL_URLS}
+            isolateNodeName="Mayxoay1-2"
+            canvasLabelKey="digital_twin_mayxoay_canvas_label"
+            loadingKey="digital_twin_mayxoay_loading"
+            readyKey="digital_twin_mayxoay_ready"
+            loadErrorKey="digital_twin_mayxoay_load_error"
+          />
+        ) : activeTab === "cluster-03" ? (
+          <DigitalTwinClusterViewer
+            modelUrls={CLUSTER_03_MODEL_URLS}
+            rootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
+            motionDefinitionUrls={CLUSTER_03_MOTION_URLS}
+            canvasLabelKey="digital_twin_maynen_canvas_label"
+            loadingKey="digital_twin_maynen_loading"
+            readyKey="digital_twin_maynen_ready"
+            loadErrorKey="digital_twin_maynen_load_error"
+            showOcLeftCamControls
+          />
         ) : (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-on-surface-variant">
