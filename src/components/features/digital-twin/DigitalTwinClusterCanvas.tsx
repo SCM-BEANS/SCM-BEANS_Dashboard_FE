@@ -9,6 +9,11 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 const DRACO_DECODER_PATH = "/draco-gltf/";
+// The exported CAD constraints carry a sub-0.05 mm endpoint mismatch around
+// the arm transition. Keeping this tolerance local to the kinematic solver
+// avoids dropping a valid-looking pose back to the unconstrained fallback.
+const CLUSTER_KINEMATIC_ENDPOINT_TOLERANCE_METERS = 5e-5;
+const CLUSTER_MAX_AUTO_MOTOR_STEP_RADIANS = 0.01;
 
 export interface DigitalTwinClusterCanvasProps {
   modelUrls: readonly string[];
@@ -55,7 +60,7 @@ function disposeModel(root: THREE.Object3D) {
   });
 }
 
-function prepareClusterPart(root: THREE.Group, isolateNodeName?: string) {
+export function prepareClusterPart(root: THREE.Group, isolateNodeName?: string) {
   const target = isolateNodeName
     ? root.getObjectByName(isolateNodeName)
     : root;
@@ -464,7 +469,7 @@ interface ClusterBoxNenMotionDefinition {
   };
 }
 
-type ClusterMotionDefinition =
+export type ClusterMotionDefinition =
   | ClusterPathMotionDefinition
   | ClusterAxisMotionDefinition
   | ClusterBoxNenMotionDefinition;
@@ -490,7 +495,7 @@ function parseClusterRootTransform(payload: unknown) {
   return new THREE.Matrix4().fromArray(values);
 }
 
-async function loadClusterRootTransform(
+export async function loadClusterRootTransform(
   rootFrameUrl: string | undefined,
   signal: AbortSignal,
 ) {
@@ -1147,7 +1152,7 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
   return definition as ClusterMotionDefinition;
 }
 
-async function loadClusterMotionDefinition(
+export async function loadClusterMotionDefinition(
   motionDefinitionUrl: string | undefined,
   signal: AbortSignal,
 ) {
@@ -1166,7 +1171,7 @@ async function loadClusterMotionDefinition(
   return parseClusterMotionDefinition(await response.json());
 }
 
-function combineClusterParts(
+export function combineClusterParts(
   parts: THREE.Object3D[],
   rootTransform: THREE.Matrix4,
   recenterModel: boolean,
@@ -1194,7 +1199,7 @@ function combineClusterParts(
   return combinedModel;
 }
 
-function assertClusterPartSeparation(model: THREE.Group) {
+export function assertClusterPartSeparation(model: THREE.Group) {
   const body = model.getObjectByName("body_may-1");
   const arm1 = model.getObjectByName("arm_left_1-1");
   if (!body || !arm1) {
@@ -1368,10 +1373,8 @@ function createParentLocalGuidePath(
   return guidePath;
 }
 
-interface FinitePathCouplingCandidate {
-  arm3Angle: number;
+interface MovingPointOnLineSolution {
   arm2Angle: number;
-  lineProgress: number;
   residualMeters: number;
 }
 
@@ -1383,100 +1386,84 @@ function angularDistanceRadians(left: number, right: number) {
   return Math.abs(wrapAngleRadians(left - right));
 }
 
-function solveFinitePointOnMovingSegment({
+function solveMovingPointOnLine({
   sourcePoint,
   driverAxisPoint,
   driverAxis,
-  lineStart,
-  lineEnd,
-  lineProgress,
-  arm3Pivot,
-  arm3Axis,
-  previousArm3Angle,
-  previousArm2Angle,
+  linePoint,
+  lineDirection,
+  previousAngle,
 }: {
   sourcePoint: THREE.Vector3;
   driverAxisPoint: THREE.Vector3;
   driverAxis: THREE.Vector3;
-  lineStart: THREE.Vector3;
-  lineEnd: THREE.Vector3;
-  lineProgress: number;
-  arm3Pivot: THREE.Vector3;
-  arm3Axis: THREE.Vector3;
-  previousArm3Angle: number;
-  previousArm2Angle: number;
-}): FinitePathCouplingCandidate | null {
+  linePoint: THREE.Vector3;
+  lineDirection: THREE.Vector3;
+  previousAngle: number;
+}): MovingPointOnLineSolution | null {
   const normalizedDriverAxis = driverAxis.clone().normalize();
-  const normalizedArm3Axis = arm3Axis.clone().normalize();
-  const targetBasePoint = lineStart.clone().lerp(lineEnd, lineProgress);
-  const sourceRadius = sourcePoint
+  const normalizedLineDirection = lineDirection.clone().normalize();
+  const lineNormal = normalizedDriverAxis
     .clone()
-    .sub(driverAxisPoint)
-    .projectOnPlane(normalizedDriverAxis);
-  const sourceRadiusSquared = sourceRadius.lengthSq();
-  const arm3ToDriver = arm3Pivot
+    .cross(normalizedLineDirection);
+  if (lineNormal.lengthSq() <= 1e-20) {
+    return null;
+  }
+  lineNormal.normalize();
+
+  // PathMate14 uses an infinite CAD line. Solve the single angular degree of
+  // freedom required to place the driven point on that line; locking the
+  // target to lineProgress=0 incorrectly loses the solution mid-stroke.
+  const sourceRelative = sourcePoint.clone().sub(driverAxisPoint);
+  const sourceParallel = normalizedDriverAxis
     .clone()
-    .sub(driverAxisPoint)
-    .projectOnPlane(normalizedDriverAxis);
-  const targetRadius = targetBasePoint
+    .multiplyScalar(sourceRelative.dot(normalizedDriverAxis));
+  const sourcePerpendicular = sourceRelative.clone().sub(sourceParallel);
+  const cosineTerm = sourcePerpendicular.dot(lineNormal);
+  const sineTerm = normalizedDriverAxis
     .clone()
-    .sub(arm3Pivot)
-    .projectOnPlane(normalizedDriverAxis);
-  const cosineTerm = arm3ToDriver.dot(targetRadius);
-  const sineTerm = arm3ToDriver.dot(
-    normalizedArm3Axis.clone().cross(targetRadius),
-  );
-  const requiredTerm =
-    (sourceRadiusSquared -
-      arm3ToDriver.lengthSq() -
-      targetRadius.lengthSq()) /
-    2;
+    .cross(sourcePerpendicular)
+    .dot(lineNormal);
+  const constant = driverAxisPoint
+    .clone()
+    .add(sourceParallel)
+    .sub(linePoint)
+    .dot(lineNormal);
   const amplitude = Math.hypot(cosineTerm, sineTerm);
-  if (amplitude <= 1e-12 || Math.abs(requiredTerm) > amplitude + 1e-10) {
+  if (amplitude <= 1e-12 || Math.abs(-constant) > amplitude + 1e-10) {
     return null;
   }
 
   const phase = Math.atan2(sineTerm, cosineTerm);
   const offset = Math.acos(
-    THREE.MathUtils.clamp(requiredTerm / amplitude, -1, 1),
+    THREE.MathUtils.clamp(-constant / amplitude, -1, 1),
   );
-  const arm3Angles = [phase - offset, phase + offset];
-  const candidates = arm3Angles.map((arm3Angle) => {
-    const targetPoint = targetBasePoint
-      .clone()
-      .sub(arm3Pivot)
-      .applyAxisAngle(normalizedArm3Axis, arm3Angle)
-      .add(arm3Pivot);
-    const targetPointRadius = targetPoint
-      .clone()
-      .sub(driverAxisPoint)
-      .projectOnPlane(normalizedDriverAxis);
-    const arm2Angle = Math.atan2(
-      normalizedDriverAxis.dot(sourceRadius.clone().cross(targetPointRadius)),
-      sourceRadius.dot(targetPointRadius),
-    );
-    const resolvedPoint = sourcePoint
-      .clone()
-      .sub(driverAxisPoint)
-      .applyAxisAngle(normalizedDriverAxis, arm2Angle)
-      .add(driverAxisPoint);
-    return {
-      arm3Angle,
-      arm2Angle,
-      lineProgress,
-      residualMeters: resolvedPoint.distanceTo(targetPoint),
-    };
-  });
+  const candidates = [phase - offset, phase + offset]
+    .map((angle) => unwrapAngleNear(angle, previousAngle))
+    .map((angle) => {
+      const resolvedPoint = rotatePointAroundAxis(
+        sourcePoint,
+        driverAxisPoint,
+        normalizedDriverAxis,
+        angle,
+      );
+      return {
+        arm2Angle: angle,
+        residualMeters: Math.abs(
+          resolvedPoint.clone().sub(linePoint).dot(lineNormal),
+        ),
+      };
+    });
 
   candidates.sort(
     (left, right) =>
-      angularDistanceRadians(left.arm3Angle, previousArm3Angle) -
-        angularDistanceRadians(right.arm3Angle, previousArm3Angle) ||
-      angularDistanceRadians(left.arm2Angle, previousArm2Angle) -
-        angularDistanceRadians(right.arm2Angle, previousArm2Angle) ||
+      angularDistanceRadians(left.arm2Angle, previousAngle) -
+        angularDistanceRadians(right.arm2Angle, previousAngle) ||
       left.residualMeters - right.residualMeters,
   );
-  return candidates[0] ?? null;
+
+  const solution = candidates[0];
+  return solution && solution.residualMeters <= 1e-7 ? solution : null;
 }
 
 interface CalibratedArmLeftSolution {
@@ -1641,6 +1628,66 @@ function interpolateMainDriveMotorAngle(
   }
 
   return samples[samples.length - 1].motorAngleRadians;
+}
+
+function limitMainAutoProgressStep(
+  currentProgress: number,
+  targetProgress: number,
+  calibration: MainDriveCalibration | undefined,
+) {
+  if (!calibration || currentProgress === targetProgress) {
+    return targetProgress;
+  }
+
+  const currentMotorAngle = interpolateMainDriveMotorAngle(
+    calibration,
+    currentProgress,
+  );
+  const targetMotorAngle = interpolateMainDriveMotorAngle(
+    calibration,
+    targetProgress,
+  );
+  const motorAngleDelta = Math.abs(targetMotorAngle - currentMotorAngle);
+  if (!Number.isFinite(motorAngleDelta)) {
+    return targetProgress;
+  }
+
+  if (motorAngleDelta <= CLUSTER_MAX_AUTO_MOTOR_STEP_RADIANS) {
+    return targetProgress;
+  }
+
+  // The calibration curve changes slope near the CAD transition. A linear
+  // fraction of the full progress step can therefore still overshoot the
+  // angle limit. Find the largest safe progress fraction against the actual
+  // interpolated motor angle instead.
+  let safeFraction = 0;
+  let unsafeFraction = 1;
+  for (let iteration = 0; iteration < 24; iteration += 1) {
+    const fraction = (safeFraction + unsafeFraction) / 2;
+    const candidateProgress = THREE.MathUtils.lerp(
+      currentProgress,
+      targetProgress,
+      fraction,
+    );
+    const candidateMotorAngle = interpolateMainDriveMotorAngle(
+      calibration,
+      candidateProgress,
+    );
+    if (
+      Math.abs(candidateMotorAngle - currentMotorAngle) <=
+      CLUSTER_MAX_AUTO_MOTOR_STEP_RADIANS
+    ) {
+      safeFraction = fraction;
+    } else {
+      unsafeFraction = fraction;
+    }
+  }
+
+  return THREE.MathUtils.lerp(
+    currentProgress,
+    targetProgress,
+    safeFraction,
+  );
 }
 
 function solveCalibratedArmLeft({
@@ -1846,12 +1893,15 @@ function solveCalibratedArmLeft({
             wiperDistanceMaximum,
           ) &&
           path10ResidualMeters <= 1e-7 &&
-          line10ProjectionMeters >= -1e-8 &&
-          line10ProjectionMeters <= arm3LineLength + 1e-8 &&
+          line10ProjectionMeters >=
+            -CLUSTER_KINEMATIC_ENDPOINT_TOLERANCE_METERS &&
+          line10ProjectionMeters <=
+            arm3LineLength + CLUSTER_KINEMATIC_ENDPOINT_TOLERANCE_METERS &&
           isWithinDistanceRange(
             limitDistance1Meters,
             arm3DistanceMinimum,
             arm3DistanceMaximum,
+            CLUSTER_KINEMATIC_ENDPOINT_TOLERANCE_METERS,
           ),
       };
     })
@@ -2709,25 +2759,28 @@ function applyMainRightArmConnection(
   const sourcePointWorld = right2State.part.localToWorld(
     new THREE.Vector3(...right2Connection.sourceLocalPoint),
   );
-  const targetLineStart = new THREE.Vector3(
-    ...right2Connection.targetPath.start,
+  const arm3Pivot = new THREE.Vector3(...right3AxisDefinition.pivot.point);
+  const arm3Axis = new THREE.Vector3(
+    ...right3AxisDefinition.pivot.axis,
+  ).normalize();
+  const targetLineStart = rotatePointAroundAxis(
+    new THREE.Vector3(...right2Connection.targetPath.start),
+    arm3Pivot,
+    arm3Axis,
+    shaftAngle,
   );
-  const targetLineEnd = new THREE.Vector3(...right2Connection.targetPath.end);
-  const lineProgress =
-    right2Connection.initialLineProgress ??
-    right2Connection.targetPath.initialParameter ??
-    0;
-  const lineSolution = solveFinitePointOnMovingSegment({
+  const targetLineDirection = rotateVectorAroundAxis(
+    new THREE.Vector3(...right2Connection.targetPath.direction),
+    arm3Axis,
+    shaftAngle,
+  ).normalize();
+  const lineSolution = solveMovingPointOnLine({
     sourcePoint: sourcePointWorld,
     driverAxisPoint: driverAxisPointWorld,
     driverAxis: driverAxisWorld,
-    lineStart: targetLineStart,
-    lineEnd: targetLineEnd,
-    lineProgress,
-    arm3Pivot: new THREE.Vector3(...right3AxisDefinition.pivot.point),
-    arm3Axis: new THREE.Vector3(...right3AxisDefinition.pivot.axis),
-    previousArm3Angle: shaftAngle,
-    previousArm2Angle: right2State.coupledAngleRadians ?? 0,
+    linePoint: targetLineStart,
+    lineDirection: targetLineDirection,
+    previousAngle: right2State.coupledAngleRadians ?? 0,
   });
   if (!lineSolution || lineSolution.residualMeters > 1e-7) return;
 
@@ -2846,6 +2899,287 @@ function applyIndependentMotion(
   );
 }
 
+export interface ClusterMotionRuntime {
+  apply(mainProgress: number, lowerProgress: number): void;
+  advance(
+    delta: number,
+    mainAutoMotion: boolean,
+    lowerAutoMotion: boolean,
+  ): {
+    mainProgress: number;
+    lowerProgress: number;
+  };
+  setGuidesVisible(visible: boolean): void;
+  dispose(): void;
+}
+
+export interface ClusterMotionRuntimeOptions {
+  initialMainProgress: number;
+  initialLowerProgress: number;
+  showGuides?: boolean;
+}
+
+export function createClusterMotionRuntime(
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+  options: ClusterMotionRuntimeOptions,
+): ClusterMotionRuntime {
+  const states: MotionState[] = [];
+  let armLeft1Follower: ArmLeft1FollowerState | null = null;
+  let boxNenSlide: BoxNenSlideState | null = null;
+  let disposed = false;
+
+  try {
+    attachArmLeft1Followers(model, motionDefinitions);
+    attachClusterConnections(model, motionDefinitions);
+    model.updateMatrixWorld(true);
+    boxNenSlide = createBoxNenSlideState(model, motionDefinitions);
+    armLeft1Follower = createArmLeft1FollowerState(
+      model,
+      motionDefinitions,
+    );
+
+    for (const motionDefinition of motionDefinitions) {
+      const part = model.getObjectByName(motionDefinition.nodeName);
+      if (!part) {
+        throw new Error(
+          `GLB node "${motionDefinition.nodeName}" was not found.`,
+        );
+      }
+
+      if (motionDefinition.schemaVersion === "cluster-03-box-nen-motion.v1") {
+        continue;
+      }
+
+      const parent = part.parent ?? model;
+      parent.updateMatrixWorld(true);
+      part.updateMatrixWorld(true);
+
+      if (
+        motionDefinition.schemaVersion ===
+          "cluster-03-truc-chinh-motion.v1" ||
+        motionDefinition.schemaVersion === "cluster-03-truc-nen-motion.v1" ||
+        motionDefinition.schemaVersion ===
+          "cluster-03-gear-motor-chinh-motion.v1" ||
+        motionDefinition.schemaVersion ===
+          "cluster-03-gear-motor-nen-motion.v1" ||
+        motionDefinition.schemaVersion === "cluster-03-gear-nen-motion.v1" ||
+        motionDefinition.schemaVersion ===
+          "cluster-03-arm-left-3-motion.v1" ||
+        motionDefinition.schemaVersion ===
+          "cluster-03-arm-right-3-motion.v1" ||
+        motionDefinition.schemaVersion === "cluster-03-wiper-gear-motion.v1"
+      ) {
+        const pivotWorld = new THREE.Vector3(...motionDefinition.pivot.point);
+        const axisWorld = new THREE.Vector3(...motionDefinition.pivot.axis).normalize();
+        const parentInverse = parent.matrixWorld.clone().invert();
+        const pivotParent = pivotWorld.clone().applyMatrix4(parentInverse);
+        const axisParent = axisWorld
+          .clone()
+          .add(pivotWorld)
+          .applyMatrix4(parentInverse)
+          .sub(pivotParent)
+          .normalize();
+
+        states.push({
+          kind: "axis",
+          nodeName: motionDefinition.nodeName,
+          part,
+          parent,
+          basePosition: part.position.clone(),
+          baseQuaternion: part.quaternion.clone(),
+          pivotParent,
+          axisParent,
+          angleRangeRadians: motionDefinition.motion.angleRangeRadians,
+          translationRangeMeters:
+            motionDefinition.motion.translationRangeMeters ?? [0, 0],
+          progress: THREE.MathUtils.clamp(
+            isLowerDriveNode(motionDefinition.nodeName)
+              ? options.initialLowerProgress
+              : options.initialMainProgress,
+            0,
+            1,
+          ),
+          direction: 1,
+        });
+        continue;
+      }
+
+      const pathMotionDefinition =
+        motionDefinition as ClusterPathMotionDefinition;
+      const worldPath = createClusterMotionPath(pathMotionDefinition);
+      const anchorLocal = new THREE.Vector3(
+        ...pathMotionDefinition.anchor.localPoint,
+      );
+      const initialAnchorParent = parent.worldToLocal(
+        part.localToWorld(anchorLocal.clone()),
+      );
+      const expectedAnchorParent = parent.worldToLocal(
+        worldPath.getPointAt(0).clone(),
+      );
+      const isDriverFollow =
+        pathMotionDefinition.motion.kind === "driver-follow";
+      if (
+        !isDriverFollow &&
+        initialAnchorParent.distanceTo(expectedAnchorParent) > 1e-6
+      ) {
+        throw new Error(
+          pathMotionDefinition.partId +
+            " initial GLB anchor does not match the CAD motion path.",
+        );
+      }
+
+      const guidePath = createParentLocalGuidePath(worldPath, parent);
+      const guide = new THREE.Mesh(
+        new THREE.TubeGeometry(guidePath, 128, 0.0007, 8, false),
+        new THREE.MeshBasicMaterial({
+          color:
+            pathMotionDefinition.nodeName === "oc_left-1"
+              ? 0xff7a00
+              : 0x22c55e,
+          transparent: true,
+          opacity: 0.95,
+          depthTest: false,
+          depthWrite: false,
+        }),
+      );
+      guide.name = `${pathMotionDefinition.nodeName}-sketch-cam-path`;
+      guide.visible =
+        options.showGuides !== false &&
+        pathMotionDefinition.motion.showGuide !== false;
+      parent.add(guide);
+
+      states.push({
+        kind: "path",
+        nodeName: pathMotionDefinition.nodeName,
+        part,
+        parent,
+        basePosition: part.position.clone(),
+        baseQuaternion: part.quaternion.clone(),
+        initialAnchorParent: isDriverFollow
+          ? expectedAnchorParent
+          : initialAnchorParent,
+        worldPath,
+        guide,
+        showGuide: pathMotionDefinition.motion.showGuide !== false,
+        progress: THREE.MathUtils.clamp(options.initialMainProgress, 0, 1),
+        direction: 1,
+      });
+    }
+
+    applyIndependentMotion(
+      states,
+      model,
+      motionDefinitions,
+      options.initialMainProgress,
+      options.initialLowerProgress,
+      armLeft1Follower,
+      boxNenSlide,
+    );
+  } catch (error) {
+    states.forEach(disposeMotionState);
+    throw error;
+  }
+
+  const mainDriveDefinition = motionDefinitions.find(
+    (definition): definition is ClusterAxisMotionDefinition =>
+      definition.partId === "gear_motor_chinh-1" &&
+      "gear" in definition &&
+      Boolean(definition.gear?.driveCalibration),
+  );
+  const mainDriveCalibration = mainDriveDefinition?.gear?.driveCalibration;
+
+  const runtime: ClusterMotionRuntime = {
+    apply(mainProgress, lowerProgress) {
+      if (disposed) return;
+      applyIndependentMotion(
+        states,
+        model,
+        motionDefinitions,
+        mainProgress,
+        lowerProgress,
+        armLeft1Follower,
+        boxNenSlide,
+      );
+    },
+    advance(delta, mainAutoMotion, lowerAutoMotion) {
+      if (disposed) {
+        return {
+          mainProgress: 0,
+          lowerProgress: 0,
+        };
+      }
+
+      const mainLeader = states.find(
+        (state) => state.nodeName === "gear_motor_chinh-1",
+      );
+      const lowerLeader = states.find(
+        (state) => state.nodeName === "gear_motor_nen-1",
+      );
+      let nextMainProgress = mainLeader?.progress ?? 0;
+      let nextLowerProgress = lowerLeader?.progress ?? 0;
+
+      if (mainAutoMotion && mainLeader) {
+        const proposedMainProgress =
+          nextMainProgress + delta * 0.22 * mainLeader.direction;
+        nextMainProgress = limitMainAutoProgressStep(
+          nextMainProgress,
+          THREE.MathUtils.clamp(proposedMainProgress, 0, 1),
+          mainDriveCalibration,
+        );
+        if (nextMainProgress >= 1) {
+          mainLeader.direction = -1;
+        } else if (nextMainProgress <= 0) {
+          mainLeader.direction = 1;
+        }
+      }
+      if (lowerAutoMotion && lowerLeader) {
+        nextLowerProgress += delta * 0.22 * lowerLeader.direction;
+        if (nextLowerProgress >= 1) {
+          nextLowerProgress = 1;
+          lowerLeader.direction = -1;
+        } else if (nextLowerProgress <= 0) {
+          nextLowerProgress = 0;
+          lowerLeader.direction = 1;
+        }
+      }
+
+      applyIndependentMotion(
+        states,
+        model,
+        motionDefinitions,
+        nextMainProgress,
+        nextLowerProgress,
+        armLeft1Follower,
+        boxNenSlide,
+      );
+
+      return {
+        mainProgress: nextMainProgress,
+        lowerProgress: nextLowerProgress,
+      };
+    },
+    setGuidesVisible(visible) {
+      if (disposed) return;
+      states.forEach((state) => {
+        if (state.kind === "path") {
+          state.guide.visible = visible && state.showGuide;
+        }
+      });
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      states.forEach(disposeMotionState);
+      states.length = 0;
+      armLeft1Follower = null;
+      boxNenSlide = null;
+    },
+  };
+
+  return runtime;
+}
+
 function ClusterScene({
   modelUrls,
   rootFrameUrl,
@@ -2870,9 +3204,7 @@ function ClusterScene({
     ClusterMotionDefinition[]
   >([]);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const camStatesRef = useRef<MotionState[]>([]);
-  const armLeft1FollowerRef = useRef<ArmLeft1FollowerState | null>(null);
-  const boxNenSlideRef = useRef<BoxNenSlideState | null>(null);
+  const motionRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
   const resolvedMotionDefinitionUrls = useMemo(
     () =>
       motionDefinitionUrls?.length
@@ -3010,259 +3342,54 @@ function ClusterScene({
 
   useEffect(() => {
     if (!model || motionDefinitions.length === 0) {
-      camStatesRef.current = [];
-      armLeft1FollowerRef.current = null;
-      boxNenSlideRef.current = null;
+      motionRuntimeRef.current?.dispose();
+      motionRuntimeRef.current = null;
       return;
     }
 
-    const states: MotionState[] = [];
-    let armLeft1Follower: ArmLeft1FollowerState | null = null;
-    let boxNenSlide: BoxNenSlideState | null = null;
+    let runtime: ClusterMotionRuntime | null = null;
     try {
-      attachArmLeft1Followers(model, motionDefinitions);
-      attachClusterConnections(model, motionDefinitions);
-      model.updateMatrixWorld(true);
-      boxNenSlide = createBoxNenSlideState(model, motionDefinitions);
-      armLeft1Follower = createArmLeft1FollowerState(
-        model,
-        motionDefinitions,
-      );
-      for (const motionDefinition of motionDefinitions) {
-        const part = model.getObjectByName(motionDefinition.nodeName);
-        if (!part) {
-          throw new Error(
-            `GLB node "${motionDefinition.nodeName}" was not found.`,
-          );
-        }
-
-        if (motionDefinition.schemaVersion === "cluster-03-box-nen-motion.v1") {
-          continue;
-        }
-
-        const parent = part.parent ?? model;
-        parent.updateMatrixWorld(true);
-        part.updateMatrixWorld(true);
-
-        if (
-          motionDefinition.schemaVersion ===
-            "cluster-03-truc-chinh-motion.v1" ||
-          motionDefinition.schemaVersion === "cluster-03-truc-nen-motion.v1" ||
-          motionDefinition.schemaVersion ===
-            "cluster-03-gear-motor-chinh-motion.v1" ||
-          motionDefinition.schemaVersion ===
-            "cluster-03-gear-motor-nen-motion.v1"
-          || motionDefinition.schemaVersion === "cluster-03-gear-nen-motion.v1"
-          || motionDefinition.schemaVersion === "cluster-03-arm-left-3-motion.v1"
-          || motionDefinition.schemaVersion === "cluster-03-arm-right-3-motion.v1"
-          || motionDefinition.schemaVersion === "cluster-03-wiper-gear-motion.v1"
-        ) {
-          const pivotWorld = new THREE.Vector3(...motionDefinition.pivot.point);
-          const axisWorld = new THREE.Vector3(...motionDefinition.pivot.axis).normalize();
-          const parentInverse = parent.matrixWorld.clone().invert();
-          const pivotParent = pivotWorld.clone().applyMatrix4(parentInverse);
-          const axisParent = axisWorld
-            .clone()
-            .add(pivotWorld)
-            .applyMatrix4(parentInverse)
-            .sub(pivotParent)
-            .normalize();
-
-          states.push({
-            kind: "axis",
-            nodeName: motionDefinition.nodeName,
-            part,
-            parent,
-            basePosition: part.position.clone(),
-            baseQuaternion: part.quaternion.clone(),
-            pivotParent,
-            axisParent,
-            angleRangeRadians: motionDefinition.motion.angleRangeRadians,
-            translationRangeMeters:
-              motionDefinition.motion.translationRangeMeters ?? [0, 0],
-            progress: THREE.MathUtils.clamp(
-              isLowerDriveNode(motionDefinition.nodeName)
-                ? lowerDriveProgress
-                : mainDriveProgress,
-              0,
-              1,
-            ),
-            direction: 1,
-          });
-          continue;
-        }
-
-        const pathMotionDefinition =
-          motionDefinition as ClusterPathMotionDefinition;
-        const worldPath = createClusterMotionPath(pathMotionDefinition);
-        const anchorLocal = new THREE.Vector3(
-          ...pathMotionDefinition.anchor.localPoint,
-        );
-        const initialAnchorParent = parent.worldToLocal(
-          part.localToWorld(anchorLocal.clone()),
-        );
-        const expectedAnchorParent = parent.worldToLocal(
-          worldPath.getPointAt(0).clone(),
-        );
-        const isDriverFollow =
-          pathMotionDefinition.motion.kind === "driver-follow";
-        if (
-          !isDriverFollow &&
-          initialAnchorParent.distanceTo(expectedAnchorParent) > 1e-6
-        ) {
-          throw new Error(
-            pathMotionDefinition.partId +
-              " initial GLB anchor does not match the CAD motion path.",
-          );
-        }
-
-        const guidePath = createParentLocalGuidePath(worldPath, parent);
-        const guide = new THREE.Mesh(
-          new THREE.TubeGeometry(guidePath, 128, 0.0007, 8, false),
-          new THREE.MeshBasicMaterial({
-            color:
-              pathMotionDefinition.nodeName === "oc_left-1"
-                ? 0xff7a00
-                : 0x22c55e,
-            transparent: true,
-            opacity: 0.95,
-            depthTest: false,
-            depthWrite: false,
-          }),
-        );
-        guide.name = `${pathMotionDefinition.nodeName}-sketch-cam-path`;
-        guide.visible =
-          ocLeftCamVisible && pathMotionDefinition.motion.showGuide !== false;
-        parent.add(guide);
-
-        states.push({
-          kind: "path",
-          nodeName: pathMotionDefinition.nodeName,
-          part,
-          parent,
-          basePosition: part.position.clone(),
-          baseQuaternion: part.quaternion.clone(),
-          initialAnchorParent: isDriverFollow
-            ? expectedAnchorParent
-            : initialAnchorParent,
-          worldPath,
-          guide,
-          showGuide: pathMotionDefinition.motion.showGuide !== false,
-          progress: THREE.MathUtils.clamp(mainDriveProgress, 0, 1),
-          direction: 1,
-        });
-      }
-
-      applyIndependentMotion(
-        states,
-        model,
-        motionDefinitions,
-        mainDriveProgress,
-        lowerDriveProgress,
-        armLeft1Follower,
-        boxNenSlide,
-      );
-      camStatesRef.current = states;
-      armLeft1FollowerRef.current = armLeft1Follower;
-      boxNenSlideRef.current = boxNenSlide;
+      runtime = createClusterMotionRuntime(model, motionDefinitions, {
+        initialMainProgress: 0,
+        initialLowerProgress: 0,
+        showGuides: true,
+      });
+      motionRuntimeRef.current = runtime;
     } catch (error) {
-      states.forEach(disposeMotionState);
-      camStatesRef.current = [];
-      armLeft1FollowerRef.current = null;
-      boxNenSlideRef.current = null;
       onError(error);
       return;
     }
 
     return () => {
-      states.forEach(disposeMotionState);
-      if (camStatesRef.current === states) camStatesRef.current = [];
-      if (armLeft1FollowerRef.current === armLeft1Follower) {
-        armLeft1FollowerRef.current = null;
+      if (motionRuntimeRef.current === runtime) {
+        motionRuntimeRef.current = null;
       }
-      if (boxNenSlideRef.current === boxNenSlide) {
-        boxNenSlideRef.current = null;
-      }
+      runtime?.dispose();
     };
-  }, [model, motionDefinitions, onError]);
-
-  useEffect(() => {
-    if (model) {
-      applyIndependentMotion(
-        camStatesRef.current,
-        model,
-        motionDefinitions,
-        mainDriveProgress,
-        lowerDriveProgress,
-        armLeft1FollowerRef.current,
-        boxNenSlideRef.current,
-      );
-    }
   }, [
-    lowerDriveProgress,
-    mainDriveProgress,
     model,
     motionDefinitions,
+    onError,
   ]);
 
   useEffect(() => {
-    camStatesRef.current.forEach((state) => {
-      if (state.kind === "path") {
-        state.guide.visible = ocLeftCamVisible && state.showGuide;
-      }
-    });
+    motionRuntimeRef.current?.apply(
+      mainDriveProgress,
+      lowerDriveProgress,
+    );
+  }, [lowerDriveProgress, mainDriveProgress]);
+
+  useEffect(() => {
+    motionRuntimeRef.current?.setGuidesVisible(ocLeftCamVisible);
   }, [ocLeftCamVisible]);
 
   useFrame((_, delta) => {
-    const states = camStatesRef.current;
-    if (!states.length || !model || (!mainAutoMotion && !lowerAutoMotion)) {
+    const runtime = motionRuntimeRef.current;
+    if (!runtime || (!mainAutoMotion && !lowerAutoMotion)) {
       return;
     }
 
-    const mainLeader = states.find(
-      (state) => state.nodeName === "gear_motor_chinh-1",
-    );
-    const lowerLeader = states.find(
-      (state) => state.nodeName === "gear_motor_nen-1",
-    );
-    let nextMainProgress = mainLeader?.progress ?? mainDriveProgress;
-    let nextLowerProgress = lowerLeader?.progress ?? lowerDriveProgress;
-
-    if (mainAutoMotion && mainLeader) {
-      nextMainProgress += delta * 0.22 * mainLeader.direction;
-      if (nextMainProgress >= 1) {
-        nextMainProgress = 1;
-        mainLeader.direction = -1;
-      } else if (nextMainProgress <= 0) {
-        nextMainProgress = 0;
-        mainLeader.direction = 1;
-      }
-    }
-    if (lowerAutoMotion && lowerLeader) {
-      nextLowerProgress += delta * 0.22 * lowerLeader.direction;
-      if (nextLowerProgress >= 1) {
-        nextLowerProgress = 1;
-        lowerLeader.direction = -1;
-      } else if (nextLowerProgress <= 0) {
-        nextLowerProgress = 0;
-        lowerLeader.direction = 1;
-      }
-    }
-
-    states.forEach((state) => {
-      state.progress = isLowerDriveNode(state.nodeName)
-        ? nextLowerProgress
-        : nextMainProgress;
-    });
-    applyIndependentMotion(
-      states,
-      model,
-      motionDefinitions,
-      nextMainProgress,
-      nextLowerProgress,
-      armLeft1FollowerRef.current,
-      boxNenSlideRef.current,
-    );
+    runtime.advance(delta, mainAutoMotion, lowerAutoMotion);
   });
 
   return (

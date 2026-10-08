@@ -16,6 +16,10 @@ const NO_EXCLUDED_NODE_NAMES: readonly string[] = [];
 export interface BodyModelViewerProps {
   excludedNodeNames?: readonly string[];
   includeMayxoayNode?: boolean;
+  includeCompressorMotion?: boolean;
+  compressorModelUrls?: readonly string[];
+  compressorRootFrameUrl?: string;
+  compressorMotionDefinitionUrls?: readonly string[];
 }
 
 interface CanvasErrorBoundaryProps {
@@ -49,12 +53,17 @@ class CanvasErrorBoundary extends Component<
 export function BodyModelViewer({
   excludedNodeNames = NO_EXCLUDED_NODE_NAMES,
   includeMayxoayNode = false,
+  includeCompressorMotion = false,
+  compressorModelUrls,
+  compressorRootFrameUrl,
+  compressorMotionDefinitionUrls,
 }: BodyModelViewerProps = {}) {
   const t = useI18nStore((state) => state.t);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ViewerStatus>("loading");
   const [zoomLevel, setZoomLevel] = useState(0);
   const [cameraResetVersion, setCameraResetVersion] = useState(0);
+  const [compressorRunning, setCompressorRunning] = useState(false);
 
   const handleLoadStart = useCallback(() => setStatus("loading"), []);
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -62,6 +71,7 @@ export function BodyModelViewer({
   const handleRetry = useCallback(() => {
     setStatus("loading");
     setZoomLevel(0);
+    setCompressorRunning(false);
     setAttempt((current) => current + 1);
   }, []);
   const handleReset = useCallback(() => {
@@ -81,6 +91,11 @@ export function BodyModelViewer({
           zoomLevel={zoomLevel}
           excludedNodeNames={excludedNodeNames}
           includeMayxoayNode={includeMayxoayNode}
+          includeCompressorMotion={includeCompressorMotion}
+          compressorModelUrls={compressorModelUrls}
+          compressorRootFrameUrl={compressorRootFrameUrl}
+          compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
+          compressorRunning={compressorRunning}
         />
       </CanvasErrorBoundary>
 
@@ -116,6 +131,34 @@ export function BodyModelViewer({
         >
           <span aria-hidden="true">↺</span>
         </button>
+        {includeCompressorMotion ? (
+          <>
+            <span className="h-7 w-px bg-outline-variant" aria-hidden="true" />
+            <button
+              type="button"
+              aria-label={t(
+                compressorRunning
+                  ? "digital_twin_body_motion_stop_label"
+                  : "digital_twin_body_motion_run_label",
+              )}
+              title={t(
+                compressorRunning
+                  ? "digital_twin_body_motion_stop_label"
+                  : "digital_twin_body_motion_run_label",
+              )}
+              aria-pressed={compressorRunning}
+              disabled={status !== "ready"}
+              onClick={() => setCompressorRunning((running) => !running)}
+              className="min-h-11 rounded-md bg-primary px-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {t(
+                compressorRunning
+                  ? "digital_twin_body_motion_stop"
+                  : "digital_twin_body_motion_run",
+              )}
+            </button>
+          </>
+        ) : null}
       </div>
 
       {status === "loading" ? (

@@ -4,12 +4,10 @@ import { useRef, useState, type KeyboardEvent } from "react";
 import { useI18nStore } from "@/store/useI18nStore";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { BodyModelViewer } from "./BodyModelViewer";
-import { DigitalTwinViewer } from "./DigitalTwinViewer";
 import { DigitalTwinClusterViewer } from "./DigitalTwinClusterViewer";
 
 const DIGITAL_TWIN_TABS = [
   { id: "body", labelKey: "digital_twin_tab_body" },
-  { id: "mechanism", labelKey: "digital_twin_tab_mechanism" },
   { id: "cluster-02", labelKey: "digital_twin_tab_mayxoay" },
   { id: "cluster-03", labelKey: "digital_twin_tab_maynen" },
   { id: "combined", labelKey: "digital_twin_tab_combined" },
@@ -161,9 +159,12 @@ export function DigitalTwinWorkspace() {
         className="min-w-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
       >
         {activeTab === "body" ? (
-          <BodyModelViewer />
-        ) : activeTab === "mechanism" ? (
-          <DigitalTwinViewer />
+          <BodyModelViewer
+            includeCompressorMotion
+            compressorModelUrls={CLUSTER_03_MODEL_URLS}
+            compressorRootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
+            compressorMotionDefinitionUrls={CLUSTER_03_MOTION_URLS}
+          />
         ) : activeTab === "cluster-02" ? (
           <DigitalTwinClusterViewer
             modelUrls={CLUSTER_02_MODEL_URLS}

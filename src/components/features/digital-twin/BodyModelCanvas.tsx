@@ -1,23 +1,43 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import {
+  assertClusterPartSeparation,
+  combineClusterParts,
+  createClusterMotionRuntime,
+  loadClusterMotionDefinition,
+  loadClusterRootTransform,
+  prepareClusterPart,
+  type ClusterMotionDefinition,
+  type ClusterMotionRuntime,
+} from "./DigitalTwinClusterCanvas";
 
-const BODY_MODEL_URL = "/models/digital-twin/body/Body.glb";
+const COFFEE_MACHINE_MODEL_URL =
+  "/models/digital-twin/body/coffee_machine_03_v2.glb";
 const MAYXOAY_MODEL_URL = "/models/digital-twin/cluster-02/may_xoay.glb";
 const MAYXOAY_NODE_NAME = "Mayxoay1-2";
+const HIDDEN_BODY_NODE_NAMES = [
+  "CV02_Matphai-1",
+  "HK05_TamR-1",
+  "PART_03_BL-1",
+  "Assem_HeNhiet02-1",
+] as const;
+
+// The body asset still contains the legacy compressor assembly. When the
+// Cụm 3 replacement is enabled, remove that duplicate before attaching the
+// animated replacement so both models cannot render on top of each other.
+const LEGACY_COMPRESSOR_NODE_NAMES = ["Mayphacafe-1"] as const;
+const BODY_COMPRESSOR_NODE_NAME = "may_ne_coffe-1";
+const CLUSTER_COMPRESSOR_NODE_NAME = "body_may-1";
+const CLUSTER_GUIDE_SUFFIX = "-sketch-cam-path";
 const DRACO_DECODER_PATH = "/draco-gltf/";
-const BODY_METALLIC_COATING = {
-  color: "#b9c1c8",
-  metalness: 0.86,
-  roughness: 0.36,
-};
 const MAYXOAY_METALLIC_ACCENT = {
   color: "#e8752b",
   metalness: 0.62,
@@ -33,6 +53,16 @@ interface BodyModelCanvasProps {
   zoomLevel: number;
   excludedNodeNames: readonly string[];
   includeMayxoayNode: boolean;
+  includeCompressorMotion: boolean;
+  compressorModelUrls?: readonly string[];
+  compressorRootFrameUrl?: string;
+  compressorMotionDefinitionUrls?: readonly string[];
+  compressorRunning: boolean;
+}
+
+interface CompressorPosePair {
+  source: THREE.Object3D;
+  display: THREE.Object3D;
 }
 
 interface ModelResources {
@@ -96,6 +126,75 @@ function disposeModel(
   });
 }
 
+function findUniqueSourceNode(root: THREE.Object3D, sourceName: string) {
+  const matches: THREE.Object3D[] = [];
+  root.traverse((candidate) => {
+    if (candidate.userData.name === sourceName) matches.push(candidate);
+  });
+
+  if (matches.length === 0) {
+    throw new Error(`GLB node not found: ${sourceName}.`);
+  }
+  if (matches.length > 1) {
+    throw new Error(`Multiple GLB nodes found for ${sourceName}.`);
+  }
+  return matches[0];
+}
+
+function isClusterGuideNode(node: THREE.Object3D) {
+  return node.name.endsWith(CLUSTER_GUIDE_SUFFIX);
+}
+
+function createCompressorDisplayClone(source: THREE.Group) {
+  const display = source.clone(true);
+  display.visible = true;
+
+  const sourceNodes: THREE.Object3D[] = [];
+  source.traverse((node) => {
+    if (!isClusterGuideNode(node)) sourceNodes.push(node);
+  });
+
+  const displayGuideNodes: THREE.Object3D[] = [];
+  display.traverse((node) => {
+    if (isClusterGuideNode(node)) displayGuideNodes.push(node);
+  });
+  displayGuideNodes.forEach((node) => node.removeFromParent());
+
+  const displayNodes: THREE.Object3D[] = [];
+  display.traverse((node) => displayNodes.push(node));
+  if (sourceNodes.length !== displayNodes.length) {
+    throw new Error("Compressor display clone hierarchy does not match runtime.");
+  }
+
+  return {
+    display,
+    posePairs: sourceNodes.map((sourceNode, index) => ({
+      source: sourceNode,
+      display: displayNodes[index],
+    })),
+  } satisfies { display: THREE.Group; posePairs: CompressorPosePair[] };
+}
+
+function syncCompressorDisplayPose(
+  posePairs: readonly CompressorPosePair[],
+  displayRoot: THREE.Object3D | null,
+) {
+  if (!displayRoot) return;
+
+  for (const { source, display } of posePairs) {
+    display.matrixAutoUpdate = source.matrixAutoUpdate;
+    if (source.matrixAutoUpdate) {
+      display.position.copy(source.position);
+      display.quaternion.copy(source.quaternion);
+      display.scale.copy(source.scale);
+    } else {
+      display.matrix.copy(source.matrix);
+    }
+    display.matrixWorldNeedsUpdate = true;
+  }
+  displayRoot.updateMatrixWorld(true);
+}
+
 function attachMayxoayNode(
   sourceRoot: THREE.Object3D,
   targetRoot: THREE.Object3D,
@@ -125,11 +224,12 @@ function attachMayxoayNode(
   return mayxoayNode;
 }
 
-function applyBodyMetallicCoating(
+function applyBodyEnvironmentMap(
   root: THREE.Object3D,
   environmentMap: THREE.Texture | null,
 ) {
-  const styledMaterials = new Set<THREE.Material>();
+  if (!environmentMap) return;
+  const environmentMappedMaterials = new Set<THREE.Material>();
 
   root.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
@@ -138,26 +238,14 @@ function applyBodyMetallicCoating(
       ? object.material
       : [object.material];
     for (const material of materials) {
-      if (styledMaterials.has(material)) continue;
-      styledMaterials.add(material);
+      if (environmentMappedMaterials.has(material)) continue;
+      environmentMappedMaterials.add(material);
 
       const pbrMaterial = material as THREE.Material & {
-        color?: THREE.Color;
         envMap?: THREE.Texture | null;
         envMapIntensity?: number;
-        metalness?: number;
-        roughness?: number;
       };
-      if (pbrMaterial.color instanceof THREE.Color) {
-        pbrMaterial.color.set(BODY_METALLIC_COATING.color);
-      }
-      if (typeof pbrMaterial.metalness === "number") {
-        pbrMaterial.metalness = BODY_METALLIC_COATING.metalness;
-      }
-      if (typeof pbrMaterial.roughness === "number") {
-        pbrMaterial.roughness = BODY_METALLIC_COATING.roughness;
-      }
-      if (environmentMap && "envMap" in pbrMaterial) {
+      if ("envMap" in pbrMaterial) {
         pbrMaterial.envMap = environmentMap;
         if (typeof pbrMaterial.envMapIntensity === "number") {
           pbrMaterial.envMapIntensity = 0.65;
@@ -223,9 +311,19 @@ function detachExcludedNodes(
     throw new Error(`Excluded GLB node(s) not found: ${missingNames.join(", ")}.`);
   }
 
-  for (const node of excludedNodes) node.removeFromParent();
+  const excludedNodeSet = new Set(excludedNodes);
+  const detachedNodes = excludedNodes.filter((node) => {
+    let ancestor = node.parent;
+    while (ancestor) {
+      if (excludedNodeSet.has(ancestor)) return false;
+      ancestor = ancestor.parent;
+    }
+    return true;
+  });
 
-  return excludedNodes;
+  for (const node of detachedNodes) node.removeFromParent();
+
+  return detachedNodes;
 }
 
 function fitCameraToBody(
@@ -268,11 +366,22 @@ function BodyScene({
   zoomLevel,
   excludedNodeNames,
   includeMayxoayNode,
+  includeCompressorMotion,
+  compressorModelUrls,
+  compressorRootFrameUrl,
+  compressorMotionDefinitionUrls,
+  compressorRunning,
 }: Omit<BodyModelCanvasProps, "canvasLabel">) {
   const { camera, gl } = useThree();
   const [model, setModel] = useState<THREE.Group | null>(null);
+  const [compressorRuntimeModel, setCompressorRuntimeModel] =
+    useState<THREE.Group | null>(null);
+  const [compressorDisplayRoot, setCompressorDisplayRoot] =
+    useState<THREE.Group | null>(null);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const environmentMapRef = useRef<THREE.Texture | null>(null);
+  const compressorRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
+  const compressorPosePairsRef = useRef<CompressorPosePair[]>([]);
 
   useEffect(() => {
     const room = new RoomEnvironment();
@@ -294,7 +403,10 @@ function BodyScene({
     let active = true;
     let loadedScene: THREE.Group | null = null;
     let loadedMayxoayScene: THREE.Group | null = null;
+    let loadedClusterSourceScenes: THREE.Group[] = [];
+    let loadedClusterModel: THREE.Group | null = null;
     let excludedNodes: THREE.Object3D[] = [];
+    const abortController = new AbortController();
     const manager = new THREE.LoadingManager();
     const dracoLoader = new DRACOLoader(manager);
     dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
@@ -306,6 +418,9 @@ function BodyScene({
       return environmentMap ? { textures: new Set([environmentMap]) } : {};
     };
     const disposeLoadedScenes = () => {
+      compressorRuntimeRef.current?.dispose();
+      compressorRuntimeRef.current = null;
+      compressorPosePairsRef.current = [];
       if (loadedScene) {
         disposeModel(loadedScene, environmentResources());
         loadedScene = null;
@@ -314,6 +429,14 @@ function BodyScene({
         disposeModel(loadedMayxoayScene, environmentResources());
         loadedMayxoayScene = null;
       }
+      if (loadedClusterModel) {
+        disposeModel(loadedClusterModel);
+        loadedClusterModel = null;
+        loadedClusterSourceScenes = [];
+      } else {
+        loadedClusterSourceScenes.forEach((scene) => disposeModel(scene));
+        loadedClusterSourceScenes = [];
+      }
       for (const excludedNode of excludedNodes) {
         disposeModel(excludedNode, environmentResources());
       }
@@ -321,7 +444,7 @@ function BodyScene({
     };
 
     onLoadStart();
-    const bodyLoad = loader.loadAsync(BODY_MODEL_URL).then((gltf) => {
+    const bodyLoad = loader.loadAsync(COFFEE_MACHINE_MODEL_URL).then((gltf) => {
       loadedScene = gltf.scene;
       return gltf;
     });
@@ -332,34 +455,74 @@ function BodyScene({
         })
       : Promise.resolve(null);
 
-    void Promise.allSettled([bodyLoad, mayxoayLoad]).then((results) => {
-      const [bodyResult, mayxoayResult] = results;
-      if (!active) {
-        disposeLoadedScenes();
-        return;
-      }
+    const hasCompressorConfig = Boolean(
+      compressorModelUrls?.length &&
+        compressorRootFrameUrl &&
+        compressorMotionDefinitionUrls?.length,
+    );
+    const compressorLoad = includeCompressorMotion
+      ? hasCompressorConfig
+        ? Promise.all([
+            Promise.all(
+              (compressorModelUrls ?? []).map((modelUrl) =>
+                loader.loadAsync(modelUrl).then((gltf) => {
+                  loadedClusterSourceScenes.push(gltf.scene);
+                  return gltf.scene;
+                }),
+              ),
+            ),
+            loadClusterRootTransform(
+              compressorRootFrameUrl,
+              abortController.signal,
+            ),
+            Promise.all(
+              (compressorMotionDefinitionUrls ?? []).map((url) =>
+                loadClusterMotionDefinition(url, abortController.signal),
+              ),
+            ),
+          ]).then(([scenes, rootTransform, definitions]) => ({
+            scenes,
+            rootTransform,
+            definitions: definitions.filter(
+              (definition): definition is ClusterMotionDefinition =>
+                definition !== null,
+            ),
+          }))
+        : Promise.reject(
+            new Error("Body compressor motion assets are not configured."),
+          )
+      : Promise.resolve(null);
 
-      if (
-        bodyResult.status === "rejected" ||
-        mayxoayResult.status === "rejected"
-      ) {
-        const error =
-          bodyResult.status === "rejected"
-            ? bodyResult.reason
-            : mayxoayResult.status === "rejected"
-              ? mayxoayResult.reason
-              : new Error("A required 3D model could not be loaded.");
-        console.error("Failed to load the combined machine model.", error);
-        disposeLoadedScenes();
-        onError(error);
-        return;
-      }
+    void Promise.allSettled([bodyLoad, mayxoayLoad, compressorLoad]).then(
+      (results) => {
+        const [bodyResult, mayxoayResult, compressorResult] = results;
+        if (!active) {
+          disposeLoadedScenes();
+          return;
+        }
 
-      try {
-        const bodyScene = bodyResult.value.scene;
-        // Display-only half-turn around the view axis: keep the open face toward
-        // the fixed camera while correcting the machine's top/foot orientation.
-        bodyScene.rotateZ(Math.PI);
+        if (
+          bodyResult.status === "rejected" ||
+          mayxoayResult.status === "rejected" ||
+          compressorResult.status === "rejected"
+        ) {
+          const error =
+            bodyResult.status === "rejected"
+              ? bodyResult.reason
+              : mayxoayResult.status === "rejected"
+                ? mayxoayResult.reason
+                : compressorResult.status === "rejected"
+                  ? compressorResult.reason
+                  : new Error("A required 3D model could not be loaded.");
+          console.error("Failed to load the combined machine model.", error);
+          disposeLoadedScenes();
+          onError(error);
+          return;
+        }
+
+        try {
+          // The GLB's native orientation puts the machine head on the viewer's left.
+          const bodyScene = bodyResult.value.scene;
 
         let mayxoayNode: THREE.Object3D | null = null;
         if (mayxoayResult.value) {
@@ -375,31 +538,126 @@ function BodyScene({
           loadedMayxoayScene = null;
         }
 
-        excludedNodes = detachExcludedNodes(bodyScene, excludedNodeNames);
-        applyBodyMetallicCoating(bodyScene, environmentMapRef.current);
+      excludedNodes = detachExcludedNodes(bodyScene, [
+        ...HIDDEN_BODY_NODE_NAMES,
+        ...(includeCompressorMotion ? LEGACY_COMPRESSOR_NODE_NAMES : []),
+        ...excludedNodeNames,
+      ]);
+        applyBodyEnvironmentMap(bodyScene, environmentMapRef.current);
         if (mayxoayNode) applyMayxoayMetallicAccent(mayxoayNode);
         bodyScene.updateMatrixWorld(true);
+
+        let nextCompressorDisplayRoot: THREE.Group | null = null;
+        let nextCompressorPosePairs: CompressorPosePair[] = [];
+        const compressorPayload = compressorResult.value;
+        if (compressorPayload) {
+          const compressorParts = compressorPayload.scenes.map((scene) =>
+            prepareClusterPart(scene),
+          );
+          loadedClusterModel = combineClusterParts(
+            compressorParts,
+            compressorPayload.rootTransform,
+            !compressorRootFrameUrl,
+          );
+          loadedClusterSourceScenes = [];
+          assertClusterPartSeparation(loadedClusterModel);
+          loadedClusterModel.updateMatrixWorld(true);
+
+          const bodyCompressorNode = findUniqueSourceNode(
+            bodyScene,
+            BODY_COMPRESSOR_NODE_NAME,
+          );
+          const clusterCompressorNode = loadedClusterModel.getObjectByName(
+            CLUSTER_COMPRESSOR_NODE_NAME,
+          );
+          if (!clusterCompressorNode) {
+            throw new Error(
+              `GLB node not found: ${CLUSTER_COMPRESSOR_NODE_NAME}.`,
+            );
+          }
+
+          bodyCompressorNode.updateWorldMatrix(true, false);
+          clusterCompressorNode.updateWorldMatrix(true, false);
+          const displayPlacement = bodyCompressorNode.matrixWorld
+            .clone()
+            .multiply(clusterCompressorNode.matrixWorld.clone().invert());
+
+          bodyCompressorNode.visible = false;
+          loadedClusterModel.visible = false;
+          const compressorRuntime = createClusterMotionRuntime(
+            loadedClusterModel,
+            compressorPayload.definitions,
+            {
+              initialMainProgress: 0,
+              initialLowerProgress: 0,
+              showGuides: false,
+            },
+          );
+          compressorRuntimeRef.current = compressorRuntime;
+
+          const displayClone = createCompressorDisplayClone(loadedClusterModel);
+          const displayRoot = new THREE.Group();
+          displayRoot.name = "body-compressor-display";
+          displayRoot.matrix.copy(displayPlacement);
+          displayRoot.matrixAutoUpdate = false;
+          displayRoot.add(displayClone.display);
+          displayRoot.updateMatrixWorld(true);
+          nextCompressorDisplayRoot = displayRoot;
+          nextCompressorPosePairs = displayClone.posePairs;
+          syncCompressorDisplayPose(nextCompressorPosePairs, displayRoot);
+        }
+
+        compressorPosePairsRef.current = nextCompressorPosePairs;
         setModel(bodyScene);
+        setCompressorRuntimeModel(loadedClusterModel);
+        setCompressorDisplayRoot(nextCompressorDisplayRoot);
         onReady();
-      } catch (error) {
-        console.error("Failed to prepare the combined machine model.", error);
-        disposeLoadedScenes();
-        onError(error);
+        } catch (error) {
+          console.error("Failed to prepare the combined machine model.", error);
+          disposeLoadedScenes();
+          onError(error);
+        }
       }
-    });
+    );
 
     return () => {
       active = false;
+      abortController.abort();
       manager.abort();
       disposeLoadedScenes();
       dracoLoader.dispose();
     };
-  }, [excludedNodeNames, includeMayxoayNode, onError, onLoadStart, onReady]);
+  }, [
+    compressorModelUrls,
+    compressorMotionDefinitionUrls,
+    compressorRootFrameUrl,
+    excludedNodeNames,
+    includeCompressorMotion,
+    includeMayxoayNode,
+    onError,
+    onLoadStart,
+    onReady,
+  ]);
+
+  useFrame((_, delta) => {
+    const runtime = compressorRuntimeRef.current;
+    if (runtime && compressorRunning) {
+      runtime.advance(delta, true, true);
+    }
+    syncCompressorDisplayPose(
+      compressorPosePairsRef.current,
+      compressorDisplayRoot,
+    );
+  });
 
   const bounds = useMemo(() => {
     if (!model) return null;
-    return new THREE.Box3().setFromObject(model);
-  }, [model]);
+    const combinedBounds = new THREE.Box3().setFromObject(model);
+    if (compressorDisplayRoot) {
+      combinedBounds.union(new THREE.Box3().setFromObject(compressorDisplayRoot));
+    }
+    return combinedBounds;
+  }, [compressorDisplayRoot, model]);
   const size = useMemo(() => bounds?.getSize(new THREE.Vector3()) ?? null, [bounds]);
   const center = useMemo(() => bounds?.getCenter(new THREE.Vector3()) ?? null, [bounds]);
   const maxSize = size ? Math.max(size.x, size.y, size.z) : 0;
@@ -414,6 +672,12 @@ function BodyScene({
       {model && bounds && size && center ? (
         <>
           <primitive object={model} dispose={null} />
+          {compressorRuntimeModel ? (
+            <primitive object={compressorRuntimeModel} dispose={null} />
+          ) : null}
+          {compressorDisplayRoot ? (
+            <primitive object={compressorDisplayRoot} dispose={null} />
+          ) : null}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             position={[center.x, bounds.min.y - maxSize * 0.015, center.z]}
@@ -451,6 +715,11 @@ export default function BodyModelCanvas({
   zoomLevel,
   excludedNodeNames,
   includeMayxoayNode,
+  includeCompressorMotion,
+  compressorModelUrls,
+  compressorRootFrameUrl,
+  compressorMotionDefinitionUrls,
+  compressorRunning,
 }: BodyModelCanvasProps) {
   return (
     <Canvas
@@ -468,6 +737,11 @@ export default function BodyModelCanvas({
         zoomLevel={zoomLevel}
         excludedNodeNames={excludedNodeNames}
         includeMayxoayNode={includeMayxoayNode}
+        includeCompressorMotion={includeCompressorMotion}
+        compressorModelUrls={compressorModelUrls}
+        compressorRootFrameUrl={compressorRootFrameUrl}
+        compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
+        compressorRunning={compressorRunning}
       />
     </Canvas>
   );
