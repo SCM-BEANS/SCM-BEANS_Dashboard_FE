@@ -1,8 +1,8 @@
 {
   "schemaVersion": "cluster-03-connections.v1",
   "clusterId": "cluster-03",
-  "phase": "phase-6",
-  "status": "partial-runtime-ready",
+  "phase": "phase-8",
+  "status": "phase-8-box-nen-verified",
   "runtimeReady": false,
   "checks": [
     {
@@ -28,7 +28,7 @@
     {
       "id": "pending-state-explicit",
       "passed": true,
-      "detail": "Unresolved CAD relationships remain explicit; oc_left-1, oc_right-1, truc_chinh-1, truc_nen-1 and gear_motor_chinh-1 are the only resolved motion parts."
+      "detail": "All 18 part-level CAD checkpoints are resolved; overall runtimeReady remains false until the final phase-9/11 controller verification."
     },
     {
       "id": "root-frame-alignment",
@@ -348,7 +348,127 @@
     {
       "id": "arm-left-1-body-pathmate8",
       "passed": true,
-      "detail": "PathMate8 explicitly connects arm_left_1-1 to body_may-1 Sketch1 Arc3+Line1; the body path is the runtime anchor authority."
+      "detail": "PathMate8 connects the fixed body_may-1 reference point to the arm_left_1-1 Sketch1 line; runtime applies the coupled roll around Concentric1."
+    },
+    {
+      "id": "arm-left-1-attached-details",
+      "passed": true,
+      "detail": "head_nen-1 follows arm_left_1-1, while gac_coffee-1 remains body-mounted and translates only on its CAD-derived straight body-bar axis."
+    },
+    {
+      "id": "arm-right-1-cad-parent",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-1.json",
+      "details": "PathMate13 and Coincident11 resolve arm_right_1-1 against body_may-1."
+    },
+    {
+      "id": "arm-right-1-driver-mates",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-1.json",
+      "details": "Coincident12 and Concentric17 align arm_right_1-1 with oc_right-1."
+    },
+    {
+      "id": "arm-right-1-head-cross-mate",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-1.json",
+      "details": "Concentric20 is recorded as a cross-branch mate; head_nen-1 remains owned by arm_left_1-1."
+    },
+    {
+      "id": "arm-right-1-glb-transform",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-1.json",
+      "details": "GLB matrix residual 2.9941739110306287e-7 m."
+    },
+    {
+      "id": "arm-right-2-chain",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-2.json",
+      "details": "Coincident13 and Concentric21 connect arm_right_2-1 to arm_right_1-1 and oc_right-1."
+    },
+    {
+      "id": "arm-right-2-pathmate14",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-2.json",
+      "details": "PathMate14 line residual 8.15151336259022e-17 m."
+    },
+    {
+      "id": "arm-right-2-glb-transform",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-2.json",
+      "details": "GLB matrix residual 4.637667345708252e-7 m."
+    },
+    {
+      "id": "arm-right-3-shaft-axis",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-3.json",
+      "details": "Parallel7 and Concentric22 make arm_right_3-1 follow truc_chinh-1."
+    },
+    {
+      "id": "arm-right-3-parent",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-3.json",
+      "details": "Coincident15 resolves arm_right_3-1 against body_may-1."
+    },
+    {
+      "id": "arm-right-3-pathmate14",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-3.json",
+      "details": "PathMate14 line residual 8.15151336259022e-17 m."
+    },
+    {
+      "id": "arm-right-3-glb-transform",
+      "phase": "phase-7",
+      "status": "passed",
+      "evidence": "arm-right-3.json",
+      "details": "GLB matrix residual 3.632699797084804e-7 m."
+    },
+    {
+      "id": "gac-coffee-cad-constraints",
+      "phase": "phase-8",
+      "status": "passed",
+      "evidence": "cluster-03-phase-8-gac-coffee-cad-evidence.json",
+      "passed": true,
+      "detail": "Coincident10 anchors gac_coffee-1 to body_may-1; Tangent3 derives the fixed straight slide axis while the arm remains only the Arc3 pusher."
+    },
+    {
+      "id": "box-nen-cad-parent",
+      "passed": true,
+      "detail": "Concentric28 and Parallel15 resolve box_nen-1 as an axial-sliding child of fixed body_may-1."
+    },
+    {
+      "id": "box-nen-initial-transform",
+      "passed": true,
+      "detail": "The final.glb box node matches the CAD instance transform and its body_may-1 parent is fixed."
+    },
+    {
+      "id": "box-nen-single-render-owner",
+      "passed": true,
+      "detail": "box_nen-1 remains owned by final.glb; no duplicate overlay is loaded."
+    },
+    {
+      "id": "box-nen-preserves-previous-parts",
+      "passed": true,
+      "detail": "All previously verified cluster-03 part checkpoints remain runtime-ready while box_nen-1 is added."
+    },
+    {
+      "id": "box-nen-screw-constraints",
+      "passed": true,
+      "detail": "Screw2 couples box_nen-1 to truc_nen-1; LimitDistance4 remains recorded as the CAD travel limit."
+    },
+    {
+      "id": "box-nen-screw-samples",
+      "passed": true,
+      "detail": "Progress 0, 0.5 and 1 move box_nen-1 by the same Screw2 translation as truc_nen-1."
     }
   ],
   "rootFrame": {
@@ -358,8 +478,7 @@
     "maxMatrixEntryError": 4.947491722973041e-7
   },
   "runtimeBlockers": [
-    "The remaining cluster-03 components still require later CAD normalization phases.",
-    "PathMate10, LimitDistance1 and Coincident7 are resolved for the arm_left_2/arm_left_3/wiper linkage; collision verification remains outside this checkpoint."
+    "Part-level Cluster-03 checkpoints are resolved; final phase-9/11 assembly-controller verification remains separately tracked."
   ],
   "motionReady": true,
   "ocLeft": {
@@ -1076,6 +1195,360 @@
         ]
       }
     ],
+    "attachments": [
+      {
+        "partId": "head_nen-1",
+        "nodeName": "head_nen-1",
+        "parentId": "arm_left_1-1",
+        "relation": "rigid-follow",
+        "sourceMates": [
+          "Concentric13",
+          "Concentric14",
+          "Coincident8"
+        ],
+        "constraints": [
+          {
+            "name": "Concentric13",
+            "type": "MateConcentric",
+            "mateType": 1,
+            "entityCount": 2,
+            "participants": [
+              "arm_left_1-1",
+              "head_nen-1"
+            ],
+            "entities": [
+              {
+                "componentId": "arm_left_1-1",
+                "referenceType": 4,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.05467569038448087,
+                  0.01690488366908066,
+                  0.13296945812326477,
+                  -1,
+                  -2e-15,
+                  0,
+                  0.0021,
+                  0
+                ]
+              },
+              {
+                "componentId": "head_nen-1",
+                "referenceType": 4,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.04667569038448093,
+                  0.01690488366908066,
+                  0.1329694581232648,
+                  -1,
+                  0,
+                  0,
+                  0.002,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Concentric14",
+            "type": "MateConcentric",
+            "mateType": 1,
+            "entityCount": 2,
+            "participants": [
+              "arm_left_1-1",
+              "head_nen-1"
+            ],
+            "entities": [
+              {
+                "componentId": "arm_left_1-1",
+                "referenceType": 4,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.054675690384480814,
+                  -0.011765437881034013,
+                  0.1530446333955515,
+                  -1,
+                  -2e-15,
+                  0,
+                  0.0021,
+                  0
+                ]
+              },
+              {
+                "componentId": "head_nen-1",
+                "referenceType": 4,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.04667569038448088,
+                  -0.011765437881033985,
+                  0.1530446333955515,
+                  -1,
+                  0,
+                  0,
+                  0.002,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Coincident8",
+            "type": "MateCoincident",
+            "mateType": 0,
+            "entityCount": 2,
+            "participants": [
+              "arm_left_1-1",
+              "head_nen-1"
+            ],
+            "entities": [
+              {
+                "componentId": "arm_left_1-1",
+                "referenceType": 3,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.05667569038448079,
+                  -0.02369034312930654,
+                  0.10927415880540917,
+                  -1,
+                  -2e-15,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              {
+                "componentId": "head_nen-1",
+                "referenceType": 3,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.05667569038448087,
+                  -0.008265437881033982,
+                  0.1530446333955515,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "initialTransform": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03532430961551921,
+          -0.25725429941739136,
+          -0.08743051245993758,
+          1,
+          0,
+          0,
+          0
+        ],
+        "validation": {
+          "glbMatrixResidual": 2.994173913806186e-7,
+          "toleranceMeters": 1e-8
+        }
+      },
+      {
+        "partId": "gac_coffee-1",
+        "nodeName": "gac_coffee-1",
+        "parentId": "body_may-1",
+        "relation": "body-mounted-tangent-contact",
+        "sourceMates": [
+          "Coincident10",
+          "Tangent3"
+        ],
+        "motionParentId": "arm_left_1-1",
+        "motionRelation": "straight-body-bar-translation",
+        "constraints": [
+          {
+            "name": "Coincident10",
+            "type": "MateCoincident",
+            "mateType": 0,
+            "entityCount": 2,
+            "participants": [
+              "body_may-1",
+              "gac_coffee-1"
+            ],
+            "entities": [
+              {
+                "componentId": "body_may-1",
+                "referenceType": 3,
+                "referenceType2": 2,
+                "entityParams": [
+                  0.002324309615519271,
+                  -0.059754299417390466,
+                  0.13856948754006654,
+                  0,
+                  4e-15,
+                  1,
+                  0,
+                  0
+                ]
+              },
+              {
+                "componentId": "gac_coffee-1",
+                "referenceType": 3,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.0008756903844814173,
+                  -0.08170731091299793,
+                  0.13856948754006662,
+                  0,
+                  -4e-15,
+                  -1,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Tangent3",
+            "type": "MateTangent",
+            "mateType": 4,
+            "entityCount": 2,
+            "participants": [
+              "arm_left_1-1",
+              "gac_coffee-1"
+            ],
+            "entities": [
+              {
+                "componentId": "arm_left_1-1",
+                "referenceType": 4,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.054675690384480786,
+                  -0.026224236486804053,
+                  0.15767530752334127,
+                  1,
+                  3.369508300891156e-17,
+                  -1.0647276522269302e-15,
+                  0.00275,
+                  0
+                ]
+              },
+              {
+                "componentId": "gac_coffee-1",
+                "referenceType": 3,
+                "referenceType2": 2,
+                "entityParams": [
+                  -0.054675690384481536,
+                  -0.023332605457903915,
+                  0.16576534484832037,
+                  1.9996953903127827e-15,
+                  -0.9998476951563912,
+                  0.017452406437287005,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "initialTransform": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0.03482430961551853,
+          -0.2577086780362075,
+          -0.08743051245993747,
+          1,
+          0,
+          0,
+          0
+        ],
+        "validation": {
+          "glbMatrixResidual": 3.219637925155894e-7,
+          "toleranceMeters": 1e-8
+        },
+        "slideGuide": {
+          "kind": "straight-translation",
+          "coordinateFrame": "solidworks-assembly",
+          "axis": [
+            2e-15,
+            -1,
+            4.000881689262497e-15
+          ],
+          "axisSource": "Tangent3 driven-plane normal projected onto the Coincident10 plane",
+          "sourceMates": [
+            "Coincident10",
+            "Tangent3"
+          ],
+          "pushProgressRange": [
+            0,
+            0.6196234683297756
+          ],
+          "holdAfterSegment": "Line1",
+          "contact": {
+            "driverPoint": [
+              -0.054675690384480786,
+              -0.026224236486804053,
+              0.15767530752334127
+            ],
+            "driverAxis": [
+              1,
+              3.369508300891156e-17,
+              -1.0647276522269302e-15
+            ],
+            "driverRadiusMeters": 0.00275,
+            "drivenPoint": [
+              -0.054675690384481536,
+              -0.023332605457903915,
+              0.16576534484832037
+            ],
+            "drivenNormal": [
+              1.9996953903127827e-15,
+              -0.9998476951563912,
+              0.017452406437287005
+            ],
+            "coincidentNormal": [
+              0,
+              -4e-15,
+              -1
+            ]
+          },
+          "guide": {
+            "sourceSketches": [
+              "Sketch3:Line1",
+              "Sketch4:Line1"
+            ],
+            "axis": [
+              0,
+              7.412863056867546e-15,
+              -1
+            ],
+            "coordinateFrame": "solidworks-assembly",
+            "sketchDirections": [
+              [
+                -0.017452406437283505,
+                1.478637593624023e-14,
+                -0.9998476951563913
+              ],
+              [
+                0.017452406437283505,
+                3.7092147597722145e-17,
+                -0.9998476951563913
+              ]
+            ]
+          }
+        }
+      }
+    ],
     "toleranceMeters": 1e-8
   },
   "armLeft2": {
@@ -1272,5 +1745,215 @@
       }
     },
     "deferredMates": []
+  },
+  "armRight1": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-right-1.json",
+    "status": "verified",
+    "deferredMates": [
+      "Concentric20"
+    ],
+    "samples": [
+      {
+        "progress": 0,
+        "driverPathPoint": [
+          0.0033243096155192234,
+          -0.034311241963348865,
+          0.09033556931162613
+        ],
+        "armAnchorPoint": [
+          0.005324309615519204,
+          -0.023690343129306124,
+          0.1092741588054092
+        ],
+        "translationDelta": [
+          6.938893903907228e-18,
+          0,
+          2.7755575615628914e-17
+        ]
+      },
+      {
+        "progress": 0.5,
+        "driverPathPoint": [
+          0.0033243096155192594,
+          -0.05254792184498282,
+          0.09729164772988921
+        ],
+        "armAnchorPoint": [
+          0.005324309615519241,
+          -0.041927023010940076,
+          0.11623023722367228
+        ],
+        "translationDelta": [
+          4.2934406030425976e-17,
+          -0.018236679881633952,
+          0.006956078418263109
+        ]
+      },
+      {
+        "progress": 1,
+        "driverPathPoint": [
+          0.003324309615519265,
+          -0.057254299417390686,
+          0.0825694875400665
+        ],
+        "armAnchorPoint": [
+          0.005324309615519246,
+          -0.046633400583347945,
+          0.10150807703384956
+        ],
+        "translationDelta": [
+          4.85722573273506e-17,
+          -0.02294305745404182,
+          -0.007766081771559602
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "armRight2": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-right-2.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "driverPathPoint": [
+          0.0033243096155192234,
+          -0.034311241963348865,
+          0.09033556931162613
+        ],
+        "armAnchorPoint": [
+          0.007324309615519279,
+          -0.06311496490734772,
+          0.08085434034089578
+        ],
+        "translationDelta": [
+          6.938893903907228e-18,
+          0,
+          2.7755575615628914e-17
+        ]
+      },
+      {
+        "progress": 0.5,
+        "driverPathPoint": [
+          0.0033243096155192594,
+          -0.05254792184498282,
+          0.09729164772988921
+        ],
+        "armAnchorPoint": [
+          0.007324309615519315,
+          -0.08135164478898167,
+          0.08781041875915886
+        ],
+        "translationDelta": [
+          4.2934406030425976e-17,
+          -0.018236679881633952,
+          0.006956078418263109
+        ]
+      },
+      {
+        "progress": 1,
+        "driverPathPoint": [
+          0.003324309615519265,
+          -0.057254299417390686,
+          0.0825694875400665
+        ],
+        "armAnchorPoint": [
+          0.007324309615519321,
+          -0.08605802236138954,
+          0.07308825856933615
+        ],
+        "translationDelta": [
+          4.85722573273506e-17,
+          -0.02294305745404182,
+          -0.007766081771559602
+        ]
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "armRight3": {
+    "file": "/models/digital-twin/cluster-03/connections/arm-right-3.json",
+    "status": "verified",
+    "samples": [
+      {
+        "progress": 0,
+        "angleRadians": 0
+      },
+      {
+        "progress": 0.5,
+        "angleRadians": 3.141592653589793
+      },
+      {
+        "progress": 1,
+        "angleRadians": 6.283185307179586
+      }
+    ],
+    "toleranceMeters": 1e-8
+  },
+  "boxNen": {
+    "file": "/models/digital-twin/cluster-03/connections/box-nen.json",
+    "status": "verified",
+    "motionGroup": "motor_nen",
+    "parentId": "body_may-1",
+    "sourceMates": [
+      "Concentric28",
+      "Parallel15"
+    ],
+    "constraintMates": [
+      "LimitDistance4",
+      "Screw2"
+    ],
+    "driver": {
+      "partId": "truc_nen-1",
+      "motionFile": "/models/digital-twin/cluster-03/connections/truc-nen.json",
+      "relation": "screw-translation-follow",
+      "sourceMates": [
+        "Screw2",
+        "GearMate4"
+      ]
+    },
+    "screw": {
+      "sourceMate": "Screw2",
+      "driverComponent": "truc_nen-1",
+      "fixedReferenceComponent": "box_nen-1",
+      "targetAxis": [
+        6.165890344762365e-16,
+        4.261501286010193e-15,
+        1
+      ],
+      "fixedReferenceAxis": [
+        0,
+        -4e-15,
+        -1
+      ],
+      "pitchMeters": 0.004,
+      "reverse": true,
+      "translationPerRevolutionMeters": -0.004
+    },
+    "samples": [
+      {
+        "progress": 0,
+        "driverAngleRadians": 0,
+        "shaftTranslationMeters": 0,
+        "boxTranslationMeters": 0,
+        "translationResidualMeters": 0
+      },
+      {
+        "progress": 0.5,
+        "driverAngleRadians": 3.141592653589793,
+        "shaftTranslationMeters": -0.002,
+        "boxTranslationMeters": -0.002,
+        "translationResidualMeters": 0
+      },
+      {
+        "progress": 1,
+        "driverAngleRadians": 6.283185307179586,
+        "shaftTranslationMeters": -0.004,
+        "boxTranslationMeters": -0.004,
+        "translationResidualMeters": 0
+      }
+    ],
+    "glbMatrixResidual": 2.9941739065897366e-7,
+    "toleranceMeters": 1e-8
   }
 }

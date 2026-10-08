@@ -1,7 +1,7 @@
 {
   "schemaVersion": "cluster-03-connections.v1",
   "clusterId": "cluster-03",
-  "status": "phase-6-arm-left-3-ready",
+  "status": "phase-8-box-nen-motion-ready",
   "runtimeReady": false,
   "units": "meters",
   "coordinateFrame": "solidworks-assembly",
@@ -31,7 +31,11 @@
       "/models/digital-twin/cluster-03/connections/arm-left-1.json",
       "/models/digital-twin/cluster-03/connections/arm-left-2.json",
       "/models/digital-twin/cluster-03/connections/arm-left-3.json",
-      "/models/digital-twin/cluster-03/connections/wiper-gear.json"
+      "/models/digital-twin/cluster-03/connections/wiper-gear.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-1.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-2.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-3.json",
+      "/models/digital-twin/cluster-03/connections/box-nen.json"
     ]
   },
   "artifactMatrix": [
@@ -147,6 +151,34 @@
       "runtimeServed": true,
       "owner": "cluster-03",
       "status": "phase-6-arm-left-3-verified"
+    },
+    {
+      "kind": "motion-definition-arm-right-1",
+      "file": "/models/digital-twin/cluster-03/connections/arm-right-1.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-7-arm-right-1-verified"
+    },
+    {
+      "kind": "motion-definition-arm-right-2",
+      "file": "/models/digital-twin/cluster-03/connections/arm-right-2.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-7-arm-right-2-verified"
+    },
+    {
+      "kind": "motion-definition-arm-right-3",
+      "file": "/models/digital-twin/cluster-03/connections/arm-right-3.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-7-arm-right-3-verified"
+    },
+    {
+      "kind": "motion-definition-box-nen",
+      "file": "/models/digital-twin/cluster-03/connections/box-nen.json",
+      "runtimeServed": true,
+      "owner": "cluster-03",
+      "status": "phase-8-box-nen-verified"
     }
   ],
   "render": {
@@ -172,7 +204,11 @@
       "/models/digital-twin/cluster-03/connections/gear-nen.json",
       "/models/digital-twin/cluster-03/connections/arm-left-1.json",
       "/models/digital-twin/cluster-03/connections/arm-left-2.json",
-      "/models/digital-twin/cluster-03/connections/arm-left-3.json"
+      "/models/digital-twin/cluster-03/connections/arm-left-3.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-1.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-2.json",
+      "/models/digital-twin/cluster-03/connections/arm-right-3.json",
+      "/models/digital-twin/cluster-03/connections/box-nen.json"
     ]
   },
   "parts": [
@@ -462,18 +498,32 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Coincident15+Parallel7+Concentric22+PathMate14",
+        "reason": "SolidWorks mate chain for arm_right_3-1 is preserved in the runtime motion definition; no mesh overlay is loaded."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
-        "point": null,
-        "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "status": "cad-anchor-resolved",
+        "point": [
+          0.01332430961551926,
+          -0.05725429941739088,
+          0.05756948754006641
+        ],
+        "axis": [
+          -1,
+          -1.9999999993615707e-15,
+          2.373743600530179e-24
+        ],
+        "localPoint": [
+          -0.021249999999999002,
+          0.2000000000000001,
+          0.14500000000000401
+        ],
+        "sourceFeature": "Concentric22",
+        "reason": "Pivot and anchor are taken from the extracted SolidWorks mate entities."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-arm-right-3-ready",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "arm_right_3-1",
@@ -717,24 +767,38 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Coincident10+Tangent3",
+        "reason": "gac_coffee-1 is anchored to body_may-1 by Coincident10; Tangent3 records its verified contact with arm_left_1-1 without making the moving arm its parent."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
+        "status": "cad-relative-transform-resolved",
         "point": null,
         "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "localPoint": null,
+        "sourceFeature": "Coincident10+Tangent3",
+        "reason": "The runtime preserves the imported CAD relative transform by attaching this node under body_may-1."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-body-mounted-straight-slide",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "gac_coffee-1",
         "sourceFile": "gac_coffee.SLDPRT",
         "inventorySchema": "cluster-03-cad-inventory.v1",
         "solidWorksRevision": "32.1.0"
+      },
+      "motion": {
+        "parentId": "arm_left_1-1",
+        "relation": "straight-body-bar-translation",
+        "sourceFeature": "Coincident10+Tangent3",
+        "status": "runtime-straight-body-bar-translation",
+        "axis": [
+          2e-15,
+          -1,
+          4.000881689262497e-15
+        ],
+        "reason": "The runtime translates gac_coffee-1 on the CAD-derived straight body-bar axis during Arc3, then holds it while the arm-side contact slides during Line1."
       }
     },
     {
@@ -981,18 +1045,20 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "arm_left_1-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric13+Concentric14+Coincident8",
+        "reason": "head_nen-1 is rigidly attached to arm_left_1-1 by its verified concentric/coincident mates."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
+        "status": "cad-relative-transform-resolved",
         "point": null,
         "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "localPoint": null,
+        "sourceFeature": "Concentric13+Concentric14+Coincident8",
+        "reason": "The runtime preserves the imported CAD relative transform by attaching this node under arm_left_1-1."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-arm-left-1-attached",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "head_nen-1",
@@ -1035,18 +1101,28 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "PathMate13+Coincident11+Coincident12+Concentric17+Coincident13",
+        "reason": "SolidWorks mate chain for arm_right_1-1 is preserved in the runtime motion definition; no mesh overlay is loaded."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
-        "point": null,
+        "status": "cad-anchor-resolved",
+        "point": [
+          0.005324309615519197,
+          -0.023690343129306124,
+          0.10927415880540917
+        ],
         "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "localPoint": [
+          -0.02900000000000006,
+          0.23356395628808496,
+          0.19670467126534674
+        ],
+        "sourceFeature": "Coincident12/Coincident13",
+        "reason": "Pivot and anchor are taken from the extracted SolidWorks mate entities."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-arm-right-1-ready",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "arm_right_1-1",
@@ -1089,18 +1165,28 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Coincident13+Concentric21+PathMate14",
+        "reason": "SolidWorks mate chain for arm_right_2-1 is preserved in the runtime motion definition; no mesh overlay is loaded."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
-        "point": null,
+        "status": "cad-anchor-resolved",
+        "point": [
+          0.007324309615519272,
+          -0.06311496490734772,
+          0.08085434034089575
+        ],
         "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "localPoint": [
+          -0.026949999999999988,
+          0.19311185553215987,
+          0.17232112537816888
+        ],
+        "sourceFeature": "Coincident12/Coincident13",
+        "reason": "Pivot and anchor are taken from the extracted SolidWorks mate entities."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-arm-right-2-ready",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "arm_right_2-1",
@@ -1216,25 +1302,35 @@
         ]
       },
       "parent": {
-        "id": null,
-        "status": "pending-cad-mate-normalization",
-        "reason": "Parent/child ownership is not inferred from filenames; it will be resolved from mate entities in a later phase."
+        "id": "body_may-1",
+        "status": "cad-mate-resolved",
+        "sourceFeature": "Concentric28+Parallel15",
+        "reason": "Concentric28 and Parallel15 resolve the body/box coaxial orientation while Screw2 leaves the verified axial slide driven by truc_nen-1."
       },
       "pivot": {
-        "status": "pending-cad-reference-extraction",
-        "point": null,
-        "axis": null,
-        "sourceFeature": null,
-        "reason": "A motion pivot must be tied to a SolidWorks reference entity before runtime use."
+        "status": "cad-slide-axis-resolved",
+        "point": [
+          -0.024675690384480732,
+          -0.05725429941739055,
+          0.13134948754058198
+        ],
+        "axis": [
+          6.165890344762365e-16,
+          4.261501286010193e-15,
+          1
+        ],
+        "sourceFeature": "Screw2",
+        "reason": "Screw2 couples the axial translation of box_nen-1 to truc_nen-1; Concentric28 and Parallel15 preserve coaxial orientation."
       },
-      "connectionStatus": "pending-mate-entity-normalization",
+      "connectionStatus": "runtime-box-nen-screw-follow-ready",
       "sourceEvidence": {
         "assemblyFile": "Final.SLDASM",
         "componentId": "box_nen-1",
         "sourceFile": "box_nen.SLDPRT",
         "inventorySchema": "cluster-03-cad-inventory.v1",
         "solidWorksRevision": "32.1.0"
-      }
+      },
+      "motionGroup": "motor_nen"
     },
     {
       "id": "gear_motor_nen-1",
@@ -1423,6 +1519,17 @@
       "sourceFeature": "Concentric7+GearMate2",
       "kind": "axis-rotation",
       "driver": "gear_motor_chinh-1"
+    },
+    {
+      "status": "verified",
+      "runtimeReady": true,
+      "file": "/models/digital-twin/cluster-03/connections/box-nen.json",
+      "nodeName": "box_nen-1",
+      "parentId": "body_may-1",
+      "sourceFeature": "Concentric28+Parallel15+Screw2",
+      "kind": "screw-follow",
+      "driver": "truc_nen-1",
+      "motionGroup": "motor_nen"
     }
   ],
   "motionFiles": [
@@ -1436,7 +1543,11 @@
     "/models/digital-twin/cluster-03/connections/arm-left-1.json",
     "/models/digital-twin/cluster-03/connections/arm-left-2.json",
     "/models/digital-twin/cluster-03/connections/arm-left-3.json",
-    "/models/digital-twin/cluster-03/connections/wiper-gear.json"
+    "/models/digital-twin/cluster-03/connections/wiper-gear.json",
+    "/models/digital-twin/cluster-03/connections/box-nen.json"
   ],
-  "phase": "phase-6"
+  "phase": "phase-8",
+  "motionDefinitionFiles": [
+    "/models/digital-twin/cluster-03/connections/box-nen.json"
+  ]
 }

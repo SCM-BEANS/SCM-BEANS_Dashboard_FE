@@ -22,7 +22,7 @@
   "driver": {
     "partId": "oc_left-1",
     "motionFile": "/models/digital-twin/cluster-03/connections/oc-left.json",
-    "relation": "rigid-translation",
+    "relation": "rigid-translation-with-path-roll",
     "sourceMates": [
       "Coincident1",
       "Concentric1"
@@ -41,11 +41,28 @@
       -0.04807707643577436,
       0.07067592024869035
     ],
+    "sourceDirection": [
+      8.06848128361309e-16,
+      -0.5735764363510489,
+      -0.8191520442889897
+    ],
     "targetReferencePoint": [
       -0.05467569038448073,
       -0.05725429941739091,
       0.05756948754006651
     ],
+    "rotationAxis": {
+      "point": [
+        -0.05467569038448077,
+        -0.03431124196334914,
+        0.09033556931162612
+      ],
+      "axis": [
+        -1,
+        -2e-15,
+        0
+      ]
+    },
     "targetPath": {
       "sourceFeature": "Sketch1",
       "sourceSegments": [
@@ -59,6 +76,360 @@
       "toleranceMeters": 1e-8
     }
   },
+  "attachments": [
+    {
+      "partId": "head_nen-1",
+      "nodeName": "head_nen-1",
+      "parentId": "arm_left_1-1",
+      "relation": "rigid-follow",
+      "sourceMates": [
+        "Concentric13",
+        "Concentric14",
+        "Coincident8"
+      ],
+      "constraints": [
+        {
+          "name": "Concentric13",
+          "type": "MateConcentric",
+          "mateType": 1,
+          "entityCount": 2,
+          "participants": [
+            "arm_left_1-1",
+            "head_nen-1"
+          ],
+          "entities": [
+            {
+              "componentId": "arm_left_1-1",
+              "referenceType": 4,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.05467569038448087,
+                0.01690488366908066,
+                0.13296945812326477,
+                -1,
+                -2e-15,
+                0,
+                0.0021,
+                0
+              ]
+            },
+            {
+              "componentId": "head_nen-1",
+              "referenceType": 4,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.04667569038448093,
+                0.01690488366908066,
+                0.1329694581232648,
+                -1,
+                0,
+                0,
+                0.002,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Concentric14",
+          "type": "MateConcentric",
+          "mateType": 1,
+          "entityCount": 2,
+          "participants": [
+            "arm_left_1-1",
+            "head_nen-1"
+          ],
+          "entities": [
+            {
+              "componentId": "arm_left_1-1",
+              "referenceType": 4,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.054675690384480814,
+                -0.011765437881034013,
+                0.1530446333955515,
+                -1,
+                -2e-15,
+                0,
+                0.0021,
+                0
+              ]
+            },
+            {
+              "componentId": "head_nen-1",
+              "referenceType": 4,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.04667569038448088,
+                -0.011765437881033985,
+                0.1530446333955515,
+                -1,
+                0,
+                0,
+                0.002,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Coincident8",
+          "type": "MateCoincident",
+          "mateType": 0,
+          "entityCount": 2,
+          "participants": [
+            "arm_left_1-1",
+            "head_nen-1"
+          ],
+          "entities": [
+            {
+              "componentId": "arm_left_1-1",
+              "referenceType": 3,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.05667569038448079,
+                -0.02369034312930654,
+                0.10927415880540917,
+                -1,
+                -2e-15,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "componentId": "head_nen-1",
+              "referenceType": 3,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.05667569038448087,
+                -0.008265437881033982,
+                0.1530446333955515,
+                1,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ],
+      "initialTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.03532430961551921,
+        -0.25725429941739136,
+        -0.08743051245993758,
+        1,
+        0,
+        0,
+        0
+      ],
+      "validation": {
+        "glbMatrixResidual": 2.994173913806186e-7,
+        "toleranceMeters": 1e-8
+      }
+    },
+    {
+      "partId": "gac_coffee-1",
+      "nodeName": "gac_coffee-1",
+      "parentId": "body_may-1",
+      "relation": "body-mounted-tangent-contact",
+      "sourceMates": [
+        "Coincident10",
+        "Tangent3"
+      ],
+      "motionParentId": "arm_left_1-1",
+      "motionRelation": "straight-body-bar-translation",
+      "constraints": [
+        {
+          "name": "Coincident10",
+          "type": "MateCoincident",
+          "mateType": 0,
+          "entityCount": 2,
+          "participants": [
+            "body_may-1",
+            "gac_coffee-1"
+          ],
+          "entities": [
+            {
+              "componentId": "body_may-1",
+              "referenceType": 3,
+              "referenceType2": 2,
+              "entityParams": [
+                0.002324309615519271,
+                -0.059754299417390466,
+                0.13856948754006654,
+                0,
+                4e-15,
+                1,
+                0,
+                0
+              ]
+            },
+            {
+              "componentId": "gac_coffee-1",
+              "referenceType": 3,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.0008756903844814173,
+                -0.08170731091299793,
+                0.13856948754006662,
+                0,
+                -4e-15,
+                -1,
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tangent3",
+          "type": "MateTangent",
+          "mateType": 4,
+          "entityCount": 2,
+          "participants": [
+            "arm_left_1-1",
+            "gac_coffee-1"
+          ],
+          "entities": [
+            {
+              "componentId": "arm_left_1-1",
+              "referenceType": 4,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.054675690384480786,
+                -0.026224236486804053,
+                0.15767530752334127,
+                1,
+                3.369508300891156e-17,
+                -1.0647276522269302e-15,
+                0.00275,
+                0
+              ]
+            },
+            {
+              "componentId": "gac_coffee-1",
+              "referenceType": 3,
+              "referenceType2": 2,
+              "entityParams": [
+                -0.054675690384481536,
+                -0.023332605457903915,
+                0.16576534484832037,
+                1.9996953903127827e-15,
+                -0.9998476951563912,
+                0.017452406437287005,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ],
+      "initialTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.03482430961551853,
+        -0.2577086780362075,
+        -0.08743051245993747,
+        1,
+        0,
+        0,
+        0
+      ],
+      "validation": {
+        "glbMatrixResidual": 3.219637925155894e-7,
+        "toleranceMeters": 1e-8
+      },
+      "slideGuide": {
+        "kind": "straight-translation",
+        "coordinateFrame": "solidworks-assembly",
+        "axis": [
+          2e-15,
+          -1,
+          4.000881689262497e-15
+        ],
+        "axisSource": "Tangent3 driven-plane normal projected onto the Coincident10 plane",
+        "sourceMates": [
+          "Coincident10",
+          "Tangent3"
+        ],
+        "pushProgressRange": [
+          0,
+          0.6196234683297756
+        ],
+        "holdAfterSegment": "Line1",
+        "contact": {
+          "driverPoint": [
+            -0.054675690384480786,
+            -0.026224236486804053,
+            0.15767530752334127
+          ],
+          "driverAxis": [
+            1,
+            3.369508300891156e-17,
+            -1.0647276522269302e-15
+          ],
+          "driverRadiusMeters": 0.00275,
+          "drivenPoint": [
+            -0.054675690384481536,
+            -0.023332605457903915,
+            0.16576534484832037
+          ],
+          "drivenNormal": [
+            1.9996953903127827e-15,
+            -0.9998476951563912,
+            0.017452406437287005
+          ],
+          "coincidentNormal": [
+            0,
+            -4e-15,
+            -1
+          ]
+        },
+        "guide": {
+          "sourceSketches": [
+            "Sketch3:Line1",
+            "Sketch4:Line1"
+          ],
+          "axis": [
+            0,
+            7.412863056867546e-15,
+            -1
+          ],
+          "coordinateFrame": "solidworks-assembly",
+          "sketchDirections": [
+            [
+              -0.017452406437283505,
+              1.478637593624023e-14,
+              -0.9998476951563913
+            ],
+            [
+              0.017452406437283505,
+              3.7092147597722145e-17,
+              -0.9998476951563913
+            ]
+          ]
+        }
+      }
+    }
+  ],
   "anchor": {
     "kind": "point",
     "space": "solidworks-assembly",
@@ -369,6 +740,82 @@
       "Coincident1",
       "Concentric1"
     ],
+    "gacCoffeeCadEvidenceSchema": "cluster-03-gac-coffee-check-cad-connection.v1",
+    "gacCoffeeMates": [
+      "Coincident10",
+      "Tangent3"
+    ],
+    "gacCoffeeSlideGuide": {
+      "kind": "straight-translation",
+      "coordinateFrame": "solidworks-assembly",
+      "axis": [
+        2e-15,
+        -1,
+        4.000881689262497e-15
+      ],
+      "axisSource": "Tangent3 driven-plane normal projected onto the Coincident10 plane",
+      "sourceMates": [
+        "Coincident10",
+        "Tangent3"
+      ],
+      "pushProgressRange": [
+        0,
+        0.6196234683297756
+      ],
+      "holdAfterSegment": "Line1",
+      "contact": {
+        "driverPoint": [
+          -0.054675690384480786,
+          -0.026224236486804053,
+          0.15767530752334127
+        ],
+        "driverAxis": [
+          1,
+          3.369508300891156e-17,
+          -1.0647276522269302e-15
+        ],
+        "driverRadiusMeters": 0.00275,
+        "drivenPoint": [
+          -0.054675690384481536,
+          -0.023332605457903915,
+          0.16576534484832037
+        ],
+        "drivenNormal": [
+          1.9996953903127827e-15,
+          -0.9998476951563912,
+          0.017452406437287005
+        ],
+        "coincidentNormal": [
+          0,
+          -4e-15,
+          -1
+        ]
+      },
+      "guide": {
+        "sourceSketches": [
+          "Sketch3:Line1",
+          "Sketch4:Line1"
+        ],
+        "axis": [
+          0,
+          7.412863056867546e-15,
+          -1
+        ],
+        "coordinateFrame": "solidworks-assembly",
+        "sketchDirections": [
+          [
+            -0.017452406437283505,
+            1.478637593624023e-14,
+            -0.9998476951563913
+          ],
+          [
+            0.017452406437283505,
+            3.7092147597722145e-17,
+            -0.9998476951563913
+          ]
+        ]
+      }
+    },
     "readOnlyIntent": true
   },
   "validation": {
@@ -399,7 +846,17 @@
         0.10150807703384952
       ]
     ],
-    "preservedOrientation": true
+    "preservedOrientation": true,
+    "gacCoffeeSlideAxis": [
+      2e-15,
+      -1,
+      4.000881689262497e-15
+    ],
+    "gacCoffeeGuideAxis": [
+      0,
+      7.412863056867546e-15,
+      -1
+    ]
   },
   "targetInitialTransform": [
     1,

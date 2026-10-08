@@ -43,8 +43,16 @@ const CLUSTER_03_ARM_LEFT_2_MOTION_URL =
   "/models/digital-twin/cluster-03/connections/arm-left-2.json";
 const CLUSTER_03_ARM_LEFT_3_MOTION_URL =
   "/models/digital-twin/cluster-03/connections/arm-left-3.json";
+const CLUSTER_03_ARM_RIGHT_1_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-right-1.json";
+const CLUSTER_03_ARM_RIGHT_2_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-right-2.json";
+const CLUSTER_03_ARM_RIGHT_3_MOTION_URL =
+  "/models/digital-twin/cluster-03/connections/arm-right-3.json";
 const CLUSTER_03_WIPER_GEAR_MOTION_URL =
   "/models/digital-twin/cluster-03/connections/wiper-gear.json";
+const CLUSTER_03_BOX_NEN_CONNECTION_URL =
+  "/models/digital-twin/cluster-03/connections/box-nen.json";
 const CLUSTER_03_MOTION_URLS = [
   CLUSTER_03_OC_LEFT_MOTION_URL,
   CLUSTER_03_OC_RIGHT_MOTION_URL,
@@ -56,7 +64,11 @@ const CLUSTER_03_MOTION_URLS = [
   CLUSTER_03_ARM_LEFT_1_MOTION_URL,
   CLUSTER_03_ARM_LEFT_2_MOTION_URL,
   CLUSTER_03_ARM_LEFT_3_MOTION_URL,
+  CLUSTER_03_ARM_RIGHT_1_MOTION_URL,
+  CLUSTER_03_ARM_RIGHT_2_MOTION_URL,
+  CLUSTER_03_ARM_RIGHT_3_MOTION_URL,
   CLUSTER_03_WIPER_GEAR_MOTION_URL,
+  CLUSTER_03_BOX_NEN_CONNECTION_URL,
 ] as const;
 
 type DigitalTwinTab = (typeof DIGITAL_TWIN_TABS)[number]["id"];

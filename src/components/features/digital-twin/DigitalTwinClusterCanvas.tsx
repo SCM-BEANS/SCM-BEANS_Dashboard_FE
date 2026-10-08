@@ -98,7 +98,9 @@ type ClusterPathMotionNodeName =
   | "oc_left-1"
   | "oc_right-1"
   | "arm_left_1-1"
-  | "arm_left_2-1";
+  | "arm_left_2-1"
+  | "arm_right_1-1"
+  | "arm_right_2-1";
 type ClusterAxisMotionNodeName =
   | "truc_chinh-1"
   | "truc_nen-1"
@@ -106,6 +108,7 @@ type ClusterAxisMotionNodeName =
   | "gear_motor_nen-1"
   | "gear_nen-1"
   | "arm_left_3-1"
+  | "arm_right_3-1"
   | "wiper_gear-1";
 
 interface ClusterMotionConstraintEntity {
@@ -122,20 +125,60 @@ interface ClusterMotionConstraint {
 interface ClusterBodyPathConnection {
   kind: "point-on-path";
   status: "verified";
-  mate: "PathMate8";
-  sourcePartId: "arm_left_1-1";
+  mate: "PathMate8" | "PathMate13";
+  sourcePartId: "arm_left_1-1" | "arm_right_1-1";
   targetPartId: "body_may-1";
   sourcePoint: MotionVector;
+  sourceDirection: MotionVector;
   targetReferencePoint: MotionVector;
+  rotationAxis: {
+    point: MotionVector;
+    axis: MotionVector;
+  };
   targetPath: {
-    sourceFeature: "Sketch1";
-    sourceSegments: readonly ["Arc3", "Line1"];
+    sourceFeature: "Sketch1" | "Sketch2";
+    sourceSegments: readonly [string, string];
     coordinateFrame: "solidworks-assembly";
   };
   validation: {
     pathDriverStartResidualMeters: number;
     toleranceMeters: number;
   };
+}
+
+interface ClusterGacCoffeeSlideGuide {
+  kind: "straight-translation";
+  coordinateFrame: "solidworks-assembly";
+  axis: MotionVector;
+  axisSource: string;
+  sourceMates: readonly ["Coincident10", "Tangent3"];
+  pushProgressRange: readonly [number, number];
+  holdAfterSegment: "Line1";
+  contact: {
+    driverPoint: MotionVector;
+    driverAxis: MotionVector;
+    driverRadiusMeters: number;
+    drivenPoint: MotionVector;
+    drivenNormal: MotionVector;
+    coincidentNormal: MotionVector;
+  };
+  guide: {
+    sourceSketches: readonly ["Sketch3:Line1", "Sketch4:Line1"];
+    axis: MotionVector;
+    coordinateFrame: "solidworks-assembly";
+    sketchDirections: readonly [MotionVector, MotionVector];
+  };
+}
+
+interface ClusterArmLeft1Attachment {
+  partId: "head_nen-1" | "gac_coffee-1";
+  nodeName: "head_nen-1" | "gac_coffee-1";
+  parentId: "arm_left_1-1" | "body_may-1";
+  relation: "rigid-follow" | "body-mounted-tangent-contact";
+  motionParentId?: "arm_left_1-1";
+  motionRelation?: "tangent-contact-follow" | "straight-body-bar-translation";
+  slideGuide?: ClusterGacCoffeeSlideGuide;
+  sourceMates: readonly string[];
 }
 
 interface MainDriveCalibrationSample {
@@ -159,7 +202,9 @@ interface ClusterPathMotionDefinition {
     | "cluster-03-oc-left-motion.v1"
     | "cluster-03-oc-right-motion.v1"
     | "cluster-03-arm-left-1-motion.v1"
-    | "cluster-03-arm-left-2-motion.v1";
+    | "cluster-03-arm-left-2-motion.v1"
+    | "cluster-03-arm-right-1-motion.v1"
+    | "cluster-03-arm-right-2-motion.v1";
   clusterId: "cluster-03";
   status: "verified";
   runtimeReady: true;
@@ -175,9 +220,9 @@ interface ClusterPathMotionDefinition {
     showGuide?: boolean;
   };
   driver?: {
-    partId: "oc_left-1";
+    partId: "oc_left-1" | "oc_right-1";
     motionFile: string;
-    relation: "rigid-translation";
+    relation: "rigid-translation" | "rigid-translation-with-path-roll";
     sourceMates: readonly string[];
     pathConstraint?: string;
     dependencyPartId?: string;
@@ -185,6 +230,7 @@ interface ClusterPathMotionDefinition {
     sourcePath: string;
   };
   bodyConnection?: ClusterBodyPathConnection;
+  attachments?: readonly ClusterArmLeft1Attachment[];
   anchor: {
     point: MotionVector;
     localPoint: MotionVector;
@@ -201,21 +247,24 @@ interface ClusterPathMotionDefinition {
         radius: number;
         normal: MotionVector;
         sweepRadians: number;
+        lengthMeters: number;
       },
       {
         kind: "line";
         start: MotionVector;
         end: MotionVector;
+        lengthMeters: number;
       },
     ];
+    lengthMeters: number;
     segmentDirections?: readonly ["forward" | "reverse", "forward" | "reverse"];
   };
   connection?: {
     kind: "point-on-path";
     status: "verified";
-    mate: "PathMate10";
-    sourcePartId: "arm_left_2-1";
-    targetPartId: "arm_left_3-1";
+    mate: "PathMate10" | "PathMate14";
+    sourcePartId: "arm_left_2-1" | "arm_right_2-1";
+    targetPartId: "arm_left_3-1" | "arm_right_3-1";
     sourcePoint: MotionVector;
     sourceLocalPoint: MotionVector;
     targetPath: {
@@ -230,18 +279,20 @@ interface ClusterPathMotionDefinition {
       localStart: MotionVector;
       localEnd: MotionVector;
       parameterRange: readonly [number, number];
+      initialParameter?: number;
       lengthMeters: number;
       coordinateFrame: "solidworks-assembly";
     };
     driverAxis: {
-      sourceMate: "Concentric2";
-      partId: "oc_left-1";
+      sourceMate: "Concentric2" | "Concentric21";
+      partId: "oc_left-1" | "oc_right-1";
       point: MotionVector;
       axis: MotionVector;
       localPoint: MotionVector;
       localAxis: MotionVector;
     };
-    limit: {
+    initialLineProgress?: number;
+    limit?: {
       mate: "LimitDistance1";
       sourcePoint: MotionVector;
       targetPoint: MotionVector;
@@ -294,6 +345,7 @@ interface ClusterAxisMotionDefinition {
     | "cluster-03-gear-motor-nen-motion.v1"
     | "cluster-03-gear-nen-motion.v1"
     | "cluster-03-arm-left-3-motion.v1"
+    | "cluster-03-arm-right-3-motion.v1"
     | "cluster-03-wiper-gear-motion.v1";
   clusterId: "cluster-03";
   status: "verified";
@@ -338,9 +390,84 @@ interface ClusterAxisMotionDefinition {
   };
 }
 
+interface ClusterBoxNenMotionDefinition {
+  schemaVersion: "cluster-03-box-nen-motion.v1";
+  clusterId: "cluster-03";
+  motionGroup: "motor_nen";
+  status: "verified";
+  runtimeReady: true;
+  units: "meters";
+  coordinateFrame: "solidworks-assembly";
+  partId: "box_nen-1";
+  nodeName: "box_nen-1";
+  parentId: "body_may-1";
+  motion: {
+    kind: "screw-follow";
+    property: "translation";
+    progressRange: readonly [number, number];
+    initialProgress: number;
+    preserveInitialPose: true;
+    translationRangeMeters: readonly [number, number];
+  };
+  attachment: {
+    relation: "body-mounted-axial-slide";
+    sourceMates: readonly ["Concentric28", "Parallel15"];
+    parentReference: {
+      point: MotionVector;
+      axis: MotionVector;
+      parallelNormal: MotionVector;
+    };
+    targetReference: {
+      point: MotionVector;
+      axis: MotionVector;
+      parallelNormal: MotionVector;
+    };
+    axis: MotionVector;
+    axisReference: "truc_nen-1";
+  };
+  screw: {
+    sourceMate: "Screw2";
+    driverComponent: "truc_nen-1";
+    fixedReferenceComponent: "box_nen-1";
+    targetAxis: MotionVector;
+    fixedReferenceAxis: MotionVector;
+    pitchMeters: number;
+    reverse: boolean;
+    translationPerRevolutionMeters: number;
+  };
+  driver: {
+    partId: "truc_nen-1";
+    motionFile: string;
+    relation: "screw-translation-follow";
+    sourceMates: readonly ["Screw2", "GearMate4"];
+  };
+  constraints: readonly ClusterMotionConstraint[];
+  targetInitialTransform: readonly number[];
+  parentInitialTransform: readonly number[];
+  validation: {
+    glbMatrixTolerance: number;
+    glbMatrixResidual: number;
+    concentricAxisAlignmentDot: number;
+    parallelNormalAlignmentDot: number;
+    parentFixed: true;
+    samples: readonly {
+      progress: number;
+      driverAngleRadians: number;
+      shaftTranslationMeters: number;
+      boxTranslationMeters: number;
+      translationResidualMeters: number;
+    }[];
+    screwPitchMeters: number;
+    translationDirectionDot: number;
+    toleranceMeters: number;
+    passed: true;
+  };
+}
+
 type ClusterMotionDefinition =
   | ClusterPathMotionDefinition
-  | ClusterAxisMotionDefinition;
+  | ClusterAxisMotionDefinition
+  | ClusterBoxNenMotionDefinition;
 
 function parseClusterRootTransform(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -466,7 +593,12 @@ function isValidArmLeft1BodyConnection(
     sourcePartId?: unknown;
     targetPartId?: unknown;
     sourcePoint?: unknown;
+    sourceDirection?: unknown;
     targetReferencePoint?: unknown;
+    rotationAxis?: {
+      point?: unknown;
+      axis?: unknown;
+    };
     targetPath?: {
       sourceFeature?: unknown;
       sourceSegments?: unknown;
@@ -486,7 +618,10 @@ function isValidArmLeft1BodyConnection(
     connection.sourcePartId === "arm_left_1-1" &&
     connection.targetPartId === "body_may-1" &&
     isMotionVector(connection.sourcePoint) &&
+    isMotionVector(connection.sourceDirection) &&
     isMotionVector(connection.targetReferencePoint) &&
+    isMotionVector(connection.rotationAxis?.point) &&
+    isMotionVector(connection.rotationAxis?.axis) &&
     connection.targetPath?.sourceFeature === "Sketch1" &&
     JSON.stringify(connection.targetPath.sourceSegments) ===
       JSON.stringify(["Arc3", "Line1"]) &&
@@ -497,6 +632,99 @@ function isValidArmLeft1BodyConnection(
   );
 }
 
+function isValidArmRight1BodyConnection(
+  value: unknown,
+): value is ClusterBodyPathConnection {
+  if (!value || typeof value !== "object") return false;
+
+  const connection = value as {
+    kind?: unknown;
+    status?: unknown;
+    mate?: unknown;
+    sourcePartId?: unknown;
+    targetPartId?: unknown;
+    sourcePoint?: unknown;
+    sourceDirection?: unknown;
+    targetReferencePoint?: unknown;
+    rotationAxis?: {
+      point?: unknown;
+      axis?: unknown;
+    };
+    targetPath?: {
+      sourceFeature?: unknown;
+      sourceSegments?: unknown;
+      coordinateFrame?: unknown;
+    };
+    validation?: {
+      pathDriverStartResidualMeters?: unknown;
+      toleranceMeters?: unknown;
+    };
+  };
+  const validation = connection.validation;
+
+  return (
+    connection.kind === "point-on-path" &&
+    connection.status === "verified" &&
+    connection.mate === "PathMate13" &&
+    connection.sourcePartId === "arm_right_1-1" &&
+    connection.targetPartId === "body_may-1" &&
+    isMotionVector(connection.sourcePoint) &&
+    isMotionVector(connection.sourceDirection) &&
+    isMotionVector(connection.targetReferencePoint) &&
+    isMotionVector(connection.rotationAxis?.point) &&
+    isMotionVector(connection.rotationAxis?.axis) &&
+    connection.targetPath?.sourceFeature === "Sketch2" &&
+    JSON.stringify(connection.targetPath.sourceSegments) ===
+      JSON.stringify(["Arc1", "Line2"]) &&
+    connection.targetPath.coordinateFrame === "solidworks-assembly" &&
+    isFiniteNumber(validation?.pathDriverStartResidualMeters) &&
+    isFiniteNumber(validation?.toleranceMeters) &&
+    validation.pathDriverStartResidualMeters <= validation.toleranceMeters
+  );
+}
+
+function isValidArmLeft1Attachments(
+  value: unknown,
+): value is readonly ClusterArmLeft1Attachment[] {
+  if (!Array.isArray(value) || value.length !== 2) return false;
+
+  const expected = new Map([
+    ["head_nen-1", ["Concentric13", "Concentric14", "Coincident8"]],
+    ["gac_coffee-1", ["Coincident10", "Tangent3"]],
+  ] as const);
+
+  return value.every((attachment) => {
+    if (!attachment || typeof attachment !== "object") return false;
+    const candidate = attachment as Partial<ClusterArmLeft1Attachment>;
+    const mates = expected.get(candidate.partId as "head_nen-1" | "gac_coffee-1");
+    return (
+      (candidate.partId === "head_nen-1" || candidate.partId === "gac_coffee-1") &&
+      candidate.nodeName === candidate.partId &&
+      candidate.parentId ===
+        (candidate.partId === "gac_coffee-1"
+          ? "body_may-1"
+          : "arm_left_1-1") &&
+      (candidate.relation === "rigid-follow" ||
+        candidate.relation === "body-mounted-tangent-contact") &&
+      (candidate.partId !== "gac_coffee-1" ||
+        (candidate.motionParentId === "arm_left_1-1" &&
+          candidate.motionRelation === "straight-body-bar-translation" &&
+          candidate.slideGuide?.kind === "straight-translation" &&
+          candidate.slideGuide.coordinateFrame === "solidworks-assembly" &&
+          isMotionVector(candidate.slideGuide.axis) &&
+          candidate.slideGuide.pushProgressRange?.length === 2 &&
+          candidate.slideGuide.pushProgressRange.every(isFiniteNumber) &&
+          isMotionVector(candidate.slideGuide.contact?.driverPoint) &&
+          isMotionVector(candidate.slideGuide.contact?.drivenPoint) &&
+          isMotionVector(candidate.slideGuide.contact?.drivenNormal) &&
+          isMotionVector(candidate.slideGuide.guide?.axis))) &&
+      Array.isArray(candidate.sourceMates) &&
+      mates !== undefined &&
+      JSON.stringify(candidate.sourceMates) === JSON.stringify(mates)
+    );
+  });
+}
+
 function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition {
   if (!payload || typeof payload !== "object") {
     throw new Error("cluster motion response is not an object.");
@@ -504,6 +732,98 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
 
   const definition = payload as Partial<ClusterPathMotionDefinition>;
   const schemaVersion = (payload as { schemaVersion?: unknown }).schemaVersion;
+  if (schemaVersion === "cluster-03-box-nen-motion.v1") {
+    const boxDefinition = payload as Partial<ClusterBoxNenMotionDefinition>;
+    if (
+      boxDefinition.clusterId !== "cluster-03" ||
+      boxDefinition.motionGroup !== "motor_nen" ||
+      boxDefinition.status !== "verified" ||
+      boxDefinition.runtimeReady !== true ||
+      boxDefinition.units !== "meters" ||
+      boxDefinition.coordinateFrame !== "solidworks-assembly" ||
+      boxDefinition.partId !== "box_nen-1" ||
+      boxDefinition.nodeName !== "box_nen-1" ||
+      boxDefinition.parentId !== "body_may-1" ||
+      boxDefinition.motion?.kind !== "screw-follow" ||
+      boxDefinition.motion.property !== "translation" ||
+      !Array.isArray(boxDefinition.motion.progressRange) ||
+      boxDefinition.motion.progressRange.length !== 2 ||
+      boxDefinition.motion.progressRange.some(
+        (value) => typeof value !== "number" || !Number.isFinite(value),
+      ) ||
+      boxDefinition.motion.progressRange[0] !== 0 ||
+      boxDefinition.motion.progressRange[1] !== 1 ||
+      boxDefinition.motion.preserveInitialPose !== true ||
+      !Array.isArray(boxDefinition.motion.translationRangeMeters) ||
+      boxDefinition.motion.translationRangeMeters.length !== 2 ||
+      boxDefinition.motion.translationRangeMeters.some(
+        (value) => typeof value !== "number" || !Number.isFinite(value),
+      ) ||
+      boxDefinition.attachment?.relation !== "body-mounted-axial-slide" ||
+      JSON.stringify(boxDefinition.attachment.sourceMates) !==
+        JSON.stringify(["Concentric28", "Parallel15"]) ||
+      !isMotionVector(boxDefinition.attachment.parentReference?.point) ||
+      !isMotionVector(boxDefinition.attachment.parentReference?.axis) ||
+      !isMotionVector(
+        boxDefinition.attachment.parentReference?.parallelNormal,
+      ) ||
+      !isMotionVector(boxDefinition.attachment.targetReference?.point) ||
+      !isMotionVector(boxDefinition.attachment.targetReference?.axis) ||
+      !isMotionVector(
+        boxDefinition.attachment.targetReference?.parallelNormal,
+      ) ||
+      !isMotionVector(boxDefinition.attachment.axis) ||
+      boxDefinition.attachment.axisReference !== "truc_nen-1" ||
+      boxDefinition.screw?.sourceMate !== "Screw2" ||
+      boxDefinition.screw?.driverComponent !== "truc_nen-1" ||
+      boxDefinition.screw?.fixedReferenceComponent !== "box_nen-1" ||
+      !isMotionVector(boxDefinition.screw.targetAxis) ||
+      !isMotionVector(boxDefinition.screw.fixedReferenceAxis) ||
+      !Number.isFinite(boxDefinition.screw?.pitchMeters) ||
+      (boxDefinition.screw?.pitchMeters ?? 0) <= 0 ||
+      typeof boxDefinition.screw?.reverse !== "boolean" ||
+      !Number.isFinite(boxDefinition.screw?.translationPerRevolutionMeters) ||
+      !boxDefinition.driver ||
+      boxDefinition.driver.partId !== "truc_nen-1" ||
+      boxDefinition.driver.motionFile !==
+        "/models/digital-twin/cluster-03/connections/truc-nen.json" ||
+      boxDefinition.driver.relation !== "screw-translation-follow" ||
+      JSON.stringify(boxDefinition.driver.sourceMates) !==
+        JSON.stringify(["Screw2", "GearMate4"]) ||
+      !Array.isArray(boxDefinition.targetInitialTransform) ||
+      boxDefinition.targetInitialTransform.length !== 16 ||
+      boxDefinition.targetInitialTransform.some(
+        (value) => typeof value !== "number" || !Number.isFinite(value),
+      ) ||
+      !Array.isArray(boxDefinition.parentInitialTransform) ||
+      boxDefinition.parentInitialTransform.length !== 16 ||
+      boxDefinition.parentInitialTransform.some(
+        (value) => typeof value !== "number" || !Number.isFinite(value),
+      ) ||
+      !boxDefinition.validation ||
+      boxDefinition.validation.parentFixed !== true ||
+      boxDefinition.validation.passed !== true ||
+      !Number.isFinite(boxDefinition.validation.glbMatrixResidual) ||
+      !Number.isFinite(boxDefinition.validation.glbMatrixTolerance) ||
+      boxDefinition.validation.glbMatrixResidual >
+        boxDefinition.validation.glbMatrixTolerance ||
+      !Number.isFinite(boxDefinition.validation.screwPitchMeters) ||
+      !Number.isFinite(boxDefinition.validation.translationDirectionDot) ||
+      boxDefinition.validation.samples?.length !== 3 ||
+      boxDefinition.validation.samples.some(
+        (sample) =>
+          !Number.isFinite(sample.progress) ||
+          !Number.isFinite(sample.driverAngleRadians) ||
+          !Number.isFinite(sample.shaftTranslationMeters) ||
+          !Number.isFinite(sample.boxTranslationMeters) ||
+          !Number.isFinite(sample.translationResidualMeters),
+      )
+    ) {
+      throw new Error("cluster box_nen motion contract is invalid or not verified.");
+    }
+
+    return boxDefinition as ClusterBoxNenMotionDefinition;
+  }
   if (
     schemaVersion === "cluster-03-truc-chinh-motion.v1" ||
     schemaVersion === "cluster-03-truc-nen-motion.v1" ||
@@ -511,6 +831,7 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
     schemaVersion === "cluster-03-gear-motor-nen-motion.v1" ||
     schemaVersion === "cluster-03-gear-nen-motion.v1" ||
     schemaVersion === "cluster-03-arm-left-3-motion.v1" ||
+    schemaVersion === "cluster-03-arm-right-3-motion.v1" ||
     schemaVersion === "cluster-03-wiper-gear-motion.v1"
   ) {
     const axisDefinition = payload as Partial<ClusterAxisMotionDefinition>;
@@ -527,6 +848,8 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
                 ? "gear_nen-1"
                 : schemaVersion === "cluster-03-arm-left-3-motion.v1"
                   ? "arm_left_3-1"
+                  : schemaVersion === "cluster-03-arm-right-3-motion.v1"
+                    ? "arm_right_3-1"
                   : "wiper_gear-1";
     const expectedKind =
       schemaVersion === "cluster-03-truc-chinh-motion.v1"
@@ -591,7 +914,14 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
           axisDefinition.driver.motionFile !==
             "/models/digital-twin/cluster-03/connections/truc-chinh.json" ||
           JSON.stringify(axisDefinition.driver.sourceMates) !==
-            JSON.stringify(["Parallel1", "Concentric6"])))
+            JSON.stringify(["Parallel1", "Concentric6"]))) ||
+      (schemaVersion === "cluster-03-arm-right-3-motion.v1" &&
+        (!axisDefinition.driver ||
+          axisDefinition.driver.partId !== "truc_chinh-1" ||
+          axisDefinition.driver.motionFile !==
+            "/models/digital-twin/cluster-03/connections/truc-chinh.json" ||
+          JSON.stringify(axisDefinition.driver.sourceMates) !==
+            JSON.stringify(["Parallel7", "Concentric22"])))
     ) {
       throw new Error("cluster axis motion contract is invalid or not verified.");
     }
@@ -618,7 +948,30 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
     definition.connection?.mate === "PathMate10" &&
     definition.connection?.sourcePartId === "arm_left_2-1" &&
     definition.connection?.targetPartId === "arm_left_3-1";
-  const isKnownArmMotion = isKnownArmLeft1Motion || isKnownArmLeft2Motion;
+  const isKnownArmRight1Motion =
+    schemaVersion === "cluster-03-arm-right-1-motion.v1" &&
+    definition.partId === "arm_right_1-1" &&
+    definition.nodeName === "arm_right_1-1" &&
+    definition.motion?.kind === "driver-follow" &&
+    definition.driver?.partId === "oc_right-1" &&
+    definition.driver?.pathConstraint === "PathMate13";
+  const isKnownArmRight2Motion =
+    schemaVersion === "cluster-03-arm-right-2-motion.v1" &&
+    definition.partId === "arm_right_2-1" &&
+    definition.nodeName === "arm_right_2-1" &&
+    definition.motion?.kind === "driver-follow" &&
+    definition.driver?.partId === "oc_right-1" &&
+    definition.driver?.dependencyPartId === "arm_right_1-1" &&
+    definition.connection?.kind === "point-on-path" &&
+    definition.connection?.status === "verified" &&
+    definition.connection?.mate === "PathMate14" &&
+    definition.connection?.sourcePartId === "arm_right_2-1" &&
+    definition.connection?.targetPartId === "arm_right_3-1";
+  const isKnownArmMotion =
+    isKnownArmLeft1Motion ||
+    isKnownArmLeft2Motion ||
+    isKnownArmRight1Motion ||
+    isKnownArmRight2Motion;
   const segments = definition.path?.segments;
   const arc = segments?.[0];
   const line = segments?.[1];
@@ -646,7 +999,12 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
     (definition.partId === "arm_left_2-1" &&
       definition.path?.sourceFeature === "Sketch1" &&
       JSON.stringify(definition.path?.sourceSegments) ===
-        JSON.stringify(["Arc3", "Line1"]));
+        JSON.stringify(["Arc3", "Line1"])) ||
+    ((definition.partId === "arm_right_1-1" ||
+      definition.partId === "arm_right_2-1") &&
+      definition.path?.sourceFeature === "Sketch2" &&
+      JSON.stringify(definition.path?.sourceSegments) ===
+        JSON.stringify(["Arc1", "Line2"]));
   if (
     definition.clusterId !== "cluster-03" ||
     definition.status !== "verified" ||
@@ -689,7 +1047,14 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
         JSON.stringify(definition.driver.sourceMates) !==
           JSON.stringify(["Coincident1", "Concentric1"]))) ||
     (schemaVersion === "cluster-03-arm-left-1-motion.v1" &&
-      !isValidArmLeft1BodyConnection(definition.bodyConnection))
+      (!isValidArmLeft1BodyConnection(definition.bodyConnection) ||
+        !isValidArmLeft1Attachments(definition.attachments)))
+    ||
+    (isKnownArmRight1Motion &&
+      (!definition.driver ||
+        JSON.stringify(definition.driver.sourceMates) !==
+          JSON.stringify(["Coincident12", "Concentric17"]) ||
+        !isValidArmRight1BodyConnection(definition.bodyConnection)))
     ||
     (isKnownArmLeft2Motion &&
       (!definition.driver ||
@@ -739,7 +1104,42 @@ function parseClusterMotionDefinition(payload: unknown): ClusterMotionDefinition
         typeof definition.wiperConnection.limit.minimumDistanceMeters !==
           "number" ||
         typeof definition.wiperConnection.limit.maximumDistanceMeters !==
-          "number"))
+          "number")) ||
+    (isKnownArmRight2Motion &&
+      (!definition.driver ||
+        JSON.stringify(definition.driver.sourceMates) !==
+          JSON.stringify(["Coincident13", "Concentric21"]) ||
+        definition.driver.dependencyMotionFile !==
+          "/models/digital-twin/cluster-03/connections/arm-right-1.json" ||
+        !definition.connection ||
+        !isMotionVector(definition.connection.sourcePoint) ||
+        !isMotionVector(definition.connection.sourceLocalPoint) ||
+        definition.connection.targetPath.sourceFeature !== "Sketch1" ||
+        definition.connection.targetPath.sourceSegment !== "Line1" ||
+        !isMotionVector(definition.connection.targetPath.point) ||
+        !isMotionVector(definition.connection.targetPath.direction) ||
+        !isMotionVector(definition.connection.targetPath.start) ||
+        !isMotionVector(definition.connection.targetPath.end) ||
+        !isMotionVector(definition.connection.targetPath.localStart) ||
+        !isMotionVector(definition.connection.targetPath.localEnd) ||
+        !Array.isArray(definition.connection.targetPath.parameterRange) ||
+        definition.connection.targetPath.parameterRange.length !== 2 ||
+        definition.connection.targetPath.parameterRange[0] !== 0 ||
+        definition.connection.targetPath.parameterRange[1] !== 1 ||
+        typeof definition.connection.targetPath.lengthMeters !== "number" ||
+        !Number.isFinite(definition.connection.targetPath.lengthMeters) ||
+        definition.connection.targetPath.lengthMeters <= 0 ||
+        definition.connection.driverAxis?.sourceMate !== "Concentric21" ||
+        definition.connection.driverAxis.partId !== "oc_right-1" ||
+        !isMotionVector(definition.connection.driverAxis.point) ||
+        !isMotionVector(definition.connection.driverAxis.axis) ||
+        !isMotionVector(definition.connection.driverAxis.localPoint) ||
+        !isMotionVector(definition.connection.driverAxis.localAxis) ||
+        typeof definition.connection.validation?.pathResidualMeters !==
+          "number" ||
+        !Number.isFinite(definition.connection.validation.pathResidualMeters) ||
+        definition.connection.validation.pathResidualMeters >
+          (definition.connection.validation.toleranceMeters ?? Infinity)))
   ) {
     throw new Error("cluster motion contract is invalid or not verified.");
   }
@@ -809,6 +1209,81 @@ function assertClusterPartSeparation(model: THREE.Group) {
     throw new Error(
       "cluster-03 body_may-1 and arm_left_1-1 must share the aggregate GLB parent.",
     );
+  }
+}
+
+function attachArmLeft1Followers(
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+) {
+  const arm1Definition = motionDefinitions.find(
+    (definition) => definition.partId === "arm_left_1-1",
+  );
+  if (
+    !arm1Definition ||
+    arm1Definition.schemaVersion !== "cluster-03-arm-left-1-motion.v1"
+  ) {
+    return;
+  }
+
+  const arm = model.getObjectByName("arm_left_1-1");
+  if (!arm) {
+    throw new Error('GLB node "arm_left_1-1" was not found for attached parts.');
+  }
+
+  for (const attachment of arm1Definition.attachments ?? []) {
+    const part = model.getObjectByName(attachment.nodeName);
+    const parent = model.getObjectByName(attachment.parentId);
+    if (!part) {
+      throw new Error(
+        `GLB node "${attachment.nodeName}" was not found for arm_left_1 attachment.`,
+      );
+    }
+    if (!parent) {
+      throw new Error(
+        `GLB node "${attachment.parentId}" was not found for arm_left_1 attachment.`,
+      );
+    }
+    if (part === parent) {
+      throw new Error("arm_left_1 attachment cannot point back to its parent.");
+    }
+    if (part.parent !== parent) {
+      // Object3D.attach preserves the CAD-imported world pose while applying
+      // the verified CAD parent. head_nen follows arm_left_1; gac_coffee stays
+      // in the body frame because Coincident10 is its primary CAD anchor.
+      parent.attach(part);
+    }
+  }
+}
+
+function attachClusterConnections(
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+) {
+  for (const definition of motionDefinitions) {
+    if (definition.schemaVersion !== "cluster-03-box-nen-motion.v1") continue;
+
+    const part = model.getObjectByName(definition.nodeName);
+    const parent = model.getObjectByName(definition.parentId);
+    if (!part) {
+      throw new Error(
+        `GLB node "${definition.nodeName}" was not found for box_nen connection.`,
+      );
+    }
+    if (!parent) {
+      throw new Error(
+        `GLB node "${definition.parentId}" was not found for box_nen connection.`,
+      );
+    }
+    if (part === parent) {
+      throw new Error("box_nen connection cannot point a node back to itself.");
+    }
+    if (part.parent !== parent) {
+      // Preserve the exported CAD pose while making the verified body parent
+      // explicit. The axial translation is applied after the lower gear
+      // coupling, so Concentric28/Parallel15 remain orientation constraints.
+      parent.attach(part);
+    }
   }
 }
 
@@ -1043,6 +1518,87 @@ function rotateVectorAroundAxis(
   angle: number,
 ) {
   return vector.clone().applyAxisAngle(axis, angle);
+}
+
+interface ArmLeft1BodyPathSolution {
+  angleRadians: number;
+  residualMeters: number;
+  lineProjectionMeters: number;
+}
+
+function solveArmLeft1BodyPathAngle({
+  sourcePoint,
+  sourceDirection,
+  targetPoint,
+  rotationAxisPoint,
+  rotationAxis,
+  pathDelta,
+  previousAngle,
+}: {
+  sourcePoint: THREE.Vector3;
+  sourceDirection: THREE.Vector3;
+  targetPoint: THREE.Vector3;
+  rotationAxisPoint: THREE.Vector3;
+  rotationAxis: THREE.Vector3;
+  pathDelta: THREE.Vector3;
+  previousAngle: number;
+}): ArmLeft1BodyPathSolution | null {
+  const axis = rotationAxis.clone().normalize();
+  const direction = sourceDirection.clone().normalize();
+  const movedAxisPoint = rotationAxisPoint.clone().add(pathDelta);
+  const sourceRelative = sourcePoint.clone().sub(rotationAxisPoint);
+  const targetRelative = targetPoint.clone().sub(movedAxisPoint);
+  const quarterTurnDirection = axis.clone().cross(direction);
+  const cosineTerm = targetRelative.clone().cross(direction).dot(axis);
+  const sineTerm = targetRelative
+    .clone()
+    .cross(quarterTurnDirection)
+    .dot(axis);
+  const constant = sourceRelative.clone().cross(direction).dot(axis);
+  const amplitude = Math.hypot(cosineTerm, sineTerm);
+  if (amplitude <= 1e-12 || Math.abs(constant) > amplitude + 1e-10) {
+    return null;
+  }
+
+  const phase = Math.atan2(sineTerm, cosineTerm);
+  const offset = Math.acos(
+    THREE.MathUtils.clamp(-constant / amplitude, -1, 1),
+  );
+  const candidates = [phase - offset, phase + offset]
+    .map((angle) => unwrapAngleNear(angle, previousAngle))
+    .map((angle) => {
+      const resolvedSourcePoint = rotatePointAroundAxis(
+        sourcePoint.clone().add(pathDelta),
+        movedAxisPoint,
+        axis,
+        angle,
+      );
+      const resolvedDirection = rotateVectorAroundAxis(
+        direction,
+        axis,
+        angle,
+      ).normalize();
+      const targetOffset = targetPoint.clone().sub(resolvedSourcePoint);
+      const lineProjectionMeters = targetOffset.dot(resolvedDirection);
+      const residualMeters = targetOffset
+        .clone()
+        .cross(resolvedDirection)
+        .length();
+      return {
+        angleRadians: angle,
+        residualMeters,
+        lineProjectionMeters,
+      };
+    })
+    .sort(
+      (left, right) =>
+        Math.abs(left.angleRadians - previousAngle) -
+          Math.abs(right.angleRadians - previousAngle) ||
+        left.residualMeters - right.residualMeters,
+    );
+
+  const solution = candidates[0];
+  return solution && solution.residualMeters <= 1e-7 ? solution : null;
 }
 
 function isWithinDistanceRange(
@@ -1328,6 +1884,7 @@ interface CamState {
   progress: number;
   direction: 1 | -1;
   coupledAngleRadians?: number;
+  bodyPathAngleRadians?: number;
 }
 
 interface AxisState {
@@ -1345,9 +1902,149 @@ interface AxisState {
   direction: 1 | -1;
   coupledAngleRadians?: number;
   kinematicAngleRangeRadians?: readonly [number, number];
+  currentAxialTranslationMeters?: number;
+  screwFollowerTranslationMeters?: number;
 }
 
 type MotionState = CamState | AxisState;
+
+interface BoxNenSlideState {
+  part: THREE.Object3D;
+  parent: THREE.Object3D;
+  basePosition: THREE.Vector3;
+  baseQuaternion: THREE.Quaternion;
+  axisParent: THREE.Vector3;
+  translationRangeMeters: readonly [number, number];
+  progress: number;
+  currentTranslationMeters: number;
+}
+
+function createBoxNenSlideState(
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+): BoxNenSlideState | null {
+  const definition = motionDefinitions.find(
+    (candidate): candidate is ClusterBoxNenMotionDefinition =>
+      candidate.schemaVersion === "cluster-03-box-nen-motion.v1",
+  );
+  if (!definition) return null;
+
+  const part = model.getObjectByName(definition.nodeName);
+  const parent = model.getObjectByName(definition.parentId);
+  if (!part || !parent) {
+    throw new Error("cluster-03 box_nen slide nodes are missing.");
+  }
+
+  model.updateMatrixWorld(true);
+  const axisPointWorld = new THREE.Vector3(
+    ...definition.attachment.targetReference.point,
+  );
+  const axisWorld = new THREE.Vector3(...definition.attachment.axis).normalize();
+  const parentInverse = parent.matrixWorld.clone().invert();
+  const axisPointParent = axisPointWorld.clone().applyMatrix4(parentInverse);
+  const axisParent = axisPointWorld
+    .clone()
+    .add(axisWorld)
+    .applyMatrix4(parentInverse)
+    .sub(axisPointParent)
+    .normalize();
+
+  return {
+    part,
+    parent,
+    basePosition: part.position.clone(),
+    baseQuaternion: part.quaternion.clone(),
+    axisParent,
+    translationRangeMeters: definition.motion.translationRangeMeters,
+    progress: 0,
+    currentTranslationMeters: 0,
+  };
+}
+
+function applyBoxNenSlideMotion(
+  state: BoxNenSlideState,
+  translationOverride?: number,
+) {
+  const translation =
+    translationOverride ??
+    THREE.MathUtils.lerp(
+      state.translationRangeMeters[0],
+      state.translationRangeMeters[1],
+      THREE.MathUtils.clamp(state.progress, 0, 1),
+    );
+  state.currentTranslationMeters = translation;
+  state.part.position
+    .copy(state.basePosition)
+    .addScaledVector(state.axisParent, translation);
+  state.part.quaternion.copy(state.baseQuaternion);
+  state.part.updateMatrixWorld(true);
+}
+
+interface ArmLeft1FollowerState {
+  motionParent: THREE.Object3D;
+  part: THREE.Object3D;
+  bodyConnection: ClusterBodyPathConnection;
+  slideGuide: ClusterGacCoffeeSlideGuide;
+  motionParentBaseWorldMatrix: THREE.Matrix4;
+  partBaseWorldMatrix: THREE.Matrix4;
+  arcEndProgress: number;
+  arcEndSlideDistanceMeters: number | null;
+}
+
+function createArmLeft1FollowerState(
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+): ArmLeft1FollowerState | null {
+  const arm1Definition = motionDefinitions.find(
+    (definition) =>
+      definition.partId === "arm_left_1-1" &&
+      definition.schemaVersion === "cluster-03-arm-left-1-motion.v1",
+  );
+  if (
+    !arm1Definition ||
+    arm1Definition.schemaVersion !== "cluster-03-arm-left-1-motion.v1"
+  ) {
+    return null;
+  }
+  const bodyConnection = arm1Definition.bodyConnection;
+  const arcSegment = arm1Definition.path.segments[0];
+  if (
+    !bodyConnection ||
+    arcSegment.kind !== "arc" ||
+    arm1Definition.path.lengthMeters <= 0
+  ) {
+    return null;
+  }
+  const gacAttachment = (arm1Definition.attachments ?? []).find(
+    (attachment) =>
+      attachment.partId === "gac_coffee-1" &&
+      attachment.motionParentId === "arm_left_1-1" &&
+      attachment.motionRelation === "straight-body-bar-translation" &&
+      attachment.slideGuide?.kind === "straight-translation",
+  );
+  const motionParentId = gacAttachment?.motionParentId;
+  if (!gacAttachment || !motionParentId || !gacAttachment.slideGuide) return null;
+
+  const motionParent = model.getObjectByName(motionParentId);
+  const part = model.getObjectByName(gacAttachment.nodeName);
+  if (!motionParent || !part) {
+    throw new Error(
+      "cluster-03 gac_coffee straight-slide nodes are missing.",
+    );
+  }
+
+  model.updateMatrixWorld(true);
+  return {
+    motionParent,
+    part,
+    bodyConnection,
+    slideGuide: gacAttachment.slideGuide,
+    motionParentBaseWorldMatrix: motionParent.matrixWorld.clone(),
+    partBaseWorldMatrix: part.matrixWorld.clone(),
+    arcEndProgress: arcSegment.lengthMeters / arm1Definition.path.lengthMeters,
+    arcEndSlideDistanceMeters: null,
+  };
+}
 
 function applyAxisMotionAtAngle(
   state: AxisState,
@@ -1361,6 +2058,7 @@ function applyAxisMotionAtAngle(
       state.translationRangeMeters[1],
       THREE.MathUtils.clamp(state.progress, 0, 1),
     );
+  state.currentAxialTranslationMeters = axialTranslation;
   const deltaRotation = new THREE.Quaternion().setFromAxisAngle(
     state.axisParent,
     angle,
@@ -1433,10 +2131,153 @@ function applyMotionState(state: MotionState, progress: number) {
   state.part.updateMatrixWorld(true);
 }
 
+function resolveArmLeft1WorldMatrixAtProgress(
+  model: THREE.Group,
+  states: MotionState[],
+  follower: ArmLeft1FollowerState,
+  progress: number,
+) {
+  const armState = states.find(
+    (state): state is CamState =>
+      state.nodeName === "arm_left_1-1" && state.kind === "path",
+  );
+  const driverState = states.find(
+    (state): state is CamState =>
+      state.nodeName === "oc_left-1" && state.kind === "path",
+  );
+  if (!armState || !driverState) return null;
+
+  const savedPosition = armState.part.position.clone();
+  const savedQuaternion = armState.part.quaternion.clone();
+  const savedScale = armState.part.scale.clone();
+  const savedBodyPathAngle = armState.bodyPathAngleRadians;
+  const targetProgress = THREE.MathUtils.clamp(progress, 0, 1);
+  const pathStart = driverState.worldPath.getPointAt(0).clone();
+  const pathDelta = driverState.worldPath
+    .getPointAt(targetProgress)
+    .sub(pathStart);
+  const bodyConnection = follower.bodyConnection;
+  const bodyPathSolution = solveArmLeft1BodyPathAngle({
+    sourcePoint: new THREE.Vector3(...bodyConnection.sourcePoint),
+    sourceDirection: new THREE.Vector3(...bodyConnection.sourceDirection),
+    targetPoint: new THREE.Vector3(...bodyConnection.targetReferencePoint),
+    rotationAxisPoint: new THREE.Vector3(
+      ...bodyConnection.rotationAxis.point,
+    ),
+    rotationAxis: new THREE.Vector3(...bodyConnection.rotationAxis.axis),
+    pathDelta,
+    previousAngle: savedBodyPathAngle ?? 0,
+  });
+  if (!bodyPathSolution) return null;
+
+  applyMotionState(armState, targetProgress);
+  model.updateMatrixWorld(true);
+  const bodyPathAxisPoint = new THREE.Vector3(
+    ...bodyConnection.rotationAxis.point,
+  ).add(pathDelta);
+  const bodyPathAxis = new THREE.Vector3(
+    ...bodyConnection.rotationAxis.axis,
+  ).normalize();
+  applyWorldAxisRotation(
+    armState.part,
+    bodyPathAxisPoint,
+    bodyPathAxis,
+    bodyPathSolution.angleRadians,
+  );
+  armState.bodyPathAngleRadians = bodyPathSolution.angleRadians;
+  model.updateMatrixWorld(true);
+  const targetWorldMatrix = armState.part.matrixWorld.clone();
+
+  armState.part.position.copy(savedPosition);
+  armState.part.quaternion.copy(savedQuaternion);
+  armState.part.scale.copy(savedScale);
+  armState.bodyPathAngleRadians = savedBodyPathAngle;
+  armState.part.updateMatrixWorld(true);
+  model.updateMatrixWorld(true);
+  return targetWorldMatrix;
+}
+
+function applyArmLeft1FollowerMotion(
+  model: THREE.Group,
+  states: MotionState[],
+  follower: ArmLeft1FollowerState | null,
+  mainProgress: number,
+) {
+  if (!follower) return;
+
+  model.updateMatrixWorld(true);
+  const isArcPushPhase = mainProgress <= follower.arcEndProgress;
+  const slideAxis = new THREE.Vector3(...follower.slideGuide.axis).normalize();
+  const drivenNormal = new THREE.Vector3(
+    ...follower.slideGuide.contact.drivenNormal,
+  ).normalize();
+  const driverPoint = new THREE.Vector3(
+    ...follower.slideGuide.contact.driverPoint,
+  );
+  const slideDenominator = drivenNormal.dot(slideAxis);
+  if (Math.abs(slideDenominator) <= 1e-8) return;
+
+  const resolveSlideDistance = (armWorldMatrix: THREE.Matrix4) => {
+    const motionDelta = armWorldMatrix
+      .clone()
+      .multiply(follower.motionParentBaseWorldMatrix.clone().invert());
+    const currentDriverPoint = driverPoint.clone().applyMatrix4(motionDelta);
+    return drivenNormal.dot(currentDriverPoint.sub(driverPoint)) / slideDenominator;
+  };
+
+  let slideDistanceMeters: number;
+  if (isArcPushPhase) {
+    // Arc3 is the push phase. Tangent3 gives the driven plane normal; its
+    // projection onto Coincident10 gives a fixed body-bar slide axis. GAC
+    // therefore translates without inheriting the arm's rotation or pose.
+    slideDistanceMeters = resolveSlideDistance(
+      follower.motionParent.matrixWorld,
+    );
+  } else {
+    // Line1 continues along the body_may groove. Hold GAC at the distance
+    // reached at the end of Arc3 so only the arm-side contact/connector moves.
+    if (follower.arcEndSlideDistanceMeters === null) {
+      const arcEndArmWorldMatrix = resolveArmLeft1WorldMatrixAtProgress(
+        model,
+        states,
+        follower,
+        follower.arcEndProgress,
+      );
+      if (!arcEndArmWorldMatrix) return;
+      follower.arcEndSlideDistanceMeters = resolveSlideDistance(
+        arcEndArmWorldMatrix,
+      );
+    }
+    slideDistanceMeters = follower.arcEndSlideDistanceMeters;
+  }
+
+  const targetWorldMatrix = follower.partBaseWorldMatrix.clone();
+  const targetWorldPosition = new THREE.Vector3()
+    .setFromMatrixPosition(follower.partBaseWorldMatrix)
+    .addScaledVector(slideAxis, slideDistanceMeters);
+  targetWorldMatrix.setPosition(targetWorldPosition);
+
+  const parent = follower.part.parent ?? model;
+  const targetLocalMatrix = parent.matrixWorld
+    .clone()
+    .invert()
+    .multiply(targetWorldMatrix);
+  targetLocalMatrix.decompose(
+    follower.part.position,
+    follower.part.quaternion,
+    follower.part.scale,
+  );
+  follower.part.updateMatrixWorld(true);
+}
+
 function applyLowerGearMotorConnection(
   states: MotionState[],
   motionDefinitions: ClusterMotionDefinition[],
 ) {
+  // The CAD pitch remains 4 mm per revolution. The viewer exposes six
+  // input revolutions over one progress cycle so the lower slide is visible;
+  // GearMate4 still resolves the motor-to-shaft ratio before translation.
+  const lowerDriveRevolutions = 6;
   const motorDefinition = motionDefinitions.find(
     (definition) => definition.partId === "gear_motor_nen-1",
   );
@@ -1461,7 +2302,7 @@ function applyLowerGearMotorConnection(
     axisMotorDefinition.motion.angleRangeRadians[0],
     axisMotorDefinition.motion.angleRangeRadians[1],
     motorProgress,
-  );
+  ) * lowerDriveRevolutions;
   applyAxisMotionAtAngle(motorState, motorAngle);
   motorState.coupledAngleRadians = motorAngle;
 
@@ -1483,18 +2324,17 @@ function applyLowerGearMotorConnection(
   );
   if (shaftState) {
     const shaftAngle = -drivenGearAngle;
-    const shaftRevolutions = THREE.MathUtils.clamp(
-      Math.abs(shaftAngle) / (Math.PI * 2),
-      0,
-      1,
-    );
+    const shaftRevolutions = Math.abs(shaftAngle) / (Math.PI * 2);
     const shaftTranslation = THREE.MathUtils.lerp(
       shaftState.translationRangeMeters[0],
       shaftState.translationRangeMeters[1],
       shaftRevolutions,
     );
+    // Keep the shaft as a rotation-only visual part. box_nen consumes the
+    // screw displacement calculated from this same gear/shaft relation.
+    shaftState.screwFollowerTranslationMeters = shaftTranslation;
     shaftState.coupledAngleRadians = shaftAngle;
-    applyAxisMotionAtAngle(shaftState, shaftAngle, shaftTranslation);
+    applyAxisMotionAtAngle(shaftState, shaftAngle, 0);
   }
 }
 
@@ -1503,6 +2343,9 @@ function applyMainGearMotorConnection(
   model: THREE.Group,
   motionDefinitions: ClusterMotionDefinition[],
 ) {
+  const arm1Definition = motionDefinitions.find(
+    (definition) => definition.partId === "arm_left_1-1",
+  );
   const arm2Definition = motionDefinitions.find(
     (definition) => definition.partId === "arm_left_2-1",
   );
@@ -1513,6 +2356,7 @@ function applyMainGearMotorConnection(
     (definition) => definition.partId === "wiper_gear-1",
   );
   if (
+    !arm1Definition ||
     !arm2Definition ||
     !arm3Definition ||
     !wiperDefinition ||
@@ -1524,11 +2368,16 @@ function applyMainGearMotorConnection(
     return;
   }
 
+  const arm1PathDefinition = arm1Definition as ClusterPathMotionDefinition;
   const arm2PathDefinition = arm2Definition as ClusterPathMotionDefinition;
   const wiperPathDefinition = arm2PathDefinition.wiperConnection;
-  if (!wiperPathDefinition) return;
+  if (!wiperPathDefinition || !arm1PathDefinition.bodyConnection) return;
   const wiperAxisDefinition = wiperDefinition as ClusterAxisMotionDefinition;
 
+  const arm1State = states.find(
+    (state): state is CamState =>
+      state.nodeName === "arm_left_1-1" && state.kind === "path",
+  );
   const arm2State = states.find(
     (state): state is CamState =>
       state.nodeName === "arm_left_2-1" && state.kind === "path",
@@ -1557,6 +2406,7 @@ function applyMainGearMotorConnection(
       state.nodeName === "oc_left-1" && state.kind === "path",
   );
   if (
+    !arm1State ||
     !arm2State ||
     !arm3State ||
     !wiperState ||
@@ -1575,7 +2425,7 @@ function applyMainGearMotorConnection(
 
   const driveCalibration = gearMotor.driveCalibration;
   const arm2Connection = arm2PathDefinition.connection;
-  if (!arm2Connection) return;
+  if (!arm2Connection || !arm2Connection.limit) return;
 
   const driverAxis = arm2Connection.driverAxis;
   const wiperSourcePoint = new THREE.Vector3(
@@ -1608,6 +2458,23 @@ function applyMainGearMotorConnection(
   const pathStart = ocLeftState.worldPath.getPointAt(0).clone();
 
   const mainProgress = THREE.MathUtils.clamp(gearMotorState.progress, 0, 1);
+  const pathDelta = ocLeftState.worldPath
+    .getPointAt(mainProgress)
+    .sub(pathStart);
+  const bodyConnection = arm1PathDefinition.bodyConnection;
+  const bodyPathSolution = solveArmLeft1BodyPathAngle({
+    sourcePoint: new THREE.Vector3(...bodyConnection.sourcePoint),
+    sourceDirection: new THREE.Vector3(...bodyConnection.sourceDirection),
+    targetPoint: new THREE.Vector3(...bodyConnection.targetReferencePoint),
+    rotationAxisPoint: new THREE.Vector3(
+      ...bodyConnection.rotationAxis.point,
+    ),
+    rotationAxis: new THREE.Vector3(...bodyConnection.rotationAxis.axis),
+    pathDelta,
+    previousAngle: arm1State.bodyPathAngleRadians ?? 0,
+  });
+  if (!bodyPathSolution || bodyPathSolution.residualMeters > 1e-7) return;
+
   const motorAngle = interpolateMainDriveMotorAngle(
     driveCalibration,
     mainProgress,
@@ -1675,6 +2542,26 @@ function applyMainGearMotorConnection(
   });
 
   model.updateMatrixWorld(true);
+  // The path-follow pose above restores arm_left_1 from its base transform and
+  // applies the same translation as oc_left.  Apply the second Mate-like
+  // constraint afterwards: Concentric1 keeps the arm on the oc axis while the
+  // arm sketch line is rotated through body_may's path reference point.  Doing
+  // this before applyMotionState would silently discard the connection.
+  const bodyPathAxisPoint = new THREE.Vector3(
+    ...bodyConnection.rotationAxis.point,
+  ).add(pathDelta);
+  const bodyPathAxis = new THREE.Vector3(
+    ...bodyConnection.rotationAxis.axis,
+  ).normalize();
+  applyWorldAxisRotation(
+    arm1State.part,
+    bodyPathAxisPoint,
+    bodyPathAxis,
+    bodyPathSolution.angleRadians,
+  );
+  arm1State.bodyPathAngleRadians = bodyPathSolution.angleRadians;
+  model.updateMatrixWorld(true);
+
   const driverAxisPointWorld = ocLeftState.part.localToWorld(
     new THREE.Vector3(...driverAxis.localPoint),
   );
@@ -1693,6 +2580,163 @@ function applyMainGearMotorConnection(
     driverAxisPointWorld,
     driverAxisWorld,
     solution.arm2Angle,
+  );
+}
+
+function applyMainRightArmConnection(
+  states: MotionState[],
+  model: THREE.Group,
+  motionDefinitions: ClusterMotionDefinition[],
+  mainProgress: number,
+) {
+  const right1Definition = motionDefinitions.find(
+    (definition) => definition.partId === "arm_right_1-1",
+  );
+  const right2Definition = motionDefinitions.find(
+    (definition) => definition.partId === "arm_right_2-1",
+  );
+  const right3Definition = motionDefinitions.find(
+    (definition) => definition.partId === "arm_right_3-1",
+  );
+  const ocRightState = states.find(
+    (state): state is CamState =>
+      state.nodeName === "oc_right-1" && state.kind === "path",
+  );
+  const right1State = states.find(
+    (state): state is CamState =>
+      state.nodeName === "arm_right_1-1" && state.kind === "path",
+  );
+  const right2State = states.find(
+    (state): state is CamState =>
+      state.nodeName === "arm_right_2-1" && state.kind === "path",
+  );
+  const right3State = states.find(
+    (state): state is AxisState =>
+      state.nodeName === "arm_right_3-1" && state.kind === "axis",
+  );
+  const shaftState = states.find(
+    (state): state is AxisState =>
+      state.nodeName === "truc_chinh-1" && state.kind === "axis",
+  );
+  if (
+    !right1Definition ||
+    !right2Definition ||
+    !right3Definition ||
+    right1Definition.schemaVersion !==
+      "cluster-03-arm-right-1-motion.v1" ||
+    right2Definition.schemaVersion !==
+      "cluster-03-arm-right-2-motion.v1" ||
+    right3Definition.schemaVersion !==
+      "cluster-03-arm-right-3-motion.v1" ||
+    !right1State ||
+    !right2State ||
+    !right3State ||
+    !ocRightState
+  ) {
+    return;
+  }
+
+  const right1PathDefinition = right1Definition as ClusterPathMotionDefinition;
+  const right2PathDefinition = right2Definition as ClusterPathMotionDefinition;
+  const right3AxisDefinition = right3Definition as ClusterAxisMotionDefinition;
+  const right1BodyConnection = right1PathDefinition.bodyConnection;
+  const right2Connection = right2PathDefinition.connection;
+  if (!right1BodyConnection || !right2Connection) return;
+
+  const progress = THREE.MathUtils.clamp(mainProgress, 0, 1);
+  right1State.progress = progress;
+  right2State.progress = progress;
+  applyMotionState(right1State, progress);
+  applyMotionState(right2State, progress);
+
+  const shaftAngle =
+    shaftState?.coupledAngleRadians ??
+    (shaftState
+      ? THREE.MathUtils.lerp(
+          shaftState.angleRangeRadians[0],
+          shaftState.angleRangeRadians[1],
+          progress,
+        )
+      : THREE.MathUtils.lerp(
+          right3State.angleRangeRadians[0],
+          right3State.angleRangeRadians[1],
+          progress,
+        ));
+  right3State.coupledAngleRadians = shaftAngle;
+  applyAxisMotionAtAngle(right3State, shaftAngle);
+  model.updateMatrixWorld(true);
+
+  const pathStart = ocRightState.worldPath.getPointAt(0).clone();
+  const pathDelta = ocRightState.worldPath.getPointAt(progress).sub(pathStart);
+  const bodyPathSolution = solveArmLeft1BodyPathAngle({
+    sourcePoint: new THREE.Vector3(...right1BodyConnection.sourcePoint),
+    sourceDirection: new THREE.Vector3(...right1BodyConnection.sourceDirection),
+    targetPoint: new THREE.Vector3(
+      ...right1BodyConnection.targetReferencePoint,
+    ),
+    rotationAxisPoint: new THREE.Vector3(
+      ...right1BodyConnection.rotationAxis.point,
+    ),
+    rotationAxis: new THREE.Vector3(...right1BodyConnection.rotationAxis.axis),
+    pathDelta,
+    previousAngle: right1State.bodyPathAngleRadians ?? 0,
+  });
+  if (!bodyPathSolution || bodyPathSolution.residualMeters > 1e-7) return;
+
+  const bodyPathAxisPoint = new THREE.Vector3(
+    ...right1BodyConnection.rotationAxis.point,
+  ).add(pathDelta);
+  applyWorldAxisRotation(
+    right1State.part,
+    bodyPathAxisPoint,
+    new THREE.Vector3(...right1BodyConnection.rotationAxis.axis),
+    bodyPathSolution.angleRadians,
+  );
+  right1State.bodyPathAngleRadians = bodyPathSolution.angleRadians;
+  model.updateMatrixWorld(true);
+
+  const driverAxisPointWorld = ocRightState.part.localToWorld(
+    new THREE.Vector3(...right2Connection.driverAxis.localPoint),
+  );
+  const driverAxisEndWorld = ocRightState.part.localToWorld(
+    new THREE.Vector3(...right2Connection.driverAxis.localPoint).add(
+      new THREE.Vector3(...right2Connection.driverAxis.localAxis),
+    ),
+  );
+  const driverAxisWorld = driverAxisEndWorld
+    .sub(driverAxisPointWorld)
+    .normalize();
+  const sourcePointWorld = right2State.part.localToWorld(
+    new THREE.Vector3(...right2Connection.sourceLocalPoint),
+  );
+  const targetLineStart = new THREE.Vector3(
+    ...right2Connection.targetPath.start,
+  );
+  const targetLineEnd = new THREE.Vector3(...right2Connection.targetPath.end);
+  const lineProgress =
+    right2Connection.initialLineProgress ??
+    right2Connection.targetPath.initialParameter ??
+    0;
+  const lineSolution = solveFinitePointOnMovingSegment({
+    sourcePoint: sourcePointWorld,
+    driverAxisPoint: driverAxisPointWorld,
+    driverAxis: driverAxisWorld,
+    lineStart: targetLineStart,
+    lineEnd: targetLineEnd,
+    lineProgress,
+    arm3Pivot: new THREE.Vector3(...right3AxisDefinition.pivot.point),
+    arm3Axis: new THREE.Vector3(...right3AxisDefinition.pivot.axis),
+    previousArm3Angle: shaftAngle,
+    previousArm2Angle: right2State.coupledAngleRadians ?? 0,
+  });
+  if (!lineSolution || lineSolution.residualMeters > 1e-7) return;
+
+  right2State.coupledAngleRadians = lineSolution.arm2Angle;
+  applyWorldAxisRotation(
+    right2State.part,
+    driverAxisPointWorld,
+    driverAxisWorld,
+    lineSolution.arm2Angle,
   );
 }
 
@@ -1754,6 +2798,8 @@ function applyIndependentMotion(
   motionDefinitions: ClusterMotionDefinition[],
   mainProgress: number,
   lowerProgress: number,
+  armLeft1Follower: ArmLeft1FollowerState | null = null,
+  boxNenSlide: BoxNenSlideState | null = null,
 ) {
   states.forEach((state) => {
     const progress = isLowerDriveNode(state.nodeName)
@@ -1762,8 +2808,42 @@ function applyIndependentMotion(
     state.progress = THREE.MathUtils.clamp(progress, 0, 1);
     applyMotionState(state, state.progress);
   });
+  const lowerShaftState = states.find(
+    (state): state is AxisState =>
+      state.nodeName === "truc_nen-1" && state.kind === "axis",
+  );
+  if (lowerShaftState) {
+    lowerShaftState.screwFollowerTranslationMeters = undefined;
+  }
   applyLowerGearMotorConnection(states, motionDefinitions);
+  if (boxNenSlide) {
+    boxNenSlide.progress = THREE.MathUtils.clamp(lowerProgress, 0, 1);
+    const shaftState = states.find(
+      (state): state is AxisState =>
+        state.nodeName === "truc_nen-1" && state.kind === "axis",
+    );
+    // Follow the resolved shaft translation after GearMate4/Screw2 coupling.
+    // This keeps box_nen synchronized with the actual gear ratio rather than
+    // assuming the lower motor progress is a one-to-one shaft displacement.
+    applyBoxNenSlideMotion(
+      boxNenSlide,
+      shaftState?.screwFollowerTranslationMeters ??
+        shaftState?.currentAxialTranslationMeters,
+    );
+  }
   applyMainGearMotorConnection(states, model, motionDefinitions);
+  applyMainRightArmConnection(
+    states,
+    model,
+    motionDefinitions,
+    mainProgress,
+  );
+  applyArmLeft1FollowerMotion(
+    model,
+    states,
+    armLeft1Follower,
+    mainProgress,
+  );
 }
 
 function ClusterScene({
@@ -1791,6 +2871,8 @@ function ClusterScene({
   >([]);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const camStatesRef = useRef<MotionState[]>([]);
+  const armLeft1FollowerRef = useRef<ArmLeft1FollowerState | null>(null);
+  const boxNenSlideRef = useRef<BoxNenSlideState | null>(null);
   const resolvedMotionDefinitionUrls = useMemo(
     () =>
       motionDefinitionUrls?.length
@@ -1929,18 +3011,33 @@ function ClusterScene({
   useEffect(() => {
     if (!model || motionDefinitions.length === 0) {
       camStatesRef.current = [];
+      armLeft1FollowerRef.current = null;
+      boxNenSlideRef.current = null;
       return;
     }
 
-    model.updateMatrixWorld(true);
     const states: MotionState[] = [];
+    let armLeft1Follower: ArmLeft1FollowerState | null = null;
+    let boxNenSlide: BoxNenSlideState | null = null;
     try {
+      attachArmLeft1Followers(model, motionDefinitions);
+      attachClusterConnections(model, motionDefinitions);
+      model.updateMatrixWorld(true);
+      boxNenSlide = createBoxNenSlideState(model, motionDefinitions);
+      armLeft1Follower = createArmLeft1FollowerState(
+        model,
+        motionDefinitions,
+      );
       for (const motionDefinition of motionDefinitions) {
         const part = model.getObjectByName(motionDefinition.nodeName);
         if (!part) {
           throw new Error(
             `GLB node "${motionDefinition.nodeName}" was not found.`,
           );
+        }
+
+        if (motionDefinition.schemaVersion === "cluster-03-box-nen-motion.v1") {
+          continue;
         }
 
         const parent = part.parent ?? model;
@@ -1957,6 +3054,7 @@ function ClusterScene({
             "cluster-03-gear-motor-nen-motion.v1"
           || motionDefinition.schemaVersion === "cluster-03-gear-nen-motion.v1"
           || motionDefinition.schemaVersion === "cluster-03-arm-left-3-motion.v1"
+          || motionDefinition.schemaVersion === "cluster-03-arm-right-3-motion.v1"
           || motionDefinition.schemaVersion === "cluster-03-wiper-gear-motion.v1"
         ) {
           const pivotWorld = new THREE.Vector3(...motionDefinition.pivot.point);
@@ -2061,11 +3159,17 @@ function ClusterScene({
         motionDefinitions,
         mainDriveProgress,
         lowerDriveProgress,
+        armLeft1Follower,
+        boxNenSlide,
       );
       camStatesRef.current = states;
+      armLeft1FollowerRef.current = armLeft1Follower;
+      boxNenSlideRef.current = boxNenSlide;
     } catch (error) {
       states.forEach(disposeMotionState);
       camStatesRef.current = [];
+      armLeft1FollowerRef.current = null;
+      boxNenSlideRef.current = null;
       onError(error);
       return;
     }
@@ -2073,6 +3177,12 @@ function ClusterScene({
     return () => {
       states.forEach(disposeMotionState);
       if (camStatesRef.current === states) camStatesRef.current = [];
+      if (armLeft1FollowerRef.current === armLeft1Follower) {
+        armLeft1FollowerRef.current = null;
+      }
+      if (boxNenSlideRef.current === boxNenSlide) {
+        boxNenSlideRef.current = null;
+      }
     };
   }, [model, motionDefinitions, onError]);
 
@@ -2084,6 +3194,8 @@ function ClusterScene({
         motionDefinitions,
         mainDriveProgress,
         lowerDriveProgress,
+        armLeft1FollowerRef.current,
+        boxNenSlideRef.current,
       );
     }
   }, [
@@ -2148,6 +3260,8 @@ function ClusterScene({
       motionDefinitions,
       nextMainProgress,
       nextLowerProgress,
+      armLeft1FollowerRef.current,
+      boxNenSlideRef.current,
     );
   });
 

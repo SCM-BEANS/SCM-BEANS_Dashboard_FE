@@ -12,6 +12,7 @@ arm_left_1-1 is verified as an independent Phase 6 checkpoint.
 - Runtime motion: driver-follow translation along the already verified body_may-1:Sketch1 path
 - Orientation: preserved from the initial GLB/CAD pose
 - Mesh owner: final.glb; no arm overlay is loaded
+- Attached details: `head_nen-1` follows through `Concentric13 + Concentric14 + Coincident8`; `gac_coffee-1` is body-mounted through `Coincident10`, with `Tangent3` retained as its arm contact evidence
 
 ## Evidence
 
@@ -26,6 +27,8 @@ The runtime artifact is:
 public/models/digital-twin/cluster-03/connections/arm-left-1.json
 
 The driver path is referenced from the verified oc-left.json artifact rather than copied as an untracked geometry offset. The arm's CAD mating point is reconstructed at progress 0 with residual 8.469999434971913e-17 m.
+
+The same runtime artifact records the head attachment and the separate body-mounted `gac_coffee-1` contact. The imported world pose is preserved before each node is attached under its verified CAD parent; only `head_nen-1` follows the arm's cam translation and PathMate8 roll.
 
 ## Verification
 

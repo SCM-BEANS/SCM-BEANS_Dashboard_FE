@@ -16,7 +16,11 @@ solution before arm_left_2 is applied.
 
 `arm-left-1.json` now contains an explicit verified `bodyConnection` record for
 `PathMate8`, connecting `arm_left_1-1` to `body_may-1` Sketch1 `Arc3+Line1`.
-The runtime parser and CAD validator require this record.
+The connection records the arm line direction and the `Concentric1` rotation
+axis. The runtime now solves that line-to-fixed-body-point constraint and
+applies the resulting roll to `arm_left_1-1` around the shared axis while
+keeping the verified `oc_left-1` transform unchanged; it is no longer
+metadata-only. The runtime parser and CAD validator require this data.
 
 ## Evidence
 
@@ -26,6 +30,8 @@ The runtime parser and CAD validator require this record.
 - `LimitDistance2`: `0.002469471663313584..0.00600000000000005 m`.
 - `LimitDistance1`: `0.0014694716633136002..0.005000000000000094 m`.
 - `arm_left_1` PathMate8 start residual: `0 m`.
+- `arm_left_1` PathMate8 runtime line residuals at progress `0, 0.5, 1`:
+  below `5.2e-17 m`.
 
 ## Verification
 
@@ -34,6 +40,8 @@ The runtime parser and CAD validator require this record.
 - gear_motor_chinh, arm_left_1, arm_left_2, arm_left_3 and chain validators:
   passed.
 - `diagnose-cluster-03-main-drive-range.mjs`: passed at 1001 samples.
+- Browser Compressor workflow: passed at progress `0%, 5%, 50%, 100%` with no
+  runtime errors.
 
 The remaining cluster-03 components outside this left/main-drive checkpoint
 are still governed by the existing phase status.
