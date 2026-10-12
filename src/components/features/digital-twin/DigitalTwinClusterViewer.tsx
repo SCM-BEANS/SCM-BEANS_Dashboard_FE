@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Component, useCallback, useState, type ReactNode } from "react";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { useI18nStore } from "@/store/useI18nStore";
+import type { ClusterAttachmentDefinition } from "./DigitalTwinClusterCanvas";
 
 const DigitalTwinClusterCanvas = dynamic(
   () => import("./DigitalTwinClusterCanvas"),
@@ -15,6 +16,7 @@ const OC_LEFT_CAM_STEP = 0.05;
 
 export interface DigitalTwinClusterViewerProps {
   modelUrls: readonly string[];
+  attachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
   rootFrameUrl?: string;
   motionDefinitionUrl?: string;
   motionDefinitionUrls?: readonly string[];
@@ -57,6 +59,7 @@ class CanvasErrorBoundary extends Component<
 
 export function DigitalTwinClusterViewer({
   modelUrls,
+  attachedModelDefinitions,
   rootFrameUrl,
   motionDefinitionUrl,
   motionDefinitionUrls,
@@ -74,7 +77,7 @@ export function DigitalTwinClusterViewer({
   const [zoomLevel, setZoomLevel] = useState(0);
   const [cameraResetVersion, setCameraResetVersion] = useState(0);
   const [mainDriveProgress, setMainDriveProgress] = useState(0);
-  const [lowerDriveProgress, setLowerDriveProgress] = useState(0);
+  const [lowerDriveProgress, setLowerDriveProgress] = useState(1);
   const [ocLeftCamVisible, setOcLeftCamVisible] = useState(true);
   const [mainAutoMotion, setMainAutoMotion] = useState(false);
   const [lowerAutoMotion, setLowerAutoMotion] = useState(false);
@@ -86,7 +89,7 @@ export function DigitalTwinClusterViewer({
     setStatus("loading");
     setZoomLevel(0);
     setMainDriveProgress(0);
-    setLowerDriveProgress(0);
+    setLowerDriveProgress(1);
     setMainAutoMotion(false);
     setLowerAutoMotion(false);
     setAttempt((current) => current + 1);
@@ -94,7 +97,7 @@ export function DigitalTwinClusterViewer({
   const handleReset = useCallback(() => {
     setZoomLevel(0);
     setMainDriveProgress(0);
-    setLowerDriveProgress(0);
+    setLowerDriveProgress(1);
     setMainAutoMotion(false);
     setLowerAutoMotion(false);
     setCameraResetVersion((version) => version + 1);
@@ -115,6 +118,7 @@ export function DigitalTwinClusterViewer({
       <CanvasErrorBoundary key={attempt} onError={handleError}>
         <DigitalTwinClusterCanvas
           modelUrls={modelUrls}
+          attachedModelDefinitions={attachedModelDefinitions}
           rootFrameUrl={rootFrameUrl}
           motionDefinitionUrl={motionDefinitionUrl}
           motionDefinitionUrls={motionDefinitionUrls}

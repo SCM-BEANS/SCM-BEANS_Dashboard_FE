@@ -3,6 +3,9 @@
 import dynamic from "next/dynamic";
 import { Component, useCallback, useState, type ReactNode } from "react";
 import { useI18nStore } from "@/store/useI18nStore";
+import type { ClusterAttachmentDefinition } from "./DigitalTwinClusterCanvas";
+import { DIGITAL_TWIN_OPERATION_STAGES } from "./operation/DigitalTwinOperationConfig";
+import { useDigitalTwinTestCycle } from "./operation/useDigitalTwinTestCycle";
 
 const BodyModelCanvas = dynamic(() => import("./BodyModelCanvas"), {
   ssr: false,
@@ -18,8 +21,10 @@ export interface BodyModelViewerProps {
   includeMayxoayNode?: boolean;
   includeCompressorMotion?: boolean;
   compressorModelUrls?: readonly string[];
+  compressorAttachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
   compressorRootFrameUrl?: string;
   compressorMotionDefinitionUrls?: readonly string[];
+  enableOperationTest?: boolean;
 }
 
 interface CanvasErrorBoundaryProps {
@@ -55,10 +60,19 @@ export function BodyModelViewer({
   includeMayxoayNode = false,
   includeCompressorMotion = false,
   compressorModelUrls,
+  compressorAttachedModelDefinitions,
   compressorRootFrameUrl,
   compressorMotionDefinitionUrls,
+  enableOperationTest = false,
 }: BodyModelViewerProps = {}) {
   const t = useI18nStore((state) => state.t);
+  const {
+    status: operationStatus,
+    currentEvent: operationEvent,
+    start: startOperation,
+    reset: resetOperation,
+    fail: failOperation,
+  } = useDigitalTwinTestCycle();
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ViewerStatus>("loading");
   const [zoomLevel, setZoomLevel] = useState(0);
@@ -67,20 +81,44 @@ export function BodyModelViewer({
 
   const handleLoadStart = useCallback(() => setStatus("loading"), []);
   const handleReady = useCallback(() => setStatus("ready"), []);
-  const handleError = useCallback(() => setStatus("error"), []);
+  const handleError = useCallback(() => {
+    resetOperation();
+    setStatus("error");
+  }, [resetOperation]);
+  const handleOperationError = useCallback(
+    (error: unknown) => failOperation(error),
+    [failOperation],
+  );
+  const handleOperationStart = useCallback(() => {
+    setCompressorRunning(false);
+    startOperation();
+  }, [startOperation]);
   const handleRetry = useCallback(() => {
+    resetOperation();
     setStatus("loading");
     setZoomLevel(0);
     setCompressorRunning(false);
     setAttempt((current) => current + 1);
-  }, []);
+  }, [resetOperation]);
   const handleReset = useCallback(() => {
     setZoomLevel(0);
     setCameraResetVersion((version) => version + 1);
   }, []);
 
+  const activeStage = DIGITAL_TWIN_OPERATION_STAGES.find(
+    (stage) => stage.phase === operationEvent?.phase,
+  );
+  const operationStatusLabel =
+    operationStatus === "complete"
+      ? t("digital_twin_operation_complete")
+      : operationStatus === "fault"
+        ? t("digital_twin_operation_error")
+        : operationStatus === "running" && activeStage
+          ? t(activeStage.labelKey)
+          : t("digital_twin_operation_idle");
+
   return (
-    <div className="relative isolate h-[min(62vh,700px)] min-h-[320px] overflow-hidden bento-border bg-surface-container md:min-h-[380px]">
+    <div className="relative isolate h-[min(62vh,700px)] min-h-[320px] overflow-hidden bento-border bg-transparent md:min-h-[380px]">
       <CanvasErrorBoundary key={attempt} onError={handleError}>
         <BodyModelCanvas
           onLoadStart={handleLoadStart}
@@ -93,13 +131,16 @@ export function BodyModelViewer({
           includeMayxoayNode={includeMayxoayNode}
           includeCompressorMotion={includeCompressorMotion}
           compressorModelUrls={compressorModelUrls}
+          compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
           compressorRootFrameUrl={compressorRootFrameUrl}
           compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
           compressorRunning={compressorRunning}
+          operationEvent={operationEvent}
+          onOperationError={handleOperationError}
         />
       </CanvasErrorBoundary>
 
-      <div className="absolute right-3 top-3 z-20 flex items-center gap-2 rounded-lg border border-outline-variant bg-surface/90 p-1.5 shadow-sm backdrop-blur-sm">
+      <div className="absolute right-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-2 rounded-lg border border-outline-variant bg-surface/90 p-1.5 shadow-sm backdrop-blur-sm">
         <button
           type="button"
           aria-label={t("digital_twin_zoom_out")}
@@ -147,7 +188,7 @@ export function BodyModelViewer({
                   : "digital_twin_body_motion_run_label",
               )}
               aria-pressed={compressorRunning}
-              disabled={status !== "ready"}
+              disabled={status !== "ready" || operationStatus === "running"}
               onClick={() => setCompressorRunning((running) => !running)}
               className="min-h-11 rounded-md bg-primary px-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             >
@@ -156,6 +197,27 @@ export function BodyModelViewer({
                   ? "digital_twin_body_motion_stop"
                   : "digital_twin_body_motion_run",
               )}
+            </button>
+          </>
+        ) : null}
+        {enableOperationTest ? (
+          <>
+            <span className="h-7 w-px bg-outline-variant" aria-hidden="true" />
+            <button
+              type="button"
+              aria-label={
+                operationStatus === "running"
+                  ? t("digital_twin_operation_running")
+                  : t("digital_twin_operation_run_label")
+              }
+              title={t("digital_twin_operation_run_label")}
+              disabled={status !== "ready" || operationStatus === "running"}
+              onClick={handleOperationStart}
+              className="min-h-11 rounded-md bg-primary px-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {operationStatus === "running"
+                ? t("digital_twin_operation_running")
+                : t("digital_twin_operation_run")}
             </button>
           </>
         ) : null}
@@ -181,13 +243,24 @@ export function BodyModelViewer({
       ) : null}
 
       {status === "ready" ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="absolute left-3 top-3 z-10 rounded-md border border-outline-variant bg-surface/90 px-3 py-1.5 text-xs font-semibold text-on-surface shadow-sm"
-        >
-          {t("digital_twin_body_ready")}
-        </div>
+        <>
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute left-3 top-3 z-10 rounded-md border border-outline-variant bg-surface/90 px-3 py-1.5 text-xs font-semibold text-on-surface shadow-sm"
+          >
+            {t("digital_twin_body_ready")}
+          </div>
+          {enableOperationTest ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute bottom-3 left-3 z-10 max-w-[calc(100%-1.5rem)] rounded-md border border-outline-variant bg-surface/90 px-3 py-1.5 text-xs font-semibold text-on-surface shadow-sm"
+            >
+              {operationStatusLabel}
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       {status === "error" ? (

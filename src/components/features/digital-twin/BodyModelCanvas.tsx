@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -8,8 +15,10 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { DigitalTwinCycleEvent } from "@/schemas/digitalTwinCycle";
 import {
   assertClusterPartSeparation,
+  attachClusterModelToParent,
   combineClusterParts,
   createClusterMotionRuntime,
   loadClusterMotionDefinition,
@@ -17,7 +26,13 @@ import {
   prepareClusterPart,
   type ClusterMotionDefinition,
   type ClusterMotionRuntime,
+  type ClusterAttachmentDefinition,
 } from "./DigitalTwinClusterCanvas";
+import {
+  DIGITAL_TWIN_OPERATION_STAGES,
+  type DigitalTwinOperationNodeReference,
+  type DigitalTwinOperationStageDefinition,
+} from "./operation/DigitalTwinOperationConfig";
 
 const COFFEE_MACHINE_MODEL_URL =
   "/models/digital-twin/body/coffee_machine_03_v2.glb";
@@ -55,9 +70,12 @@ interface BodyModelCanvasProps {
   includeMayxoayNode: boolean;
   includeCompressorMotion: boolean;
   compressorModelUrls?: readonly string[];
+  compressorAttachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
   compressorRootFrameUrl?: string;
   compressorMotionDefinitionUrls?: readonly string[];
   compressorRunning: boolean;
+  operationEvent: DigitalTwinCycleEvent | null;
+  onOperationError: (error: unknown) => void;
 }
 
 interface CompressorPosePair {
@@ -69,6 +87,12 @@ interface ModelResources {
   geometries: Set<THREE.BufferGeometry>;
   materials: Set<THREE.Material>;
   textures: Set<THREE.Texture>;
+}
+
+interface OperationVisualState {
+  visibility: Map<THREE.Object3D, boolean>;
+  materials: Map<THREE.Mesh, THREE.Material | THREE.Material[]>;
+  clonedMaterials: Set<THREE.Material>;
 }
 
 function collectModelResources(root: THREE.Object3D): ModelResources {
@@ -139,6 +163,148 @@ function findUniqueSourceNode(root: THREE.Object3D, sourceName: string) {
     throw new Error(`Multiple GLB nodes found for ${sourceName}.`);
   }
   return matches[0];
+}
+
+function findOperationNode(
+  bodyRoot: THREE.Object3D,
+  compressorDisplayRoot: THREE.Object3D | null,
+  reference: DigitalTwinOperationNodeReference,
+) {
+  const targetRoot =
+    reference.root === "body" ? bodyRoot : compressorDisplayRoot;
+  if (!targetRoot) {
+    throw new Error(
+      `Digital twin operation root is unavailable: ${reference.root}.`,
+    );
+  }
+  return findUniqueSourceNode(targetRoot, reference.sourceName);
+}
+
+function isAncestorOf(ancestor: THREE.Object3D, node: THREE.Object3D) {
+  let current = node.parent;
+  while (current) {
+    if (current === ancestor) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+function getMeshMaterials(mesh: THREE.Mesh) {
+  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+}
+
+function createHighlightedMaterial(
+  material: THREE.Material,
+  highlightColor: string,
+) {
+  const clone = material.clone();
+  const styledMaterial = clone as THREE.Material & {
+    color?: THREE.Color;
+    emissive?: THREE.Color;
+    emissiveIntensity?: number;
+  };
+  const color = new THREE.Color(highlightColor);
+
+  if (styledMaterial.color instanceof THREE.Color) {
+    styledMaterial.color.lerp(color, 0.72);
+  }
+  if (styledMaterial.emissive instanceof THREE.Color) {
+    styledMaterial.emissive.copy(color);
+    styledMaterial.emissiveIntensity = Math.max(
+      styledMaterial.emissiveIntensity ?? 0,
+      1.35,
+    );
+  }
+  styledMaterial.needsUpdate = true;
+  return clone;
+}
+
+function restoreOperationVisualState(
+  stateRef: MutableRefObject<OperationVisualState | null>,
+) {
+  const state = stateRef.current;
+  if (!state) return;
+
+  for (const [mesh, originalMaterials] of state.materials) {
+    mesh.material = originalMaterials;
+  }
+  for (const material of state.clonedMaterials) material.dispose();
+  for (const [node, originalVisibility] of state.visibility) {
+    node.visible = originalVisibility;
+  }
+
+  stateRef.current = null;
+}
+
+function applyOperationVisualState(
+  bodyRoot: THREE.Object3D,
+  compressorDisplayRoot: THREE.Object3D | null,
+  stage: DigitalTwinOperationStageDefinition,
+  state: OperationVisualState,
+) {
+  const activeNodes = stage.activeNodes.map((reference) => ({
+    reference,
+    node: findOperationNode(bodyRoot, compressorDisplayRoot, reference),
+  }));
+  const hiddenOccluders = stage.hiddenOccluders.map((reference) => ({
+    reference,
+    node: findOperationNode(bodyRoot, compressorDisplayRoot, reference),
+  }));
+
+  for (const activeTarget of activeNodes) {
+    for (const occluderTarget of hiddenOccluders) {
+      if (
+        activeTarget.reference.root === occluderTarget.reference.root &&
+        (activeTarget.node === occluderTarget.node ||
+          isAncestorOf(occluderTarget.node, activeTarget.node))
+      ) {
+        throw new Error(
+          `Operation occluder ${occluderTarget.reference.sourceName} hides active node ${activeTarget.reference.sourceName}.`,
+        );
+      }
+    }
+  }
+
+  const snapshotVisibility = (node: THREE.Object3D) => {
+    if (!state.visibility.has(node)) state.visibility.set(node, node.visible);
+  };
+
+  for (const { node } of activeNodes) {
+    snapshotVisibility(node);
+    node.visible = true;
+
+    let meshCount = 0;
+    node.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      meshCount += 1;
+      if (state.materials.has(object)) return;
+
+      const originalMaterials = object.material;
+      const highlightedMaterials = getMeshMaterials(object).map((material) =>
+        createHighlightedMaterial(material, stage.highlightColor),
+      );
+      state.materials.set(object, originalMaterials);
+      highlightedMaterials.forEach((material) =>
+        state.clonedMaterials.add(material),
+      );
+      object.material = Array.isArray(originalMaterials)
+        ? highlightedMaterials
+        : highlightedMaterials[0];
+    });
+
+    if (meshCount === 0) {
+      throw new Error(
+        `Operation active node has no mesh descendants: ${stage.phase}:${stage.activeNodes
+          .map((reference) => reference.sourceName)
+          .join(", ")}.`,
+      );
+    }
+  }
+
+  for (const { node } of hiddenOccluders) {
+    snapshotVisibility(node);
+    node.visible = false;
+  }
 }
 
 function isClusterGuideNode(node: THREE.Object3D) {
@@ -368,9 +534,12 @@ function BodyScene({
   includeMayxoayNode,
   includeCompressorMotion,
   compressorModelUrls,
+  compressorAttachedModelDefinitions,
   compressorRootFrameUrl,
   compressorMotionDefinitionUrls,
   compressorRunning,
+  operationEvent,
+  onOperationError,
 }: Omit<BodyModelCanvasProps, "canvasLabel">) {
   const { camera, gl } = useThree();
   const [model, setModel] = useState<THREE.Group | null>(null);
@@ -382,6 +551,13 @@ function BodyScene({
   const environmentMapRef = useRef<THREE.Texture | null>(null);
   const compressorRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
   const compressorPosePairsRef = useRef<CompressorPosePair[]>([]);
+  const operationVisualStateRef = useRef<OperationVisualState | null>(null);
+  const operationCycleIdRef = useRef<string | null>(null);
+  const operationMotionProgressRef = useRef({ main: 0, lower: 1 });
+  const restoreOperationState = useCallback(
+    () => restoreOperationVisualState(operationVisualStateRef),
+    [],
+  );
 
   useEffect(() => {
     const room = new RoomEnvironment();
@@ -480,13 +656,22 @@ function BodyScene({
                 loadClusterMotionDefinition(url, abortController.signal),
               ),
             ),
-          ]).then(([scenes, rootTransform, definitions]) => ({
+            Promise.all(
+              (compressorAttachedModelDefinitions ?? []).map((definition) =>
+                loader.loadAsync(definition.modelUrl).then((gltf) => {
+                  loadedClusterSourceScenes.push(gltf.scene);
+                  return gltf.scene;
+                }),
+              ),
+            ),
+          ]).then(([scenes, rootTransform, definitions, attachedScenes]) => ({
             scenes,
             rootTransform,
             definitions: definitions.filter(
               (definition): definition is ClusterMotionDefinition =>
                 definition !== null,
             ),
+            attachedScenes,
           }))
         : Promise.reject(
             new Error("Body compressor motion assets are not configured."),
@@ -559,6 +744,11 @@ function BodyScene({
             compressorPayload.rootTransform,
             !compressorRootFrameUrl,
           );
+          compressorPayload.attachedScenes.forEach((scene, index) => {
+            const definition = compressorAttachedModelDefinitions?.[index];
+            if (!definition) return;
+            attachClusterModelToParent(loadedClusterModel!, scene, definition);
+          });
           loadedClusterSourceScenes = [];
           assertClusterPartSeparation(loadedClusterModel);
           loadedClusterModel.updateMatrixWorld(true);
@@ -589,7 +779,7 @@ function BodyScene({
             compressorPayload.definitions,
             {
               initialMainProgress: 0,
-              initialLowerProgress: 0,
+              initialLowerProgress: 1,
               showGuides: false,
             },
           );
@@ -624,10 +814,12 @@ function BodyScene({
       active = false;
       abortController.abort();
       manager.abort();
+      restoreOperationState();
       disposeLoadedScenes();
       dracoLoader.dispose();
     };
   }, [
+    compressorAttachedModelDefinitions,
     compressorModelUrls,
     compressorMotionDefinitionUrls,
     compressorRootFrameUrl,
@@ -637,11 +829,97 @@ function BodyScene({
     onError,
     onLoadStart,
     onReady,
+    restoreOperationState,
+  ]);
+
+  const operationPhase = operationEvent?.phase ?? "idle";
+  useEffect(() => {
+    restoreOperationState();
+
+    const stage = DIGITAL_TWIN_OPERATION_STAGES.find(
+      (candidate) => candidate.phase === operationPhase,
+    );
+    if (!model || !stage) return;
+
+    const nextState: OperationVisualState = {
+      visibility: new Map(),
+      materials: new Map(),
+      clonedMaterials: new Set(),
+    };
+    operationVisualStateRef.current = nextState;
+
+    try {
+      applyOperationVisualState(
+        model,
+        compressorDisplayRoot,
+        stage,
+        nextState,
+      );
+    } catch (error) {
+      restoreOperationState();
+      onOperationError(error);
+    }
+
+    return restoreOperationState;
+  }, [
+    compressorDisplayRoot,
+    model,
+    onOperationError,
+    operationPhase,
+    restoreOperationState,
   ]);
 
   useFrame((_, delta) => {
     const runtime = compressorRuntimeRef.current;
-    if (runtime && compressorRunning) {
+    if (!runtime) return;
+
+    const operationIsActive = Boolean(
+      operationEvent &&
+        operationEvent.phase !== "idle" &&
+        operationEvent.phase !== "complete" &&
+        operationEvent.phase !== "fault",
+    );
+
+    if (operationIsActive && operationEvent) {
+      if (operationCycleIdRef.current !== operationEvent.cycleId) {
+        operationCycleIdRef.current = operationEvent.cycleId;
+        operationMotionProgressRef.current = { main: 0, lower: 1 };
+        runtime.apply(0, 1);
+      }
+
+      const stage = DIGITAL_TWIN_OPERATION_STAGES.find(
+        (candidate) => candidate.phase === operationEvent.phase,
+      );
+      if (stage?.motion?.runtime === "cluster-03") {
+        operationMotionProgressRef.current = {
+          main: THREE.MathUtils.lerp(
+            stage.motion.mainProgressRange[0],
+            stage.motion.mainProgressRange[1],
+            operationEvent.progress,
+          ),
+          lower: THREE.MathUtils.lerp(
+            stage.motion.lowerProgressRange[0],
+            stage.motion.lowerProgressRange[1],
+            operationEvent.progress,
+          ),
+        };
+      }
+      runtime.apply(
+        operationMotionProgressRef.current.main,
+        operationMotionProgressRef.current.lower,
+      );
+      syncCompressorDisplayPose(
+        compressorPosePairsRef.current,
+        compressorDisplayRoot,
+      );
+      return;
+    }
+
+    if (operationCycleIdRef.current !== null) {
+      runtime.apply(0, 1);
+      operationCycleIdRef.current = null;
+      operationMotionProgressRef.current = { main: 0, lower: 1 };
+    } else if (compressorRunning) {
       runtime.advance(delta, true, true);
     }
     syncCompressorDisplayPose(
@@ -658,9 +936,6 @@ function BodyScene({
     }
     return combinedBounds;
   }, [compressorDisplayRoot, model]);
-  const size = useMemo(() => bounds?.getSize(new THREE.Vector3()) ?? null, [bounds]);
-  const center = useMemo(() => bounds?.getCenter(new THREE.Vector3()) ?? null, [bounds]);
-  const maxSize = size ? Math.max(size.x, size.y, size.z) : 0;
 
   useEffect(() => {
     if (!model || !bounds || !controlsRef.current) return;
@@ -669,7 +944,7 @@ function BodyScene({
 
   return (
     <>
-      {model && bounds && size && center ? (
+      {model && bounds ? (
         <>
           <primitive object={model} dispose={null} />
           {compressorRuntimeModel ? (
@@ -678,14 +953,6 @@ function BodyScene({
           {compressorDisplayRoot ? (
             <primitive object={compressorDisplayRoot} dispose={null} />
           ) : null}
-          <mesh
-            rotation={[-Math.PI / 2, 0, 0]}
-            position={[center.x, bounds.min.y - maxSize * 0.015, center.z]}
-            receiveShadow
-          >
-            <planeGeometry args={[maxSize * 4, maxSize * 4]} />
-            <meshStandardMaterial color="#d9dde3" roughness={0.88} metalness={0.02} />
-          </mesh>
         </>
       ) : null}
       <ambientLight intensity={0.85} />
@@ -717,9 +984,12 @@ export default function BodyModelCanvas({
   includeMayxoayNode,
   includeCompressorMotion,
   compressorModelUrls,
+  compressorAttachedModelDefinitions,
   compressorRootFrameUrl,
   compressorMotionDefinitionUrls,
   compressorRunning,
+  operationEvent,
+  onOperationError,
 }: BodyModelCanvasProps) {
   return (
     <Canvas
@@ -739,9 +1009,12 @@ export default function BodyModelCanvas({
         includeMayxoayNode={includeMayxoayNode}
         includeCompressorMotion={includeCompressorMotion}
         compressorModelUrls={compressorModelUrls}
+        compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
         compressorRootFrameUrl={compressorRootFrameUrl}
         compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
         compressorRunning={compressorRunning}
+        operationEvent={operationEvent}
+        onOperationError={onOperationError}
       />
     </Canvas>
   );

@@ -19,6 +19,13 @@ const CLUSTER_02_MODEL_URLS = [
 const CLUSTER_03_MODEL_URLS = [
   "/models/digital-twin/cluster-03/final.glb",
 ] as const;
+const CLUSTER_03_ATTACHMENT_DEFINITIONS = [
+  {
+    modelUrl: "/models/digital-twin/cluster-03/ong_nuoc.glb",
+    sourceNodeName: "ong_nuoc.SLDPRT",
+    parentNodeName: "head_nen-1",
+  },
+] as const;
 const CLUSTER_03_ROOT_FRAME_URL =
   "/models/digital-twin/cluster-03/connections/root-frame.json";
 const CLUSTER_03_OC_LEFT_MOTION_URL =
@@ -160,6 +167,7 @@ export function DigitalTwinWorkspace() {
       >
         {activeTab === "body" ? (
           <BodyModelViewer
+            enableOperationTest
             includeCompressorMotion
             compressorModelUrls={CLUSTER_03_MODEL_URLS}
             compressorRootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
@@ -177,6 +185,7 @@ export function DigitalTwinWorkspace() {
         ) : activeTab === "cluster-03" ? (
           <DigitalTwinClusterViewer
             modelUrls={CLUSTER_03_MODEL_URLS}
+            attachedModelDefinitions={CLUSTER_03_ATTACHMENT_DEFINITIONS}
             rootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
             motionDefinitionUrls={CLUSTER_03_MOTION_URLS}
             canvasLabelKey="digital_twin_maynen_canvas_label"

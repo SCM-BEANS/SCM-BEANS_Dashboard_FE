@@ -17,6 +17,7 @@ const CLUSTER_MAX_AUTO_MOTOR_STEP_RADIANS = 0.01;
 
 export interface DigitalTwinClusterCanvasProps {
   modelUrls: readonly string[];
+  attachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
   rootFrameUrl?: string;
   motionDefinitionUrl?: string;
   motionDefinitionUrls?: readonly string[];
@@ -33,6 +34,12 @@ export interface DigitalTwinClusterCanvasProps {
   ocLeftCamVisible: boolean;
   mainAutoMotion: boolean;
   lowerAutoMotion: boolean;
+}
+
+export interface ClusterAttachmentDefinition {
+  modelUrl: string;
+  sourceNodeName: string;
+  parentNodeName: string;
 }
 
 function disposeModel(root: THREE.Object3D) {
@@ -86,6 +93,88 @@ export function prepareClusterPart(root: THREE.Group, isolateNodeName?: string) 
   }
 
   return target;
+}
+
+function findUniqueClusterSourceNode(
+  root: THREE.Object3D,
+  sourceNodeName: string,
+) {
+  const matches: THREE.Object3D[] = [];
+  root.traverse((candidate) => {
+    if (
+      candidate.userData.name === sourceNodeName ||
+      candidate.name === sourceNodeName
+    ) {
+      matches.push(candidate);
+    }
+  });
+
+  if (matches.length === 0) {
+    throw new Error(`GLB node "${sourceNodeName}" was not found.`);
+  }
+  if (matches.length > 1) {
+    throw new Error(`Multiple GLB nodes found for ${sourceNodeName}.`);
+  }
+  return matches[0];
+}
+
+export function attachClusterModelToParent(
+  model: THREE.Group,
+  attachmentRoot: THREE.Group,
+  definition: ClusterAttachmentDefinition,
+) {
+  const parent = model.getObjectByName(definition.parentNodeName);
+  if (!parent) {
+    throw new Error(
+      `GLB attachment parent "${definition.parentNodeName}" was not found.`,
+    );
+  }
+
+  const attachedNode = findUniqueClusterSourceNode(
+    attachmentRoot,
+    definition.sourceNodeName,
+  );
+  attachedNode.updateWorldMatrix(true, true);
+
+  const parentBounds = new THREE.Box3().setFromObject(parent);
+  const attachedBounds = new THREE.Box3().setFromObject(attachedNode);
+  if (parentBounds.isEmpty() || attachedBounds.isEmpty()) {
+    throw new Error(
+      `GLB attachment bounds are empty for ${definition.sourceNodeName}.`,
+    );
+  }
+
+  // The pipe is exported as a standalone part without the assembly placement.
+  // Align its connector-side Z edge to the head and center it on X/Y once;
+  // after that, parenting makes every verified head pose carry the pipe along.
+  const parentCenter = parentBounds.getCenter(new THREE.Vector3());
+  const attachedCenter = attachedBounds.getCenter(new THREE.Vector3());
+  const placementOffset = new THREE.Vector3(
+    parentCenter.x - attachedCenter.x,
+    parentCenter.y - attachedCenter.y,
+    parentBounds.min.z - attachedBounds.min.z,
+  );
+  const attachedWorldPosition = attachedNode.getWorldPosition(
+    new THREE.Vector3(),
+  );
+  const attachedWorldMatrix = attachedNode.matrixWorld.clone();
+  attachedWorldMatrix.setPosition(
+    attachedWorldPosition.add(placementOffset),
+  );
+
+  attachedNode.removeFromParent();
+  model.add(attachedNode);
+  model.updateMatrixWorld(true);
+  attachedNode.matrix.copy(
+    model.matrixWorld.clone().invert().multiply(attachedWorldMatrix),
+  );
+  attachedNode.matrixAutoUpdate = false;
+  attachedNode.updateMatrixWorld(true);
+
+  parent.attach(attachedNode);
+  attachedNode.matrixAutoUpdate = false;
+  attachedNode.userData.clusterAttachment = definition.sourceNodeName;
+  attachedNode.updateMatrixWorld(true);
 }
 
 interface ClusterRootFramePayload {
@@ -3182,6 +3271,7 @@ export function createClusterMotionRuntime(
 
 function ClusterScene({
   modelUrls,
+  attachedModelDefinitions,
   rootFrameUrl,
   motionDefinitionUrl,
   motionDefinitionUrls,
@@ -3282,11 +3372,30 @@ function ClusterScene({
         return { scene, index };
       }),
     );
+    const attachedLoads = (attachedModelDefinitions ?? []).map(
+      (definition) =>
+        new Promise<THREE.Group>((resolve, reject) => {
+          loader.load(
+            definition.modelUrl,
+            (gltf) => resolve(gltf.scene),
+            undefined,
+            reject,
+          );
+        }).then((scene) => {
+          pendingScenes.push(scene);
+          return scene;
+        }),
+    );
 
-    void Promise.all([rootTransform, Promise.all(loads)])
-      .then(([resolvedRootTransform, loadedModels]) => {
+    void Promise.all([
+      rootTransform,
+      Promise.all(loads),
+      Promise.all(attachedLoads),
+    ])
+      .then(([resolvedRootTransform, loadedModels, attachedScenes]) => {
         if (!active) {
           loadedModels.forEach(({ scene }) => disposeModel(scene));
+          attachedScenes.forEach((scene) => disposeModel(scene));
           pendingScenes.length = 0;
           return;
         }
@@ -3303,12 +3412,23 @@ function ClusterScene({
             resolvedRootTransform,
             !rootFrameUrl,
           );
+          attachedScenes.forEach((scene, index) => {
+            const definition = attachedModelDefinitions?.[index];
+            if (!definition) return;
+            attachClusterModelToParent(loadedScene!, scene, definition);
+          });
           assertClusterPartSeparation(loadedScene);
           pendingScenes.length = 0;
           setModel(loadedScene);
           onReady();
         } catch (error) {
-          loadedModels.forEach(({ scene }) => disposeModel(scene));
+          if (loadedScene) {
+            disposeModel(loadedScene);
+            loadedScene = null;
+          } else {
+            loadedModels.forEach(({ scene }) => disposeModel(scene));
+          }
+          attachedScenes.forEach((scene) => disposeModel(scene));
           pendingScenes.length = 0;
           onError(error);
         }
@@ -3328,7 +3448,15 @@ function ClusterScene({
       pendingScenes.length = 0;
       dracoLoader.dispose();
     };
-  }, [isolateNodeName, modelUrls, onError, onLoadStart, onReady, rootFrameUrl]);
+  }, [
+    attachedModelDefinitions,
+    isolateNodeName,
+    modelUrls,
+    onError,
+    onLoadStart,
+    onReady,
+    rootFrameUrl,
+  ]);
 
   const bounds = useMemo(() => {
     if (!model) return null;
@@ -3351,7 +3479,7 @@ function ClusterScene({
     try {
       runtime = createClusterMotionRuntime(model, motionDefinitions, {
         initialMainProgress: 0,
-        initialLowerProgress: 0,
+        initialLowerProgress: 1,
         showGuides: true,
       });
       motionRuntimeRef.current = runtime;
@@ -3415,6 +3543,7 @@ function ClusterScene({
 
 export default function DigitalTwinClusterCanvas({
   modelUrls,
+  attachedModelDefinitions,
   rootFrameUrl,
   motionDefinitionUrl,
   motionDefinitionUrls,
@@ -3442,6 +3571,7 @@ export default function DigitalTwinClusterCanvas({
     >
       <ClusterScene
         modelUrls={modelUrls}
+        attachedModelDefinitions={attachedModelDefinitions}
         rootFrameUrl={rootFrameUrl}
         motionDefinitionUrl={motionDefinitionUrl}
         motionDefinitionUrls={motionDefinitionUrls}
