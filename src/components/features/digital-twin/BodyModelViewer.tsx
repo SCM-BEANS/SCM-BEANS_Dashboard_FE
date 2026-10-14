@@ -19,6 +19,8 @@ const NO_EXCLUDED_NODE_NAMES: readonly string[] = [];
 export interface BodyModelViewerProps {
   excludedNodeNames?: readonly string[];
   includeMayxoayNode?: boolean;
+  enableCoffeeEffect?: boolean;
+  enableWaterEffect?: boolean;
   includeCompressorMotion?: boolean;
   compressorModelUrls?: readonly string[];
   compressorAttachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
@@ -58,6 +60,8 @@ class CanvasErrorBoundary extends Component<
 export function BodyModelViewer({
   excludedNodeNames = NO_EXCLUDED_NODE_NAMES,
   includeMayxoayNode = false,
+  enableCoffeeEffect = false,
+  enableWaterEffect = false,
   includeCompressorMotion = false,
   compressorModelUrls,
   compressorAttachedModelDefinitions,
@@ -78,6 +82,9 @@ export function BodyModelViewer({
   const [zoomLevel, setZoomLevel] = useState(0);
   const [cameraResetVersion, setCameraResetVersion] = useState(0);
   const [compressorRunning, setCompressorRunning] = useState(false);
+  const [coffeeRunRequest, setCoffeeRunRequest] = useState(0);
+  const [waterRunRequest, setWaterRunRequest] = useState(0);
+  const [waterResetRequest, setWaterResetRequest] = useState(0);
 
   const handleLoadStart = useCallback(() => setStatus("loading"), []);
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -93,6 +100,18 @@ export function BodyModelViewer({
     setCompressorRunning(false);
     startOperation();
   }, [startOperation]);
+  const handleCoffeeSimulation = useCallback(() => {
+    if (status !== "ready" || !enableCoffeeEffect) return;
+    setCoffeeRunRequest((request) => request + 1);
+  }, [enableCoffeeEffect, status]);
+  const handleWaterSimulation = useCallback(() => {
+    if (status !== "ready" || !enableWaterEffect) return;
+    setWaterRunRequest((request) => request + 1);
+  }, [enableWaterEffect, status]);
+  const handleWaterReset = useCallback(() => {
+    if (!enableWaterEffect) return;
+    setWaterResetRequest((request) => request + 1);
+  }, [enableWaterEffect]);
   const handleRetry = useCallback(() => {
     resetOperation();
     setStatus("loading");
@@ -129,6 +148,11 @@ export function BodyModelViewer({
           zoomLevel={zoomLevel}
           excludedNodeNames={excludedNodeNames}
           includeMayxoayNode={includeMayxoayNode}
+          enableCoffeeEffect={enableCoffeeEffect}
+          coffeeRunRequest={coffeeRunRequest}
+          enableWaterEffect={enableWaterEffect}
+          waterRunRequest={waterRunRequest}
+          waterResetRequest={waterResetRequest}
           includeCompressorMotion={includeCompressorMotion}
           compressorModelUrls={compressorModelUrls}
           compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
@@ -197,6 +221,46 @@ export function BodyModelViewer({
                   ? "digital_twin_body_motion_stop"
                   : "digital_twin_body_motion_run",
               )}
+            </button>
+          </>
+        ) : null}
+        {enableCoffeeEffect ? (
+          <>
+            <span className="h-7 w-px bg-outline-variant" aria-hidden="true" />
+            <button
+              type="button"
+              aria-label={t("digital_twin_coffee_simulate_label")}
+              title={t("digital_twin_coffee_simulate_label")}
+              disabled={status !== "ready" || operationStatus === "running"}
+              onClick={handleCoffeeSimulation}
+              className="min-h-11 rounded-md border border-primary px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {t("digital_twin_coffee_simulate")}
+            </button>
+          </>
+        ) : null}
+        {enableWaterEffect ? (
+          <>
+            <span className="h-7 w-px bg-outline-variant" aria-hidden="true" />
+            <button
+              type="button"
+              aria-label={t("digital_twin_water_run")}
+              title={t("digital_twin_water_run")}
+              disabled={status !== "ready" || operationStatus === "running"}
+              onClick={handleWaterSimulation}
+              className="min-h-11 rounded-md border border-primary px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {t("digital_twin_water_run")}
+            </button>
+            <button
+              type="button"
+              aria-label={t("digital_twin_water_reset")}
+              title={t("digital_twin_water_reset")}
+              disabled={status !== "ready"}
+              onClick={handleWaterReset}
+              className="min-h-11 rounded-md px-3 text-sm font-semibold text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              {t("digital_twin_water_reset")}
             </button>
           </>
         ) : null}

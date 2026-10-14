@@ -5,10 +5,14 @@ import { useI18nStore } from "@/store/useI18nStore";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import { BodyModelViewer } from "./BodyModelViewer";
 import { DigitalTwinClusterViewer } from "./DigitalTwinClusterViewer";
+import { MaterialEffectsTestViewer } from "./material-effects/MaterialEffectsTestViewer";
+import { WaterFlowTestViewer } from "./material-effects/WaterFlowTestViewer";
 
 const DIGITAL_TWIN_TABS = [
   { id: "body", labelKey: "digital_twin_tab_body" },
   { id: "cluster-02", labelKey: "digital_twin_tab_mayxoay" },
+  { id: "material-test", labelKey: "digital_twin_tab_material_test" },
+  { id: "water-test", labelKey: "digital_twin_tab_water_test" },
   { id: "cluster-03", labelKey: "digital_twin_tab_maynen" },
   { id: "combined", labelKey: "digital_twin_tab_combined" },
 ] as const satisfies ReadonlyArray<{ id: string; labelKey: TranslationKey }>;
@@ -168,6 +172,8 @@ export function DigitalTwinWorkspace() {
         {activeTab === "body" ? (
           <BodyModelViewer
             enableOperationTest
+            enableCoffeeEffect
+            enableWaterEffect
             includeCompressorMotion
             compressorModelUrls={CLUSTER_03_MODEL_URLS}
             compressorRootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
@@ -182,6 +188,10 @@ export function DigitalTwinWorkspace() {
             readyKey="digital_twin_mayxoay_ready"
             loadErrorKey="digital_twin_mayxoay_load_error"
           />
+        ) : activeTab === "material-test" ? (
+          <MaterialEffectsTestViewer />
+        ) : activeTab === "water-test" ? (
+          <WaterFlowTestViewer />
         ) : activeTab === "cluster-03" ? (
           <DigitalTwinClusterViewer
             modelUrls={CLUSTER_03_MODEL_URLS}

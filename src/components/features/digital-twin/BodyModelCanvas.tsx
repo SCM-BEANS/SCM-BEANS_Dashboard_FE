@@ -33,6 +33,19 @@ import {
   type DigitalTwinOperationNodeReference,
   type DigitalTwinOperationStageDefinition,
 } from "./operation/DigitalTwinOperationConfig";
+import {
+  MAYXOAY_COFFEE_BOX_NEN_TARGET,
+  MAYXOAY_COFFEE_SKETCH18_CALIBRATION,
+} from "./material-effects/MaterialEffectsConfig";
+import {
+  CoffeeGroundEffect,
+  type CoffeeGroundPlayback,
+} from "./material-effects/CoffeeGroundEffect";
+import {
+  WaterFlowEffect,
+  type WaterFlowPlayback,
+} from "./material-effects/WaterFlowEffect";
+import { createWaterFlowBounds } from "./material-effects/waterFlowRuntime";
 
 const COFFEE_MACHINE_MODEL_URL =
   "/models/digital-twin/body/coffee_machine_03_v2.glb";
@@ -51,6 +64,8 @@ const HIDDEN_BODY_NODE_NAMES = [
 const LEGACY_COMPRESSOR_NODE_NAMES = ["Mayphacafe-1"] as const;
 const BODY_COMPRESSOR_NODE_NAME = "may_ne_coffe-1";
 const CLUSTER_COMPRESSOR_NODE_NAME = "body_may-1";
+const CLUSTER_BOX_NEN_NODE_NAME = "box_nen-1";
+const BODY_COFFEE_OUTLET_NODE_NAME = "DR08_CT8-1";
 const CLUSTER_GUIDE_SUFFIX = "-sketch-cam-path";
 const DRACO_DECODER_PATH = "/draco-gltf/";
 const MAYXOAY_METALLIC_ACCENT = {
@@ -68,6 +83,11 @@ interface BodyModelCanvasProps {
   zoomLevel: number;
   excludedNodeNames: readonly string[];
   includeMayxoayNode: boolean;
+  enableCoffeeEffect: boolean;
+  coffeeRunRequest: number;
+  enableWaterEffect: boolean;
+  waterRunRequest: number;
+  waterResetRequest: number;
   includeCompressorMotion: boolean;
   compressorModelUrls?: readonly string[];
   compressorAttachedModelDefinitions?: readonly ClusterAttachmentDefinition[];
@@ -77,6 +97,16 @@ interface BodyModelCanvasProps {
   operationEvent: DigitalTwinCycleEvent | null;
   onOperationError: (error: unknown) => void;
 }
+
+const INITIAL_COFFEE_PLAYBACK: CoffeeGroundPlayback = {
+  phase: "idle",
+  cycleId: null,
+};
+
+const INITIAL_WATER_PLAYBACK: WaterFlowPlayback = {
+  phase: "idle",
+  cycleId: null,
+};
 
 interface CompressorPosePair {
   source: THREE.Object3D;
@@ -153,7 +183,12 @@ function disposeModel(
 function findUniqueSourceNode(root: THREE.Object3D, sourceName: string) {
   const matches: THREE.Object3D[] = [];
   root.traverse((candidate) => {
-    if (candidate.userData.name === sourceName) matches.push(candidate);
+    if (
+      candidate.userData.name === sourceName ||
+      candidate.name === sourceName
+    ) {
+      matches.push(candidate);
+    }
   });
 
   if (matches.length === 0) {
@@ -532,6 +567,11 @@ function BodyScene({
   zoomLevel,
   excludedNodeNames,
   includeMayxoayNode,
+  enableCoffeeEffect,
+  coffeeRunRequest,
+  enableWaterEffect,
+  waterRunRequest,
+  waterResetRequest,
   includeCompressorMotion,
   compressorModelUrls,
   compressorAttachedModelDefinitions,
@@ -547,6 +587,18 @@ function BodyScene({
     useState<THREE.Group | null>(null);
   const [compressorDisplayRoot, setCompressorDisplayRoot] =
     useState<THREE.Group | null>(null);
+  const [coffeeAnchorNode, setCoffeeAnchorNode] =
+    useState<THREE.Object3D | null>(null);
+  const [coffeeTargetNode, setCoffeeTargetNode] =
+    useState<THREE.Object3D | null>(null);
+  const [coffeePlayback, setCoffeePlayback] = useState<CoffeeGroundPlayback>(
+    INITIAL_COFFEE_PLAYBACK,
+  );
+  const [waterOutletNode, setWaterOutletNode] =
+    useState<THREE.Object3D | null>(null);
+  const [waterPlayback, setWaterPlayback] = useState<WaterFlowPlayback>(
+    INITIAL_WATER_PLAYBACK,
+  );
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const environmentMapRef = useRef<THREE.Texture | null>(null);
   const compressorRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
@@ -554,10 +606,97 @@ function BodyScene({
   const operationVisualStateRef = useRef<OperationVisualState | null>(null);
   const operationCycleIdRef = useRef<string | null>(null);
   const operationMotionProgressRef = useRef({ main: 0, lower: 1 });
+  const previousCoffeeRunRequestRef = useRef(coffeeRunRequest);
+  const previousWaterRunRequestRef = useRef(waterRunRequest);
+  const previousWaterResetRequestRef = useRef(waterResetRequest);
   const restoreOperationState = useCallback(
     () => restoreOperationVisualState(operationVisualStateRef),
     [],
   );
+
+  useEffect(() => {
+    if (!enableCoffeeEffect) {
+      setCoffeePlayback((previous) =>
+        previous.phase === "idle" && previous.cycleId === null
+          ? previous
+          : INITIAL_COFFEE_PLAYBACK,
+      );
+      return;
+    }
+
+    if (!operationEvent || operationEvent.phase === "idle") {
+      setCoffeePlayback((previous) =>
+        previous.phase === "idle" && previous.cycleId === null
+          ? previous
+          : INITIAL_COFFEE_PLAYBACK,
+      );
+      return;
+    }
+
+    if (operationEvent.phase === "fault") {
+      setCoffeePlayback((previous) =>
+        previous.phase === "fault" && previous.cycleId === null
+          ? previous
+          : { phase: "fault", cycleId: null },
+      );
+      return;
+    }
+
+    if (operationEvent.phase === "grinding") {
+      setCoffeePlayback((previous) =>
+        previous.phase === "idle" && previous.cycleId === null
+          ? previous
+          : INITIAL_COFFEE_PLAYBACK,
+      );
+      return;
+    }
+
+    if (operationEvent.phase === "dosing") {
+      setCoffeePlayback((previous) =>
+        previous.cycleId === operationEvent.cycleId &&
+        previous.phase === "running"
+          ? previous
+          : { phase: "running", cycleId: operationEvent.cycleId },
+      );
+    }
+  }, [enableCoffeeEffect, operationEvent]);
+
+  useEffect(() => {
+    if (previousCoffeeRunRequestRef.current === coffeeRunRequest) return;
+    previousCoffeeRunRequestRef.current = coffeeRunRequest;
+    if (!enableCoffeeEffect) return;
+
+    setCoffeePlayback({
+      phase: "running",
+      cycleId: `manual-coffee-${coffeeRunRequest}`,
+    });
+  }, [coffeeRunRequest, enableCoffeeEffect]);
+
+  useEffect(() => {
+    if (previousWaterRunRequestRef.current === waterRunRequest) return;
+    previousWaterRunRequestRef.current = waterRunRequest;
+    if (!enableWaterEffect) return;
+
+    setWaterPlayback({
+      phase: "running",
+      cycleId: `manual-water-${waterRunRequest}`,
+    });
+  }, [enableWaterEffect, waterRunRequest]);
+
+  useEffect(() => {
+    if (previousWaterResetRequestRef.current === waterResetRequest) return;
+    previousWaterResetRequestRef.current = waterResetRequest;
+    setWaterPlayback(INITIAL_WATER_PLAYBACK);
+  }, [waterResetRequest]);
+
+  useEffect(() => {
+    if (enableWaterEffect) return;
+    setWaterPlayback((previous) =>
+      previous.phase === "idle" && previous.cycleId === null
+        ? previous
+        : INITIAL_WATER_PLAYBACK,
+    );
+  }, [enableWaterEffect]);
 
   useEffect(() => {
     const room = new RoomEnvironment();
@@ -620,6 +759,11 @@ function BodyScene({
     };
 
     onLoadStart();
+    setCoffeeAnchorNode(null);
+    setCoffeeTargetNode(null);
+    setCoffeePlayback(INITIAL_COFFEE_PLAYBACK);
+    setWaterOutletNode(null);
+    setWaterPlayback(INITIAL_WATER_PLAYBACK);
     const bodyLoad = loader.loadAsync(COFFEE_MACHINE_MODEL_URL).then((gltf) => {
       loadedScene = gltf.scene;
       return gltf;
@@ -708,6 +852,15 @@ function BodyScene({
         try {
           // The GLB's native orientation puts the machine head on the viewer's left.
           const bodyScene = bodyResult.value.scene;
+          const coffeeAnchorNode = enableCoffeeEffect
+            ? findUniqueSourceNode(
+                bodyScene,
+                MAYXOAY_COFFEE_SKETCH18_CALIBRATION.anchor.sourceName,
+              )
+            : null;
+          const waterOutletNode = enableWaterEffect
+            ? findUniqueSourceNode(bodyScene, BODY_COFFEE_OUTLET_NODE_NAME)
+            : null;
 
         let mayxoayNode: THREE.Object3D | null = null;
         if (mayxoayResult.value) {
@@ -734,6 +887,7 @@ function BodyScene({
 
         let nextCompressorDisplayRoot: THREE.Group | null = null;
         let nextCompressorPosePairs: CompressorPosePair[] = [];
+        let nextCoffeeTargetNode: THREE.Object3D | null = null;
         const compressorPayload = compressorResult.value;
         if (compressorPayload) {
           const compressorParts = compressorPayload.scenes.map((scene) =>
@@ -797,8 +951,23 @@ function BodyScene({
           syncCompressorDisplayPose(nextCompressorPosePairs, displayRoot);
         }
 
+        if (enableCoffeeEffect) {
+          if (!nextCompressorDisplayRoot) {
+            throw new Error(
+              "Coffee flow target is unavailable: compressor display is not loaded.",
+            );
+          }
+          nextCoffeeTargetNode = findUniqueSourceNode(
+            nextCompressorDisplayRoot,
+            CLUSTER_BOX_NEN_NODE_NAME,
+          );
+        }
+
         compressorPosePairsRef.current = nextCompressorPosePairs;
         setModel(bodyScene);
+        setCoffeeAnchorNode(coffeeAnchorNode);
+        setCoffeeTargetNode(nextCoffeeTargetNode);
+        setWaterOutletNode(waterOutletNode);
         setCompressorRuntimeModel(loadedClusterModel);
         setCompressorDisplayRoot(nextCompressorDisplayRoot);
         onReady();
@@ -824,6 +993,8 @@ function BodyScene({
     compressorMotionDefinitionUrls,
     compressorRootFrameUrl,
     excludedNodeNames,
+    enableCoffeeEffect,
+    enableWaterEffect,
     includeCompressorMotion,
     includeMayxoayNode,
     onError,
@@ -934,8 +1105,11 @@ function BodyScene({
     if (compressorDisplayRoot) {
       combinedBounds.union(new THREE.Box3().setFromObject(compressorDisplayRoot));
     }
+    if (enableWaterEffect && waterOutletNode) {
+      combinedBounds.union(createWaterFlowBounds(waterOutletNode));
+    }
     return combinedBounds;
-  }, [compressorDisplayRoot, model]);
+  }, [compressorDisplayRoot, enableWaterEffect, model, waterOutletNode]);
 
   useEffect(() => {
     if (!model || !bounds || !controlsRef.current) return;
@@ -952,6 +1126,21 @@ function BodyScene({
           ) : null}
           {compressorDisplayRoot ? (
             <primitive object={compressorDisplayRoot} dispose={null} />
+          ) : null}
+          {enableCoffeeEffect && coffeeAnchorNode && coffeeTargetNode ? (
+            <CoffeeGroundEffect
+              anchorNode={coffeeAnchorNode}
+              anchor={MAYXOAY_COFFEE_SKETCH18_CALIBRATION.anchor}
+              targetNode={coffeeTargetNode}
+              target={MAYXOAY_COFFEE_BOX_NEN_TARGET}
+              playback={coffeePlayback}
+            />
+          ) : null}
+          {enableWaterEffect && waterOutletNode ? (
+            <WaterFlowEffect
+              sourceNode={waterOutletNode}
+              playback={waterPlayback}
+            />
           ) : null}
         </>
       ) : null}
@@ -982,6 +1171,11 @@ export default function BodyModelCanvas({
   zoomLevel,
   excludedNodeNames,
   includeMayxoayNode,
+  enableCoffeeEffect,
+  coffeeRunRequest,
+  enableWaterEffect,
+  waterRunRequest,
+  waterResetRequest,
   includeCompressorMotion,
   compressorModelUrls,
   compressorAttachedModelDefinitions,
@@ -1007,6 +1201,11 @@ export default function BodyModelCanvas({
         zoomLevel={zoomLevel}
         excludedNodeNames={excludedNodeNames}
         includeMayxoayNode={includeMayxoayNode}
+        enableCoffeeEffect={enableCoffeeEffect}
+        coffeeRunRequest={coffeeRunRequest}
+        enableWaterEffect={enableWaterEffect}
+        waterRunRequest={waterRunRequest}
+        waterResetRequest={waterResetRequest}
         includeCompressorMotion={includeCompressorMotion}
         compressorModelUrls={compressorModelUrls}
         compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
