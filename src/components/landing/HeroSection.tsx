@@ -1,59 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { CheckCircle2, RotateCcw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { CheckCircle2 } from "lucide-react";
 
-interface HeroSectionProps {
-  videoEnded?: boolean;
-  onVideoEnded?: () => void;
-}
-
-export function HeroSection({
-  videoEnded: externalVideoEnded,
-  onVideoEnded
-}: HeroSectionProps) {
-  const [internalVideoEnded, setInternalVideoEnded] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null);
+export function HeroSection() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const transitionRef = useRef<HTMLDivElement>(null);
-
-  const isEnded = externalVideoEnded !== undefined ? externalVideoEnded : internalVideoEnded;
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
-    updateViewport();
-    mediaQuery.addEventListener("change", updateViewport);
-    return () => mediaQuery.removeEventListener("change", updateViewport);
-  }, []);
-
-  const handleVideoEnded = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-    setInternalVideoEnded(true);
-    onVideoEnded?.();
-  }, [onVideoEnded]);
-
-  const handleSkip = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = videoRef.current.duration || 9999;
-      videoRef.current.pause();
-    }
-    handleVideoEnded();
-  }, [handleVideoEnded]);
-
-  const handleReplay = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => { });
-      setInternalVideoEnded(false);
-    }
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,19 +54,7 @@ export function HeroSection({
     };
   }, []);
 
-  const isVisible = isEnded && !isScrolledOut;
-
-  // Fallback: If autoplay is blocked or fails, safely transition after a timeout
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (videoRef.current && videoRef.current.paused && !isEnded && videoRef.current.currentTime === 0) {
-        videoRef.current.play().catch(() => {
-          handleVideoEnded();
-        });
-      }
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [isEnded, handleVideoEnded]);
+  const isVisible = !isScrolledOut;
 
   return (
     <section
@@ -119,15 +62,16 @@ export function HeroSection({
       id="home"
       className="relative w-full min-h-screen flex items-center overflow-hidden bg-black"
     >
-      {/* ── Background Video: 100% natural, crisp 1080p, no blur, no darkening ── */}
-      <video
-        ref={videoRef}
-        src={isMobileViewport === null ? undefined : isMobileViewport ? "/video/espresso_intro_mobile.mp4" : "/video/espresso_intro.mp4?v=1080p"}
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleVideoEnded}
-        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+      {/* Static end frames from each viewport's hero video. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 hidden bg-cover bg-center lg:block"
+        style={{ backgroundImage: 'url("/images/landing-hero-desktop.jpg")' }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center lg:hidden"
+        style={{ backgroundImage: 'url("/images/landing-hero-mobile.jpg")' }}
       />
 
       <div
@@ -142,28 +86,6 @@ export function HeroSection({
             background: "linear-gradient(180deg, transparent 0%, rgba(114, 28, 36, .035) 34%, rgba(253, 251, 247, .75) 76%, #FDFBF7 100%)",
           }}
         />
-      </div>
-
-      {/* ── Minimalist Video Controls ── */}
-      <div className={`absolute z-30 bottom-6 right-6 sm:bottom-8 sm:right-8 transition-opacity duration-500 ${isScrolledOut ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-        {!isEnded ? (
-          <button
-            onClick={handleSkip}
-            className="px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/15 text-white/70 hover:text-white text-xs tracking-wider uppercase font-light transition-all duration-300"
-            title="Bỏ qua video"
-          >
-            Bỏ qua →
-          </button>
-        ) : (
-          <button
-            onClick={handleReplay}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/15 text-white/70 hover:text-white text-xs tracking-wider font-light transition-all duration-300 group"
-            title="Xem lại video"
-          >
-            <RotateCcw className="w-3 h-3 group-hover:-rotate-45 transition-transform duration-300" />
-            <span>Xem lại</span>
-          </button>
-        )}
       </div>
 
       {/* ── Main Content: Clean, Luxurious, Minimalist ── */}
