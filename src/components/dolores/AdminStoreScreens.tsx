@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DoloresButton,
   DoloresField,
@@ -9,6 +9,7 @@ import {
   DoloresPanelTitle,
   DoloresTable,
 } from "@/components/dolores/DoloresUI";
+import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type StoreView = "list" | "detail";
@@ -30,8 +31,9 @@ function StoreDialog({ success, onConfirm, onClose }: { success: boolean; onConf
 }
 
 export default function AdminStoreScreens({ initialView = "list" }: { initialView?: StoreView }) {
-  const [view, setView] = useState<StoreView>(initialView);
+  const [view, setView] = useRouteView<StoreView>(initialView);
   const [overlay, setOverlay] = useState<Overlay>(null);
+  useEffect(() => { setOverlay(null); }, [initialView]);
 
   if (view === "detail") {
     return (

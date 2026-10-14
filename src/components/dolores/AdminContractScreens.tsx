@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DoloresButton, DoloresPanel, DoloresPanelTitle, DoloresTable } from "@/components/dolores/DoloresUI";
+import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type ContractView = "list" | "c204" | "c205" | "history";
@@ -16,8 +17,9 @@ function ContractField({ label, value }: { label: string; value: string }) {
 }
 
 export default function AdminContractScreens({ initialView = "list" }: { initialView?: ContractView }) {
-  const [view, setView] = useState<ContractView>(initialView);
+  const [view, setView] = useRouteView<ContractView>(initialView);
   const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => { setPreviewOpen(false); }, [initialView]);
 
   if (previewOpen) {
     return (

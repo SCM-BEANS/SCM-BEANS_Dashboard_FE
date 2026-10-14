@@ -1,0 +1,217 @@
+[
+  {
+    "case": "F01 click menu",
+    "result": "Pass",
+    "url": "http://127.0.0.1:3000/admin/menu?view=items",
+    "heading": "Global Menu mùa hè · các món"
+  },
+  {
+    "case": "N01 Tổng quan",
+    "active": [
+      "Tổng quan"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Tài khoản",
+    "active": [
+      "Tài khoản"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Khách hàng",
+    "active": [
+      "Khách hàng"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Cửa hàng",
+    "active": [
+      "Cửa hàng"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Hợp đồng",
+    "active": [
+      "Hợp đồng"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Máy & tồn kho",
+    "active": [
+      "Máy & tồn kho"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Giám sát Smart IoT",
+    "active": [
+      "Giám sát Smart IoT"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Menu & công thức",
+    "active": [
+      "Menu & công thức"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Báo cáo vận hành",
+    "active": [
+      "Báo cáo vận hành"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "N01 Thông báo",
+    "active": [
+      "Thông báo"
+    ],
+    "result": "Pass"
+  },
+  {
+    "case": "F07 invalid account",
+    "result": "Pass"
+  },
+  {
+    "case": "F07 account payload reload",
+    "result": "Pass"
+  },
+  {
+    "case": "F02 missing milk",
+    "result": "Pass"
+  },
+  {
+    "case": "F07 account persisted retest",
+    "result": "Pass",
+    "actual": "Họ tên\tVai trò\tPhạm vi\tTrạng thái\nNguyễn Minh Anh\tKhách hàng\tCà phê Mộc\thoạt động\nLan Anh\tModerator\tVận hành Dolores\thoạt động\nNguyễn Văn Nam\tTechnician\tCông việc được giao\thoạt động\nDemo Review\tKhách hàng\tCà phê Mộc\thoạt động"
+  },
+  {
+    "case": "D01 cancel",
+    "result": "Pass"
+  },
+  {
+    "case": "F03 pending reload 20g 60ml",
+    "result": "Pass",
+    "actual": "Đã gửi · chờ máy cập nhật\n\nGlobal Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ.\n\nThông tin chi tiết\n\nMáy nhận\n\nS-018 · Cà phê Mộc\n\nBản đã gửi\n\nCông thức riêng · v1\n\nThay đổi\n\nEspresso: nước pha 40 → 60 ml; cà phê 20 g\n\nMenu máy đã báo gần nhất\n\nGlobal Menu mùa hè · v3\n\nChưa xác nhận áp dụng\n\nĐã gửi cấu hình không đồng nghĩa máy đã áp dụng. Kiểm tra trạng thái máy để xem phản hồi mới nhất."
+  },
+  {
+    "case": "F03 applied reload",
+    "result": "Pass",
+    "actual": "Món\tThành phần bắt buộc\tĐịnh lượng đã áp dụng\tPhạm vi\nEspresso\tCà phê\t20 g · 60 ml nước\tS-018 · của tôi\nCà phê sữa tươi\tCà phê + sữa tươi\t18 g · 120 ml sữa\tS-018 · của tôi"
+  },
+  {
+    "case": "F05 settlement before assessment",
+    "result": "Pass"
+  },
+  {
+    "case": "F05 technician payload at moderator",
+    "result": "Pass"
+  },
+  {
+    "case": "F05 settlement after valid assessment",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Chưa thanh toán · còn trong hạn",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Đã thanh toán",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Đã đối soát",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Đã hoàn tất",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Quá hạn",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 Không còn chỉnh sửa",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 stale confirmation cleared",
+    "result": "Pass"
+  },
+  {
+    "case": "F06 carry history payload reload",
+    "result": "Pass"
+  },
+  {
+    "case": "F03 invalid milk zero",
+    "result": "Pass"
+  },
+  {
+    "case": "F03 milk 150ml pending reload and separate recipe",
+    "result": "Pass"
+  },
+  {
+    "case": "D01 water 60ml reload",
+    "result": "Pass",
+    "actual": "Đã gửi · chờ máy cập nhật\n\nGlobal Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ.\n\nThông tin chi tiết\n\nMáy nhận\n\nS-018 · Cà phê Mộc\n\nBản đã gửi\n\nCông thức riêng · v2\n\nThay đổi\n\nEspresso: nước pha 40 → 60 ml; cà phê 18 g\n\nMenu máy đã báo gần nhất\n\nGlobal Menu mùa hè · v3\n\nChưa xác nhận áp dụng\n\nĐã gửi cấu hình không đồng nghĩa máy đã áp dụng. Kiểm tra trạng thái máy để xem phản hồi mới nhất."
+  },
+  {
+    "case": "D01 coffee 20g reload",
+    "result": "Pass",
+    "actual": "Đã gửi · chờ máy cập nhật\n\nGlobal Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ.\n\nThông tin chi tiết\n\nMáy nhận\n\nS-018 · Cà phê Mộc\n\nBản đã gửi\n\nCông thức riêng · v3\n\nThay đổi\n\nEspresso: nước pha 40 → 40 ml; cà phê 20 g\n\nMenu máy đã báo gần nhất\n\nGlobal Menu mùa hè · v3\n\nChưa xác nhận áp dụng\n\nĐã gửi cấu hình không đồng nghĩa máy đã áp dụng. Kiểm tra trạng thái máy để xem phản hồi mới nhất."
+  },
+  {
+    "case": "F01 Admin query Back",
+    "result": "Pass"
+  },
+  {
+    "case": "F01 Admin query Forward",
+    "result": "Pass"
+  },
+  {
+    "case": "F01 Store query",
+    "result": "Pass"
+  },
+  {
+    "case": "F01 Contract query",
+    "result": "Pass",
+    "actual": "Chi tiết hợp đồng C-204\n\nTheo dõi hồ sơ và xử lý công việc trong phạm vi được giao.\n\nThông tin chi tiết\nKhách hàng / cửa hàng\nNguyễn Minh Anh / Cà phê Mộc\nHợp đồng / máy chính\nC-204 / S-018 · Smart IoT\nThời gian thuê\n01/04–31/10/2026\nGiá thuê\n750.000 đ/tháng + 1.000 đ/ly\nTiền cọc / lắp đặt\n10.000.000 đ / 1.000.000 đ\nTài liệu đã ký ngoài hệ thống\nC-204-signed.pdf\nNgưỡng offline theo hợp đồng\n5 ngày"
+  },
+  {
+    "case": "F01 Machine query",
+    "result": "Pass"
+  },
+  {
+    "case": "F01 Report query",
+    "result": "Pass"
+  },
+  {
+    "case": "F05 repair actual parts correct record retest",
+    "result": "Pass"
+  },
+  {
+    "case": "F05 repair payload at Moderator",
+    "result": "Pass"
+  },
+  {
+    "case": "F01 selected account reload",
+    "result": "Pass",
+    "actual": "Demo Review"
+  },
+  {
+    "case": "F03 previous applied version retained while pending",
+    "result": "Pass"
+  },
+  {
+    "case": "F03 menu list reflects applied versus pending",
+    "result": "Pass"
+  }
+]

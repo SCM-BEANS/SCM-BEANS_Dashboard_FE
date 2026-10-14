@@ -1,5 +1,6 @@
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 import { DoloresButton, DoloresMetric, DoloresPanel, DoloresPanelTitle } from "@/components/dolores/DoloresUI";
+import type { CSSProperties } from "react";
 
 const adminMonths = [
   ["132", "h-[109.056px]"],
@@ -31,7 +32,7 @@ function MonthlyBars({
   middleLabel: string;
 }) {
   return (
-    <div className="flex h-[220px] items-end gap-4">
+    <div className="dl-monthly-bars flex h-[220px] items-end gap-4">
       <div className="flex h-[220px] w-[55px] shrink-0 flex-col justify-between text-xs leading-[1.45] text-[#706561]">
         <span>{maxLabel}</span>
         <span>{middleLabel}</span>
@@ -41,7 +42,7 @@ function MonthlyBars({
         {data.map(([value, height], index) => (
           <div className="flex h-full min-w-0 flex-1 flex-col items-start justify-end gap-1.5" key={labels[index]}>
             <span className="text-sm font-semibold leading-[1.45] text-[#302927]">{value}</span>
-            <div className={"w-full rounded-[5px] bg-[#F4EAE3] " + height} />
+            <div className={"dl-month-bar w-full rounded-[5px] bg-[#F4EAE3] " + height} style={{ "--mobile-chart-height": `${Number.parseFloat(height.match(/[\d.]+/)?.[0] ?? "0") * 0.779}px` } as CSSProperties} />
             <span className="w-full text-xs leading-[1.45] text-[#706561]">{labels[index]}</span>
           </div>
         ))}
@@ -63,17 +64,17 @@ export function AdminOverviewPage() {
         </>
       }
     >
-      <div className="grid grid-cols-4 gap-4">
+      <div className="dl-admin-metrics dl-metrics grid grid-cols-4 gap-4">
         <DoloresMetric label="Doanh thu gộp · đã thu" value="196.400.000 đ" />
         <DoloresMetric label="Doanh thu thực tế · loại cọc" value="186.400.000 đ" />
         <DoloresMetric label="Tiền cọc thu trong kỳ" value="10.000.000 đ" />
         <DoloresMetric label="Smart đang kết nối" value="54 / 56 máy" />
       </div>
-      <DoloresPanel>
+      <DoloresPanel className="dl-admin-chart">
         <DoloresPanelTitle>Doanh thu thực tế theo tháng</DoloresPanelTitle>
         <p className="-mt-2 mb-3 text-sm leading-[1.45] text-[#706561]">04–09/2026 · Triệu đồng · Không bao gồm tiền cọc</p>
         <MonthlyBars data={adminMonths} labels={["T4", "T5", "T6", "T7", "T8", "T9"]} maxLabel="186.4" middleLabel="93" />
-        <p className="mt-3 text-[13px] leading-[1.45] text-[#706561]">Dữ liệu minh họa · 86 khách hàng · 98 máy đang thuê · 48.600 ly Smart trong tháng 09</p>
+        <p className="dl-chart-note mt-3 text-[13px] leading-[1.45] text-[#706561]">Dữ liệu minh họa · 86 khách hàng · 98 máy đang thuê · 48.600 ly Smart trong tháng 09</p>
       </DoloresPanel>
       <DoloresPanel>
         <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
@@ -100,17 +101,17 @@ export function CustomerOverviewPage() {
         </>
       }
     >
-      <div className="grid grid-cols-4 gap-4">
+      <div className="dl-metrics grid grid-cols-4 gap-4">
         <DoloresMetric label="Hợp đồng đang thuê" value="2" />
         <DoloresMetric label="Máy đang sử dụng" value="2" />
         <DoloresMetric label="Hóa đơn tháng 09" value="4.250.000 đ" />
         <DoloresMetric label="Ly Smart hợp lệ" value="2.000 ly" />
       </div>
-      <DoloresPanel>
+      <DoloresPanel className="dl-customer-chart">
         <DoloresPanelTitle>Số ly đã bán thành công</DoloresPanelTitle>
         <p className="-mt-2 mb-3 text-sm leading-[1.45] text-[#706561]">Tháng 04–09/2026 · Đơn vị: ly</p>
         <MonthlyBars data={customerMonths} labels={["T4", "T5", "T6", "T7", "T8", "T9"]} maxLabel="2000" middleLabel="1000" />
-        <p className="mt-3 text-[13px] leading-[1.45] text-[#706561]">Số ly hợp lệ đã nhận · máy Smart chính và máy thay thế theo thời gian thuê</p>
+        <p className="dl-chart-note mt-3 text-[13px] leading-[1.45] text-[#706561]">Số ly hợp lệ đã nhận · máy Smart chính và máy thay thế theo thời gian thuê</p>
       </DoloresPanel>
       <DoloresPanel>
         <DoloresPanelTitle>Cần theo dõi</DoloresPanelTitle>

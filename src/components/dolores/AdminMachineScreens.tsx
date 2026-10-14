@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   DoloresButton,
   DoloresNotice,
@@ -9,6 +8,7 @@ import {
   DoloresStatCard,
   DoloresTable,
 } from "@/components/dolores/DoloresUI";
+import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type MachineView = "inventory" | "stock" | "loan-history" | "s022" | "standard" | "mb017" | "repair-history" | "s018" | "repair-history-s018";
@@ -23,7 +23,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 }
 
 export default function AdminMachineScreens({ initialView = "inventory" }: { initialView?: MachineView }) {
-  const [view, setView] = useState<MachineView>(initialView);
+  const [view, setView] = useRouteView<MachineView>(initialView);
 
   if (view === "s018") {
     return (

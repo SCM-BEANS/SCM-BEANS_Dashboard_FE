@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { writeDemoFlow } from "@/components/dolores/demoFlowStore";
+import type { DemoRecord } from "@/schemas/doloresDemo";
+import { readDemoRecord, useDemoRecord, writeDemoRecord, writeDemoFlow } from "@/components/dolores/demoFlowStore";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 import {
   DoloresButton,
@@ -26,16 +27,16 @@ function Tabs({ labels, selected, onSelect }: { labels: string[]; selected: stri
   );
 }
 
-function ConfirmPanel({ title, message, onCancel, onConfirm }: { title: string; message: string; onCancel: () => void; onConfirm: () => void }) {
+function ConfirmPanel({ title, message, onCancel, onConfirm, confirmLabel = "Xác nhận", cancelLabel = "Hủy", variant = "default" }: { title: string; message: string; onCancel: () => void; onConfirm: () => void; confirmLabel?: string; cancelLabel?: string; variant?: "default" | "recipe" }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/30 p-6">
-      <section aria-labelledby="customer-confirm-title" aria-modal="true" className="w-full max-w-[580px] rounded-[20px] border border-[#E9E2DC] bg-white p-8 shadow-lg" role="dialog">
-        <p className="text-[11px] font-medium leading-4 text-[#706561]">Kiểm tra trước khi tiếp tục</p>
-        <h2 className="mt-3 text-xl font-semibold leading-7 text-[#302927]" id="customer-confirm-title">{title}</h2>
-        <p className="mt-3 text-sm leading-6 text-[#706561]">{message}</p>
-        <div className="mt-5 grid gap-5">
-          <DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton>
-          <DoloresButton onClick={onCancel} variant="secondary">Hủy</DoloresButton>
+    <div className={"fixed inset-0 z-50 flex items-center justify-center p-6 " + (variant === "recipe" ? "bg-[rgba(41,38,37,0.22)]" : "bg-[#302927]/30")}>
+      <section aria-labelledby="customer-confirm-title" aria-modal="true" className={"w-full max-w-[580px] rounded-[20px] bg-white p-8 " + (variant === "recipe" ? "flex flex-col gap-5" : "border border-[#E9E2DC] shadow-lg")} role="dialog">
+        <p className={variant === "recipe" ? "text-sm font-semibold leading-[1.45] text-[#292625]" : "text-[11px] font-medium leading-4 text-[#706561]"}>Kiểm tra trước khi tiếp tục</p>
+        <h2 className={variant === "recipe" ? "text-[26px] font-semibold leading-[1.45] text-[#292625]" : "mt-3 text-xl font-semibold leading-7 text-[#302927]"} id="customer-confirm-title">{title}</h2>
+        <p className={variant === "recipe" ? "text-base leading-[1.45] text-[#292625]" : "mt-3 text-sm leading-6 text-[#706561]"}>{message}</p>
+        <div className={"grid gap-5 " + (variant === "recipe" ? "" : "mt-5")}>
+          <DoloresButton onClick={onConfirm}>{confirmLabel}</DoloresButton>
+          <DoloresButton onClick={onCancel} variant="secondary">{cancelLabel}</DoloresButton>
         </div>
       </section>
     </div>
@@ -220,10 +221,25 @@ function InvoiceDetailPage() {
   );
 }
 
+function validRecipe(record: DemoRecord | undefined, dish: 'espresso' | 'fresh-milk') {
+  return record && record.payload.machine === 'S-018' && record.payload.dish === dish
+    && [record.payload.coffee, record.payload[dish === 'espresso' ? 'water' : 'milk']].every(value => Number.isFinite(Number(value)) && Number(value) > 0)
+    && (record.status === 'pending' || record.status === 'applied') ? record : undefined;
+}
+
 function MenuPage() {
+  const { record: espressoRecord } = useDemoRecord('customer:S-018:espresso');
+  const { record: milkRecord } = useDemoRecord('customer:S-018:fresh-milk');
+  const espresso = validRecipe(espressoRecord, 'espresso');
+  const freshMilk = validRecipe(milkRecord, 'fresh-milk');
+  const appliedQuantity = (record: typeof espresso, field: string, fallback: string) => {
+    const value = record?.status === 'applied' ? record.payload[field] : record?.payload['acknowledged' + field[0].toUpperCase() + field.slice(1)];
+    return value && Number.isFinite(Number(value)) && Number(value) > 0 ? value : fallback;
+  };
+  const recipeStatus = [espresso, freshMilk].filter(record => record?.status === 'pending' || record?.status === 'applied').map(record => (record?.payload.dish === 'espresso' ? 'Espresso' : 'Cà phê sữa tươi') + ' · v' + record?.version + ' · ' + (record?.status === 'applied' ? 'Máy đã xác nhận' : 'Chờ máy xác nhận')).join('; ');
   const rows = [
-    ["Espresso", "Cà phê", "18 g cà phê · 40 ml nước", <Link className="font-medium text-[#B81724]" href="/dashboard/menu/espresso" key="esp">Chỉnh định lượng</Link>],
-    ["Cà phê sữa tươi", "Cà phê + sữa tươi", "18 g cà phê · 120 ml sữa", <Link className="font-medium text-[#B81724]" href="/dashboard/menu/fresh-milk" key="milk">Chỉnh định lượng</Link>],
+    ["Espresso", "Cà phê", `${appliedQuantity(espresso,"coffee","18")} g cà phê · ${appliedQuantity(espresso,"water","40")} ml nước`, <Link className="font-medium text-[#B81724]" href="/dashboard/menu/espresso" key="esp">Chỉnh định lượng</Link>],
+    ["Cà phê sữa tươi", "Cà phê + sữa tươi", `${appliedQuantity(freshMilk,"coffee","18")} g cà phê · ${appliedQuantity(freshMilk,"milk","120")} ml sữa`, <Link className="font-medium text-[#B81724]" href="/dashboard/menu/fresh-milk" key="milk">Chỉnh định lượng</Link>],
   ];
   return (
     <DoloresPage
@@ -247,7 +263,7 @@ function MenuPage() {
         <div className="grid grid-cols-2 gap-8">
           <div><p className="text-[13px] text-[#706561]">Cửa hàng / máy</p><p className="mt-1 text-sm font-semibold">Cà phê Mộc / S-018 · Smart IoT</p></div>
           <div><p className="text-[13px] text-[#706561]">Global Menu Dolores đã nhận</p><p className="mt-1 text-sm font-semibold">Global Menu mùa hè · v3</p></div>
-          <div><p className="text-[13px] text-[#706561]">Bản chỉnh sửa riêng</p><p className="mt-1 text-sm font-semibold">Chưa có thay đổi</p></div>
+          <div><p className="text-[13px] text-[#706561]">Bản chỉnh sửa riêng</p><p className="mt-1 text-sm font-semibold">{recipeStatus || "Chưa có thay đổi"}</p></div>
           <div><p className="text-[13px] text-[#706561]">Phạm vi áp dụng</p><p className="mt-1 text-sm font-semibold">Chỉ máy S-018 của tôi</p></div>
         </div>
       </DoloresPanel>
@@ -259,6 +275,10 @@ function MenuPage() {
 }
 
 function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", initialMilk = "120", initialStage = "edit", initialError = false }: { freshMilk: boolean; initialCoffee?: string; initialWater?: string; initialMilk?: string; initialStage?: "edit" | "pending" | "applied"; initialError?: boolean }) {
+  const recordId = `customer:S-018:${freshMilk ? "fresh-milk" : "espresso"}`;
+  const { record, loaded } = useDemoRecord(recordId);
+  const { record: otherRecord } = useDemoRecord(`customer:S-018:${freshMilk ? "espresso" : "fresh-milk"}`);
+  const otherRecipe = validRecipe(otherRecord, freshMilk ? "espresso" : "fresh-milk");
   const [coffee, setCoffee] = useState(initialCoffee);
   const [water, setWater] = useState(initialWater);
   const [milk, setMilk] = useState(initialError ? "" : initialMilk);
@@ -266,6 +286,31 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
   const [validationError, setValidationError] = useState(initialError);
   const [stage, setStage] = useState<"edit" | "pending" | "applied">(initialStage);
   const [discardConfirm, setDiscardConfirm] = useState(false);
+  const valid = () => [coffee, freshMilk ? milk : water].every(value => Number.isFinite(Number(value)) && Number(value) > 0);
+  const savedRecipe = validRecipe(record, freshMilk ? "fresh-milk" : "espresso");
+  useEffect(() => {
+    if (!loaded) return;
+    setCoffee(savedRecipe?.payload.coffee ?? initialCoffee);
+    setWater(savedRecipe?.payload.water ?? initialWater);
+    setMilk(savedRecipe?.payload.milk ?? (initialError ? "" : initialMilk));
+    setStage(savedRecipe?.status === "applied" ? "applied" : savedRecipe?.status === "pending" ? "pending" : initialStage === "edit" ? "edit" : "pending");
+    setConfirming(false);
+  }, [savedRecipe, loaded, initialCoffee, initialWater, initialMilk, initialError, initialStage]);
+  const submitRecipe = () => {
+    if (!valid()) { setValidationError(true); setConfirming(false); return; }
+    const previous = readDemoRecord(recordId);
+    const version = (previous?.version ?? 0) + 1;
+    const acknowledgement = previous?.status === 'applied' ? { acknowledgedVersion: String(previous.version), acknowledgedCoffee: previous.payload.coffee, acknowledgedWater: previous.payload.water, acknowledgedMilk: previous.payload.milk } : { acknowledgedVersion: previous?.payload.acknowledgedVersion ?? '', acknowledgedCoffee: previous?.payload.acknowledgedCoffee ?? '', acknowledgedWater: previous?.payload.acknowledgedWater ?? '', acknowledgedMilk: previous?.payload.acknowledgedMilk ?? '' };
+    const saved = writeDemoRecord(recordId, "pending", { ...acknowledgement, machine: "S-018", dish: freshMilk ? "fresh-milk" : "espresso", coffee, water, milk }, version);
+    if (saved) { setConfirming(false); setStage("pending"); }
+  };
+  const acknowledge = () => {
+    const latest = readDemoRecord(recordId);
+    if (!savedRecipe || !latest || latest.status !== "pending" || latest.payload.machine !== "S-018" || latest.version !== savedRecipe.version || JSON.stringify(latest.payload) !== JSON.stringify(savedRecipe.payload)) return;
+    const saved = writeDemoRecord(recordId, "applied", { ...latest.payload, acknowledgedVersion: String(latest.version), acknowledgedCoffee: latest.payload.coffee, acknowledgedWater: latest.payload.water, acknowledgedMilk: latest.payload.milk }, latest.version);
+    if (saved) setStage("applied");
+  };
+  if (!loaded) return null;
 
   if (stage === "pending" || stage === "applied") {
     const applied = stage === "applied";
@@ -275,21 +320,21 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
         description="Global Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ."
         actions={
           <>
-            {applied ? <><DoloresButton onClick={() => setStage("edit")}>Chỉnh sửa công thức</DoloresButton><DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton></> : <DoloresButton onClick={() => { writeDemoFlow("S-018-private-menu", "machine-acknowledged"); setStage("applied"); }}>Mô phỏng xác nhận từ máy</DoloresButton>}
+            {applied ? <><DoloresButton onClick={() => setStage("edit")}>Chỉnh sửa công thức</DoloresButton><DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton></> : <DoloresButton disabled={!savedRecipe} onClick={acknowledge}>Mô phỏng xác nhận từ máy</DoloresButton>}
             <DoloresButton href="/dashboard/support" variant="secondary">Cần hỗ trợ cập nhật</DoloresButton>
           </>
         }
       >
         {applied ? <>
-          <DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Món", "Thành phần bắt buộc", "Định lượng đã áp dụng", "Phạm vi"]} rows={[["Espresso", "Cà phê", freshMilk ? "18 g · 40 ml nước" : `${coffee} g · ${water} ml nước`, "S-018 · của tôi"], ["Cà phê sữa tươi", "Cà phê + sữa tươi", freshMilk ? `${coffee} g · ${milk} ml sữa` : "18 g · 120 ml sữa", "S-018 · của tôi"]]} /></DoloresPanel>
-          <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Máy / cửa hàng" value="S-018 / Cà phê Mộc" /><DoloresField label="Menu máy báo hiện tại" value="Công thức riêng · v1" /><DoloresField label="Trạng thái" value="Máy báo cập nhật thành công" /><DoloresField label="Thay đổi đã áp dụng" value={freshMilk ? `Cà phê sữa tươi: ${milk} ml sữa` : `Espresso: nước ${water} ml; cà phê ${coffee} g`} /></DoloresFieldGrid></DoloresPanel>
+          <DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Món", "Thành phần bắt buộc", "Định lượng đã áp dụng", "Phạm vi"]} rows={[["Espresso", "Cà phê", freshMilk ? `${otherRecipe?.status === "applied" ? otherRecipe.payload.coffee : otherRecipe?.payload.acknowledgedCoffee || "18"} g · ${otherRecipe?.status === "applied" ? otherRecipe.payload.water : otherRecipe?.payload.acknowledgedWater || "40"} ml nước` : `${coffee} g · ${water} ml nước`, "S-018 · của tôi"], ["Cà phê sữa tươi", "Cà phê + sữa tươi", freshMilk ? `${coffee} g · ${milk} ml sữa` : `${otherRecipe?.status === "applied" ? otherRecipe.payload.coffee : otherRecipe?.payload.acknowledgedCoffee || "18"} g · ${otherRecipe?.status === "applied" ? otherRecipe.payload.milk : otherRecipe?.payload.acknowledgedMilk || "120"} ml sữa`, "S-018 · của tôi"]]} /></DoloresPanel>
+          <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Máy / cửa hàng" value="S-018 / Cà phê Mộc" /><DoloresField label="Menu máy báo hiện tại" value={`Công thức riêng · v${savedRecipe?.version ?? 1}`} /><DoloresField label="Trạng thái" value="Máy báo cập nhật thành công" /><DoloresField label="Thay đổi đã áp dụng" value={freshMilk ? `Cà phê sữa tươi: ${milk} ml sữa` : `Espresso: nước ${water} ml; cà phê ${coffee} g`} /></DoloresFieldGrid></DoloresPanel>
         </> : <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
           <div className="grid grid-cols-2 gap-8">
             <div><p className="text-[13px] text-[#706561]">Máy nhận</p><p className="mt-1 text-sm font-semibold">S-018 · Cà phê Mộc</p></div>
-            <div><p className="text-[13px] text-[#706561]">Bản đã gửi</p><p className="mt-1 text-sm font-semibold">Công thức riêng · v1</p></div>
+            <div><p className="text-[13px] text-[#706561]">Bản đã gửi</p><p className="mt-1 text-sm font-semibold">Công thức riêng · v{savedRecipe?.version ?? 1}</p></div>
             <div><p className="text-[13px] text-[#706561]">Thay đổi</p><p className="mt-1 text-sm font-semibold">{freshMilk ? "Cà phê sữa tươi: 120 → " + milk + " ml sữa" : "Espresso: nước pha 40 → " + water + " ml; cà phê " + coffee + " g"}</p></div>
-            <div><p className="text-[13px] text-[#706561]">Menu máy đã báo gần nhất</p><p className="mt-1 text-sm font-semibold">Global Menu mùa hè · v3</p></div>
+            <div><p className="text-[13px] text-[#706561]">Menu máy đã báo gần nhất</p><p className="mt-1 text-sm font-semibold">{savedRecipe?.payload.acknowledgedVersion ? `Công thức riêng · v${savedRecipe.payload.acknowledgedVersion}` : "Global Menu mùa hè · v3"}</p></div>
           </div>
         </DoloresPanel>}
         <DoloresNotice title={applied ? "Máy đã xác nhận áp dụng" : "Chưa xác nhận áp dụng"}>
@@ -319,7 +364,7 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
             )}
             <DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton>
             <DoloresButton onClick={() => setDiscardConfirm(true)} variant="secondary">Bỏ thay đổi</DoloresButton>
-            <DoloresButton onClick={() => { const valid = Number(coffee) > 0 && Number(freshMilk ? milk : water) > 0; setValidationError(!valid); if (valid) setConfirming(true); }}>Lưu & gửi menu riêng</DoloresButton>
+            <DoloresButton onClick={() => { setValidationError(!valid()); if (valid()) setConfirming(true); }}>Lưu & gửi menu riêng</DoloresButton>
           </>
         }
       >
@@ -349,13 +394,16 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
       </DoloresPage>
       {confirming && (
         <ConfirmPanel
-          title="Lưu và gửi menu riêng?"
-          message="Lưu công thức riêng và gửi một lần đến máy S-018? Máy cần xác nhận trước khi hiển thị trạng thái đã áp dụng."
+          title="Lưu và gửi công thức riêng?"
+          variant="recipe"
+          confirmLabel="Lưu & gửi"
+          cancelLabel="Đóng"
+          message={`Cà phê Mộc · ${freshMilk ? `Cà phê sữa tươi: sữa ${savedRecipe?.payload.milk ?? "120"} → ${milk} ml; cà phê ${coffee} g.` : `Espresso: cà phê ${savedRecipe?.payload.coffee ?? "18"} → ${coffee} g và nước ${savedRecipe?.payload.water ?? "40"} → ${water} ml.`} Lưu bản riêng và gửi đến S-018. Menu trên máy chỉ được xem là cập nhật khi máy xác nhận thành công.`}
           onCancel={() => setConfirming(false)}
-          onConfirm={() => { setConfirming(false); writeDemoFlow("S-018-private-menu", "pending"); setStage("pending"); }}
+          onConfirm={submitRecipe}
         />
       )}
-      {discardConfirm && <ConfirmPanel title="Bỏ bản chỉnh sửa riêng?" message="Các thay đổi chưa gửi sẽ bị bỏ. Menu đã áp dụng trên máy không thay đổi." onCancel={() => setDiscardConfirm(false)} onConfirm={() => { setDiscardConfirm(false); setCoffee("18"); setWater("40"); setMilk("120"); }} />}
+      {discardConfirm && <ConfirmPanel title="Bỏ bản chỉnh sửa riêng?" message="Các thay đổi chưa gửi sẽ bị bỏ. Menu đã áp dụng trên máy không thay đổi." onCancel={() => setDiscardConfirm(false)} onConfirm={() => { setDiscardConfirm(false); setCoffee(savedRecipe?.payload.coffee ?? "18"); setWater(savedRecipe?.payload.water ?? "40"); setMilk(savedRecipe?.payload.milk ?? "120"); }} />}
     </>
   );
 }

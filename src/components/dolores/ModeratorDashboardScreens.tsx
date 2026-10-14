@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
+import shellStyles from "@/components/dolores/DoloresShell.module.css";
 import {
   DoloresButton,
   DoloresField,
@@ -13,7 +14,7 @@ import {
   DoloresPanelTitle,
   DoloresTable,
 } from "@/components/dolores/DoloresUI";
-import { readDemoFlow, writeDemoFlow } from "@/components/dolores/demoFlowStore";
+import { isRetrievalAssessment, readDemoFields, readDemoRecord, useDemoRecord, writeDemoRecord, writeDemoFlow } from "@/components/dolores/demoFlowStore";
 
 const BASE = "/moderator";
 type Row = ReactNode[];
@@ -24,17 +25,17 @@ function ActionBar({ items }: { items: [string, string, "primary" | "secondary"]
 
 function Dashboard() {
   const bars = [["T1", 76], ["T2", 91], ["T3", 83], ["T4", 124], ["T5", 110], ["T6", 142], ["T7", 132], ["T8", 166]] as const;
-  return <DoloresPage title="Tổng quan hợp đồng & thanh toán" description="Việc ưu tiên cho Moderator: hợp đồng, hóa đơn, máy IoT và phản hồi khách." actions={<DoloresButton href={`${BASE}/invoices`}>Việc cần xử lý</DoloresButton>}>
-    <div className="grid grid-cols-4 gap-4">
+  return <DoloresPage title="Tổng quan hợp đồng & thanh toán" description="Việc ưu tiên cho Moderator: hợp đồng, hóa đơn, máy IoT và phản hồi khách." actions={<DoloresButton href={`${BASE}/invoices`}>Việc cần xử lý</DoloresButton>} showMobileActionsMenu={false}>
+    <div className="dl-metrics grid grid-cols-4 gap-4">
       <DoloresMetric label="Hợp đồng hiệu lực" value="98" />
       <DoloresMetric label="Chứng từ chờ đối chiếu" value="12" />
       <DoloresMetric label="Smart IoT đang thuê" value="56" />
       <DoloresMetric label="Máy IoT còn trong kho" value="12" />
     </div>
-    <DoloresPanel>
+    <DoloresPanel className="dl-moderator-chart">
       <DoloresPanelTitle>Số ly Smart IoT theo tháng</DoloresPanelTitle>
       <p className="-mt-3 text-[13px] leading-[1.45] text-[#706561]">Ly hợp lệ đã đồng bộ · dữ liệu minh họa</p>
-      <div className="mt-6 grid grid-cols-[32px_1fr] gap-4">
+      <div className="dl-moderator-bars mt-6 grid grid-cols-[32px_1fr] gap-4">
         <div className="flex h-[186px] flex-col justify-between pb-5 text-[10px] text-[#706561]"><span>166</span><span>83</span><span>0</span></div>
         <div className="grid grid-cols-8 items-end gap-3">
           {bars.map(([month, value]) => <div className="flex h-[186px] flex-col items-stretch justify-end" key={month}>
@@ -44,7 +45,7 @@ function Dashboard() {
           </div>)}
         </div>
       </div>
-      <p className="mt-3 text-[11px] leading-[1.45] text-[#706561]">Máy thường không gửi telemetry hoặc số ly lên Dolores.</p>
+      <p className="dl-chart-note mt-3 text-[11px] leading-[1.45] text-[#706561]">Máy thường không gửi telemetry hoặc số ly lên Dolores.</p>
     </DoloresPanel>
     <DoloresPanel><DoloresPanelTitle>Việc cần xử lý</DoloresPanelTitle><p className="text-sm font-semibold">12 chứng từ thanh toán</p><p className="mt-1 text-[13px] text-[#706561]">Tenant tải ảnh chuyển khoản; Moderator so khớp tài khoản công ty.</p></DoloresPanel>
   </DoloresPage>;
@@ -61,21 +62,98 @@ function DecisionDialog({ title, message, onCancel, onConfirm, success = false, 
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/30 p-6" role="presentation"><section aria-labelledby="moderator-dialog-title" aria-modal="true" className="w-full max-w-[580px] rounded-[20px] border border-[#E9E2DC] bg-white p-8 shadow-xl" role="dialog"><p className="text-[11px] font-medium leading-4 text-[#706561]">{success ? "Bản xem trước · dữ liệu cục bộ" : "Kiểm tra trước khi tiếp tục"}</p><h2 className="mt-3 text-xl font-semibold leading-7" id="moderator-dialog-title">{title}</h2><p className="mt-3 text-sm leading-6 text-[#706561]">{message}</p><div className="mt-5 grid gap-5">{success ? <><DoloresButton onClick={onConfirm}>Đóng</DoloresButton>{nextHref && <DoloresButton href={nextHref} variant="secondary">Tiếp tục</DoloresButton>}</> : <><DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton><DoloresButton variant="secondary" onClick={onCancel}>Hủy</DoloresButton></>}</div></section></div>;
 }
 
-function ActionForm({ title, description, fields, recordKey, action, returnHref, nextHref, notice }: { title: string; description: string; fields: [string, string, "text" | "file" | "select"][]; recordKey: string; action: string; returnHref: string; nextHref?: string; notice?: [string, string] }) {
+type FormField = [string, string, "text" | "file" | "select", string[]?];
+const positiveQuantity = (value: string) => /^\d+(?:\.\d+)?(?:\s*(?:g|ml))?$/.test(value.trim()) && Number.parseFloat(value) > 0;
+
+function ActionForm({ title, description, fields, recordKey, action, returnHref, nextHref, notice }: { title: string; description: string; fields: FormField[]; recordKey: string; action: string; returnHref: string; nextHref?: string; notice?: [string, string] }) {
   const [dialog, setDialog] = useState<"confirm" | "success" | null>(null);
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
-  const saveDemo = () => {
-    writeDemoFlow(recordKey, "submitted-demo");
-    setDialog("success");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const signature = JSON.stringify(fields);
+  useEffect(() => {
+    const saved = readDemoRecord('moderator:' + recordKey);
+    const initialFields: FormField[] = JSON.parse(signature);
+    setLocalValues({ ...saved?.payload, ...Object.fromEntries(initialFields.map(([,value,type],index) => ['field-' + index, saved?.payload['field-' + index] ?? (type === 'file' ? '' : value)])) });
+    setDialog(null); setErrors({});
+  }, [recordKey, signature]);
+  const values = Object.fromEntries(fields.map(([label,value,type],index) => [label, localValues['field-' + index] ?? (type === 'file' ? '' : value)]));
+  const validate = () => {
+    const next: Record<string,string> = {};
+    fields.forEach(([label,,type],index) => {
+      const value = values[label];
+      if ((type === 'file' || label === 'Tên món' || label === 'Họ tên') && !value.trim()) next['field-' + index] = 'Vui lòng bổ sung trước khi gửi';
+      if ((label === 'Cà phê' || label === 'Sữa tươi' || (label === 'Nước pha' && recordKey === 'espresso-recipe')) && !positiveQuantity(value)) next['field-' + index] = 'Thành phần bắt buộc phải có định lượng lớn hơn 0.';
+      if (label.includes('Email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) next['field-' + index] = 'Vui lòng bổ sung email hợp lệ trước khi gửi';
+    });
+    setErrors(next);
+    if (Object.keys(next).length) { setDialog(null); requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[aria-invalid="true"]')?.focus()); return false; }
+    return true;
   };
+  const saveDemo = () => {
+    if (!validate()) return;
+    const payload = Object.fromEntries(fields.map(([label,value,type],index) => ['field-' + index, localValues['field-' + index] ?? (type === 'file' ? '' : value)]));
+    if (writeDemoRecord('moderator:' + recordKey, 'submitted-demo', { ...localValues, ...payload }, (readDemoRecord('moderator:' + recordKey)?.version ?? 0) + 1)) setDialog('success');
+  };
+  const missingMilk = recordKey === 'menu-add-milk' && Boolean(errors['field-2']);
   return <>
-    <DoloresPage title={title} description={description} actions={<><DoloresButton onClick={() => setDialog("confirm")}>{action}</DoloresButton><DoloresButton href={returnHref} variant="secondary">Quay lại</DoloresButton></>}>
+    <DoloresPage title={missingMilk ? 'Thêm món · thiếu thành phần bắt buộc' : title} description={description} actions={<><DoloresButton onClick={() => { if (validate()) setDialog('confirm'); }}>{action}</DoloresButton><DoloresButton href={returnHref} variant="secondary">Quay lại</DoloresButton></>}>
       {notice && <DoloresNotice title={notice[0]}>{notice[1]}</DoloresNotice>}
-      <DoloresPanel><DoloresPanelTitle>Thông tin xử lý</DoloresPanelTitle><DoloresFieldGrid>{fields.map(([label, value, type]) => <DoloresField key={label} label={label} required={type === "file"}>
-        {type === "file" ? <input className="text-sm" type="file" aria-label={label} onChange={(event) => setLocalValues((current) => ({ ...current, [label]: event.target.files?.[0]?.name ?? "" }))} /> : type === "select" ? <select aria-label={label} className="bg-transparent text-sm outline-none" value={localValues[label] ?? value} onChange={(event) => setLocalValues((current) => ({ ...current, [label]: event.target.value }))}><option>{value}</option><option>Đã xác nhận</option><option>Chờ xử lý</option><option>Đã hoàn tất</option></select> : <input aria-label={label} className="w-full bg-transparent text-sm outline-none" defaultValue={value} />}
-      </DoloresField>)}</DoloresFieldGrid></DoloresPanel>
+      <DoloresPanel><DoloresPanelTitle>Thông tin xử lý</DoloresPanelTitle><DoloresFieldGrid>{fields.map(([label,value,type,options],index) => {
+        const id = 'field-' + index;
+        const update = (value: string) => setLocalValues(current => ({...current,[id]:value}));
+        return <DoloresField key={id} label={label} required={type === 'file' || label === 'Cà phê' || label === 'Sữa tươi'}>
+          {type === 'file' ? <><input className="text-sm" type="file" aria-label={label} aria-invalid={Boolean(errors[id])} aria-describedby={errors[id] ? id + '-error' : undefined} onChange={event => { const file = event.target.files?.[0]; update(file?.name ?? ''); setLocalValues(current => ({...current,[id + '-type']:file?.type ?? '',[id + '-size']:String(file?.size ?? '')})); }} />{localValues[id] && <span className="text-xs text-[#706561]">{localValues[id]}</span>}</> : type === 'select' ? <select aria-label={label} className="bg-transparent text-sm outline-none" value={values[label]} onChange={event => update(event.target.value)}>{Array.from(new Set(options ?? [value, "Đã xác nhận", "Chờ xử lý", "Đã hoàn tất"])).map(option => <option key={option}>{option}</option>)}</select> : <input aria-label={label} aria-invalid={Boolean(errors[id])} aria-describedby={errors[id] ? id + '-error' : undefined} className="w-full bg-transparent text-sm outline-none" value={values[label]} onChange={event => update(event.target.value)} />}
+          {errors[id] && <span id={id + '-error'} className="text-xs text-[#B81724]">{errors[id]}</span>}
+        </DoloresField>;
+      })}</DoloresFieldGrid></DoloresPanel>
+      {Object.keys(errors).length > 0 && <DoloresNotice title={missingMilk ? 'Thiếu thành phần bắt buộc' : 'Chưa thể gửi thông tin'} tone="warning">{missingMilk ? 'Món cà phê sữa tươi cần có định lượng sữa tươi. Chưa lưu công thức.' : 'Bổ sung thông tin được đánh dấu rồi gửi lại.'}</DoloresNotice>}
     </DoloresPage>
-    {dialog && <DecisionDialog success={dialog === "success"} nextHref={dialog === "success" ? nextHref : undefined} title={dialog === "success" ? "Đã ghi nhận trên bản xem trước" : `Xác nhận · ${title}`} message={dialog === "success" ? "Trạng thái được lưu trong trình duyệt để minh họa flow. Chưa có chứng từ, khoản tiền hay lệnh thiết bị nào được gửi lên hệ thống." : `${action}. Hãy kiểm tra lại thông tin trước khi tiếp tục.`} onCancel={() => setDialog(null)} onConfirm={() => dialog === "success" ? setDialog(null) : saveDemo()} />}
+    {dialog && <DecisionDialog success={dialog === 'success'} nextHref={dialog === 'success' ? nextHref : undefined} title={dialog === 'success' ? 'Đã ghi nhận trên bản xem trước' : 'Xác nhận · ' + title} message={dialog === 'success' ? 'Trạng thái và dữ liệu được lưu trong trình duyệt để minh họa flow.' : action + '. ' + Object.entries(values).map(([label,value]) => label + ': ' + value).join(' · ')} onCancel={() => setDialog(null)} onConfirm={() => dialog === 'success' ? setDialog(null) : saveDemo()} />}
+  </>;
+}
+
+function StandardContractPage() {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const signedDocument = "C-205-signed.pdf";
+  const contractFields = [
+    ["Khách hàng / shop", "Nguyễn Minh Anh / Cà phê Mộc"],
+    ["Máy chính", "C-031 · Máy thường"],
+    ["Thời hạn", "15/05–14/11/2026"],
+    ["Giá thuê", "1.500.000 đ/tháng"],
+    ["Đặt cọc / lắp đặt", "10.000.000 đ / 1.000.000 đ"],
+    ["Hợp đồng bản ký", `${signedDocument} · ký bên ngoài`],
+    ["Địa điểm hợp đồng", "Quận 3, TP. HCM"],
+  ];
+  return <>
+    <DoloresPage
+      title="Hồ sơ hợp đồng C-205"
+      description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
+      actions={<ActionBar items={[["Xem hóa đơn", `${BASE}/invoices`, "primary"], ["Lịch sử phiên bản", `${BASE}/invoices/history`, "secondary"], ["Danh sách hợp đồng", `${BASE}/contracts`, "secondary"]]} />}
+      mobileActions={<><DoloresButton onClick={() => setPreviewOpen(true)}>Xem bản ký</DoloresButton><DoloresButton href={`${BASE}/contracts/handover/standard`} variant="secondary">Bàn giao máy thường</DoloresButton></>}
+    >
+      <DoloresPanel>
+        <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
+        <div className="flex flex-col gap-3">
+          {contractFields.map(([label, value]) => <div className="flex flex-col gap-[5px]" key={label}>
+            <span className="text-xs leading-[1.45] text-[#706561]">{label}</span>
+            <span className="text-sm font-semibold leading-[1.45] text-[#302927]">{value}</span>
+          </div>)}
+        </div>
+      </DoloresPanel>
+    </DoloresPage>
+    {previewOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/30 p-4" role="presentation">
+      <section aria-labelledby="standard-contract-preview-title" aria-modal="true" className="flex w-full max-w-[358px] flex-col gap-4 rounded-[20px] bg-white px-5 py-6" role="dialog">
+        <p className="text-xs font-semibold leading-[1.45] text-[#706561]">Tài liệu trong hồ sơ</p>
+        <h2 className="text-[22px] font-semibold leading-[1.45] text-[#302927]" id="standard-contract-preview-title">Hồ sơ hợp đồng C-205</h2>
+        <p className="text-sm leading-[1.45] text-[#302927]">Tài liệu được lưu để xem và đối chiếu với hồ sơ.</p>
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#E9E2DC] p-4">
+          <h3 className="text-lg font-semibold leading-[1.45] text-[#302927]">Tài liệu</h3>
+          <p className="text-sm leading-[1.45] text-[#302927]">{signedDocument}</p>
+          <p className="text-sm leading-[1.45] text-[#302927]">Bản xem mẫu: chưa có ảnh/PDF gốc được cung cấp trong dữ liệu thiết kế.</p>
+        </div>
+        <DoloresButton variant="secondary" onClick={() => setPreviewOpen(false)}>Đóng</DoloresButton>
+      </section>
+    </div>}
   </>;
 }
 
@@ -84,7 +162,8 @@ function ContractScreens({ path }: { path: string }) {
     [<Link href={`${BASE}/contracts/C-204`} key="c204">C-204</Link>, "Cà phê Mộc · Nguyễn Minh Anh", "Smart IoT · S-018", "31/10/2026", "Sắp hết hạn", "Đã ký"],
     [<Link href={`${BASE}/contracts/C-205`} key="c205">C-205</Link>, "Cà phê Mộc · Nguyễn Minh Anh", "Máy thường · C-031", "14/11/2026", "Đang hiệu lực", "Đã ký"],
   ]} actions={[["Tạo hồ sơ hợp đồng", `${BASE}/contracts/new`, "primary"], ["Nhắc hợp đồng sắp hết hạn", `${BASE}/contracts/expiry`, "secondary"]]} />;
-  if (path === "contracts/C-204" || path === "contracts/C-205") return <DoloresPage title={`Hồ sơ hợp đồng ${path.endsWith("204") ? "C-204" : "C-205"}`} description="Thông tin cửa hàng, thiết bị, điều khoản và các sự kiện liên quan." actions={<ActionBar items={[["Xem hóa đơn", `${BASE}/invoices`, "primary"], ["Lịch sử phiên bản", `${BASE}/invoices/history`, "secondary"], ["Danh sách hợp đồng", `${BASE}/contracts`, "secondary"]]} />}><DoloresPanel><DoloresPanelTitle>Thông tin hợp đồng</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Khách hàng" value="Nguyễn Minh Anh" /><DoloresField label="Cửa hàng" value="Cà phê Mộc · Quận 3" /><DoloresField label="Loại máy" value={path.endsWith("204") ? "Smart IoT · S-018" : "Máy thường · C-031"} /><DoloresField label="Thời hạn" value={path.endsWith("204") ? "31/10/2026" : "14/11/2026"} /><DoloresField label="Hợp đồng đã ký" value="Có · hồ sơ minh họa" /><DoloresField label="Trạng thái" value="Đang hiệu lực" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
+  if (path === "contracts/C-205") return <><div className={shellStyles.desktopOnlyContent}><ContractsIndexFallback /></div><div className={shellStyles.mobileOnlyContent}><StandardContractPage /></div></>;
+  if (path === "contracts/C-204") return <DoloresPage title="Hồ sơ hợp đồng C-204" description="Thông tin cửa hàng, thiết bị, điều khoản và các sự kiện liên quan." actions={<ActionBar items={[["Xem hóa đơn", `${BASE}/invoices`, "primary"], ["Lịch sử phiên bản", `${BASE}/invoices/history`, "secondary"], ["Danh sách hợp đồng", `${BASE}/contracts`, "secondary"]]} />}><DoloresPanel><DoloresPanelTitle>Thông tin hợp đồng</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Khách hàng" value="Nguyễn Minh Anh" /><DoloresField label="Cửa hàng" value="Cà phê Mộc · Quận 3" /><DoloresField label="Loại máy" value="Smart IoT · S-018" /><DoloresField label="Thời hạn" value="31/10/2026" /><DoloresField label="Hợp đồng đã ký" value="Có · hồ sơ minh họa" /><DoloresField label="Trạng thái" value="Đang hiệu lực" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
   if (path === "contracts/expiry") return <ActionForm title="Nhắc hợp đồng sắp hết hạn" description="Gửi thông báo để khách hàng phản hồi về hợp đồng C-204." fields={[["Hợp đồng", "C-204 · Cà phê Mộc", "text"], ["Khách hàng", "Nguyễn Minh Anh", "text"], ["Hết hạn", "31/10/2026", "text"], ["Kết quả phản hồi", "Chưa phản hồi", "select"]]} recordKey="M11-C-204" action="Gửi nhắc hợp đồng" returnHref={`${BASE}/contracts`} notice={["Theo dõi phản hồi riêng", "Hồ sơ C-204 và trạng thái hợp đồng được giữ lại trong bản xem trước."]} />;
   if (path === "contracts/settlement") return <SettlementScreen />;
   if (path === "contracts/compensation" || path === "contracts/deposit-refund" || path === "contracts/refund-good") return <DepositActionScreen path={path} />;
@@ -120,11 +199,72 @@ function InvoiceScreens({ path }: { path: string }) {
   if (path === "invoices/reconcile") return <InvoiceReconcileScreen />;
   if (path === "invoices/shortfall") return <ActionForm title="Yêu cầu thanh toán phần còn thiếu" description="Gửi thông báo bổ sung cho phần còn thiếu của hóa đơn HD-09-204." fields={[["Hóa đơn", "HD-09-204", "text"], ["Tổng phải trả", "2.750.000 đ", "text"], ["Đã đối soát", "1.750.000 đ", "text"], ["Còn thiếu", "1.000.000 đ", "text"], ["Hạn thanh toán", "12/10/2026", "text"]]} recordKey="HD-09-204-shortfall" action="Gửi yêu cầu bổ sung" returnHref={`${BASE}/invoices/reconcile`} notice={["Nhắc hằng ngày", "Thông báo nhắc tiếp tục theo trạng thái thanh toán trên hóa đơn."]} />;
   if (path === "invoices/excess") return <ActionForm title="Hoàn khoản thanh toán thừa" description="Đối chiếu phản hồi khách hàng và ngân hàng trước khi ghi nhận khoản thừa." fields={[["Hóa đơn", "HD-09-205", "text"], ["Số phải trả", "1.500.000 đ", "text"], ["Đã nhận", "1.700.000 đ", "text"], ["Tiền thừa", "200.000 đ", "text"], ["Xác nhận khách hàng / ngân hàng", "Chờ đối chiếu", "select"]]} recordKey="HD-09-205-excess" action="Ghi nhận đã hoàn tiền thừa" returnHref={`${BASE}/invoices`} notice={["Điều kiện ghi nhận", "Chờ khách hàng xác nhận và khớp giao dịch ngân hàng; đây là khoản hoàn thừa, không phải hoàn cọc."]} />;
-  if (path === "invoices/late-cups" || path === "invoices/late-cups-final") return <ActionForm title={path.endsWith("final") ? "Ly gửi muộn · hóa đơn đã hoàn tất" : "Xử lý số ly gửi về muộn"} description="Chọn nhánh phù hợp với trạng thái hóa đơn và kỳ đối chiếu." fields={[["Hóa đơn", path.endsWith("final") ? "HD-09-204 · đã hoàn tất" : "HD-09-204 · chưa chốt", "text"], ["Ngày nhận dữ liệu", "02/10/2026", "text"], ["Số ly gửi muộn", "120 ly", "text"], ["Giá trị bổ sung", "120.000 đ", "text"], ["Trạng thái hóa đơn", path.endsWith("final") ? "Đã hoàn tất" : "Chưa thanh toán · còn trong hạn", "select"]]} recordKey="late-cups-120" action={path.endsWith("final") ? "Ghi nhận cộng kỳ sau" : "Tính lại & gửi bản mới"} returnHref={`${BASE}/invoices`} notice={["Điều kiện cập nhật", "Chỉ tính lại/gửi bản mới khi hóa đơn chưa thanh toán, còn trong hạn và còn chỉnh sửa. Nếu đã chốt hoặc quá điều kiện, chuyển số ly sang kỳ tiếp theo."]} />;
+  if (path === "invoices/late-cups" || path === "invoices/late-cups-final") return <LateCupsScreen finalized={path.endsWith("final")} />;
   if (path === "invoices/overdue") return <SceneTable title="Dư nợ quá hạn & phí cộng dồn" description="Theo dõi khoản quá hạn theo hóa đơn và kỳ phát sinh." headers={["Khách hàng", "Hóa đơn", "Gốc", "Phí cộng dồn", "Hạn thanh toán", "Trạng thái"]} rows={[["Cà phê Mộc", "HD-08-204", "1.000.000 đ", "Theo điều khoản", "11/09/2026", "Quá hạn"]]} actions={[["Mở hóa đơn", `${BASE}/invoices/reconcile`, "primary"], ["Danh sách hóa đơn", `${BASE}/invoices`, "secondary"]]} notice={["Không tự tính mức phạt", "Mức phí chỉ lấy theo điều khoản hợp đồng; bản xem trước không tự suy ra lãi hoặc phí."]} />;
-  if (path === "invoices/history") return <SceneTable title="Lịch sử phiên bản hóa đơn" description="Theo dõi các bản hóa đơn đã phát hành và thay đổi." headers={["Hóa đơn", "Phiên bản", "Ngày", "Thay đổi", "Trạng thái"]} rows={[["HD-09-204", "v2", "02/10/2026", "Thêm 120 ly gửi muộn", "Bản cập nhật minh họa"], ["HD-09-204", "v1", "30/09/2026", "Phát hành kỳ tháng 09", "Đã gửi"]]} actions={[["Mở đối soát", `${BASE}/invoices/reconcile`, "primary"], ["Về hóa đơn", `${BASE}/invoices`, "secondary"]]} />;
+  if (path === "invoices/history") return <InvoiceHistory />;
   if (path === "invoices/payg") return <SceneTable title="PAYG & số ly gửi về muộn" description="Đối chiếu dữ liệu theo máy, hợp đồng và chu kỳ." headers={["Máy", "Hợp đồng", "Loại", "Ly trong kỳ", "Giá/ly", "Thành tiền"]} rows={[["S-018", "C-204", "Smart IoT", "1.000", "2.000 đ", "2.000.000 đ"], ["S-022", "C-204", "Máy thay tạm", "120", "Theo hợp đồng", "Gộp C-204"]]} actions={[["Xử lý ly gửi muộn", `${BASE}/invoices/late-cups`, "primary"], ["Hóa đơn", `${BASE}/invoices`, "secondary"]]} notice={["Gắn đúng hợp đồng", "Usage máy thay thế được phân bổ theo kỳ cho hợp đồng chính; không tạo hợp đồng thanh toán riêng."]} />;
   return <InvoicesList />;
+}
+
+const BILL_STATUSES = ['Chưa thanh toán · còn trong hạn', 'Đã thanh toán', 'Đã đối soát', 'Đã hoàn tất', 'Quá hạn', 'Không còn chỉnh sửa'] as const;
+type BillStatus = typeof BILL_STATUSES[number];
+type BillFixture = { id: string; period: string; dueDate: string; receivedDate: string; status: BillStatus; editable: boolean };
+function canRecalculate(bill: BillFixture) {
+  return bill.status === 'Chưa thanh toán · còn trong hạn' && bill.editable && bill.receivedDate <= bill.dueDate;
+}
+function LateCupsScreen({ finalized }: { finalized: boolean }) {
+  const [status,setStatus] = useState<BillStatus>(finalized ? 'Đã hoàn tất' : BILL_STATUSES[0]);
+  const [dialog,setDialog] = useState<'confirm'|'success'|null>(null);
+  const [values,setValues] = useState({receivedDate:'02/10/2026',cups:'120 ly',amount:'120.000 đ'});
+  useEffect(() => {
+    const saved = readDemoRecord('moderator:HD-09-204:late-cups');
+    const payload = saved?.payload;
+    setStatus(payload && BILL_STATUSES.includes(payload.status as BillStatus) ? payload.status as BillStatus : finalized ? 'Đã hoàn tất' : BILL_STATUSES[0]);
+    if (payload && payload.bill === 'HD-09-204') setValues({receivedDate:payload.receivedDate ?? '02/10/2026', cups:payload.cups ?? '120 ly', amount:payload.amount ?? '120.000 đ'});
+    setDialog(null);
+  }, [finalized]);
+  const bill: BillFixture = {id:'HD-09-204',period:'09/2026',dueDate:'2026-10-12',receivedDate:'2026-10-02',status,editable:status !== 'Không còn chỉnh sửa'};
+  const recalculate = canRecalculate(bill);
+  const action = recalculate ? 'Tính lại & gửi bản mới' : 'Ghi nhận cộng kỳ sau';
+  const save = () => {
+    const previous = readDemoRecord('moderator:HD-09-204:late-cups');
+    let history: unknown[] = [];
+    try { const parsed: unknown = JSON.parse(previous?.payload.history ?? '[]'); if(Array.isArray(parsed)) history=parsed; } catch { /* Invalid history is not used. */ }
+    const action = canRecalculate(bill) ? 'recalculated' : 'carry-forward';
+    const invoiceVersion = 1 + history.filter(item => item && typeof item === 'object' && (item as Record<string, unknown>).action === 'recalculated').length + (action === 'recalculated' ? 1 : 0);
+    const entry = {...values,bill:bill.id,period:bill.period,status,action,invoiceVersion:String(invoiceVersion)};
+    if(writeDemoRecord('moderator:HD-09-204:late-cups',entry.action,{...entry,history:JSON.stringify([...history,entry])},(previous?.version ?? 0)+1)) setDialog('success');
+  };
+  return <>
+    <DoloresPage title={recalculate ? 'Xử lý số ly gửi về muộn' : 'Ly gửi muộn · hóa đơn đã hoàn tất'} description="Chọn nhánh phù hợp với trạng thái hóa đơn và kỳ đối chiếu." actions={<><DoloresButton onClick={()=>setDialog('confirm')}>{action}</DoloresButton><DoloresButton href={BASE + '/invoices'} variant="secondary">Quay lại</DoloresButton></>}>
+      <DoloresNotice title="Điều kiện cập nhật">Chỉ tính lại/gửi bản mới khi hóa đơn chưa thanh toán, còn trong hạn và còn chỉnh sửa. Nếu đã chốt hoặc quá điều kiện, chuyển số ly sang kỳ tiếp theo.</DoloresNotice>
+      <DoloresPanel><DoloresPanelTitle>Thông tin xử lý</DoloresPanelTitle><DoloresFieldGrid>
+        <DoloresField label="Hóa đơn" value={bill.id + (recalculate ? ' · chưa chốt' : ' · đã chốt / chuyển kỳ sau')} />
+        <DoloresField label="Ngày nhận dữ liệu" value={values.receivedDate} />
+        <DoloresField label="Số ly gửi muộn"><input aria-label="Số ly gửi muộn" className="bg-transparent text-sm outline-none" value={values.cups} onChange={event=>setValues(current=>({...current,cups:event.target.value}))} /></DoloresField>
+        <DoloresField label="Giá trị bổ sung"><input aria-label="Giá trị bổ sung" className="bg-transparent text-sm outline-none" value={values.amount} onChange={event=>setValues(current=>({...current,amount:event.target.value}))} /></DoloresField>
+        <DoloresField label="Trạng thái hóa đơn"><select aria-label="Trạng thái hóa đơn" className="bg-transparent text-sm outline-none" value={status} onChange={event=>{setStatus(event.target.value as BillStatus);setDialog(null);}}>{BILL_STATUSES.map(value=><option key={value}>{value}</option>)}</select></DoloresField>
+      </DoloresFieldGrid></DoloresPanel>
+    </DoloresPage>
+    {dialog && <DecisionDialog success={dialog==='success'} title={dialog==='success' ? 'Đã ghi nhận trên bản xem trước' : 'Xác nhận · Xử lý số ly gửi về muộn'} message={action + '. ' + bill.id + ' · ' + values.cups + ' · ' + values.amount} onCancel={()=>setDialog(null)} onConfirm={()=>dialog==='success' ? setDialog(null) : save()} />}
+  </>;
+}
+
+function InvoiceHistory() {
+  const { record } = useDemoRecord('moderator:HD-09-204:late-cups');
+  const rows: Row[] = [['HD-09-204', 'v1', '30/09/2026', 'Phát hành kỳ tháng 09', 'Đã gửi']];
+  try {
+    const history: unknown = JSON.parse(record?.payload.history ?? '[]');
+    let invoiceVersion = 1;
+    if (Array.isArray(history)) history.forEach((entry: unknown) => {
+      if (!entry || typeof entry !== 'object') return;
+      const item = entry as Record<string, unknown>;
+      if (item.bill !== 'HD-09-204' || typeof item.cups !== 'string' || typeof item.receivedDate !== 'string') return;
+      if (item.action === 'recalculated') invoiceVersion += 1;
+      rows.unshift([item.bill, 'v' + invoiceVersion, item.receivedDate, item.cups + ' · ' + String(item.amount ?? ''), item.action === 'recalculated' ? 'Tính lại · bản demo mới' : 'Cộng kỳ sau · giữ bản đã chốt']);
+    });
+  } catch { /* Malformed history cannot replace the issued fixture. */ }
+  return <SceneTable title="Lịch sử phiên bản hóa đơn" description="Theo dõi các bản hóa đơn đã phát hành và thay đổi." headers={['Hóa đơn','Phiên bản','Ngày','Thay đổi','Trạng thái']} rows={rows} actions={[["Mở đối soát", BASE + '/invoices/reconcile', "primary"], ["Về hóa đơn", BASE + '/invoices', "secondary"]]} />;
 }
 
 function InvoicesList() {
@@ -133,6 +273,13 @@ function InvoicesList() {
     ["Cà phê Mộc", "09/2026", "1.500.000 đ", "Nhận 1.700.000 đ", "Thừa 200.000 đ", <Link href={`${BASE}/invoices/excess`} key="m23">Hoàn thừa ›</Link>],
     ["Góc Phố", "08/2026", "1.200.000 đ", "Chưa nhận đủ", "Quá hạn", <Link href={`${BASE}/invoices/overdue`} key="m34">Mở ›</Link>],
   ]} actions={[["Đối soát chứng từ", `${BASE}/invoices/reconcile`, "primary"], ["PAYG", `${BASE}/invoices/payg`, "secondary"], ["Lịch sử phiên bản", `${BASE}/invoices/history`, "secondary"]]} />;
+}
+
+function RepairHistory() {
+  const { record } = useDemoRecord('technician:repair:CF-STD-026');
+  const fields = Object.fromEntries(readDemoFields(record));
+  const rows: Row[] = record ? [['Bản demo đã lưu', 'CF-STD-026', fields['Mô tả công việc'] ?? '', fields['Linh kiện thay'] ?? '', (fields['Giá'] ?? '') + ' · ' + (fields['Ghi chú lịch sử'] ?? '')]] : [['01/10/2026', 'S-018', 'Kiểm tra kết nối', 'Không ghi nhận', 'Đã gửi YC-017']];
+  return <SceneTable title="Lịch sử sửa chữa, bảo trì & linh kiện" description="Xem kết quả Technician đã gửi theo từng thiết bị." headers={['Ngày','Máy','Công việc','Linh kiện','Kết quả Technician']} rows={rows} actions={[["Yêu cầu kỹ thuật", BASE + '/technical-requests', "primary"]]} />;
 }
 
 function MachineScreens({ path }: { path: string }) {
@@ -144,7 +291,7 @@ function MachineScreens({ path }: { path: string }) {
   if (path === "machines/customer") return <SceneTable title="Máy của Nguyễn Minh Anh" description="Thiết bị của khách hàng và trạng thái theo hợp đồng." headers={["Mã máy", "Loại", "Hợp đồng", "Cửa hàng / vị trí", "Trạng thái", "Mở"]} rows={[["S-018", "Smart IoT", "C-204", "Cà phê Mộc · Quận 3", "Đang thuê", <Link href={`${BASE}/iot/machines`} key="smart">Dữ liệu Smart ›</Link>], ["C-031", "Máy thường", "C-205", "Cà phê Mộc · Quận 3", "Đang thuê", <Link href={`${BASE}/contracts/C-205`} key="std">Hồ sơ ›</Link>], ["S-022", "Smart IoT · máy thay", "C-204", "Đã trả", "Đã kết thúc", <Link href={`${BASE}/machines/loans`} key="loan">Lịch sử ›</Link>]]} actions={[["Hồ sơ khách hàng", `${BASE}/customers/nguyen-minh-anh`, "primary"], ["Danh sách máy", `${BASE}/machines`, "secondary"]]} />;
   if (path === "machines/stock") return <SceneTable title="Máy trong kho · chưa cho thuê" description="Xem máy theo loại và tình trạng sẵn sàng." headers={["Mã máy", "Loại máy", "Nguồn nhập", "Tình trạng", "Thao tác"]} rows={[["S-022", "Smart IoT", "Kho Dolores", "Sẵn sàng cho thuê", <Link href={`${BASE}/machines/S-022`} key="detail">Hồ sơ ›</Link>], ["C-034", "Máy thường", "Tồn kho", "Chờ kiểm tra", "Mở hồ sơ"]]} actions={[["Máy & tồn kho", `${BASE}/machines`, "primary"]]} />;
   if (path === "machines/loans") return <SceneTable title="Máy cho mượn & lịch sử sử dụng" description="Theo dõi máy tạm, hợp đồng chính và thời gian sử dụng." headers={["Máy tạm", "Loại", "Hợp đồng chính", "Bàn giao", "Trả máy"]} rows={[["S-022", "Smart IoT", "C-204 · S-018", "12/09/2026", "Đã trả 12/09/2026"]]} actions={[["Gán máy thay", `${BASE}/machines/substitute`, "primary"], ["Danh sách máy", `${BASE}/machines`, "secondary"]]} notice={["Máy thay cùng loại", "Ghép Smart IoT với Smart IoT và máy thường với máy thường; usage vẫn tính theo hợp đồng chính."]} />;
-  if (path === "machines/repair-history") return <SceneTable title="Lịch sử sửa chữa, bảo trì & linh kiện" description="Xem kết quả Technician đã gửi theo từng thiết bị." headers={["Ngày", "Máy", "Công việc", "Linh kiện", "Kết quả Technician"]} rows={[["01/10/2026", "S-018", "Kiểm tra kết nối", "Không ghi nhận", "Đã gửi YC-017"]]} actions={[["Yêu cầu kỹ thuật", `${BASE}/technical-requests`, "primary"]]} />;
+  if (path === "machines/repair-history") return <RepairHistory />;
   if (path === "machines/substitute") return <ActionForm title="Máy thay thế & phân bổ số ly" description="Gán máy thay tạm cùng loại vào hợp đồng chính." fields={[["Hợp đồng chính", "C-204", "text"], ["Máy chính", "S-018 · Smart IoT", "text"], ["Máy thay thế", "S-022 · Smart IoT", "select"], ["Kỳ sử dụng", "Theo hợp đồng", "text"], ["Ngày bàn giao", "Chọn ngày", "text"]]} recordKey="C-204-substitute" action="Ghi nhận máy thay thế" returnHref={`${BASE}/machines/loans`} notice={["Không tạo hợp đồng mới", "Usage máy thay được gộp vào hợp đồng chính theo kỳ."]} />;
   if (path === "machines/substitute/return") return <ActionForm title="Kết thúc sử dụng máy thay" description="Ghi nhận trả máy thay thế tạm thời về kho." fields={[["Hợp đồng chính", "C-204", "text"], ["Máy chính", "S-018 · Smart IoT", "text"], ["Máy thay thế", "S-022 · Smart IoT", "text"], ["Ngày trả", "12/09/2026", "text"], ["Usage theo kỳ", "Gộp vào C-204", "text"]]} recordKey="C-204-substitute-return" action="Ghi nhận trả máy thay" returnHref={`${BASE}/machines/loans`} notice={["Đúng loại thiết bị", "Máy Smart IoT được trả về kho Smart IoT; usage tiếp tục gắn với hợp đồng chính."]} />;
   if (path.startsWith("machines/")) return <DoloresPage title={`Hồ sơ máy ${path.split("/")[1]}`} description="Thông tin thiết bị và lịch sử gắn với hợp đồng." actions={<ActionBar items={[["Máy & tồn kho", `${BASE}/machines`, "primary"], ["Lịch sử sửa chữa", `${BASE}/machines/repair-history`, "secondary"]]} />}><DoloresPanel><DoloresPanelTitle>Thông tin máy</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Mã máy" value={path.split("/")[1]} /><DoloresField label="Loại máy" value="Smart IoT" /><DoloresField label="Trạng thái" value="Sẵn sàng cho thuê" /><DoloresField label="Lịch sử" value="Chưa ghi nhận cho thuê trong bản demo" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
@@ -178,15 +325,9 @@ function TechnicalScreens({ path }: { path: string }) {
 }
 
 function TechResult() {
-  const [status, setStatus] = useState<string | undefined>(undefined);
-  useEffect(() => {
-    const update = () => setStatus(readDemoFlow("YC-017"));
-    update();
-    window.addEventListener("dolores-demo-flow", update);
-    return () => window.removeEventListener("dolores-demo-flow", update);
-  }, []);
-  const assessed = status === "retrieved-assessed";
-  return <DoloresPage title="Kết quả Technician · YC-017" description="Kết quả thu hồi máy và đánh giá được gửi từ Technician." actions={<ActionBar items={[["Mở giao diện Technician", "/technician/tasks/YC-017", "primary"], ["Hợp đồng C-204", `${BASE}/contracts/C-204`, "secondary"], ["Danh sách yêu cầu", `${BASE}/technical-requests`, "secondary"]]} />}><DoloresPanel><DoloresPanelTitle>Thu hồi & đánh giá máy</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng" value="C-204" /><DoloresField label="Máy" value="S-018 · Smart IoT" /><DoloresField label="Technician" value="Nguyễn Văn Nam" /><DoloresField label="Trạng thái" value={assessed ? "Đã gửi kết quả từ màn Technician trong trình duyệt này" : "Đang chờ Technician gửi kết quả"} /><DoloresField label="Tình trạng" value={assessed ? "Đã thu hồi và đánh giá · bản xem trước" : "Chưa có kết quả"} /><DoloresField label="Chứng cứ" value="Ảnh / dữ liệu chưa đồng bộ" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Bước quyết toán">{assessed ? "Kết quả demo đã nhận. Kiểm tra hồ sơ và xử lý quyết toán theo hợp đồng; không thực hiện thanh toán trong giao diện frontend." : "Chưa mở quyết toán. Gửi YC-017 qua Technician trước khi xử lý tiền cọc."}</DoloresNotice>{assessed && <DoloresButton href={`${BASE}/contracts/settlement`}>Mở quyết toán sau đánh giá</DoloresButton>}</DoloresPage>;
+  const { record } = useDemoRecord("technician:retrieval:YC-017");
+  const assessed = isRetrievalAssessment(record);
+  return <DoloresPage title="Kết quả Technician · YC-017" description="Kết quả thu hồi máy và đánh giá được gửi từ Technician." actions={<ActionBar items={[["Mở giao diện Technician", "/technician/tasks/YC-017", "primary"], ["Hợp đồng C-204", `${BASE}/contracts/C-204`, "secondary"], ["Danh sách yêu cầu", `${BASE}/technical-requests`, "secondary"]]} />}><DoloresPanel><DoloresPanelTitle>Thu hồi & đánh giá máy</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng" value="C-204" /><DoloresField label="Máy" value="S-018 · Smart IoT" /><DoloresField label="Technician" value="Nguyễn Văn Nam" /><DoloresField label="Trạng thái" value={assessed ? "Đã gửi kết quả từ màn Technician trong trình duyệt này" : "Đang chờ Technician gửi kết quả"} /><DoloresField label="Tình trạng" value={assessed ? (record?.payload.damage === "yes" ? "Có hư hỏng · " : "Không hư hỏng · ") + record?.payload.notes : "Chưa có kết quả"} /><DoloresField label="Chứng cứ" value="Ảnh / dữ liệu chưa đồng bộ" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Bước quyết toán">{assessed ? "Kết quả demo đã nhận. Kiểm tra hồ sơ và xử lý quyết toán theo hợp đồng; không thực hiện thanh toán trong giao diện frontend." : "Chưa mở quyết toán. Gửi YC-017 qua Technician trước khi xử lý tiền cọc."}</DoloresNotice>{assessed && <DoloresButton href={`${BASE}/contracts/settlement`}>Mở quyết toán sau đánh giá</DoloresButton>}</DoloresPage>;
 }
 
 function InvoiceReconcileScreen() {
@@ -265,20 +406,16 @@ function InvoiceReconcileScreen() {
 }
 
 function SettlementScreen() {
-  const [technicianDone, setTechnicianDone] = useState(false);
+  const { record: assessment } = useDemoRecord("technician:retrieval:YC-017");
+  const technicianDone = isRetrievalAssessment(assessment);
+  const { record: settlement } = useDemoRecord("moderator:C-204-settlement");
   const [dialog, setDialog] = useState<"confirm" | "success" | null>(null);
-  useEffect(() => {
-    const update = () => setTechnicianDone(readDemoFlow("YC-017") === "retrieved-assessed");
-    update();
-    window.addEventListener("dolores-demo-flow", update);
-    return () => window.removeEventListener("dolores-demo-flow", update);
-  }, []);
   return <>
     <DoloresPage title="Quyết toán & hoàn cọc sau đánh giá" description="Xử lý riêng tiền đặt cọc sau khi Technician đã thu hồi và gửi đánh giá máy." actions={<><DoloresButton disabled={!technicianDone} onClick={() => setDialog("confirm")}>Ghi nhận quyết toán</DoloresButton><DoloresButton href={`${BASE}/technical-requests/YC-017`} variant="secondary">Xem kết quả Technician</DoloresButton><DoloresButton href={`${BASE}/contracts`} variant="secondary">Về hợp đồng</DoloresButton></>}>
-      <DoloresPanel><DoloresPanelTitle>C-204 · S-018</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Kết quả thu hồi" value={technicianDone ? "Đã nhận từ Technician · demo trình duyệt" : "Chưa có kết quả Technician"} /><DoloresField label="Đánh giá máy" value={technicianDone ? "Đã báo · kiểm tra hồ sơ trước khi quyết toán" : "Đang chờ đánh giá"} /><DoloresField label="Tiền đặt cọc" value="Theo hồ sơ hợp đồng" /><DoloresField label="Trạng thái quyết toán" value={readDemoFlow("C-204-settlement") === "recorded-demo" ? "Đã ghi nhận trên bản xem trước" : "Chưa quyết toán"} /></DoloresFieldGrid></DoloresPanel>
+      <DoloresPanel><DoloresPanelTitle>C-204 · S-018</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Kết quả thu hồi" value={technicianDone ? "Đã nhận từ Technician · demo trình duyệt" : "Chưa có kết quả Technician"} /><DoloresField label="Đánh giá máy" value={technicianDone ? assessment?.payload.notes ?? "Đã báo · kiểm tra hồ sơ trước khi quyết toán" : "Đang chờ đánh giá"} /><DoloresField label="Tiền đặt cọc" value="Theo hồ sơ hợp đồng" /><DoloresField label="Trạng thái quyết toán" value={settlement?.status === "recorded-demo" ? "Đã ghi nhận trên bản xem trước" : "Chưa quyết toán"} /></DoloresFieldGrid></DoloresPanel>
       <DoloresNotice title={technicianDone ? "Kết quả đã có · frontend demo" : "Chờ bước Technician"}>{technicianDone ? "Có thể ghi nhận quyết toán sau khi kiểm tra hồ sơ. Thao tác này chỉ lưu trạng thái cục bộ, không chuyển tiền." : "Mở nhiệm vụ YC-017 ở Technician và gửi kết quả thu hồi/đánh giá trước. Chưa cho phép tiếp tục quyết toán."}</DoloresNotice>
     </DoloresPage>
-    {dialog && <DecisionDialog success={dialog === "success"} title={dialog === "success" ? "Đã ghi nhận trên bản xem trước" : "Xác nhận quyết toán C-204?"} message={dialog === "success" ? "Trạng thái cục bộ đã được lưu. Không có giao dịch hoàn cọc nào được thực hiện." : "Kiểm tra kết quả Technician và điều khoản hợp đồng trước khi ghi nhận."} onCancel={() => setDialog(null)} onConfirm={() => { if (dialog === "confirm") { writeDemoFlow("C-204-settlement", "recorded-demo"); setDialog("success"); } else setDialog(null); }} />}
+    {dialog && <DecisionDialog success={dialog === "success"} title={dialog === "success" ? "Đã ghi nhận trên bản xem trước" : "Xác nhận quyết toán C-204?"} message={dialog === "success" ? "Trạng thái cục bộ đã được lưu. Không có giao dịch hoàn cọc nào được thực hiện." : "Kiểm tra kết quả Technician và điều khoản hợp đồng trước khi ghi nhận."} onCancel={() => setDialog(null)} onConfirm={() => { if (dialog === "confirm") { if (!isRetrievalAssessment(readDemoRecord("technician:retrieval:YC-017"))) { setDialog(null); return; } if (writeDemoRecord("moderator:C-204-settlement", "recorded-demo", { contract: "C-204", machine: "S-018", notes: assessment?.payload.notes ?? "" })) setDialog("success"); } else setDialog(null); }} />}
   </>;
 }
 
@@ -288,20 +425,16 @@ function DepositActionScreen({ path }: { path: string }) {
     : path === "contracts/refund-good"
       ? { title: "Hoàn cọc · máy được đánh giá tốt", action: "Ghi nhận hoàn cọc", key: "C-204-refund-good", note: "Hoàn cọc là khoản riêng; chỉ ghi nhận sau khi đã xem kết quả Technician và thỏa thuận." }
       : { title: "Ghi nhận hoàn cọc", action: "Ghi nhận hoàn cọc", key: "C-204-deposit-refund", note: "Không gộp hoàn cọc với hoàn tiền thanh toán thừa hoặc thu khoản thiếu." };
-  const [technicianDone, setTechnicianDone] = useState(false);
+  const { record: assessment } = useDemoRecord("technician:retrieval:YC-017");
+  const technicianDone = isRetrievalAssessment(assessment);
+  const { record: settlement } = useDemoRecord("moderator:C-204-settlement");
   const [dialog, setDialog] = useState<"confirm" | "success" | null>(null);
-  useEffect(() => {
-    const update = () => setTechnicianDone(readDemoFlow("YC-017") === "retrieved-assessed");
-    update();
-    window.addEventListener("dolores-demo-flow", update);
-    return () => window.removeEventListener("dolores-demo-flow", update);
-  }, []);
   return <>
     <DoloresPage title={config.title} description="C-204 · S-018 · ghi nhận theo hồ sơ sau khi Technician báo kết quả." actions={<><DoloresButton disabled={!technicianDone} onClick={() => setDialog("confirm")}>{config.action}</DoloresButton><DoloresButton href={`${BASE}/technical-requests/YC-017`} variant="secondary">Xem kết quả Technician</DoloresButton><DoloresButton href={`${BASE}/contracts`} variant="secondary">Về hợp đồng</DoloresButton></>}>
       <DoloresPanel><DoloresPanelTitle>Thông tin quyết toán</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng / máy" value="C-204 / S-018" /><DoloresField label="Kết quả thu hồi" value={technicianDone ? "Đã nhận · demo trình duyệt" : "Chưa có kết quả Technician"} /><DoloresField label="Tiền đặt cọc" value="Theo hợp đồng" /><DoloresField label="Số tiền" value="Theo kết quả đánh giá và thỏa thuận" /></DoloresFieldGrid></DoloresPanel>
       <DoloresNotice title={technicianDone ? "Kiểm tra hồ sơ trước khi ghi nhận" : "Chờ bước Technician"}>{technicianDone ? `${config.note} Bản frontend chỉ lưu trạng thái xem trước, không chuyển tiền.` : "Gửi kết quả thu hồi và đánh giá từ Technician trước; chưa mở ghi nhận khoản tiền."}</DoloresNotice>
     </DoloresPage>
-    {dialog && <DecisionDialog success={dialog === "success"} title={dialog === "success" ? "Đã ghi nhận trên bản xem trước" : `Xác nhận · ${config.title}`} message={dialog === "success" ? "Không có giao dịch tài chính thật nào được thực hiện." : `${config.action}. Kiểm tra kết quả Technician và hồ sơ hợp đồng.`} onCancel={() => setDialog(null)} onConfirm={() => { if (dialog === "confirm") { writeDemoFlow(config.key, "recorded-demo"); setDialog("success"); } else setDialog(null); }} />}
+    {dialog && <DecisionDialog success={dialog === "success"} title={dialog === "success" ? "Đã ghi nhận trên bản xem trước" : `Xác nhận · ${config.title}`} message={dialog === "success" ? "Không có giao dịch tài chính thật nào được thực hiện." : `${config.action}. Kiểm tra kết quả Technician và hồ sơ hợp đồng.`} onCancel={() => setDialog(null)} onConfirm={() => { if (dialog === "confirm") { if (!isRetrievalAssessment(readDemoRecord("technician:retrieval:YC-017"))) { setDialog(null); return; } if (writeDemoRecord("moderator:" + config.key, "recorded-demo", { contract: "C-204", machine: "S-018" })) setDialog("success"); } else setDialog(null); }} />}
   </>;
 }
 
@@ -322,13 +455,14 @@ function MenuMissingIngredient() {
   const [invalid, setInvalid] = useState(true);
   const [dialog, setDialog] = useState(false);
   const [saved, setSaved] = useState(false);
+  useEffect(() => { const record = readDemoRecord("moderator:menu-add-milk"); if (record && positiveQuantity(record.payload["field-2"] ?? "")) { setMilk(record.payload["field-2"]); setInvalid(false); } }, []);
   if (saved) return <DoloresPage title="Đã lưu món Cà phê sữa tươi" description="Đã lưu trên bản xem trước · dữ liệu minh họa." actions={<DoloresButton href={`${BASE}/menu`}>Về danh sách món</DoloresButton>}><DoloresNotice title="Dữ liệu minh họa">Không có Global Menu thật nào được cập nhật.</DoloresNotice></DoloresPage>;
   return <>
-    <DoloresPage title="Thêm món · thiếu thành phần bắt buộc" description="Global Menu mùa hè · thêm món Cà phê sữa tươi." actions={<><DoloresButton onClick={() => { if (!milk.trim()) setInvalid(true); else { setInvalid(false); setDialog(true); } }}>Lưu món</DoloresButton><DoloresButton href={`${BASE}/menu`} variant="secondary">Về danh sách món</DoloresButton></>}>
-      <DoloresPanel><DoloresPanelTitle>Thành phần của món</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Tên món" value="Cà phê sữa tươi" /><DoloresField label="Cà phê" value="18 g" /><DoloresField label="Sữa tươi *" required><input aria-label="Sữa tươi bắt buộc" className="bg-transparent text-sm outline-none" value={milk} onChange={(event) => { setMilk(event.target.value); if (event.target.value.trim()) setInvalid(false); }} /></DoloresField><DoloresField label="Nước pha" value="Theo công thức máy" /></DoloresFieldGrid></DoloresPanel>
+    <DoloresPage title="Thêm món · thiếu thành phần bắt buộc" description="Global Menu mùa hè · thêm món Cà phê sữa tươi." actions={<><DoloresButton onClick={() => { if (!positiveQuantity(milk)) setInvalid(true); else { setInvalid(false); setDialog(true); } }}>Lưu món</DoloresButton><DoloresButton href={`${BASE}/menu`} variant="secondary">Về danh sách món</DoloresButton></>}>
+      <DoloresPanel><DoloresPanelTitle>Thành phần của món</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Tên món" value="Cà phê sữa tươi" /><DoloresField label="Cà phê" value="18 g" /><DoloresField label="Sữa tươi *" required><input aria-label="Sữa tươi bắt buộc" className="bg-transparent text-sm outline-none" value={milk} onChange={(event) => { setMilk(event.target.value); setInvalid(!positiveQuantity(event.target.value)); }} /></DoloresField><DoloresField label="Nước pha" value="Theo công thức máy" /></DoloresFieldGrid></DoloresPanel>
       {invalid && <DoloresNotice title="Thiếu thành phần bắt buộc" tone="warning">Món cà phê sữa tươi cần có định lượng sữa tươi. Chưa lưu công thức.</DoloresNotice>}
     </DoloresPage>
-    {dialog && <DecisionDialog title="Xác nhận · Lưu món Cà phê sữa tươi" message={`Sữa tươi: ${milk}. Kiểm tra thành phần trước khi lưu vào Global Menu.`} onCancel={() => setDialog(false)} onConfirm={() => { writeDemoFlow("global-menu-new-dish", "saved-demo"); setDialog(false); setSaved(true); }} />}
+    {dialog && <DecisionDialog title="Xác nhận · Lưu món Cà phê sữa tươi" message={`Sữa tươi: ${milk}. Kiểm tra thành phần trước khi lưu vào Global Menu.`} onCancel={() => setDialog(false)} onConfirm={() => { if (!positiveQuantity(milk)) { setInvalid(true); setDialog(false); return; } if (writeDemoRecord("moderator:menu-add-milk", "submitted-demo", { "field-0": "Cà phê sữa tươi", "field-1": "18 g", "field-2": milk, "field-3": "Theo thiết bị" })) { setDialog(false); setSaved(true); } }} />}
   </>;
 }
 
@@ -343,7 +477,7 @@ function RefurbishmentScreen() {
   const [technicianDone, setTechnicianDone] = useState(false);
   const [recorded, setRecorded] = useState(false);
   useEffect(() => {
-    const update = () => setTechnicianDone(readDemoFlow("MB-2026-017") === "refurbished-tested");
+    const update = () => { const result = readDemoRecord("technician:refurbishment:MB-017"); setTechnicianDone(result?.status === "refurbished-tested" && readDemoFields(result).some(([label, value]) => label === "Máy thu mua" && value.startsWith("MB-017"))); };
     update();
     window.addEventListener("dolores-demo-flow", update);
     return () => window.removeEventListener("dolores-demo-flow", update);

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DoloresButton, DoloresPanel, DoloresPanelTitle, DoloresStatCard, DoloresTable } from "@/components/dolores/DoloresUI";
+import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type ReportView = "overview" | "customers";
@@ -16,8 +17,9 @@ const MONTHS = [
 ];
 
 export default function AdminReportScreens({ initialView = "overview" }: { initialView?: ReportView }) {
-  const [view, setView] = useState<ReportView>(initialView);
+  const [view, setView] = useRouteView<ReportView>(initialView);
   const [filterOpen, setFilterOpen] = useState(false);
+  useEffect(() => { setFilterOpen(false); }, [initialView]);
 
   if (filterOpen) {
     return (

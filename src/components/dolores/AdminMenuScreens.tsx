@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DoloresButton,
   DoloresField,
@@ -10,19 +10,20 @@ import {
   DoloresPanelTitle,
   DoloresTable,
 } from "@/components/dolores/DoloresUI";
+import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 export type AdminMenuView = "list" | "items" | "add" | "missing" | "ingredients" | "edit-espresso" | "edit-espresso-60" | "edit-espresso-20g" | "send" | "sent";
 type Overlay = "add-confirm" | "add-success" | "edit-confirm" | "edit-success" | "send-confirm" | "send-success" | null;
 
-function MenuDialog({ title, message, success, onConfirm, onClose }: { title: string; message: string; success?: boolean; onConfirm: () => void; onClose: () => void }) {
+function MenuDialog({ title, message, success, onConfirm, onClose, variant = "default" }: { title: string; message: string; success?: boolean; onConfirm: () => void; onClose: () => void; variant?: "default" | "recipe" }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/25 px-6" role="dialog" aria-modal="true" aria-labelledby="menu-dialog-title">
-      <section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
-        <p className="text-[11px] font-medium leading-4 text-[#706561]">{success ? "Thông tin menu" : "Kiểm tra trước khi tiếp tục"}</p>
-        <h2 id="menu-dialog-title" className="mt-3 text-xl font-semibold leading-7">{title}</h2>
-        <p className="mt-3 text-[13px] leading-5 text-[#706561]">{message}</p>
-        <div className="mt-5 grid gap-5">
+    <div className={"fixed inset-0 z-50 flex items-center justify-center px-6 " + (variant === "recipe" ? "bg-[rgba(41,38,37,0.22)]" : "bg-[#302927]/25")} role="dialog" aria-modal="true" aria-labelledby="menu-dialog-title">
+      <section className={"w-full max-w-[580px] rounded-[20px] bg-white p-8 " + (variant === "recipe" ? "flex flex-col gap-5" : "shadow-xl")}>
+        <p className={variant === "recipe" ? "text-sm font-semibold leading-[1.45] text-[#292625]" : "text-[11px] font-medium leading-4 text-[#706561]"}>{success ? "Thông tin menu" : "Kiểm tra trước khi tiếp tục"}</p>
+        <h2 id="menu-dialog-title" className={variant === "recipe" ? "text-[26px] font-semibold leading-[1.45] text-[#292625]" : "mt-3 text-xl font-semibold leading-7"}>{title}</h2>
+        <p className={variant === "recipe" ? "text-base leading-[1.45] text-[#292625]" : "mt-3 text-[13px] leading-5 text-[#706561]"}>{message}</p>
+        <div className={"grid gap-5 " + (variant === "recipe" ? "" : "mt-5")}>
           {!success && <DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton>}
           <DoloresButton variant={success ? "primary" : "secondary"} onClick={onClose}>{success ? "Về danh sách món" : "Đóng"}</DoloresButton>
         </div>
@@ -32,12 +33,17 @@ function MenuDialog({ title, message, success, onConfirm, onClose }: { title: st
 }
 
 export default function AdminMenuScreens({ initialView = "list", basePath = "/admin/menu" }: { initialView?: AdminMenuView; basePath?: string }) {
-  const [view, setView] = useState<AdminMenuView>(initialView);
+  const [view, setView] = useRouteView<AdminMenuView>(initialView);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [coffee, setCoffee] = useState(initialView === "edit-espresso-20g" ? "20" : "18");
   const [water, setWater] = useState(initialView === "edit-espresso-60" ? "60" : "40");
   const [milk, setMilk] = useState("120");
   const [milkSelected, setMilkSelected] = useState(true);
+  useEffect(() => {
+    setOverlay(null);
+    if (initialView === "edit-espresso-20g") setCoffee("20");
+    if (initialView === "edit-espresso-60") setWater("60");
+  }, [initialView]);
   const linkTo = (nextView: AdminMenuView) => `${basePath}?view=${nextView}`;
   const description = "Chỉ Admin và Moderator quản lý Global Menu Dolores. Mỗi máy cho thuê phải được cấp menu; khách chỉ tùy chỉnh công thức riêng.";
 
@@ -85,7 +91,7 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
         </DoloresFieldGrid></DoloresPanel>
         <DoloresNotice title="Điều chỉnh định lượng món">Có thể thay đổi gram cà phê và lượng nước. Ví dụ thay nước pha từ 40 ml lên 60 ml; thành phần bắt buộc vẫn được giữ.</DoloresNotice>
       </DoloresPage>
-      {overlay && <MenuDialog title={overlay === "edit-success" ? "Đã lưu thông tin" : "Xác nhận · Lưu công thức Espresso"} message={`Global Menu mùa hè · Espresso · ${coffee} g cà phê · ${water} ml nước pha.`} success={overlay === "edit-success"} onConfirm={() => setOverlay("edit-success")} onClose={() => overlay === "edit-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
+      {overlay && <MenuDialog variant={overlay === "edit-confirm" ? "recipe" : "default"} title={overlay === "edit-success" ? "Đã lưu thông tin" : "Xác nhận · Lưu công thức Espresso"} message={`Global Menu mùa hè · Espresso · ${coffee} g cà phê · ${water} ml nước pha.`} success={overlay === "edit-success"} onConfirm={() => setOverlay("edit-success")} onClose={() => overlay === "edit-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
     </>;
   }
 

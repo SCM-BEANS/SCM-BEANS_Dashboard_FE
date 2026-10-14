@@ -1,0 +1,66 @@
+[
+  {
+    "case": "typed payload write/read",
+    "result": "Pass"
+  },
+  {
+    "case": "different ID isolated",
+    "result": "Pass"
+  },
+  {
+    "case": "storage exception no success/event",
+    "result": "Pass"
+  },
+  {
+    "case": "malformed JSON safe",
+    "result": "Pass"
+  },
+  {
+    "case": "array storage rejected",
+    "result": "Pass"
+  },
+  {
+    "case": "future schema rejected",
+    "result": "Pass"
+  },
+  {
+    "case": "legacy marker cannot unlock settlement",
+    "result": "Pass"
+  },
+  {
+    "case": "wrong machine assessment rejected",
+    "result": "Pass"
+  },
+  {
+    "case": "valid assessment unlocks",
+    "result": "Pass"
+  },
+  {
+    "case": "eligible bill",
+    "result": "Pass"
+  },
+  {
+    "case": "deadline exceeded",
+    "result": "Pass"
+  },
+  {
+    "case": "noneditable bill",
+    "result": "Pass"
+  },
+  {
+    "case": "bill Đã thanh toán",
+    "result": "Pass"
+  },
+  {
+    "case": "bill Đã đối soát",
+    "result": "Pass"
+  },
+  {
+    "case": "bill Đã hoàn tất",
+    "result": "Pass"
+  },
+  {
+    "case": "bill Quá hạn",
+    "result": "Pass"
+  }
+]

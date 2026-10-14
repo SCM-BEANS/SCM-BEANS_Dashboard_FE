@@ -1,31 +1,32 @@
 "use client";
 
-import { ArrowRight, MapPin, Clock, Headphones } from "lucide-react";
+import { ArrowRight, Eye, ShieldCheck, Lightbulb } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { AnimateOnScroll, StaggerContainer } from "./AnimateOnScroll";
 
 const stats = [
-  { value: "500+", label: "Máy đang thuê" },
-  { value: "50+", label: "Doanh nghiệp đối tác" },
-  { value: "10", label: "Tỉnh thành triển khai" },
-  { value: "24/7", label: "Hỗ trợ kỹ thuật" },
+  { value: "2020", label: "Năm thành lập" },
+  { value: "500+", label: "Máy đã triển khai" },
+  { value: "50+", label: "Doanh nghiệp đồng hành" },
+  { value: "IoT", label: "Công nghệ kết nối" },
 ];
 
-const servicePoints = [
+const companyValues = [
   {
-    icon: <MapPin className="w-5 h-5" />,
-    title: "Triển khai tại chỗ",
-    desc: "Đội kỹ thuật lắp đặt và cấu hình máy tại địa điểm của bạn trong 24 giờ.",
+    icon: <Eye className="w-5 h-5" />,
+    title: "Minh bạch",
+    desc: "Giá cả rõ ràng, hợp đồng đơn giản. Không phí ẩn, không điều khoản khó hiểu.",
   },
   {
-    icon: <Clock className="w-5 h-5" />,
-    title: "Bảo trì định kỳ",
-    desc: "Lịch bảo trì tự động, nhắc nhở vệ sinh máy, thay linh kiện đúng hạn.",
+    icon: <ShieldCheck className="w-5 h-5" />,
+    title: "Đáng tin cậy",
+    desc: "SLA 99.9% uptime, đội kỹ thuật phản hồi trong 15 phút. Chúng tôi cam kết và thực hiện đúng cam kết.",
   },
   {
-    icon: <Headphones className="w-5 h-5" />,
-    title: "Hỗ trợ 24/7",
-    desc: "Hotline và chat trực tuyến, phản hồi trong vòng 15 phút cho mọi sự cố.",
+    icon: <Lightbulb className="w-5 h-5" />,
+    title: "Đổi mới liên tục",
+    desc: "Cập nhật tính năng mới mỗi quý, lắng nghe phản hồi từ khách hàng để cải thiện liên tục.",
   },
 ];
 
@@ -87,55 +88,40 @@ export function DistributionSection() {
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-          {/* Left: Map visual */}
-          <AnimateOnScroll direction="left" className="relative w-full rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center bg-white border border-[#E0E0E0] shadow-figma-4 group">
-            {/* Map bg */}
+          {/* Left: Company visual */}
+          <AnimateOnScroll
+            direction="left"
+            className="relative w-full rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center bg-white border border-[#E0E0E0] shadow-figma-4"
+          >
             <div
-              className="absolute inset-0 opacity-30 bg-cover bg-center group-hover:scale-105 transition-transform duration-1000"
+              aria-hidden="true"
+              className="absolute inset-0"
               style={{
-                backgroundImage:
-                  "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200')",
+                background:
+                  "radial-gradient(ellipse at 70% 35%, rgba(212,163,115,.2), transparent 58%), linear-gradient(135deg, #FFFFFF 0%, #FDFBF7 52%, #FAF7F2 100%)",
               }}
             />
-            {/* Wine tint overlay */}
-            <div className="absolute inset-0 bg-[#721C24]/5" />
-
-            <div className="relative z-10 w-full h-full p-8">
-              <div className="text-[#9E9E9E] text-xs tracking-widest uppercase mb-4 font-semibold">
-                Service Coverage · Vietnam
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: "radial-gradient(circle, rgba(114,28,36,.14) 1px, transparent 1.5px)",
+                backgroundSize: "28px 28px",
+              }}
+            />
+            <div className="relative z-10 flex h-full w-full flex-col items-center justify-center p-6 sm:p-8">
+              <div className="absolute left-6 top-6 text-[#9E9E9E] text-xs tracking-widest uppercase font-semibold">
+                DOLORES COFFEE · OUR STORY
               </div>
-              <div className="relative w-full h-[260px]">
-                {[
-                  { top: "5%", left: "48%", label: "Hà Nội", size: "large", delay: 0 },
-                  { top: "35%", left: "55%", label: "Đà Nẵng", size: "medium", delay: 200 },
-                  { top: "60%", left: "40%", label: "TP.HCM", size: "large", delay: 100 },
-                  { top: "70%", left: "50%", label: "Bình Dương", size: "medium", delay: 400 },
-                  { top: "15%", left: "44%", label: "Hải Phòng", size: "medium", delay: 300 },
-                  { top: "50%", left: "38%", label: "Nha Trang", size: "medium", delay: 500 },
-                ].map((point, i) => (
-                  <div
-                    key={i}
-                    className="absolute flex flex-col items-center animate-[fade-in-up_0.5s_ease-out_forwards]"
-                    style={{ top: point.top, left: point.left, animationDelay: `${point.delay}ms`, opacity: 0 }}
-                  >
-                    <div className="relative">
-                      <div
-                        className={`rounded-full bg-[#721C24] animate-ping absolute ${
-                          point.size === "large" ? "w-4 h-4" : "w-3 h-3"
-                        }`}
-                        style={{ opacity: 0.4 }}
-                      />
-                      <div
-                        className={`rounded-full bg-[#721C24] relative z-10 ${
-                          point.size === "large" ? "w-4 h-4" : "w-3 h-3"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-[rgba(0,0,0,0.87)] text-[11px] mt-1.5 whitespace-nowrap font-bold drop-shadow-sm">
-                      {point.label}
-                    </span>
-                  </div>
-                ))}
+              <div className="relative h-full min-h-[240px] w-full max-w-[560px]">
+                <Image
+                  src="/images/coffee-machine-float.png"
+                  alt="Máy pha cà phê DOLORES COFFEE"
+                  fill
+                  priority
+                  sizes="(max-width: 1023px) 100vw, 50vw"
+                  className="object-contain p-6 drop-shadow-[0_24px_40px_rgba(114,28,36,0.18)]"
+                />
               </div>
             </div>
           </AnimateOnScroll>
@@ -146,23 +132,22 @@ export function DistributionSection() {
               {/* Eyebrow */}
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-0.5 bg-[#721C24]" />
-                <span className="text-[#721C24] tracking-[0.2em] uppercase text-xs font-semibold">Coverage</span>
+                <span className="text-[#721C24] tracking-[0.2em] uppercase text-xs font-semibold">About Us</span>
               </div>
               <h2
                 className="text-[#721C24] font-serif font-semibold mb-5 leading-tight"
                 style={{ fontSize: "clamp(28px, 4vw, 36px)", lineHeight: "44px" }}
               >
-                Dịch vụ phủ rộng toàn quốc
+                Chúng tôi là DOLORES COFFEE
               </h2>
               <p className="text-[#9E9E9E]" style={{ fontSize: "18px", lineHeight: "28px" }}>
-                Từ Hà Nội đến TP.HCM, đội ngũ kỹ thuật viên của DOLORES COFFEE sẵn sàng
-                triển khai và hỗ trợ các doanh nghiệp vừa và lớn trong toàn bộ chuỗi dịch vụ máy pha cà phê.
+                Chúng tôi tin rằng mọi doanh nghiệp, dù lớn hay nhỏ, đều xứng đáng được tiếp cận công nghệ máy pha cà phê tốt nhất mà không cần đầu tư vốn lớn ban đầu.
               </p>
             </div>
 
-            {/* Service cards */}
+            {/* Company values */}
             <StaggerContainer staggerMs={100} className="flex flex-col gap-4">
-              {servicePoints.map((sp, i) => (
+              {companyValues.map((sp, i) => (
                 <div
                   key={i}
                   className="flex gap-4 p-5 bg-white rounded-xl border border-[#E0E0E0] hover:border-[#721C24]/40 shadow-figma-2 hover:shadow-figma-4 transition-all duration-200 group"
@@ -183,7 +168,7 @@ export function DistributionSection() {
               id="distribution-cta-btn"
               className="btn-primary group w-fit mt-2"
             >
-              Liên hệ triển khai
+              Tìm hiểu thêm
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </AnimateOnScroll>

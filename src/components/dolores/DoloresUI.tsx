@@ -40,17 +40,18 @@ export function DoloresButton({
     (variant === "primary"
       ? "bg-[#B81724] text-white hover:opacity-[0.88] active:opacity-[0.72] disabled:cursor-not-allowed disabled:opacity-[0.38]"
       : "border border-[#E9E2DC] bg-white text-[#302927] hover:opacity-[0.88] active:opacity-[0.72] disabled:cursor-not-allowed disabled:opacity-[0.38]");
+  const dataVariant = variant;
 
   if (href) {
     return (
-      <Link className={className} href={href} aria-disabled={disabled}>
+      <Link className={className} href={href} aria-disabled={disabled} data-variant={dataVariant}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button className={className} type={type} onClick={onClick} disabled={disabled}>
+    <button className={className} type={type} onClick={onClick} disabled={disabled} data-variant={dataVariant}>
       {children}
     </button>
   );
@@ -78,7 +79,7 @@ export function DoloresNotice({
   return (
     <aside className={"flex flex-col gap-2 rounded-[10px] p-4 text-sm leading-normal text-[#302927] " + toneClass}>
       <p className="font-medium">{title}</p>
-      <p>{children}</p>
+      <div>{children}</div>
     </aside>
   );
 }
@@ -107,7 +108,7 @@ export function DoloresField({
 }
 
 export function DoloresFieldGrid({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-2 gap-4">{children}</div>;
+  return <div className="dolores-field-grid grid grid-cols-2 gap-4">{children}</div>;
 }
 
 export function DoloresTable({
@@ -133,7 +134,7 @@ export function DoloresTable({
           {rows.map((row, rowIndex) => (
             <tr className="h-[60px]" key={rowIndex}>
               {row.map((cell, cellIndex) => (
-                <td className="border-y border-[#F0ECE8] px-2 first:border-l last:border-r first:rounded-l-sm last:rounded-r-sm" key={cellIndex}>
+              <td className="border-y border-[#F0ECE8] px-2 first:border-l last:border-r first:rounded-l-sm last:rounded-r-sm" data-label={headers[cellIndex]} key={cellIndex}>
                   {cell}
                 </td>
               ))}
@@ -147,7 +148,7 @@ export function DoloresTable({
 
 export function DoloresMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-h-[99px] flex-col gap-1.5 px-3 py-[18px]">
+    <div className="dolores-metric flex min-h-[99px] flex-col gap-1.5 px-3 py-[18px]">
       <p className="text-[13px] leading-[19px] text-[#706561]">{label}</p>
       <p className="text-[26px] font-semibold leading-[38px] text-[#302927]">{value}</p>
     </div>
@@ -156,7 +157,7 @@ export function DoloresMetric({ label, value }: { label: string; value: string }
 
 export function DoloresStatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-h-[99px] flex-col gap-1.5 rounded-[14px] bg-white px-5 py-[18px]">
+    <div className="dolores-stat-card flex min-h-[99px] flex-col gap-1.5 rounded-[14px] bg-white px-5 py-[18px]">
       <p className="text-[13px] leading-[19px] text-[#706561]">{label}</p>
       <p className="text-[26px] font-semibold leading-[38px] text-[#302927]">{value}</p>
     </div>
