@@ -1,0 +1,75 @@
+{
+  "reviewDate": "2026-10-04",
+  "timezone": "Asia/Saigon",
+  "projectRoot": "E:/Đồ án/dolores-nextjs",
+  "method": "Static source and SRS review; no browser, integration, or hardware test performed in this review",
+  "documents": [
+    {
+      "path": "E:\\Đồ án\\Dolores_Software_Requirements_Specification_EN_v1.1.docx",
+      "bytes": 98440,
+      "sha256": "5581608F20864822A149E7C0E860D572AD3F19AF4648754E60DA751F4C9014ED"
+    },
+    {
+      "path": "C:\\Users\\khang\\Downloads\\Software Requirement Specification_Menu_Corrected.docx",
+      "bytes": 33284,
+      "sha256": "1C2351E8BC5199B4D78C5ADBF44426CFC102CF26CAC0F2F70C807B9D1DABE815"
+    },
+    {
+      "path": "C:\\Users\\khang\\Downloads\\MainFlow_NghiepVu.docx",
+      "bytes": 56665,
+      "sha256": "8D3D1CE6B63D79F72C8C78E709354FA5B894E964F76001A3F24D01E893D353D8"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "src\\lib\\prototype.ts",
+      "bytes": 15225,
+      "sha256": "A38F305612917DC0809A99C2993743328DCD8DB3EA5D14694C7B409CCA8A272E"
+    },
+    {
+      "path": "src\\lib\\demo-store.tsx",
+      "bytes": 14814,
+      "sha256": "DCAE7448E583F4C430F4F7CEDD51E22D9D303A5E87D86BF36E1CFCE6FA642437"
+    },
+    {
+      "path": "src\\components\\PrototypeApp.tsx",
+      "bytes": 135750,
+      "sha256": "BD1099CAEC2B7F620A74C506E344C792C3A64973F21535C8D385B47F6D0D3A9F"
+    },
+    {
+      "path": "src\\components\\AppIcon.tsx",
+      "bytes": 900,
+      "sha256": "A2CE615CA42ED6B178D540537E3BC1E6FF87BB45CC14EDC7D7A3E63687CF27D4"
+    },
+    {
+      "path": "src\\app\\[role]\\[[...segments]]\\page.tsx",
+      "bytes": 730,
+      "sha256": "1B66B3385BE224F2A52EE622B40EB358AD5DAC936E6456BCB8EF0290C0D64931"
+    },
+    {
+      "path": "src\\app\\template.tsx",
+      "bytes": 431,
+      "sha256": "94D8DAD235944D48EE87841E44EBA13B8319985559F88D59A28B39D7815275F5"
+    },
+    {
+      "path": "src\\app\\page.tsx",
+      "bytes": 2859,
+      "sha256": "AFA0183A893066CF32E176A55E32422C0970E1177193CD68B183BD6C9FDF5EB3"
+    },
+    {
+      "path": "src\\app\\layout.tsx",
+      "bytes": 427,
+      "sha256": "62F7B3113D11A6C59BADAF63727029136B3B1CCC1871BB71C94F1D89BA7D0DC7"
+    },
+    {
+      "path": "src\\app\\globals.css",
+      "bytes": 39457,
+      "sha256": "1588FA82DAE57F3CC23CA6A19FE67A04131460317C3002B36C2C89074B81D704"
+    },
+    {
+      "path": "src\\app\\favicon.ico",
+      "bytes": 25931,
+      "sha256": "2B8AD2D33455A8F736FC3A8EBF8F0BDEA8848AD4C0DB48A2833BD0F9CD775932"
+    }
+  ]
+}

@@ -1,0 +1,473 @@
+Main Business Flows
+MainFlow và phần nghiệp vụ
+Baseline đã xác nhận
+Chủ đề
+Nội dung
+Phạm vi Dolores
+Nền tảng tập trung vào máy Smart IoT: giám sát từ xa, hiển thị trạng thái/vị trí và cup count để tính PAYG theo tháng. Contract, thanh toán, inventory và lịch sử máy của cả hai loại chủ yếu phục vụ lưu trữ, theo dõi; Dolores không điều hành lịch bảo trì hay tiêu chí đánh giá kỹ thuật nội bộ.
+Quan hệ Customer - Contract - Machine
+Một Customer có thể có nhiều Contract; mỗi máy vật lý gắn một Contract đang hiệu lực.
+Tài khoản, shop và quyền Tenant
+System Administrator tạo tài khoản, tạo shop, thiết lập trạng thái và cấp quyền cho Tenant. Moderator xem/quản lý Contract và xử lý billing/service theo các flow nghiệp vụ.
+Ký hợp đồng
+Hai bên ký ngoài Dolores; Moderator upload bản đã ký. Không có e-contract.
+Giá thuê Conventional
+1.500.000 VND cho mỗi máy mỗi tháng.
+Giá thuê Smart IoT
+750.000 VND tiền cơ bản mỗi tháng + 1.000 VND cho mỗi ly hợp lệ.
+Tháng bắt đầu hợp đồng
+Nếu Contract bắt đầu giữa tháng, tiền thuê tháng bắt đầu được tính theo thời gian thuê thực tế.
+Tháng kết thúc hợp đồng
+Nếu Contract kết thúc giữa tháng, vẫn tính đủ tiền thuê tháng đó; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng.
+Cọc và phí lắp đặt
+Cọc 10.000.000 VND/máy/hợp đồng. Phí lắp mặc định 1.000.000 VND/máy hoặc mức khác thỏa thuận trong hợp đồng.
+Tháng đầu
+Gồm tiền cọc + tiền thuê + phí lắp đặt + các khoản áp dụng.
+Thanh toán
+Bill phát hành ngày cuối tháng; hạn 10 ngày tính từ ngày phát hành, tính Thứ Hai đến Thứ Bảy và không tính Chủ nhật. Tenant chuyển khoản ngoài Dolores, xác nhận/upload bằng chứng; Moderator đối chiếu tài khoản công ty. Không có thanh toán online.
+Thiếu/thừa/trễ
+Thiếu trong hạn: Moderator yêu cầu thanh toán đủ. Thừa: Moderator hoàn phần vượt bill sau khi Tenant xác nhận đã thanh toán và Moderator đối soát ngân hàng công ty. Trễ: phần còn thiếu chịu mức cộng dồn 5% mỗi ngày trên số dư chưa thanh toán của ngày trước; reminder hằng ngày đến khi thanh toán đủ.
+Hoàn tiền
+Tiền thừa được hoàn sau khi Tenant xác nhận đã thanh toán và Moderator đối chiếu giao dịch với tài khoản ngân hàng công ty. Hoàn cọc không hư hỏng trong 10 ngày làm việc từ khi Moderator thông báo kết quả Technician; phần cọc dư sau damage theo cùng mốc 10 ngày.
+Bảo trì
+Nghiệp vụ công ty mỗi 3 tháng trong khung 10 ngày; quản lý và lên lịch bảo trì nằm ngoài phạm vi Dolores. Nền tảng lưu lịch sử bảo trì đã thực hiện.
+Máy thay thế
+Máy thay phải cùng loại; replacement là máy tạm gắn với Contract thuê chính, không tạo Contract mới. Smart IoT replacement usage được quy vào Contract; Dolores theo dõi số máy IoT còn lại.
+Conventional
+Có Contract/Installation Location, billing, maintenance, repair và history; không có telemetry, cup count, digital twin, online/offline, live monitored location, remote menu/recipe.
+Smart IoT
+Có telemetry/cup usage, trạng thái online/offline, GPS monitored location và quản lý Global Menu/recipe từ web xuống máy. Máy lưu dữ liệu offline và tự gửi lên cloud khi kết nối lại. Hợp đồng quy định yêu cầu online và giới hạn offline; mức 5 ngày có thể thay đổi theo đàm phán.
+Điều kiện Smart IoT
+Công ty/Technician đánh giá điều kiện tiên quyết trước hợp đồng; Tenant bảo đảm hạ tầng mạng, Moderator mới tiến hành hợp đồng.
+Location
+Contract/Installation Location có cho mọi máy; Monitored Device Location chỉ dành cho Smart IoT.
+Hết hạn / tiếp tục thuê
+Nhắc trước một tháng; tiếp tục thuê bằng Contract mới, không có gia hạn hợp đồng  cũ. Nếu hết hợp đồng thì tạo hợp đồng mới thôi
+Thu mua máy cũ
+Chỉ hỗ trợ Customer thuê máy của Dolores; tiêu chí/điều kiện do công ty quy định. Technician đánh giá nội bộ trước; Moderator chốt mua, ký hợp đồng bên ngoài/upload; chuyển khoản/bằng chứng → thu gom → refurbishment/testing → available-for-rent.
+Main Business Flows và scenarios
+Mỗi hàng dưới đây là một scenario thuộc main flow tương ứng. Các bước được đánh số theo trình tự; phần ghi Cần chốt nêu đúng nơi baseline chưa xác định cách vận hành.
+ID
+Main Business Flow
+Actor chính
+Các scenario sinh ra
+MF-01
+Customer Onboarding & Rental Contract(Tiếp nhận khách hàng, đàm phán và hợp đồng thuê)
+Tenant / Store Owner, Moderator, System Administrator
+S01 | Tiếp nhận nhu cầu và đàm phán thuê máy
+1. Tenant nêu nhu cầu sử dụng, loại máy mong muốn và địa điểm dự kiến lắp đặt.
+2. Công ty/Technician đánh giá các điều kiện tiên quyết trước hợp đồng; Tenant phải bảo đảm hạ tầng mạng theo yêu cầu, sau đó Moderator mới tiến hành hợp đồng Smart IoT. Tiêu chí đánh giá là nội bộ.
+3. Moderator trao đổi loại máy Conventional hoặc Smart IoT, giá thuê baseline và các điều khoản cần ghi trong hợp đồng.
+4. Hai bên thống nhất loại máy, thời hạn, địa điểm theo hợp đồng, tiền cọc 10.000.000 VND/máy/hợp đồng, phí lắp mặc định 1.000.000 VND/máy hoặc mức khác thỏa thuận trong hợp đồng.
+5. Moderator đối chiếu máy dự kiến với inventory; mọi điều khoản thương mại cụ thể được ghi trong hợp đồng hai bên ký.
+MF-01
+Customer Onboarding & Rental Contract(Tiếp nhận khách hàng, đàm phán và hợp đồng thuê)
+Tenant / Store Owner, Moderator, System Administrator
+S02 | Ký bên ngoài Dolores, tạo hồ sơ và đưa hợp đồng lên hệ thống
+1. System Administrator tạo tài khoản, tạo shop, thiết lập trạng thái và cấp quyền cho Tenant để sử dụng Dolores.
+2. Tenant và Moderator hoàn tất việc ký hợp đồng ngoài Dolores; hệ thống không ký hợp đồng điện tử.
+3. Moderator lập Contract Record gắn với tài khoản/shop; nhập thời hạn, loại máy, điều khoản phí và Contract/Installation Location; upload bản hợp đồng đã ký.
+4. Moderator gắn một máy vật lý với hợp đồng đang hiệu lực; một Customer có thể có nhiều hợp đồng.
+5. Moderator được xem và quản lý Contract của các tài khoản trên hệ thống; đồng thời gửi yêu cầu thanh toán và đối soát theo MF-04/MF-05. Quyền tạo account/shop/status và cấp quyền Tenant thuộc System Administrator.
+MF-02
+Conventional Machine Delivery & Installation(Giao và lắp đặt máy thông thường)
+Moderator, Technician, Tenant / Store Owner
+S01 | Lập yêu cầu giao và phân công Technician
+1. Moderator xác nhận hợp đồng đã được ghi nhận, máy Conventional đã được chọn và địa điểm lắp đặt đã có.
+2. Moderator lập yêu cầu công việc gắn với Customer, Contract, mã máy, địa điểm và phụ kiện bàn giao.
+3. Technician nhận yêu cầu, chuẩn bị máy từ inventory và thống nhất lịch đến địa điểm với Tenant.
+MF-02
+Conventional Machine Delivery & Installation(Giao và lắp đặt máy thông thường)
+Moderator, Technician, Tenant / Store Owner
+S02 | Giao, lắp đặt và xác nhận bàn giao
+1. Technician giao máy Conventional đến Contract/Installation Location và lắp đặt.
+2. Technician ghi mã máy, thời điểm, địa điểm, kết quả lắp đặt và thông tin bàn giao vào lịch sử máy/hợp đồng.
+3. Tenant tiếp nhận; Technician báo hoàn tất cho Moderator để cập nhật trạng thái công việc.
+4. Dolores tiếp tục quản lý hợp đồng, location đã khai báo, bảo trì, sửa chữa và lịch sử; máy này không phát sinh telemetry hay trạng thái online/offline.
+MF-03
+Smart IoT Delivery & Activation(Giao máy Smart IoT và kích hoạt)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S01 | Giao máy, liên kết hợp đồng và kích hoạt Smart IoT
+1. Moderator tạo yêu cầu giao như với máy thường, đồng thời ghi nhận máy/thiết bị Smart IoT cần gắn với Contract.
+2. Technician lắp máy tại Contract/Installation Location, ghi mã máy/thiết bị và liên kết máy với hợp đồng; máy là thiết bị Edge trên bo mạch Android và tablet.
+3. Smart Coffee Machine gửi telemetry/cup usage khả dụng, trạng thái online/offline và GPS location; System hiển thị các dữ liệu này riêng với Contract Location.
+4. Technician báo kết quả kích hoạt cho Moderator; Tenant và Moderator kiểm tra máy trong phạm vi quyền được cấp.
+5. Điều kiện mạng được đánh giá trước hợp đồng; sau bàn giao, máy gửi telemetry và GPS location qua dịch vụ Smart IoT.
+MF-03
+Smart IoT Delivery & Activation(Giao máy Smart IoT và kích hoạt)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S02 | Xác nhận máy bắt đầu vận hành
+1. Moderator xác nhận Contract Location và thông tin máy đã khớp hồ sơ hợp đồng.
+2. System tổng hợp cup usage Pay-As-You-Go theo tháng hợp đồng; dữ liệu sử dụng được quy về đúng máy và Contract.
+3. Tenant bắt đầu theo dõi máy và cấu hình menu/recipe qua Global Menu tại MF-07.
+4. Hợp đồng Smart IoT quy định máy cần online và giới hạn thời gian offline; mức 5 ngày được nêu làm baseline tham khảo, có thể thay đổi theo đàm phán hợp đồng.
+MF-04
+First-Month Billing & Payment(Thanh toán tháng đầu)
+System, Moderator, Tenant / Store Owner, Smart Coffee Machine
+S01 | Lập yêu cầu thanh toán tháng đầu
+1. Moderator lập/kiểm tra khoản phải trả tháng đầu theo Contract; tháng đầu gồm tiền cọc, tiền thuê, phí lắp đặt và các khoản áp dụng.
+2. Tiền cọc là 10.000.000 VND cho mỗi máy/mỗi hợp đồng; phí lắp đặt mặc định 1.000.000 VND/máy hoặc mức đã thỏa thuận trong hợp đồng.
+3. Với Conventional, tiền thuê baseline là 1.500.000 VND/máy/tháng; với Smart IoT là 750.000 VND/máy/tháng cộng 1.000 VND cho mỗi ly hợp lệ.
+4. Nếu Contract bắt đầu giữa tháng, tiền thuê của tháng bắt đầu được tính theo thời gian thuê thực tế.
+5. Nếu Smart IoT, System tổng hợp số ly hợp lệ của hợp đồng; Moderator đưa số liệu và các khoản áp dụng vào bảng kê.
+6. Moderator gửi yêu cầu thanh toán có các dòng phí cho Tenant; ngày phát hành bill tháng đầu theo lịch chốt cuối tháng tại MF-05.
+MF-04
+First-Month Billing & Payment(Thanh toán tháng đầu)
+System, Moderator, Tenant / Store Owner, Smart Coffee Machine
+S02 | Tenant chuyển khoản, upload bằng chứng và Moderator đối chiếu
+1. Tenant chuyển khoản qua ngân hàng bên ngoài Dolores.
+2. Tenant upload bằng chứng chuyển khoản/tham chiếu giao dịch lên hồ sơ thanh toán.
+3. Moderator đối chiếu với giao dịch nhận được; khớp thì ghi nhận đã đối soát, chưa khớp thì giữ trạng thái cần kiểm tra và xử lý tiếp.
+4. Dolores lưu bằng chứng và trạng thái đối soát; hệ thống không thu tiền trực tuyến.
+MF-05
+Recurring Monthly Billing & Reconciliation(Thanh toán định kỳ và đối soát)
+System, Moderator, Tenant / Store Owner, Smart Coffee Machine
+S01 | Tổng hợp bill định kỳ cuối kỳ
+1. Moderator phát hành bill trên Dolores vào ngày cuối cùng của tháng; hạn trả là 10 ngày tính từ ngày phát hành, theo ngày Thứ Hai đến Thứ Bảy và không tính Chủ nhật.
+2. Bill Conventional gồm 1.500.000 VND tiền thuê tháng và các khoản sửa chữa/thay thế áp dụng theo hợp đồng.
+3. Bill Smart IoT gồm 750.000 VND tiền thuê cơ bản, 1.000 VND nhân số ly hợp lệ và các khoản sửa chữa/thay thế áp dụng theo hợp đồng.
+4. Nếu Contract bắt đầu giữa tháng, tiền thuê của tháng bắt đầu được tính theo thời gian thuê thực tế.
+5. Nếu Contract kết thúc giữa tháng, Tenant vẫn thanh toán đủ tiền thuê của tháng đó; phí PAYG Smart IoT chỉ tính số ly hợp lệ đến ngày dừng sử dụng.
+6. System cung cấp số liệu Smart IoT đã đồng bộ; Moderator gửi bảng kê tháng cho Tenant. Repair, part và labor thuộc trách nhiệm theo hợp đồng được gom vào bill.
+MF-05
+Recurring Monthly Billing & Reconciliation(Thanh toán định kỳ và đối soát)
+System, Moderator, Tenant / Store Owner, Smart Coffee Machine
+S02 | Thanh toán ngoài hệ thống và đối soát hàng tháng
+1. Tenant chuyển khoản bên ngoài Dolores, xác nhận đã thanh toán và upload bằng chứng cho kỳ tương ứng.
+2. Moderator đối chiếu ảnh với giao dịch trên tài khoản ngân hàng nội bộ của công ty; Tenant không thực hiện việc đối chiếu tài khoản công ty.
+3. Nếu thanh toán thiếu trong hạn, Moderator yêu cầu Tenant thanh toán đủ. Nếu số tiền nhận lớn hơn tổng phải thu sau xác nhận/đối soát, dù thanh toán trong hạn hay sau hạn, Moderator hoàn phần vượt.
+4. Nếu quá hạn, phần còn thiếu chịu mức cộng dồn 5% mỗi ngày trên số dư chưa thanh toán của ngày trước, gồm phần phí đã cộng dồn; ví dụ 5.000.000 → 5.250.000 → 5.512.500 VND.
+5. System gửi reminder mỗi ngày cho đến khi bill tháng được thanh toán; System lưu kỳ, bằng chứng và trạng thái đối soát.
+6. Hạn thanh toán là 10 ngày tính từ ngày phát hành bill; ngày được tính từ Thứ Hai đến Thứ Bảy, không tính Chủ nhật.
+7. Nếu Contract bắt đầu giữa tháng, tiền thuê tháng bắt đầu được tính theo thời gian thuê thực tế.
+MF-06
+Smart IoT Usage Monitoring & Pay-As-You-Go(Giám sát sử dụng và tính phí theo ly)
+Smart Coffee Machine, System, Moderator, Tenant / Store Owner
+S01 | Thu telemetry, cup count và vị trí được giám sát
+1. Một ly hợp lệ là một ly được bán và máy gửi trạng thái bán thành công.
+2. Smart Coffee Machine tự lưu cup count và thông tin vận hành khi offline; khi kết nối lại, máy tự gửi dữ liệu đã lưu lên cloud.
+3. System gắn dữ liệu với đúng máy và Contract để hiển thị cho Moderator/Tenant theo quyền truy cập.
+4. Contract/Installation Location vẫn là vị trí khai báo của hợp đồng; Monitored Device Location là dữ liệu theo dõi riêng của Smart IoT.
+5. System tổng hợp số ly hợp lệ theo tháng để tính Pay-As-You-Go; máy Conventional không có các dữ liệu/tính năng telemetry này.
+6. Theo hợp đồng, Tenant phải duy trì máy online; thời gian offline tối đa được ghi theo thỏa thuận từng hợp đồng, mức 5 ngày có thể thay đổi.
+7. Nếu dữ liệu ly của tháng vừa kết thúc được đồng bộ sau khi phát hành bill nhưng vẫn trong hạn thanh toán và bill còn điều chỉnh được, System tính lại usage và Moderator gửi bill điều chỉnh cho Tenant.
+8. Nếu không thể điều chỉnh bill trong thời hạn đó, các ly hợp lệ được đồng bộ trễ sẽ được cộng vào bill của tháng kế tiếp.
+MF-06
+Smart IoT Usage Monitoring & Pay-As-You-Go(Giám sát sử dụng và tính phí theo ly)
+Smart Coffee Machine, System, Moderator, Tenant / Store Owner
+S02 | Quy thuộc cup usage khi có Smart replacement machine
+1. Technician ghi thời điểm bắt đầu/kết thúc bàn giao giữa máy chính và replacement cùng loại vào work history.
+2. System cộng cup usage hợp lệ của máy chính và Smart IoT replacement vào cùng Contract trong khoảng Tenant thực dùng từng máy.
+3. Moderator kiểm tra tổng usage của Contract trước khi phát hành bill.
+4. Smart IoT chỉ thay bằng Smart IoT; Conventional chỉ thay bằng Conventional.
+MF-07
+Smart IoT Global Menu & Recipe Management(Quản lý Global Menu và công thức)
+Tenant / Store Owner, Smart Coffee Machine, System
+S01 | Tạo Global Menu và quản lý recipe chung
+1. Tenant tạo bộ Global Menu dùng chung cho doanh nghiệp, gồm danh sách món và recipe/định lượng pha chế.
+2. Tenant cập nhật recipe/định lượng trong phạm vi menu mình quản lý.
+3. System lưu menu để Tenant chọn nội dung áp dụng cho từng cửa hàng/máy Smart IoT.
+MF-07
+Smart IoT Global Menu & Recipe Management(Quản lý Global Menu và công thức)
+Tenant / Store Owner, Smart Coffee Machine, System
+S02 | Chọn subset theo cửa hàng/máy và cập nhật xuống máy
+1. Tenant chọn cửa hàng và Smart Coffee Machine đích.
+2. Tenant chọn subset từ Global Menu, ví dụ Store A dùng 10/20 món còn Store B dùng đủ 20/20 món.
+3. Tenant điều chỉnh recipe/định lượng cần áp dụng rồi gửi cập nhật từ Dolores xuống Smart Coffee Machine tương ứng.
+4. Tenant mở hồ sơ máy trên màn hình khách hàng để xem menu hiện tại của máy.
+5. System lưu quan hệ menu-cửa hàng-máy; Conventional Machine không nhận remote menu/recipe.
+6. Nếu cập nhật menu không thực hiện được, Tenant báo Moderator; Moderator điều phối Technician đến xử lý máy.
+MF-08
+Preventive Maintenance(Bảo trì định kỳ)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine
+S01 | Điều phối bảo trì ngoài Dolores
+1. Nghiệp vụ công ty là bảo trì 3 tháng/lần trong khung 10 ngày; việc quản lý và lên lịch nằm ngoài phạm vi Dolores.
+2. Moderator/Technician phối hợp với Tenant theo quy trình công ty ở bên ngoài hệ thống; Dolores không tạo lịch hay reminder bảo trì.
+3. Technician chuẩn bị máy replacement cùng loại phù hợp với nhánh Conventional hoặc Smart IoT.
+4. Các tiêu chí và lịch điều phối là nội bộ; Dolores không quản lý hoặc lên lịch bảo trì, chỉ lưu/hiển thị lịch sử bảo trì đã thực hiện.
+MF-08
+Preventive Maintenance(Bảo trì định kỳ)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine
+S02 | Đổi máy tạm, bảo trì máy chính và hoàn đổi
+1. Technician đến địa điểm, bàn giao replacement cho Tenant và thu hồi máy chính; ghi hai mã máy, thời điểm và người nhận.
+2. Technician thực hiện bảo trì, ghi tình trạng, công việc và linh kiện thay thế vào lịch sử máy.
+3. Technician báo kết quả cho Moderator; Moderator cập nhật trạng thái và thông báo Tenant.
+4. Technician giao lại máy chính, thu hồi replacement và ghi kết thúc bàn giao.
+5. Nếu replacement là Smart IoT, usage hợp lệ trong thời gian dùng được quy vào Contract theo MF-06.
+MF-09
+Breakdown & Repair(Báo hỏng, sửa chữa và thay linh kiện)
+Tenant / Store Owner, Moderator, Technician, System, Smart Coffee Machine
+S01 | Tiếp nhận yêu cầu và thu hồi máy cần chẩn đoán
+1. Tenant gửi yêu cầu máy có vấn đề, chọn Contract/máy và mô tả tình trạng.
+2. Moderator xem yêu cầu và gửi work request cho Technician tại Contract Location.
+3. Technician kiểm tra sơ bộ, giao replacement machine cho Tenant và thu hồi máy lỗi để chẩn đoán/sửa chữa.
+4. Technician ghi nhận hai máy, thời điểm, tình trạng tiếp nhận và địa điểm xử lý vào lịch sử.
+MF-09
+Breakdown & Repair(Báo hỏng, sửa chữa và thay linh kiện)
+Tenant / Store Owner, Moderator, Technician, System, Smart Coffee Machine
+S02 | Chẩn đoán nguyên nhân, trách nhiệm và chi phí dự kiến
+1. Technician kiểm tra máy và thực hiện chẩn đoán theo quy trình nội bộ của công ty; Dolores không quản lý tiêu chí/chẩn đoán nội bộ.
+2. Chi phí sửa chữa, thay linh kiện và nhân công áp dụng theo hợp đồng đã thỏa thuận; Dolores không tự quyết định trách nhiệm hay điều kiện thu phí.
+3. Nền tảng lưu hồ sơ hợp đồng, máy sử dụng, lịch sử sửa chữa/bảo trì/thay thế, linh kiện và giá để Moderator/Tenant theo dõi.
+MF-09
+Breakdown & Repair(Báo hỏng, sửa chữa và thay linh kiện)
+Tenant / Store Owner, Moderator, Technician, System, Smart Coffee Machine
+S03 | Sửa chữa, ghi lịch sử, tính phí và trả máy
+1. Technician sửa/thay linh kiện, ghi part, công việc, ngày và kết quả vào lịch sử máy.
+2. Technician báo hoàn tất cho Moderator; Moderator thông báo Tenant.
+3. Technician bàn giao lại máy chính và thu hồi replacement; hai bên xác nhận bàn giao.
+4. Moderator ghi khoản phí theo điều khoản Contract vào bill cuối kỳ; Dolores lưu bill và lịch sử sửa/thay, không tự quyết định chính sách chi phí.
+5. Nếu là Smart IoT replacement, cup usage trong thời gian sử dụng được cộng vào Contract; Conventional không có cup telemetry.
+MF-10
+Contract Expiry Reminder & Decision(Nhắc sắp hết hạn và lấy quyết định)
+System, Moderator, Tenant / Store Owner
+S01 | Nhắc trước một tháng
+1. System phát nhắc khi Contract còn hiệu lực một tháng.
+2. Moderator theo dõi danh sách sắp hết hạn và gửi Tenant thông tin ngày kết thúc cùng câu hỏi có tiếp tục thuê hay không.
+3. Tenant có thể trả lời dừng thuê hoặc trao đổi để lập Contract mới.
+4. Nếu Tenant không phản hồi, xem như không tiếp tục sử dụng; khi Contract hết hạn, Moderator thực hiện quy trình kết thúc/thu hồi bình thường tại MF-11.
+MF-10
+Contract Expiry Reminder & Decision(Nhắc sắp hết hạn và lấy quyết định)
+System, Moderator, Tenant / Store Owner
+S02 | Điều hướng theo quyết định của Tenant
+1. Nếu Tenant dừng thuê, Moderator mở quy trình thu hồi/kết thúc tại MF-11.
+2. Nếu Tenant muốn tiếp tục, Moderator mở đàm phán và hợp đồng mới tại MF-14.
+3. Dolores không gia hạn/renew Contract cũ; mọi kỳ thuê tiếp theo dùng Contract mới.
+MF-11
+Normal Contract Termination, Recovery & Deposit Refund(Kết thúc bình thường, thu hồi và hoàn cọc)
+Moderator, Technician, Tenant / Store Owner, System
+S01 | Lập yêu cầu thu hồi và Technician nhận máy, đánh giá
+1. Tenant dừng ở ngày hết hạn hoặc hai bên thống nhất kết thúc bình thường.
+2. Moderator tạo yêu cầu thu hồi gắn với Contract/máy và thống nhất lịch với Technician/Tenant.
+3. Technician thu hồi và đánh giá tình trạng máy theo quy trình nội bộ, trước khi Moderator quyết toán.
+4. Technician thông báo kết luận có/không có hư hỏng cho Moderator; Dolores không quản lý checklist hay tiêu chí đánh giá nội bộ.
+MF-11
+Normal Contract Termination, Recovery & Deposit Refund(Kết thúc bình thường, thu hồi và hoàn cọc)
+Moderator, Technician, Tenant / Store Owner, System
+S02 | Moderator quyết toán rồi mới hoàn cọc
+1. Tiền cọc là 10.000.000 VND/máy/hợp đồng; sau Technician đánh giá, Moderator thông báo Tenant máy có hư hỏng hay không.
+2. Nếu có hư hỏng, Moderator trừ chi phí hư hại vào cọc; nếu chi phí vượt cọc, Tenant phải thanh toán phần chênh lệch.
+3. Nếu đánh giá tốt và không có vấn đề, Moderator thông báo Tenant; thời hạn hoàn tiền là 10 ngày làm việc kể từ thông báo đó, tính Thứ Hai đến Thứ Bảy và không tính Chủ nhật.
+4. Nếu có hư hỏng/vi phạm, Moderator áp dụng điều khoản hợp đồng trước khi hoàn phần cọc còn lại (nếu có).
+5. Phần cọc còn dư sau khi trừ damage được hoàn theo cùng mốc 10 ngày làm việc; nếu damage vượt cọc, Tenant thanh toán phần chênh lệch theo hợp đồng.
+6. Nếu Contract kết thúc giữa tháng, tiền thuê tháng kết thúc vẫn tính đủ tháng; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng.
+MF-12
+Early Termination(Khách hàng kết thúc hợp đồng sớm)
+Tenant / Store Owner, Moderator, Technician
+S01 | Tiếp nhận yêu cầu kết thúc sớm và thu hồi
+1. Tenant đề nghị dừng trước ngày hết hạn; Moderator đối chiếu Contract và ghi nhận ngày yêu cầu.
+2. Moderator tạo yêu cầu Technician thu hồi máy theo lịch đã phối hợp với Tenant.
+3. Technician thu hồi và đánh giá tình trạng máy; báo cáo được lập trước quyết toán tiền cọc.
+4. Nếu Tenant không chuẩn bị máy để thu hồi, việc xử lý thuộc điều khoản hợp đồng; Dolores không tạo workflow xử lý việc không tuân thủ này.
+MF-12
+Early Termination(Khách hàng kết thúc hợp đồng sớm)
+Tenant / Store Owner, Moderator, Technician
+S02 | Tính khoản phải trả/hoàn theo điều khoản
+1. Moderator dùng báo cáo tình trạng của Technician, các bill còn mở và điều khoản kết thúc sớm đã ký để quyết toán.
+2. Dù kết thúc giữa tháng, tiền thuê tháng kết thúc vẫn tính đủ tháng; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng.
+3. Nếu hợp đồng quy định mất cọc, phí hoặc được hoàn phần dư, Moderator áp dụng đúng điều khoản; không mặc định tỷ lệ chung.
+4. Moderator ghi nhận số tiền cuối cùng và hoàn khoản dư (nếu có) sau khi xử lý các khoản liên quan.
+5. Các khoản kết thúc sớm lấy theo điều khoản Contract; Dolores không tự đặt mức phạt.
+MF-13
+Contract Violation & Recovery(Vi phạm hợp đồng, thu hồi và quyết toán)
+Moderator, Technician, Tenant / Store Owner
+S01 | Ghi nhận vi phạm và phát lệnh thu hồi
+1. Moderator ghi nhận sự kiện/nghi vấn vi phạm và điều khoản hợp đồng liên quan.
+2. Moderator thực hiện thông báo/xử lý theo điều khoản và tạo yêu cầu Technician thu hồi máy.
+3. Technician thu hồi máy, đánh giá tình trạng và ghi bằng chứng/hư hỏng trước khi Moderator quyết toán.
+4. Việc thông báo và biện pháp khi Tenant không phối hợp thu hồi được xử lý theo Contract, ngoài workflow Dolores.
+MF-13
+Contract Violation & Recovery(Vi phạm hợp đồng, thu hồi và quyết toán)
+Moderator, Technician, Tenant / Store Owner
+S02 | Áp dụng điều khoản, khấu trừ/hoàn phần dư
+1. Moderator đối chiếu báo cáo Technician, bill còn nợ và điều khoản vi phạm đã ký.
+2. Dù kết thúc giữa tháng, tiền thuê tháng kết thúc vẫn tính đủ tháng; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng.
+3. Moderator xác định khoản phạt, khấu trừ cọc hoặc số dư được hoàn đúng theo hợp đồng.
+4. Chỉ sau đánh giá/thu hồi và quyết toán theo điều khoản mới thực hiện hoàn phần còn lại (nếu có).
+5. Moderator áp dụng đúng điều khoản đã ký; Dolores không mặc định mọi vi phạm đều làm mất toàn bộ cọc.
+MF-14
+Continued Rental via NEW Contract(Tiếp tục thuê bằng hợp đồng mới)
+Tenant / Store Owner, Moderator
+S01 | Đàm phán và ký Contract mới
+1. Sau nhắc hết hạn, Tenant xác nhận muốn tiếp tục thuê.
+2. Moderator và Tenant đàm phán thời hạn, loại máy, địa điểm, cọc và giá theo thỏa thuận mới.
+3. Hai bên ký ngoài Dolores; Moderator tạo Contract Record mới và upload bản đã ký.
+4. Hệ thống giữ quan hệ lịch sử với Customer nhưng không renewal hoặc kéo dài Contract cũ.
+MF-14
+Continued Rental via NEW Contract(Tiếp tục thuê bằng hợp đồng mới)
+Tenant / Store Owner, Moderator
+S02 | Gắn máy và chuyển tiếp lịch sử giữa hai Contract
+1. Moderator hoàn tất quy trình hết hạn/thu hồi của Contract cũ trước; nếu Tenant muốn tiếp tục thì lập Contract mới, không renewal.
+2. Contract mới là hợp đồng độc lập; máy được gắn theo thỏa thuận/phân bổ tại thời điểm ký, không cố định phải dùng lại máy cũ.
+3. System lưu riêng lịch sử Contract cũ và Contract mới; máy vật lý chỉ gắn với một Contract đang hiệu lực. Tiền cọc/quyết toán của Contract cũ xử lý riêng theo hợp đồng cũ.
+MF-15
+Machine Inventory, History & Lifecycle(Kho máy, lịch sử và vòng đời máy)
+System Administrator, Moderator, Technician, Tenant / Store Owner, System
+S01 | Quản lý inventory và phân bổ máy
+1. Moderator xem/ghi nhận máy vật lý theo mã máy, loại Conventional/Smart IoT và tình trạng nghiệp vụ hiện có.
+2. Khi phân bổ cho thuê, Moderator liên kết một máy vật lý với một Contract; một Customer có thể có nhiều Contract.
+3. Máy thu mua cũ chưa được đánh dấu available-for-rent trước khi hoàn tất refurbish/testing tại MF-19.
+4. Dolores theo dõi số lượng máy IoT còn lại để hỗ trợ điều phối máy thay thế; replacement cùng loại được gắn tạm với Contract tại MF-16.
+MF-15
+Machine Inventory, History & Lifecycle(Kho máy, lịch sử và vòng đời máy)
+System Administrator, Moderator, Technician, Tenant / Store Owner, System
+S02 | Ghi lịch sử vòng đời xuyên suốt
+1. Dolores lưu và hiển thị lịch sử máy gồm lắp đặt, bảo trì, sửa chữa, thay thế/thu hồi máy, linh kiện được thay và giá liên quan theo hợp đồng.
+2. Lịch sử liên kết máy với Contract/Customer khi áp dụng; tiêu chí/checklist đánh giá nội bộ của Technician nằm ngoài Dolores.
+3. Smart IoT bổ sung telemetry/usage/location theo dữ liệu thiết bị; Conventional giữ lịch sử nghiệp vụ nhưng không có dữ liệu IoT.
+4. Moderator/Technician cập nhật các sự kiện vận hành để Tenant và công ty tra cứu, theo dõi.
+MF-15
+Machine Inventory, History & Lifecycle(Kho máy, lịch sử và vòng đời máy)
+System Administrator, Moderator, Technician, Tenant / Store Owner, System
+S03 | Xem hồ sơ theo vai trò
+1. Moderator tra cứu Customer, Contract, bill và lịch sử máy để điều phối nghiệp vụ.
+2. Technician xem các work request và ghi nhận kết quả công việc được giao.
+3. Tenant xem các Contract/máy của Customer và dữ liệu Smart IoT nếu có.
+4. System Administrator xem dashboard thông số vận hành toàn hệ thống theo MF-20.
+MF-16
+Replacement Machine Handling & Usage Attribution(Quản lý máy thay thế và quy thuộc sử dụng)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S01 | Bàn giao/thu hồi replacement trong maintenance hoặc repair
+1. Replacement là máy tạm gắn với Contract/work request chính, không tạo rental Contract mới; máy thay phải cùng loại với máy chính (IoT thay IoT, Conventional thay Conventional).
+2. Technician bàn giao replacement cho Tenant trước hoặc cùng lúc thu máy chính; ghi mã máy, thời điểm và người nhận.
+3. Khi máy chính sẵn sàng, Technician giao lại máy chính, thu hồi replacement và ghi kết thúc sử dụng.
+4. Dolores theo dõi số lượng máy IoT còn lại để biết khả năng cấp máy thay thế; khi cấp/thu lại, cập nhật số lượng khả dụng.
+MF-16
+Replacement Machine Handling & Usage Attribution(Quản lý máy thay thế và quy thuộc sử dụng)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S02 | Tính usage replacement cho Smart IoT
+1. Nếu máy chính là Smart IoT, replacement bắt buộc cũng là Smart IoT; System lấy cup count hợp lệ của replacement trong thời gian Tenant dùng.
+2. System cộng usage hợp lệ của máy chính và replacement vào cùng Contract theo thời gian sử dụng.
+3. Moderator kiểm tra tổng usage Contract trước khi phát hành bill.
+4. Nếu máy chính là Conventional, replacement cũng Conventional và không phát sinh cup count/Pay-As-You-Go.
+MF-17
+Contract Location vs. Monitored Device Location(Địa điểm hợp đồng và vị trí theo dõi)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S01 | Ghi và hiển thị Contract/Installation Location cho mọi máy
+1. Moderator nhập địa điểm lắp đặt theo hợp đồng trong Contract Record cho Conventional và Smart IoT.
+2. Technician xác nhận nơi lắp máy khi bàn giao; Tenant/Moderator xem vị trí đã khai báo.
+3. Conventional chỉ được quản lý theo địa điểm hợp đồng/lắp đặt, không có live monitored location.
+MF-17
+Contract Location vs. Monitored Device Location(Địa điểm hợp đồng và vị trí theo dõi)
+Moderator, Technician, Tenant / Store Owner, Smart Coffee Machine, System
+S02 | Hiển thị monitored location riêng cho Smart IoT
+1. Smart Coffee Machine dùng GPS trên thiết bị Edge (bo mạch Android và tablet) để gửi vị trí; System hiển thị Monitored Device Location riêng với Contract Location.
+2. Moderator/Tenant xem được location theo dõi; dữ liệu GPS được phân biệt với địa điểm hợp đồng đã khai báo.
+MF-18
+Used-Machine Buyback: Inspection, Valuation & Purchase(Thu mua máy cũ, định giá và giao dịch)
+Tenant / Store Owner, Moderator, Technician
+S01 | Kiểm tra hiện trạng và định giá máy cũ
+1. Chỉ khách hàng là người thuê máy Dolores mới thuộc đối tượng được hỗ trợ thu mua máy cũ.
+2. Technician kiểm tra và đánh giá máy theo tiêu chí nội bộ của công ty; Dolores không cấu hình tiêu chí chấm điểm.
+3. Technician hoàn tất đánh giá trước; sau đó Moderator mới thương lượng/chốt điều kiện mua với khách.
+4. Moderator liên kết hồ sơ giao dịch với Customer/người bán và máy; điều kiện thu mua do công ty quy định, không cấu hình tiêu chí đánh giá trong Dolores.
+MF-18
+Used-Machine Buyback: Inspection, Valuation & Purchase(Thu mua máy cũ, định giá và giao dịch)
+Tenant / Store Owner, Moderator, Technician
+S02 | Thương lượng, ký hợp đồng mua bên ngoài và upload
+1. Moderator và người bán thống nhất giá/điều khoản mua.
+2. Hai bên ký hợp đồng mua máy bên ngoài Dolores; Dolores không ký điện tử.
+3. Moderator tạo Buyback Record gắn với Customer/người bán và máy, rồi upload bản hợp đồng mua đã ký.
+MF-18
+Used-Machine Buyback: Inspection, Valuation & Purchase(Thu mua máy cũ, định giá và giao dịch)
+Tenant / Store Owner, Moderator, Technician
+S03 | Chuyển khoản, lưu bằng chứng và thu gom
+1. Bên mua chuyển khoản ngoài Dolores theo hợp đồng mua.
+2. Moderator upload/ghi nhận bằng chứng chuyển khoản trên Buyback Record để theo dõi.
+3. Sau bước chuyển khoản và lưu bằng chứng, Technician thu máy từ người bán và xác nhận bàn giao.
+MF-19
+Buyback Refurbishment, Testing & Availability(Tân trang, kiểm thử và đưa máy vào inventory cho thuê)
+Technician, Moderator, System
+S01 | Tiếp nhận máy mua lại vào khu vực xử lý
+1. Technician nhận máy đã thu gom, ghi mã nhận diện, tình trạng ban đầu và liên kết với Buyback Record.
+2. System/Moderator giữ máy ở trạng thái xử lý sau thu mua; chưa đánh dấu available-for-rent.
+3. Technician thực hiện refurbishment, thay part nếu cần và ghi lại lịch sử/cost.
+MF-19
+Buyback Refurbishment, Testing & Availability(Tân trang, kiểm thử và đưa máy vào inventory cho thuê)
+Technician, Moderator, System
+S02 | Kiểm thử và chỉ mở available-for-rent khi đạt
+1. Technician kiểm tra máy sau refurbishment theo tiêu chí nội bộ và thông báo kết quả đạt/không đạt cho Moderator.
+2. Dolores lưu kết quả vận hành cần theo dõi; không thiết lập checklist hay tự đánh giá pass/fail.
+3. Chỉ sau khi Technician xác nhận hoàn tất refurbishment/testing đạt, Moderator mới đưa máy vào available-for-rent.
+MF-20
+System Administration & Operational Overview(Quản trị tài khoản và tổng quan hệ thống)
+System Administrator, System, Moderator
+S01 | Quản lý tài khoản và vai trò
+1. System Administrator tạo tài khoản, tạo shop, thiết lập trạng thái và cấp quyền cho Tenant.
+2. Moderator được xem và quản lý Contract của các tài khoản trên hệ thống; Moderator gửi yêu cầu thanh toán và đối soát theo quy trình.
+3. System áp dụng quyền Tenant do System Administrator cấp; Admin phụ trách tài khoản/shop/trạng thái/quyền, không giao các thao tác này cho Moderator.
+MF-20
+System Administration & Operational Overview(Quản trị tài khoản và tổng quan hệ thống)
+System Administrator, System, Moderator
+S02 | Theo dõi tổng quan hoạt động Dolores
+1. System tổng hợp doanh thu tổng, số khách hàng, số hợp đồng và số lượng theo từng loại máy đang được thuê.
+2. System Administrator xem các Contract còn hạn/hết hạn cùng những thông số vận hành khác trên dashboard.
+3. Moderator dùng Contract và dữ liệu nghiệp vụ được phân quyền để xử lý công việc.
+Actor
+Actor
+Flow bao gồm
+Nội dung
+System Administrator
+MF-01, MF-14, MF-15, MF-18, MF-20
+Tạo tài khoản, tạo shop, thiết lập trạng thái và cấp quyền cho Tenant; dashboard gồm doanh thu tổng, số khách, số hợp đồng, số lượng từng loại máy thuê và Contract còn hạn/hết hạn.
+System
+MF-03 đến MF-10, MF-15 đến MF-20
+Tập hợp dữ liệu IoT/cup count theo tháng, gửi reminder bill hằng ngày đến khi thanh toán và nhắc Contract trước một tháng; lưu trạng thái/bằng chứng và lịch sử. Không lên lịch bảo trì hoặc thực hiện đánh giá kỹ thuật nội bộ.
+Moderator
+MF-01 đến MF-20
+Xem/quản lý Contract của các tài khoản trên hệ thống; gửi yêu cầu thanh toán, đối chiếu với ngân hàng nội bộ và khởi tạo hoàn tiền theo quy trình. Theo dõi hồ sơ và điều phối Technician; không tạo account/shop/status hoặc cấp quyền Tenant.
+Tenant / Store Owner
+MF-01 đến MF-18
+Được Admin cấp tài khoản/quyền; theo dõi Contract/bill, chuyển khoản và xác nhận/upload proof, báo lỗi máy cho Moderator; giám sát telemetry/location, cup count và quản lý Global Menu trên Smart IoT.
+Smart Coffee Machine
+MF-03, MF-06, MF-07, MF-09, MF-16, MF-17
+Nguồn cup/status/GPS; lưu dữ liệu ly offline, tự đồng bộ lên cloud khi kết nối lại; nhận menu/recipe. Tenant xem menu hiện tại trong hồ sơ máy.
+Technician
+MF-02, MF-03, MF-08, MF-09, MF-11 đến MF-19
+Giao/lắp, đổi máy, chẩn đoán/sửa, thu hồi/đánh giá cọc, inspection/valuation và refurbishment/testing. Tiêu chí đánh giá là quy trình nội bộ; điểm kiểm soát bắt buộc: thu hồi/đánh giá trước khi Moderator quyết toán/hoàn cọc.
+Phần nghiệp vụ
+Nghiệp vụ
+Flow bao gồm
+Nội dung
+Onboarding, đàm phán, ký/upload và gắn máy
+MF-01
+Đã có flow; Admin tạo account/shop/status/quyền Tenant; Moderator quản lý Contract và quy trình thanh toán liên quan.
+Giao/lắp Conventional và Smart IoT
+MF-02, MF-03
+Đã có hai nhánh; điều kiện mạng Smart IoT được công ty/Technician đánh giá trước hợp đồng; Dolores lưu Contract Location và dữ liệu vận hành phù hợp từng loại máy.
+Bill tháng đầu, bill định kỳ và đối soát
+MF-04, MF-05
+Đã chốt cọc, phí lắp, ngày phát hành, hạn 10 ngày Thứ Hai–Thứ Bảy, không tính Chủ nhật; số dư thiếu quá hạn cộng dồn 5%/ngày; hoàn bill thừa sau xác nhận và đối soát. Nếu Contract bắt đầu giữa tháng, tiền thuê tính theo thời gian thuê thực tế; nếu kết thúc giữa tháng, vẫn tính đủ tiền thuê tháng đó.
+Pay-As-You-Go, telemetry, location và Global Menu
+MF-06, MF-07, MF-17
+Đã chốt tính PAYG theo tháng, định nghĩa ly hợp lệ, lưu offline và tự đồng bộ, giới hạn offline theo hợp đồng, GPS, xem menu hiện tại và điều phối Technician khi lỗi menu. Dữ liệu về trễ được tính lại/gửi bill điều chỉnh nếu còn trong hạn và bill điều chỉnh được; nếu không, cộng vào kỳ kế tiếp.
+Bảo trì, sửa chữa, part và replacement
+MF-08, MF-09, MF-16
+Đã xác nhận Dolores chỉ lưu/theo dõi lịch sử; không quản lý lịch bảo trì hay tiêu chí nội bộ. Chi phí sửa/thay theo hợp đồng; máy thay cùng loại, usage Smart IoT quy về Contract.
+Nhắc hết hạn, kết thúc thường, sớm, vi phạm và hoàn cọc
+MF-10 đến MF-13
+Đã chốt không phản hồi là không tiếp tục; Technician thu hồi/đánh giá trước, Moderator quyết toán; 10 ngày làm việc cho hoàn cọc, damage trừ cọc và phần vượt do Tenant trả thêm.
+Hợp đồng mới khi tiếp tục thuê
+MF-14
+Contract mới độc lập, không renewal; máy được phân bổ theo thỏa thuận tại thời điểm ký, quyết toán Contract cũ riêng.
+Inventory và machine lifecycle/history
+MF-15, MF-16
+Đã chốt replacement cùng loại, gắn tạm với Contract chính và theo dõi số máy IoT còn lại; history lưu sự kiện máy, sửa chữa, bảo trì, linh kiện và giá.
+Used-machine buyback đến available-for-rent
+MF-18, MF-19
+Đã chốt chỉ hỗ trợ khách thuê máy Dolores, điều kiện theo quy định công ty; Technician đánh giá nội bộ trước, Moderator chốt mua, ký/upload hợp đồng, đối soát bằng chứng chuyển khoản, thu gom và đưa máy vào available-for-rent sau refurbish/testing đạt.
+Vai trò Admin, System, Moderator, Tenant, Smart Machine, Technician
+MF-01 đến MF-20
+Đã walkthrough đủ sáu góc nhìn; Admin quản trị account/shop/quyền và dashboard; Moderator quản lý Contract và xử lý payment/service.
+Nghiệp vụ
+1. Từ nhu cầu thuê đến hợp đồng và bàn giao
+System Administrator tạo tài khoản, shop, trạng thái và cấp quyền Tenant. Tenant trao đổi với Moderator về nhu cầu, loại máy và địa điểm. Với Smart IoT, công ty/Technician đánh giá điều kiện tiên quyết trước; Tenant phải bảo đảm hạ tầng mạng rồi Moderator mới tiến hành hợp đồng. Hai bên ký bên ngoài Dolores; Moderator lập Contract Record, upload bản đã ký và quản lý Contract của các tài khoản. Một Customer có thể có nhiều Contract, nhưng mỗi máy vật lý chỉ gắn một Contract đang hiệu lực. Contract/Installation Location được ghi cho mọi máy. Technician giao/lắp Conventional hoặc Smart IoT; máy Smart là thiết bị Edge Android/tablet có GPS gửi Monitored Device Location. Dolores tập trung giám sát Smart IoT/PAYG; Contract, thanh toán, vận hành và lịch sử máy được lưu để theo dõi.
+2. Thanh toán tháng đầu và các tháng tiếp theo
+Tháng đầu gồm cọc 10.000.000 VND/máy/hợp đồng, tiền thuê, phí lắp mặc định 1.000.000 VND/máy (hoặc mức đã thỏa thuận) và các khoản áp dụng. Giá thuê Conventional là 1.500.000 VND/máy/tháng; Smart IoT là 750.000 VND/máy/tháng cộng 1.000 VND mỗi ly hợp lệ. Nếu Contract bắt đầu giữa tháng, tiền thuê tháng bắt đầu tính theo thời gian thuê thực tế. Nếu Contract kết thúc giữa tháng, vẫn tính đủ tiền thuê tháng kết thúc; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng. Bill phát hành ngày cuối tháng; hạn thanh toán 10 ngày tính Thứ Hai đến Thứ Bảy, không tính Chủ nhật. Tenant chuyển khoản ngoài Dolores, xác nhận/upload bằng chứng; Moderator đối chiếu với tài khoản ngân hàng công ty. Thiếu trong hạn, Moderator yêu cầu trả đủ. Thừa, Moderator hoàn sau khi Tenant xác nhận thanh toán và giao dịch được đối soát. Trễ hạn, phần còn thiếu tăng lũy kế 5% mỗi ngày trên số dư chưa thanh toán của ngày trước (5.000.000 → 5.250.000 → 5.512.500 VND); System nhắc hằng ngày đến khi thanh toán đủ. Dữ liệu PAYG đồng bộ trễ được tính lại và Moderator gửi bill điều chỉnh nếu còn trong hạn thanh toán và bill còn điều chỉnh được; nếu không, ly hợp lệ được cộng sang bill tháng kế tiếp.
+3. Sử dụng, menu, bảo trì và sửa chữa
+Contract/Installation Location áp dụng cho mọi máy. Dolores tập trung Smart IoT: telemetry, cup count, trạng thái online/offline, GPS monitored location và Global Menu/recipe; Tenant xem menu hiện tại trong hồ sơ máy. Một ly hợp lệ là ly bán thành công được máy gửi; máy lưu dữ liệu khi offline và tự đồng bộ lại. PAYG tính theo tháng; dữ liệu đồng bộ sau khi phát hành bill sẽ được tính lại/gửi bill điều chỉnh nếu còn trong hạn và bill còn chỉnh sửa được, nếu không thì chuyển usage sang kỳ kế tiếp. Contract quy định giới hạn offline tối đa, hiện mức 5 ngày có thể thay đổi theo đàm phán. Nếu menu gửi không thành công, Tenant báo Moderator để điều phối Technician. Bảo trì mỗi ba tháng trong khung mười ngày nhưng lịch/điều phối nằm ngoài Dolores. Khi hỏng, Technician nhận máy và cấp replacement cùng loại; Technician sửa/thay linh kiện theo thỏa thuận Contract. Dolores lưu lịch sử bảo trì, repair, part, giá và replacement; Smart IoT replacement usage được quy về Contract.
+4. Hết hạn, kết thúc và hoàn cọc
+Một tháng trước khi Contract hết hạn, System nhắc và Moderator hỏi Tenant muốn tiếp tục hay không. Không phản hồi được xem như không tiếp tục sử dụng; khi hết hạn, Moderator tiến hành kết thúc bình thường. Nếu muốn tiếp tục, Contract cũ kết thúc rồi ký Contract mới độc lập; máy được chọn theo thỏa thuận/phân bổ mới. Nếu Contract kết thúc giữa tháng, tiền thuê tháng đó vẫn tính đủ; PAYG Smart IoT chỉ tính ly hợp lệ đến ngày dừng sử dụng. Với kết thúc thường, sớm hoặc vi phạm, Technician thu hồi/đánh giá trước khi Moderator quyết toán theo điều khoản. Hư hỏng được trừ từ cọc 10.000.000 VND; phần vượt cọc do Tenant trả thêm. Không có hư hỏng thì hoàn trong 10 ngày làm việc kể từ thông báo của Moderator; phần dư sau damage áp dụng cùng mốc 10 ngày làm việc.
+5. Thu mua máy cũ và đưa về vòng đời cho thuê
+Khách hàng thuê máy Dolores được hỗ trợ thu mua lại theo điều kiện công ty quy định. Technician đánh giá nội bộ trước; sau đó Moderator mới chốt mua, ký hợp đồng bên ngoài Dolores và upload lên hồ sơ. Bên mua chuyển khoản; Moderator đối chiếu/ghi bằng chứng; rồi Technician thu gom. Máy giữ ở inventory xử lý, chưa available-for-rent. Technician refurbish, thay part và kiểm thử; sau khi Technician xác nhận đạt, Moderator mới chuyển sang available-for-rent.
+Nguyên tắc hoàn cọc xuyên suốt: Technician thu hồi và đánh giá tình trạng máy trước; Moderator quyết toán theo bill và điều khoản hợp đồng sau đó; nếu có damage/vi phạm thì áp dụng điều khoản trước khi hoàn phần cọc còn lại (nếu có).

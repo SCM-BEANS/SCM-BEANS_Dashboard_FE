@@ -1,48 +1,24 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
-import QueryProvider from "@/providers/QueryProvider";
-import { Providers } from "./providers";
-import type { ReactNode } from "react";
 
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-inter",
+const ubarHeadline = localFont({
+  src: "./fonts/UBar-Headline.otf",
+  weight: "700",
+  style: "normal",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-playfair",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-ubar-headline",
 });
 
 export const metadata: Metadata = {
-  title: "DOLORES COFFEE — Coffee Machine as a Service",
-  description: "Giải pháp thuê máy pha cà phê tích hợp IoT & Cloud hàng đầu Việt Nam. Quản lý toàn bộ đội máy từ một nền tảng duy nhất.",
-  keywords: "thuê máy pha cà phê, IoT, cloud, dashboard, DOLORES COFFEE",
-  icons: {
-    icon: "/images/logo.png",
-    apple: "/images/logo.png",
-  },
+  title: "Dolores · Quản lý máy pha cà phê Smart IoT",
+  description: "Bản Next.js local chuyển thể từ prototype Dolores trên Figma.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi" className="scroll-smooth">
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-[#FDFBF7] text-[rgba(0,0,0,0.87)] antialiased`}>
-        <Providers>
-          <QueryProvider>
-            {children}
-          </QueryProvider>
-        </Providers>
-      </body>
+    <html lang="vi" className={ubarHeadline.variable}>
+      <body>{children}</body>
     </html>
   );
 }

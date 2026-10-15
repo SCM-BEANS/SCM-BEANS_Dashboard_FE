@@ -1,0 +1,92 @@
+[
+  {
+    "id": "phase-00-discovery",
+    "title": "Discovery and architecture decision gates",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "The team has explicit technical boundaries and OI gates before committing to production architecture.",
+    "verification_command": "Each of 20 flows and 45 scenarios has an owner/slice; every OI is traceable as open, answered or deferred.",
+    "notes": "Covers cross-cutting MF-01–MF-20 and 45 scenarios.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-01-foundation",
+    "title": "Thin shared foundation and access",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Each role reaches only its authorized Dolores records; Admin manages accounts/shops/status/access and Moderator creates Tenant accounts only.",
+    "verification_command": "Server denies cross-Tenant IDs and unauthorized Moderator/Admin actions; authorized role flows load exact records after refresh.",
+    "notes": "Covers MF-20/S01 and access prerequisites for all flows.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-rental-handover",
+    "title": "Rental contract, machine record and handover",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Tenant and Moderator complete a signed rental record and view the delivered conventional or Smart machine with correct location and history.",
+    "verification_command": "MF-01–MF-03 and MF-15/MF-17 passed; duplicate primary machine allocation and wrong Tenant/shop links are rejected.",
+    "notes": "Covers MF-01–MF-03, MF-15, MF-17/S01.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-smart-iot-menu",
+    "title": "Smart IoT, PAYG, telemetry and menus",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Tenant and internal staff see exact Smart telemetry, confirmed menu state and private recipes; conventional units do not expose Smart features.",
+    "verification_command": "Valid cup events count once by exact machine and active assignment; device-confirmed menu/GPS is distinct from contract location; OI-gated behavior remains blocked.",
+    "notes": "Covers MF-06, MF-07, MF-17/S02 and Smart portion of MF-03.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-04-billing",
+    "title": "Billing, payment evidence and reconciliation",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Tenant submits payment proof and confirmation; Moderator separately reconciles bank receipt; Admin reports only reconciled receipts with deposits separated.",
+    "verification_command": "MF-04–MF-05 happy paths preserve upload and reconcile timestamps; late ordinary cups carry forward; OI-05/06/07/09/10/17 gates are not guessed.",
+    "notes": "Covers MF-04, MF-05, billing handoff from MF-06 and MF-20/S02 data.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-05-service-replacement",
+    "title": "Support, maintenance, repair and replacement",
+    "status": "not_started",
+    "evidence": "",
+      "user_visible_behavior": "Tenant follows a support request through Moderator dispatch and Technician completion; approved service SLA deadlines and actual milestones are visible without a Technician scheduling calendar; service history and same-type replacement use are linked to the correct contract.",
+      "verification_command": "MF-08–MF-09 and MF-16 pass; SLA status uses approved service terms and clock rules only; wrong technician, overlapping or cross-type replacement updates are denied.",
+      "notes": "Covers MF-08, MF-09, MF-16, history parts of MF-15; OI-19 gates SLA targets, clock calculations and alerts.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-06-contract-closeout",
+    "title": "Expiry, termination, deposit settlement and new contract",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Tenant and Moderator close a rental after Technician recovery/assessment; continuation creates a separate contract and eligible external refunds are tracked.",
+    "verification_command": "MF-10–MF-14 pass for approved cases; settlement cannot precede the exact Technician assessment; unresolved date/refund cases are blocked.",
+    "notes": "Covers MF-10–MF-14 and deposit/history dependencies.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-07-buyback",
+    "title": "Used-machine buyback and stock release",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "Eligible Tenant and Moderator track buyback evidence separately from acknowledgement, then Technician collection/refurbishment/testing precedes Moderator stock release.",
+    "verification_command": "MF-18–MF-19 pass; collection/payment alone or a failed/missing test cannot mark a machine available.",
+    "notes": "Covers MF-18–MF-19 and inventory/history portion of MF-15.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-08-operations-ux",
+    "title": "Reporting, reminders, responsive UX and hardening",
+    "status": "not_started",
+    "evidence": "",
+      "user_visible_behavior": "All four roles use record-backed dashboards/reminders, approved SLA compliance views and complete key flows on mobile with exact deep links and readable confirmation/error states.",
+      "verification_command": "All 20 flows/45 scenarios have pass evidence or named OI-blocked status; SLA metrics exclude unconfigured targets; routes retain exact IDs; responsive/security/integrity checks meet approved targets.",
+      "notes": "Covers MF-20/S02 plus cross-flow reminders, reporting, mobile, SLA overview and final verification; OI-19 gates SLA metrics/alerts.",
+    "priority": "P1"
+  }
+]

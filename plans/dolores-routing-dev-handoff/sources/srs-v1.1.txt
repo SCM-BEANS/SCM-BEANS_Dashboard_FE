@@ -1,0 +1,1277 @@
+Dolores Software Requirements Specification
+Smart IoT monitoring and machine rental operations
+Version 1.12 October 2026English edition
+This specification translates the supplied Dolores business-flow document into software requirements covering Smart IoT monitoring and Pay As You Go, rental operations, machine history and used-machine buyback. It incorporates the user clarifications supplied on 2 October 2026 and preserves the distinction between platform functions and activities performed outside Dolores.
+Document status: All 20 source main flows and 45 scenarios are represented. Version 1.1 incorporates six subsequent business decisions. Remaining decisions and review gaps are not implementation-ready merely because the source scenario list is covered.
+Source authority: The supplied main-flow DOCX and the explicit clarifications identified in Section 1 control this SRS. Screen mockups, earlier estimates and unrelated project reports are not used to add requirements.
+Revision scope: Preserved Tenant recipes on Global Menu updates; complete-data gating for the final Smart IoT bill; Tenant submission time as the late-charge/reminder cutoff; actual-time rental for a same-month start and end; same-type replacements; reconciled-receipt revenue and external refund records. Changes are identified by U-06 through U-11 beside affected requirements.
+Use: Review, implementation planning and preparation of acceptance criteria for the confirmed scope. The acceptance observations are derived expectations, not claims that software has been implemented or tested.
+Contents
+1 Introduction3
+1 1 Purpose and scope3
+1 2 Source and precedence3
+1 3 Requirement conventions4
+2 Overall description4
+2 1 Product boundary4
+2 2 Machine capabilities5
+2 3 Permissions and data scope5
+2 4 Dependencies and operating context6
+3 Business rules7
+3 1 Confirmed charge calculations10
+4 Functional requirements and scenarios10
+4 1 Customer onboarding and rental contracts10
+4 2 Conventional machine delivery and installation11
+4 3 Smart IoT delivery and activation12
+4 4 First month billing and payment13
+4 5 Monthly billing and payment reconciliation14
+4 6 Smart IoT monitoring and Pay As You Go16
+4 7 Global Menu and private recipe management17
+4 8 Preventive maintenance records19
+4 9 Breakdown reporting repair and parts20
+4 10 Contract expiry reminders and decisions21
+4 11 Normal termination recovery and deposit refund22
+4 12 Early termination23
+4 13 Contract violations recovery and settlement24
+4 14 Continued rental through a new contract25
+4 15 Machine inventory history and lifecycle26
+4 16 Replacement machines and usage attribution27
+4 17 Contractual and monitored locations28
+4 18 Used machine inspection purchase and collection29
+4 19 Buyback refurbishment testing and availability30
+4 20 Account administration and operational overview31
+5 External interface requirements32
+6 Data requirements and lifecycle controls33
+6 1 Logical records33
+6 2 Relationships and integrity35
+6 3 Confirmed business checkpoints35
+7 Quality requirements and unquantified targets36
+7 1 Acceptance coverage approach37
+8 Limitations and exclusions37
+9 Open decisions39
+10 Source traceability41
+10 1 Main flow and scenario coverage41
+10 2 Coverage summary44
+Appendix A Terminology45
+1 Introduction
+1 1 Purpose and scope
+Dolores primarily supports remote observation of Smart IoT coffee machines and monthly PAYG charging from successful sold-cup reports. It also stores and tracks customer contracts, external payment evidence, machine inventory and lifecycle history for Smart IoT and Conventional machines. The SRS describes what the platform and connected Smart Coffee Machine must support, while leaving internal company judgments and external transactions with the responsible people.
+The intended readers are the Dolores project stakeholders and the people reviewing, implementing or validating the stated requirements. This document does not choose an unapproved technology stack, payment integration or technical service level.
+1 2 Source and precedence
+Ref
+Authoritative content
+S-01
+Software Requirement Specification_Menu_Corrected.docx supplied from the user Downloads folder. It contains a baseline, 20 main flows, 45 scenarios, an actor review and an end-to-end narrative.
+U-01
+User clarification on 2 October 2026: Moderator may create customer accounts; Admin manages all Tenant, Moderator and Technician accounts.
+U-02
+User clarification on 2 October 2026: late-arriving cup usage is accumulated into the following month.
+U-03
+User clarification on 2 October 2026: deposits are displayed separately; Gross Revenue includes deposits; Actual Revenue is rental and applicable actual charges excluding deposits.
+U-04
+User confirmation on 2 October 2026 of the proposed buyback rule: collect according to the agreement; track customer confirmation separately. Moderator-submitted evidence is available to the customer for viewing and confirmation.
+U-05
+User clarification on 2 October 2026: Global Menu is the default recipe/menu already present when a Smart IoT machine is manufactured. Conventional machines do not receive the Dolores menu.
+U-06
+Post-review confirmation: preserve Tenant private recipes when the Global Menu changes. Update the base recipe for viewing and optional Tenant adoption; do not automatically overwrite the private recipe.
+U-07
+Post-review confirmation: issue the final Smart IoT bill only after all usage data through the rental end/use cutoff has synchronized, including offline days. Ordinary monthly bills retain next-month carry-forward for delayed usage.
+U-08
+Post-review confirmation: stop late-charge accrual and bill reminders at the time the Tenant has uploaded transaction evidence and clicked Confirm payment. Moderator reconciliation remains a separate later action.
+U-09
+Post-review confirmation: where a rental starts and ends in the same month, calculate rental from actual rental time.
+U-10
+Post-review confirmation: a replacement must have the same machine type. A shortage does not authorize a cross-type substitute.
+U-11
+Post-review confirmation: revenue is based on reconciled money received. Refunds are external bank transactions with evidence and confirmation tracking comparable to bill-payment records.
+U-01 to U-11 override contradictory passages in S-01 and earlier SRS wording; the later decision controls where they overlap. Specifically, this SRS does not retain the old ban on Moderator customer-account creation, the old option to revise an issued bill for delayed cups, or the old statement that Conventional machines receive a Dolores Global Menu. U-07 creates a final-bill exception to ordinary late-usage carry-forward, and U-09 settles same-month rental. All other requirements are grounded in S-01 or are explicitly identified as an integrity consequence of its rules.
+1 3 Requirement conventions
+FR identifies a functional requirement; BR identifies a business rule; DR identifies a logical data record; IF identifies an external interface; QC identifies a source-supported quality constraint; OI identifies an open issue. MF-xx/Sxx references preserve the source flow and scenario identifiers. The word shall denotes a requirement within the confirmed scope. To be confirmed denotes missing detail and must not be implemented as an assumed business rule.
+A System action belongs to Dolores unless explicitly assigned to the Smart Coffee Machine or Edge. Admin, Moderator, Technician and Tenant are human roles; System and Smart Coffee Machine are participating technical actors. Customer, Tenant and Store Owner refer to the customer-side actor in this specification.
+2 Overall description
+2 1 Product boundary
+The platform links customers and shops to rental contracts and physical machines. A connected Smart Coffee Machine supplies the device data used for monitoring, location display, menu application results and usage billing. External bank transfers and externally signed contracts provide evidence that staff upload and reconcile. Technical assessment and scheduling remain company activities outside the platform.
+Actor
+Responsibility
+Admin
+Administers all three account roles, manages Global Menu with Moderator and views the confirmed operational overview.
+Moderator
+Creates customer accounts; manages contract records, bill issuance/reconciliation, technical requests, settlement and buyback tracking; manages Global Menu.
+Technician
+Performs and records assigned delivery, activation, maintenance, repair, replacement, recovery, inspection and refurbishment/testing outcomes.
+Tenant or Store Owner
+Views own contracts/machines/bills, submits transfer evidence and support requests, responds to expiry, confirms own buyback evidence and customizes supported private Smart IoT recipes/drinks.
+System
+Stores records, applies role scope and lifecycle constraints, aggregates usage, calculates specified charges, displays results and sends the confirmed reminders.
+Smart Coffee Machine
+Provides successful sold-cup and available operating/GPS data, retains data offline, synchronizes after reconnection, and applies supported menus/private recipes with a reported result.
+2 2 Machine capabilities
+Capability
+Conventional
+Smart IoT
+Contract and installation location
+Supported
+Supported
+Rental billing and service history
+Supported
+Supported
+Telemetry and valid-cup PAYG
+Excluded
+Available device data and valid cups
+Online or offline status
+Excluded
+Supported; contractual offline limit
+Monitored GPS location
+Excluded
+Separate from contract location
+Dolores Global Menu
+Not received
+Default menu present from manufacture
+Remote menu and private recipes
+Excluded
+Supported according to machine capabilities
+Temporary replacement
+Conventional only
+Smart IoT only; usage belongs to the main contract
+Digital twin
+Explicitly excluded
+Not specified by this source; no requirement added
+2 3 Permissions and data scope
+The matrix summarizes confirmed responsibilities. Not granted means the source does not authorize that action for the role. No action specified is a deliberate absence of an added permission, not a claim about a complete future access-control design. Tenant access is limited to their own records; Technician work access is tied to assigned work.
+Action
+Admin
+Moderator
+Technician
+Tenant
+Manage Tenant, Moderator and Technician accounts
+Manage
+Create Tenant only
+Not granted
+Own access only
+Manage customer shops, status and role access
+Manage per baseline
+Additional actions TBC
+Not granted
+View own context
+Negotiate/register/upload rental contracts
+No additional action specified
+Manage
+View assigned-work context
+View own contracts
+Issue bills and reconcile bank evidence
+View reporting totals
+Issue and reconcile
+No action specified
+View own bill and submit evidence
+Perform external bank transfer
+Outside platform
+Record/check evidence
+No platform action
+Pay externally
+Manage Global Menu
+Create, update, issue
+Create, update, issue
+Verify at handover
+No Global authoring
+Customize private recipes and add supported drinks
+No Tenant-private edit specified
+No Tenant-private edit specified
+Technical support
+Own Smart IoT machines only
+Receive/update technical work
+No action specified
+Assign and follow results
+Assigned work and outcomes
+Report issues; view own results
+Make technical condition/valuation/test conclusion
+No action specified
+Use Technician result
+Record internal assessment result
+View own relevant outcome
+Settle and refund deposits
+No action specified
+After recovery and assessment
+Recover and assess first
+View own settlement; pay excess
+Record buyback terms/payment evidence
+No action specified
+Manage purchase record
+Inspect and collect
+Own case; view/confirm evidence
+Release bought-back machine for rental
+No action specified
+After satisfactory testing
+Report test result
+Not granted
+View inventory and machine history
+Operational overview
+Inventory and history
+Assigned work/history
+Own machine history
+View aggregate operating/revenue metrics
+Confirmed dashboard
+Operational records by scope
+Assigned work scope
+Own records only
+2 4 Dependencies and operating context
+Smart IoT uses the described Android board/tablet Edge and GPS capability. The customer must meet the company network prerequisites before a Smart rental contract proceeds. Cloud visibility and menu update results depend on the device reporting data; offline storage and later synchronization are part of the confirmed machine behavior. Device models, protocols, data capacities and reporting intervals are not specified.
+Bank-account checking is internal company work performed by the Moderator. The platform receives records and evidence of external payments and refunds, with separate confirmation/reconciliation tracking; an automated bank feed or online payment gateway is not specified. The parties likewise sign contracts outside the platform.
+3 Business rules
+These rules apply across the functional flows. Monetary amounts are in Vietnamese dong. Contract-specific responsibility and charges are recorded from the agreed contract; this SRS does not create additional commercial penalties.
+BR-01  Customer and primary contract. One customer may have multiple rental contracts. Each contract identifies one primary physical machine; a physical machine has at most one active primary rental contract.
+Source: MF-01, MF-14, MF-15
+BR-02  Replacement association. A replacement is a temporary assignment under the main contract/work request and does not create another rental contract. It must have the same type as the primary machine.
+Source: MF-16
+BR-03  Account ownership. Moderator may create customer accounts. Admin manages all Tenant, Moderator and Technician accounts. Internal staff administration is not granted to Moderator.
+Source: U-01; MF-20
+BR-04  Contract execution. Rental and purchase contracts are signed outside Dolores and uploaded by the Moderator. Dolores does not provide electronic contract signing.
+Source: MF-01, MF-18
+BR-05  Conventional rental. The baseline Conventional rental is VND 1,500,000 per machine per month.
+Source: MF-04, MF-05
+BR-06  Smart IoT rental. The baseline Smart IoT charge is VND 750,000 per month plus VND 1,000 per valid cup.
+Source: MF-04, MF-05, MF-06
+BR-07  Deposit. The deposit is VND 10,000,000 per contract per machine. It is shown and tracked separately; it is not carried into a later month as part of the delayed-usage rule.
+Source: MF-04, MF-11; U-03
+BR-08  Installation charge. The default is VND 1,000,000 per machine, or a different installation fee agreed in the contract.
+Source: MF-01, MF-04
+BR-09  First-month charges. The first month includes the deposit, rental, installation and applicable charges. Rental for a mid-month start is based on actual rental time.
+Source: MF-04, MF-05
+BR-10  Ending-month charges. A contract that starts and ends in the same month uses actual rental time. For a contract spanning different months, the existing full ending-month rental rule remains. Smart IoT PAYG includes valid cups only through the actual usage stop cutoff. [U-09]
+Source: MF-05, MF-11, MF-12, MF-13
+BR-11  Bill and payment term. Ordinary bills issue on the final day of the month. The final Smart IoT bill waits for complete data through the rental end/use cutoff, including offline days. Its actual issue date starts the payment term of ten counted days, Monday through Saturday excluding Sunday. Conventional machines have no online-data gate. [U-07]
+Source: MF-05
+BR-12  External payment. The Tenant pays externally and uploads evidence. The Moderator compares it with the company bank account internally and records reconciliation. Dolores has no online payment processing.
+Source: MF-04, MF-05
+BR-13  Shortfall and excess. Within the payment term, request the unpaid balance. Return a reconciled excess after customer payment confirmation, whether the payment is within or after the deadline.
+Source: MF-05
+BR-14  Overdue balance. Each day of lateness adds five percent of the previous unpaid balance, including accumulated late charges, until the Tenant has uploaded transaction evidence and clicked Confirm payment. The charge applies to the remaining unpaid amount. Reconciliation later does not move the confirmed submission cutoff. [U-08]
+Source: MF-05
+BR-15  Bill reminders. Send a daily reminder until the Tenant has uploaded transaction evidence and clicked Confirm payment. Stop at that completed-submission timestamp; Moderator reconciliation is separate. Exception handling for rejected/insufficient submissions remains OI-07. [U-08]
+Source: MF-05
+BR-16  Valid cup. A valid cup is a sold cup that the Smart Coffee Machine reports successful. A Conventional machine has no telemetry cup count or PAYG.
+Source: MF-06
+BR-17  Offline synchronization. The Smart Coffee Machine retains cup and operating data offline and automatically synchronizes it after connectivity returns. The agreed offline limit is contract-specific; five days is the reference value.
+Source: MF-03, MF-06
+BR-18  Late-arriving cups. Carry delayed usage from ordinary issued bills to the following month. The final Smart IoT bill instead waits for complete data through the rental end/use cutoff and includes all remaining unbilled cups. Do not extend the rental or fabricate a next rental month because synchronization is delayed. [U-07]
+Source: U-02; MF-06
+BR-19  Factory default menu. Only Smart IoT machines have the Dolores Global Menu, already present from manufacture. Conventional machines do not receive it.
+Source: U-05; MF-03, MF-07
+BR-20  Global ownership. Only Admin/Moderator manages the Global Menu. Tenant receives it and its updates and cannot create, update or issue the Global Menu.
+Source: MF-07
+BR-21  Private customization. Tenant may adjust a private recipe derived from the received menu and add private drinks when the selected machine supports them. Preserve mandatory ingredients and private scope; no mandatory Moderator approval is introduced.
+Source: MF-07
+BR-22  Menu application evidence. A sent update is not an applied update. Show the last device-confirmed menu until the machine reports successful application.
+Source: MF-07
+BR-23  Preventive maintenance boundary. The company performs maintenance every three months within a ten-day window. Dolores records completed maintenance/history and does not manage the maintenance schedule or generate its reminders.
+Source: MF-08
+BR-24  Technical and charge decisions. Technical assessment criteria, diagnosis, valuation and testing criteria are internal company processes. Repair/part/labour liability and charges follow the contract. Dolores records outcomes and amounts.
+Source: MF-08, MF-09, MF-18, MF-19
+BR-25  Expiry and continuation. Remind one month before expiry. No response means no continued rental. Continued rental requires a new independent contract, not renewal or extension.
+Source: MF-10, MF-14
+BR-26  Deposit settlement sequence. Technician recovery and condition assessment come first. Moderator then settles under bills and contract terms, handles damage/violations and only then refunds an eligible remainder.
+Source: MF-11, MF-12, MF-13
+BR-27  Damage and refund period. Deduct damage from the deposit; the Tenant pays the excess if damage exceeds it. Refund an eligible deposit/remainder within ten working days from Moderator notification of the Technician result, counting Monday through Saturday and excluding Sunday.
+Source: MF-11
+BR-28  Buyback eligibility. Only Dolores rental customers receive buyback support. Technician internal assessment precedes Moderator purchase finalization; company criteria are not configured in the platform.
+Source: MF-18
+BR-29  Buyback evidence and collection. Moderator submits external transfer evidence and the customer can view/confirm it. Agreed collection may proceed while customer confirmation is pending; confirmation is tracked separately.
+Source: U-04; MF-18
+BR-30  Buyback availability gate. A collected machine remains unavailable for rental until refurbishment/testing is satisfactory according to the Technician and the Moderator marks it available.
+Source: MF-19
+BR-31  Location distinction. All rental machines have a contractual installation location. Only Smart IoT has separately monitored GPS location.
+Source: MF-17
+BR-32  Operational revenue labels. Revenue uses reconciled money received. Show deposits separately: Gross Revenue includes them; Actual Revenue is rental and applicable actual charges excluding deposits. Record external refunds with evidence and confirmation separately. Refund netting/presentation and charge classification remain OI-17. [U-11]
+Source: U-03; MF-20
+BR-33  Private recipes on Global Menu updates. Preserve Tenant private recipes and drinks; update the displayed base separately. The Tenant can choose to apply the new base through the existing capability and machine-confirmation flow. A private 60 ml recipe remains 60 ml when the base changes from 40 ml to 50 ml. [U-06]
+Source: MF-07; U-06
+3 1 Confirmed charge calculations
+For a full Conventional rental month, the base rental is VND 1,500,000. For a full Smart IoT rental month, the base is VND 750,000 and the usage charge is VND 1,000 multiplied by the valid cups assigned to the bill. Applicable service charges are added according to the contract. The first bill additionally contains the separately tracked deposit and agreed installation charge.
+For a day of lateness with no intervening payment, the new unpaid balance equals the preceding unpaid balance multiplied by 1.05. The confirmed example is VND 5,000,000, then VND 5,250,000 after day one, then VND 5,512,500 after day two. Late-charge accrual stops at the completed evidence-upload and Confirm payment timestamp under U-08, separately from bank reconciliation. Rounding, partial-payment allocation and invalid/insufficient-submission exception handling remain OI-07.
+Revenue is calculated from reconciled money received. Gross Revenue includes separately identified deposits; Actual Revenue excludes deposits and includes rental and applicable actual charges. Issued bills and unreviewed Tenant evidence are not recognized receipts. Refunds occur outside Dolores with linked evidence and confirmation records. Whether reports subtract refunds or display a separate refund total, and the classification of individual charge categories, remain OI-17.
+4 Functional requirements and scenarios
+Each subsection maps directly to one source main flow. Preconditions describe the business context rather than adding approval steps. Numbered scenario steps distinguish physical or external work from the software records that support it. The open-issue references identify where a more detailed specification still needs a decision.
+4 1 Customer onboarding and rental contracts
+Source flow: MF-01. Actors: Tenant, Moderator, Admin; Technician for the external prerequisite assessment.
+Preconditions: A customer has expressed a rental need. For Smart IoT, the company or Technician assesses prerequisites and the customer must satisfy the network conditions before the Moderator proceeds with the contract.
+Functional requirements
+FR-01-01  The system shall allow the Moderator to record the agreed rental terms, including customer/shop, machine type, rental period, installation location, deposit, installation charge and applicable contractual fees.  [MF-01/S01]
+FR-01-02  The system shall allow the Moderator to consult machine inventory when selecting the proposed rental machine.  [MF-01/S01]
+FR-01-03  The system shall allow a Moderator to create a customer account. Admin account administration shall cover Tenant, Moderator and Technician accounts.  [MF-01/S02]
+FR-01-04  The system shall allow the Moderator to create a contract record and upload the contract signed outside Dolores.  [MF-01/S02]
+FR-01-05  The system shall associate a rental contract with its customer/shop and one primary physical machine. A customer may hold multiple contracts; a physical machine shall not be assigned as a primary rental machine to more than one active contract.  [MF-01/S02]
+FR-01-06  The system shall allow the Tenant to view their own contract records and the Moderator to view and manage customer contract records.  [MF-01/S02]
+MF-01 S01 Receive the rental need and agree the terms
+1. The Tenant explains the required machine type and proposed installation location to the Moderator.
+2. For Smart IoT, the company/Technician assesses prerequisites outside Dolores; the Tenant provides the required network infrastructure.
+3. The Moderator discusses the machine type, rental period, location, baseline price, VND 10,000,000 deposit and installation fee, and checks inventory.
+4. The parties agree the commercial terms for the externally signed contract. Dolores stores the agreed result; it does not conduct the negotiation or technical assessment.
+MF-01 S02 Create the account and register the signed contract
+1. Admin or Moderator creates the customer account under the confirmed account permissions. Admin manages the relevant account access and shop records.
+2. The parties sign the rental contract outside Dolores.
+3. The Moderator creates the contract record, links the customer/shop, records the rental terms and installation location, and uploads the signed document.
+4. The Moderator assigns the primary machine, subject to the active-contract restriction. Delivery then follows MF-02 or MF-03.
+Postcondition: The customer and signed contract are recorded, with the primary machine and installation location identified.
+Acceptance observation: A Moderator can create a customer account without being granted administration of Moderator or Technician accounts. A second active primary assignment for the same physical machine is not accepted.
+To be confirmed: OI-01, OI-02.
+4 2 Conventional machine delivery and installation
+Source flow: MF-02. Actors: Moderator, Technician, Tenant.
+Preconditions: A Conventional machine and a registered contract with an installation location have been selected.
+Functional requirements
+FR-02-01  The system shall allow the Moderator to create a delivery work request containing the customer, contract, machine, installation location and handover accessories.  [MF-02/S01]
+FR-02-02  The system shall allow the assigned Technician to access the delivery request.  [MF-02/S01]
+FR-02-03  The system shall record the machine identifier, handover time and location, installation result and handover information entered by the Technician.  [MF-02/S02]
+FR-02-04  The system shall retain the delivery result in machine/contract history and allow the Moderator to record work completion.  [MF-02/S02]
+FR-02-05  The system shall not expose Smart IoT telemetry, cup counting, connection status, monitored GPS location or remote menu operations for Conventional machines. Conventional machines shall not receive the Dolores Global Menu.  [MF-02/S02]
+MF-02 S01 Request delivery and assign a Technician
+1. The Moderator checks the recorded contract, selected Conventional machine and installation location.
+2. The Moderator creates and assigns the delivery request with the relevant handover information.
+3. The Technician receives the request, prepares the machine from inventory and arranges delivery with the Tenant.
+MF-02 S02 Install and record handover
+1. The Technician delivers and installs the machine at the contractual installation location.
+2. The Technician records the machine, time, location and installation/handover result.
+3. The Tenant receives the machine; the Technician reports completion to the Moderator.
+4. Dolores retains the contract, declared location and subsequent service history without creating IoT or menu data for the machine.
+Postcondition: A Conventional handover is recorded and available for subsequent contract and machine-history tracking.
+Acceptance observation: The Conventional machine detail shows the recorded installation location and history without an online/offline status, cup counter or Dolores menu.
+4 3 Smart IoT delivery and activation
+Source flow: MF-03. Actors: Moderator, Technician, Tenant, Smart Coffee Machine, System.
+Preconditions: The Smart IoT prerequisites have been satisfied and the machine has a registered rental contract. Its default Global Menu is already present from manufacture.
+Functional requirements
+FR-03-01  The system shall allow a Smart IoT delivery request to identify the physical machine, its associated device and rental contract.  [MF-03/S01]
+FR-03-02  The system shall record the device/machine/contract association and the Technician installation and activation result.  [MF-03/S01]
+FR-03-03  The system shall display the available telemetry, valid-cup usage, connection status and monitored GPS location reported by the Smart Coffee Machine.  [MF-03/S01]
+FR-03-04  The system shall retain the distinction between the contractual installation location and the monitored device location.  [MF-03/S02]
+FR-03-05  The handover record shall capture the Technician confirmation that the machine default Dolores Global Menu is present and applied. An initial cloud download shall not be required merely to establish the existence of the factory-provided menu.  [MF-03/S02]
+FR-03-06  The system shall allow the Tenant to view the menu reported as applied by the machine and shall restrict their changes to private recipes and supported private drinks.  [MF-03/S02]
+FR-03-07  The system shall retain the maximum offline duration agreed in the contract; five days is a reference value, not a fixed system-wide threshold.  [MF-03/S02]
+MF-03 S01 Deliver and activate the Smart IoT machine
+1. The Moderator creates the Smart IoT delivery request linked to the contract and device.
+2. The Technician installs the machine at the contractual location and records the machine/device association. The stated Edge hardware is an Android board and tablet with GPS.
+3. The machine sends available usage, telemetry, connection and location information to Dolores.
+4. The Technician reports the activation result; the Tenant and Moderator view the machine within their permitted scope.
+MF-03 S02 Confirm the machine and default menu are ready
+1. The Moderator checks the machine, contract and installation-location association.
+2. The Technician verifies that the Dolores Global Menu already installed from manufacture is present and applied before completing handover.
+3. Dolores displays the device-confirmed menu and usage associated with the contract.
+4. Subsequent Global Menu updates are managed by Admin/Moderator under MF-07. Tenant customization is private and subject to actual machine support.
+Postcondition: The installed Smart IoT machine is linked to the correct contract, with its default menu and activation result recorded.
+Acceptance observation: A factory-provided default menu is not treated as missing simply because no first-time cloud menu push occurred. Conventional machines do not enter this flow.
+To be confirmed: OI-03, OI-04.
+4 4 First month billing and payment
+Source flow: MF-04. Actors: Moderator, Tenant, System, Smart Coffee Machine.
+Preconditions: The rental contract and applicable charges are recorded. Smart IoT usage is available to the extent it has synchronized.
+Functional requirements
+FR-04-01  The system shall allow the Moderator to prepare and review first-month charges for the contract.  [MF-04/S01]
+FR-04-02  The first-month bill shall distinguish the VND 10,000,000 deposit from rental, installation, Smart IoT usage and other applicable contractual charges.  [MF-04/S01]
+FR-04-03  The system shall use a default installation charge of VND 1,000,000 per machine or the installation amount agreed in the contract.  [MF-04/S01]
+FR-04-04  The system shall apply the confirmed machine-type rental and PAYG prices. First-month rental is based on actual rental time for a mid-month start; a rental that starts and ends in the same month also uses actual rental time. [U-09]  [MF-04/S01]
+FR-04-05  The Moderator shall be able to issue the first-month bill at month end and present the charge breakdown. If it is also the final Smart IoT bill, the complete-data gate in MF-05 applies. [U-07]  [MF-04/S01]
+FR-04-06  The system shall allow the Tenant to submit external bank-transfer evidence against the bill and allow the Moderator to record reconciliation with the company bank account.  [MF-04/S02]
+MF-04 S01 Prepare the first-month bill
+1. The Moderator checks the contract and prepares the deposit, rental, installation and applicable extra charges.
+2. For Smart IoT, the System supplies synchronized valid-cup usage and the PAYG calculation.
+3. The first-month rental reflects actual rental time if the contract starts during the month; the precise proration formula remains OI-05.
+4. The Moderator issues the itemized bill at month end, subject to the final Smart IoT complete-data gate if this is also the last bill, and sends the payment request. The deposit remains a separate line and tracked amount.
+MF-04 S02 Submit evidence and reconcile payment
+1. The Tenant pays by bank transfer outside Dolores and uploads payment evidence for the bill.
+2. The Moderator compares the evidence with the actual company bank transaction.
+3. If the amounts and transaction match, the Moderator records the reconciliation result. Otherwise, the payment remains subject to checking.
+4. Shortfalls, excess payments and overdue balances follow MF-05. Dolores does not process the bank transfer.
+Postcondition: The first-month bill and its payment evidence/reconciliation are recorded, with the deposit distinguishable from rental and other charges.
+Acceptance observation: The VND 10,000,000 deposit remains separately identifiable in the first-month bill and is not merged into PAYG usage.
+To be confirmed: OI-05, OI-06, OI-07.
+4 5 Monthly billing and payment reconciliation
+Source flow: MF-05. Actors: Moderator, Tenant, System, Smart Coffee Machine.
+Preconditions: A contract has a monthly billing period, applicable rental terms, available usage and any contractual service charges.
+Functional requirements
+FR-05-01  The system shall allow ordinary monthly bills to be issued on the last day of the month. The final Smart IoT bill shall not be issued until all usage data through the rental end/use cutoff has synchronized; issuance may therefore be later than month end. Conventional bills have no online-data gate. [U-07]  [MF-05/S01]
+FR-05-02  The system shall determine the payment term as ten counted days from bill issuance, counting Monday through Saturday and excluding Sunday. The exact inclusion of the issue date and holiday handling remain to be confirmed.  [MF-05/S01]
+FR-05-03  A Conventional monthly bill shall include VND 1,500,000 rental and applicable contractual charges; a Smart IoT bill shall include VND 750,000 base rental, VND 1,000 per valid cup and applicable contractual charges.  [MF-05/S01]
+FR-05-04  The system shall calculate rental from actual rental time when the rental starts and ends in the same month. Otherwise the existing actual-time first-month and full ending-month rules apply. Smart IoT usage shall stop at the actual usage cutoff. [U-09]  [MF-05/S01]
+FR-05-05  Ordinary bills shall distinguish current-period usage from delayed prior-period valid cups carried forward. The final Smart IoT bill shall include all remaining unbilled valid usage through the cutoff after complete synchronization, without charging a cup twice. No new rental month is created to collect final delayed usage, and no deposit is carried forward by this rule. [U-07]  [MF-05/S01]
+FR-05-06  The Moderator shall be able to include repair, part and labour charges that are applicable under the signed contract.  [MF-05/S01]
+FR-05-07  The system shall associate uploaded transaction evidence and the Tenant Confirm payment action with the bill. It shall record the time both submission conditions are satisfied separately from the Moderator reconciliation time and result. [U-08]  [MF-05/S02]
+FR-05-08  For a reconciled shortfall within the payment term, the system shall support the Moderator request for payment of the remaining amount.  [MF-05/S02]
+FR-05-09  For a reconciled excess payment, the system shall track the external refund after Tenant payment confirmation and bank reconciliation, regardless of lateness. It shall retain the refund transaction, evidence and confirmation linked to the bill; Dolores does not transfer money. [U-11]  [MF-05/S02]
+FR-05-10  For an overdue unpaid balance, the system shall calculate the confirmed daily cumulative five-percent charge up to the time the Tenant has uploaded transaction evidence and clicked Confirm payment. Later Moderator reconciliation shall not replace that submission cutoff. Shortfall/rejected-evidence exceptions remain OI-07. [U-08]  [MF-05/S02]
+FR-05-11  The System shall stop daily bill reminders when the Tenant has uploaded transaction evidence and clicked Confirm payment, while retaining a separate pending-reconciliation result. The first reminder date remains OI-08; invalid/shortfall resumption rules remain OI-07. [U-08]  [MF-05/S02]
+FR-05-12  The System shall prevent final Smart IoT bill issuance until usage through the rental end/use cutoff is confirmed complete, including applicable primary/replacement intervals and offline days. It shall derive the payment deadline from the actual issue date. The completeness evidence is specified further under OI-09. [U-07]  [MF-05/S01]
+MF-05 S01 Close the month and issue the bill
+1. The System makes available synchronized usage and the Moderator checks contract rental and applicable service charges.
+2. The bill separates rental, usage, prior-period late usage and other applicable charges; deposits are tracked separately.
+3. At month end, the Moderator issues the ordinary bill and payment request. For the final Smart IoT bill, the Moderator waits for complete usage data through the cutoff before issuance. The ten-counted-day payment term starts from the actual issue date.
+4. For ordinary monthly billing, delayed cups are included in the following month. Before final Smart IoT issuance, pending offline usage must synchronize and previously billed cups must be excluded. Waiting for synchronization does not extend the rental period or the usage cutoff.
+MF-05 S02 Reconcile payment and handle differences
+1. The Tenant transfers money externally, uploads transaction evidence and clicks Confirm payment. The System records the completed-submission time and stops further late-charge accrual and bill reminders at that time; bank reconciliation is still pending.
+2. The Moderator checks the company bank account internally and records the reconciliation.
+3. If payment is insufficient within the term, the Moderator requests the balance. If payment exceeds the amount due, the Moderator returns the excess after confirmation and reconciliation.
+4. Before the completed Tenant submission cutoff, an overdue unpaid amount accumulates five percent daily on the preceding balance. With no intervening payment or completed submission, VND 5,000,000 becomes VND 5,250,000 and then VND 5,512,500.
+5. The System keeps the submission timestamp separate from Moderator reconciliation. Pending reconciliation alone does not continue reminders or late-charge accrual after a completed Tenant submission. If the submission is invalid or insufficient, the outstanding amount remains; restart/backdating behavior requires OI-07.
+Postcondition: The issued bill, outstanding balance, evidence, reconciliation and any excess refund remain traceable to the contract.
+Acceptance observation: Ordinary late usage is carried forward. If a rental ends on day 30 and its last two days synchronize on day 2 of the next month, its final Smart IoT bill is withheld until the data is complete and includes the unbilled usage. The waiting period adds no rental days. The payment term starts from actual issuance. A VND 5,000,000 overdue balance follows the confirmed two-day example until the Tenant submission cutoff.
+To be confirmed: OI-05, OI-06, OI-07, OI-08, OI-09.
+4 6 Smart IoT monitoring and Pay As You Go
+Source flow: MF-06. Actors: Smart Coffee Machine, System, Moderator, Tenant; Technician for replacement handover times.
+Preconditions: A Smart IoT device is associated with its machine and rental contract.
+Functional requirements
+FR-06-01  The machine shall locally retain cup-count and operating data while offline and automatically synchronize stored data to the cloud when connectivity returns.  [MF-06/S01]
+FR-06-02  The System shall count a cup as valid only when it represents a sold cup reported successful by the machine.  [MF-06/S01]
+FR-06-03  The System shall associate the received usage with the correct machine and contract and display it to the Moderator and the owning Tenant.  [MF-06/S01]
+FR-06-04  The System shall aggregate valid cups by monthly billing period and calculate PAYG at VND 1,000 per valid cup.  [MF-06/S01]
+FR-06-05  The System shall display available device telemetry, online/offline status and GPS monitored location while preserving the separate contractual location.  [MF-06/S01]
+FR-06-06  For ordinary monthly bills, delayed valid cups received after issuance shall be charged in the following month. For the final Smart IoT bill, the System shall wait for complete usage data through the rental end/use cutoff and include all remaining unbilled valid cups in that final bill. Original contract and usage time shall be preserved. [U-07]  [MF-06/S01]
+FR-06-07  The System shall retain the contractual offline limit for the relevant Smart IoT machine; no automatic penalty, machine lock or contract termination is authorized by the monitoring rule alone.  [MF-06/S01]
+FR-06-08  The System shall allocate valid cups from the primary Smart IoT machine and a same-type replacement to the same rental contract according to the Tenant actual usage periods.  [MF-06/S02]
+MF-06 S01 Receive and display current or delayed usage
+1. The Smart Coffee Machine records successful sold cups and operating data.
+2. When connected, the machine sends the available information to Dolores. When offline, it retains the information and synchronizes it upon reconnection.
+3. The System associates usage with the correct machine and contract and displays usage, connection status and GPS as applicable.
+4. The System aggregates monthly valid cups for PAYG. Ordinary late data is carried into the following month; final Smart IoT issuance waits for all usage data through the rental end/use cutoff, including data stored during offline days.
+5. The contractual offline limit is retained for monitoring; the reference five-day value can be changed by negotiation.
+MF-06 S02 Attribute replacement usage
+1. The Technician records the start and end of the primary/replacement handover periods.
+2. The System attributes primary-machine and Smart replacement cups to the same contract for the corresponding actual usage periods.
+3. The Moderator checks the combined contract usage before billing.
+4. A Conventional replacement remains Conventional and does not generate cup-based PAYG.
+Postcondition: Smart IoT usage is attributable to a contract and period, including replacement use and data received late.
+Acceptance observation: A Conventional machine does not produce PAYG. Smart replacement use is charged to the existing contract and does not create another rental contract.
+To be confirmed: OI-03, OI-04, OI-09, OI-10.
+4 7 Global Menu and private recipe management
+Source flow: MF-07. Actors: Admin, Moderator, Tenant, Smart Coffee Machine, System; Technician for handover verification.
+Preconditions: A Smart IoT machine already contains its default Global Menu from manufacture. Conventional machines are excluded from this menu flow.
+Functional requirements
+FR-07-01  Only Admin and Moderator shall be permitted to create, modify and issue the Dolores Global Menu, including its drinks, mandatory ingredients and base recipes.  [MF-07/S01]
+FR-07-02  The System shall treat the factory-provided Global Menu as the source menu for the Smart IoT machine; this requirement shall not introduce a manufacturing-management module.  [MF-07/S01]
+FR-07-03  The System shall support Admin/Moderator assignment and transmission of subsequent Global Menu updates to supported Smart IoT machines.  [MF-07/S02]
+FR-07-04  The System shall distinguish sent, awaiting-machine-response, failed and applied menu results. It shall continue to show the last device-confirmed menu until the machine reports successful application.  [MF-07/S02]
+FR-07-05  The Tenant shall be able to view the menu currently reported by their machine and receive Global Menu updates from Dolores, without Global Menu authoring permission.  [MF-07/S02]
+FR-07-06  The System shall support the Tenant report of a menu delivery/application failure to the Moderator for Technician coordination.  [MF-07/S02]
+FR-07-07  The Tenant shall be able to adjust private recipes derived from their received Global Menu within their own machine/account scope.  [MF-07/S03]
+FR-07-08  The System shall display the base recipe and proposed private quantities, preserve required ingredients and check the actual limits supported by the machine.  [MF-07/S03]
+FR-07-09  The System shall allow the Tenant to confirm saving and sending a private recipe to the selected machine without a mandatory Moderator approval step. Private changes shall not update the Global Menu or another Tenant data.  [MF-07/S03]
+FR-07-10  The Tenant shall be able to add a private drink only when its ingredients, functions and quantities are feasible for the selected machine.  [MF-07/S04]
+FR-07-11  Where support is absent or cannot be established, the System shall identify the unmet condition and shall not allow the private drink to be applied.  [MF-07/S04]
+FR-07-12  The System shall show the new private recipe or drink as currently applied only after machine success confirmation. A Global Menu update shall preserve existing Tenant private recipes and private drinks; the updated base remains available for viewing and optional Tenant adoption. It shall not silently replace a private recipe. [U-06]  [MF-07/S03, S04]
+FR-07-13  A Global Menu update shall retain the existing Tenant private recipes and private drinks. The updated base recipe shall be stored/displayed separately and shall not automatically overwrite private values. [U-06]  [MF-07/S02]
+FR-07-14  The Tenant shall be able to view the updated base recipe and explicitly choose to apply it to their own recipe. The existing supported-capability validation, confirmation and machine application-result flow shall still apply. [U-06]  [MF-07/S02, S03]
+MF-07 S01 Manage the internal Global Menu
+1. Admin/Moderator manages the Dolores source menu, its drinks, mandatory ingredients and base recipes.
+2. Changes are limited to recipes and capabilities supported by the relevant Smart IoT machine.
+3. The System stores the internal menu configuration. Tenant access does not include creating, editing or issuing the Global Menu.
+MF-07 S02 Apply an internal menu update
+1. Admin/Moderator selects the Smart IoT target and sends a supported Global Menu update. The initial default menu already exists from manufacture.
+2. The machine receives the update, attempts application and reports the result.
+3. While awaiting a successful response, Dolores continues to show the last device-confirmed menu and the pending or failed result separately.
+4. On success, the applied menu becomes visible to the Tenant. On failure, the Tenant may notify the Moderator, who coordinates a Technician.
+5. The System preserves the Tenant private recipes and drinks and updates the separately displayed base recipe. For example, a private 60 ml Espresso remains 60 ml when the base changes from 40 ml to 50 ml. The Tenant may choose to adopt the 50 ml base; any device application still requires machine success confirmation. Incompatible or removed base items remain OI-12.
+MF-07 S03 Customize a private recipe
+1. The Tenant selects their own Smart IoT machine and a drink from its Dolores Global Menu.
+2. The Tenant changes supported ingredient quantities while retaining mandatory ingredients; a fresh-milk coffee must retain both coffee and fresh milk.
+3. The System presents the base and proposed recipe and checks machine support.
+4. The Tenant confirms saving and sending the private recipe to the selected machine.
+5. The System reports the machine result and marks the private recipe as applied only after success. No mandatory Moderator review is added.
+MF-07 S04 Add a supported private drink
+1. The Tenant selects a Smart IoT machine already carrying the Dolores menu and enters the private drink, ingredients and recipe.
+2. The System checks the machine capabilities and supported quantities.
+3. If unsupported or not verifiable, the System explains the unmet condition and prevents application.
+4. If supported, the Tenant confirms saving and sending the private drink.
+5. The machine reports success or failure. The drink remains private and does not become a Global Menu item.
+Postcondition: Internal Global Menu ownership is preserved. Existing Tenant private recipes and drinks survive base-menu updates; the Tenant can view and choose the new base recipe. Device-confirmed application remains distinct from cloud updates.
+Acceptance observation: A Tenant cannot modify the Global Menu. A Global change from 40 ml to 50 ml preserves a Tenant private 60 ml recipe. The updated base is visible and can be explicitly selected; unsupported changes cannot be applied, and a successful send alone is not successful application.
+To be confirmed: OI-03, OI-12.
+4 8 Preventive maintenance records
+Source flow: MF-08. Actors: Moderator, Technician, Tenant; System and Smart Coffee Machine for replacement usage.
+Preconditions: The company has coordinated preventive maintenance outside Dolores.
+Functional requirements
+FR-08-01  Dolores shall retain the boundary that preventive maintenance is a company process every three months within a ten-day window; it shall not generate maintenance schedules or maintenance reminders.  [MF-08/S01]
+FR-08-02  The system shall record the same-type replacement and primary-machine handover identifiers, times and recipient.  [MF-08/S02]
+FR-08-03  The system shall allow the Technician to record maintenance performed, condition, work and replaced parts in the machine history.  [MF-08/S02]
+FR-08-04  The system shall retain the Technician result, Moderator status update and notification to the Tenant.  [MF-08/S02]
+FR-08-05  The system shall record return of the primary machine and collection of the replacement, with Smart replacement usage attributed under MF-06 and MF-16.  [MF-08/S02]
+MF-08 S01 Coordinate maintenance outside Dolores
+1. The company follows its three-month maintenance cycle and ten-day window.
+2. The Moderator/Technician coordinates the visit with the Tenant outside the platform.
+3. The Technician prepares a replacement of the same machine type. Scheduling and internal assessment criteria are not configured in Dolores.
+MF-08 S02 Swap, maintain and return the machines
+1. The Technician provides the replacement and collects the primary machine, recording both identifiers, the handover time and recipient.
+2. The Technician performs maintenance and records the work, condition and parts in the machine history.
+3. The Technician reports the result; the Moderator updates the tracked status and informs the Tenant.
+4. The Technician returns the primary machine, collects the replacement and records the end of replacement use.
+5. Smart replacement valid cups are allocated to the existing rental contract.
+Postcondition: Maintenance and replacement history are retained without creating an in-platform maintenance scheduling service.
+Acceptance observation: Completed maintenance can be recorded while the platform has no automatic maintenance appointment or reminder requirement.
+4 9 Breakdown reporting repair and parts
+Source flow: MF-09. Actors: Tenant, Moderator, Technician, System, Smart Coffee Machine.
+Preconditions: The Tenant has a machine under a recorded contract and reports a problem.
+Functional requirements
+FR-09-01  The system shall allow the Tenant to report a machine problem with the relevant contract/machine and a description.  [MF-09/S01]
+FR-09-02  The system shall allow the Moderator to review the report and send a work request to a Technician with the contractual location.  [MF-09/S01]
+FR-09-03  The system shall record receipt of the faulty primary machine and issue of a same-type replacement, including identifiers, times and received condition.  [MF-09/S01]
+FR-09-04  The system shall store diagnosis outcomes, service information, parts and prices required for tracking; it shall not implement the company internal diagnostic criteria or decide liability.  [MF-09/S02]
+FR-09-05  The system shall allow the Technician to record repair/part work, date and outcome and report completion to the Moderator.  [MF-09/S03]
+FR-09-06  The system shall record return of the primary machine and recovery of the replacement with the handover confirmation.  [MF-09/S03]
+FR-09-07  The system shall allow the Moderator to include applicable contractual service charges on the monthly bill, retaining their connection to the repair history.  [MF-09/S03]
+MF-09 S01 Report the problem and receive the faulty machine
+1. The Tenant selects the relevant machine/contract, describes the issue and sends the request.
+2. The Moderator reviews it and assigns a Technician work request.
+3. The Technician checks the machine, provides a same-type replacement and collects the faulty machine for diagnosis/repair.
+4. The Technician records both machines, the times, received condition and processing location.
+MF-09 S02 Determine the diagnosis and contractual charges
+1. The Technician diagnoses the machine using company procedures outside the platform.
+2. Responsibility for repairs, parts and labour is determined from the signed contract, not automatically by Dolores.
+3. The relevant diagnosis outcome, work, parts and prices are retained for tracking by the Moderator and Tenant.
+MF-09 S03 Complete the repair and return the machine
+1. The Technician performs the repair/part replacement and records the work, date and result.
+2. The Technician reports completion; the Moderator informs the Tenant.
+3. The primary machine is returned and the replacement collected with handover information recorded.
+4. The Moderator records applicable service charges on the month-end bill. Smart replacement usage remains attributed to the same contract.
+Postcondition: The support request, completed service, parts, prices and replacement history are linked to the machine and contract.
+Acceptance observation: A repair record does not itself authorize a charge; the Moderator records the charge according to the contract.
+To be confirmed: OI-13.
+4 10 Contract expiry reminders and decisions
+Source flow: MF-10. Actors: System, Moderator, Tenant.
+Preconditions: The system has a recorded contract end date.
+Functional requirements
+FR-10-01  The System shall issue a reminder when one month remains before contract expiry.  [MF-10/S01]
+FR-10-02  The Moderator shall be able to identify expiring contracts and communicate the end date and continued-rental question to the Tenant.  [MF-10/S01]
+FR-10-03  The system shall record the Tenant decision to stop or discuss a new contract.  [MF-10/S01]
+FR-10-04  If the Tenant does not respond, the contract shall proceed through normal expiry and recovery rather than automatic continuation.  [MF-10/S01, S02]
+FR-10-05  Continued rental shall lead to a new contract; the system shall not renew or extend the old contract as the continuation mechanism.  [MF-10/S02]
+MF-10 S01 Remind the Tenant before expiry
+1. When one month remains, the System issues the expiry reminder.
+2. The Moderator reviews the expiring contract and asks whether the Tenant wants to continue renting.
+3. The Tenant may choose to stop or discuss a new contract. No response means no continuation.
+MF-10 S02 Follow the Tenant decision
+1. For a stop decision, the Moderator proceeds to normal termination and recovery under MF-11.
+2. For continued rental, the Moderator proceeds to negotiation and a new contract under MF-14.
+3. When no response is received, the contract expires normally and MF-11 applies.
+Postcondition: The expiry decision determines termination or a separate new-contract process.
+Acceptance observation: Neither silence nor a continued-rental response extends the old contract automatically.
+To be confirmed: OI-08.
+4 11 Normal termination recovery and deposit refund
+Source flow: MF-11. Actors: Moderator, Technician, Tenant, System.
+Preconditions: The contract reaches its end or the parties agree normal termination.
+Functional requirements
+FR-11-01  The system shall allow the Moderator to record the recovery request against the machine/contract and the coordinated collection information.  [MF-11/S01]
+FR-11-02  The system shall record Technician machine recovery and the condition/damage conclusion before Moderator deposit settlement.  [MF-11/S01]
+FR-11-03  The system shall support Moderator settlement using the Technician result, outstanding bills and applicable contract terms.  [MF-11/S02]
+FR-11-04  The system shall support recording damage deductions from the VND 10,000,000 deposit and an additional amount payable by the Tenant when the applicable damage amount exceeds that deposit.  [MF-11/S02]
+FR-11-05  The system shall record the Moderator notification of the Technician result and the refundable deposit amount.  [MF-11/S02]
+FR-11-06  The system shall track the ten-working-day deposit refund deadline from that notification, counting Monday through Saturday and excluding Sunday. This period also applies to the remaining deposit after damage deductions.  [MF-11/S02]
+FR-11-07  The system shall not complete a deposit refund before recovery, Technician condition assessment and settlement of the applicable damage/violation terms.  [MF-11/S02]
+FR-11-08  Ending-month rental shall follow BR-10: actual rental time if the contract starts and ends in the same month; otherwise the full ending-month rule applies. Smart IoT PAYG stops at the usage cutoff and the final bill waits for complete data. [U-07, U-09]  [MF-11/S02]
+FR-11-09  The system shall record an external deposit refund with transaction evidence and confirmation linked to the settlement, without executing a bank transfer. The ten-working-day rule is retained; its interaction with an incomplete final bill remains OI-14. [U-11]  [MF-11/S02]
+MF-11 S01 Recover and assess the machine
+1. The Moderator records the normal termination/recovery request and coordinates with the Tenant and Technician.
+2. The Technician collects the machine and assesses its condition using internal procedures.
+3. The Technician communicates the damage/no-damage conclusion to the Moderator; the system records the outcome rather than configuring an internal assessment checklist.
+MF-11 S02 Settle and refund the deposit
+1. After the Technician assessment, the Moderator informs the Tenant of the result and reviews outstanding bills and contract terms.
+2. The Moderator records applicable deductions. Damage is deducted from the deposit; the Tenant owes any applicable damage amount exceeding the deposit.
+3. Damage and violation terms are handled before determining the refundable remainder.
+4. The Moderator refunds the eligible deposit or remainder externally within ten working days from the notification and records the refund transaction, evidence and confirmation against the settlement. The unresolved interaction with a final bill awaiting data is OI-14.
+5. The ending-month rental and PAYG cutoff follow the confirmed billing rules.
+Postcondition: The recovery result precedes settlement, and the refundable amount or additional amount owed is recorded.
+Acceptance observation: Refund completion cannot bypass the Technician recovery/assessment result. A refundable remainder after damage uses the same ten-working-day notification-based deadline.
+To be confirmed: OI-05, OI-06, OI-09, OI-14.
+4 12 Early termination
+Source flow: MF-12. Actors: Tenant, Moderator, Technician.
+Preconditions: The Tenant requests termination before the contract end date.
+Functional requirements
+FR-12-01  The system shall record the Tenant early-termination request and requested date against the contract.  [MF-12/S01]
+FR-12-02  The system shall support the Moderator recovery request and retain the Technician collection and condition assessment before settlement.  [MF-12/S01]
+FR-12-03  Tenant refusal to prepare the machine for recovery shall be handled under the external contract process, without a new non-cooperation enforcement workflow in Dolores.  [MF-12/S01]
+FR-12-04  The system shall allow the Moderator to record early-termination charges, deposit deductions or refundable amounts according to the signed contract; no universal early-termination penalty or forfeiture shall be assumed.  [MF-12/S02]
+FR-12-05  The system shall apply actual-time rental for a same-month start and end; otherwise full ending-month rental applies. Smart IoT usage is limited to the stop cutoff and the final bill waits for complete data. [U-07, U-09]  [MF-12/S02]
+MF-12 S01 Receive the early-termination request and recover
+1. The Tenant communicates the request; the Moderator records the reason and requested date.
+2. The Moderator creates the recovery request and coordinates collection.
+3. The Technician recovers and assesses the machine before any deposit settlement.
+4. Failure to prepare the machine is handled under contract terms outside the Dolores workflow.
+MF-12 S02 Apply the agreed settlement terms
+1. The Moderator reviews the Technician condition result, outstanding bills and signed early-termination terms.
+2. Rental is calculated under BR-10, including the actual-time same-month exception. Valid cups through the stop cutoff are included only after the final Smart IoT data is complete.
+3. The Moderator records the contractual charge, forfeiture, deduction or refundable remainder without applying an invented general percentage.
+4. Any refund is performed only after assessment and settlement, following the deposit-refund controls in MF-11.
+Postcondition: Early termination is recorded with its contract-specific settlement.
+Acceptance observation: The system does not default every early termination to losing the entire deposit.
+To be confirmed: OI-05, OI-06, OI-09, OI-14.
+4 13 Contract violations recovery and settlement
+Source flow: MF-13. Actors: Moderator, Technician, Tenant.
+Preconditions: A Moderator has identified a suspected or actual violation and the relevant contract term.
+Functional requirements
+FR-13-01  The system shall allow the Moderator to record the violation event or suspicion with its relevant contractual term.  [MF-13/S01]
+FR-13-02  The system shall support the Moderator recovery request and retain Technician recovery, condition and damage evidence before settlement.  [MF-13/S01]
+FR-13-03  Enforcement and non-cooperation handling shall remain under the external contract process.  [MF-13/S01]
+FR-13-04  The system shall allow the Moderator to record applicable contractual penalties, deposit deductions, outstanding amounts and any refundable remainder based on the Technician result and open bills.  [MF-13/S02]
+FR-13-05  A violation shall not automatically forfeit the entire deposit; a refund, if due, shall follow assessment and contractual settlement.  [MF-13/S02]
+FR-13-06  The system shall apply BR-10, including actual-time rental for a same-month start and end, to violation termination. Smart IoT usage ends at the stop cutoff; the final bill waits for complete data. [U-07, U-09]  [MF-13/S02]
+MF-13 S01 Record the violation and request recovery
+1. The Moderator records the event/suspicion and relevant contract term.
+2. The Moderator handles notices according to the contract and issues the Technician recovery request.
+3. The Technician recovers the machine and records its condition, damage and evidence before settlement.
+4. Any non-cooperation enforcement remains outside the platform workflow.
+MF-13 S02 Apply contractual deductions and refund any remainder
+1. The Moderator reviews the Technician report, unpaid bills and violation terms.
+2. The Moderator determines and records contractual charges, deposit deductions and any remaining refundable balance.
+3. The BR-10 rental rule, including the actual-time same-month exception, and valid cups through the stop cutoff are applied; final Smart IoT issuance waits for complete data.
+4. Only after recovery, assessment and settlement can an eligible deposit remainder be refunded.
+Postcondition: The violation and resulting contractual settlement remain traceable without automatic blanket forfeiture.
+Acceptance observation: A recorded violation alone does not mark a deposit as fully forfeited or refunded.
+To be confirmed: OI-05, OI-06, OI-09, OI-14.
+4 14 Continued rental through a new contract
+Source flow: MF-14. Actors: Tenant, Moderator, System.
+Preconditions: The Tenant has chosen to discuss continued rental following the expiry reminder.
+Functional requirements
+FR-14-01  The system shall allow the Moderator to create a separate contract record for continued rental and upload the newly signed external contract.  [MF-14/S01]
+FR-14-02  The old contract shall not be renewed or extended; the new rental terms shall belong to the new contract.  [MF-14/S01]
+FR-14-03  The system shall retain the old and new contracts separately under the customer history, including independent deposit settlement.  [MF-14/S02]
+FR-14-04  The machine for the new contract shall be selected according to the new agreement/allocation, without requiring reuse of the previous machine.  [MF-14/S02]
+FR-14-05  The system shall preserve the one-active-primary-contract-per-physical-machine constraint when the new assignment begins.  [MF-14/S02]
+MF-14 S01 Negotiate and sign a separate contract
+1. The Tenant confirms interest in continued rental.
+2. The Moderator and Tenant agree new terms, including period, type, location, deposit and price.
+3. The parties sign outside Dolores; the Moderator creates a new record and uploads the signed contract.
+4. The new record is independent and does not extend the old contract.
+MF-14 S02 Complete the old lifecycle and assign the new machine
+1. The Moderator completes the old contract termination/recovery process and handles its settlement separately.
+2. The new contract uses the machine agreed or allocated for that new rental; it may be a different physical machine.
+3. The System preserves both contract histories and ensures no overlapping active primary assignment for a physical machine.
+4. Delivery/activation and billing for the new contract follow the relevant standard flows.
+Postcondition: The customer has distinct old/new contract records and independent deposit histories.
+Acceptance observation: Creating a new contract does not silently carry the old deposit, extend the old term or assume the same machine.
+4 15 Machine inventory history and lifecycle
+Source flow: MF-15. Actors: Moderator, Technician, Tenant, Admin, System.
+Preconditions: A physical machine has an identifying record or is being recorded for inventory tracking.
+Functional requirements
+FR-15-01  The system shall allow the Moderator to record and view physical machines by identifier, Conventional/Smart IoT type and current business condition.  [MF-15/S01]
+FR-15-02  The system shall show machine availability for allocation and the remaining Smart IoT machine count used to support replacement coordination.  [MF-15/S01]
+FR-15-03  A bought-back machine shall not be made available for rent before the successful refurbishment/testing outcome in MF-19.  [MF-15/S01]
+FR-15-04  The system shall retain per-machine installation, maintenance, repair, replaced-part, return/recovery and temporary replacement history, including related prices where applicable.  [MF-15/S02]
+FR-15-05  Machine history shall retain the related customer/contract where applicable; Smart IoT shall additionally retain available usage, telemetry and monitored-location context.  [MF-15/S02]
+FR-15-06  The Moderator shall be able to consult customer, contract, bill and machine-history records for operational work.  [MF-15/S03]
+FR-15-07  The Technician shall be able to access assigned work requests and record their work outcomes; the Tenant shall be able to view their own contracts and machines.  [MF-15/S03]
+FR-15-08  Admin shall be able to view the operational overview described in MF-20. Detailed access beyond the confirmed role responsibilities shall not be assumed.  [MF-15/S03]
+MF-15 S01 Record inventory and allocate machines
+1. The Moderator records or opens the machine identifier, type and current business condition.
+2. The Moderator uses the inventory to select a primary rental machine or a same-type temporary replacement.
+3. The System maintains the remaining Smart IoT count for availability tracking.
+4. Machines bought back but still awaiting successful refurbishment/testing remain unavailable for rental.
+MF-15 S02 Maintain the machine lifecycle history
+1. The Moderator/Technician records installation, maintenance, repair, parts, prices, handovers and recoveries as applicable.
+2. Each business event remains associated with the physical machine and the customer/contract where relevant.
+3. Smart IoT history also uses available device data; Conventional history remains operational and contractual.
+4. Internal assessment criteria are not configured as part of this history function.
+MF-15 S03 View records within the role scope
+1. The Moderator consults customer, contract, bill and machine records.
+2. The Technician consults assigned requests and records work outcomes.
+3. The Tenant views their own contracts, machines and available Smart IoT data.
+4. Admin views the operational overview under MF-20.
+Postcondition: Physical machine records retain their business history across rental, replacement, service and buyback processing.
+Acceptance observation: A change of contract or replacement use does not erase the physical machine service history.
+To be confirmed: OI-01, OI-13, OI-15.
+4 16 Replacement machines and usage attribution
+Source flow: MF-16. Actors: Moderator, Technician, Tenant, Smart Coffee Machine, System.
+Preconditions: A main machine requires maintenance or repair and a suitable same-type replacement is available.
+Functional requirements
+FR-16-01  The system shall permit temporary replacement assignment only for the same machine type: Smart IoT for Smart IoT, and Conventional for Conventional.  [MF-16/S01]
+FR-16-02  The replacement shall be linked temporarily to the main rental contract/work request; the system shall not create a new rental contract for that replacement.  [MF-16/S01]
+FR-16-03  The system shall record the primary and replacement identifiers, handover start/end times and recipient.  [MF-16/S01]
+FR-16-04  The system shall retain the return of the main machine, recovery of the replacement and resulting availability change.  [MF-16/S01]
+FR-16-05  The system shall aggregate valid Smart IoT replacement cups with primary-machine cups under the same contract according to their actual usage intervals.  [MF-16/S02]
+FR-16-06  Conventional replacements shall not create cup counts or PAYG charges.  [MF-16/S02]
+FR-16-07  If no same-type replacement is available, the system shall not allocate a different type. Company handling of the shortage remains OI-15. [U-10]  [MF-16/S01]
+MF-16 S01 Provide and recover the temporary machine
+1. A same-type replacement is selected and temporarily associated with the existing contract/work request.
+2. The Technician provides it before or at collection of the main machine, recording both identifiers, time and recipient.
+3. When the primary machine is ready, the Technician returns it and collects the replacement.
+4. The handover end is recorded and the available Smart IoT count is updated as applicable.
+MF-16 S02 Allocate Smart replacement usage
+1. The System uses valid replacement cup data for the recorded Tenant usage interval.
+2. Primary-machine and replacement usage are combined under the original contract.
+3. The Moderator checks total contract usage before billing.
+4. A Conventional replacement remains outside cup-based billing.
+Postcondition: The replacement is traceable as a temporary assignment and its Smart IoT usage belongs to the original contract.
+Acceptance observation: A cross-type replacement is not accepted and temporary replacement assignment does not create an additional rental contract.
+To be confirmed: OI-10, OI-15.
+4 17 Contractual and monitored locations
+Source flow: MF-17. Actors: Moderator, Technician, Tenant, Smart Coffee Machine, System.
+Preconditions: A machine is associated with a rental contract and an installation location.
+Functional requirements
+FR-17-01  The system shall store a contractual installation location for every rented machine type.  [MF-17/S01]
+FR-17-02  The system shall record the Technician installation-location confirmation at handover and allow the Tenant/Moderator to view that declared location.  [MF-17/S01]
+FR-17-03  For Smart IoT, the system shall receive and display monitored location from GPS on the Edge device.  [MF-17/S02]
+FR-17-04  The system shall present monitored GPS location separately from the contractual installation location; Conventional machines shall not show a live monitored location.  [MF-17/S02]
+MF-17 S01 Record the location for any rental machine
+1. The Moderator enters the installation location agreed in the contract.
+2. The Technician confirms the installed location during handover.
+3. The Tenant and Moderator view the recorded location. Conventional machines use only this declared location.
+MF-17 S02 Display Smart IoT GPS separately
+1. The Smart Coffee Machine obtains GPS information through its Edge device and reports it to Dolores.
+2. The System displays that monitored location separately from the declared contractual location.
+3. The Tenant and Moderator view the monitored location within their permitted machine scope.
+Postcondition: A user can distinguish where the machine is contractually installed from any monitored Smart IoT GPS report.
+Acceptance observation: A GPS report does not overwrite the contractual installation location.
+To be confirmed: OI-03, OI-04.
+4 18 Used machine inspection purchase and collection
+Source flow: MF-18. Actors: Tenant as seller, Moderator, Technician.
+Preconditions: The seller is a Dolores rental customer. Eligibility and valuation criteria are company-defined and assessed outside the system.
+Functional requirements
+FR-18-01  The system shall associate a buyback record with a Dolores rental customer/seller and the machine under consideration.  [MF-18/S01]
+FR-18-02  The system shall retain the Technician assessment/valuation outcome before the Moderator finalizes the purchase; it shall not configure the internal scoring criteria.  [MF-18/S01]
+FR-18-03  The system shall allow the Moderator to record the agreed purchase terms and upload the purchase contract signed outside Dolores.  [MF-18/S02]
+FR-18-04  The system shall allow the Moderator to upload or record evidence of the externally executed purchase bank transfer.  [MF-18/S03]
+FR-18-05  The system shall allow the customer to view and confirm the submitted buyback payment evidence and shall track this confirmation separately from collection.  [MF-18/S03]
+FR-18-06  The Moderator shall be able to coordinate Technician collection under the purchase agreement without requiring the customer evidence-confirmation status to be completed first.  [MF-18/S03]
+FR-18-07  The system shall retain the Technician collection and handover result against the buyback record.  [MF-18/S03]
+MF-18 S01 Inspect and value the offered machine
+1. The Moderator identifies the seller as a Dolores rental customer and records the machine in the buyback case.
+2. The Technician inspects and values the machine using internal company criteria.
+3. The Technician completes the assessment before the Moderator negotiates/finalizes the purchase terms.
+4. Dolores retains the relevant result and associations, not the company scoring logic.
+MF-18 S02 Agree the purchase and upload the contract
+1. The Moderator and seller agree the price and purchase terms.
+2. The parties sign the purchase contract outside Dolores.
+3. The Moderator records the purchase and uploads the signed agreement to the buyback case.
+MF-18 S03 Record payment evidence and collect under the agreement
+1. The buyer makes the external bank transfer according to the purchase agreement.
+2. The Moderator uploads/records the transfer evidence; the customer can view and confirm it.
+3. The customer confirmation is tracked separately. Under the agreement, the Moderator may coordinate Technician collection while this confirmation is still pending.
+4. The Technician collects the machine and records the handover. The machine proceeds to processing under MF-19, not directly to rentable inventory.
+Postcondition: The purchase, payment evidence, customer confirmation and collection result are tracked as related but distinct records.
+Acceptance observation: Pending customer confirmation of the transfer evidence does not itself block collection agreed with the seller. Technician assessment precedes purchase finalization.
+To be confirmed: OI-16.
+4 19 Buyback refurbishment testing and availability
+Source flow: MF-19. Actors: Technician, Moderator, System.
+Preconditions: A bought-back machine has been collected and associated with a buyback record.
+Functional requirements
+FR-19-01  The system shall record the machine identity, received condition and link to the buyback record upon receipt for processing.  [MF-19/S01]
+FR-19-02  The system shall keep the machine unavailable for rental while buyback refurbishment/testing is incomplete.  [MF-19/S01]
+FR-19-03  The system shall allow the Technician to record refurbishment work, replaced parts and associated costs in machine history.  [MF-19/S01]
+FR-19-04  The system shall record the Technician internally determined test outcome without configuring an assessment checklist or automatically determining pass/fail.  [MF-19/S02]
+FR-19-05  Only after the Technician confirms satisfactory refurbishment/testing shall the Moderator be able to mark the machine available for rent.  [MF-19/S02]
+MF-19 S01 Receive the machine into processing
+1. The Technician receives the collected machine and records its identity, initial condition and buyback association.
+2. The machine remains in post-purchase processing and unavailable for rent.
+3. The Technician performs refurbishment and records any work, parts and costs.
+MF-19 S02 Record the test result and release to inventory
+1. The Technician tests the machine under internal company criteria and reports satisfactory/unsatisfactory results.
+2. Dolores retains the outcome; it does not run an internal assessment checklist or decide the physical result.
+3. After a satisfactory Technician result, the Moderator marks the machine available for rent.
+4. Without that satisfactory result, the machine is not available for allocation to a new rental.
+Postcondition: A bought-back machine becomes rentable only after the required refurbishment and satisfactory Technician testing result.
+Acceptance observation: Payment or physical collection alone cannot make a bought-back machine available for rent.
+To be confirmed: OI-15.
+4 20 Account administration and operational overview
+Source flow: MF-20. Actors: Admin, Moderator, System.
+Preconditions: Role-assigned accounts and operational records exist or are being created.
+Functional requirements
+FR-20-01  Admin shall be permitted to manage all Tenant, Moderator and Technician accounts.  [MF-20/S01]
+FR-20-02  The system shall support Admin management of customer shops, account status and role access as specified in the baseline. The exact status/action catalogue remains to be confirmed.  [MF-20/S01]
+FR-20-03  Moderator account creation shall be limited to customer accounts; the confirmed permission shall not grant administration of Moderator or Technician accounts.  [MF-20/S01]
+FR-20-04  The system shall apply the confirmed role and record-scope restrictions to account, contract, payment, work and menu actions.  [MF-20/S01]
+FR-20-05  The Admin overview shall display customer count, contract count, quantities of rented machines by type, and contracts that remain valid or have expired.  [MF-20/S02]
+FR-20-06  The Admin overview shall display deposits separately from other revenue amounts.  [MF-20/S02]
+FR-20-07  The Admin overview shall calculate revenue from reconciled money received, not issued bills or unreviewed Tenant submissions. Gross Revenue includes deposits; Actual Revenue includes rental and applicable actual charges excluding deposits. [U-11]  [MF-20/S02]
+FR-20-08  The system shall distinguish reconciled rental receipts, outgoing buyback payments and external refund transactions. Refunds shall have linked evidence and confirmation tracking comparable to bill payments. Report presentation/netting of refunds and detailed charge classification remain OI-17. [U-11]  [MF-20/S02]
+MF-20 S01 Administer accounts and apply role access
+1. Admin manages Tenant, Moderator and Technician accounts and the customer shop/status/access information in the confirmed scope.
+2. Moderator may create customer accounts for onboarding, while continuing to manage contracts, billing and operational work.
+3. The System applies role and data-scope restrictions. Moderator creation of internal staff accounts is not part of the confirmed scope.
+MF-20 S02 View the operating overview
+1. The System summarizes customers, contracts, rented machines by type and valid/expired contracts.
+2. Admin views the operational totals.
+3. Only reconciled money received enters revenue. Deposits are shown separately and included in Gross Revenue; Actual Revenue excludes deposits. Tenant submission alone stops reminders/late accrual but does not recognize revenue.
+4. Refunds are external transfers with linked evidence and confirmation tracking. Report periods, refund netting/presentation and charge classification remain OI-17; the reconciled-receipt revenue basis is settled.
+Postcondition: Admin can administer the confirmed account roles and view an overview with separately identifiable deposit and revenue values.
+Acceptance observation: Moderator customer-account creation does not grant staff-account administration. Deposits are not included in Actual Revenue.
+To be confirmed: OI-01, OI-02, OI-17.
+5 External interface requirements
+IF-01 Role interfaces
+The user interfaces shall expose the actions and record scope defined for Admin, Moderator, Technician and Tenant. Lists/details must identify the relevant customer, contract or machine sufficiently to act on the correct record. The source does not specify browser/device support, navigation layout or a mobile application requirement.
+Source: MF-01 to MF-20; OI-18
+IF-02 Smart machine to platform
+The machine interface shall support the described available telemetry, successful sold-cup data, connection information and GPS reporting, including later transfer of data stored offline. Identity and usage-period context are required for correct attribution. Transport protocol, payload schema, authentication and retry behavior remain to be specified.
+Source: MF-03, MF-06, MF-16, MF-17; OI-03, OI-04, OI-10
+IF-03 Platform to Smart machine
+The interface shall support internally managed Global Menu updates and supported private Tenant recipes/drinks, with the machine reporting application success or failure. The factory default menu already exists. Initial registration, version identifiers and queued/retried update behavior are not specified.
+Source: MF-07; U-05; OI-12
+IF-04 Bank evidence boundary
+The platform shall accept Tenant payment evidence, a separately timestamped Confirm payment action and Moderator-recorded reconciliation for rental bills. External refunds shall have linked transaction evidence and confirmation records. For buyback, the Moderator submits transfer evidence and the customer can view/confirm it. Bank transfers and bank-account comparison occur outside the platform; no bank API or automatic transfer is required by the source.
+Source: MF-04, MF-05, MF-18; U-04
+IF-05 Uploaded documents and evidence
+The platform shall retain externally signed rental/purchase documents and relevant submitted transfer evidence with their associated records. Accepted file formats, file-size limits, retention and correction rights remain to be confirmed.
+Source: MF-01, MF-04, MF-05, MF-18; OI-13
+IF-06 Reminders and work communications
+The platform shall support daily unpaid-bill reminders until completed Tenant payment submission under U-08, one-month-before-expiry reminders and the business work/result communications described in the flows. The delivery channel and dispatch timing are not specified. Preventive maintenance scheduling/reminders are excluded.
+Source: MF-02, MF-03, MF-05, MF-09, MF-10; OI-08
+6 Data requirements and lifecycle controls
+6 1 Logical records
+The following are logical information requirements, not a database schema or an exhaustive set of mandatory fields. Only information supported by the business flows is included. Implementation may divide these records into tables or services without altering the confirmed business meaning.
+ID
+Record
+Required business information
+Source
+DR-01
+Account and role
+Tenant, Moderator or Technician role; account identity and status/access information. Admin administration and Moderator customer creation are distinct.
+MF-01, MF-20; OI-01, OI-02
+DR-02
+Customer and shop
+Customer identity, shop and associated contracts. The source does not define a complete shop cardinality or address/contact-field schema.
+MF-01, MF-20
+DR-03
+Rental contract
+Customer/shop, primary machine, type, start/end dates, installation location, rental terms, deposit, installation charge, applicable fees, signed document and contractual offline limit when relevant.
+MF-01, MF-04, MF-05, MF-14
+DR-04
+Physical machine
+Machine identifier, Conventional/Smart IoT type, inventory/assignment condition and lifecycle history. A Smart IoT machine also has its related device identity.
+MF-03, MF-15
+DR-05
+Temporary assignment
+Primary machine, replacement machine, original contract/work request, handover start/end and recipient. Same-type constraint applies.
+MF-06, MF-16
+DR-06
+Technical work request
+Relevant customer, contract, machine, location, assigned Technician, work description and reported result. Delivery may also contain handover accessories.
+MF-02, MF-03, MF-09, MF-11
+DR-07
+Machine service history
+Machine, work date/time, condition/outcome, maintenance/repair activity, replaced parts, related prices, handovers and relevant contract/customer. Internal scoring criteria are excluded.
+MF-08, MF-09, MF-15, MF-19
+DR-08
+Smart IoT usage and status
+Reporting device/machine, sold-cup success information, contract usage attribution, available operating telemetry, connection status and GPS report. Occurrence/receipt context is needed for monthly and delayed usage. Exact payload is OI-03/OI-10.
+MF-03, MF-06, MF-17
+DR-09
+Global Menu
+Dolores source menu, drinks, mandatory ingredients and base recipes. The Smart IoT factory default is already installed. Subsequent management belongs to Admin/Moderator.
+MF-07; U-05
+DR-10
+Private recipe or drink
+Owning Tenant/machine, source-menu context, drink, ingredients, proposed quantities, supported-capability result and device application result. It is distinct from the Global Menu, preserves private values on base updates and records an explicit Tenant choice to adopt the updated base.
+MF-07
+DR-11
+Bill and charge lines
+Contract, billing period, ordinary/final designation, rental end/use cutoff, final-data completeness evidence, actual issue/due dates, separate deposit, rental, unbilled cups/PAYG, carried-forward usage, service charges and unpaid amount/late charges.
+MF-04, MF-05, MF-06
+DR-12
+Payment and reconciliation
+Associated bill, uploaded evidence/reference, completed Tenant submission timestamp, separate Moderator reconciliation timestamp/result, shortfall/excess, and linked external refund transaction/evidence/confirmation.
+MF-04, MF-05
+DR-13
+Recovery and settlement
+Contract/machine, termination reason/date, Technician collection and assessment result, damage/violation amounts, remaining deposit or additional amount owed, Moderator notification/deadline and external refund transaction, evidence, confirmation and outcome.
+MF-11, MF-12, MF-13
+DR-14
+Buyback record
+Dolores customer/seller, machine, Technician inspection/valuation outcome, agreed price/terms, signed purchase agreement, external transfer evidence, separate customer confirmation and collection result.
+MF-18
+DR-15
+Refurbishment and release
+Bought-back machine, intake condition, refurbishment work, parts/costs, Technician test outcome and Moderator available-for-rent decision.
+MF-19
+DR-16
+Reminder and decision context
+Bill/contract being reminded, relevant payment/expiry condition and Tenant continued-rental response or absence of response. Notification transport and read-state design are not specified.
+MF-05, MF-10
+DR-17
+Operational aggregates
+Customer/contract counts, rented-machine quantities by type, valid/expired contract categories, separately presented deposit amount, Gross Revenue and Actual Revenue based on reconciled money received; external refund totals remain identifiable. Refund netting/presentation remains OI-17.
+MF-20; U-03
+6 2 Relationships and integrity
+A customer can hold multiple contracts. Each primary assignment links one physical machine to one active rental contract. A temporary same-type replacement is an additional temporary link to that contract, not a new rental contract.
+Contractual location belongs to the contract/installation record. Smart monitored location belongs to the device report. They are stored and displayed as different facts.
+Usage attribution must follow the actual machine-use interval. Ordinary late receipt changes the billing period under carry-forward without changing the originating customer/contract. Final Smart IoT billing waits for complete usage through the cutoff and includes remaining unbilled cups; synchronization delay does not extend the rental.
+A private recipe/drink retains its Tenant/machine scope and its distinction from the Dolores Global Menu. It cannot modify another Tenant data or the internal source menu. Global updates preserve the private values while making the new base available for optional Tenant adoption.
+Bills, payment evidence, reconciliation and refund tracking remain linked. A deposit is distinguishable from rental/PAYG and is settled independently for each contract.
+Machine service history follows the physical machine across handovers and contracts. Bought-back machines retain their purchase association through refurbishment, testing and release to inventory.
+6 3 Confirmed business checkpoints
+These checkpoints express the ordering required by the source. They are not a complete enumeration of every technical status or allowed database transition.
+Record or process
+Required checkpoint
+Blocked or excluded shortcut
+Rental contract
+External signing and uploaded record; valid primary assignment
+Electronic signing or overlapping active primary assignments
+Smart handover
+Default Global Menu exists and is verified as applied
+Requiring a first cloud download solely because the default was factory-installed
+Payment timing
+Uploaded evidence plus Confirm payment stops reminders and late accrual; reconciliation stays separate
+Using Moderator review time as the Tenant submission cutoff
+Payment revenue
+Moderator checks company bank transaction and records reconciliation
+Counting an unreviewed submission as reconciled revenue
+Final Smart bill
+Complete usage through rental end/use cutoff before issuance
+Issuing with missing offline days or inventing another rental month
+Menu update
+Preserve private recipe; update base; report device application result
+Overwriting private values or equating sent with applied
+Deposit refund
+Technician recovery/assessment → Moderator settlement → eligible refund
+Refund before condition assessment or before applicable damage/violation terms are handled
+Continued rental
+Old contract lifecycle and settlement → separate new contract
+Renewing the old contract or automatically reusing its deposit
+Buyback collection
+Collection follows the agreement; customer evidence confirmation is separate
+Blocking agreed collection solely because that confirmation is pending
+Bought-back machine
+Refurbishment/testing → satisfactory Technician result → Moderator release
+Rentable immediately upon purchase payment or collection
+7 Quality requirements and unquantified targets
+The source supports the following qualitative constraints. No numeric performance, availability, scalability, recovery or security target has been supplied. Their absence is recorded as OI-18 rather than filled with invented service levels. These requirements do not claim implementation or test completion.
+QC-01 Role and customer separation
+Access and actions shall follow the confirmed role responsibilities. Tenant records and private menu changes shall remain within that Tenant scope.
+Source: MF-01, MF-07, MF-15, MF-20
+QC-02 Usage integrity
+The same valid cup shall not be billed twice when stored device data is synchronized again. This is an integrity condition implied by charging once per valid sold cup; event identity and retry design remain OI-10.
+Source: MF-06, MF-16
+QC-03 Attribution integrity
+Usage shall remain associated with the correct machine, contract and actual usage interval, including replacements and delayed synchronization.
+Source: MF-06, MF-16
+QC-04 Evidence-based status
+A bank image alone shall not be treated as completed Moderator reconciliation. A menu send alone shall not be treated as device application. Technician outcomes precede the dependent settlement/availability decisions.
+Source: MF-05, MF-07, MF-11, MF-19
+QC-05 Offline data continuity
+Smart IoT shall retain cup/operating data offline and synchronize it after reconnection. Buffer capacity, durability guarantees and timing targets are not quantified by the source.
+Source: MF-06
+QC-06 History continuity
+Machine, contract, service and payment evidence shall preserve the associations required by the flows. A new contract or temporary replacement shall not merge separate contract/deposit histories.
+Source: MF-14, MF-15, MF-16
+QC-07 Correct machine-type presentation
+Conventional data shall not be presented as Smart IoT telemetry, live GPS, cup count or Global Menu data. The two location concepts shall remain distinguishable.
+Source: MF-02, MF-17; U-05
+QC-08 Financial separation
+Deposits, rental/PAYG and applicable charges shall be distinguishable for billing and reporting. Gross Revenue and Actual Revenue shall follow the confirmed deposit distinction.
+Source: MF-04, MF-05, MF-20; U-03
+7 1 Acceptance coverage approach
+Acceptance review should use the scenario and requirement references in this SRS. The confirmed business distinctions to observe include Conventional versus Smart behavior, correct contract attribution, full versus partial payment, supported versus unsupported private drinks, Technician-first deposit settlement and the buyback availability gate. These are derived review conditions, not additional workflows or a completed test plan.
+Measurable test thresholds and technical acceptance methods require the decisions listed in OI-18. No test execution, defect target or man-day estimate is asserted in this specification.
+8 Limitations and exclusions
+EX-01 External contract signing
+Dolores stores rental and purchase agreements signed outside the platform. Electronic contract signing is excluded.
+EX-02 External payment and refunds
+Customer rent payments, purchase payments and refunds are carried out externally. Dolores stores evidence, reconciliation and recorded outcomes; online payment processing and automatic bank transfers are not in scope.
+EX-03 Conventional machine capabilities
+Conventional machines have contractual records and service history but no telemetry, cup counts, digital twin, online/offline status, live GPS, remote recipes or Dolores Global Menu.
+EX-04 Maintenance scheduling
+The company maintenance cycle is every three months within ten days. Planning and scheduling occur outside Dolores; the platform records completed maintenance and does not generate maintenance reminders.
+EX-05 Internal assessment
+Prerequisite assessment, diagnosis, damage assessment, valuation and physical test criteria are company/Technician procedures. Dolores records their outcomes; it does not configure scoring or independently determine a physical test result.
+EX-06 Contractual enforcement
+Liability, repair/part charges, early-termination consequences, violation penalties and non-cooperation handling follow the external contract/company process. No universal forfeiture rate, automatic machine lock or enforcement workflow is introduced.
+EX-07 Renewal
+Continued rental uses a newly signed independent contract. Renewal or extension of the previous contract is excluded.
+EX-08 Buyback eligibility and readiness
+Buyback support is restricted to Dolores rental customers under company criteria. Collection or payment does not by itself make a machine available for rent.
+EX-09 Manufacturing and unlisted capabilities
+The Smart Global Menu is factory-provided. This describes the machine starting condition and does not add manufacturing management. Procurement, coffee supply, ingredient-stock measurement or physical machine redesign are not specified as platform features in the approved source.
+EX-10 Unspecified implementation details
+This SRS does not select a technology stack, communication protocol, payment provider, cloud topology, 3D Smart visualization feature or numeric service level absent from the approved source. Such decisions require separate confirmation.
+9 Open decisions
+All entries below are To be confirmed. They identify missing details needed for a complete implementation specification; they do not replace the confirmed rules or authorize an assumed answer. The Conventional menu question is resolved by U-05 and is therefore not an open issue. OI-11 is resolved by U-06: private recipes and drinks are preserved while the updated base is available for viewing and optional adoption. OI-05, OI-07, OI-08, OI-09, OI-15 and OI-17 retain only residual details after U-07 through U-11. No gap-free implementation claim is made.
+OI-01 Account and shop administration
+U-01 settles customer-account creation and Admin control of all three account roles. Confirm the complete account-status/action list and whether Moderator may also create shops, change customer status or assign customer access. The original file is inconsistent on those additional actions.
+Affected scope: MF-01, MF-20
+OI-02 Authentication and account lifecycle
+The source defines roles but no sign-in method, credential delivery, password recovery, account activation/deactivation or session rules. These functions must be specified before they become implementation commitments.
+Affected scope: MF-01, MF-20
+OI-03 Machine capabilities and payloads
+Confirm actual telemetry fields, units, timestamps, capability declarations, ingredient/quantity limits and the data available from each Smart IoT model. Do not assume temperature, pressure, sensor inventory or other fields not listed in the source.
+Affected scope: MF-03, MF-06, MF-07, MF-17
+OI-04 Connection and monitored location semantics
+Confirm how online/offline is determined, reporting cadence, stale-data display, GPS accuracy expectations and what happens when the contractual offline threshold is exceeded. No automatic lock or penalty is approved.
+Affected scope: MF-03, MF-06, MF-17
+OI-05 Proration calculation details
+Actual rental time for a same-month start and end is settled by U-09. Confirm only the denominator, start/end-day inclusion and rounding for the actual-time calculation.
+Affected scope: MF-04, MF-05, MF-11 to MF-13
+OI-06 Calendar counting and cutoffs
+Monday through Saturday count and Sunday does not. Confirm whether the issuing/notification day is day one, public-holiday treatment, time zone and the precise due/refund cutoff time. Confirm whether late charges count Sundays/holidays.
+Affected scope: MF-05, MF-11
+OI-07 Payment allocation and late-charge precision
+U-08 settles the stop timestamp: evidence uploaded and Confirm payment clicked. Confirm remaining-balance allocation, rounding, and whether/how reminders or late charges resume or are recalculated if reconciliation rejects the evidence or finds a shortfall. Submission does not cancel the underlying debt. No cap or grace period is specified.
+Affected scope: MF-05
+OI-08 Reminder delivery
+Confirm notification channels, daily dispatch time, first reminder day and the exact calendar interpretation of one month before expiry. U-08 settles reminder cessation at completed Tenant payment submission; exception resumption is OI-07.
+Affected scope: MF-05, MF-10
+OI-09 Evidence of complete final usage
+U-07 settles waiting for complete final usage before issuing the last Smart IoT bill. Specify how the machine/cloud demonstrates completeness through the cutoff, including days with zero sales and replacement intervals. A current online status alone does not prove past data is complete. Handling permanent data loss or additional records after an incorrectly confirmed complete dataset is not yet defined.
+Affected scope: MF-06, MF-11 to MF-13
+OI-10 Usage identity and interval boundaries
+Confirm event identifiers, original occurrence time, duplicate/retry handling, replacement handover boundaries and clock discrepancies so the same valid cup is not charged twice or assigned to the wrong contract.
+Affected scope: MF-06, MF-16
+OI-12 Menu version and retry policy
+Confirm factory-menu identification, menu revision identifiers, offline update queues, retry/cancellation rules and conflict resolution for simultaneous edits. Sent, waiting, failed and applied distinctions are confirmed. U-06 settles preservation of private recipes; confirm handling of a base drink being removed or changed to ingredients/capabilities incompatible with an existing private recipe. Do not silently overwrite it.
+Affected scope: MF-03, MF-07
+OI-13 Record lifecycle and corrections
+Confirm the exact state catalogues, permitted corrections/deletions, evidence-file types and limits, retention periods and mandatory fields beyond those directly stated. The SRS describes business checkpoints rather than inventing complete state machines.
+Affected scope: Contracts, bills, work requests and machine history
+OI-14 Settlement details
+Confirm deduction order for unpaid bills, damage and contractual penalties; allocation of partially received first-month money to the deposit; refund approval/evidence details; disputes; and the due date of additional compensation. U-11 confirms external refund transactions with evidence/confirmation. The ten-working-day refund deadline remains tied to Moderator notification; how to settle when the final bill is still awaiting complete usage is unresolved. Do not silently postpone that deadline or refund an assumed fully received deposit.
+Affected scope: MF-11 to MF-13
+OI-15 Inventory exceptions
+U-10 confirms same-type replacement without exception. If none is available, the platform cannot allocate a different type. Company handling of the resulting shortage, service-return availability criteria and the full inventory status list remain to be confirmed.
+Affected scope: MF-15, MF-16, MF-19
+OI-16 Buyback exceptional cases
+Confirm handling of disputed transfer evidence, failed transfer, cancelled purchase or unsuccessful collection. Permission to collect while confirmation is pending does not approve collection before an agreed payment condition.
+Affected scope: MF-18
+OI-17 Revenue reporting basis
+U-11 settles the reconciled-money-received basis and external refund evidence/confirmation workflow. Confirm report periods, refund netting versus separate presentation, treatment of overpayment awaiting refund, and which installation/service/late-charge categories belong to Actual Revenue. Deposit inclusion/exclusion is already settled.
+Affected scope: MF-20; U-03
+OI-18 Measurable quality and external interfaces
+Confirm supported client platforms, measurable performance/availability/concurrency targets, accessibility criteria, backup/recovery/retention objectives, authentication security controls and device API/protocol details. No technology stack, SLA or numeric target is supplied by the approved source.
+Affected scope: All flows and interfaces
+10 Source traceability
+10 1 Main flow and scenario coverage
+All 45 source scenarios are represented in Section 4. The table maps each scenario to its functional requirements; U-01 to U-11 supply the explicit corrections described in Section 1. Scenario IDs retain the original numbering even where the clarified outcome replaces an older source sentence.
+Source scenario
+Scenario subject
+Functional requirements
+Update
+MF-01/S01
+Receive the rental need and agree the terms
+FR-01-01, FR-01-02
+U-01
+MF-01/S02
+Create the account and register the signed contract
+FR-01-03, FR-01-04, FR-01-05, FR-01-06
+U-01
+MF-02/S01
+Request delivery and assign a Technician
+FR-02-01, FR-02-02
+U-05
+MF-02/S02
+Install and record handover
+FR-02-03, FR-02-04, FR-02-05
+U-05
+MF-03/S01
+Deliver and activate the Smart IoT machine
+FR-03-01, FR-03-02, FR-03-03
+U-05
+MF-03/S02
+Confirm the machine and default menu are ready
+FR-03-04, FR-03-05, FR-03-06, FR-03-07
+U-05
+MF-04/S01
+Prepare the first-month bill
+FR-04-01, FR-04-02, FR-04-03, FR-04-04, FR-04-05
+U-03, U-07, U-09
+MF-04/S02
+Submit evidence and reconcile payment
+FR-04-06
+U-03, U-07, U-09
+MF-05/S01
+Close the month and issue the bill
+FR-05-01, FR-05-02, FR-05-03, FR-05-04, FR-05-05, FR-05-06, FR-05-12
+U-02, U-03, U-07, U-08, U-09, U-11
+MF-05/S02
+Reconcile payment and handle differences
+FR-05-07, FR-05-08, FR-05-09, FR-05-10, FR-05-11
+U-02, U-03, U-07, U-08, U-09, U-11
+MF-06/S01
+Receive and display current or delayed usage
+FR-06-01, FR-06-02, FR-06-03, FR-06-04, FR-06-05, FR-06-06, FR-06-07
+U-02, U-07
+MF-06/S02
+Attribute replacement usage
+FR-06-08
+U-02, U-07
+MF-07/S01
+Manage the internal Global Menu
+FR-07-01, FR-07-02
+U-05, U-06
+MF-07/S02
+Apply an internal menu update
+FR-07-03, FR-07-04, FR-07-05, FR-07-06, FR-07-13, FR-07-14
+U-05, U-06
+MF-07/S03
+Customize a private recipe
+FR-07-07, FR-07-08, FR-07-09, FR-07-12, FR-07-14
+U-05, U-06
+MF-07/S04
+Add a supported private drink
+FR-07-10, FR-07-11, FR-07-12
+U-05, U-06
+MF-08/S01
+Coordinate maintenance outside Dolores
+FR-08-01
+—
+MF-08/S02
+Swap, maintain and return the machines
+FR-08-02, FR-08-03, FR-08-04, FR-08-05
+—
+MF-09/S01
+Report the problem and receive the faulty machine
+FR-09-01, FR-09-02, FR-09-03
+—
+MF-09/S02
+Determine the diagnosis and contractual charges
+FR-09-04
+—
+MF-09/S03
+Complete the repair and return the machine
+FR-09-05, FR-09-06, FR-09-07
+—
+MF-10/S01
+Remind the Tenant before expiry
+FR-10-01, FR-10-02, FR-10-03, FR-10-04
+—
+MF-10/S02
+Follow the Tenant decision
+FR-10-04, FR-10-05
+—
+MF-11/S01
+Recover and assess the machine
+FR-11-01, FR-11-02
+U-07, U-09, U-11
+MF-11/S02
+Settle and refund the deposit
+FR-11-03, FR-11-04, FR-11-05, FR-11-06, FR-11-07, FR-11-08, FR-11-09
+U-07, U-09, U-11
+MF-12/S01
+Receive the early-termination request and recover
+FR-12-01, FR-12-02, FR-12-03
+U-07, U-09
+MF-12/S02
+Apply the agreed settlement terms
+FR-12-04, FR-12-05
+U-07, U-09
+MF-13/S01
+Record the violation and request recovery
+FR-13-01, FR-13-02, FR-13-03
+U-07, U-09
+MF-13/S02
+Apply contractual deductions and refund any remainder
+FR-13-04, FR-13-05, FR-13-06
+U-07, U-09
+MF-14/S01
+Negotiate and sign a separate contract
+FR-14-01, FR-14-02
+—
+MF-14/S02
+Complete the old lifecycle and assign the new machine
+FR-14-03, FR-14-04, FR-14-05
+—
+MF-15/S01
+Record inventory and allocate machines
+FR-15-01, FR-15-02, FR-15-03
+—
+MF-15/S02
+Maintain the machine lifecycle history
+FR-15-04, FR-15-05
+—
+MF-15/S03
+View records within the role scope
+FR-15-06, FR-15-07, FR-15-08
+—
+MF-16/S01
+Provide and recover the temporary machine
+FR-16-01, FR-16-02, FR-16-03, FR-16-04, FR-16-07
+U-10
+MF-16/S02
+Allocate Smart replacement usage
+FR-16-05, FR-16-06
+U-10
+MF-17/S01
+Record the location for any rental machine
+FR-17-01, FR-17-02
+—
+MF-17/S02
+Display Smart IoT GPS separately
+FR-17-03, FR-17-04
+—
+MF-18/S01
+Inspect and value the offered machine
+FR-18-01, FR-18-02
+U-04
+MF-18/S02
+Agree the purchase and upload the contract
+FR-18-03
+U-04
+MF-18/S03
+Record payment evidence and collect under the agreement
+FR-18-04, FR-18-05, FR-18-06, FR-18-07
+U-04
+MF-19/S01
+Receive the machine into processing
+FR-19-01, FR-19-02, FR-19-03
+—
+MF-19/S02
+Record the test result and release to inventory
+FR-19-04, FR-19-05
+—
+MF-20/S01
+Administer accounts and apply role access
+FR-20-01, FR-20-02, FR-20-03, FR-20-04
+U-01, U-03, U-11
+MF-20/S02
+View the operating overview
+FR-20-05, FR-20-06, FR-20-07, FR-20-08
+U-01, U-03, U-11
+10 2 Coverage summary
+Item
+Count or scope
+Main flows
+20, MF-01 through MF-20
+Source scenarios
+45
+Functional requirements
+139
+Business rules
+33
+Logical data record groups
+17
+External interfaces
+6
+Qualitative constraints
+8
+Open decisions
+17
+Source authority
+One supplied DOCX plus U-01 through U-11
+Implementation and testing
+Not claimed; this is a requirements document
+Appendix A Terminology
+Term
+Meaning in this specification
+Admin
+System Administrator; manages Tenant, Moderator and Technician accounts and performs the confirmed internal menu/overview functions.
+Tenant or Customer
+The Dolores rental customer; also called Store Owner in the source. Own-record access applies.
+Conventional
+A rental coffee machine without the described Smart IoT telemetry, cup billing, monitored GPS or Dolores menu capability.
+Smart IoT
+A connected coffee machine with the described Edge, device data, GPS, menu and PAYG capabilities, subject to actual hardware support.
+Edge
+The described machine-side Android board/tablet environment that provides local data retention and synchronization.
+PAYG
+Pay As You Go: the VND 1,000 charge per valid sold cup, in addition to Smart monthly base rental.
+Valid cup
+A sold cup reported successful by the Smart Coffee Machine.
+Global Menu
+The factory-provided Smart IoT source menu managed by Admin/Moderator. Updates preserve Tenant private values; the new base can be viewed and selected.
+Private recipe or drink
+A Tenant-specific supported customization or new drink for their own Smart IoT machine; it does not alter Global Menu ownership.
+Contract location
+The installation location declared in the contract, available for both machine types.
+Monitored location
+The separate GPS location reported by a Smart IoT device.
+Replacement
+A same-type temporary machine associated with the original rental contract during maintenance/repair.
+Reconciliation
+Moderator comparison of submitted transfer evidence with the company bank transaction and recording of the result.
+Deposit
+VND 10,000,000 per contract/machine, shown separately and settled only after the required recovery/assessment sequence.
+Gross Revenue
+The user-defined total based on reconciled money received, including deposits; refund presentation remains OI-17.
+Actual Revenue
+Reconciled rental receipts and applicable actual charges excluding deposits; classification/refund presentation remain OI-17.
+Buyback
+Company purchase of a used machine from an eligible Dolores rental customer, followed by collection, refurbishment and testing.
+Available for rent
+The recorded condition permitting rental allocation; for bought-back machines, it requires satisfactory Technician refurbishment/testing and Moderator release.
+To be confirmed
+A detail not settled by the source/clarifications. It must not be treated as an approved implementation rule.
