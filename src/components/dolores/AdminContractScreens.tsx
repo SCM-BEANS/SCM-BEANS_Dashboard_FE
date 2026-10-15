@@ -62,7 +62,7 @@ export default function AdminContractScreens({ initialView = "list" }: { initial
       <DoloresPage
         title="Chi tiết hợp đồng C-204"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton onClick={() => setView("history")}>Lịch sử hợp đồng</DoloresButton><DoloresButton href="/admin/machines?view=s018" variant="secondary">Máy & lịch sử sửa chữa</DoloresButton><DoloresButton onClick={() => setPreviewOpen(true)} variant="secondary">Xem bản hợp đồng</DoloresButton></>}
+        actions={<><DoloresButton onClick={() => setView("history")}>Lịch sử hợp đồng</DoloresButton><DoloresButton href="/admin/machines/S-018" variant="secondary">Máy & lịch sử sửa chữa</DoloresButton><DoloresButton onClick={() => setPreviewOpen(true)} variant="secondary">Xem bản hợp đồng</DoloresButton></>}
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
@@ -85,7 +85,7 @@ export default function AdminContractScreens({ initialView = "list" }: { initial
       <DoloresPage
         title="Chi tiết hợp đồng C-205"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton href="/admin/machines?view=standard">Xem hồ sơ máy</DoloresButton><DoloresButton onClick={() => setView("list")} variant="secondary">Về hợp đồng</DoloresButton></>}
+        actions={<><DoloresButton href="/admin/machines/C-031">Xem hồ sơ máy</DoloresButton><DoloresButton onClick={() => setView("list")} variant="secondary">Về hợp đồng</DoloresButton></>}
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>

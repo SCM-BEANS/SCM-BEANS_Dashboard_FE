@@ -3,11 +3,20 @@
 import { DoloresIconView, type DoloresIcon } from "@/components/dolores/DoloresUI";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import styles from "./DoloresShell.module.css";
 
 export type DoloresRole = "admin" | "moderator" | "technician" | "customer";
 type NavItem = { label: string; href: string; icon: DoloresIcon };
+
+export const DoloresShellFocusContext = createContext<{
+  setFocusLabel: (label: string | null) => void;
+} | null>(null);
 
 const ROLE_NAV: Record<DoloresRole, NavItem[]> = {
   admin: [
@@ -99,9 +108,19 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
   const selectedItem =
     nav.find((item) => item.href === selectionPath) ??
     nav.filter((item) => item.href !== nav[0]?.href && selectionPath.startsWith(item.href)).sort((a, b) => b.href.length - a.href.length)[0];
-  const selectedLabel = selectedItem?.label ?? nav[0]?.label ?? "Tổng quan";
+  const [focusLabel, setFocusLabel] = useState<string | null>(null);
+  const selectedLabel = [
+    selectedItem?.label ?? nav[0]?.label ?? "Tổng quan",
+    focusLabel,
+  ]
+    .filter(Boolean)
+    .join(" / ");
   const notificationsHref = nav.find((item) => item.label === "Thông báo")?.href ?? nav[0]?.href ?? "/";
   const mobileItems = MOBILE_NAV[role];
+
+  useEffect(() => {
+    setFocusLabel(null);
+  }, [pathname]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -123,8 +142,6 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto" aria-label={"Điều hướng " + ROLE_LABEL[role]}>
           {nav.map((item) => {
             const isCurrent = selectionPath === item.href;
-            const isPinned = role === "admin" && item.label === "Cửa hàng";
-            const isActive = isCurrent || isPinned;
             return (
               <Link
                 className="flex h-12 shrink-0 items-center gap-1 rounded-[10px] px-1"
@@ -133,7 +150,7 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
                 aria-current={isCurrent ? "page" : undefined}
               >
                 <DoloresIconView icon={item.icon} />
-                <span className={"flex h-12 min-w-0 flex-1 items-center rounded-[10px] px-4 py-3 text-sm " + (isActive ? "bg-[#F9E9EA] text-[#B81724]" : "text-[#706561] hover:bg-[#F7F5F3]")}>
+                <span className={"flex h-12 min-w-0 flex-1 items-center rounded-[10px] px-4 py-3 text-sm " + (isCurrent ? "bg-[#F9E9EA] text-[#B81724]" : "text-[#706561] hover:bg-[#F7F5F3]")}>
                   {item.label}
                 </span>
               </Link>
@@ -145,7 +162,8 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
           <p>Dolores • Dữ liệu minh họa</p>
         </div>
       </aside>
-      <div className={`${styles.workspace} flex h-screen min-w-0 flex-1 flex-col`}>
+      <DoloresShellFocusContext.Provider value={{ setFocusLabel }}>
+        <div className={`${styles.workspace} flex h-screen min-w-0 flex-1 flex-col`}>
         <header className={styles.mobileHeader}>
           <Link className={styles.mobileBrand} href={nav[0]?.href ?? "/"}>dolores.</Link>
           <Link className={styles.mobileNotification} href={notificationsHref}>Thông báo</Link>
@@ -166,7 +184,8 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
           })}
           <button aria-expanded={mobileMenuOpen} aria-controls="dolores-mobile-menu" className={styles.mobileNavItem} onClick={() => setMobileMenuOpen(true)} type="button">Khác</button>
         </nav>
-      </div>
+        </div>
+      </DoloresShellFocusContext.Provider>
       {mobileMenuOpen && <div className={styles.menuOverlay} id="dolores-mobile-menu" role="dialog" aria-modal="true" aria-labelledby="dolores-mobile-menu-title">
         <div className={styles.menuHeading} id="dolores-mobile-menu-title">Điều hướng · {ROLE_LABEL[role]}</div>
         <nav aria-label={`Tất cả trang ${ROLE_LABEL[role]}`} className={styles.menuLinks}>

@@ -17,6 +17,8 @@ type ViewerStatus = "loading" | "ready" | "error";
 const NO_EXCLUDED_NODE_NAMES: readonly string[] = [];
 
 export interface BodyModelViewerProps {
+  interactive?: boolean;
+  modelRotationY?: number;
   excludedNodeNames?: readonly string[];
   includeMayxoayNode?: boolean;
   enableCoffeeEffect?: boolean;
@@ -58,6 +60,8 @@ class CanvasErrorBoundary extends Component<
 }
 
 export function BodyModelViewer({
+  interactive = true,
+  modelRotationY = 0,
   excludedNodeNames = NO_EXCLUDED_NODE_NAMES,
   includeMayxoayNode = false,
   enableCoffeeEffect = false,
@@ -137,13 +141,20 @@ export function BodyModelViewer({
           : t("digital_twin_operation_idle");
 
   return (
-    <div className="relative isolate h-[min(62vh,700px)] min-h-[320px] overflow-hidden bento-border bg-transparent md:min-h-[380px]">
+    <div
+      className="relative isolate min-h-[320px] overflow-hidden bento-border bg-transparent md:min-h-[380px]"
+      style={{
+        height: "var(--admin-machine-viewer-height, min(62vh, 700px))",
+      }}
+    >
       <CanvasErrorBoundary key={attempt} onError={handleError}>
         <BodyModelCanvas
+          interactive={interactive}
           onLoadStart={handleLoadStart}
           onReady={handleReady}
           onError={handleError}
           canvasLabel={t("digital_twin_body_canvas_label")}
+          modelRotationY={modelRotationY}
           cameraResetVersion={cameraResetVersion}
           zoomLevel={zoomLevel}
           excludedNodeNames={excludedNodeNames}
@@ -164,7 +175,8 @@ export function BodyModelViewer({
         />
       </CanvasErrorBoundary>
 
-      <div className="absolute right-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-2 rounded-lg border border-outline-variant bg-surface/90 p-1.5 shadow-sm backdrop-blur-sm">
+      {interactive ? (
+        <div className="absolute right-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-2 rounded-lg border border-outline-variant bg-surface/90 p-1.5 shadow-sm backdrop-blur-sm">
         <button
           type="button"
           aria-label={t("digital_twin_zoom_out")}
@@ -285,7 +297,8 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {status === "loading" ? (
         <div

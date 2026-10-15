@@ -49,15 +49,13 @@ import { createWaterFlowBounds } from "./material-effects/waterFlowRuntime";
 
 const COFFEE_MACHINE_MODEL_URL =
   "/models/digital-twin/body/coffee_machine_03_v2.glb";
+const BODY_CAMERA_ZOOM_STEP = 0.82;
 const MAYXOAY_MODEL_URL = "/models/digital-twin/cluster-02/may_xoay.glb";
 const MAYXOAY_NODE_NAME = "Mayxoay1-2";
 const HIDDEN_BODY_NODE_NAMES = [
-  "CV02_Matphai-1",
-  "HK05_TamR-1",
   "PART_03_BL-1",
   "Assem_HeNhiet02-1",
 ] as const;
-
 // The body asset still contains the legacy compressor assembly. When the
 // Cụm 3 replacement is enabled, remove that duplicate before attaching the
 // animated replacement so both models cannot render on top of each other.
@@ -75,6 +73,8 @@ const MAYXOAY_METALLIC_ACCENT = {
 };
 
 interface BodyModelCanvasProps {
+  interactive: boolean;
+  modelRotationY: number;
   onLoadStart: () => void;
   onReady: () => void;
   onError: (error: unknown) => void;
@@ -529,7 +529,7 @@ function detachExcludedNodes(
 
 function fitCameraToBody(
   camera: THREE.Camera,
-  controls: OrbitControlsImpl,
+  controls: OrbitControlsImpl | null,
   bounds: THREE.Box3,
   zoomLevel: number,
 ) {
@@ -553,13 +553,17 @@ function fitCameraToBody(
   camera.lookAt(center);
   camera.updateProjectionMatrix();
 
-  controls.target.copy(center);
-  controls.minDistance = Math.max(maxSize * 0.12, 0.05);
-  controls.maxDistance = Math.max(maxSize * 8, 10);
-  controls.update();
+  if (controls) {
+    controls.target.copy(center);
+    controls.minDistance = Math.max(maxSize * 0.12, 0.05);
+    controls.maxDistance = Math.max(maxSize * 8, 10);
+    controls.update();
+  }
 }
 
 function BodyScene({
+  interactive,
+  modelRotationY,
   onLoadStart,
   onReady,
   onError,
@@ -600,6 +604,12 @@ function BodyScene({
     INITIAL_WATER_PLAYBACK,
   );
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const cameraFitKeyRef = useRef<{
+    model: THREE.Group;
+    bounds: THREE.Box3;
+    cameraResetVersion: number;
+  } | null>(null);
+  const appliedZoomLevelRef = useRef<number | null>(null);
   const environmentMapRef = useRef<THREE.Texture | null>(null);
   const compressorRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
   const compressorPosePairsRef = useRef<CompressorPosePair[]>([]);
@@ -852,6 +862,7 @@ function BodyScene({
         try {
           // The GLB's native orientation puts the machine head on the viewer's left.
           const bodyScene = bodyResult.value.scene;
+          bodyScene.rotation.y = modelRotationY;
           const coffeeAnchorNode = enableCoffeeEffect
             ? findUniqueSourceNode(
                 bodyScene,
@@ -997,6 +1008,7 @@ function BodyScene({
     enableWaterEffect,
     includeCompressorMotion,
     includeMayxoayNode,
+    modelRotationY,
     onError,
     onLoadStart,
     onReady,
@@ -1112,9 +1124,38 @@ function BodyScene({
   }, [compressorDisplayRoot, enableWaterEffect, model, waterOutletNode]);
 
   useEffect(() => {
-    if (!model || !bounds || !controlsRef.current) return;
-    fitCameraToBody(camera, controlsRef.current, bounds, zoomLevel);
-  }, [bounds, camera, cameraResetVersion, model, zoomLevel]);
+    const controls = controlsRef.current;
+    if (!model || !bounds) return;
+
+    const previousFit = cameraFitKeyRef.current;
+    const needsRefit =
+      !previousFit ||
+      previousFit.model !== model ||
+      previousFit.bounds !== bounds ||
+      previousFit.cameraResetVersion !== cameraResetVersion;
+
+    if (needsRefit) {
+      fitCameraToBody(camera, controls, bounds, zoomLevel);
+      cameraFitKeyRef.current = { model, bounds, cameraResetVersion };
+      appliedZoomLevelRef.current = zoomLevel;
+      return;
+    }
+
+    if (!interactive || !controls) return;
+
+    const previousZoomLevel = appliedZoomLevelRef.current;
+    if (previousZoomLevel === null || previousZoomLevel === zoomLevel) return;
+
+    const zoomDelta = zoomLevel - previousZoomLevel;
+    const zoomScale = Math.pow(BODY_CAMERA_ZOOM_STEP, Math.abs(zoomDelta));
+    if (zoomDelta > 0) {
+      controls.dollyIn(zoomScale);
+    } else {
+      controls.dollyOut(zoomScale);
+    }
+    controls.update();
+    appliedZoomLevelRef.current = zoomLevel;
+  }, [bounds, camera, cameraResetVersion, interactive, model, zoomLevel]);
 
   return (
     <>
@@ -1147,22 +1188,26 @@ function BodyScene({
       <ambientLight intensity={0.85} />
       <directionalLight position={[4, 8, -5]} intensity={1.25} />
       <directionalLight position={[-5, 3, -4]} intensity={0.55} />
-      <OrbitControls
-        ref={controlsRef}
-        makeDefault
-        enableDamping
-        dampingFactor={0.08}
-        enablePan={false}
-        enableZoom
-        enableRotate={false}
-        minDistance={0.05}
-        maxDistance={100}
-      />
+      {interactive ? (
+        <OrbitControls
+          ref={controlsRef}
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          enablePan={false}
+          enableZoom
+          enableRotate={false}
+          minDistance={0.05}
+          maxDistance={100}
+        />
+      ) : null}
     </>
   );
 }
 
 export default function BodyModelCanvas({
+  interactive,
+  modelRotationY,
   onLoadStart,
   onReady,
   onError,
@@ -1187,13 +1232,15 @@ export default function BodyModelCanvas({
 }: BodyModelCanvasProps) {
   return (
     <Canvas
-      className="absolute inset-0 h-full w-full"
+      className={`absolute inset-0 h-full w-full ${interactive ? "" : "pointer-events-none"}`}
       aria-label={canvasLabel}
       camera={{ position: [3, 2.4, 4.5], fov: 38, near: 0.001, far: 1000 }}
       dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
       <BodyScene
+        interactive={interactive}
+        modelRotationY={modelRotationY}
         onLoadStart={onLoadStart}
         onReady={onReady}
         onError={onError}
