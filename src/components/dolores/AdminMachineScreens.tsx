@@ -1,26 +1,10 @@
 "use client";
 
-import {
-  DoloresButton,
-  DoloresNotice,
-  DoloresPanel,
-  DoloresPanelTitle,
-  DoloresStatCard,
-  DoloresTable,
-} from "@/components/dolores/DoloresUI";
+import { DoloresButton, DoloresDetails, DoloresPanel, DoloresPanelTitle, DoloresStatCard, DoloresTable } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type MachineView = "inventory" | "stock" | "loan-history" | "s022" | "standard" | "mb017" | "repair-history" | "s018" | "repair-history-s018";
-
-function DetailField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-h-[46px] flex-col gap-1">
-      <span className="text-[13px] leading-[19px] text-[#706561]">{label}</span>
-      <strong className="text-sm font-semibold leading-[21px] text-[#302927]">{value}</strong>
-    </div>
-  );
-}
 
 export default function AdminMachineScreens({ initialView = "inventory" }: { initialView?: MachineView }) {
   const [view, setView] = useRouteView<MachineView>(initialView);
@@ -32,7 +16,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
         actions={<><DoloresButton href="/admin/contracts?view=c204">Xem hợp đồng</DoloresButton><DoloresButton onClick={() => setView("repair-history-s018")} variant="secondary">Lịch sử sửa chữa</DoloresButton><DoloresButton href="/admin/menu?machine=S-018" variant="secondary">Menu máy</DoloresButton><DoloresButton href="/admin/iot?view=machines" variant="secondary">Về máy của khách</DoloresButton></>}
       >
-        <div className="grid grid-cols-4 gap-4">
+        <div className="dl-metrics-grid grid grid-cols-4 gap-4">
           <DoloresStatCard label="Ly máy chính" value="1.840 ly" />
           <DoloresStatCard label="Ly máy thay" value="160 ly" />
           <DoloresStatCard label="Tổng C-204" value="2.000 ly" />
@@ -40,12 +24,12 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
         </div>
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-7">
-            <DetailField label="Khách hàng" value="Nguyễn Minh Anh · Cà phê Mộc" />
-            <DetailField label="Vị trí hợp đồng" value="Quận 3, TP. HCM" />
-            <DetailField label="Vị trí GPS đã nhận" value="Quận 3 · 01/10/2026 09:42" />
-            <DetailField label="Menu đang áp dụng" value="Global Menu mùa hè · v3" />
-          </div>
+          <DoloresDetails fields={[
+            ["Khách hàng", "Nguyễn Minh Anh · Cà phê Mộc"],
+            ["Vị trí hợp đồng", "Quận 3, TP. HCM"],
+            ["Vị trí GPS đã nhận", "Quận 3 · 01/10/2026 09:42"],
+            ["Menu đang áp dụng", "Global Menu mùa hè · v3"],
+          ]} />
         </DoloresPanel>
       </DoloresPage>
     );
@@ -60,15 +44,15 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-7">
-            <DetailField label="Máy / serial" value="S-018 / C-204" />
-            <DetailField label="Lần xử lý" value="12/09/2026" />
-            <DetailField label="Technician" value="Nguyễn Văn Nam" />
-            <DetailField label="Công việc" value="Thay van cấp nước" />
-            <DetailField label="Linh kiện / số lượng" value="Van cấp nước / 1 chiếc" />
-            <DetailField label="Chi phí lưu hồ sơ" value="350.000 đ" />
-            <DetailField label="Kết quả" value="Đã thay, kiểm tra vận hành bình thường" />
-          </div>
+          <DoloresDetails fields={[
+            ["Máy / serial", "S-018 / C-204"],
+            ["Lần xử lý", "12/09/2026"],
+            ["Technician", "Nguyễn Văn Nam"],
+            ["Công việc", "Thay van cấp nước"],
+            ["Linh kiện / số lượng", "Van cấp nước / 1 chiếc"],
+            ["Chi phí lưu hồ sơ", "350.000 đ"],
+            ["Kết quả", "Đã thay, kiểm tra vận hành bình thường"],
+          ]} />
         </DoloresPanel>
         <DoloresPanel>
           <DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle>
@@ -89,7 +73,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
         actions={<><DoloresButton onClick={() => setView("s022")}>Xem máy S-022</DoloresButton><DoloresButton onClick={() => setView("inventory")} variant="secondary">Về tổng kho</DoloresButton></>}
       >
-        <div className="grid grid-cols-3 gap-4">
+        <div className="dl-metrics-grid grid grid-cols-3 gap-4">
           <DoloresStatCard label="Smart sẵn sàng" value="11 máy" />
           <DoloresStatCard label="Máy thường sẵn sàng" value="4 máy" />
           <DoloresStatCard label="Chờ tân trang / kiểm thử" value="3 máy" />
@@ -106,9 +90,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
             ]}
           />
         </DoloresPanel>
-        <DoloresNotice title="Tồn kho theo từng máy">
-          Điều kiện sẵn sàng phụ thuộc loại máy, tình trạng và hồ sơ sửa chữa. Máy thu mua chỉ sẵn sàng cho thuê sau khi Technician tân trang và kiểm thử đạt.
-        </DoloresNotice>
+
       </DoloresPage>
     );
   }
@@ -131,9 +113,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
             ]}
           />
         </DoloresPanel>
-        <DoloresNotice title="Gắn máy tạm theo thời gian">
-          Máy thay bắt buộc cùng loại; không tạo hợp đồng thuê mới. Ly Smart được ghi vào hợp đồng chính theo khoảng sử dụng.
-        </DoloresNotice>
+
       </DoloresPage>
     );
   }
@@ -147,14 +127,14 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-            <DetailField label="Mã máy / serial" value="S-022 / SN022 · Smart IoT" />
-            <DetailField label="Hiện trạng" value="Trong kho · sẵn sàng" />
-            <DetailField label="Hợp đồng hiện tại" value="Không có hợp đồng thuê đang gắn" />
-            <DetailField label="Lần cho mượn gần nhất" value="C-204 · thay S-018 · 10–12/09/2026" />
-            <DetailField label="Số ly trong lần cho mượn" value="160 ly · thuộc C-204" />
-            <DetailField label="Linh kiện đã thay" value="Van cấp nước · 1 chiếc · 350.000 đ" />
-          </div>
+          <DoloresDetails fields={[
+            ["Mã máy / serial", "S-022 / SN022 · Smart IoT"],
+            ["Hiện trạng", "Trong kho · sẵn sàng"],
+            ["Hợp đồng hiện tại", "Không có hợp đồng thuê đang gắn"],
+            ["Lần cho mượn gần nhất", "C-204 · thay S-018 · 10–12/09/2026"],
+            ["Số ly trong lần cho mượn", "160 ly · thuộc C-204"],
+            ["Linh kiện đã thay", "Van cấp nước · 1 chiếc · 350.000 đ"],
+          ]} />
         </DoloresPanel>
         <DoloresPanel>
           <DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle>
@@ -172,7 +152,13 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
   if (view === "standard") {
     return (
       <DoloresPage title="Hồ sơ máy thường C-031" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton href="/admin/contracts?view=c205">Xem hợp đồng</DoloresButton><DoloresButton href="/admin/businesses?view=customer" variant="secondary">Về khách hàng</DoloresButton></>}>
-        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><div className="grid grid-cols-2 gap-x-4 gap-y-8"><DetailField label="Máy / serial" value="C-031 / SN031 · máy thường" /><DetailField label="Hiện trạng" value="Đang cho thuê" /><DetailField label="Khách hàng / hợp đồng" value="Nguyễn Minh Anh / C-205" /><DetailField label="Địa điểm lắp đặt" value="Cà phê Mộc · Quận 3" /><DetailField label="Lần sửa gần nhất" value="21/08/2026 · Thay bơm · 1 linh kiện · 350.000 đ" /></div></DoloresPanel>
+        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresDetails fields={[
+          ["Máy / serial", "C-031 / SN031 · máy thường"],
+          ["Hiện trạng", "Đang cho thuê"],
+          ["Khách hàng / hợp đồng", "Nguyễn Minh Anh / C-205"],
+          ["Địa điểm lắp đặt", "Cà phê Mộc · Quận 3"],
+          ["Lần sửa gần nhất", <><span className="hidden lg:inline">21/08/2026 · Thay bơm · 1 linh kiện · 350.000 đ</span><span className="lg:hidden">Thay van cấp nước · 1 chiếc · 350.000 đ</span></>],
+        ]} /></DoloresPanel>
       </DoloresPage>
     );
   }
@@ -180,7 +166,12 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
   if (view === "mb017") {
     return (
       <DoloresPage title="Hồ sơ máy thu mua MB-017" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton onClick={() => setView("inventory")}>Xem hợp đồng</DoloresButton><DoloresButton onClick={() => setView("stock")} variant="secondary">Về khách hàng</DoloresButton></>}>
-        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><div className="grid grid-cols-2 gap-x-4 gap-y-8"><DetailField label="Mã máy / serial" value="MB-017 / OWN017 · máy thường" /><DetailField label="Hiện trạng" value="Đang tân trang / kiểm thử" /><DetailField label="Hồ sơ thu mua" value="MB-2026-017 · mua của khách đang thuê" /><DetailField label="Trạng thái bàn giao" value="Đã thu gom theo thỏa thuận" /><DetailField label="Điều kiện cho thuê" value="Technician tân trang và kiểm thử đạt trước khi sẵn sàng" /></div></DoloresPanel>
+        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresDetails fields={[
+          ["Mã máy / serial", "MB-017 / OWN017 · máy thường"],
+          ["Hiện trạng", "Đang tân trang / kiểm thử"],
+          ["Hồ sơ thu mua", "MB-2026-017 · mua của khách đang thuê"],
+          ["Trạng thái bàn giao", "Đã thu gom theo thỏa thuận"],
+        ]} /></DoloresPanel>
       </DoloresPage>
     );
   }
@@ -188,8 +179,16 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
   if (view === "repair-history") {
     return (
       <DoloresPage title="Lịch sử sửa chữa, bảo trì & linh kiện" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton onClick={() => setView("s022")}>Về hồ sơ máy</DoloresButton><DoloresButton onClick={() => setView("loan-history")} variant="secondary">Lịch sử cho mượn</DoloresButton></>}>
-        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><div className="grid grid-cols-2 gap-x-4 gap-y-8"><DetailField label="Máy / serial" value="S-022 / SN022" /><DetailField label="Lần xử lý" value="20/08/2026" /><DetailField label="Technician" value="Nguyễn Văn Nam" /><DetailField label="Công việc" value="Thay van cấp nước" /><DetailField label="Linh kiện / số lượng" value="Van cấp nước / 1 chiếc" /><DetailField label="Chi phí lưu hồ sơ" value="350.000 đ" /><DetailField label="Kết quả" value="Đã thay, kiểm tra vận hành bình thường" /></div></DoloresPanel>
-        <DoloresPanel><DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle><div className="space-y-3 text-sm"><div><p className="font-semibold">10/07 · Bảo trì</p><p className="mt-1 text-[#706561]">Vệ sinh và kiểm tra. Không thay linh kiện.</p></div><div><p className="font-semibold">20/08 · Sửa chữa</p><p className="mt-1 text-[#706561]">Thay van cấp nước · 1 chiếc · 350.000 đ · đã kiểm tra vận hành.</p></div></div></DoloresPanel>
+        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresDetails fields={[
+          ["Máy / serial", "S-022 / SN022"],
+          ["Lần xử lý", "20/08/2026"],
+          ["Technician", "Nguyễn Văn Nam"],
+          ["Công việc", "Thay van cấp nước"],
+          ["Linh kiện / số lượng", "Van cấp nước / 1 chiếc"],
+          ["Chi phí lưu hồ sơ", "350.000 đ"],
+          ["Kết quả", "Đã thay, kiểm tra vận hành bình thường"],
+        ]} /></DoloresPanel>
+        <DoloresPanel><DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle><div className="space-y-3 text-sm"><div><p className="font-semibold">10/07 · Bảo trì</p><p className="mt-1 text-[#706561]">Vệ sinh và kiểm tra. Không thay linh kiện.</p></div><div><p className="font-semibold">20/08 · Sửa chữa</p><p className="mt-1 text-[#706561]">Thay van cấp nước · 1 chiếc · 350.000 đ · đã kiểm tra vận hành.</p></div><div><p className="font-semibold">12/09 · Trả máy sau cho mượn</p><p className="mt-1 text-[#706561]">Máy đủ điều kiện về kho sẵn sàng.</p></div></div></DoloresPanel>
       </DoloresPage>
     );
   }
@@ -200,7 +199,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
       actions={<><DoloresButton onClick={() => setView("stock")}>Máy chưa cho thuê trong kho</DoloresButton><DoloresButton onClick={() => setView("loan-history")} variant="secondary">Lịch sử máy cho mượn</DoloresButton><DoloresButton onClick={() => setView("s022")} variant="secondary">Mở hồ sơ S-022</DoloresButton></>}
     >
-      <div className="grid grid-cols-4 gap-4">
+      <div className="dl-metrics-grid grid grid-cols-4 gap-4">
         <DoloresStatCard label="Smart trong kho · sẵn sàng" value="11" />
         <DoloresStatCard label="Máy đang cho thuê" value="98" />
         <DoloresStatCard label="Máy đang cho mượn" value="2" />

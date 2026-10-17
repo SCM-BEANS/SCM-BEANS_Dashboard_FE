@@ -1,3 +1,202 @@
+.shell {
+  font-family: var(--font-inter), Arial, sans-serif;
+  color-scheme: light;
+}
+
+/* The application theme sets fonts on text elements directly. Keep Dolores scoped. */
+.shell :where(h1, h2, h3, h4, h5, h6, p, a, button, input, select, textarea, span, th, td, label) {
+  font-family: inherit;
+}
+
+.shell :global([data-variant]) {
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.shell :global(a[aria-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.pageHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pageHeading h1 {
+  line-height: 41px;
+}
+
+.pageHeading p {
+  line-height: 22px;
+}
+
+.workspace :global(.dl-metrics) {
+  min-height: 110px;
+  align-items: start;
+}
+
+.workspace :global(.dl-metrics-grid) {
+  min-height: 110px;
+  align-items: start;
+}
+
+.workspace :global(.dl-admin-chart),
+.workspace :global(.dl-customer-chart) {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workspace :global(.dl-admin-chart > h2),
+.workspace :global(.dl-customer-chart > h2),
+.workspace :global(.dl-admin-chart > p),
+.workspace :global(.dl-customer-chart > p) {
+  margin: 0;
+}
+
+.workspace :global(.dl-admin-chart > p),
+.workspace :global(.dl-customer-chart > p) {
+  line-height: 20px;
+}
+
+.workspace :global(.dl-admin-chart > .dl-chart-note),
+.workspace :global(.dl-customer-chart > .dl-chart-note) {
+  line-height: 19px;
+}
+
+.workspace :global(.dl-monthly-bars span) {
+  line-height: 17px;
+}
+
+.workspace :global(.dl-monthly-bars > div:nth-child(2) > div > span:first-child) {
+  line-height: 20px;
+}
+
+.chartBaseline {
+  display: none;
+}
+
+.upload {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #f8f6f3;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.upload[data-invalid="true"] {
+  border-color: #b81724;
+}
+
+.upload span:last-child {
+  color: #706561;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.documentPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f6ede7;
+  color: #292625;
+}
+
+.documentPreview p:first-of-type {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.documentPreview p:last-child {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.overviewDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.overviewDetails > div {
+  min-height: 80px;
+}
+
+.overviewDetails p:first-child {
+  color: #706561;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.overviewDetails p:last-child {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 23px;
+}
+
+.overviewTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.overviewTimeline h3 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.overviewTimeline p {
+  margin-top: 4px;
+  color: #706561;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.overviewNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f9e9ea;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.offlineNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f4eae3;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.offlineNotice :is(h2, p) {
+  font: inherit;
+}
+
+
 .mobileNav,
 .mobileHeader,
 .menuOverlay,
@@ -10,12 +209,156 @@
   min-width: 0;
 }
 
+.shell[data-role="admin"] .workspace > footer {
+  column-gap: 16px;
+}
+
+.shell[data-role="technician"] .sidebar,
+.shell[data-role="customer"] .sidebar {
+  gap: 6px;
+  padding-top: 30px;
+  padding-bottom: 24px;
+}
+
+.shell[data-role="technician"] .sidebar nav,
+.shell[data-role="customer"] .sidebar nav,
+.shell[data-role="technician"] .sidebar > div:last-child,
+.shell[data-role="customer"] .sidebar > div:last-child {
+  gap: 6px;
+}
+
+.workspace :global(.dolores-table) {
+  display: block;
+  min-width: 1024px;
+  border-spacing: 0;
+}
+
+.workspace :global(.dolores-table thead) {
+  display: block;
+}
+
+.workspace :global(.dolores-table tbody) {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.workspace :global(.dolores-table tr) {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(4, 241px);
+  gap: 12px;
+  padding: 12px;
+}
+
+.workspace :global(.dolores-table[data-columns="2"] tr) { grid-template-columns: repeat(2, 494px); }
+.workspace :global(.dolores-table[data-columns="3"] tr) { grid-template-columns: repeat(3, 325.333px); }
+.workspace :global(.dolores-table[data-columns="5"] tr) { grid-template-columns: repeat(5, 190.4px); }
+.workspace :global(.dolores-table[data-columns="6"] tr) { grid-template-columns: repeat(6, 156.667px); }
+.workspace :global(.dolores-table[data-columns="7"] tr) { grid-template-columns: repeat(7, 132.571px); }
+.workspace :global(.dolores-table[data-column-layout="technician-tasks"] tr) { grid-template-columns: 154.378px 180.108px 184.396px 197.261px 235.856px; }
+.workspace :global(.dolores-table[data-column-layout="customer-contracts"] tr) { grid-template-columns: 137.729px 150.641px 129.121px 159.249px 142.033px 221.227px; }
+
+.workspace :global(.dolores-table thead tr) {
+  height: 48px;
+  background: #f8f6f3;
+}
+
+.workspace :global(.dolores-table th) {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.workspace :global(.dolores-table tbody tr) {
+  position: relative;
+  height: 60px;
+  padding: 14px 12px;
+  border: 0.5px solid #e9e2dc;
+}
+
+.workspace :global(.dolores-table td) {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.workspace :global([data-filter-layout] > [data-variant]) {
+  width: 124px;
+}
+
 .desktopOnlyContent {
   display: contents;
 }
 
 .mobileOnlyContent {
   display: none;
+}
+
+.dialogOverlay {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgba(41, 38, 37, 0.22);
+  outline: none;
+}
+
+.dialogOverlay > section {
+  display: flex;
+  width: 100%;
+  max-width: 580px;
+  max-height: calc(100dvh - 48px);
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 32px;
+  border: 0;
+  border-radius: 20px;
+  background: #fff;
+  color: #292625;
+  box-shadow: none;
+}
+
+.dialogOverlay > section > * {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.dialogOverlay > section > p:first-child {
+  color: #292625;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.dialogOverlay > section > :is(h1, h2) {
+  color: #292625;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 38px;
+}
+
+.dialogOverlay > section > :is(h1, h2) + p {
+  color: #292625;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 23px;
+}
+
+.dialogOverlay :global([data-dialog-actions]) {
+  display: grid;
+  gap: 20px;
+  width: 100%;
 }
 
 @media (max-width: 1023px) {
@@ -68,7 +411,8 @@
     border-radius: 10px;
     color: #302927;
     font-size: 14px;
-    line-height: 1.45;
+    font-weight: 500;
+    line-height: 17px;
     text-decoration: none;
   }
 
@@ -82,6 +426,7 @@
 
   .pageMain {
     min-width: 0;
+    background: #f8f6f3;
     overscroll-behavior: contain;
     scrollbar-width: none;
   }
@@ -95,19 +440,23 @@
     padding: 20px 16px 24px;
   }
 
-  .pageContent > :global(div:first-child h1) {
-    font-size: 24px;
-    line-height: 1.45;
+  .pageHeading {
+    gap: 16px;
   }
 
-  .pageContent > :global(div:first-child p) {
+  .pageHeading h1 {
+    font-size: 24px;
+    line-height: 35px;
+  }
+
+  .pageHeading p {
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 20px;
   }
 
   .workspace :global(.dolores-metric) {
     min-width: 0;
-    min-height: 83px;
+    min-height: 0;
     gap: 12px;
     padding: 14px;
     border-radius: 14px;
@@ -116,13 +465,18 @@
 
   .workspace :global(.dolores-metric > p:first-child) {
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 17px;
   }
 
   .workspace :global(.dolores-metric > p:last-child) {
     overflow-wrap: anywhere;
+    font-size: 22px;
+    line-height: 32px;
+  }
+
+  .workspace :global(.dolores-metric[data-mobile-size="compact"] > p:last-child) {
     font-size: 18px;
-    line-height: 1.45;
+    line-height: 26px;
   }
 
   .workspace :global(.dolores-stat-card) {
@@ -139,13 +493,21 @@
 
   .workspace :global(.dolores-stat-card > p:last-child) {
     overflow-wrap: anywhere;
-    font-size: 18px;
-    line-height: 1.45;
+    font-size: 22px;
+    line-height: 32px;
   }
 
   .workspace :global([data-variant]) {
     height: 52px;
     min-height: 52px;
+    white-space: normal;
+  }
+
+  .workspace :global(.dl-inline-menu-action) {
+    height: 48px;
+    min-height: 48px;
+    justify-content: flex-start;
+    padding: 8px 12px;
   }
 
   .workspace :global(.grid-cols-4) {
@@ -157,17 +519,119 @@
   }
 
   .workspace :global(.dl-metrics) {
+    min-height: 0;
     column-gap: 12px;
     row-gap: 16px;
   }
 
+  .workspace :global(.dl-metrics-grid) {
+    min-height: 0;
+    column-gap: 12px;
+    row-gap: 16px;
+  }
+
+  .workspace :global(.dl-metrics-grid.dl-metrics-grid-compact-rows) {
+    row-gap: 12px;
+  }
+
+  .workspace :global(.dl-metrics-grid.grid-cols-3 > :last-child:nth-child(odd)) {
+    grid-column: 1 / -1;
+  }
+
   .workspace :global(.dolores-field-grid) {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .workspace :global(.dolores-field-grid > *) {
+    grid-column: auto;
+  }
+
+  .workspace :global(.account-scope-input) {
+    height: 34px;
+    min-height: 34px;
   }
 
   .workspace :global(label.flex.min-h-20) {
-    min-height: 64px;
+    min-height: 63px;
     padding: 12px 16px;
+  }
+
+  .workspace :global(:where(.dolores-panel) > .dolores-panel-title) {
+    margin-bottom: 12px;
+  }
+
+  .workspace :global(.dolores-task-panel > p) {
+    margin-top: 0;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .workspace :global(.dolores-list-panel > p) {
+    margin-bottom: 12px;
+  }
+
+  .workspace :global(.dolores-notice) {
+    gap: 12px;
+    border: 1px solid #e9e2dc;
+    border-radius: 16px;
+    background: #f4eae3;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+
+  .workspace :global(.dolores-notice > p) {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+  }
+
+  .dialogOverlay {
+    padding: 16px;
+    background: rgba(41, 38, 36, 0.2);
+  }
+
+  .dialogOverlay > section {
+    max-width: 358px;
+    max-height: calc(100dvh - 32px);
+    gap: 16px;
+    padding: 24px 20px;
+    color: #302927;
+  }
+
+  .dialogOverlay > section > p:first-child {
+    color: #706561;
+    font-size: 12px;
+    line-height: 17px;
+  }
+
+  .dialogOverlay > section > :is(h1, h2) {
+    color: #302927;
+    font-size: 22px;
+    line-height: 32px;
+  }
+
+  .dialogOverlay > section > :is(h1, h2) + p {
+    color: #302927;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .dialogOverlay :global([data-dialog-actions]) {
+    gap: 16px;
+  }
+
+  .dialogOverlay :global([data-variant]) {
+    width: 100%;
+    height: 52px;
+    min-height: 52px;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    border: 1px solid #e9e2dc;
+    background: #fff;
+    color: #302927;
+    text-align: left;
   }
 
   .workspace :global(section.rounded-2xl.border) {
@@ -187,6 +651,7 @@
     display: block;
     width: 100%;
     border-spacing: 0;
+    min-width: 0;
   }
 
   .workspace :global(table.w-full thead) {
@@ -200,89 +665,95 @@
     clip-path: inset(50%);
   }
 
-  .workspace :global(table.w-full tbody),
-  .workspace :global(table.w-full tr) {
+  .workspace :global(table.dolores-table tbody),
+  .workspace :global(table.dolores-table tr) {
     display: grid;
     width: 100%;
     min-width: 0;
-    gap: 10px;
+    gap: 12px;
   }
 
   .workspace :global(table.w-full tbody) {
     border: 0;
+    margin-top: 0;
   }
 
-  .workspace :global(table.w-full tr) {
+  .workspace :global(table.dolores-table tr) {
+    position: relative;
     grid-template-columns: minmax(0, 1fr);
     height: auto;
-    padding: 12px;
+    padding: 16px;
     border: 1px solid #e9e2dc;
-    border-radius: 12px;
+    border-radius: 16px;
     background: #fff;
   }
 
-  .workspace :global(table.w-full td) {
+  .workspace :global(.dolores-table[data-columns] tr) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace :global(table.dolores-table td) {
     display: grid;
-    grid-template-columns: minmax(84px, 0.8fr) minmax(0, 1.2fr);
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
     min-width: 0;
     padding: 0;
     overflow-wrap: anywhere;
     border: 0;
     border-radius: 0;
+    font-size: 14px;
+    line-height: 20px;
   }
 
-  .workspace :global(table.w-full td::before) {
+  .workspace :global(table.dolores-table td::before) {
     color: #706561;
     content: attr(data-label);
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 17px;
   }
 
-  .workspace :global(.dl-moderator-bars) {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+  .workspace :global(table.dolores-table td:first-child) {
+    display: block;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 25px;
   }
 
-  .workspace :global(.dl-moderator-bars > div:first-child) {
+  .workspace :global(table.dolores-table td:first-child::before) {
     display: none;
   }
 
-  .workspace :global(.dl-moderator-bars > div:nth-child(2).grid-cols-8) {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 5px;
+  .workspace :global(table.dolores-table td:first-child :is(a, button)::after) {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    content: "";
   }
 
-  .workspace :global(.dl-moderator-bars > div:nth-child(2) > div) {
-    min-width: 0;
-    height: 186px;
+  .workspace :global(table.dolores-table td:not(:first-child) :is(a, button)) {
+    position: relative;
   }
 
-  .workspace :global(.dl-moderator-bars > div:nth-child(2) > div > span:first-child) {
-    font-size: 11px;
-  }
-
-  .workspace :global(.dl-moderator-bars > div:nth-child(2) > div > span:last-child) {
-    font-size: 10px;
+  .workspace :global(table.dolores-table td:first-child :is(a, button)) {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
   }
 
   .workspace :global(.dl-admin-chart),
-  .workspace :global(.dl-customer-chart),
-  .workspace :global(.dl-moderator-chart) {
+  .workspace :global(.dl-customer-chart) {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .workspace :global(.dl-admin-chart > h2),
-  .workspace :global(.dl-customer-chart > h2),
-  .workspace :global(.dl-moderator-chart > h2) {
+  .workspace :global(.dl-customer-chart > h2) {
     margin-bottom: 0;
   }
 
   .workspace :global(.dl-admin-chart > p),
-  .workspace :global(.dl-customer-chart > p),
-  .workspace :global(.dl-moderator-chart > p) {
+  .workspace :global(.dl-customer-chart > p) {
     margin: 0;
   }
 
@@ -292,28 +763,92 @@
     order: 2;
   }
 
+  .workspace :global(.dl-admin-chart > .dl-chart-note),
+  .workspace :global(.dl-customer-chart > .dl-chart-note) {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
   .shell[data-role="admin"] .workspace :global(.dl-monthly-bars),
   .shell[data-role="customer"] .workspace :global(.dl-monthly-bars),
-  .shell[data-role="moderator"] .workspace :global(.dl-moderator-bars) {
+  .shell[data-role="moderator"] .workspace :global(.dl-monthly-bars) {
     order: 3;
   }
 
-  .workspace :global(.dl-moderator-bars) {
-    height: 186px;
-    margin-top: 0;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-
-  .workspace :global(.dl-moderator-bars > div:nth-child(2)) {
-    height: 186px;
-    gap: 5px;
-  }
-
   .workspace :global(.dl-admin-chart > p),
-  .workspace :global(.dl-customer-chart > p),
-  .workspace :global(.dl-moderator-chart > p) {
-    line-height: 1.45;
+  .workspace :global(.dl-customer-chart > p) {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .workspace :global(.dl-admin-chart > h2),
+  .workspace :global(.dl-customer-chart > h2) {
+    line-height: 26px;
+  }
+
+  .chartBaseline {
+    display: block;
+    order: 4;
+    color: #706561;
+    font-size: 12px;
+    line-height: 17px;
+  }
+
+  .overviewDetails {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .overviewDetails > div {
+    min-height: 0;
+    grid-column: auto;
+  }
+
+  .overviewDetails p:first-child {
+    font-size: 12px;
+    line-height: 17px;
+  }
+
+  .overviewDetails p:last-child {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .overviewTimeline {
+    gap: 12px;
+  }
+
+  .overviewTimeline p {
+    margin-top: 5px;
+  }
+
+  .overviewNotice {
+    gap: 12px;
+    border: 1px solid #e9e2dc;
+    border-radius: 16px;
+    background: #f4eae3;
+    font-weight: 400;
+    line-height: 20px;
+  }
+
+  .overviewNotice h2 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+  }
+
+  .offlineNotice {
+    gap: 12px;
+    border: 1px solid #e9e2dc;
+    border-radius: 16px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+
+  .offlineNotice h2 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
   }
 
   .workspace :global(.dl-monthly-bars) {
@@ -333,7 +868,17 @@
 
   .workspace :global(.dl-monthly-bars > div:nth-child(2) > div) {
     min-width: 0;
-    gap: 3px;
+    gap: 5px;
+  }
+
+  .workspace :global(.dl-monthly-bars > div:nth-child(2) > div > span:first-child) {
+    font-size: 12px;
+    line-height: 17px;
+  }
+
+  .workspace :global(.dl-monthly-bars > div:nth-child(2) > div > span:last-child) {
+    font-size: 11px;
+    line-height: 16px;
   }
 
   .workspace :global(.dl-month-bar) {
@@ -349,6 +894,39 @@
     min-width: 104px;
     height: 52px;
     padding: 0 12px;
+  }
+
+  .workspace :global([data-filter-layout] > [data-variant]) {
+    width: 104px;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .workspace :global([data-filter-layout="contracts"] > [data-variant]:nth-child(2)) {
+    width: 117.6px;
+    white-space: nowrap;
+  }
+
+  .documentPreview {
+    padding: 16px;
+    border: 1px solid #e9e2dc;
+    border-radius: 16px;
+    background: white;
+    color: #302927;
+  }
+
+  .documentPreview h3 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+  }
+
+  .documentPreview p:first-of-type,
+  .documentPreview p:last-child {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
   }
 
   .workspace :global(.fixed.inset-0.z-50) {
@@ -384,7 +962,7 @@
     flex: 0 0 76px;
     align-items: center;
     gap: 10px;
-    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+    padding: 12px 16px;
     background: #fff;
   }
 
@@ -394,11 +972,18 @@
     flex: 1 1 auto;
   }
 
+  .mobilePrimaryAction:not(:has(> :global([data-variant="primary"]))) {
+    display: none;
+  }
+
   .mobilePrimaryAction > :global([data-variant="primary"]) {
     display: inline-flex;
     width: 100%;
     height: 52px;
     min-width: 0;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    text-align: left;
   }
 
   .mobilePrimaryAction > :global([data-variant="primary"] ~ [data-variant="primary"]) {
@@ -423,6 +1008,11 @@
     color: #302927;
     font-size: 14px;
     font-weight: 500;
+    text-align: left;
+  }
+
+  .mobileActionsButton {
+    flex: 0 0 78px;
   }
 
   .mobileNav {
@@ -442,16 +1032,16 @@
     min-width: 0;
     min-height: 64px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 0 4px;
     border: 0;
     border-radius: 0;
     background: transparent;
     color: #706561;
-    font: inherit;
     font-size: 12px;
-    line-height: 1.2;
-    text-align: center;
+    font-weight: 600;
+    line-height: 17px;
+    text-align: left;
     text-decoration: none;
     white-space: normal;
   }
@@ -459,11 +1049,12 @@
   .mobileNavItemActive {
     background: #f9e9ea;
     color: #b81724;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .shell[data-role="admin"] .mobileNavItemActive {
     background: transparent;
+    color: #706561;
   }
 
   .menuOverlay {

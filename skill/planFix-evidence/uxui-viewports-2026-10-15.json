@@ -1,0 +1,772 @@
+[
+  {
+    "route": "/admin",
+    "width": 320,
+    "overflow": false,
+    "main": [
+      {
+        "width": 320,
+        "height": 640,
+        "scrollHeight": 1175
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 360,
+    "overflow": false,
+    "main": [
+      {
+        "width": 360,
+        "height": 640,
+        "scrollHeight": 1048
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 375,
+    "overflow": false,
+    "main": [
+      {
+        "width": 375,
+        "height": 640,
+        "scrollHeight": 1048
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 390,
+    "overflow": false,
+    "main": [
+      {
+        "width": 390,
+        "height": 640,
+        "scrollHeight": 1048
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 414,
+    "overflow": false,
+    "main": [
+      {
+        "width": 414,
+        "height": 640,
+        "scrollHeight": 1011
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 768,
+    "overflow": false,
+    "main": [
+      {
+        "width": 768,
+        "height": 640,
+        "scrollHeight": 971
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 1023,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1023,
+        "height": 640,
+        "scrollHeight": 971
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 1024,
+    "overflow": false,
+    "main": [
+      {
+        "width": 784,
+        "height": 768,
+        "scrollHeight": 1010
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 1280,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1040,
+        "height": 768,
+        "scrollHeight": 964
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/admin",
+    "width": 1440,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1200,
+        "height": 768,
+        "scrollHeight": 964
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 320,
+    "overflow": false,
+    "main": [
+      {
+        "width": 320,
+        "height": 640,
+        "scrollHeight": 1786
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 360,
+    "overflow": false,
+    "main": [
+      {
+        "width": 360,
+        "height": 640,
+        "scrollHeight": 1786
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 375,
+    "overflow": false,
+    "main": [
+      {
+        "width": 375,
+        "height": 640,
+        "scrollHeight": 1786
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 390,
+    "overflow": false,
+    "main": [
+      {
+        "width": 390,
+        "height": 640,
+        "scrollHeight": 1766
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 414,
+    "overflow": false,
+    "main": [
+      {
+        "width": 414,
+        "height": 640,
+        "scrollHeight": 1766
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 768,
+    "overflow": false,
+    "main": [
+      {
+        "width": 768,
+        "height": 640,
+        "scrollHeight": 1686
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 1023,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1023,
+        "height": 640,
+        "scrollHeight": 1686
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 1024,
+    "overflow": false,
+    "main": [
+      {
+        "width": 784,
+        "height": 768,
+        "scrollHeight": 779
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 1280,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1040,
+        "height": 768,
+        "scrollHeight": 779
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/technician/tasks",
+    "width": 1440,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1200,
+        "height": 768,
+        "scrollHeight": 779
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 320,
+    "overflow": false,
+    "main": [
+      {
+        "width": 320,
+        "height": 640,
+        "scrollHeight": 811
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 360,
+    "overflow": false,
+    "main": [
+      {
+        "width": 360,
+        "height": 640,
+        "scrollHeight": 841
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 375,
+    "overflow": false,
+    "main": [
+      {
+        "width": 375,
+        "height": 640,
+        "scrollHeight": 859
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 390,
+    "overflow": false,
+    "main": [
+      {
+        "width": 390,
+        "height": 640,
+        "scrollHeight": 873
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 414,
+    "overflow": false,
+    "main": [
+      {
+        "width": 414,
+        "height": 640,
+        "scrollHeight": 853
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 768,
+    "overflow": false,
+    "main": [
+      {
+        "width": 768,
+        "height": 640,
+        "scrollHeight": 827
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 1023,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1023,
+        "height": 640,
+        "scrollHeight": 827
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 1024,
+    "overflow": false,
+    "main": [
+      {
+        "width": 784,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 1280,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1040,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/dashboard/machines/S-018/model",
+    "width": 1440,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1200,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": [
+      {
+        "complete": true,
+        "width": 254
+      },
+      {
+        "complete": true,
+        "width": 262
+      },
+      {
+        "complete": true,
+        "width": 48
+      },
+      {
+        "complete": true,
+        "width": 8
+      },
+      {
+        "complete": true,
+        "width": 9
+      }
+    ]
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 320,
+    "overflow": false,
+    "main": [
+      {
+        "width": 320,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 360,
+    "overflow": false,
+    "main": [
+      {
+        "width": 360,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 375,
+    "overflow": false,
+    "main": [
+      {
+        "width": 375,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 390,
+    "overflow": false,
+    "main": [
+      {
+        "width": 390,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 414,
+    "overflow": false,
+    "main": [
+      {
+        "width": 414,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 768,
+    "overflow": false,
+    "main": [
+      {
+        "width": 768,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 1023,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1023,
+        "height": 640,
+        "scrollHeight": 640
+      }
+    ],
+    "mobileNavVisible": true,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 1024,
+    "overflow": false,
+    "main": [
+      {
+        "width": 784,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 1280,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1040,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  },
+  {
+    "route": "/moderator/contracts/C-205",
+    "width": 1440,
+    "overflow": false,
+    "main": [
+      {
+        "width": 1200,
+        "height": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "mobileNavVisible": false,
+    "model": []
+  }
+]

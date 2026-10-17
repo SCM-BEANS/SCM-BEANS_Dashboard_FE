@@ -1,34 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  DoloresButton,
-  DoloresField,
-  DoloresFieldGrid,
-  DoloresNotice,
-  DoloresPanel,
-  DoloresPanelTitle,
-  DoloresTable,
-} from "@/components/dolores/DoloresUI";
+import { DoloresButton, DoloresField, DoloresFieldGrid, DoloresPanel, DoloresPanelTitle, DoloresTable } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
+import { DoloresDialog } from "@/components/dolores/DoloresDialog";
 
 export type AdminMenuView = "list" | "items" | "add" | "missing" | "ingredients" | "edit-espresso" | "edit-espresso-60" | "edit-espresso-20g" | "send" | "sent";
 type Overlay = "add-confirm" | "add-success" | "edit-confirm" | "edit-success" | "send-confirm" | "send-success" | null;
 
 function MenuDialog({ title, message, success, onConfirm, onClose, variant = "default" }: { title: string; message: string; success?: boolean; onConfirm: () => void; onClose: () => void; variant?: "default" | "recipe" }) {
   return (
-    <div className={"fixed inset-0 z-50 flex items-center justify-center px-6 " + (variant === "recipe" ? "bg-[rgba(41,38,37,0.22)]" : "bg-[#302927]/25")} role="dialog" aria-modal="true" aria-labelledby="menu-dialog-title">
+    <DoloresDialog labelledBy="menu-dialog-title" onClose={onClose}>
       <section className={"w-full max-w-[580px] rounded-[20px] bg-white p-8 " + (variant === "recipe" ? "flex flex-col gap-5" : "shadow-xl")}>
-        <p className={variant === "recipe" ? "text-sm font-semibold leading-[1.45] text-[#292625]" : "text-[11px] font-medium leading-4 text-[#706561]"}>{success ? "Thông tin menu" : "Kiểm tra trước khi tiếp tục"}</p>
+        <p className={variant === "recipe" ? "text-sm font-semibold leading-[1.45] text-[#292625]" : "text-[11px] font-medium leading-4 text-[#706561]"}>{success ? "Thông tin menu" : "Xác nhận thông tin"}</p>
         <h2 id="menu-dialog-title" className={variant === "recipe" ? "text-[26px] font-semibold leading-[1.45] text-[#292625]" : "mt-3 text-xl font-semibold leading-7"}>{title}</h2>
         <p className={variant === "recipe" ? "text-base leading-[1.45] text-[#292625]" : "mt-3 text-[13px] leading-5 text-[#706561]"}>{message}</p>
-        <div className={"grid gap-5 " + (variant === "recipe" ? "" : "mt-5")}>
+        <div data-dialog-actions>
           {!success && <DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton>}
           <DoloresButton variant={success ? "primary" : "secondary"} onClick={onClose}>{success ? "Về danh sách món" : "Đóng"}</DoloresButton>
         </div>
       </section>
-    </div>
+    </DoloresDialog>
   );
 }
 
@@ -45,7 +38,7 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
     if (initialView === "edit-espresso-60") setWater("60");
   }, [initialView]);
   const linkTo = (nextView: AdminMenuView) => `${basePath}?view=${nextView}`;
-  const description = "Chỉ Admin và Moderator quản lý Global Menu Dolores. Mỗi máy cho thuê phải được cấp menu; khách chỉ tùy chỉnh công thức riêng.";
+  const description = "Cấp Global Menu Dolores cho máy cho thuê và quản lý công thức.";
 
   if (view === "list") {
     return <DoloresPage title="Global Menu & công thức" description={description} actions={<DoloresButton href={linkTo("items")}>Mở menu & danh sách món</DoloresButton>}>
@@ -72,9 +65,9 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
             <DoloresField label="Menu" value="Global Menu mùa hè" /><DoloresField label="Tên món" required value="Cà phê sữa tươi" />
             <DoloresField label="Thành phần cà phê" required><span className="flex items-center gap-2"><input aria-label="Thành phần cà phê" className="w-20 bg-transparent text-sm outline-none" type="number" value={coffee} onChange={(event) => setCoffee(event.target.value)} />g</span></DoloresField>
             <DoloresField label="Thành phần sữa tươi" required><span className="flex items-center gap-2"><input aria-label="Thành phần sữa tươi" className="w-20 bg-transparent text-sm outline-none" type="number" value={milkSelected ? milk : ""} onChange={(event) => setMilk(event.target.value)} />ml</span></DoloresField>
-            <DoloresField className="col-span-2" label="Ghi chú định lượng" value="Số liệu mẫu; chỉnh theo công thức của công ty" />
+
           </DoloresFieldGrid></DoloresPanel>
-          <DoloresNotice title={missing ? "Chưa thể lưu món" : "Thành phần bắt buộc của món"} tone={missing ? "warning" : "info"}>{missing ? "Cà phê sữa tươi phải có cả cà phê và sữa tươi. Bổ sung sữa tươi trước khi lưu." : "Cà phê sữa tươi phải có cả cà phê và sữa tươi. Thiếu một thành phần sẽ báo lỗi và chưa lưu món."}</DoloresNotice>
+          {missing && <p role="alert" className="text-sm font-medium text-[#B81724]">Cà phê sữa tươi còn thiếu thành phần sữa tươi.</p>}
         </>}
       </DoloresPage>
       {overlay && <MenuDialog title={overlay === "add-success" ? "Đã lưu thông tin" : "Xác nhận · Lưu món Cà phê sữa tươi"} message="Cà phê sữa tươi · cà phê và sữa tươi · Global Menu mùa hè." success={overlay === "add-success"} onConfirm={() => setOverlay("add-success")} onClose={() => overlay === "add-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
@@ -89,7 +82,7 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
           <DoloresField label="Lượng cà phê"><span className="flex items-center gap-2"><input aria-label="Lượng cà phê" className="w-20 bg-transparent text-sm outline-none" type="number" value={coffee} onChange={(event) => setCoffee(event.target.value)} />g</span></DoloresField>
           <DoloresField label="Lượng nước pha"><span className="flex items-center gap-2"><input aria-label="Lượng nước pha" className="w-20 bg-transparent text-sm outline-none" type="number" value={water} onChange={(event) => setWater(event.target.value)} />ml</span></DoloresField>
         </DoloresFieldGrid></DoloresPanel>
-        <DoloresNotice title="Điều chỉnh định lượng món">Có thể thay đổi gram cà phê và lượng nước. Ví dụ thay nước pha từ 40 ml lên 60 ml; thành phần bắt buộc vẫn được giữ.</DoloresNotice>
+
       </DoloresPage>
       {overlay && <MenuDialog variant={overlay === "edit-confirm" ? "recipe" : "default"} title={overlay === "edit-success" ? "Đã lưu thông tin" : "Xác nhận · Lưu công thức Espresso"} message={`Global Menu mùa hè · Espresso · ${coffee} g cà phê · ${water} ml nước pha.`} success={overlay === "edit-success"} onConfirm={() => setOverlay("edit-success")} onClose={() => overlay === "edit-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
     </>;
@@ -98,11 +91,11 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
   if (view === "send") {
     return <>
       <DoloresPage title="Gửi menu đến máy Smart" description={description} actions={<><DoloresButton onClick={() => setOverlay("send-confirm")}>Xác nhận gửi menu</DoloresButton><DoloresButton href={linkTo("items")} variant="secondary">Về danh sách món</DoloresButton></>}>
-        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Menu / phiên bản" value="Global Menu mùa hè · v4" /><DoloresField label="Thay đổi" value={`Espresso: nước pha 40 ml → ${water} ml`} /><DoloresField label="Máy nhận menu" value="S-018 · Smart IoT" /><DoloresField label="Khách hàng / cửa hàng" value="Nguyễn Minh Anh / Cà phê Mộc" /><DoloresField className="col-span-2" label="Menu đang áp dụng" value="Gửi cấu hình mới đến máy. Khách xem menu hiện tại trên màn chi tiết máy; khi máy có lỗi, Moderator điều phối Technician xử lý." /></DoloresFieldGrid></DoloresPanel>
+        <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Menu / phiên bản" value="Global Menu mùa hè · v4" /><DoloresField label="Thay đổi" value={`Espresso: nước pha 40 ml → ${water} ml`} /><DoloresField label="Máy nhận menu" value="S-018 · Smart IoT" /><DoloresField label="Khách hàng / cửa hàng" value="Nguyễn Minh Anh / Cà phê Mộc" /><DoloresField className="col-span-2" label="Menu đang áp dụng" value="Global Menu mùa hè · v3" /></DoloresFieldGrid></DoloresPanel>
       </DoloresPage>
-      {overlay && <MenuDialog title={overlay === "send-success" ? "Đã ghi nhận yêu cầu gửi" : "Gửi menu xuống máy"} message="Global Menu mùa hè v4 → S-018. Lưu trạng thái đã gửi; menu hiện tại trên máy được theo dõi từ dữ liệu máy." success={overlay === "send-success"} onConfirm={() => setOverlay("send-success")} onClose={() => overlay === "send-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
+      {overlay && <MenuDialog title={overlay === "send-success" ? "Đã ghi nhận yêu cầu gửi" : "Gửi menu xuống máy"} message="Global Menu mùa hè v4 → S-018." success={overlay === "send-success"} onConfirm={() => setOverlay("send-success")} onClose={() => overlay === "send-confirm" ? setOverlay(null) : (setOverlay(null), setView("items"))} />}
     </>;
   }
 
-  return <DoloresPage title="Global Menu mùa hè · món đã cập nhật" description={description} actions={<DoloresButton href={linkTo("items")}>Về danh sách món</DoloresButton>}><DoloresNotice title="Đã gửi đến máy">Global Menu mùa hè v4 đã được gửi đến S-018. Trạng thái áp dụng cần được xác nhận từ máy.</DoloresNotice></DoloresPage>;
+  return <DoloresPage title="Global Menu mùa hè · món đã cập nhật" description={description} actions={<DoloresButton href={linkTo("items")}>Về danh sách món</DoloresButton>}><DoloresPanel><DoloresPanelTitle>Thông tin gửi menu</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Menu / phiên bản" value="Global Menu mùa hè · v4" /><DoloresField label="Máy nhận menu" value="S-018" /><DoloresField label="Trạng thái gửi" value="Đã gửi" /><DoloresField label="Trạng thái áp dụng" value="Chờ xác nhận từ máy" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
 }

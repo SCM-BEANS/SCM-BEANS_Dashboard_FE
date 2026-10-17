@@ -1,0 +1,2385 @@
+{
+  "browser": "Microsoft Edge Chromium headless",
+  "viewports": [
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 1440,
+      "height": 920
+    }
+  ],
+  "results": [
+    {
+      "route": "/admin",
+      "width": 390,
+      "status": 200,
+      "h1": "Tổng quan vận hành",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/users",
+      "width": 390,
+      "status": 200,
+      "h1": "Tài khoản toàn hệ thống",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tổng quan vận hành",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/users",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tài khoản toàn hệ thống",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/stores",
+      "width": 390,
+      "status": 200,
+      "h1": "Cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/reports",
+      "width": 390,
+      "status": 200,
+      "h1": "Báo cáo doanh thu & vận hành",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/reports",
+      "width": 1440,
+      "status": 200,
+      "h1": "Báo cáo doanh thu & vận hành",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/stores",
+      "width": 1440,
+      "status": 200,
+      "h1": "Cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/businesses",
+      "width": 390,
+      "status": 200,
+      "h1": "Khách hàng & cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/businesses",
+      "width": 1440,
+      "status": 200,
+      "h1": "Khách hàng & cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts",
+      "width": 390,
+      "status": 200,
+      "h1": "Hợp đồng & trạng thái",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hợp đồng & trạng thái",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/machines",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/machines",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/iot",
+      "width": 390,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/iot",
+      "width": 1440,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/menu",
+      "width": 390,
+      "status": 200,
+      "h1": "Global Menu & công thức",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/menu",
+      "width": 1440,
+      "status": 200,
+      "h1": "Global Menu & công thức",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/notifications",
+      "width": 390,
+      "status": 200,
+      "h1": "Thông tin vận hành cần chú ý",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/notifications",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thông tin vận hành cần chú ý",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator",
+      "width": 390,
+      "status": 200,
+      "h1": "Tổng quan hợp đồng & thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks",
+      "width": 390,
+      "status": 200,
+      "h1": "Việc được giao",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tổng quan hợp đồng & thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks",
+      "width": 1440,
+      "status": 200,
+      "h1": "Việc được giao",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard",
+      "width": 390,
+      "status": 200,
+      "h1": "Tổng quan của cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Danh sách hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts",
+      "width": 390,
+      "status": 200,
+      "h1": "Danh sách hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tổng quan của cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts",
+      "width": 1440,
+      "status": 200,
+      "h1": "Danh sách hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Đàm phán & lập hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Danh sách hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/first-invoice",
+      "width": 390,
+      "status": 200,
+      "h1": "Hóa đơn tháng đầu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đàm phán & lập hợp đồng thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/first-invoice",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hóa đơn tháng đầu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/handover/standard",
+      "width": 390,
+      "status": 200,
+      "h1": "Bàn giao & lắp đặt máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/handover/standard",
+      "width": 1440,
+      "status": 200,
+      "h1": "Bàn giao & lắp đặt máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/handover/smart",
+      "width": 390,
+      "status": 200,
+      "h1": "Bàn giao & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/handover/smart",
+      "width": 1440,
+      "status": 200,
+      "h1": "Bàn giao & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/expiry",
+      "width": 390,
+      "status": 200,
+      "h1": "Nhắc hợp đồng sắp hết hạn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/expiry",
+      "width": 1440,
+      "status": 200,
+      "h1": "Nhắc hợp đồng sắp hết hạn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/retrieval",
+      "width": 390,
+      "status": 200,
+      "h1": "Thu hồi trước quyết toán cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/retrieval",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thu hồi trước quyết toán cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/settlement",
+      "width": 390,
+      "status": 200,
+      "h1": "Quyết toán & hoàn cọc sau đánh giá",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/settlement",
+      "width": 1440,
+      "status": 200,
+      "h1": "Quyết toán & hoàn cọc sau đánh giá",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/early-termination",
+      "width": 390,
+      "status": 200,
+      "h1": "Chấm dứt sớm & vi phạm",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/early-termination",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chấm dứt sớm & vi phạm",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/compensation",
+      "width": 390,
+      "status": 200,
+      "h1": "Bồi thường vượt tiền đặt cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/compensation",
+      "width": 1440,
+      "status": 200,
+      "h1": "Bồi thường vượt tiền đặt cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/deposit-refund",
+      "width": 390,
+      "status": 200,
+      "h1": "Ghi nhận hoàn cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/deposit-refund",
+      "width": 1440,
+      "status": 200,
+      "h1": "Ghi nhận hoàn cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/refund-good",
+      "width": 390,
+      "status": 200,
+      "h1": "Hoàn cọc · máy được đánh giá tốt",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/refund-good",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hoàn cọc · máy được đánh giá tốt",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/violations",
+      "width": 390,
+      "status": 200,
+      "h1": "Theo dõi vi phạm hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/violations",
+      "width": 1440,
+      "status": 200,
+      "h1": "Theo dõi vi phạm hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers",
+      "width": 390,
+      "status": 200,
+      "h1": "Tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Tạo tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/customers/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tạo tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices",
+      "width": 390,
+      "status": 200,
+      "h1": "Hóa đơn định kỳ & đối soát",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hóa đơn định kỳ & đối soát",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Hóa đơn định kỳ & đối soát",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hóa đơn định kỳ & đối soát",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/reconcile",
+      "width": 390,
+      "status": 200,
+      "h1": "Đối soát chứng từ thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/reconcile",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đối soát chứng từ thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/shortfall",
+      "width": 390,
+      "status": 200,
+      "h1": "Yêu cầu thanh toán phần còn thiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/shortfall",
+      "width": 1440,
+      "status": 200,
+      "h1": "Yêu cầu thanh toán phần còn thiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/excess",
+      "width": 390,
+      "status": 200,
+      "h1": "Hoàn khoản thanh toán thừa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/excess",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hoàn khoản thanh toán thừa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/late-cups",
+      "width": 390,
+      "status": 200,
+      "h1": "Xử lý số ly gửi về muộn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/late-cups",
+      "width": 1440,
+      "status": 200,
+      "h1": "Xử lý số ly gửi về muộn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/late-cups-final",
+      "width": 1440,
+      "status": 200,
+      "h1": "Ly gửi muộn · hóa đơn đã hoàn tất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/late-cups-final",
+      "width": 390,
+      "status": 200,
+      "h1": "Ly gửi muộn · hóa đơn đã hoàn tất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/overdue",
+      "width": 390,
+      "status": 200,
+      "h1": "Dư nợ quá hạn & phí cộng dồn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/overdue",
+      "width": 1440,
+      "status": 200,
+      "h1": "Dư nợ quá hạn & phí cộng dồn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/history",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử phiên bản hóa đơn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử phiên bản hóa đơn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/payg",
+      "width": 390,
+      "status": 200,
+      "h1": "PAYG & số ly gửi về muộn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/invoices/payg",
+      "width": 1440,
+      "status": 200,
+      "h1": "PAYG & số ly gửi về muộn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/stock",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy trong kho · chưa cho thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy & tồn kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/stock",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy trong kho · chưa cho thuê",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/customer",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy của Nguyễn Minh Anh",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/customer",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy của Nguyễn Minh Anh",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/loans",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy cho mượn & lịch sử sử dụng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/loans",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy cho mượn & lịch sử sử dụng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/repair-history",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử sửa chữa, bảo trì & linh kiện",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/substitute",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy thay thế & phân bổ số ly",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/substitute",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy thay thế & phân bổ số ly",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/repair-history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử sửa chữa, bảo trì & linh kiện",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/substitute/return",
+      "width": 390,
+      "status": 200,
+      "h1": "Kết thúc sử dụng máy thay",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot",
+      "width": 1440,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machines/substitute/return",
+      "width": 1440,
+      "status": 200,
+      "h1": "Kết thúc sử dụng máy thay",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot",
+      "width": 390,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/customer",
+      "width": 390,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/customer",
+      "width": 1440,
+      "status": 200,
+      "h1": "Giám sát Smart IoT · theo khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/machines",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết dữ liệu & mô hình máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/machines",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết dữ liệu & mô hình máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu",
+      "width": 390,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/items",
+      "width": 390,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu",
+      "width": 1440,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/items",
+      "width": 1440,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/ingredients",
+      "width": 390,
+      "status": 200,
+      "h1": "Thành phần món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/add",
+      "width": 390,
+      "status": 200,
+      "h1": "Thêm món · Cà phê sữa tươi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/ingredients",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thành phần món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/add",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thêm món · Cà phê sữa tươi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/add/missing",
+      "width": 390,
+      "status": 200,
+      "h1": "Thêm món · thiếu thành phần bắt buộc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/send",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi menu đến máy Smart",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/add/missing",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thêm món · thiếu thành phần bắt buộc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/send",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi menu đến máy Smart",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/sent",
+      "width": 390,
+      "status": 200,
+      "h1": "Trạng thái gửi Global Menu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/sent",
+      "width": 1440,
+      "status": 200,
+      "h1": "Trạng thái gửi Global Menu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso",
+      "width": 390,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso/60",
+      "width": 390,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso · nước pha 60 ml",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso/60",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso · nước pha 60 ml",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso/20g",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso · cà phê 20 g",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/menu/espresso/20g",
+      "width": 390,
+      "status": 200,
+      "h1": "Chỉnh công thức Espresso · cà phê 20 g",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests",
+      "width": 390,
+      "status": 200,
+      "h1": "Yêu cầu kỹ thuật & kết quả",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests",
+      "width": 1440,
+      "status": 200,
+      "h1": "Yêu cầu kỹ thuật & kết quả",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Yêu cầu kỹ thuật & kết quả",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Yêu cầu kỹ thuật & kết quả",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu cho Technician",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu cho Technician",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/YC-017",
+      "width": 390,
+      "status": 200,
+      "h1": "Kết quả Technician · YC-017",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/YC-017",
+      "width": 1440,
+      "status": 200,
+      "h1": "Kết quả Technician · YC-017",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/install-standard",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Lắp đặt máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/install-standard",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Lắp đặt máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/install-smart",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Lắp đặt & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/install-smart",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Lắp đặt & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/repair",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Sửa chữa / lỗi kết nối",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/repair",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Sửa chữa / lỗi kết nối",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/retrieval",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Thu hồi & đánh giá",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/retrieval",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Thu hồi & đánh giá",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/buyback",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Đánh giá máy khách đề nghị bán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/buyback",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Đánh giá máy khách đề nghị bán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/collection",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Thu gom máy đã thu mua",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/technical-requests/new/collection",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi yêu cầu: Thu gom máy đã thu mua",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machine-history",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử bảo trì & sửa chữa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machine-history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử bảo trì & sửa chữa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machine-history/S-018",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết lịch sử sửa chữa / bảo trì",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/machine-history/S-018",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết lịch sử sửa chữa / bảo trì",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback",
+      "width": 390,
+      "status": 200,
+      "h1": "Thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/list",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/list",
+      "width": 390,
+      "status": 200,
+      "h1": "Thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/documents",
+      "width": 390,
+      "status": 200,
+      "h1": "Chứng từ mua bán máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/refurbishment",
+      "width": 390,
+      "status": 200,
+      "h1": "Tân trang & nhập kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/documents",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chứng từ mua bán máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/buyback/refurbishment",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tân trang & nhập kho",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/notifications",
+      "width": 390,
+      "status": 200,
+      "h1": "Thông báo",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/notifications",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thông báo",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/notifications/alerts",
+      "width": 390,
+      "status": 200,
+      "h1": "Cảnh báo & nhắc việc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/notifications/alerts",
+      "width": 1440,
+      "status": 200,
+      "h1": "Cảnh báo & nhắc việc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/YC-017",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết yêu cầu YC-017",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/standard-handover",
+      "width": 1440,
+      "status": 200,
+      "h1": "Bàn giao máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/YC-017",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết yêu cầu YC-017",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/standard-handover",
+      "width": 390,
+      "status": 200,
+      "h1": "Bàn giao máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/smart-activation",
+      "width": 390,
+      "status": 200,
+      "h1": "Lắp đặt & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/smart-activation",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lắp đặt & kích hoạt Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/repair",
+      "width": 390,
+      "status": 200,
+      "h1": "Sửa chữa & thay linh kiện",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/repair",
+      "width": 1440,
+      "status": 200,
+      "h1": "Sửa chữa & thay linh kiện",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/retrieval",
+      "width": 390,
+      "status": 200,
+      "h1": "Thu hồi & ghi nhận tình trạng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/substitute",
+      "width": 390,
+      "status": 200,
+      "h1": "Bàn giao máy thay thế tạm thời",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/substitute",
+      "width": 1440,
+      "status": 200,
+      "h1": "Bàn giao máy thay thế tạm thời",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/retrieval",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thu hồi & ghi nhận tình trạng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/substitute-return",
+      "width": 390,
+      "status": 200,
+      "h1": "Ghi nhận trả máy thay thế",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/substitute-return",
+      "width": 1440,
+      "status": 200,
+      "h1": "Ghi nhận trả máy thay thế",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/refurbishment",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy thu mua · tân trang & kiểm thử",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/refurbishment",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy thu mua · tân trang & kiểm thử",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/buyback-assessment",
+      "width": 390,
+      "status": 200,
+      "h1": "Đánh giá máy khách đề nghị bán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/buyback-assessment",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đánh giá máy khách đề nghị bán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/maintenance-history",
+      "width": 390,
+      "status": 200,
+      "h1": "Ghi nhận lịch sử bảo trì",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/tasks/maintenance-history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Ghi nhận lịch sử bảo trì",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/S-018",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy S-018",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/S-018",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy S-018",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/C-031",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy C-031",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/CF-STD-026",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy CF-STD-026",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/C-031",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy C-031",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/CF-STD-026",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy CF-STD-026",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/S-022",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy S-022",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/notifications",
+      "width": 390,
+      "status": 200,
+      "h1": "Thông báo công việc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/history/S-022",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử xử lý máy S-022",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/technician/notifications",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thông báo công việc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts",
+      "width": 390,
+      "status": 200,
+      "h1": "Hợp đồng của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/C-204",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hợp đồng của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/C-204",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/C-205",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/C-205",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Trao đổi hợp đồng thuê mới",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Trao đổi hợp đồng thuê mới",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/expiry",
+      "width": 390,
+      "status": 200,
+      "h1": "Sắp hết hạn hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/end-early",
+      "width": 390,
+      "status": 200,
+      "h1": "Đề nghị kết thúc hợp đồng sớm",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/expiry",
+      "width": 1440,
+      "status": 200,
+      "h1": "Sắp hết hạn hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/end-early",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đề nghị kết thúc hợp đồng sớm",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/end",
+      "width": 390,
+      "status": 200,
+      "h1": "Kết thúc hợp đồng & hoàn cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/end",
+      "width": 1440,
+      "status": 200,
+      "h1": "Kết thúc hợp đồng & hoàn cọc",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/deposit-complete",
+      "width": 390,
+      "status": 200,
+      "h1": "Hoàn cọc đã hoàn tất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/contracts/deposit-complete",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hoàn cọc đã hoàn tất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018/model",
+      "width": 1440,
+      "status": 200,
+      "h1": "Mô hình máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018/model",
+      "width": 390,
+      "status": 200,
+      "h1": "Mô hình máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-022",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy thay thế trong hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-022",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy thay thế trong hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/C-031",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết máy thông thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/C-031",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết máy thông thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/substitute",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy thay thế trong hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/substitute",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy thay thế trong hợp đồng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/history",
+      "width": 390,
+      "status": 200,
+      "h1": "Lịch sử bảo trì & sửa chữa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/history",
+      "width": 1440,
+      "status": 200,
+      "h1": "Lịch sử bảo trì & sửa chữa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices",
+      "width": 390,
+      "status": 200,
+      "h1": "Hóa đơn & thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hóa đơn & thanh toán",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/payment",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi ảnh chứng từ chuyển khoản",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/payment",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi ảnh chứng từ chuyển khoản",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/shortfall",
+      "width": 390,
+      "status": 200,
+      "h1": "Cần thanh toán phần còn thiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/shortfall",
+      "width": 1440,
+      "status": 200,
+      "h1": "Cần thanh toán phần còn thiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/refund",
+      "width": 390,
+      "status": 200,
+      "h1": "Theo dõi hoàn tiền thanh toán thừa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/refund",
+      "width": 1440,
+      "status": 200,
+      "h1": "Theo dõi hoàn tiền thanh toán thừa",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/2026-08",
+      "width": 390,
+      "status": 200,
+      "h1": "Thanh toán tháng đầu tiên",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/2026-08",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thanh toán tháng đầu tiên",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/2026-09",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết hóa đơn & đối chiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/2026-09",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết hóa đơn & đối chiếu",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/reminder",
+      "width": 390,
+      "status": 200,
+      "h1": "Nhắc thanh toán hóa đơn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/reminder",
+      "width": 1440,
+      "status": 200,
+      "h1": "Nhắc thanh toán hóa đơn",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/standard",
+      "width": 390,
+      "status": 200,
+      "h1": "Hóa đơn thuê máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/standard",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hóa đơn thuê máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/standard-payment",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi chứng từ thuê máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/invoices/standard-payment",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi chứng từ thuê máy thường",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu",
+      "width": 390,
+      "status": 200,
+      "h1": "Menu của tôi · máy S-018",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu",
+      "width": 1440,
+      "status": 200,
+      "h1": "Menu của tôi · máy S-018",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/espresso",
+      "width": 390,
+      "status": 200,
+      "h1": "Tinh chỉnh Espresso",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/espresso",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tinh chỉnh Espresso",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/fresh-milk",
+      "width": 390,
+      "status": 200,
+      "h1": "Tinh chỉnh cà phê sữa tươi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/fresh-milk",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tinh chỉnh cà phê sữa tươi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/add-dish",
+      "width": 390,
+      "status": 200,
+      "h1": "Thêm món riêng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/add-dish",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thêm món riêng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/sent",
+      "width": 390,
+      "status": 200,
+      "h1": "Đã gửi · chờ máy cập nhật",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/sent",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đã gửi · chờ máy cập nhật",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/applied",
+      "width": 390,
+      "status": 200,
+      "h1": "Đã gửi · chờ máy cập nhật",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support",
+      "width": 390,
+      "status": 200,
+      "h1": "Yêu cầu hỗ trợ của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/menu/applied",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đã gửi · chờ máy cập nhật",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support",
+      "width": 1440,
+      "status": 200,
+      "h1": "Yêu cầu hỗ trợ của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Báo sự cố máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Báo sự cố máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/menu",
+      "width": 390,
+      "status": 200,
+      "h1": "Cập nhật menu cần hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/menu",
+      "width": 1440,
+      "status": 200,
+      "h1": "Cập nhật menu cần hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-017",
+      "width": 390,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-018",
+      "width": 390,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-017",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-018",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback",
+      "width": 390,
+      "status": 200,
+      "h1": "Đề nghị thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-012",
+      "width": 390,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đề nghị thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/support/YC-012",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tiến trình yêu cầu hỗ trợ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/new",
+      "width": 1440,
+      "status": 200,
+      "h1": "Gửi đề nghị bán máy của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/new",
+      "width": 390,
+      "status": 200,
+      "h1": "Gửi đề nghị bán máy của tôi",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/documents",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chứng từ thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/documents",
+      "width": 390,
+      "status": 200,
+      "h1": "Chứng từ thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/documents/confirmed",
+      "width": 390,
+      "status": 200,
+      "h1": "Đã xác nhận chứng từ thu mua",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/issue",
+      "width": 390,
+      "status": 200,
+      "h1": "Chứng từ thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/documents/confirmed",
+      "width": 1440,
+      "status": 200,
+      "h1": "Đã xác nhận chứng từ thu mua",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/buyback/issue",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chứng từ thu mua máy cũ",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/notifications",
+      "width": 390,
+      "status": 200,
+      "h1": "Thông báo & nhắc nhở",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/C-204",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hồ sơ hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/C-204",
+      "width": 390,
+      "status": 200,
+      "h1": "Hồ sơ hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/notifications",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thông báo & nhắc nhở",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/C-205",
+      "width": 390,
+      "status": 200,
+      "h1": "Hồ sơ hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/contracts/C-205",
+      "width": 1440,
+      "status": 200,
+      "h1": "Hồ sơ hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018?view=monitoring",
+      "width": 390,
+      "status": 200,
+      "h1": "Giám sát máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018?view=monitoring",
+      "width": 1440,
+      "status": 200,
+      "h1": "Giám sát máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018?state=offline",
+      "width": 390,
+      "status": 200,
+      "h1": "Máy mất kết nối · dữ liệu gần nhất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018?state=offline",
+      "width": 1440,
+      "status": 200,
+      "h1": "Máy mất kết nối · dữ liệu gần nhất",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018/model?view=front",
+      "width": 390,
+      "status": 200,
+      "h1": "Mô hình máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/dashboard/machines/S-018/model?view=front",
+      "width": 1440,
+      "status": 200,
+      "h1": "Mô hình máy Smart IoT",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/users?view=create-customer",
+      "width": 1440,
+      "status": 200,
+      "h1": "Tạo tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/machines?view=front",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết dữ liệu & mô hình máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/moderator/iot/machines?view=front",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết dữ liệu & mô hình máy",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/users?view=create-customer",
+      "width": 390,
+      "status": 200,
+      "h1": "Tạo tài khoản khách hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/stores?view=detail",
+      "width": 1440,
+      "status": 200,
+      "h1": "Thông tin cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/stores?view=detail",
+      "width": 390,
+      "status": 200,
+      "h1": "Thông tin cửa hàng",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/menu?view=items",
+      "width": 1440,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/menu?view=items",
+      "width": 390,
+      "status": 200,
+      "h1": "Global Menu mùa hè · các món",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts?view=c204",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts?view=c204",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-204",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts?view=c205",
+      "width": 390,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    },
+    {
+      "route": "/admin/contracts?view=c205",
+      "width": 1440,
+      "status": 200,
+      "h1": "Chi tiết hợp đồng C-205",
+      "overflow": false,
+      "visibleMain": 1
+    }
+  ],
+  "errors": [],
+  "console": []
+}

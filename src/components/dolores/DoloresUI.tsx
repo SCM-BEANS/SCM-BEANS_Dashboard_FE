@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import styles from "./DoloresShell.module.css";
 
 export type DoloresIcon =
   | "activity"
@@ -27,6 +28,7 @@ export function DoloresButton({
   onClick,
   disabled,
   type = "button",
+  className: extraClassName = "",
 }: {
   children: ReactNode;
   href?: string;
@@ -34,17 +36,18 @@ export function DoloresButton({
   onClick?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
+  className?: string;
 }) {
   const className =
     "inline-flex h-12 shrink-0 items-center justify-center rounded-[10px] px-4 py-3 text-sm font-medium transition-opacity " +
     (variant === "primary"
       ? "bg-[#B81724] text-white hover:opacity-[0.88] active:opacity-[0.72] disabled:cursor-not-allowed disabled:opacity-[0.38]"
-      : "border border-[#E9E2DC] bg-white text-[#302927] hover:opacity-[0.88] active:opacity-[0.72] disabled:cursor-not-allowed disabled:opacity-[0.38]");
+      : "border border-[#E9E2DC] bg-white text-[#302927] hover:opacity-[0.88] active:opacity-[0.72] disabled:cursor-not-allowed disabled:opacity-[0.38]") + " " + extraClassName;
   const dataVariant = variant;
 
   if (href) {
     return (
-      <Link className={className} href={href} aria-disabled={disabled} data-variant={dataVariant}>
+      <Link className={className} href={href} aria-disabled={disabled} tabIndex={disabled ? -1 : undefined} onClick={disabled ? (event) => event.preventDefault() : onClick} data-variant={dataVariant}>
         {children}
       </Link>
     );
@@ -58,30 +61,11 @@ export function DoloresButton({
 }
 
 export function DoloresPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={"rounded-2xl border border-[#E9E2DC] bg-white px-6 py-[22px] " + className}>{children}</section>;
+  return <section className={"dolores-panel rounded-2xl border border-[#E9E2DC] bg-white px-6 py-[22px] " + className}>{children}</section>;
 }
 
 export function DoloresPanelTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-4 text-lg font-semibold leading-[1.45] text-[#302927]">{children}</h2>;
-}
-
-export function DoloresNotice({
-  title,
-  children,
-  tone = "info",
-}: {
-  title: string;
-  children: ReactNode;
-  tone?: "info" | "warning" | "success";
-}) {
-  const toneClass =
-    tone === "warning" ? "bg-[#FFF2E6]" : tone === "success" ? "bg-[#ECF6EF]" : "bg-[#F9E9EA]";
-  return (
-    <aside className={"flex flex-col gap-2 rounded-[10px] p-4 text-sm leading-normal text-[#302927] " + toneClass}>
-      <p className="font-medium">{title}</p>
-      <div>{children}</div>
-    </aside>
-  );
+  return <h2 className="dolores-panel-title mb-4 text-lg font-semibold leading-[26px] text-[#302927]">{children}</h2>;
 }
 
 export function DoloresField({
@@ -98,11 +82,11 @@ export function DoloresField({
   children?: ReactNode;
 }) {
   return (
-    <label className={"flex min-h-20 flex-col justify-center gap-[5px] rounded-[10px] border border-[#E9E2DC] bg-white px-4 py-3 " + className}>
-      <span className="text-xs text-[#706561]">
+    <label className={"dolores-field flex min-h-20 min-w-0 flex-col justify-center gap-[5px] rounded-[10px] border border-[#E9E2DC] bg-white px-4 py-3 font-medium focus-within:border-[#B81724] has-[[aria-invalid=true]]:border-[#B81724] " + className}>
+      <span className="text-xs leading-[15px] text-[#706561]">
         {label}{required ? " *" : ""}
       </span>
-      {children ?? <span className="text-sm text-[#302927]">{value}</span>}
+      {children ?? <span className="text-sm leading-[17px] text-[#302927]">{value}</span>}
     </label>
   );
 }
@@ -111,18 +95,24 @@ export function DoloresFieldGrid({ children }: { children: ReactNode }) {
   return <div className="dolores-field-grid grid grid-cols-2 gap-4">{children}</div>;
 }
 
+export function DoloresDetails({ fields }: { fields: readonly (readonly [ReactNode, ReactNode])[] }) {
+  return <div className={styles.overviewDetails}>{fields.map(([label, value], index) => <div className={fields.length % 2 === 1 && index === fields.length - 1 ? "col-span-2" : undefined} key={typeof label === "string" ? label : index}><p>{label}</p><p>{value}</p></div>)}</div>;
+}
+
 export function DoloresTable({
   headers,
   rows,
   className = "",
+  columnLayout,
 }: {
   headers: string[];
   rows: ReactNode[][];
   className?: string;
+  columnLayout?: "customer-contracts" | "technician-tasks";
 }) {
   return (
     <div className={"w-full overflow-x-auto " + className}>
-      <table className="w-full min-w-[720px] border-separate border-spacing-y-[10px] text-left text-sm text-[#302927]">
+      <table data-columns={headers.length} data-column-layout={columnLayout} className="dolores-table w-full min-w-[720px] border-separate border-spacing-y-[10px] text-left text-sm text-[#302927]">
         <thead>
           <tr className="h-12 bg-[#F7F5F3] text-[13px] font-semibold text-[#706561]">
             {headers.map((header) => (
@@ -146,9 +136,9 @@ export function DoloresTable({
   );
 }
 
-export function DoloresMetric({ label, value }: { label: string; value: string }) {
+export function DoloresMetric({ label, value, mobileSize }: { label: string; value: string; mobileSize?: "compact" }) {
   return (
-    <div className="dolores-metric flex min-h-[99px] flex-col gap-1.5 px-3 py-[18px]">
+    <div className="dolores-metric flex min-w-0 flex-col gap-1.5 rounded-[14px] bg-white px-5 py-[18px]" data-mobile-size={mobileSize}>
       <p className="text-[13px] leading-[19px] text-[#706561]">{label}</p>
       <p className="text-[26px] font-semibold leading-[38px] text-[#302927]">{value}</p>
     </div>

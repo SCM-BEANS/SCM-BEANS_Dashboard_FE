@@ -1,0 +1,436 @@
+[
+  {
+    "name": "D01 cancel leaves storage empty",
+    "status": "PASS"
+  },
+  {
+    "name": "D01 saves both quantities and remains pending",
+    "status": "PASS",
+    "details": {
+      "schemaVersion": 2,
+      "id": "customer:S-018:espresso",
+      "status": "pending",
+      "version": 1,
+      "payload": {
+        "acknowledgedVersion": "",
+        "acknowledgedCoffee": "",
+        "acknowledgedWater": "",
+        "acknowledgedMilk": "",
+        "machine": "S-018",
+        "dish": "espresso",
+        "coffee": "20",
+        "water": "60",
+        "milk": "120"
+      }
+    }
+  },
+  {
+    "name": "D01 pending survives reload",
+    "status": "PASS"
+  },
+  {
+    "name": "D01 applied after simulated acknowledgement",
+    "status": "PASS",
+    "details": {
+      "schemaVersion": 2,
+      "id": "customer:S-018:espresso",
+      "status": "applied",
+      "version": 1,
+      "payload": {
+        "acknowledgedVersion": "1",
+        "acknowledgedCoffee": "20",
+        "acknowledgedWater": "60",
+        "acknowledgedMilk": "120",
+        "machine": "S-018",
+        "dish": "espresso",
+        "coffee": "20",
+        "water": "60",
+        "milk": "120"
+      }
+    }
+  },
+  {
+    "name": "Applied menu version in monitoring",
+    "status": "PASS"
+  },
+  {
+    "name": "Re-edit pending retains last applied quantities",
+    "status": "PASS"
+  },
+  {
+    "name": "Monitoring retains acknowledged version during pending re-edit",
+    "status": "PASS"
+  },
+  {
+    "name": "customer-expiry geometry 390",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 16,
+        "y": 240.5,
+        "width": 358,
+        "height": 363
+      }
+    }
+  },
+  {
+    "name": "customer-expiry Escape 390",
+    "status": "PASS"
+  },
+  {
+    "name": "buyback-preview geometry 390",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 16,
+        "y": 221.5,
+        "width": 358,
+        "height": 401
+      }
+    }
+  },
+  {
+    "name": "buyback-preview Escape 390",
+    "status": "PASS"
+  },
+  {
+    "name": "technician-type geometry 390",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 16,
+        "y": 74.5,
+        "width": 358,
+        "height": 695
+      }
+    }
+  },
+  {
+    "name": "technician-type Escape 390",
+    "status": "PASS"
+  },
+  {
+    "name": "customer-expiry geometry 1440",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 430,
+        "y": 288,
+        "width": 580,
+        "height": 344
+      }
+    }
+  },
+  {
+    "name": "customer-expiry Escape 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "buyback-preview geometry 1440",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 430,
+        "y": 264.5,
+        "width": 580,
+        "height": 391
+      }
+    }
+  },
+  {
+    "name": "buyback-preview Escape 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "technician-type geometry 1440",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 430,
+        "y": 95.5,
+        "width": 580,
+        "height": 729
+      }
+    }
+  },
+  {
+    "name": "technician-type Escape 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M21 preview geometry 390",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 16,
+        "y": 221.5,
+        "width": 358,
+        "height": 401
+      }
+    }
+  },
+  {
+    "name": "M21 preview Escape 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M21 preview geometry 1440",
+    "status": "PASS",
+    "details": {
+      "bounds": {
+        "x": 430,
+        "y": 264.5,
+        "width": 580,
+        "height": 391
+      }
+    }
+  },
+  {
+    "name": "M21 preview Escape 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile navigation contains focus",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile navigation closes and restores focus",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile actions contains focus",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile actions closes and restores focus",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 missing document error 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 cancel does not save 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 confirms saved document 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 success destination C204 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 missing document error 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 cancel does not save 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 confirms saved document 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M02 success destination C204 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "C205 preview approved content 390",
+    "status": "PASS",
+    "details": {
+      "decision": "Q05 mobile C205",
+      "text": "Tài liệu trong hồ sơ\n\nHồ sơ hợp đồng C-205\n\nTài liệu được lưu để xem và đối chiếu với hồ sơ.\n\nTài liệu\n\nC-205-signed.pdf\n\nBản xem mẫu: chưa có ảnh/PDF gốc được cung cấp trong dữ liệu thiết kế.\n\nĐóng"
+    }
+  },
+  {
+    "name": "Preview focus containment 390",
+    "status": "PASS"
+  },
+  {
+    "name": "Preview Escape focus return 390",
+    "status": "PASS"
+  },
+  {
+    "name": "C205 preview approved content 1440",
+    "status": "PASS",
+    "details": {
+      "decision": "User reply: retain Figma PC C204",
+      "text": "Tài liệu trong hồ sơ\n\nHồ sơ hợp đồng C-204\n\nTài liệu được lưu để xem và đối chiếu với hồ sơ.\n\nC-204-signed.pdf\n\nBản xem mẫu: chưa có ảnh/PDF gốc được cung cấp trong dữ liệu thiết kế.\n\nĐóng"
+    }
+  },
+  {
+    "name": "Preview focus containment 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "Preview Escape focus return 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "Model tap changes view without navigation",
+    "status": "PASS"
+  },
+  {
+    "name": "Model Front button navigates",
+    "status": "PASS"
+  },
+  {
+    "name": "Model drag changes view",
+    "status": "PASS"
+  },
+  {
+    "name": "Contract handover opens assigned job standard 390",
+    "status": "PASS"
+  },
+  {
+    "name": "Contract handover opens assigned job smart 390",
+    "status": "PASS"
+  },
+  {
+    "name": "Contract handover opens assigned job standard 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "Contract handover opens assigned job smart 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 retained Figma content install-standard 390",
+    "status": "PASS",
+    "details": {
+      "decision": "User explicitly chose to keep Figma content",
+      "values": [
+        "Thu hồi & đánh giá tình trạng",
+        "YC-017",
+        "C-204 / S-018",
+        "Nguyễn Văn Nam",
+        "Cà phê Mộc · Quận 3",
+        "Thu hồi máy và báo tình trạng để quyết toán cọc"
+      ]
+    }
+  },
+  {
+    "name": "M19 cancel no dispatch install-standard 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 confirms dispatch install-standard 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 success destination install-standard 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 retained Figma content install-smart 390",
+    "status": "PASS",
+    "details": {
+      "decision": "User explicitly chose to keep Figma content",
+      "values": [
+        "Thu hồi & đánh giá tình trạng",
+        "YC-017",
+        "C-204 / S-018",
+        "Nguyễn Văn Nam",
+        "Cà phê Mộc · Quận 3",
+        "Thu hồi máy và báo tình trạng để quyết toán cọc"
+      ]
+    }
+  },
+  {
+    "name": "M19 cancel no dispatch install-smart 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 confirms dispatch install-smart 390",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 success destination install-smart 390",
+    "status": "PASS"
+  },
+  {
+    "name": "Customer contract signed preview C-204 390",
+    "status": "PASS",
+    "details": {
+      "source": "58:5549 / 90:26723"
+    }
+  },
+  {
+    "name": "Customer contract signed preview C-205 390",
+    "status": "PASS",
+    "details": {
+      "source": "64:10195 / 90:27600"
+    }
+  },
+  {
+    "name": "M19 retained Figma content install-standard 1440",
+    "status": "PASS",
+    "details": {
+      "decision": "User explicitly chose to keep Figma content",
+      "values": [
+        "Thu hồi & đánh giá tình trạng",
+        "YC-017",
+        "C-204 / S-018",
+        "Nguyễn Văn Nam",
+        "Cà phê Mộc · Quận 3",
+        "Thu hồi máy và báo tình trạng để quyết toán cọc"
+      ]
+    }
+  },
+  {
+    "name": "M19 cancel no dispatch install-standard 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 confirms dispatch install-standard 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 success destination install-standard 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 retained Figma content install-smart 1440",
+    "status": "PASS",
+    "details": {
+      "decision": "User explicitly chose to keep Figma content",
+      "values": [
+        "Thu hồi & đánh giá tình trạng",
+        "YC-017",
+        "C-204 / S-018",
+        "Nguyễn Văn Nam",
+        "Cà phê Mộc · Quận 3",
+        "Thu hồi máy và báo tình trạng để quyết toán cọc"
+      ]
+    }
+  },
+  {
+    "name": "M19 cancel no dispatch install-smart 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 confirms dispatch install-smart 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "M19 success destination install-smart 1440",
+    "status": "PASS"
+  },
+  {
+    "name": "Customer contract signed preview C-204 1440",
+    "status": "PASS",
+    "details": {
+      "source": "58:5549 / 90:26723"
+    }
+  },
+  {
+    "name": "Customer contract signed preview C-205 1440",
+    "status": "PASS",
+    "details": {
+      "source": "64:10195 / 90:27600"
+    }
+  }
+]

@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-17",
+  "figmaFileKey": "z34Av71ZjvqjF0AQ0hyQxK",
+  "viewport": {
+    "pc": {
+      "width": 1440,
+      "height": 920
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "captures": [
+    {
+      "name": "A15-STD · Hồ sơ máy thường C-031",
+      "route": "/admin/machines?view=standard",
+      "figma": {
+        "pc": "80:18725",
+        "mobile": "89:19362"
+      },
+      "screenshots": {
+        "pc": "uxui-machine-standard-1440-2026-10-17.png",
+        "mobile": "uxui-machine-standard-390-2026-10-17.png"
+      }
+    },
+    {
+      "name": "A23 · Lịch sử sửa chữa, bảo trì & linh kiện",
+      "route": "/admin/machines?view=repair-history",
+      "figma": {
+        "pc": "80:15992",
+        "mobile": "89:18665"
+      },
+      "screenshots": {
+        "pc": "uxui-machine-repair-history-1440-2026-10-17.png",
+        "mobile": "uxui-machine-repair-history-390-2026-10-17.png"
+      }
+    },
+    {
+      "name": "A24 · Lịch sử hợp đồng của khách",
+      "route": "/admin/contracts?view=history",
+      "figma": {
+        "pc": "80:15208",
+        "mobile": "89:18154"
+      },
+      "screenshots": {
+        "pc": "uxui-contract-history-1440-2026-10-17.png",
+        "mobile": "uxui-contract-history-390-2026-10-17.png"
+      }
+    },
+    {
+      "name": "A26 · Quản lý tài khoản Moderator",
+      "route": "/admin/users?view=staff",
+      "figma": {
+        "pc": "80:15316",
+        "mobile": "89:18199"
+      },
+      "screenshots": {
+        "pc": "uxui-staff-moderator-1440-2026-10-17.png",
+        "mobile": "uxui-staff-moderator-390-2026-10-17.png"
+      }
+    },
+    {
+      "name": "A26-TECH · Quản lý tài khoản Technician",
+      "route": "/admin/users?view=staff&account=2",
+      "figma": {
+        "pc": "91:3891",
+        "mobile": "91:21663"
+      },
+      "screenshots": {
+        "pc": "uxui-staff-technician-1440-2026-10-17.png",
+        "mobile": "uxui-staff-technician-390-2026-10-17.png"
+      }
+    },
+    {
+      "name": "A08 · Chi tiết báo cáo theo khách hàng",
+      "route": "/admin/reports?view=customers",
+      "figma": {
+        "pc": "54:877",
+        "mobile": "89:379"
+      },
+      "screenshots": {
+        "pc": "uxui-report-customers-1440-2026-10-17.png",
+        "mobile": "uxui-report-customers-390-2026-10-17.png"
+      }
+    }
+  ],
+  "notes": [
+    "A15-STD: verified responsive source copy for the most recent maintenance value.",
+    "A23: added the missing 12/09 return-after-loan history item.",
+    "A24: matched timeline typography, spacing and C-031 relationship text.",
+    "A26: corrected role scopes and ensured account=2 opens the Technician record; long scopes wrap on mobile.",
+    "A08: removed the extra mobile actions menu so the primary action fills the row."
+  ]
+}

@@ -1,0 +1,182 @@
+[
+  {
+    "name": "admin",
+    "route": "/admin",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-admin-390-2026-10-15.png"
+  },
+  {
+    "name": "admin",
+    "route": "/admin",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-admin-1440-2026-10-15.png"
+  },
+  {
+    "name": "accounts",
+    "route": "/admin/users",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-accounts-390-2026-10-15.png"
+  },
+  {
+    "name": "accounts",
+    "route": "/admin/users",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-accounts-1440-2026-10-15.png"
+  },
+  {
+    "name": "admin-contract",
+    "route": "/admin/contracts?view=c204",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-admin-contract-390-2026-10-15.png"
+  },
+  {
+    "name": "admin-contract",
+    "route": "/admin/contracts?view=c204",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-admin-contract-1440-2026-10-15.png"
+  },
+  {
+    "name": "moderator",
+    "route": "/moderator",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-moderator-390-2026-10-15.png"
+  },
+  {
+    "name": "moderator",
+    "route": "/moderator",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-moderator-1440-2026-10-15.png"
+  },
+  {
+    "name": "contract-create",
+    "route": "/moderator/contracts/new",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-contract-create-390-2026-10-15.png"
+  },
+  {
+    "name": "contract-create",
+    "route": "/moderator/contracts/new",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-contract-create-1440-2026-10-15.png"
+  },
+  {
+    "name": "standard-contract",
+    "route": "/moderator/contracts/C-205",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-standard-contract-390-2026-10-15.png"
+  },
+  {
+    "name": "standard-contract",
+    "route": "/moderator/contracts/C-205",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-standard-contract-1440-2026-10-15.png"
+  },
+  {
+    "name": "moderator-model",
+    "route": "/moderator/iot/machines",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-moderator-model-390-2026-10-15.png"
+  },
+  {
+    "name": "moderator-model",
+    "route": "/moderator/iot/machines",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-moderator-model-1440-2026-10-15.png"
+  },
+  {
+    "name": "tasks",
+    "route": "/technician/tasks",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-tasks-390-2026-10-15.png"
+  },
+  {
+    "name": "tasks",
+    "route": "/technician/tasks",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-tasks-1440-2026-10-15.png"
+  },
+  {
+    "name": "handover",
+    "route": "/technician/tasks/standard-handover",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-handover-390-2026-10-15.png"
+  },
+  {
+    "name": "handover",
+    "route": "/technician/tasks/standard-handover",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-handover-1440-2026-10-15.png"
+  },
+  {
+    "name": "customer",
+    "route": "/dashboard",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-customer-390-2026-10-15.png"
+  },
+  {
+    "name": "customer",
+    "route": "/dashboard",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-customer-1440-2026-10-15.png"
+  },
+  {
+    "name": "contracts",
+    "route": "/dashboard/contracts",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-contracts-390-2026-10-15.png"
+  },
+  {
+    "name": "contracts",
+    "route": "/dashboard/contracts",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-contracts-1440-2026-10-15.png"
+  },
+  {
+    "name": "smart-machine",
+    "route": "/dashboard/machines/S-018",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-smart-machine-390-2026-10-15.png"
+  },
+  {
+    "name": "smart-machine",
+    "route": "/dashboard/machines/S-018",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-smart-machine-1440-2026-10-15.png"
+  },
+  {
+    "name": "monitoring",
+    "route": "/dashboard/machines/S-018?view=monitoring",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-monitoring-390-2026-10-15.png"
+  },
+  {
+    "name": "monitoring",
+    "route": "/dashboard/machines/S-018?view=monitoring",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-monitoring-1440-2026-10-15.png"
+  },
+  {
+    "name": "machine-model",
+    "route": "/dashboard/machines/S-018/model",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-machine-model-390-2026-10-15.png"
+  },
+  {
+    "name": "machine-model",
+    "route": "/dashboard/machines/S-018/model",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-machine-model-1440-2026-10-15.png"
+  },
+  {
+    "name": "menu-applied",
+    "route": "/dashboard/menu",
+    "width": 390,
+    "path": "skill/planFix-evidence/uxui-menu-applied-390-2026-10-15.png"
+  },
+  {
+    "name": "menu-applied",
+    "route": "/dashboard/menu",
+    "width": 1440,
+    "path": "skill/planFix-evidence/uxui-menu-applied-1440-2026-10-15.png"
+  }
+]

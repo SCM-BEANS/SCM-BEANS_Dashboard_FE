@@ -1,0 +1,114 @@
+[
+  {
+    "route": "/",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Thuê máy pha cà phê thông minhcho doanh nghiệp"
+  },
+  {
+    "route": "/",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Thuê máy pha cà phê thông minhcho doanh nghiệp"
+  },
+  {
+    "route": "/about",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Chúng tôi là DOLORES COFFEE"
+  },
+  {
+    "route": "/about",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Chúng tôi là DOLORES COFFEE"
+  },
+  {
+    "route": "/products",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Danh mục sản phẩm cho thuê"
+  },
+  {
+    "route": "/products",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Danh mục sản phẩm cho thuê"
+  },
+  {
+    "route": "/pricing",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Minh bạch, linh hoạt"
+  },
+  {
+    "route": "/pricing",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Minh bạch, linh hoạt"
+  },
+  {
+    "route": "/solutions",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Giải pháp toàn diện cho doanh nghiệp"
+  },
+  {
+    "route": "/solutions",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Giải pháp toàn diện cho doanh nghiệp"
+  },
+  {
+    "route": "/technology",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "IoT & Cloud cho máy pha cà phê"
+  },
+  {
+    "route": "/technology",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "IoT & Cloud cho máy pha cà phê"
+  },
+  {
+    "route": "/login",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Dolores Coffee"
+  },
+  {
+    "route": "/login",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Dolores Coffee"
+  },
+  {
+    "route": "/settings",
+    "width": 390,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Bảo mật (Security)"
+  },
+  {
+    "route": "/settings",
+    "width": 1440,
+    "status": 200,
+    "doloresShell": 0,
+    "heading": "Bảo mật (Security)"
+  }
+]

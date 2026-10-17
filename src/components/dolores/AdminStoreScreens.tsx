@@ -11,28 +11,30 @@ import {
 } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
+import { DoloresDialog } from "@/components/dolores/DoloresDialog";
 
 type StoreView = "list" | "detail";
 type Overlay = "confirm" | "success" | null;
 
-function StoreDialog({ success, onConfirm, onClose }: { success: boolean; onConfirm: () => void; onClose: () => void }) {
+function StoreDialog({ success, storeName, onConfirm, onClose }: { success: boolean; storeName: string; onConfirm: () => void; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/25 px-6" role="dialog" aria-modal="true" aria-labelledby="store-dialog-title">
+    <DoloresDialog labelledBy="store-dialog-title" onClose={onClose}>
       <section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
-        <p className="text-[11px] font-medium leading-4 text-[#706561]">{success ? "Thông tin cửa hàng" : "Kiểm tra trước khi tiếp tục"}</p>
+        <p className="text-[11px] font-medium leading-4 text-[#706561]">{success ? "✓  Đã hoàn tất" : "Xác nhận thông tin"}</p>
         <h2 id="store-dialog-title" className="mt-3 text-xl font-semibold leading-7">{success ? "Đã ghi nhận thành công" : "Xác nhận · Thông tin cửa hàng"}</h2>
-        <p className="mt-3 text-[13px] leading-5 text-[#706561]">Cà phê Mộc · Nguyễn Minh Anh · Quận 3, TP. HCM · Hoạt động.</p>
-        <div className="mt-5 grid gap-5">
+        <p className="mt-3 text-[13px] leading-5 text-[#706561]">Lưu thông tin {storeName}, Tenant phụ trách, địa chỉ và trạng thái cửa hàng.</p>
+        <div data-dialog-actions>
           {success ? <DoloresButton onClick={onClose}>Về danh sách</DoloresButton> : <><DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton><DoloresButton onClick={onClose} variant="secondary">Đóng</DoloresButton></>}
         </div>
       </section>
-    </div>
+    </DoloresDialog>
   );
 }
 
 export default function AdminStoreScreens({ initialView = "list" }: { initialView?: StoreView }) {
   const [view, setView] = useRouteView<StoreView>(initialView);
   const [overlay, setOverlay] = useState<Overlay>(null);
+  const [fields, setFields] = useState({ "Tên cửa hàng": "Cà phê Mộc", "Tenant phụ trách": "Nguyễn Minh Anh", "Địa chỉ": "Quận 3, TP. HCM", "Trạng thái": "Hoạt động" });
   useEffect(() => { setOverlay(null); }, [initialView]);
 
   if (view === "detail") {
@@ -40,13 +42,10 @@ export default function AdminStoreScreens({ initialView = "list" }: { initialVie
       <>
         <DoloresPage title="Thông tin cửa hàng" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton onClick={() => setOverlay("confirm")}>Lưu cửa hàng</DoloresButton><DoloresButton variant="secondary" onClick={() => setView("list")}>Hủy</DoloresButton></>}>
           <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid>
-            <DoloresField label="Tên cửa hàng" required value="Cà phê Mộc" />
-            <DoloresField label="Tenant phụ trách" required value="Nguyễn Minh Anh" />
-            <DoloresField label="Địa chỉ" required value="Quận 3, TP. HCM" />
-            <DoloresField label="Trạng thái" value="Hoạt động" />
+            {Object.entries(fields).map(([label, value]) => <DoloresField key={label} label={label} required={label !== "Trạng thái"}><input className="w-full bg-transparent text-sm leading-[17px] outline-none" aria-label={label} value={value} onChange={event => setFields(current => ({ ...current, [label]: event.target.value }))} /></DoloresField>)}
           </DoloresFieldGrid></DoloresPanel>
         </DoloresPage>
-        {overlay && <StoreDialog success={overlay === "success"} onConfirm={() => setOverlay("success")} onClose={() => {
+        {overlay && <StoreDialog success={overlay === "success"} storeName={fields["Tên cửa hàng"]} onConfirm={() => setOverlay("success")} onClose={() => {
           if (overlay === "confirm") setOverlay(null);
           else { setOverlay(null); setView("list"); }
         }} />}

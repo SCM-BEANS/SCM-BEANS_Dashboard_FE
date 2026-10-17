@@ -1,0 +1,186 @@
+.viewport {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 4 / 5;
+  container-type: inline-size;
+}
+
+.graphic {
+  position: relative;
+  display: block;
+  width: 320px;
+  height: 400px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: scale(calc(100cqw / 320px));
+  transform-origin: top left;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.graphic img {
+  max-width: none;
+  pointer-events: none;
+}
+
+.front {
+  position: absolute;
+  inset: 0;
+  transition: transform 350ms ease-in-out;
+}
+
+.groundShadow {
+  position: absolute;
+  top: 356px;
+  left: 34px;
+  transition: transform 350ms ease-in-out;
+}
+
+.graphic[data-view="Front"] .groundShadow {
+  transform: translateX(20px);
+}
+
+.graphic[data-view="Front"] .front {
+  transform: translateX(20px);
+}
+
+.topBevel,
+.depthFace,
+.sideLight,
+.sidePanel {
+  position: absolute;
+  transition: opacity 350ms ease-in-out;
+}
+
+.topBevel {
+  top: 44px;
+  left: 34px;
+}
+
+.depthFace {
+  top: 68px;
+  left: 248px;
+}
+
+.sideLight {
+  top: 105px;
+  left: 262px;
+}
+
+.sidePanel {
+  top: 130px;
+  left: 263px;
+  width: 16px;
+  height: 55px;
+  border-radius: 5px;
+  background: #bf9c80;
+}
+
+.graphic[data-view="Front"] :is(.topBevel, .depthFace, .sideLight, .sidePanel) {
+  opacity: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel > h2 {
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  height: 400px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.layout > .viewport {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.info {
+  display: flex;
+  grid-row: 1;
+  grid-column: 2;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.info h3 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 35px;
+}
+
+.info p {
+  font-size: 16px;
+  line-height: 23px;
+}
+
+.info p:last-of-type {
+  color: #706561;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+@media (max-width: 1023px) {
+  .panel {
+    gap: 12px;
+  }
+
+  .panel:global(.dolores-panel) > :global(.dolores-panel-title) {
+    margin: 0;
+    order: 0;
+  }
+
+  .layout,
+  .info,
+  .buttons {
+    display: contents;
+  }
+
+  .info :is(h3, p) {
+    order: 1;
+    color: #706561;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+
+  .layout > .viewport {
+    order: 2;
+  }
+
+  .buttons > :global([data-variant]) {
+    width: 100%;
+    order: 3;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .front,
+  .groundShadow,
+  .topBevel,
+  .depthFace,
+  .sideLight,
+  .sidePanel {
+    transition: none;
+  }
+}
