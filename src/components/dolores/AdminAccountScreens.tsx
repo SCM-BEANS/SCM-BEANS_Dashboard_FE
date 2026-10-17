@@ -1,5 +1,7 @@
 "use client";
 
+import { resolveAdminAccountView } from "@/routes/query";
+import type { AdminAccountView as AccountView } from "@/routes/query";
 import { useEffect, useId, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { demoAccountSchema } from "@/schemas/doloresDemo";
@@ -19,7 +21,6 @@ import { DoloresPage } from "@/components/dolores/DoloresShell";
 
 type AccountRole = "Khách hàng" | "Moderator" | "Technician";
 type Account = { name: string; email: string; role: AccountRole; scope: string; status: string };
-type AccountView = "list" | "create-customer" | "create-moderator" | "create-technician" | "tenant" | "staff";
 type Overlay = "role-picker" | "confirm" | "success" | "error" | null;
 type SaveAction = "create" | "update";
 
@@ -74,7 +75,7 @@ function ModalButton({ children, onClick, primary = false }: { children: string;
 export default function AdminAccountScreens({ initialView = "list" }: { initialView?: string }) {
   const accountParam = useSearchParams().get("account");
   const [accounts, setAccounts] = useState<Account[]>(ACCOUNT_FIXTURES);
-  const entryView: AccountView = ["create-customer", "create-moderator", "create-technician", "tenant", "staff"].includes(initialView) ? initialView as AccountView : "list";
+  const entryView = resolveAdminAccountView(initialView);
   const [view, setView] = useRouteView<AccountView>(entryView);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [returnTo, setReturnTo] = useState<"list" | "form">("list");

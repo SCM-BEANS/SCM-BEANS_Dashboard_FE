@@ -1,6 +1,5 @@
+import { resolveAdminContractView } from "@/routes/query";
 import AdminContractScreens from "@/components/dolores/AdminContractScreens";
-
-type ContractView = "list" | "c204" | "c205" | "history";
 
 export default async function AdminContractsPage({
   searchParams,
@@ -8,6 +7,6 @@ export default async function AdminContractsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view } = await searchParams;
-  const initialView: ContractView = view === "c204" || view === "c205" || view === "history" ? view : "list";
+  const initialView = resolveAdminContractView(view);
   return <AdminContractScreens initialView={initialView} />;
 }

@@ -1,6 +1,9 @@
 "use client";
 
-import { DoloresIconView, type DoloresIcon } from "@/components/dolores/DoloresUI";
+import { getRoleNavigationState, isCurrentPath, ROLE_LABEL } from "@/routes/navigation";
+import { PATH_PUBLIC } from "@/routes/path";
+import type { AppRole } from "@/routes/routes";
+import { DoloresIconView } from "@/components/dolores/DoloresUI";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,103 +14,16 @@ import {
 } from "react";
 import styles from "./DoloresShell.module.css";
 
-export type DoloresRole = "admin" | "moderator" | "technician" | "customer";
-type NavItem = { label: string; href: string; icon: DoloresIcon };
+export type DoloresRole = AppRole;
 
 export const DoloresShellFocusContext = createContext<{
   setFocusLabel: (label: string | null) => void;
 } | null>(null);
 
-const ROLE_NAV: Record<DoloresRole, NavItem[]> = {
-  admin: [
-    { label: "Tổng quan", href: "/admin", icon: "layout-dashboard" },
-    { label: "Tài khoản", href: "/admin/users", icon: "users" },
-    { label: "Khách hàng", href: "/admin/businesses", icon: "store" },
-    { label: "Cửa hàng", href: "/admin/stores", icon: "layout-dashboard" },
-    { label: "Hợp đồng", href: "/admin/contracts", icon: "file-text" },
-    { label: "Máy & tồn kho", href: "/admin/machines", icon: "package" },
-    { label: "Giám sát Smart IoT", href: "/admin/iot", icon: "activity" },
-    { label: "Menu & công thức", href: "/admin/menu", icon: "utensils" },
-    { label: "Báo cáo vận hành", href: "/admin/reports", icon: "chart-column" },
-    { label: "Thông báo", href: "/admin/notifications", icon: "bell" },
-  ],
-  moderator: [
-    { label: "Tổng quan", href: "/moderator", icon: "layout-dashboard" },
-    { label: "Hợp đồng", href: "/moderator/contracts", icon: "file-text" },
-    { label: "Tài khoản khách", href: "/moderator/customers", icon: "users" },
-    { label: "Hóa đơn", href: "/moderator/invoices", icon: "file-text" },
-    { label: "Máy & tồn kho", href: "/moderator/machines", icon: "coffee" },
-    { label: "Giám sát Smart IoT", href: "/moderator/iot", icon: "activity" },
-    { label: "Menu & công thức", href: "/moderator/menu", icon: "utensils" },
-    { label: "Yêu cầu kỹ thuật", href: "/moderator/technical-requests", icon: "wrench" },
-    { label: "Lịch sử máy", href: "/moderator/machine-history", icon: "clipboard-check" },
-    { label: "Thu mua máy cũ", href: "/moderator/buyback", icon: "package" },
-    { label: "Thông báo", href: "/moderator/notifications", icon: "bell" },
-  ],
-  technician: [
-    { label: "Việc được giao", href: "/technician/tasks", icon: "clipboard-check" },
-    { label: "Lịch sử máy", href: "/technician/history", icon: "coffee" },
-    { label: "Thông báo", href: "/technician/notifications", icon: "bell" },
-  ],
-  customer: [
-    { label: "Tổng quan", href: "/dashboard", icon: "layout-dashboard" },
-    { label: "Hợp đồng", href: "/dashboard/contracts", icon: "file-text" },
-    { label: "Máy của tôi", href: "/dashboard/machines", icon: "coffee" },
-    { label: "Menu của tôi", href: "/dashboard/menu", icon: "utensils" },
-    { label: "Hóa đơn", href: "/dashboard/invoices", icon: "file-text" },
-    { label: "Yêu cầu hỗ trợ", href: "/dashboard/support", icon: "wrench" },
-    { label: "Thu mua máy cũ", href: "/dashboard/buyback", icon: "package" },
-    { label: "Thông báo", href: "/dashboard/notifications", icon: "bell" },
-  ],
-};
-
-const ROLE_LABEL: Record<DoloresRole, string> = {
-  admin: "Admin",
-  moderator: "Moderator",
-  technician: "Technician",
-  customer: "Khách hàng",
-};
-
-const MOBILE_NAV: Record<DoloresRole, { label: string; href: string; exact?: boolean }[]> = {
-  admin: [
-    { label: "Tổng quan", href: "/admin", exact: true },
-    { label: "Khách hàng", href: "/admin/businesses" },
-    { label: "Máy", href: "/admin/machines" },
-  ],
-  moderator: [
-    { label: "Tổng quan", href: "/moderator", exact: true },
-    { label: "Hợp đồng", href: "/moderator/contracts" },
-    { label: "Giám sát", href: "/moderator/iot" },
-  ],
-  technician: [
-    { label: "Công việc", href: "/technician/tasks" },
-    { label: "Lịch sử", href: "/technician/history" },
-    { label: "Thông báo", href: "/technician/notifications", exact: true },
-  ],
-  customer: [
-    { label: "Tổng quan", href: "/dashboard", exact: true },
-    { label: "Máy", href: "/dashboard/machines" },
-    { label: "Hóa đơn", href: "/dashboard/invoices" },
-  ],
-};
-
-function isCurrentPath(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export function DoloresShell({ role, children }: { role: DoloresRole; children: ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const nav = ROLE_NAV[role];
-  const selectionPath = role === "customer" && pathname === "/dashboard/support/menu"
-    ? "/dashboard/menu"
-    : role === "admin" && pathname === "/admin/notifications" ? "/admin" : pathname;
-  const mobileSelectionPath = role === "customer" && pathname === "/dashboard/support/menu"
-    ? "/dashboard/menu"
-    : pathname;
-  const selectedItem =
-    nav.find((item) => item.href === selectionPath) ??
-    nav.filter((item) => item.href !== nav[0]?.href && selectionPath.startsWith(item.href)).sort((a, b) => b.href.length - a.href.length)[0];
+  const { nav, selectionPath, mobileSelectionPath, selectedItem, notificationsHref, mobileItems } = getRoleNavigationState(role, pathname);
   const [focusLabel, setFocusLabel] = useState<string | null>(null);
   const selectedLabel = [
     selectedItem?.label ?? nav[0]?.label ?? "Tổng quan",
@@ -115,8 +31,6 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
   ]
     .filter(Boolean)
     .join(" / ");
-  const notificationsHref = nav.find((item) => item.label === "Thông báo")?.href ?? nav[0]?.href ?? "/";
-  const mobileItems = MOBILE_NAV[role];
 
   useEffect(() => {
     setFocusLabel(null);
@@ -134,7 +48,7 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
   return (
     <div className={`${styles.shell} flex h-screen min-h-[640px] min-w-[1024px] overflow-hidden bg-[#F8F6F3] text-[#302927]`} data-role={role} style={{ fontFamily: "var(--font-inter), Arial, sans-serif" }}>
       <aside className={`${styles.sidebar} flex h-screen w-[240px] shrink-0 flex-col gap-1 border-r border-[#E9E2DC] bg-white px-3 pb-5 pt-6`}>
-        <Link className="text-[28px] font-semibold leading-[1.45] text-[#B81724]" href={nav[0]?.href ?? "/"}>
+        <Link className="text-[28px] font-semibold leading-[1.45] text-[#B81724]" href={nav[0]?.href ?? PATH_PUBLIC.home}>
           dolores.
         </Link>
         <p className="text-[13px] leading-[1.45] text-[#706561]">{ROLE_LABEL[role]}</p>
@@ -165,7 +79,7 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
       <DoloresShellFocusContext.Provider value={{ setFocusLabel }}>
         <div className={`${styles.workspace} flex h-screen min-w-0 flex-1 flex-col`}>
         <header className={styles.mobileHeader}>
-          <Link className={styles.mobileBrand} href={nav[0]?.href ?? "/"}>dolores.</Link>
+          <Link className={styles.mobileBrand} href={nav[0]?.href ?? PATH_PUBLIC.home}>dolores.</Link>
           <Link className={styles.mobileNotification} href={notificationsHref}>Thông báo</Link>
         </header>
         <header className={`${styles.desktopHeader} flex h-[72px] shrink-0 items-center gap-4 bg-white px-8`}>

@@ -1,6 +1,7 @@
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 import { DoloresButton, DoloresMetric, DoloresPanel, DoloresPanelTitle } from "@/components/dolores/DoloresUI";
 import type { CSSProperties } from "react";
+import { PATH_ADMIN, PATH_DASHBOARD } from "@/routes/path";
 
 const adminMonths = [
   ["132", "h-[109.056px]"],
@@ -58,9 +59,9 @@ export function AdminOverviewPage() {
       description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
       actions={
         <>
-          <DoloresButton href="/admin/reports">Báo cáo doanh thu</DoloresButton>
-          <DoloresButton href="/admin/iot" variant="secondary">Giám sát theo khách hàng</DoloresButton>
-          <DoloresButton href="/admin/machines" variant="secondary">Xem kho máy</DoloresButton>
+          <DoloresButton href={PATH_ADMIN.reports}>Báo cáo doanh thu</DoloresButton>
+          <DoloresButton href={PATH_ADMIN.iot} variant="secondary">Giám sát theo khách hàng</DoloresButton>
+          <DoloresButton href={PATH_ADMIN.machines} variant="secondary">Xem kho máy</DoloresButton>
         </>
       }
     >
@@ -96,8 +97,8 @@ export function CustomerOverviewPage() {
       description="Theo dõi máy, hợp đồng, hóa đơn và các thông báo cần xử lý."
       actions={
         <>
-          <DoloresButton href="/dashboard/machines">Xem máy của tôi</DoloresButton>
-          <DoloresButton href="/dashboard/invoices" variant="secondary">Xem hóa đơn</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.machines}>Xem máy của tôi</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoices} variant="secondary">Xem hóa đơn</DoloresButton>
         </>
       }
     >
@@ -118,8 +119,8 @@ export function CustomerOverviewPage() {
         <p className="text-sm font-semibold">Hóa đơn tháng 9</p>
         <p className="mt-1 text-sm text-[#706561]">Hạn thanh toán còn 4 ngày · Còn phải trả 2.750.000 đ</p>
         <div className="mt-4 flex gap-4">
-          <a className="text-sm font-medium text-[#B81724] underline" href="/dashboard/invoices">Xem hóa đơn</a>
-          <a className="text-sm font-medium text-[#B81724] underline" href="/dashboard/machines">Xem máy</a>
+          <a className="text-sm font-medium text-[#B81724] underline" href={PATH_DASHBOARD.invoices}>Xem hóa đơn</a>
+          <a className="text-sm font-medium text-[#B81724] underline" href={PATH_DASHBOARD.machines}>Xem máy</a>
         </div>
       </DoloresPanel>
     </DoloresPage>

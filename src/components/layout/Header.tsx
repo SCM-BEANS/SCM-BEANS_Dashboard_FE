@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authService } from "@/services/auth.service";
 import { ChangePasswordModal } from "@/components/auth/ChangePasswordModal";
+import { PATH_AUTH, PATH_LEGACY, PATH_SETTINGS } from "@/routes/path";
 
 export const Header = () => {
   const { startCycle, toggleMobileMenu } = useIoTStore();
@@ -65,7 +66,7 @@ export const Header = () => {
     window.dispatchEvent(new CustomEvent('auth-change'));
     setIsLoggedIn(false);
     setIsDropdownOpen(false);
-    router.push('/login');
+    router.push(PATH_AUTH.login);
   };
 
   return (
@@ -106,11 +107,11 @@ export const Header = () => {
                 <p className="text-xs text-on-surface-variant truncate">{isLoggedIn ? "Authorized" : "Not Logged In"}</p>
               </div>
               <div className="py-1">
-                <Link href="/users" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors">
+                <Link href={PATH_LEGACY.users} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors">
                   <User className="w-4 h-4" />
                   <span>Users List</span>
                 </Link>
-                <Link href="/settings" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors">
+                <Link href={PATH_SETTINGS.root} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container transition-colors">
                   <Settings className="w-4 h-4" />
                   <span>Settings</span>
                 </Link>
@@ -138,7 +139,7 @@ export const Header = () => {
                   </button>
                 ) : (
                   <Link 
-                    href="/login"
+                    href={PATH_AUTH.login}
                     onClick={() => setIsDropdownOpen(false)}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-primary hover:bg-primary/10 transition-colors"
                   >

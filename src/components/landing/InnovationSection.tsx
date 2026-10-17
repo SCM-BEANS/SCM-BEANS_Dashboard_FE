@@ -3,6 +3,7 @@
 import { ArrowRight, Cpu, Cloud, Activity, Zap, BarChart3, Wifi } from "lucide-react";
 import Link from "next/link";
 import { AnimateOnScroll, StaggerContainer } from "./AnimateOnScroll";
+import { PATH_PUBLIC } from "@/routes/path";
 
 const features = [
   {
@@ -185,7 +186,7 @@ export function InnovationSection() {
           </StaggerContainer>
 
           <Link
-            href="/technology"
+            href={PATH_PUBLIC.technology}
             id="innovation-cta-btn"
             className="btn-primary group"
           >

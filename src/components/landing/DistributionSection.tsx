@@ -4,6 +4,7 @@ import { ArrowRight, Eye, ShieldCheck, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimateOnScroll, StaggerContainer } from "./AnimateOnScroll";
+import { PATH_PUBLIC } from "@/routes/path";
 
 const stats = [
   { value: "2020", label: "Năm thành lập" },
@@ -164,7 +165,7 @@ export function DistributionSection() {
             </StaggerContainer>
 
             <Link
-              href="/about"
+              href={PATH_PUBLIC.about}
               id="distribution-cta-btn"
               className="btn-primary group w-fit mt-2"
             >

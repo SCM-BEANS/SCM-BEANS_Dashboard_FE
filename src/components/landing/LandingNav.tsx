@@ -1,17 +1,11 @@
 "use client";
 
+import { LANDING_NAV as NAV_ITEMS } from "@/routes/navigation";
+import { PATH_AUTH, PATH_PUBLIC } from "@/routes/path";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { User, Menu, X } from "lucide-react";
-
-const NAV_ITEMS = [
-  { name: "Solutions", href: "/solutions" },
-  { name: "Products", href: "/products" },
-  { name: "Technology", href: "/technology" },
-  { name: "Pricing", href: "/pricing" },
-  { name: "About", href: "/about" },
-];
 
 interface LandingNavProps {
   isLandingHero?: boolean;
@@ -60,7 +54,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
         }`}
       >
         <div className="relative max-w-[1440px] mx-auto px-6 sm:px-10 h-[88px] flex items-center justify-between">
-          <Link href="/" className="group flex shrink-0 items-center" id="nav-logo" aria-label="DOLORES COFFEE">
+          <Link href={PATH_PUBLIC.home} className="group flex shrink-0 items-center" id="nav-logo" aria-label="DOLORES COFFEE">
             <div className={`relative overflow-hidden transition-all duration-300 group-hover:scale-105 rounded-2xl p-1.5 ${
               isDarkHeader 
                 ? "bg-white/95 shadow-[0_4px_24px_rgba(0,0,0,0.45)] border border-white/20" 
@@ -98,7 +92,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
           {/* ── Desktop CTA ── */}
           <div className="hidden md:flex items-center gap-3.5">
             <Link
-              href="/login"
+              href={PATH_AUTH.login}
               id="nav-login-btn"
               className={`flex items-center gap-2 text-[15px] font-semibold px-6 py-2.5 transition-all duration-300 rounded-full ${
                 isDarkHeader
@@ -110,7 +104,7 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
               <span>Login</span>
             </Link>
             <Link
-              href="/login"
+              href={PATH_AUTH.login}
               id="nav-getstarted-btn"
               className="text-[15px] font-semibold text-white bg-gradient-to-r from-[#721C24] to-[#5A141A] hover:from-[#5A141A] hover:to-[#420E13] px-7 py-2.5 rounded-full transition-all duration-300 shadow-[0_4px_16px_rgba(114,28,36,0.3)] hover:shadow-[0_6px_22px_rgba(114,28,36,0.45)] hover:-translate-y-0.5 active:translate-y-0"
             >
@@ -164,14 +158,14 @@ export function LandingNav({ isLandingHero = false }: LandingNavProps) {
         </div>
         <div className="flex flex-col gap-3 px-6 py-6">
           <Link
-            href="/login"
+            href={PATH_AUTH.login}
             onClick={closeMenu}
             className="text-center py-3.5 border border-[#E0E0E0] text-[rgba(0,0,0,0.87)] rounded-full font-semibold text-sm hover:bg-white transition-all"
           >
             Login
           </Link>
           <Link
-            href="/login"
+            href={PATH_AUTH.login}
             onClick={closeMenu}
             className="text-center py-3.5 bg-gradient-to-r from-[#721C24] to-[#5A141A] text-white rounded-full font-semibold text-sm shadow-[0_4px_14px_rgba(114,28,36,0.3)] transition-all"
           >

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { AnimateOnScroll } from "./AnimateOnScroll";
+import { PATH_PUBLIC, PATH_AUTH } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 export function CtaSection() {
   return (
@@ -70,10 +72,10 @@ export function CtaSection() {
 
           <AnimateOnScroll delay={300}>
             <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-              <Link href="/about#contact" className="btn-primary group px-8 py-4">
+              <Link href={buildRouteUrl(PATH_PUBLIC.about + "#contact", {})} className="btn-primary group px-8 py-4">
                 Yêu cầu tư vấn <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/login" className="btn-secondary px-8 py-4">
+              <Link href={PATH_AUTH.login} className="btn-secondary px-8 py-4">
                 Xem Demo Dashboard
               </Link>
             </div>
@@ -92,7 +94,7 @@ export function LandingFooter() {
           {/* Brand Col */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             <Link
-              href="/"
+              href={PATH_PUBLIC.home}
               className="flex items-center gap-3 group w-fit"
             >
               <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm bg-white border border-[#E0E0E0] p-1">
@@ -131,7 +133,7 @@ export function LandingFooter() {
             <ul className="flex flex-col gap-3">
               {["Máy Espresso", "Máy Tự Động", "Cloud Dashboard", "API Integration"].map((l, i) => (
                 <li key={i}>
-                  <Link href="/products" className="text-[#9E9E9E] text-sm hover:text-[#721C24] transition-colors">
+                  <Link href={PATH_PUBLIC.products} className="text-[#9E9E9E] text-sm hover:text-[#721C24] transition-colors">
                     {l}
                   </Link>
                 </li>
@@ -145,7 +147,7 @@ export function LandingFooter() {
             <ul className="flex flex-col gap-3">
               {["Về chúng tôi", "Bảng giá", "Khách hàng", "Tuyển dụng"].map((l, i) => (
                 <li key={i}>
-                  <Link href={l === "Bảng giá" ? "/pricing" : "/about"} className="text-[#9E9E9E] text-sm hover:text-[#721C24] transition-colors">
+                  <Link href={l === "Bảng giá" ? PATH_PUBLIC.pricing : PATH_PUBLIC.about} className="text-[#9E9E9E] text-sm hover:text-[#721C24] transition-colors">
                     {l}
                   </Link>
                 </li>

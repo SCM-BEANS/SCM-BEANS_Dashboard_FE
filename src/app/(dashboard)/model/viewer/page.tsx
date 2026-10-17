@@ -4,6 +4,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ModelViewer } from "@/components/3d/ModelViewer";
+import { PATH_TOOLS } from "@/routes/path";
 
 export default function ModelViewerPage() {
   const { t } = useI18nStore();
@@ -16,7 +17,7 @@ export default function ModelViewerPage() {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 md:p-6 flex justify-between items-start pointer-events-none">
         <Link
-          href="/model"
+          href={PATH_TOOLS.model}
           className="pointer-events-auto flex items-center gap-2 bg-surface border-2 border-outline px-4 py-2 hover:bg-primary hover:text-on-primary hover:border-primary transition-all duration-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] group"
         >
           <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />

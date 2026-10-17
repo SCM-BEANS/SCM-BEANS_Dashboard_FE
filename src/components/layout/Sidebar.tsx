@@ -1,5 +1,6 @@
 "use client";
 
+import { getLegacyNavigation } from "@/routes/navigation";
 import { useIoTStore } from "@/store/useIoTStore";
 import { useI18nStore } from "@/store/useI18nStore";
 import { Coffee, LayoutDashboard, Box, ThermometerSun, Settings, Wrench, HelpCircle, ChevronDown, X, Layers, Users, ShieldAlert, Store } from "lucide-react";
@@ -9,35 +10,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+const LEGACY_NAV_ICONS = { LayoutDashboard, Store, Coffee, Box, ThermometerSun, Layers, Wrench, Settings, HelpCircle, ShieldAlert, Users };
+
 export const Sidebar = () => {
   const { status, emergencyStop, isMobileMenuOpen, toggleMobileMenu } = useIoTStore();
   const { t } = useI18nStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
-  const isAdmin = pathname.startsWith("/admin");
-
-  const userNavItems = [
-    { name: t("nav_overview"), href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Businesses", href: "/dashboard/businesses", icon: Store },
-    { name: "My Machines", href: "/dashboard/machines", icon: Coffee },
-    { name: t("nav_inventory"), href: "/inventory", icon: Box },
-    { name: t("nav_thermodynamics"), href: "/thermodynamics", icon: ThermometerSun },
-    { name: t("nav_model"), href: "/model", icon: Layers },
-    { name: t("nav_diagnostic"), href: "#", icon: Wrench },
-    { name: t("nav_calibration"), href: "#", icon: Settings },
-    { name: t("nav_logs"), href: "#", icon: HelpCircle },
-  ];
-
-  const adminNavItems = [
-    { name: "Admin Dashboard", href: "/admin", icon: ShieldAlert },
-    { name: "Manage Users", href: "/admin/users", icon: Users },
-    { name: "Manage Businesses", href: "/admin/businesses", icon: Store },
-    { name: "Manage Machines", href: "/admin/machines", icon: Coffee },
-    { name: t("nav_logs"), href: "#", icon: HelpCircle },
-  ];
-
-  const navItems = isAdmin ? adminNavItems : userNavItems;
+  const navItems = getLegacyNavigation(pathname, t).map((item) => ({ ...item, icon: LEGACY_NAV_ICONS[item.icon] }));
 
   return (
     <>

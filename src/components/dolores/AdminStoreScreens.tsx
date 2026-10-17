@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminStoreView as StoreView } from "@/routes/query";
 import { useEffect, useState } from "react";
 import {
   DoloresButton,
@@ -12,7 +13,6 @@ import {
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 
-type StoreView = "list" | "detail";
 type Overlay = "confirm" | "success" | null;
 
 function StoreDialog({ success, onConfirm, onClose }: { success: boolean; onConfirm: () => void; onClose: () => void }) {

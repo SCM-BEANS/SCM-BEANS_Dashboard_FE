@@ -1,11 +1,12 @@
 "use client";
 
+import type { AdminContractView as ContractView } from "@/routes/query";
 import { useEffect, useState } from "react";
 import { DoloresButton, DoloresPanel, DoloresPanelTitle, DoloresTable } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
-
-type ContractView = "list" | "c204" | "c205" | "history";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 function ContractField({ label, value }: { label: string; value: string }) {
   return (
@@ -43,7 +44,7 @@ export default function AdminContractScreens({ initialView = "list" }: { initial
       <DoloresPage
         title="Lịch sử hợp đồng của khách"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton onClick={() => setView("c204")}>Xem hợp đồng hiện tại</DoloresButton><DoloresButton href="/admin/businesses?view=customer" variant="secondary">Về khách hàng</DoloresButton></>}
+        actions={<><DoloresButton onClick={() => setView("c204")}>Xem hợp đồng hiện tại</DoloresButton><DoloresButton href={buildRouteUrl(PATH_ADMIN.businesses, { "view": "customer" })} variant="secondary">Về khách hàng</DoloresButton></>}
       >
         <DoloresPanel>
           <DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle>
@@ -62,7 +63,7 @@ export default function AdminContractScreens({ initialView = "list" }: { initial
       <DoloresPage
         title="Chi tiết hợp đồng C-204"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton onClick={() => setView("history")}>Lịch sử hợp đồng</DoloresButton><DoloresButton href="/admin/machines/S-018" variant="secondary">Máy & lịch sử sửa chữa</DoloresButton><DoloresButton onClick={() => setPreviewOpen(true)} variant="secondary">Xem bản hợp đồng</DoloresButton></>}
+        actions={<><DoloresButton onClick={() => setView("history")}>Lịch sử hợp đồng</DoloresButton><DoloresButton href={PATH_ADMIN.machineDetail("S-018")} variant="secondary">Máy & lịch sử sửa chữa</DoloresButton><DoloresButton onClick={() => setPreviewOpen(true)} variant="secondary">Xem bản hợp đồng</DoloresButton></>}
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>
@@ -85,7 +86,7 @@ export default function AdminContractScreens({ initialView = "list" }: { initial
       <DoloresPage
         title="Chi tiết hợp đồng C-205"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton href="/admin/machines/C-031">Xem hồ sơ máy</DoloresButton><DoloresButton onClick={() => setView("list")} variant="secondary">Về hợp đồng</DoloresButton></>}
+        actions={<><DoloresButton href={PATH_ADMIN.machineDetail("C-031")}>Xem hồ sơ máy</DoloresButton><DoloresButton onClick={() => setView("list")} variant="secondary">Về hợp đồng</DoloresButton></>}
       >
         <DoloresPanel>
           <DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle>

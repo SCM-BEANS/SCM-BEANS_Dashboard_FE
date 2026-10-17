@@ -1,3 +1,4 @@
+import { resolveAdminReportView } from "@/routes/query";
 import AdminReportScreens from "@/components/dolores/AdminReportScreens";
 
 export default async function AdminReportsPage({
@@ -6,5 +7,5 @@ export default async function AdminReportsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view } = await searchParams;
-  return <AdminReportScreens initialView={view === "customers" ? "customers" : "overview"} />;
+  return <AdminReportScreens initialView={resolveAdminReportView(view)} />;
 }

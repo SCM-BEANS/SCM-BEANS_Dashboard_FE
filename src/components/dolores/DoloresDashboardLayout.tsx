@@ -1,17 +1,16 @@
 "use client";
 
-import { DoloresShell, type DoloresRole } from "@/components/dolores/DoloresShell";
+import { isCustomerDashboardPath } from "@/routes/navigation";
+import { DoloresShell } from "@/components/dolores/DoloresShell";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const FIGMA_CUSTOMER_PATH = /^\/dashboard(?:$|\/(?:contracts|machines|menu|invoices|support|buyback|notifications)(?:\/|$))/;
-
 export function DoloresDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (FIGMA_CUSTOMER_PATH.test(pathname)) {
-    return <DoloresShell role={"customer" as DoloresRole}>{children}</DoloresShell>;
+  if (isCustomerDashboardPath(pathname)) {
+    return <DoloresShell role="customer">{children}</DoloresShell>;
   }
 
   return (

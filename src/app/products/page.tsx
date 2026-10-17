@@ -5,6 +5,7 @@ import { LandingFooter, CtaSection } from "@/components/landing/CtaFooter";
 import { AnimateOnScroll } from "@/components/landing/AnimateOnScroll";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { PATH_PUBLIC } from "@/routes/path";
 
 const products = [
   {
@@ -135,7 +136,7 @@ export default function ProductsPage() {
                         </div>
                       </div>
                       <Link
-                        href="/pricing"
+                        href={PATH_PUBLIC.pricing}
                         className="btn-primary group/btn text-sm py-2.5 px-5"
                       >
                         Thuê ngay <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />

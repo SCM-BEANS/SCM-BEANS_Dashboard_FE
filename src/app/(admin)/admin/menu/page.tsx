@@ -1,9 +1,8 @@
-import AdminMenuScreens, { type AdminMenuView } from "@/components/dolores/AdminMenuScreens";
-
-const MENU_VIEWS: AdminMenuView[] = ["list", "items", "add", "missing", "ingredients", "edit-espresso", "edit-espresso-60", "edit-espresso-20g", "send", "sent"];
+import { resolveAdminMenuView } from "@/routes/query";
+import AdminMenuScreens from "@/components/dolores/AdminMenuScreens";
 
 export default async function AdminMenuPage({ searchParams }: { searchParams: Promise<{ view?: string; machine?: string }> }) {
   const { view, machine } = await searchParams;
-  const initialView = MENU_VIEWS.find((candidate) => candidate === view) ?? (machine === "S-018" ? "items" : "list");
+  const initialView = resolveAdminMenuView(view, machine);
   return <AdminMenuScreens initialView={initialView} />;
 }

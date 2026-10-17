@@ -1,11 +1,12 @@
 "use client";
 
+import type { AdminReportView as ReportView } from "@/routes/query";
 import { useEffect, useState } from "react";
 import { DoloresButton, DoloresPanel, DoloresPanelTitle, DoloresStatCard, DoloresTable } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
-
-type ReportView = "overview" | "customers";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 const MONTHS = [
   { label: "T4", value: "132" },
@@ -52,8 +53,8 @@ export default function AdminReportScreens({ initialView = "overview" }: { initi
           <DoloresTable
             headers={["Khách hàng / shop", "Hợp đồng", "Loại máy", "Hiệu lực", "Đã ghi nhận"]}
             rows={[
-              [<a className="font-medium hover:text-[#B81724]" href="/admin/businesses?view=customer" key="c204">Minh Anh / Mộc ›</a>, "C-204", "Smart IoT", "Đến 31/10/2026", "2.750.000 đ"],
-              [<a className="font-medium hover:text-[#B81724]" href="/admin/businesses?view=customer" key="c205">Minh Anh / Mộc ›</a>, "C-205", "Máy thường", "Đến 14/11/2026", "1.500.000 đ"],
+              [<a className="font-medium hover:text-[#B81724]" href={buildRouteUrl(PATH_ADMIN.businesses, { "view": "customer" })} key="c204">Minh Anh / Mộc ›</a>, "C-204", "Smart IoT", "Đến 31/10/2026", "2.750.000 đ"],
+              [<a className="font-medium hover:text-[#B81724]" href={buildRouteUrl(PATH_ADMIN.businesses, { "view": "customer" })} key="c205">Minh Anh / Mộc ›</a>, "C-205", "Máy thường", "Đến 14/11/2026", "1.500.000 đ"],
             ]}
           />
         </DoloresPanel>
@@ -65,7 +66,7 @@ export default function AdminReportScreens({ initialView = "overview" }: { initi
     <DoloresPage
       title="Báo cáo doanh thu & vận hành"
       description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-      actions={<><DoloresButton onClick={() => setView("customers")}>Chi tiết khách hàng</DoloresButton><DoloresButton href="/admin/contracts" variant="secondary">Hợp đồng & lịch sử</DoloresButton><DoloresButton href="/admin/iot" variant="secondary">Giám sát số ly toàn hệ thống</DoloresButton><DoloresButton onClick={() => setFilterOpen(true)} variant="secondary">Lọc kỳ báo cáo</DoloresButton></>}
+      actions={<><DoloresButton onClick={() => setView("customers")}>Chi tiết khách hàng</DoloresButton><DoloresButton href={PATH_ADMIN.contracts} variant="secondary">Hợp đồng & lịch sử</DoloresButton><DoloresButton href={PATH_ADMIN.iot} variant="secondary">Giám sát số ly toàn hệ thống</DoloresButton><DoloresButton onClick={() => setFilterOpen(true)} variant="secondary">Lọc kỳ báo cáo</DoloresButton></>}
     >
       <div className="grid grid-cols-4 gap-1">
         <DoloresStatCard label="Doanh thu gộp · đã thu" value="196.400.000 đ" />

@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminMachineView as MachineView } from "@/routes/query";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -13,8 +14,9 @@ import {
 } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
-type MachineView = "inventory" | "stock" | "loan-history" | "s022" | "standard" | "mb017" | "repair-history" | "s018" | "repair-history-s018";
 type InventoryFilter = "Tất cả máy" | "Smart IoT" | "Máy thường" | "Trong kho";
 type InventoryRow = {
   machineType: "Smart IoT" | "Máy thường";
@@ -49,7 +51,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       machineType: "Smart IoT",
       inStock: true,
       cells: [
-        <Link className="font-semibold text-[#B81724] hover:underline" href="/admin/machines/S-022" key="s022">S-022 ›</Link>,
+        <Link className="font-semibold text-[#B81724] hover:underline" href={PATH_ADMIN.machineDetail("S-022")} key="s022">S-022 ›</Link>,
         "Smart IoT",
         "—",
         "Kho Dolores",
@@ -85,7 +87,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       machineType: "Máy thường",
       inStock: false,
       cells: [
-        <Link className="font-semibold text-[#B81724] hover:underline" href="/admin/machines/C-031" key="c031">C-031 ›</Link>,
+        <Link className="font-semibold text-[#B81724] hover:underline" href={PATH_ADMIN.machineDetail("C-031")} key="c031">C-031 ›</Link>,
         "Máy thường",
         "C-205",
         "Cà phê Mộc · Quận 3",
@@ -97,7 +99,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       machineType: "Máy thường",
       inStock: true,
       cells: [
-        <Link className="font-semibold text-[#B81724] hover:underline" href="/admin/machines/MB-017" key="mb017">MB-017 ›</Link>,
+        <Link className="font-semibold text-[#B81724] hover:underline" href={PATH_ADMIN.machineDetail("MB-017")} key="mb017">MB-017 ›</Link>,
         "Máy thường",
         "—",
         "Kho Dolores",
@@ -118,7 +120,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
       <DoloresPage
         title="Máy Smart S-018 · giám sát & hồ sơ"
         description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-        actions={<><DoloresButton href="/admin/contracts?view=c204">Xem hợp đồng</DoloresButton><DoloresButton onClick={() => setView("repair-history-s018")} variant="secondary">Lịch sử sửa chữa</DoloresButton><DoloresButton href="/admin/menu?machine=S-018" variant="secondary">Menu máy</DoloresButton><DoloresButton href="/admin/iot?view=machines" variant="secondary">Về máy của khách</DoloresButton></>}
+        actions={<><DoloresButton href={buildRouteUrl(PATH_ADMIN.contracts, { "view": "c204" })}>Xem hợp đồng</DoloresButton><DoloresButton onClick={() => setView("repair-history-s018")} variant="secondary">Lịch sử sửa chữa</DoloresButton><DoloresButton href={buildRouteUrl(PATH_ADMIN.menu, { "machine": "S-018" })} variant="secondary">Menu máy</DoloresButton><DoloresButton href={buildRouteUrl(PATH_ADMIN.iot, { "view": "machines" })} variant="secondary">Về máy của khách</DoloresButton></>}
       >
         <div className="grid grid-cols-4 gap-4">
           <DoloresStatCard label="Ly máy chính" value="1.840 ly" />
@@ -259,7 +261,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
 
   if (view === "standard") {
     return (
-      <DoloresPage title="Hồ sơ máy thường C-031" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton href="/admin/contracts?view=c205">Xem hợp đồng</DoloresButton><DoloresButton href="/admin/businesses?view=customer" variant="secondary">Về khách hàng</DoloresButton></>}>
+      <DoloresPage title="Hồ sơ máy thường C-031" description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao." actions={<><DoloresButton href={buildRouteUrl(PATH_ADMIN.contracts, { "view": "c205" })}>Xem hợp đồng</DoloresButton><DoloresButton href={buildRouteUrl(PATH_ADMIN.businesses, { "view": "customer" })} variant="secondary">Về khách hàng</DoloresButton></>}>
         <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><div className="grid grid-cols-2 gap-x-4 gap-y-8"><DetailField label="Máy / serial" value="C-031 / SN031 · máy thường" /><DetailField label="Hiện trạng" value="Đang cho thuê" /><DetailField label="Khách hàng / hợp đồng" value="Nguyễn Minh Anh / C-205" /><DetailField label="Địa điểm lắp đặt" value="Cà phê Mộc · Quận 3" /><DetailField label="Lần sửa gần nhất" value="21/08/2026 · Thay bơm · 1 linh kiện · 350.000 đ" /></div></DoloresPanel>
       </DoloresPage>
     );
@@ -286,7 +288,7 @@ export default function AdminMachineScreens({ initialView = "inventory" }: { ini
     <DoloresPage
       title="Máy & tồn kho"
       description="Danh sách máy đang thuê, máy trong kho và lịch sử sử dụng."
-      actions={<><DoloresButton href="/admin/iot">Giám sát máy Smart IoT</DoloresButton><DoloresButton href="/admin/machines/S-018" variant="secondary">Lịch sử máy</DoloresButton></>}
+      actions={<><DoloresButton href={PATH_ADMIN.iot}>Giám sát máy Smart IoT</DoloresButton><DoloresButton href={PATH_ADMIN.machineDetail("S-018")} variant="secondary">Lịch sử máy</DoloresButton></>}
     >
       <div className="grid grid-cols-4 gap-4">
         <DoloresStatCard label="Smart IoT trong kho" value="12 máy" />

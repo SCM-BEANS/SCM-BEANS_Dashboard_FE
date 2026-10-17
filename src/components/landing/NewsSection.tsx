@@ -3,6 +3,7 @@
 import { ArrowRight, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { AnimateOnScroll } from "./AnimateOnScroll";
+import { PATH_LEGACY } from "@/routes/path";
 
 const articles = [
   {
@@ -81,7 +82,7 @@ export function NewsSection() {
               </p>
             </div>
             <Link
-              href="/news"
+              href={PATH_LEGACY.news}
               className="group flex items-center gap-2 text-sm font-semibold text-[#721C24] shrink-0 hover:opacity-80 transition-opacity"
             >
               Xem tất cả <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -93,7 +94,7 @@ export function NewsSection() {
           {articles.map((a, i) => (
             <AnimateOnScroll key={i} delay={i * 150}>
               <Link
-                href="/news"
+                href={PATH_LEGACY.news}
                 className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-[#E0E0E0] shadow-figma-4 hover:shadow-figma-8 hover:-translate-y-1 transition-all duration-300"
               >
                 {/* Image */}

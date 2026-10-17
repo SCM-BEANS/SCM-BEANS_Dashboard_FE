@@ -6,6 +6,8 @@ import { AnimateOnScroll } from "@/components/landing/AnimateOnScroll";
 import Link from "next/link";
 import { ArrowRight, Check, HelpCircle } from "lucide-react";
 import { useState } from "react";
+import { PATH_AUTH, PATH_PUBLIC } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 const plans = [
   {
@@ -23,7 +25,7 @@ const plans = [
       "Hợp đồng tối thiểu 12 tháng",
     ],
     cta: "Đăng ký ngay",
-    href: "/login",
+    href: PATH_AUTH.login,
   },
   {
     name: "Business",
@@ -41,7 +43,7 @@ const plans = [
       "Hợp đồng tối thiểu 6 tháng",
     ],
     cta: "Bắt đầu miễn phí 14 ngày",
-    href: "/login",
+    href: PATH_AUTH.login,
   },
   {
     name: "Enterprise",
@@ -59,7 +61,7 @@ const plans = [
       "Hợp đồng linh hoạt",
     ],
     cta: "Liên hệ tư vấn",
-    href: "/about#contact",
+    href: buildRouteUrl(PATH_PUBLIC.about + "#contact", {}),
   },
 ];
 

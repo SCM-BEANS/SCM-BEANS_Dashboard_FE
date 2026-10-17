@@ -1,6 +1,8 @@
 import { DoloresButton, DoloresNotice, DoloresPanel, DoloresPanelTitle, DoloresStatCard, DoloresTable } from "@/components/dolores/DoloresUI";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 import AdminCustomerScreens from "@/components/dolores/AdminCustomerScreens";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 export default function AdminIoTScreens({ showCustomerMachines = false }: { showCustomerMachines?: boolean }) {
   if (showCustomerMachines) return <AdminCustomerScreens initialView="machines" />;
@@ -9,7 +11,7 @@ export default function AdminIoTScreens({ showCustomerMachines = false }: { show
     <DoloresPage
       title="Giám sát Smart IoT · theo khách hàng"
       description="Theo dõi hồ sơ và xử lý công việc trong phạm vi được giao."
-      actions={<><DoloresButton href="/admin/iot?view=machines">Xem máy của Nguyễn Minh Anh</DoloresButton><DoloresButton href="/admin/machines" variant="secondary">Kho máy</DoloresButton></>}
+      actions={<><DoloresButton href={buildRouteUrl(PATH_ADMIN.iot, { "view": "machines" })}>Xem máy của Nguyễn Minh Anh</DoloresButton><DoloresButton href={PATH_ADMIN.machines} variant="secondary">Kho máy</DoloresButton></>}
     >
       <div className="grid grid-cols-4 gap-3">
         <DoloresStatCard label="Khách hàng Dolores" value="86" />
@@ -22,7 +24,7 @@ export default function AdminIoTScreens({ showCustomerMachines = false }: { show
         <DoloresTable
           headers={["Khách hàng", "Cửa hàng", "Tổng máy", "Smart / thường", "Ly Smart tháng 09"]}
           rows={[
-            [<a className="font-semibold hover:text-[#B81724]" href="/admin/iot?view=machines" key="minh-anh">Nguyễn Minh Anh</a>, "Cà phê Mộc", "2", "1 / 1", "2.000"],
+            [<a className="font-semibold hover:text-[#B81724]" href={buildRouteUrl(PATH_ADMIN.iot, { "view": "machines" })} key="minh-anh">Nguyễn Minh Anh</a>, "Cà phê Mộc", "2", "1 / 1", "2.000"],
             ["Trần Minh Tâm", "Góc Phố", "3", "2 / 1", "3.100"],
             ["Lê Hải Nam", "Bếp Nhà", "1", "0 / 1", "Không có dữ liệu số ly"],
           ]}

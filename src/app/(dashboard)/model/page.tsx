@@ -4,6 +4,7 @@ import { useI18nStore } from "@/store/useI18nStore";
 import Link from "next/link";
 import { Layers, ArrowRight, Activity, Settings, Info, Box } from "lucide-react";
 import { ModelViewer } from "@/components/3d/ModelViewer";
+import { PATH_TOOLS } from "@/routes/path";
 
 export default function ModelPreviewPage() {
   const { t } = useI18nStore();
@@ -82,7 +83,7 @@ export default function ModelPreviewPage() {
           {/* Action Footer */}
           <div className="p-6 border-t-2 border-outline bg-surface-container mt-auto">
             <Link 
-              href="/model/viewer"
+              href={PATH_TOOLS.modelViewer}
               className="w-full flex items-center justify-center gap-2 font-mono text-sm uppercase bg-primary text-on-primary px-4 py-3 border-2 border-transparent hover:bg-background hover:text-primary hover:border-primary transition-all duration-300 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
             >
               <span>View Full 3D Interactive</span>

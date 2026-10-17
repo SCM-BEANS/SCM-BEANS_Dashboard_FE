@@ -8,6 +8,7 @@ import {
   CheckCircle2, Coffee, TrendingUp, Clock, Headphones
 } from "lucide-react";
 import Link from "next/link";
+import { PATH_PUBLIC } from "@/routes/path";
 
 const solutions = [
   {
@@ -142,7 +143,7 @@ export default function SolutionsPage() {
                   ))}
                 </ul>
                 <Link
-                  href="/pricing"
+                  href={PATH_PUBLIC.pricing}
                   className="btn-primary group w-fit"
                 >
                   Xem bảng giá <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminMenuView } from "@/routes/query";
 import { useEffect, useState } from "react";
 import {
   DoloresButton,
@@ -12,8 +13,10 @@ import {
 } from "@/components/dolores/DoloresUI";
 import { useRouteView } from "@/components/dolores/useRouteView";
 import { DoloresPage } from "@/components/dolores/DoloresShell";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
-export type AdminMenuView = "list" | "items" | "add" | "missing" | "ingredients" | "edit-espresso" | "edit-espresso-60" | "edit-espresso-20g" | "send" | "sent";
+export type { AdminMenuView } from "@/routes/query";
 type Overlay = "add-confirm" | "add-success" | "edit-confirm" | "edit-success" | "send-confirm" | "send-success" | null;
 
 function MenuDialog({ title, message, success, onConfirm, onClose, variant = "default" }: { title: string; message: string; success?: boolean; onConfirm: () => void; onClose: () => void; variant?: "default" | "recipe" }) {
@@ -32,7 +35,7 @@ function MenuDialog({ title, message, success, onConfirm, onClose, variant = "de
   );
 }
 
-export default function AdminMenuScreens({ initialView = "list", basePath = "/admin/menu" }: { initialView?: AdminMenuView; basePath?: string }) {
+export default function AdminMenuScreens({ initialView = "list", basePath = PATH_ADMIN.menu }: { initialView?: AdminMenuView; basePath?: string }) {
   const [view, setView] = useRouteView<AdminMenuView>(initialView);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [coffee, setCoffee] = useState(initialView === "edit-espresso-20g" ? "20" : "18");
@@ -44,7 +47,7 @@ export default function AdminMenuScreens({ initialView = "list", basePath = "/ad
     if (initialView === "edit-espresso-20g") setCoffee("20");
     if (initialView === "edit-espresso-60") setWater("60");
   }, [initialView]);
-  const linkTo = (nextView: AdminMenuView) => `${basePath}?view=${nextView}`;
+  const linkTo = (nextView: AdminMenuView) => buildRouteUrl(basePath, { view: nextView });
   const description = "Chỉ Admin và Moderator quản lý Global Menu Dolores. Mỗi máy cho thuê phải được cấp menu; khách chỉ tùy chỉnh công thức riêng.";
 
   if (view === "list") {

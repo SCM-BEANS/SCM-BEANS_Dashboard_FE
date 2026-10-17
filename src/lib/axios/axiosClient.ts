@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import Cookies from 'js-cookie';
 import { AUTH } from '@/constants/endpoints';
+import { PATH_AUTH } from "@/routes/path";
 
 const axiosClient = axios.create({
   // Use relative path to hit the Next.js proxy (which bypasses CORS)
@@ -116,7 +117,7 @@ axiosClient.interceptors.response.use(
             processQueue(err, null);
             Cookies.remove('access_token');
             Cookies.remove('refresh_token');
-            if (typeof window !== 'undefined') window.location.href = '/login';
+            if (typeof window !== 'undefined') window.location.href = PATH_AUTH.login;
             reject(err.response?.data || err);
           })
           .finally(() => {

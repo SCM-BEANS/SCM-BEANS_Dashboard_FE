@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Coffee, Lock, Mail, ArrowRight, User, KeyRound } from 'lucide-react';
 import { authService } from '@/services/auth.service';
+import { PATH_AUTH, PATH_DASHBOARD } from "@/routes/path";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -75,8 +76,8 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
         setTimeout(() => {
           if (onSuccess) {
             onSuccess();
-          } else if (window.location.pathname === '/login') {
-            router.push('/dashboard');
+          } else if (window.location.pathname === PATH_AUTH.login) {
+            router.push(PATH_DASHBOARD.root);
           } else {
             router.refresh();
           }
@@ -171,8 +172,8 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
         setTimeout(() => {
           if (onSuccess) {
             onSuccess();
-          } else if (window.location.pathname === '/login') {
-            router.push('/dashboard');
+          } else if (window.location.pathname === PATH_AUTH.login) {
+            router.push(PATH_DASHBOARD.root);
           } else {
             router.refresh();
           }

@@ -5,6 +5,7 @@ import { LandingFooter, CtaSection } from "@/components/landing/CtaFooter";
 import { AnimateOnScroll } from "@/components/landing/AnimateOnScroll";
 import Link from "next/link";
 import { ArrowRight, Cpu, Cloud, Activity, Zap, Lock, Code } from "lucide-react";
+import { PATH_PUBLIC } from "@/routes/path";
 
 const techStack = [
   { icon: <Cpu className="w-6 h-6" />, title: "Edge Computing", desc: "Xử lý và phân tích dữ liệu ngay tại máy, không cần phụ thuộc vào kết nối internet liên tục. Đảm bảo máy hoạt động ổn định dù mạng yếu." },
@@ -65,7 +66,7 @@ export default function TechnologyPage() {
                 </p>
               </AnimateOnScroll>
               <AnimateOnScroll delay={280}>
-                <Link href="/solutions" className="btn-primary group">
+                <Link href={PATH_PUBLIC.solutions} className="btn-primary group">
                   Xem giải pháp <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </AnimateOnScroll>

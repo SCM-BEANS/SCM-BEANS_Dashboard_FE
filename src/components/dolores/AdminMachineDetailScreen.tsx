@@ -9,6 +9,8 @@ import {
 import { DoloresPage } from "@/components/dolores/DoloresShell";
 import { BodyModelViewer } from "@/components/features/digital-twin/BodyModelViewer";
 import { AdminMachineFocusView } from "@/components/dolores/AdminMachineFocusView";
+import { PATH_ADMIN } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
 
 type MachineKind = "smart" | "standard";
 
@@ -88,7 +90,7 @@ function SmartMachineDetail({ machine }: { machine: MachineRecord }) {
     <DoloresPage
       title="Lịch sử máy"
       description="Hợp đồng, lịch sử bảo trì, sửa chữa, thay thế và vị trí máy."
-      actions={<DoloresButton href="/admin/machines" variant="secondary">Về danh sách máy</DoloresButton>}
+      actions={<DoloresButton href={PATH_ADMIN.machines} variant="secondary">Về danh sách máy</DoloresButton>}
     >
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <DoloresStatCard label="Ly hợp lệ kỳ này" value={isReplacement ? "160 ly" : "2.160 ly"} />
@@ -111,8 +113,8 @@ function SmartMachineDetail({ machine }: { machine: MachineRecord }) {
               <DetailField label="Offline" value="Máy Edge lưu dữ liệu và gửi lại khi có kết nối; ngày thiếu được xử lý theo kỳ hóa đơn." />
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
-              <DoloresButton href={`/admin/iot?view=machines`}>Xem dữ liệu vận hành</DoloresButton>
-              <DoloresButton href="/admin/contracts?view=c204" variant="secondary">Xem hợp đồng</DoloresButton>
+              <DoloresButton href={buildRouteUrl(PATH_ADMIN.iot, { "view": "machines" })}>Xem dữ liệu vận hành</DoloresButton>
+              <DoloresButton href={buildRouteUrl(PATH_ADMIN.contracts, { "view": "c204" })} variant="secondary">Xem hợp đồng</DoloresButton>
             </div>
           </DoloresPanel>
         }
@@ -139,7 +141,7 @@ function SmartMachineDetail({ machine }: { machine: MachineRecord }) {
             [<strong key="americano">Americano</strong>, "18 g cà phê · 120 ml nước", "18 g cà phê · 120 ml nước", "Theo Global Menu"],
           ]}
         />
-        <DoloresButton href="/admin/menu" variant="secondary">Mở menu quản lý</DoloresButton>
+        <DoloresButton href={PATH_ADMIN.menu} variant="secondary">Mở menu quản lý</DoloresButton>
       </DoloresPanel>
     </DoloresPage>
   );
@@ -151,7 +153,7 @@ function StandardMachineDetail({ machine }: { machine: MachineRecord }) {
     <DoloresPage
       title="Lịch sử máy"
       description="Hợp đồng, lịch sử bảo trì, sửa chữa, thay thế và vị trí máy."
-      actions={<DoloresButton href="/admin/machines" variant="secondary">Về danh sách máy</DoloresButton>}
+      actions={<DoloresButton href={PATH_ADMIN.machines} variant="secondary">Về danh sách máy</DoloresButton>}
     >
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <DoloresStatCard label="Phí thuê máy thường" value="1.500.000 đ / tháng" />
@@ -170,7 +172,7 @@ function StandardMachineDetail({ machine }: { machine: MachineRecord }) {
           {isBuyback && <DetailField label="Điều kiện cho thuê lại" value="Chỉ sẵn sàng sau khi Technician tân trang và kiểm thử đạt." />}
         </div>
         <div className="mt-6 flex flex-wrap gap-2">
-          <DoloresButton href="/admin/contracts?view=c205" variant="secondary">Xem hợp đồng</DoloresButton>
+          <DoloresButton href={buildRouteUrl(PATH_ADMIN.contracts, { "view": "c205" })} variant="secondary">Xem hợp đồng</DoloresButton>
         </div>
       </DoloresPanel>
       <DoloresNotice title="Máy thường">
@@ -188,7 +190,7 @@ export default function AdminMachineDetailScreen({ machineId }: { machineId: str
       <DoloresPage
         title="Lịch sử máy"
         description="Hợp đồng, lịch sử bảo trì, sửa chữa, thay thế và vị trí máy."
-        actions={<DoloresButton href="/admin/machines" variant="secondary">Về danh sách máy</DoloresButton>}
+        actions={<DoloresButton href={PATH_ADMIN.machines} variant="secondary">Về danh sách máy</DoloresButton>}
       >
         <DoloresNotice title="Không tìm thấy máy">
           Máy này không thuộc hồ sơ hiện tại hoặc chưa có dữ liệu trong kho Dolores.

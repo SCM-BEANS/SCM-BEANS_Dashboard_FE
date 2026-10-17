@@ -14,6 +14,10 @@ import {
   DoloresPanelTitle,
   DoloresTable,
 } from "@/components/dolores/DoloresUI";
+import { PATH_DASHBOARD } from "@/routes/path";
+import { buildRouteUrl } from "@/routes/query";
+
+const getCentralizedDashboardPath = (relativePath: string) => relativePath ? `${PATH_DASHBOARD.root}/${relativePath}` : PATH_DASHBOARD.root;
 
 function Tabs({ labels, selected, onSelect }: { labels: string[]; selected: string; onSelect: (value: string) => void }) {
   return (
@@ -88,8 +92,8 @@ function CustomerFlowDialog({
 function ContractsPage() {
   const [filter, setFilter] = useState("Tất cả");
   const rows = [
-    [<Link className="font-medium" href="/dashboard/contracts/C-204" key="c204">C-204 ›</Link>, "Smart IoT", "S-018", "31/10/2026", "Sắp hết hạn"],
-    [<Link className="font-medium" href="/dashboard/contracts/C-205" key="c205">C-205 ›</Link>, "Thông thường", "C-031", "14/11/2026", "Còn hiệu lực"],
+    [<Link className="font-medium" href={PATH_DASHBOARD.contractDetail("C-204")} key="c204">C-204 ›</Link>, "Smart IoT", "S-018", "31/10/2026", "Sắp hết hạn"],
+    [<Link className="font-medium" href={PATH_DASHBOARD.contractDetail("C-205")} key="c205">C-205 ›</Link>, "Thông thường", "C-031", "14/11/2026", "Còn hiệu lực"],
   ];
   return (
     <DoloresPage
@@ -97,8 +101,8 @@ function ContractsPage() {
       description="Xem thời hạn, máy và hồ sơ của từng hợp đồng."
       actions={
         <>
-          <DoloresButton href="/dashboard/contracts/C-204">Xem chi tiết hợp đồng</DoloresButton>
-          <DoloresButton href="/dashboard" variant="secondary">Về tổng quan</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.contractDetail("C-204")}>Xem chi tiết hợp đồng</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.root} variant="secondary">Về tổng quan</DoloresButton>
         </>
       }
     >
@@ -114,9 +118,9 @@ function ContractsPage() {
 function MachinesPage() {
   const [filter, setFilter] = useState("Tất cả máy");
   const machineRows = [
-    [<Link className="font-semibold" href="/dashboard/machines/S-018" key="s018">S-018 ›</Link>, "Smart IoT", "C-204", "Cà phê Mộc", "Đã đồng bộ 09:42", "Máy chính"],
-    [<Link className="font-semibold" href="/dashboard/machines/C-031" key="c031">C-031 ›</Link>, "Thông thường", "C-205", "Cà phê Mộc", "Theo hồ sơ", "Đang sử dụng"],
-    [<Link className="font-semibold" href="/dashboard/machines/substitute" key="s022">S-022 ›</Link>, "Smart IoT · tạm", "C-204", "Đã trả ngày 12/09", "160 ly trong kỳ", "Đã trả máy thay"],
+    [<Link className="font-semibold" href={PATH_DASHBOARD.machineDetail("S-018")} key="s018">S-018 ›</Link>, "Smart IoT", "C-204", "Cà phê Mộc", "Đã đồng bộ 09:42", "Máy chính"],
+    [<Link className="font-semibold" href={PATH_DASHBOARD.machineDetail("C-031")} key="c031">C-031 ›</Link>, "Thông thường", "C-205", "Cà phê Mộc", "Theo hồ sơ", "Đang sử dụng"],
+    [<Link className="font-semibold" href={PATH_DASHBOARD.machineSubstitute} key="s022">S-022 ›</Link>, "Smart IoT · tạm", "C-204", "Đã trả ngày 12/09", "160 ly trong kỳ", "Đã trả máy thay"],
   ];
   const rows = filter === "Smart IoT" ? [machineRows[0], machineRows[2]] : filter === "Thông thường" ? [machineRows[1]] : machineRows;
   return (
@@ -125,8 +129,8 @@ function MachinesPage() {
       description="Xem tình trạng, vị trí theo hợp đồng và lịch sử của từng máy."
       actions={
         <>
-          <DoloresButton href="/dashboard/machines/S-018">Giám sát máy Smart</DoloresButton>
-          <DoloresButton href="/dashboard/contracts" variant="secondary">Xem hợp đồng</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.machineDetail("S-018")}>Giám sát máy Smart</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.contracts} variant="secondary">Xem hợp đồng</DoloresButton>
         </>
       }
     >
@@ -146,9 +150,9 @@ function MachinesPage() {
 function InvoicesPage() {
   const [filter, setFilter] = useState("Tất cả");
   const invoiceRows = [
-    [<Link className="font-medium" href="/dashboard/invoices/2026-09" key="sep">09/2026 ›</Link>, "30/09/2026", "12/10/2026", "Thuê + PAYG · C-204", <Link className="underline" href="/dashboard/invoices/2026-09" key="sum">2.750.000 đ</Link>, "Chờ đối chiếu"],
-    [<Link className="font-medium" href="/dashboard/invoices/standard" key="standard">09/2026 · C-205 ›</Link>, "30/09/2026", "12/10/2026", "Thuê máy thường", <Link className="underline" href="/dashboard/invoices/standard" key="standard-amount">1.500.000 đ</Link>, "Chưa thanh toán"],
-    [<Link className="font-medium" href="/dashboard/invoices/refund" key="excess">09/2026 · HD-09-205 ›</Link>, "30/09/2026", "12/10/2026", "Thuê máy · C-204", <Link className="underline" href="/dashboard/invoices/refund" key="excess-amount">1.500.000 đ</Link>, "Chờ hoàn 200.000 đ"],
+    [<Link className="font-medium" href={PATH_DASHBOARD.invoiceDetail("2026-09")} key="sep">09/2026 ›</Link>, "30/09/2026", "12/10/2026", "Thuê + PAYG · C-204", <Link className="underline" href={PATH_DASHBOARD.invoiceDetail("2026-09")} key="sum">2.750.000 đ</Link>, "Chờ đối chiếu"],
+    [<Link className="font-medium" href={PATH_DASHBOARD.invoiceStandard} key="standard">09/2026 · C-205 ›</Link>, "30/09/2026", "12/10/2026", "Thuê máy thường", <Link className="underline" href={PATH_DASHBOARD.invoiceStandard} key="standard-amount">1.500.000 đ</Link>, "Chưa thanh toán"],
+    [<Link className="font-medium" href={PATH_DASHBOARD.invoiceRefund} key="excess">09/2026 · HD-09-205 ›</Link>, "30/09/2026", "12/10/2026", "Thuê máy · C-204", <Link className="underline" href={PATH_DASHBOARD.invoiceRefund} key="excess-amount">1.500.000 đ</Link>, "Chờ hoàn 200.000 đ"],
     ["08/2026", "31/08/2026", "11/09/2026", "Thuê + PAYG", "2.630.000 đ", "Đã xác nhận"],
   ];
   const rows = filter === "Chưa thanh toán" ? invoiceRows.slice(0, 2) : filter === "Đã thanh toán" ? invoiceRows.slice(2) : invoiceRows;
@@ -158,9 +162,9 @@ function InvoicesPage() {
       description="Theo dõi hóa đơn, hạn thanh toán và kết quả đối chiếu từ Moderator."
       actions={
         <>
-          <DoloresButton href="/dashboard/invoices/payment">Gửi chứng từ chuyển khoản</DoloresButton>
-          <DoloresButton href="/dashboard/invoices/2026-08" variant="secondary">Xem tháng đầu</DoloresButton>
-          <DoloresButton href="/dashboard/invoices/reminder" variant="secondary">Nhắc thanh toán</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoicePayment}>Gửi chứng từ chuyển khoản</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoiceDetail("2026-08")} variant="secondary">Xem tháng đầu</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoiceReminder} variant="secondary">Nhắc thanh toán</DoloresButton>
         </>
       }
     >
@@ -184,9 +188,9 @@ function InvoiceDetailPage() {
       description="Theo dõi số tiền phải trả, tiền đã nhận và hướng xử lý khi thiếu hoặc thừa."
       actions={
         <>
-          <DoloresButton href="/dashboard/invoices/payment">Gửi chứng từ bổ sung</DoloresButton>
-          <DoloresButton href="/dashboard/invoices/shortfall" variant="secondary">Xem phần còn thiếu</DoloresButton>
-          <DoloresButton href="/dashboard/invoices/refund" variant="secondary">Xem hoàn tiền thừa</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoicePayment}>Gửi chứng từ bổ sung</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoiceShortfall} variant="secondary">Xem phần còn thiếu</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.invoiceRefund} variant="secondary">Xem hoàn tiền thừa</DoloresButton>
         </>
       }
     >
@@ -238,8 +242,8 @@ function MenuPage() {
   };
   const recipeStatus = [espresso, freshMilk].filter(record => record?.status === 'pending' || record?.status === 'applied').map(record => (record?.payload.dish === 'espresso' ? 'Espresso' : 'Cà phê sữa tươi') + ' · v' + record?.version + ' · ' + (record?.status === 'applied' ? 'Máy đã xác nhận' : 'Chờ máy xác nhận')).join('; ');
   const rows = [
-    ["Espresso", "Cà phê", `${appliedQuantity(espresso,"coffee","18")} g cà phê · ${appliedQuantity(espresso,"water","40")} ml nước`, <Link className="font-medium text-[#B81724]" href="/dashboard/menu/espresso" key="esp">Chỉnh định lượng</Link>],
-    ["Cà phê sữa tươi", "Cà phê + sữa tươi", `${appliedQuantity(freshMilk,"coffee","18")} g cà phê · ${appliedQuantity(freshMilk,"milk","120")} ml sữa`, <Link className="font-medium text-[#B81724]" href="/dashboard/menu/fresh-milk" key="milk">Chỉnh định lượng</Link>],
+    ["Espresso", "Cà phê", `${appliedQuantity(espresso,"coffee","18")} g cà phê · ${appliedQuantity(espresso,"water","40")} ml nước`, <Link className="font-medium text-[#B81724]" href={PATH_DASHBOARD.menuEspresso} key="esp">Chỉnh định lượng</Link>],
+    ["Cà phê sữa tươi", "Cà phê + sữa tươi", `${appliedQuantity(freshMilk,"coffee","18")} g cà phê · ${appliedQuantity(freshMilk,"milk","120")} ml sữa`, <Link className="font-medium text-[#B81724]" href={PATH_DASHBOARD.menuFreshMilk} key="milk">Chỉnh định lượng</Link>],
   ];
   return (
     <DoloresPage
@@ -247,10 +251,10 @@ function MenuPage() {
       description="Global Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ."
       actions={
         <>
-          <DoloresButton href="/dashboard/menu/espresso">Chỉnh Espresso</DoloresButton>
-          <DoloresButton href="/dashboard/menu/fresh-milk" variant="secondary">Chỉnh cà phê sữa tươi</DoloresButton>
-          <DoloresButton href="/dashboard/menu" variant="secondary">Về menu theo máy</DoloresButton>
-          <DoloresButton href="/dashboard/menu/add-dish" variant="secondary">Thêm món riêng</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.menuEspresso}>Chỉnh Espresso</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.menuFreshMilk} variant="secondary">Chỉnh cà phê sữa tươi</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.menu} variant="secondary">Về menu theo máy</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.menuAddDish} variant="secondary">Thêm món riêng</DoloresButton>
         </>
       }
     >
@@ -320,8 +324,8 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
         description="Global Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ."
         actions={
           <>
-            {applied ? <><DoloresButton onClick={() => setStage("edit")}>Chỉnh sửa công thức</DoloresButton><DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton></> : <DoloresButton disabled={!savedRecipe} onClick={acknowledge}>Mô phỏng xác nhận từ máy</DoloresButton>}
-            <DoloresButton href="/dashboard/support" variant="secondary">Cần hỗ trợ cập nhật</DoloresButton>
+            {applied ? <><DoloresButton onClick={() => setStage("edit")}>Chỉnh sửa công thức</DoloresButton><DoloresButton href={PATH_DASHBOARD.menu} variant="secondary">Về menu của tôi</DoloresButton></> : <DoloresButton disabled={!savedRecipe} onClick={acknowledge}>Mô phỏng xác nhận từ máy</DoloresButton>}
+            <DoloresButton href={PATH_DASHBOARD.support} variant="secondary">Cần hỗ trợ cập nhật</DoloresButton>
           </>
         }
       >
@@ -362,7 +366,7 @@ function MenuEditPage({ freshMilk, initialCoffee = "18", initialWater = "40", in
                 <DoloresButton onClick={() => setCoffee("20")} variant="secondary">Tăng cà phê lên 20 g</DoloresButton>
               </>
             )}
-            <DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton>
+            <DoloresButton href={PATH_DASHBOARD.menu} variant="secondary">Về menu của tôi</DoloresButton>
             <DoloresButton onClick={() => setDiscardConfirm(true)} variant="secondary">Bỏ thay đổi</DoloresButton>
             <DoloresButton onClick={() => { setValidationError(!valid()); if (valid()) setConfirming(true); }}>Lưu & gửi menu riêng</DoloresButton>
           </>
@@ -417,9 +421,9 @@ function MachineDetailPage({ id, state }: { id: string; state?: string }) {
       description={smart ? "Xem tình trạng, dữ liệu Smart IoT và lịch sử theo hợp đồng." : "Xem vị trí và hồ sơ máy theo hợp đồng."}
       actions={
         <>
-          {smart && <DoloresButton href="/dashboard/menu">Xem menu của máy</DoloresButton>}
-          <DoloresButton href="/dashboard/machines/history" variant="secondary">Lịch sử bảo trì & sửa chữa</DoloresButton>
-          <DoloresButton href="/dashboard/machines" variant="secondary">Về máy của tôi</DoloresButton>
+          {smart && <DoloresButton href={PATH_DASHBOARD.menu}>Xem menu của máy</DoloresButton>}
+          <DoloresButton href={PATH_DASHBOARD.machineHistory} variant="secondary">Lịch sử bảo trì & sửa chữa</DoloresButton>
+          <DoloresButton href={PATH_DASHBOARD.machines} variant="secondary">Về máy của tôi</DoloresButton>
         </>
       }
     >
@@ -451,7 +455,7 @@ function MachineDetailPage({ id, state }: { id: string; state?: string }) {
 function CustomerExpiryPage() {
   const [overlay, setOverlay] = useState<"confirm" | "success" | null>(null);
   return <>
-    <DoloresPage title="Sắp hết hạn hợp đồng" description="Nhắc trước một tháng để trao đổi. Hợp đồng mới được ký riêng, không tự động gia hạn." actions={<><DoloresButton href="/dashboard/contracts/new">Trao đổi hợp đồng mới</DoloresButton><DoloresButton onClick={() => setOverlay("confirm")} variant="secondary">Không tiếp tục thuê</DoloresButton></>}>
+    <DoloresPage title="Sắp hết hạn hợp đồng" description="Nhắc trước một tháng để trao đổi. Hợp đồng mới được ký riêng, không tự động gia hạn." actions={<><DoloresButton href={PATH_DASHBOARD.newContract}>Trao đổi hợp đồng mới</DoloresButton><DoloresButton onClick={() => setOverlay("confirm")} variant="secondary">Không tiếp tục thuê</DoloresButton></>}>
       <DoloresNotice title="Bước hiện tại: Chọn hướng xử lý"><div className="flex flex-wrap gap-x-3 gap-y-1"><span>1. Nhắc trước hạn →</span><span className="font-semibold">2. Chọn hướng xử lý →</span><span>3. Trao đổi với Moderator →</span><span>4. Hết hạn</span></div></DoloresNotice>
       <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng" value="C-204" /><DoloresField label="Ngày hết hạn" value="31/10/2026" /><DoloresField label="Nhắc trước" value="01 tháng" /><DoloresField label="Nếu không phản hồi" value="Xem như không tiếp tục sử dụng" /><DoloresField label="Nếu muốn tiếp tục" value="Trao đổi và ký hợp đồng mới độc lập" /><DoloresField label="Máy trong hợp đồng mới" value="Theo thỏa thuận mới" /></DoloresFieldGrid></DoloresPanel>
       <DoloresNotice title="Sau khi hết hạn">Thực hiện quy trình kết thúc bình thường. Hệ thống không tạo gia hạn tự động.</DoloresNotice>
@@ -462,7 +466,7 @@ function CustomerExpiryPage() {
         <h2 className="mt-3 text-xl font-semibold leading-7 text-[#302927]" id="customer-expiry-title">{overlay === "success" ? "Đã ghi nhận thành công" : "Xác nhận · Sắp hết hạn hợp đồng"}</h2>
         <p className="mt-3 text-sm leading-6 text-[#706561]">Ghi nhận không tiếp tục thuê sau 31/10/2026. Hợp đồng kết thúc theo quy trình thu hồi, đánh giá rồi quyết toán cọc.</p>
         <div className="mt-5 grid gap-5">
-          {overlay === "success" ? <DoloresButton href="/dashboard/contracts/end">Xem hồ sơ hoàn cọc</DoloresButton> : <><DoloresButton onClick={() => setOverlay("success")}>Xác nhận</DoloresButton><DoloresButton onClick={() => setOverlay(null)} variant="secondary">Đóng</DoloresButton></>}
+          {overlay === "success" ? <DoloresButton href={PATH_DASHBOARD.contractEnd}>Xem hồ sơ hoàn cọc</DoloresButton> : <><DoloresButton onClick={() => setOverlay("success")}>Xác nhận</DoloresButton><DoloresButton onClick={() => setOverlay(null)} variant="secondary">Đóng</DoloresButton></>}
         </div>
       </section>
     </div>}
@@ -470,30 +474,30 @@ function CustomerExpiryPage() {
 }
 
 function CustomerInvoiceReminderPage() {
-  return <DoloresPage title="Nhắc thanh toán hóa đơn" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/invoices/shortfall">Xem số tiền & hóa đơn</DoloresButton><DoloresButton href="/dashboard/invoices/payment" variant="secondary">Đã chuyển khoản · gửi ảnh</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hóa đơn" value="HD-09-204" /><DoloresField label="Hạn thanh toán" value="12/10/2026" /><DoloresField label="Còn phải trả" value="1.000.000 đ" /><DoloresField label="Tần suất nhắc" value="Mỗi ngày đến khi hóa đơn được thanh toán đủ" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Thanh toán ngoài Dolores">Gửi chứng từ chỉ để Moderator đối chiếu; trạng thái đã thanh toán được cập nhật sau khi xác nhận.</DoloresNotice></DoloresPage>;
+  return <DoloresPage title="Nhắc thanh toán hóa đơn" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.invoiceShortfall}>Xem số tiền & hóa đơn</DoloresButton><DoloresButton href={PATH_DASHBOARD.invoicePayment} variant="secondary">Đã chuyển khoản · gửi ảnh</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hóa đơn" value="HD-09-204" /><DoloresField label="Hạn thanh toán" value="12/10/2026" /><DoloresField label="Còn phải trả" value="1.000.000 đ" /><DoloresField label="Tần suất nhắc" value="Mỗi ngày đến khi hóa đơn được thanh toán đủ" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Thanh toán ngoài Dolores">Gửi chứng từ chỉ để Moderator đối chiếu; trạng thái đã thanh toán được cập nhật sau khi xác nhận.</DoloresNotice></DoloresPage>;
 }
 
 function CustomerReplacementPage() {
-  return <DoloresPage title="Máy thay thế trong hợp đồng" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/machines/S-018">Về giám sát</DoloresButton><DoloresButton href="/dashboard/machines" variant="secondary">Về danh sách máy</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng thuê chính" value="C-204" /><DoloresField label="Máy chính / máy thay" value="S-018 / S-022 · cùng loại Smart IoT" /><DoloresField label="Bắt đầu / kết thúc máy thay" value="10/09 09:00 – 12/09 17:00" /><DoloresField label="Ly máy thay trong đợt" value="160 ly" /><DoloresField label="Ly máy chính trong tháng" value="1.840 ly" /><DoloresField label="Tổng ly tính C-204" value="2.000 ly" /><DoloresField label="Trạng thái máy thay" value="Đã trả" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
+  return <DoloresPage title="Máy thay thế trong hợp đồng" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.machineDetail("S-018")}>Về giám sát</DoloresButton><DoloresButton href={PATH_DASHBOARD.machines} variant="secondary">Về danh sách máy</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng thuê chính" value="C-204" /><DoloresField label="Máy chính / máy thay" value="S-018 / S-022 · cùng loại Smart IoT" /><DoloresField label="Bắt đầu / kết thúc máy thay" value="10/09 09:00 – 12/09 17:00" /><DoloresField label="Ly máy thay trong đợt" value="160 ly" /><DoloresField label="Ly máy chính trong tháng" value="1.840 ly" /><DoloresField label="Tổng ly tính C-204" value="2.000 ly" /><DoloresField label="Trạng thái máy thay" value="Đã trả" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
 }
 
 function CustomerMachineHistoryPage() {
-  return <DoloresPage title="Lịch sử bảo trì & sửa chữa" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/support/new">Gửi yêu cầu hỗ trợ</DoloresButton><DoloresButton href="/dashboard/machines" variant="secondary">Về máy của tôi</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Máy" value="C-031 · hợp đồng C-205" /><DoloresField label="Lần thực hiện" value="12/09/2026" /><DoloresField label="Nội dung" value="Thay van cấp nước · 1 chiếc" /><DoloresField label="Chi phí theo hợp đồng" value="350.000 đ" /><DoloresField label="Kết quả" value="Đã hoạt động bình thường" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
+  return <DoloresPage title="Lịch sử bảo trì & sửa chữa" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.newSupport}>Gửi yêu cầu hỗ trợ</DoloresButton><DoloresButton href={PATH_DASHBOARD.machines} variant="secondary">Về máy của tôi</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Máy" value="C-031 · hợp đồng C-205" /><DoloresField label="Lần thực hiện" value="12/09/2026" /><DoloresField label="Nội dung" value="Thay van cấp nước · 1 chiếc" /><DoloresField label="Chi phí theo hợp đồng" value="350.000 đ" /><DoloresField label="Kết quả" value="Đã hoạt động bình thường" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
 }
 
 function StandardInvoiceDetailPage() {
-  return <DoloresPage title="Hóa đơn thuê máy thường" description="Hóa đơn thuê máy C-205 · máy thường C-031." actions={<><DoloresButton href="/dashboard/invoices/standard-payment">Gửi chứng từ bổ sung</DoloresButton><DoloresButton href="/dashboard/invoices" variant="secondary">Xem hóa đơn</DoloresButton></>}>
+  return <DoloresPage title="Hóa đơn thuê máy thường" description="Hóa đơn thuê máy C-205 · máy thường C-031." actions={<><DoloresButton href={PATH_DASHBOARD.invoiceStandardPayment}>Gửi chứng từ bổ sung</DoloresButton><DoloresButton href={PATH_DASHBOARD.invoices} variant="secondary">Xem hóa đơn</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>09/2026 · C-205</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Tổng tiền" value="1.500.000 đ" /><DoloresField label="Moderator đã xác nhận" value="0 đ" /><DoloresField label="Còn phải thanh toán" value="1.500.000 đ" /><DoloresField label="Hạn thanh toán" value="12/10/2026" /><DoloresField label="Máy" value="C-031 · Máy thường" /><DoloresField label="Trạng thái" value="Chưa thanh toán" /></DoloresFieldGrid></DoloresPanel>
     <DoloresNotice title="Thanh toán trễ">Dư nợ còn thiếu cộng dồn 5% mỗi ngày trễ.</DoloresNotice>
   </DoloresPage>;
 }
 
 function CustomerSupportList() {
-  return <DoloresPage title="Yêu cầu hỗ trợ của tôi" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/support/new">Gửi yêu cầu mới</DoloresButton><DoloresButton href="/dashboard/support/YC-018" variant="secondary">Xem yêu cầu đang xử lý</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Mã yêu cầu", "Máy", "Nội dung", "Trạng thái"]} rows={[[<Link href="/dashboard/support/YC-018" key="yc18">YC-018 ›</Link>, "S-018", "Menu không cập nhật", "Đã giao Technician"], [<Link href="/dashboard/support/YC-012" key="yc12">YC-012 ›</Link>, "C-031", "Thay van cấp nước", "Hoàn tất"]]} /></DoloresPanel></DoloresPage>;
+  return <DoloresPage title="Yêu cầu hỗ trợ của tôi" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.newSupport}>Gửi yêu cầu mới</DoloresButton><DoloresButton href={PATH_DASHBOARD.supportDetail("YC-018")} variant="secondary">Xem yêu cầu đang xử lý</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Mã yêu cầu", "Máy", "Nội dung", "Trạng thái"]} rows={[[<Link href={PATH_DASHBOARD.supportDetail("YC-018")} key="yc18">YC-018 ›</Link>, "S-018", "Menu không cập nhật", "Đã giao Technician"], [<Link href={PATH_DASHBOARD.supportDetail("YC-012")} key="yc12">YC-012 ›</Link>, "C-031", "Thay van cấp nước", "Hoàn tất"]]} /></DoloresPanel></DoloresPage>;
 }
 
 function CustomerMenuSupportPage() {
-  return <DoloresPage title="Cập nhật menu cần hỗ trợ" description="Global Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ." actions={<><DoloresButton href="/dashboard/support/new">Thông báo Moderator</DoloresButton><DoloresButton href="/dashboard/machines/S-018?state=offline" variant="secondary">Xem kết nối máy</DoloresButton></>}>
+  return <DoloresPage title="Cập nhật menu cần hỗ trợ" description="Global Menu do Dolores cấp và cập nhật. Bạn chỉ chỉnh công thức riêng hoặc thêm món được máy hỗ trợ." actions={<><DoloresButton href={PATH_DASHBOARD.newSupport}>Thông báo Moderator</DoloresButton><DoloresButton href={buildRouteUrl(PATH_DASHBOARD.machineDetail("S-018"), { "state": "offline" })} variant="secondary">Xem kết nối máy</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid>
       <DoloresField label="Máy cần kiểm tra" value="S-018 · Smart IoT" />
       <DoloresField label="Trạng thái áp dụng" value="Chưa xác nhận nhận bản chỉnh sửa" />
@@ -506,11 +510,11 @@ function CustomerMenuSupportPage() {
 
 function CustomerSupportProgress({ id }: { id: string }) {
   const complete = id === "YC-012";
-  return <DoloresPage title="Tiến trình yêu cầu hỗ trợ" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/support">Về yêu cầu hỗ trợ</DoloresButton><DoloresButton href="/dashboard/machines/history" variant="secondary">Xem lịch sử máy</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle><div className="space-y-4 text-sm"><p><strong>01/10 · Đã gửi</strong><br />{complete ? "Khách yêu cầu thay van cấp nước · YC-012." : "Khách báo menu không cập nhật · YC-018."}</p><p><strong>01/10 · Moderator tiếp nhận</strong><br />Đã giao Technician Nguyễn Văn Nam.</p><p><strong>{complete ? "Hoàn tất" : "Đang xử lý"}</strong><br />{complete ? "Thay van cấp nước · kết quả được lưu vào lịch sử máy." : "Kết quả sửa chữa sẽ được lưu vào lịch sử máy."}</p></div></DoloresPanel></DoloresPage>;
+  return <DoloresPage title="Tiến trình yêu cầu hỗ trợ" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.support}>Về yêu cầu hỗ trợ</DoloresButton><DoloresButton href={PATH_DASHBOARD.machineHistory} variant="secondary">Xem lịch sử máy</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Lịch sử xử lý</DoloresPanelTitle><div className="space-y-4 text-sm"><p><strong>01/10 · Đã gửi</strong><br />{complete ? "Khách yêu cầu thay van cấp nước · YC-012." : "Khách báo menu không cập nhật · YC-018."}</p><p><strong>01/10 · Moderator tiếp nhận</strong><br />Đã giao Technician Nguyễn Văn Nam.</p><p><strong>{complete ? "Hoàn tất" : "Đang xử lý"}</strong><br />{complete ? "Thay van cấp nước · kết quả được lưu vào lịch sử máy." : "Kết quả sửa chữa sẽ được lưu vào lịch sử máy."}</p></div></DoloresPanel></DoloresPage>;
 }
 
 function BuybackOverviewPage() {
-  return <DoloresPage title="Đề nghị thu mua máy cũ" description="Dịch vụ dành cho khách hàng đang thuê máy của Dolores; Technician đánh giá nội bộ trước khi đàm phán." actions={<><DoloresButton href="/dashboard/buyback/new">Gửi đề nghị thu mua</DoloresButton><DoloresButton href="/dashboard/buyback/documents" variant="secondary">Xem chứng từ thu mua</DoloresButton></>}>
+  return <DoloresPage title="Đề nghị thu mua máy cũ" description="Dịch vụ dành cho khách hàng đang thuê máy của Dolores; Technician đánh giá nội bộ trước khi đàm phán." actions={<><DoloresButton href={PATH_DASHBOARD.newBuyback}>Gửi đề nghị thu mua</DoloresButton><DoloresButton href={PATH_DASHBOARD.buybackDocuments} variant="secondary">Xem chứng từ thu mua</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>Theo dõi đề nghị</DoloresPanelTitle><DoloresFieldGrid>
       <DoloresField label="Điều kiện dịch vụ" value="Đang thuê Dolores · C-205" />
       <DoloresField label="Máy đề nghị bán" value="MB-017 · máy thuộc sở hữu khách hàng" />
@@ -531,21 +535,21 @@ function BuybackDocumentsPage({ initialOverlay }: { initialOverlay?: "issue" }) 
       <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Máy tôi bán" value="MB-017 · thuộc sở hữu khách" /><DoloresField label="Hợp đồng thuê đủ điều kiện" value="C-205 · máy thuê C-031" /><DoloresField label="Hợp đồng mua bán" value="MB-2026-017 · ký bên ngoài" /><DoloresField label="Số tiền Dolores chuyển" value="8.000.000 đ" /><DoloresField label="Moderator đã tải" value="CK-MB-017.jpg · 02/10/2026" /><DoloresField label="Trạng thái" value="Chờ khách kiểm tra và xác nhận" /></DoloresFieldGrid></DoloresPanel>
     </DoloresPage>
     {overlay === "preview" && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/30 p-6" role="presentation"><section aria-modal="true" className="w-full max-w-[580px] rounded-[20px] border border-[#E9E2DC] bg-white p-8 shadow-xl" role="dialog"><p className="text-sm font-semibold leading-[1.45] text-[#292625]">Tài liệu trong hồ sơ</p><h2 className="mt-3 text-[26px] font-semibold leading-[1.45] text-[#292625]">Chứng từ thu mua máy cũ</h2><p className="mt-3 text-base leading-[1.45] text-[#292625]">Tài liệu được lưu để xem và đối chiếu với hồ sơ.</p><div className="mt-5 flex min-h-32 flex-col justify-center gap-3 rounded-xl bg-[#F6EDE7] p-5 text-[#292625]"><p className="text-lg font-semibold">CK-MB-017.jpg</p><p className="text-sm">Bản xem mẫu: chưa có ảnh/PDF gốc được cung cấp trong dữ liệu thiết kế.</p></div><div className="mt-5"><DoloresButton variant="secondary" onClick={() => setOverlay(null)}>Đóng</DoloresButton></div></section></div>}
-    {(overlay === "confirm" || overlay === "success") && <CustomerFlowDialog mode={overlay} title={overlay === "confirm" ? "Xác nhận · Chứng từ thu mua máy cũ" : "Đã ghi nhận thành công"} message="Tôi đã kiểm tra chứng từ Moderator tải lên và đã nhận 8.000.000 đ từ Dolores cho máy MB-017." actionLabel="Xác nhận" successHref="/dashboard/buyback/documents/confirmed" successLabel="Về danh sách" onConfirm={() => { writeDemoFlow("MB-2026-017-customer-receipt", "confirmed-demo"); setOverlay("success"); }} onClose={() => setOverlay(null)} />}
+    {(overlay === "confirm" || overlay === "success") && <CustomerFlowDialog mode={overlay} title={overlay === "confirm" ? "Xác nhận · Chứng từ thu mua máy cũ" : "Đã ghi nhận thành công"} message="Tôi đã kiểm tra chứng từ Moderator tải lên và đã nhận 8.000.000 đ từ Dolores cho máy MB-017." actionLabel="Xác nhận" successHref={PATH_DASHBOARD.buybackDocumentsConfirmed} successLabel="Về danh sách" onConfirm={() => { writeDemoFlow("MB-2026-017-customer-receipt", "confirmed-demo"); setOverlay("success"); }} onClose={() => setOverlay(null)} />}
     {overlay === "issue" && <CustomerFlowDialog mode="confirm" title="Trao đổi về chứng từ thu mua" message="Thông báo Moderator rằng chứng từ hoặc số tiền mua MB-017 cần được kiểm tra lại. Trạng thái chưa xác nhận nhận tiền." actionLabel="Gửi thông báo cần đối chiếu" confirmActionLabel="Gửi thông báo cần đối chiếu" onClose={() => setOverlay(null)} onConfirm={() => { writeDemoFlow("MB-2026-017-proof-review", "notified-demo"); setOverlay("issue-success"); }} />}
-    {overlay === "issue-success" && <CustomerFlowDialog mode="success" title="Đã gửi thông báo cho Moderator" message="Chứng từ mua MB-017 đang chờ kiểm tra lại." actionLabel="Về hồ sơ thu mua" successHref="/dashboard/buyback" successLabel="Về hồ sơ thu mua" onClose={() => setOverlay(null)} />}
+    {overlay === "issue-success" && <CustomerFlowDialog mode="success" title="Đã gửi thông báo cho Moderator" message="Chứng từ mua MB-017 đang chờ kiểm tra lại." actionLabel="Về hồ sơ thu mua" successHref={PATH_DASHBOARD.buyback} successLabel="Về hồ sơ thu mua" onClose={() => setOverlay(null)} />}
   </>;
 }
 
 function BuybackReceiptConfirmedPage() {
-  return <DoloresPage title="Đã xác nhận chứng từ thu mua" description="Hồ sơ xác nhận đã nhận tiền theo chứng từ mua bán." actions={<><DoloresButton href="/dashboard/buyback">Về hồ sơ thu mua</DoloresButton><DoloresButton href="/dashboard/buyback/documents" variant="secondary">Xem lại chứng từ</DoloresButton></>}>
+  return <DoloresPage title="Đã xác nhận chứng từ thu mua" description="Hồ sơ xác nhận đã nhận tiền theo chứng từ mua bán." actions={<><DoloresButton href={PATH_DASHBOARD.buyback}>Về hồ sơ thu mua</DoloresButton><DoloresButton href={PATH_DASHBOARD.buybackDocuments} variant="secondary">Xem lại chứng từ</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>Kết quả</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Kết quả" value="Đã xác nhận nhận tiền" /><DoloresField label="Máy đã bán" value="MB-017 · máy thuộc sở hữu khách" /><DoloresField label="Số tiền" value="8.000.000 đ" /><DoloresField label="Chứng từ" value="CK-MB-017.jpg" /><DoloresField label="Lịch sử" value="Khách xác nhận · 02/10/2026" /></DoloresFieldGrid></DoloresPanel>
   </DoloresPage>;
 }
 
 function ContractDetailPage({ id }: { id: string }) {
   const standard = id === "C-205";
-  return <DoloresPage title={`Chi tiết hợp đồng ${id}`} description={standard ? "Hồ sơ thuê máy thông thường; vị trí theo hợp đồng và lịch sử máy." : "Hồ sơ thuê máy Smart IoT; dữ liệu máy theo trạng thái đồng bộ gần nhất."} actions={<><DoloresButton href={`/dashboard/machines/${standard ? "C-031" : "S-018"}`}>Xem máy trong hợp đồng</DoloresButton><DoloresButton href="/dashboard/contracts" variant="secondary">Về hợp đồng</DoloresButton></>}>
+  return <DoloresPage title={`Chi tiết hợp đồng ${id}`} description={standard ? "Hồ sơ thuê máy thông thường; vị trí theo hợp đồng và lịch sử máy." : "Hồ sơ thuê máy Smart IoT; dữ liệu máy theo trạng thái đồng bộ gần nhất."} actions={<><DoloresButton href={PATH_DASHBOARD.machineDetail(standard ? "C-031" : "S-018")}>Xem máy trong hợp đồng</DoloresButton><DoloresButton href={PATH_DASHBOARD.contracts} variant="secondary">Về hợp đồng</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>Thông tin hợp đồng</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Mã hợp đồng" value={id} /><DoloresField label="Máy" value={standard ? "Classic C-031 · Thông thường" : "Smart S-018 · Smart IoT"} /><DoloresField label="Cửa hàng" value="Cà phê Mộc · Quận 3" /><DoloresField label="Thời hạn" value={standard ? "15/05–14/11/2026" : "01/04–31/10/2026"} /><DoloresField label="Phí thuê" value={standard ? "1.500.000 đ / tháng" : "750.000 đ + PAYG"} /><DoloresField label="Trạng thái" value={standard ? "Đang hiệu lực" : "Còn 1 tháng"} /></DoloresFieldGrid></DoloresPanel>
     <DoloresNotice title="Hợp đồng mới">Mỗi máy vật lý có một hợp đồng riêng. Hợp đồng không tự gia hạn; nếu muốn tiếp tục, hãy gửi đề nghị trao đổi.</DoloresNotice>
   </DoloresPage>;
@@ -557,7 +561,7 @@ function InvoiceActionPage({ kind }: { kind: "first-month" | "shortfall" | "refu
     shortfall: { title: "Cần thanh toán phần còn thiếu", summary: "Hóa đơn 09/2026 · C-204", amount: "1.000.000 đ", status: "Chờ thanh toán đủ", action: "Gửi chứng từ bổ sung" },
     refund: { title: "Theo dõi hoàn tiền thanh toán thừa", summary: "Hóa đơn HD-09-205 · C-204", amount: "200.000 đ", status: "Chờ khách hàng xác nhận và ngân hàng đối chiếu", action: "Về danh sách hóa đơn" },
   }[kind];
-  return <DoloresPage title={content.title} description="Theo dõi thông tin và trạng thái chứng từ với Moderator." actions={<><DoloresButton href={kind === "refund" ? "/dashboard/invoices" : "/dashboard/invoices/payment"}>{content.action}</DoloresButton><DoloresButton href="/dashboard/invoices" variant="secondary">Về hóa đơn</DoloresButton></>}>
+  return <DoloresPage title={content.title} description="Theo dõi thông tin và trạng thái chứng từ với Moderator." actions={<><DoloresButton href={kind === "refund" ? PATH_DASHBOARD.invoices : PATH_DASHBOARD.invoicePayment}>{content.action}</DoloresButton><DoloresButton href={PATH_DASHBOARD.invoices} variant="secondary">Về hóa đơn</DoloresButton></>}>
     <DoloresPanel><DoloresPanelTitle>{content.summary}</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Số tiền" value={content.amount} /><DoloresField label="Trạng thái" value={content.status} /><DoloresField className="col-span-2" label="Đối chiếu" value="Chuyển khoản được thực hiện ngoài Dolores; Moderator kiểm tra chứng từ và cập nhật kết quả." /></DoloresFieldGrid></DoloresPanel>
     <DoloresNotice title="Trạng thái xử lý">Thông tin minh họa. Gửi chứng từ không đồng nghĩa khoản tiền đã được xác nhận hoặc hoàn tất.</DoloresNotice>
   </DoloresPage>;
@@ -570,11 +574,11 @@ function CustomerDishPage({ initialView }: { initialView?: string }) {
   const [coffee, setCoffee] = useState("18");
   const [water, setWater] = useState("60");
   const [ingredientOpen, setIngredientOpen] = useState(false);
-  if (stage === "unsupported") return <DoloresPage title="Chưa thể áp dụng món riêng" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton href="/dashboard/support/menu">Cập nhật menu cần hỗ trợ</DoloresButton><DoloresButton variant="secondary" onClick={() => setStage("edit")}>Chọn lại món</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Nguồn menu" value="Global Menu Dolores · v3" /><DoloresField label="Tên món" value={dish} /><DoloresField label="Thành phần" value={`${ingredient} chưa được máy hỗ trợ`} /><DoloresField label="Nước pha" value={`${water} ml`} /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Máy chưa hỗ trợ cấu hình này" tone="warning">Thành phần được chọn chưa có hỗ trợ đã xác nhận. Món chưa được lưu hoặc gửi lên máy.</DoloresNotice></DoloresPage>;
-  if (stage === "pending") return <DoloresPage title="Đang chờ máy xác nhận" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton onClick={() => { writeDemoFlow("S-018-private-dish", "machine-acknowledged"); setStage("applied"); }}>Mô phỏng xác nhận từ máy</DoloresButton><DoloresButton href="/dashboard/menu" variant="secondary">Về menu của tôi</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Nguồn menu" value="Global Menu Dolores · v3" /><DoloresField label="Tên món riêng" value={dish} /><DoloresField label="Thành phần" value={`${ingredient} · ${coffee} g`} /><DoloresField label="Nước pha" value={`${water} ml`} /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Đã gửi yêu cầu · chưa áp dụng">Menu đang chạy vẫn giữ nguyên cho tới khi máy báo áp dụng thành công.</DoloresNotice></DoloresPage>;
-  if (stage === "applied") return <DoloresPage title="Menu của tôi · đã thêm món riêng" description="S-018 · Cà phê Mộc · Global Menu Dolores v3 vẫn là menu nguồn." actions={<DoloresButton href="/dashboard/menu">Về menu của tôi</DoloresButton>}><DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Món", "Thành phần bắt buộc", "Định lượng hiện tại", "Thao tác"]} rows={[["Espresso", "Cà phê", "18 g cà phê · 40 ml nước", "Global Menu"], ["Cà phê sữa tươi", "Cà phê + sữa tươi", "18 g cà phê · 120 ml sữa", "Global Menu"], [dish, ingredient, `${coffee} g · ${water} ml nước`, "Đã áp dụng"]]} /></DoloresPanel><DoloresNotice title="Máy đã xác nhận áp dụng">Máy báo đã thêm {dish}. Global Menu Dolores v3 vẫn là menu nguồn. Trạng thái này được mô phỏng trên trình duyệt, không phải phản hồi từ thiết bị thật.</DoloresNotice></DoloresPage>;
+  if (stage === "unsupported") return <DoloresPage title="Chưa thể áp dụng món riêng" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton href={PATH_DASHBOARD.supportMenu}>Cập nhật menu cần hỗ trợ</DoloresButton><DoloresButton variant="secondary" onClick={() => setStage("edit")}>Chọn lại món</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Nguồn menu" value="Global Menu Dolores · v3" /><DoloresField label="Tên món" value={dish} /><DoloresField label="Thành phần" value={`${ingredient} chưa được máy hỗ trợ`} /><DoloresField label="Nước pha" value={`${water} ml`} /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Máy chưa hỗ trợ cấu hình này" tone="warning">Thành phần được chọn chưa có hỗ trợ đã xác nhận. Món chưa được lưu hoặc gửi lên máy.</DoloresNotice></DoloresPage>;
+  if (stage === "pending") return <DoloresPage title="Đang chờ máy xác nhận" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton onClick={() => { writeDemoFlow("S-018-private-dish", "machine-acknowledged"); setStage("applied"); }}>Mô phỏng xác nhận từ máy</DoloresButton><DoloresButton href={PATH_DASHBOARD.menu} variant="secondary">Về menu của tôi</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Nguồn menu" value="Global Menu Dolores · v3" /><DoloresField label="Tên món riêng" value={dish} /><DoloresField label="Thành phần" value={`${ingredient} · ${coffee} g`} /><DoloresField label="Nước pha" value={`${water} ml`} /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Đã gửi yêu cầu · chưa áp dụng">Menu đang chạy vẫn giữ nguyên cho tới khi máy báo áp dụng thành công.</DoloresNotice></DoloresPage>;
+  if (stage === "applied") return <DoloresPage title="Menu của tôi · đã thêm món riêng" description="S-018 · Cà phê Mộc · Global Menu Dolores v3 vẫn là menu nguồn." actions={<DoloresButton href={PATH_DASHBOARD.menu}>Về menu của tôi</DoloresButton>}><DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle><DoloresTable headers={["Món", "Thành phần bắt buộc", "Định lượng hiện tại", "Thao tác"]} rows={[["Espresso", "Cà phê", "18 g cà phê · 40 ml nước", "Global Menu"], ["Cà phê sữa tươi", "Cà phê + sữa tươi", "18 g cà phê · 120 ml sữa", "Global Menu"], [dish, ingredient, `${coffee} g · ${water} ml nước`, "Đã áp dụng"]]} /></DoloresPanel><DoloresNotice title="Máy đã xác nhận áp dụng">Máy báo đã thêm {dish}. Global Menu Dolores v3 vẫn là menu nguồn. Trạng thái này được mô phỏng trên trình duyệt, không phải phản hồi từ thiết bị thật.</DoloresNotice></DoloresPage>;
   return <>
-    <DoloresPage title="Thêm món riêng" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton onClick={() => setStage(ingredient.includes("siro") ? "unsupported" : "confirm")}>Gửi món riêng tới máy</DoloresButton><DoloresButton variant="secondary" onClick={() => setIngredientOpen(true)}>Thành phần</DoloresButton><DoloresButton href="/dashboard/menu" variant="secondary">Hủy</DoloresButton></>}>
+    <DoloresPage title="Thêm món riêng" description="S-018 · Global Menu Dolores v3 đã nhận. Món này chỉ thuộc Cà phê Mộc." actions={<><DoloresButton onClick={() => setStage(ingredient.includes("siro") ? "unsupported" : "confirm")}>Gửi món riêng tới máy</DoloresButton><DoloresButton variant="secondary" onClick={() => setIngredientOpen(true)}>Thành phần</DoloresButton><DoloresButton href={PATH_DASHBOARD.menu} variant="secondary">Hủy</DoloresButton></>}>
       <DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Nguồn menu" value="Global Menu Dolores · v3" /><DoloresField label="Tên món riêng" required><input className="w-full bg-transparent text-sm outline-none" value={dish} onChange={(event) => setDish(event.target.value)} /></DoloresField><DoloresField label="Thành phần" required><select aria-label="Thành phần" className="bg-transparent text-sm outline-none" value={ingredient} onChange={(event) => setIngredient(event.target.value)}><option>Cà phê</option><option>Cà phê + siro</option></select></DoloresField><DoloresField label="Nước pha" required><span className="flex items-center gap-2"><input aria-label="Nước pha" className="w-20 bg-transparent text-sm outline-none" type="number" value={water} onChange={(event) => setWater(event.target.value)} />ml</span></DoloresField><DoloresField label="Lượng cà phê" required><span className="flex items-center gap-2"><input aria-label="Lượng cà phê" className="w-20 bg-transparent text-sm outline-none" type="number" value={coffee} onChange={(event) => setCoffee(event.target.value)} />g</span></DoloresField></DoloresFieldGrid></DoloresPanel>
       <DoloresNotice title="Khả năng máy: hỗ trợ">Định lượng minh họa, theo thành phần và đơn vị được thể hiện trong Figma.</DoloresNotice>
     </DoloresPage>
@@ -597,7 +601,7 @@ function BasicFormPage({ kind, state }: { kind: string; state?: string }) {
     errorMessage?: string; errorLabel?: string; uploadRequired?: boolean; demoKey: string;
   }> = {
     support: {
-      title: "Báo sự cố máy", description: "Gửi mô tả sự cố cho Moderator để điều phối Technician hỗ trợ.", action: "Gửi yêu cầu hỗ trợ", cancelLabel: "Hủy", back: "/dashboard/machines",
+      title: "Báo sự cố máy", description: "Gửi mô tả sự cố cho Moderator để điều phối Technician hỗ trợ.", action: "Gửi yêu cầu hỗ trợ", cancelLabel: "Hủy", back: PATH_DASHBOARD.machines,
       fields: [
         { label: "Máy gặp sự cố", value: "S-018 · Smart IoT" }, { label: "Hợp đồng", value: "C-204" },
         { label: "Mô tả hiện tượng", value: "Menu không cập nhật sau khi đồng bộ", wide: true },
@@ -606,11 +610,11 @@ function BasicFormPage({ kind, state }: { kind: string; state?: string }) {
       ],
       extra: "incident", panelTitle: "Thông tin báo sự cố", confirmTitle: "Xác nhận · Báo sự cố máy", confirmMessage: "Gửi mô tả lỗi S-018 và ảnh đính kèm cho Moderator. Moderator điều phối Technician và cập nhật tiến trình.",
       successTitle: "Đã ghi nhận thành công", successMessage: "Gửi mô tả lỗi S-018 và ảnh đính kèm cho Moderator. Moderator điều phối Technician và cập nhật tiến trình.",
-      successHref: "/dashboard/support", successAction: "Xem yêu cầu và tiến trình", demoKey: "customer-incident",
+      successHref: PATH_DASHBOARD.support, successAction: "Xem yêu cầu và tiến trình", demoKey: "customer-incident",
       errorMessage: "Hồ sơ đang thiếu trường bắt buộc hoặc tài liệu đính kèm. Bổ sung thông tin được đánh dấu rồi gửi lại.",
     },
     payment: {
-      title: "Gửi ảnh chứng từ chuyển khoản", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi ảnh để đối chiếu", cancelLabel: "Hủy", back: "/dashboard/invoices",
+      title: "Gửi ảnh chứng từ chuyển khoản", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi ảnh để đối chiếu", cancelLabel: "Hủy", back: PATH_DASHBOARD.invoices,
       fields: [
         { label: "Hóa đơn", value: "HD-09-204" }, { label: "Số tiền đã chuyển", value: "1.000.000 đ", required: true },
         { label: "Ngày chuyển khoản", value: "02/10/2026", required: true }, { label: "Nội dung chuyển khoản", value: "C-204 thanh toán bổ sung" },
@@ -619,11 +623,11 @@ function BasicFormPage({ kind, state }: { kind: string; state?: string }) {
       notice: ["Chuyển khoản ngoài Dolores", "Moderator sẽ đối chiếu với tài khoản ngân hàng công ty. Gửi ảnh chưa có nghĩa hóa đơn đã được xác nhận thanh toán."],
       confirmTitle: "Xác nhận · Gửi ảnh chứng từ chuyển khoản", confirmMessage: "Gửi ảnh chuyển khoản bổ sung 1.000.000 đ. Hóa đơn sẽ chờ Moderator đối chiếu với ngân hàng công ty.",
       successTitle: "Đã gửi chứng từ · chờ đối chiếu", successMessage: "Gửi ảnh chuyển khoản bổ sung 1.000.000 đ. Hóa đơn sẽ chờ Moderator đối chiếu với ngân hàng công ty.",
-      successHref: "/dashboard/invoices/2026-09", successAction: "Xem hóa đơn", demoKey: "customer-invoice-proof",
+      successHref: PATH_DASHBOARD.invoiceDetail("2026-09"), successAction: "Xem hóa đơn", demoKey: "customer-invoice-proof",
       errorMessage: "Chưa có ảnh chứng từ hợp lệ. Chọn lại ảnh giao dịch trước khi gửi.", uploadRequired: true,
     },
     "standard-payment": {
-      title: "Gửi chứng từ thuê máy thường", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi ảnh để đối chiếu", cancelLabel: "Hủy", back: "/dashboard/invoices/standard",
+      title: "Gửi chứng từ thuê máy thường", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi ảnh để đối chiếu", cancelLabel: "Hủy", back: PATH_DASHBOARD.invoiceStandard,
       fields: [
         { label: "Hóa đơn", value: "HD-09-204" }, { label: "Số tiền đã chuyển", value: "1.000.000 đ", required: true },
         { label: "Ngày chuyển khoản", value: "02/10/2026", required: true }, { label: "Nội dung chuyển khoản", value: "C-204 thanh toán bổ sung" },
@@ -632,32 +636,32 @@ function BasicFormPage({ kind, state }: { kind: string; state?: string }) {
       notice: ["Chuyển khoản ngoài Dolores", "Moderator sẽ đối chiếu với tài khoản ngân hàng công ty. Gửi ảnh chưa có nghĩa hóa đơn đã được xác nhận thanh toán."],
       confirmTitle: "Xác nhận · Gửi ảnh chứng từ chuyển khoản", confirmMessage: "Gửi ảnh chuyển khoản bổ sung 1.000.000 đ. Hóa đơn sẽ chờ Moderator đối chiếu với ngân hàng công ty.",
       successTitle: "Đã gửi chứng từ · chờ đối chiếu", successMessage: "Gửi ảnh chuyển khoản bổ sung 1.000.000 đ. Hóa đơn sẽ chờ Moderator đối chiếu với ngân hàng công ty.",
-      successHref: "/dashboard/invoices/standard", successAction: "Xem hóa đơn", demoKey: "customer-standard-invoice-proof",
+      successHref: PATH_DASHBOARD.invoiceStandard, successAction: "Xem hóa đơn", demoKey: "customer-standard-invoice-proof",
       errorMessage: "Chưa có ảnh chứng từ hợp lệ. Chọn lại ảnh giao dịch trước khi gửi.", uploadRequired: true,
     },
     "contract-request": {
-      title: "Trao đổi hợp đồng thuê mới", description: "Gửi nhu cầu thuê mới để Moderator trao đổi loại máy và điều khoản.", action: "Gửi nhu cầu thuê mới", cancelLabel: "Về hợp đồng", back: "/dashboard/contracts",
+      title: "Trao đổi hợp đồng thuê mới", description: "Gửi nhu cầu thuê mới để Moderator trao đổi loại máy và điều khoản.", action: "Gửi nhu cầu thuê mới", cancelLabel: "Về hợp đồng", back: PATH_DASHBOARD.contracts,
       fields: [{ label: "Hợp đồng hiện tại", value: "C-204 · hết hạn 31/10/2026" }, { label: "Nhu cầu máy mới", value: "Smart IoT", type: "select" }, { label: "Thời gian mong muốn", value: "Từ tháng 11/2026" }, { label: "Ghi chú", value: "Trao đổi loại máy và điều khoản", wide: true }],
       notice: ["Hợp đồng mới độc lập", "Hợp đồng C-204 cũ vẫn kết thúc theo quy trình, không tự gia hạn."],
       confirmTitle: "Xác nhận · Trao đổi hợp đồng thuê mới", confirmMessage: "Gửi nhu cầu ký hợp đồng mới. Hợp đồng C-204 cũ vẫn kết thúc theo quy trình, không tự gia hạn.",
       successTitle: "Đã ghi nhận thành công", successMessage: "Gửi nhu cầu ký hợp đồng mới. Hợp đồng C-204 cũ vẫn kết thúc theo quy trình, không tự gia hạn.",
-      successHref: "/dashboard/contracts", successAction: "Xem hồ sơ hợp đồng", demoKey: "customer-contract-request",
+      successHref: PATH_DASHBOARD.contracts, successAction: "Xem hồ sơ hợp đồng", demoKey: "customer-contract-request",
     },
     "early-termination": {
-      title: "Đề nghị kết thúc hợp đồng sớm", description: "Gửi đề nghị dừng hợp đồng để Moderator xử lý theo điều khoản.", action: "Gửi đề nghị cho Moderator", cancelLabel: "Hủy", back: "/dashboard/contracts/C-204",
+      title: "Đề nghị kết thúc hợp đồng sớm", description: "Gửi đề nghị dừng hợp đồng để Moderator xử lý theo điều khoản.", action: "Gửi đề nghị cho Moderator", cancelLabel: "Hủy", back: PATH_DASHBOARD.contractDetail("C-204"),
       fields: [{ label: "Hợp đồng", value: "C-204" }, { label: "Ngày đề nghị dừng", value: "15/10/2026" }, { label: "Lý do", value: "Cửa hàng ngừng sử dụng máy" }],
       notice: ["Các khoản tháng cuối", "Tiền thuê cơ bản vẫn tính đủ tháng kết thúc; phí số ly chỉ tính trong thời gian sử dụng đến khi dừng. Thu hồi và đánh giá máy trước quyết toán cọc."],
       confirmTitle: "Xác nhận · Đề nghị kết thúc hợp đồng sớm", confirmMessage: "Gửi đề nghị dừng ngày 15/10/2026. Tiền thuê cơ bản tính đủ tháng; phí theo ly tính trong thời gian thuê đến khi dừng.",
       successTitle: "Đã ghi nhận thành công", successMessage: "Gửi đề nghị dừng ngày 15/10/2026. Tiền thuê cơ bản tính đủ tháng; phí theo ly tính trong thời gian thuê đến khi dừng.",
-      successHref: "/dashboard/contracts/end", successAction: "Xem hồ sơ hoàn cọc", demoKey: "customer-contract-end-request",
+      successHref: PATH_DASHBOARD.contractEnd, successAction: "Xem hồ sơ hoàn cọc", demoKey: "customer-contract-end-request",
     },
     "buyback-new": {
-      title: "Gửi đề nghị bán máy của tôi", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi đề nghị thu mua", cancelLabel: "Về hồ sơ thu mua", back: "/dashboard/buyback",
+      title: "Gửi đề nghị bán máy của tôi", description: "Theo dõi thông tin và thực hiện yêu cầu của cửa hàng.", action: "Gửi đề nghị thu mua", cancelLabel: "Về hồ sơ thu mua", back: PATH_DASHBOARD.buyback,
       fields: [{ label: "Khách hàng", value: "Nguyễn Minh Anh" }, { label: "Hợp đồng thuê đang hiệu lực", value: "C-205 · chứng minh điều kiện dịch vụ" }, { label: "Máy thuộc sở hữu của tôi", value: "MB-017 · máy pha cà phê thường", required: true }, { label: "Số serial / mô tả máy", value: "OWN-017", required: true }, { label: "Mô tả tình trạng", value: "Đang hoạt động" }, { label: "Địa điểm máy", value: "Cà phê Mộc · Quận 3" }, { label: "Ảnh máy / tài liệu", value: "Chọn ảnh / tài liệu", type: "file", wide: true }],
       notice: ["Máy đề nghị thu mua", "Đây là máy thuộc sở hữu của bạn. Máy C-031 đang thuê của Dolores chỉ dùng để đối chiếu hợp đồng đủ điều kiện."],
       confirmTitle: "Xác nhận · Gửi đề nghị bán máy của tôi", confirmMessage: "Gửi đề nghị bán máy MB-017 thuộc sở hữu của tôi. Hợp đồng đang thuê C-205 chỉ chứng minh điều kiện dịch vụ.",
       successTitle: "Đã ghi nhận thành công", successMessage: "Gửi đề nghị bán máy MB-017 thuộc sở hữu của tôi. Hợp đồng đang thuê C-205 chỉ chứng minh điều kiện dịch vụ.",
-      successHref: "/dashboard/buyback", successAction: "Về danh sách", demoKey: "customer-buyback-request",
+      successHref: PATH_DASHBOARD.buyback, successAction: "Về danh sách", demoKey: "customer-buyback-request",
     },
   };
   const current = config[kind] ?? config.support;
@@ -687,43 +691,43 @@ function BasicFormPage({ kind, state }: { kind: string; state?: string }) {
 
 export function CustomerSectionPage({ sections, view, state }: { sections: string[]; view?: string; state?: string }) {
   const path = sections.join("/");
-  if (path === "contracts") return <ContractsPage />;
-  if (path === "contracts/C-204") return <ContractDetailPage id="C-204" />;
-  if (path === "contracts/C-205") return <ContractDetailPage id="C-205" />;
-  if (path === "contracts/new") return <BasicFormPage kind="contract-request" />;
-  if (path === "contracts/expiry") return <CustomerExpiryPage />;
-  if (path === "contracts/end-early") return <BasicFormPage kind="early-termination" />;
-  if (path === "contracts/end") return <DoloresPage title="Kết thúc hợp đồng & hoàn cọc" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href="/dashboard/contracts/deposit-complete">Xem hoàn cọc đã thực hiện</DoloresButton><DoloresButton href="/dashboard/contracts" variant="secondary">Xem hợp đồng</DoloresButton></>}><DoloresNotice title="Bước hiện tại: Moderator quyết toán">Hợp đồng kết thúc sau khi thu hồi, đánh giá máy và đối chiếu theo thỏa thuận.</DoloresNotice><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng / máy" value="C-204 / S-018" /><DoloresField label="Ngày dừng thuê" value="31/10/2026" /><DoloresField label="Tiền cọc" value="10.000.000 đ" /><DoloresField label="Kết quả Technician" value="Đã thu hồi; hư hại theo biên bản" /><DoloresField label="Khấu trừ theo hợp đồng" value="2.000.000 đ" /><DoloresField label="Cọc còn hoàn" value="8.000.000 đ" /><DoloresField label="Thông báo / hạn hoàn" value="01/11/2026 / 12/11/2026" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
-  if (path === "contracts/deposit-complete") return <DoloresPage title="Hoàn cọc đã hoàn tất" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton onClick={() => window.print()}>Xem chứng từ hoàn cọc</DoloresButton><DoloresButton href="/dashboard/contracts/end" variant="secondary">Xem quyết toán</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng / máy" value="C-204 / S-018" /><DoloresField label="Tech thu hồi & đánh giá" value="Đã hoàn tất" /><DoloresField label="Cọc giữ / khấu trừ" value="10.000.000 đ / 2.000.000 đ" /><DoloresField label="Số tiền đã hoàn" value="8.000.000 đ" /><DoloresField label="Ngày hoàn" value="03/11/2026" /><DoloresField label="Chứng từ" value="HOAN-COC-C204.jpg" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Dữ liệu minh họa">Không có khoản hoàn tiền thật nào được thực hiện bởi giao diện frontend.</DoloresNotice></DoloresPage>;
-  if (path === "machines") return <MachinesPage />;
-  if (path === "machines/substitute" || path === "machines/S-022") return <CustomerReplacementPage />;
-  if (path === "machines/history") return <CustomerMachineHistoryPage />;
-  if (path.startsWith("machines/")) return <MachineDetailPage id={sections[1]} state={state} />;
-  if (path === "invoices") return <InvoicesPage />;
-  if (path === "invoices/reminder") return <CustomerInvoiceReminderPage />;
-  if (path === "invoices/payment") return <BasicFormPage kind="payment" state={state} />;
-  if (path === "invoices/standard") return <StandardInvoiceDetailPage />;
-  if (path === "invoices/standard-payment") return <BasicFormPage kind="standard-payment" state={state} />;
-  if (path === "invoices/shortfall") return <InvoiceActionPage kind="shortfall" />;
-  if (path === "invoices/refund") return <InvoiceActionPage kind="refund" />;
-  if (path === "invoices/2026-08") return <InvoiceActionPage kind="first-month" />;
-  if (path === "invoices/2026-09") return <InvoiceDetailPage />;
-  if (path.startsWith("invoices/")) return <InvoiceDetailPage />;
-  if (path === "menu") return <MenuPage />;
-  if (path === "menu/espresso") return <MenuEditPage freshMilk={false} initialCoffee={state === "20g" || state === "both" ? "20" : "18"} initialWater={state === "60" || state === "both" ? "60" : "40"} />;
-  if (path === "menu/fresh-milk") return <MenuEditPage freshMilk initialCoffee={state === "20g" ? "20" : "18"} initialMilk={state === "missing" ? "" : state === "150" ? "150" : "120"} initialError={state === "missing"} />;
-  if (path === "menu/add-dish") return <CustomerDishPage initialView={view} />;
-  if (path === "menu/sent") return <MenuEditPage freshMilk={false} initialStage="pending" />;
-  if (path === "support") return <CustomerSupportList />;
-  if (path === "support/new") return <BasicFormPage kind="support" state={state} />;
-  if (path === "support/menu") return <CustomerMenuSupportPage />;
-  if (path.startsWith("support/YC-")) return <CustomerSupportProgress id={sections[1]} />;
-  if (path === "buyback") return <BuybackOverviewPage />;
-  if (path === "buyback/new") return <BasicFormPage kind="buyback-new" state={state} />;
-  if (path === "buyback/documents") return <BuybackDocumentsPage />;
-  if (path === "buyback/documents/confirmed") return <BuybackReceiptConfirmedPage />;
-  if (path === "buyback/issue") return <BuybackDocumentsPage initialOverlay="issue" />;
-  if (path === "notifications") return <DoloresPage title="Thông báo & nhắc nhở" description="Theo dõi hóa đơn, hợp đồng và máy của cửa hàng." actions={<><DoloresButton href="/dashboard">Về tổng quan</DoloresButton><DoloresButton href="/dashboard/notifications?view=unread" variant="secondary">Chưa đọc</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>{view === "unread" ? "Thông báo chưa đọc" : "Danh sách thông báo"}</DoloresPanelTitle><DoloresTable headers={["Nội dung", "Liên quan", "Ngày", "Trạng thái"]} rows={[[<a className="font-semibold hover:text-[#B81724]" href="/dashboard/invoices/2026-09" key="invoice">Hóa đơn tháng 09 ›</a>, "C-204 · 2.750.000 đ", "08/10/2026", "Chưa đọc"], [<a className="font-semibold hover:text-[#B81724]" href="/dashboard/contracts/C-204" key="expiry">Hợp đồng sắp hết hạn ›</a>, "C-204 · S-018", "01/10/2026", "Cần xử lý"]]} /></DoloresPanel></DoloresPage>;
-  if (path === "menu/applied") return <MenuEditPage freshMilk={false} initialStage="pending" />;
-  return <DoloresPage title="Không tìm thấy màn hình" description={`Đường dẫn /dashboard/${path} chưa được ánh xạ tới một frame Figma.`} actions={<DoloresButton href="/dashboard">Về tổng quan</DoloresButton>}><DoloresNotice title="Không có màn tương ứng">Chọn một mục trong menu bên trái để tiếp tục.</DoloresNotice></DoloresPage>;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contracts) return <ContractsPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractDetail("C-204")) return <ContractDetailPage id="C-204" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractDetail("C-205")) return <ContractDetailPage id="C-205" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.newContract) return <BasicFormPage kind="contract-request" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractExpiry) return <CustomerExpiryPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractEndEarly) return <BasicFormPage kind="early-termination" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractEnd) return <DoloresPage title="Kết thúc hợp đồng & hoàn cọc" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.contractDepositComplete}>Xem hoàn cọc đã thực hiện</DoloresButton><DoloresButton href={PATH_DASHBOARD.contracts} variant="secondary">Xem hợp đồng</DoloresButton></>}><DoloresNotice title="Bước hiện tại: Moderator quyết toán">Hợp đồng kết thúc sau khi thu hồi, đánh giá máy và đối chiếu theo thỏa thuận.</DoloresNotice><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng / máy" value="C-204 / S-018" /><DoloresField label="Ngày dừng thuê" value="31/10/2026" /><DoloresField label="Tiền cọc" value="10.000.000 đ" /><DoloresField label="Kết quả Technician" value="Đã thu hồi; hư hại theo biên bản" /><DoloresField label="Khấu trừ theo hợp đồng" value="2.000.000 đ" /><DoloresField label="Cọc còn hoàn" value="8.000.000 đ" /><DoloresField label="Thông báo / hạn hoàn" value="01/11/2026 / 12/11/2026" /></DoloresFieldGrid></DoloresPanel></DoloresPage>;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.contractDepositComplete) return <DoloresPage title="Hoàn cọc đã hoàn tất" description="Theo dõi thông tin và thực hiện yêu cầu của cửa hàng." actions={<><DoloresButton onClick={() => window.print()}>Xem chứng từ hoàn cọc</DoloresButton><DoloresButton href={PATH_DASHBOARD.contractEnd} variant="secondary">Xem quyết toán</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>Thông tin chi tiết</DoloresPanelTitle><DoloresFieldGrid><DoloresField label="Hợp đồng / máy" value="C-204 / S-018" /><DoloresField label="Tech thu hồi & đánh giá" value="Đã hoàn tất" /><DoloresField label="Cọc giữ / khấu trừ" value="10.000.000 đ / 2.000.000 đ" /><DoloresField label="Số tiền đã hoàn" value="8.000.000 đ" /><DoloresField label="Ngày hoàn" value="03/11/2026" /><DoloresField label="Chứng từ" value="HOAN-COC-C204.jpg" /></DoloresFieldGrid></DoloresPanel><DoloresNotice title="Dữ liệu minh họa">Không có khoản hoàn tiền thật nào được thực hiện bởi giao diện frontend.</DoloresNotice></DoloresPage>;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.machines) return <MachinesPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.machineSubstitute || getCentralizedDashboardPath(path) === PATH_DASHBOARD.machineDetail("S-022")) return <CustomerReplacementPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.machineHistory) return <CustomerMachineHistoryPage />;
+  if (getCentralizedDashboardPath(path).startsWith(PATH_DASHBOARD.machines + "/")) return <MachineDetailPage id={sections[1]} state={state} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoices) return <InvoicesPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceReminder) return <CustomerInvoiceReminderPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoicePayment) return <BasicFormPage kind="payment" state={state} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceStandard) return <StandardInvoiceDetailPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceStandardPayment) return <BasicFormPage kind="standard-payment" state={state} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceShortfall) return <InvoiceActionPage kind="shortfall" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceRefund) return <InvoiceActionPage kind="refund" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceDetail("2026-08")) return <InvoiceActionPage kind="first-month" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.invoiceDetail("2026-09")) return <InvoiceDetailPage />;
+  if (getCentralizedDashboardPath(path).startsWith(PATH_DASHBOARD.invoices + "/")) return <InvoiceDetailPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menu) return <MenuPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menuEspresso) return <MenuEditPage freshMilk={false} initialCoffee={state === "20g" || state === "both" ? "20" : "18"} initialWater={state === "60" || state === "both" ? "60" : "40"} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menuFreshMilk) return <MenuEditPage freshMilk initialCoffee={state === "20g" ? "20" : "18"} initialMilk={state === "missing" ? "" : state === "150" ? "150" : "120"} initialError={state === "missing"} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menuAddDish) return <CustomerDishPage initialView={view} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menuSent) return <MenuEditPage freshMilk={false} initialStage="pending" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.support) return <CustomerSupportList />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.newSupport) return <BasicFormPage kind="support" state={state} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.supportMenu) return <CustomerMenuSupportPage />;
+  if (getCentralizedDashboardPath(path).startsWith(PATH_DASHBOARD.supportDetail("YC-"))) return <CustomerSupportProgress id={sections[1]} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.buyback) return <BuybackOverviewPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.newBuyback) return <BasicFormPage kind="buyback-new" state={state} />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.buybackDocuments) return <BuybackDocumentsPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.buybackDocumentsConfirmed) return <BuybackReceiptConfirmedPage />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.buybackIssue) return <BuybackDocumentsPage initialOverlay="issue" />;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.notifications) return <DoloresPage title="Thông báo & nhắc nhở" description="Theo dõi hóa đơn, hợp đồng và máy của cửa hàng." actions={<><DoloresButton href={PATH_DASHBOARD.root}>Về tổng quan</DoloresButton><DoloresButton href={buildRouteUrl(PATH_DASHBOARD.notifications, { "view": "unread" })} variant="secondary">Chưa đọc</DoloresButton></>}><DoloresPanel><DoloresPanelTitle>{view === "unread" ? "Thông báo chưa đọc" : "Danh sách thông báo"}</DoloresPanelTitle><DoloresTable headers={["Nội dung", "Liên quan", "Ngày", "Trạng thái"]} rows={[[<a className="font-semibold hover:text-[#B81724]" href={PATH_DASHBOARD.invoiceDetail("2026-09")} key="invoice">Hóa đơn tháng 09 ›</a>, "C-204 · 2.750.000 đ", "08/10/2026", "Chưa đọc"], [<a className="font-semibold hover:text-[#B81724]" href={PATH_DASHBOARD.contractDetail("C-204")} key="expiry">Hợp đồng sắp hết hạn ›</a>, "C-204 · S-018", "01/10/2026", "Cần xử lý"]]} /></DoloresPanel></DoloresPage>;
+  if (getCentralizedDashboardPath(path) === PATH_DASHBOARD.menuApplied) return <MenuEditPage freshMilk={false} initialStage="pending" />;
+  return <DoloresPage title="Không tìm thấy màn hình" description={`Đường dẫn ${getCentralizedDashboardPath(path)} chưa được ánh xạ tới một frame Figma.`} actions={<DoloresButton href={PATH_DASHBOARD.root}>Về tổng quan</DoloresButton>}><DoloresNotice title="Không có màn tương ứng">Chọn một mục trong menu bên trái để tiếp tục.</DoloresNotice></DoloresPage>;
 }
