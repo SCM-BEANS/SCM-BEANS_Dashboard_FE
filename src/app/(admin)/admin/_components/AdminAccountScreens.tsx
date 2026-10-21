@@ -7,7 +7,7 @@ import { useRouteView } from "@/app/(admin)/admin/_components/useRouteView";
 import { DoloresButton, DoloresField, DoloresFieldGrid, DoloresNotice, DoloresPanel, DoloresPanelTitle, DoloresTable } from "@/app/_ui/dolores/DoloresUI";
 import { DoloresPage } from "@/app/_shell/dolores/DoloresShell";
 import { useTenants } from "@/hooks/dolores/useTenants";
-import { useAdminUser, useAdminUserMutations, useAdminUsers } from "@/hooks/idaas/useAdminUsers";
+import { useAdminUser, useAdminUserMutations, useAdminUsers } from "@/hooks/dolores/useAdminUsers";
 import {
   AdminUserCreateRequestSchema,
   AdminUserUpdateRequestSchema,
@@ -15,7 +15,7 @@ import {
   type AdminUserCreateRequest,
   type AdminUserRole,
   type AdminUserUpdateRequest,
-} from "@/schemas/idaas/adminUsers";
+} from "@/schemas/dolores/adminUsers";
 import type { AdminAccountView } from "@/routes/query";
 
 type AccountForm = { name: string; email: string; role: AdminUserRole; tenantId: string };

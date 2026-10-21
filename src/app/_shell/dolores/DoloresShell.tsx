@@ -74,7 +74,7 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
         </nav>
         <div className="mt-auto pt-4 text-xs leading-[1.45] text-[#706561]">
           <p>Không gian {ROLE_LABEL[role]}</p>
-          <p>{isAdminUsersRoute ? "IDaaS • Quản lý tài khoản" : "Dolores • Dữ liệu minh họa"}</p>
+          <p>{isAdminUsersRoute ? "Dolores • Quản lý tài khoản" : "Dolores • Dữ liệu minh họa"}</p>
         </div>
       </aside>
       <DoloresShellFocusContext.Provider value={{ setFocusLabel }}>

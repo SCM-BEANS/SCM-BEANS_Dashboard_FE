@@ -1,6 +1,9 @@
-import axios, { type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 import { z } from 'zod';
+import axiosClient from '@/lib/axios/axiosClient';
+import { AUTH } from '@/constants/endpoints';
+import { PATH_AUTH } from '@/routes/path';
 
 export type DoloresErrorKind =
   | 'unauthenticated'
@@ -31,6 +34,27 @@ const doloresClient = axios.create({
   headers: { Accept: 'application/json' },
 });
 
+let refreshPromise: Promise<string> | null = null;
+
+function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const response: any = await axiosClient.post(AUTH.REFRESH, {});
+      const accessToken = response?.data?.access_token || response?.access_token;
+      if (typeof accessToken !== 'string' || !accessToken) {
+        throw new Error('Token refresh response did not include an access token.');
+      }
+
+      Cookies.set('access_token', accessToken, { expires: 15 / (24 * 60), secure: true });
+      return accessToken;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
 doloresClient.interceptors.request.use((config) => {
   const token = Cookies.get('access_token');
   if (!token) {
@@ -43,7 +67,7 @@ doloresClient.interceptors.request.use((config) => {
 
 doloresClient.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
+  async (error: unknown) => {
     if (error instanceof DoloresApiError || axios.isCancel(error)) {
       return Promise.reject(error);
     }
@@ -52,6 +76,22 @@ doloresClient.interceptors.response.use(
     }
 
     const status = error.response?.status ?? null;
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const accessToken = await refreshAccessToken();
+        originalRequest.headers.set('Authorization', 'Bearer ' + accessToken);
+        return doloresClient.request(originalRequest);
+      } catch {
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+        if (typeof window !== 'undefined') window.location.href = PATH_AUTH.login;
+        return Promise.reject(new DoloresApiError('unauthenticated', 401, 'Dolores authentication failed.'));
+      }
+    }
+
     if (status === 401) {
       return Promise.reject(new DoloresApiError('unauthenticated', status, 'Dolores authentication failed.'));
     }
