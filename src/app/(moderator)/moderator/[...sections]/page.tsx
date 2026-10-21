@@ -1,6 +1,6 @@
 import { isSupportedModeratorSection } from "@/routes/routes";
 import { notFound } from "next/navigation";
-import { ModeratorSectionPage } from "@/components/dolores/ModeratorDashboardScreens";
+import { ModeratorSectionPage } from "@/app/(moderator)/moderator/_components/ModeratorDashboardScreens";
 
 export default async function ModeratorSectionRoute({ params }: { params: Promise<{ sections: string[] }> }) {
   const { sections } = await params;

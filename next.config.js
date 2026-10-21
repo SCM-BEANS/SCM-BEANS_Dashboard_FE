@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const doloresApiOrigin = process.env.DOLORES_API_URL?.replace(/\/+$/, '');
+
 const nextConfig = {
   // Stricter React mode — catches double-invoke issues in dev
   reactStrictMode: true,
@@ -33,13 +35,15 @@ const nextConfig = {
     ],
   },
 
-  // Proxy API requests to avoid CORS issues during development
+  // Proxy the separate Dolores API to avoid browser CORS requests.
   async rewrites() {
     return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://idaas.netbird.cloud:4000/api/v1'}/:path*`, // Proxy to Golang Backend
-      },
+      ...(doloresApiOrigin
+        ? [{
+            source: '/api/dolores/v1/:path*',
+            destination: doloresApiOrigin + '/api/v1/:path*',
+          }]
+        : []),
     ];
   },
 };

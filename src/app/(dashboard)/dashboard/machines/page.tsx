@@ -1,4 +1,4 @@
-import { CustomerSectionPage } from "@/components/dolores/CustomerDashboardScreens";
+import { CustomerSectionPage } from "@/app/(dashboard)/dashboard/_components/CustomerDashboardScreens";
 
 export default async function UserMachinesPage({ searchParams }: { searchParams: Promise<{ view?: string; state?: string }> }) {
   const query = await searchParams;

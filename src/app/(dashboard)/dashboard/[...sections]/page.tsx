@@ -1,5 +1,5 @@
 import { isSupportedCustomerSection } from "@/routes/routes";
-import { CustomerSectionPage } from "@/components/dolores/CustomerDashboardScreens";
+import { CustomerSectionPage } from "@/app/(dashboard)/dashboard/_components/CustomerDashboardScreens";
 import { notFound } from "next/navigation";
 
 export default async function CustomerSectionRoute({

@@ -1,4 +1,4 @@
-import AdminMachineDetailScreen from "@/components/dolores/AdminMachineDetailScreen";
+import AdminMachineDetailScreen from "@/app/(admin)/admin/_components/AdminMachineDetailScreen";
 
 export default async function AdminMachineDetailPage({
   params,

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Coffee, Lock, Mail, ArrowRight, User, KeyRound } from 'lucide-react';
 import { authService } from '@/services/auth.service';
-import { PATH_AUTH, PATH_DASHBOARD } from "@/routes/path";
+import { getPrimaryRoleHomePath } from '@/lib/auth/roles';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -29,6 +29,12 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
   const [isResending, setIsResending] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'role_unavailable') {
+      setErrorMsg('Tài khoản chưa được gán vai trò phù hợp. Vui lòng liên hệ quản trị viên.');
+    }
+  }, []);
 
   const handleResendOTP = async () => {
     if (!email) {
@@ -69,21 +75,25 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
           return;
         }
 
+        if (!response?.access_token) {
+          throw new Error('Phản hồi đăng nhập không có access token.');
+        }
+
+        const roleHome = getPrimaryRoleHomePath(response.access_token);
+        if (!roleHome) {
+          authService.logout();
+          throw new Error('Không tìm thấy role hợp lệ trong tài khoản. Vui lòng liên hệ quản trị viên.');
+        }
+
         localStorage.setItem('email', email);
         window.dispatchEvent(new CustomEvent('auth-change'));
         setSuccessMsg('Đăng nhập thành công!');
         
         setTimeout(() => {
-          if (onSuccess) {
-            onSuccess();
-          } else if (window.location.pathname === PATH_AUTH.login) {
-            router.push(PATH_DASHBOARD.root);
-          } else {
-            router.refresh();
-          }
+          if (onSuccess) onSuccess();
+          else router.replace(roleHome);
         }, 500);
       } catch (error: any) {
-        console.error('Login error:', error);
         const msgStr = typeof error === 'string' ? error : (error?.message || error?.error || error?.title || JSON.stringify(error));
         
         // Handle MFA Required Case if returned as an error
@@ -92,10 +102,15 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
           setMode('mfa_verify');
           setSuccessMsg('Vui lòng nhập mã xác thực 2 bước (2FA) để tiếp tục.');
         } 
-        // Handle unverified email (usually 403 or contains verification keyword)
-        else if (msgStr.toLowerCase().includes('verif') || error?.status === 403 || error?.statusCode === 403) {
+        else if (msgStr.toLowerCase().includes('temporarily locked') || msgStr.toLowerCase().includes('too many failed login attempts')) {
+          setErrorMsg('Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau 15 phút.');
+        }
+        // Only verification errors should open the OTP form; other 403 errors stay visible.
+        else if (msgStr.toLowerCase().includes('verif')) {
           setSuccessMsg('Tài khoản chưa xác thực. OTP đã được gửi về email của bạn.');
           setMode('verify');
+        } else if (msgStr.toLowerCase().includes('invalid credentials')) {
+          setErrorMsg('Email hoặc mật khẩu không đúng.');
         } else {
           // If error is an empty object {}, msgStr will be "[object Object]" or "{}"
           const finalErrorMsg = (msgStr === '{}' || msgStr === '[object Object]') 
@@ -163,20 +178,24 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
       }
     } else if (mode === 'mfa_verify') {
       try {
-        await authService.loginMfa({ temp_token: tempToken, code: otpCode });
+        const response = await authService.loginMfa({ temp_token: tempToken, code: otpCode });
+        if (!response?.access_token) {
+          throw new Error('Phản hồi đăng nhập không có access token.');
+        }
+
+        const roleHome = getPrimaryRoleHomePath(response.access_token);
+        if (!roleHome) {
+          authService.logout();
+          throw new Error('Không tìm thấy role hợp lệ trong tài khoản. Vui lòng liên hệ quản trị viên.');
+        }
         
         localStorage.setItem('email', email);
         window.dispatchEvent(new CustomEvent('auth-change'));
         setSuccessMsg('Đăng nhập thành công!');
         
         setTimeout(() => {
-          if (onSuccess) {
-            onSuccess();
-          } else if (window.location.pathname === PATH_AUTH.login) {
-            router.push(PATH_DASHBOARD.root);
-          } else {
-            router.refresh();
-          }
+          if (onSuccess) onSuccess();
+          else router.replace(roleHome);
         }, 500);
       } catch (error: any) {
         console.error('MFA Login error:', error);

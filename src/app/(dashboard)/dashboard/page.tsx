@@ -1,5 +1,5 @@
-import { CustomerOverviewPage } from "@/components/dolores/DoloresOverviewPages";
+import { CustomerOverview } from "@/app/(dashboard)/dashboard/_components/CustomerOverview";
 
 export default function CustomerDashboardPage() {
-  return <CustomerOverviewPage />;
+  return <CustomerOverview />;
 }

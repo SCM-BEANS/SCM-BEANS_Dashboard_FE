@@ -1,4 +1,4 @@
-import { DoloresShell } from "@/components/dolores/DoloresShell";
+import { DoloresShell } from "@/app/_shell/dolores/DoloresShell";
 import type { ReactNode } from "react";
 
 export default function AdminLayout({

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
-import { Providers } from "./providers";
+import { Providers } from "./_providers/ThemeProvider";
 import type { ReactNode } from "react";
 
 const inter = Inter({

@@ -1,5 +1,5 @@
 import { resolveAdminReportView } from "@/routes/query";
-import AdminReportScreens from "@/components/dolores/AdminReportScreens";
+import AdminReportScreens from "@/app/(admin)/admin/_components/AdminReportScreens";
 
 export default async function AdminReportsPage({
   searchParams,

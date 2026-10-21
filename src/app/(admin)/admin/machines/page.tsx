@@ -1,5 +1,5 @@
 import { resolveAdminMachineView } from "@/routes/query";
-import AdminMachineScreens from "@/components/dolores/AdminMachineScreens";
+import AdminMachineScreens from "@/app/(admin)/admin/_components/AdminMachineScreens";
 
 export default async function AdminMachinesPage({
   searchParams,

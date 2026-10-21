@@ -1,5 +1,5 @@
-import { AdminOverviewPage } from "@/components/dolores/DoloresOverviewPages";
+import { AdminOverview } from "@/app/(admin)/admin/_components/AdminOverview";
 
 export default function AdminPage() {
-  return <AdminOverviewPage />;
+  return <AdminOverview />;
 }

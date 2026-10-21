@@ -3,6 +3,24 @@ import axiosClient from '@/lib/axios/axiosClient';
 import { AUTH } from '@/constants/endpoints';
 import { LoginResponse, ApiResponse, User } from '@/types/api.type';
 
+const logRolesFromAccessToken = (accessToken: string) => {
+  try {
+    // JWT claims are read only for diagnostics here, never for authorization.
+    const payload = accessToken.split('.')[1];
+    if (!payload) throw new Error('Missing JWT payload');
+
+    const base64Payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = JSON.parse(atob(base64Payload.padEnd(Math.ceil(base64Payload.length / 4) * 4, '=')));
+    const roles = Array.isArray(decoded.roles)
+      ? decoded.roles.filter((role: unknown): role is string => typeof role === 'string')
+      : [];
+
+    console.info('[Auth] Roles after login:', roles);
+  } catch {
+    console.info('[Auth] Roles after login: unavailable in access token');
+  }
+};
+
 export const authService = {
   /**
    * Logs in a user, extracts tokens, and sets them in js-cookie.
@@ -17,6 +35,7 @@ export const authService = {
     if (access_token) {
       Cookies.set('access_token', access_token, { expires: 15 / (24 * 60), secure: true }); // 15 mins
       // refresh_token is automatically set by the backend via HttpOnly Set-Cookie header
+      logRolesFromAccessToken(access_token);
     }
 
     return response;
@@ -31,6 +50,7 @@ export const authService = {
     const { access_token } = response;
     if (access_token) {
       Cookies.set('access_token', access_token, { expires: 15 / (24 * 60), secure: true }); // 15 mins
+      logRolesFromAccessToken(access_token);
     }
     
     return response;

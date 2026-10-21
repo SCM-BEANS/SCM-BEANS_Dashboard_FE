@@ -1,8 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { cookies } from 'next/headers';
+import { getIdaasApiBaseUrl } from './idaasTarget';
 
 const axiosServer = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://idaas.netbird.cloud:4000/api/v1',
   headers: {
     'Content-Type': 'application/json',
     'Bypass-Tunnel-Reminder': 'true', // Required for loca.lt to bypass the warning page
@@ -13,6 +13,7 @@ const axiosServer = axios.create({
 // Request Interceptor
 axiosServer.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    config.baseURL = await getIdaasApiBaseUrl();
     // Note: cookies() is a server-only function and must be called during request time
     const cookieStore = await cookies();
     const token = cookieStore.get('access_token')?.value;

@@ -1,7 +1,5 @@
-import { isAdminIoTMachineView } from "@/routes/query";
-import AdminIoTScreens from "@/components/dolores/AdminIoTScreens";
+import AdminIoTScreens from "@/app/(admin)/admin/_components/AdminIoTScreens";
 
-export default async function AdminIoTPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
-  const { view } = await searchParams;
-  return <AdminIoTScreens showCustomerMachines={isAdminIoTMachineView(view)} />;
+export default function AdminIoTPage() {
+  return <AdminIoTScreens />;
 }
