@@ -77,9 +77,9 @@ export function DoloresNotice({
   const toneClass =
     tone === "warning" ? "bg-[#FFF2E6]" : tone === "success" ? "bg-[#ECF6EF]" : "bg-[#F9E9EA]";
   return (
-    <aside className={"flex flex-col gap-2 rounded-[10px] p-4 text-sm leading-normal text-[#302927] " + toneClass}>
-      <p className="font-medium">{title}</p>
-      <div>{children}</div>
+    <aside className={"flex flex-col gap-2 rounded-[10px] p-4 text-sm leading-normal !text-black " + toneClass}>
+      <p className="font-medium !text-black">{title}</p>
+      <div className="!text-black">{children}</div>
     </aside>
   );
 }

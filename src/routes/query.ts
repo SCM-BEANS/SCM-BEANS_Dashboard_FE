@@ -27,7 +27,7 @@ export function buildRouteUrl(pathname: string, updates: QueryUpdates, currentSe
 export const ADMIN_ACCOUNT_VIEWS = ["list", "create", "tenant", "staff"] as const;
 export const ADMIN_CONTRACT_VIEWS = ["list", "detail", "history"] as const;
 export const ADMIN_MACHINE_VIEWS = ["inventory", "stock", "loan-history", "s022", "standard", "mb017", "repair-history", "s018", "repair-history-s018"] as const;
-export const ADMIN_MENU_VIEWS = ["list", "items", "detail", "add", "missing", "ingredients", "edit-espresso", "edit-espresso-60", "edit-espresso-20g", "send", "sent"] as const;
+export const ADMIN_MENU_VIEWS = ["items", "detail", "add", "missing", "ingredients", "edit-espresso", "edit-espresso-60", "edit-espresso-20g", "send", "sent"] as const;
 export const ADMIN_STORE_VIEWS = ["list", "detail", "create"] as const;
 export const ADMIN_REPORT_VIEWS = ["overview", "customers"] as const;
 export const ADMIN_CUSTOMER_VIEWS = ["list", "customer", "machines"] as const;
@@ -55,8 +55,8 @@ export const resolveAdminContractView = (view: unknown): AdminContractView =>
 export const resolveAdminMachineView = (view: unknown): AdminMachineView =>
   resolveView(view, ADMIN_MACHINE_VIEWS, "inventory");
 
-export const resolveAdminMenuView = (view: unknown, machine?: string): AdminMenuView =>
-  resolveView(view, ADMIN_MENU_VIEWS, machine === "S-018" ? "items" : "list");
+export const resolveAdminMenuView = (view: unknown): AdminMenuView =>
+  resolveView(view, ADMIN_MENU_VIEWS, "items");
 
 export const resolveAdminStoreView = (view: unknown): AdminStoreView =>
   resolveView(view, ADMIN_STORE_VIEWS, "list");

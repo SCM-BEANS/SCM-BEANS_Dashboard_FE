@@ -1,5 +1,10 @@
 import AdminIoTScreens from "@/app/(admin)/admin/_components/AdminIoTScreens";
 
-export default function AdminIoTPage() {
-  return <AdminIoTScreens />;
+export default async function AdminIoTPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tenantId?: string }>;
+}) {
+  const { tenantId } = await searchParams;
+  return <AdminIoTScreens selectedTenantId={tenantId} />;
 }

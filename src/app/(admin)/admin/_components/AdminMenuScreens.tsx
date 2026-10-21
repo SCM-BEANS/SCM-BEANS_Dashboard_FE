@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { DoloresApiErrorState, DoloresEmptyState, DoloresLoadingState } from '@/app/_ui/dolores/DoloresApiState';
 import {
   DoloresButton,
@@ -27,7 +28,7 @@ function lines(value: string): string[] {
 }
 
 export default function AdminMenuScreens({
-  initialView = 'list',
+  initialView = 'items',
   initialRecipeId = null,
   basePath = PATH_ADMIN.menu,
 }: {
@@ -36,9 +37,11 @@ export default function AdminMenuScreens({
   basePath?: string;
 }) {
   const [view] = useRouteView<AdminMenuView>(initialView);
-  const isListing = view === 'list' || view === 'items';
+  const isListing = view === 'items';
   const recipes = useGlobalRecipes(isListing);
-  const recipeDetail = useGlobalRecipe(view === 'detail' ? initialRecipeId : null);
+  const isRecipeId = initialRecipeId !== null && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(initialRecipeId);
+  const detailView = view === 'detail' || view.startsWith('edit-') || view === 'send' || view === 'sent';
+  const recipeDetail = useGlobalRecipe(detailView && isRecipeId ? initialRecipeId : null);
   const publish = usePublishGlobalRecipe();
   const [name, setName] = useState('');
   const [stepsText, setStepsText] = useState('');
@@ -75,7 +78,7 @@ export default function AdminMenuScreens({
 
   const linkTo = (nextView: AdminMenuView, id?: string) =>
     buildRouteUrl(basePath, { view: nextView, id });
-  const description = 'Quản lý các công thức Global được chia sẻ trên nền tảng Dolores.';
+  const description = 'Quản lý Global Menu và các công thức được chia sẻ trên nền tảng Dolores.';
 
   function preparePublish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,51 +115,64 @@ export default function AdminMenuScreens({
     });
   }
 
-  if (isListing) {
+  if (view === 'items') {
     const rows = (recipes.data ?? []).map((recipe) => [
-      <a className="font-semibold hover:text-[#B81724]" href={linkTo('detail', recipe.id)} key={recipe.id}>{recipe.name}</a>,
+      <Link className="font-semibold hover:text-[#B81724]" href={linkTo('detail', recipe.id)} key={recipe.id}>{recipe.name}</Link>,
       recipe.steps.length,
       recipe.dosageBounds.length ? recipe.dosageBounds.join(' · ') : 'Không có giới hạn định lượng',
-      <a className="font-medium text-[#B81724]" href={linkTo('detail', recipe.id)} key={'detail-' + recipe.id}>Xem chi tiết</a>,
+      <div className="flex flex-wrap gap-x-3 gap-y-1" key={'actions-' + recipe.id}>
+        <Link className="font-medium text-[#B81724]" href={linkTo('detail', recipe.id)}>Chi tiết</Link>
+        <Link className="font-medium text-[#706561]" href={linkTo('edit-espresso', recipe.id)}>Chỉnh sửa</Link>
+      </div>,
     ]);
 
     return (
       <DoloresPage
-        title="Global Menu & công thức"
+        title="Global Menu · các công thức"
         description={description}
         actions={<>
-          <DoloresButton href={linkTo('add')}>Phát hành công thức</DoloresButton>
+          <DoloresButton href={linkTo('add')}>Thêm món</DoloresButton>
+          <DoloresButton href={linkTo('edit-espresso')} variant="secondary">Chỉnh công thức</DoloresButton>
+          <DoloresButton href={linkTo('send')} variant="secondary">Gửi menu xuống máy</DoloresButton>
           <DoloresButton variant="secondary" onClick={() => void recipes.refetch()} disabled={recipes.isFetching}>Tải lại</DoloresButton>
         </>}
       >
         <DoloresPanel>
-          <DoloresPanelTitle>Công thức Global</DoloresPanelTitle>
+          <DoloresPanelTitle>Danh sách công thức Global</DoloresPanelTitle>
           {recipes.isPending && !recipes.data && <DoloresLoadingState />}
           {recipes.isError && <DoloresApiErrorState error={recipes.error} onRetry={() => void recipes.refetch()} />}
           {recipes.data?.length === 0 && <DoloresEmptyState message="API chưa trả về công thức Global nào." />}
           {recipes.data && recipes.data.length > 0 && <DoloresTable
-            headers={['Công thức', 'Số bước', 'Giới hạn định lượng', 'Thao tác']}
+            headers={['Món', 'Số bước', 'Giới hạn định lượng', 'Thao tác']}
             rows={rows}
           />}
         </DoloresPanel>
-        <DoloresNotice title="Phạm vi thao tác">
-          Phát hành recipe sẽ tạo công thức Global mới, biên dịch lại cấu hình liên quan và yêu cầu đồng bộ trên mọi máy. API không hỗ trợ sửa recipe tại chỗ hoặc gửi riêng một phiên bản menu đến một máy.
+        <DoloresNotice title="Dữ liệu API">
+          Danh sách này chỉ hiển thị recipe thực tế từ backend. API không cung cấp thành phần bắt buộc hoặc định lượng mẫu theo nguyên liệu; thao tác chỉnh sửa và gửi riêng xuống máy sẽ báo rõ giới hạn ở màn hình tiếp theo.
         </DoloresNotice>
       </DoloresPage>
     );
   }
 
-  if (view === 'detail') {
+  if (view === 'detail' || view.startsWith('edit-')) {
     const recipe = recipeDetail.data;
+    const editing = view.startsWith('edit-');
     return (
       <DoloresPage
-        title={recipe?.name ?? 'Chi tiết công thức Global'}
+        title={recipe?.name ?? (editing ? 'Chỉnh sửa công thức' : 'Chi tiết công thức Global')}
         description={description}
-        actions={<DoloresButton href={linkTo('items')}>Về danh sách công thức</DoloresButton>}
+        actions={<>
+          {editing && recipe && <DoloresButton href={linkTo('detail', recipe.id)} variant="secondary">Mở chi tiết</DoloresButton>}
+          <DoloresButton href={linkTo('items')}>Về danh sách công thức</DoloresButton>
+        </>}
       >
-        {!initialRecipeId && <DoloresNotice title="Thiếu mã công thức" tone="warning">Mở chi tiết từ một công thức trong danh sách để tải đúng tài nguyên.</DoloresNotice>}
-        {initialRecipeId && recipeDetail.isPending && !recipe && <DoloresLoadingState />}
-        {initialRecipeId && recipeDetail.isError && <DoloresApiErrorState error={recipeDetail.error} onRetry={() => void recipeDetail.refetch()} />}
+        {!isRecipeId && <DoloresNotice title="Chưa chọn công thức từ API" tone="warning">
+          {initialRecipeId
+            ? 'Mã được truyền từ luồng menu cũ không phải ID recipe API. Quay lại danh sách và chọn một công thức thật.'
+            : 'Mở màn hình này từ một công thức trong danh sách để tải dữ liệu chi tiết.'}
+        </DoloresNotice>}
+        {isRecipeId && recipeDetail.isPending && !recipe && <DoloresLoadingState />}
+        {isRecipeId && recipeDetail.isError && <DoloresApiErrorState error={recipeDetail.error} onRetry={() => void recipeDetail.refetch()} />}
         {recipe && <>
           <DoloresPanel>
             <DoloresPanelTitle>Các bước pha chế</DoloresPanelTitle>
@@ -170,8 +186,10 @@ export default function AdminMenuScreens({
               ? <ul className="list-disc space-y-2 pl-5 text-sm leading-6">{recipe.dosageBounds.map((bound, index) => <li key={index}>{bound}</li>)}</ul>
               : <p className="text-sm text-[#706561]">Recipe không khai báo giới hạn định lượng.</p>}
           </DoloresPanel>
-          <DoloresNotice title="Recipe Global không hỗ trợ sửa trực tiếp">
-            API publish chỉ tạo recipe mới và từ chối ID đã tồn tại. Thay thế recipe cần xóa recipe cũ rồi phát hành recipe mới; trang này không tự thực hiện thao tác xóa.
+          <DoloresNotice title={editing ? 'Chỉ xem được dữ liệu công thức' : 'Recipe Global không hỗ trợ sửa trực tiếp'}>
+            {editing
+              ? 'API hiện có chỉ đọc danh sách/chi tiết và tạo Global Recipe mới. Không có endpoint cập nhật hoặc xóa để lưu các thay đổi tại màn hình này.'
+              : 'API hiện có chỉ đọc danh sách/chi tiết và tạo Global Recipe mới. Không có endpoint cập nhật hoặc xóa recipe hiện tại.'}
           </DoloresNotice>
         </>}
       </DoloresPage>
@@ -248,17 +266,37 @@ export default function AdminMenuScreens({
     );
   }
 
-  const unsupportedEdit = view.startsWith('edit-');
+  if (view === 'send' || view === 'sent') {
+    const selectedRecipe = recipeDetail.data;
+    return (
+      <DoloresPage
+        title={view === 'sent' ? 'Trạng thái gửi menu' : 'Gửi menu đến máy Smart'}
+        description={description}
+        actions={<DoloresButton href={linkTo('items')} variant="secondary">Về danh sách công thức</DoloresButton>}
+      >
+        <DoloresNotice title="API chưa hỗ trợ gửi menu riêng theo máy" tone="warning">
+          API hiện tại chỉ cung cấp đọc Global Recipe và phát hành công thức mới. Không có endpoint gửi một menu đến máy cụ thể hoặc truy vấn trạng thái áp dụng; phát hành recipe Global có phạm vi đồng bộ toàn hệ thống.
+        </DoloresNotice>
+        {initialRecipeId && !isRecipeId && <DoloresNotice title="Không nhận diện được recipe đã chọn" tone="warning">Mã recipe trong URL không hợp lệ với API Dolores.</DoloresNotice>}
+        {isRecipeId && recipeDetail.isPending && !selectedRecipe && <DoloresLoadingState />}
+        {isRecipeId && recipeDetail.isError && <DoloresApiErrorState error={recipeDetail.error} onRetry={() => void recipeDetail.refetch()} />}
+        {selectedRecipe && <DoloresPanel>
+          <DoloresPanelTitle>Recipe được chọn · chỉ đọc</DoloresPanelTitle>
+          <p className="text-sm font-medium">{selectedRecipe.name}</p>
+          <p className="mt-2 text-sm text-[#706561]">{selectedRecipe.steps.length} bước · {selectedRecipe.dosageBounds.length} giới hạn định lượng</p>
+        </DoloresPanel>}
+      </DoloresPage>
+    );
+  }
+
   return (
     <DoloresPage
-      title={unsupportedEdit ? 'Không thể sửa Global Recipe tại chỗ' : 'Thao tác menu này chưa được API hỗ trợ'}
+      title={view === 'ingredients' ? 'Thành phần công thức' : 'Thao tác menu này chưa được API hỗ trợ'}
       description={description}
       actions={<DoloresButton href={linkTo('items')}>Về danh sách công thức</DoloresButton>}
     >
-      <DoloresNotice title={unsupportedEdit ? 'API không có thao tác cập nhật recipe' : 'Không có API gửi menu riêng đến máy'} tone="warning">
-        {unsupportedEdit
-          ? 'Backend từ chối publish lại cùng một ID. Thay thế cần xóa recipe đang dùng rồi phát hành bản mới và có thể yêu cầu đồng bộ trên mọi máy; luồng hiện tại không tự xóa recipe.'
-          : 'Không có menu-version hoặc thao tác gửi recipe riêng theo máy trong hợp đồng đang dùng. Publish Global Recipe sẽ yêu cầu đồng bộ toàn hệ thống.'}
+      <DoloresNotice title="API chưa cung cấp dữ liệu thành phần nguyên liệu" tone="warning">
+        Hợp đồng Global Recipe chỉ có tên, các bước và giới hạn định lượng dạng chuỗi. API không trả danh mục nguyên liệu bắt buộc hay dữ liệu định lượng mẫu theo từng thành phần.
       </DoloresNotice>
     </DoloresPage>
   );

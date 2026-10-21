@@ -100,3 +100,11 @@ test('legacy role-specific account creation URLs resolve to one shared create vi
   assert.equal(resolveAdminAccountView('create-moderator'), 'create');
   assert.equal(resolveAdminAccountView('create-technician'), 'create');
 });
+
+test('admin menu opens the recipe list directly and redirects the old overview view', () => {
+  const { resolveAdminMenuView } = loadTypescript('src/routes/query.ts');
+
+  assert.equal(resolveAdminMenuView(undefined), 'items');
+  assert.equal(resolveAdminMenuView('list'), 'items');
+  assert.equal(resolveAdminMenuView('detail'), 'detail');
+});

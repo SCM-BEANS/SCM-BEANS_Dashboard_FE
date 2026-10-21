@@ -37,5 +37,6 @@ export function usePlatformLocations(tenants: Tenant[] | undefined) {
     failedTenants,
     isLoading: results.some((result) => result.isPending),
     retryFailed: () => failedTenants.forEach(({ retry }) => retry()),
+    refetchAll: () => results.forEach((result) => { void result.refetch(); }),
   };
 }
