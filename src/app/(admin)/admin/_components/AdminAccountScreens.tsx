@@ -12,14 +12,13 @@ import {
   AdminUserCreateRequestSchema,
   AdminUserUpdateRequestSchema,
   type AdminUser,
-  type AdminUserCreateRequest,
   type AdminUserRole,
   type AdminUserUpdateRequest,
 } from "@/schemas/idaas/adminUsers";
 import type { AdminAccountView } from "@/routes/query";
 
-type AccountForm = { name: string; email: string; role: AdminUserRole; tenantId: string };
-type Overlay = "role-picker" | "confirm" | "success" | "error" | null;
+type AccountForm = { name: string; email: string; role: AdminUserRole | ""; tenantId: string };
+type Overlay = "confirm" | "success" | "error" | null;
 type PendingAction = "create" | "update" | "disable" | "reactivate" | "reissue";
 
 const roleLabels: Record<AdminUserRole, string> = {
@@ -28,14 +27,8 @@ const roleLabels: Record<AdminUserRole, string> = {
   technician: "Technician",
 };
 const userIdSchema = z.string().uuid();
-const accountViewSchema = z.enum(["list", "create-customer", "create-moderator", "create-technician", "tenant", "staff"]);
+const accountViewSchema = z.enum(["list", "create", "tenant", "staff"]);
 const roleOptions = Object.entries(roleLabels).map(([value, label]) => ({ value, label }));
-
-function roleForCreateView(view: AdminAccountView): AdminUserRole {
-  if (view === "create-technician") return "technician";
-  if (view === "create-moderator") return "moderator";
-  return "owner";
-}
 
 function supportedRole(user: AdminUser): AdminUserRole | null {
   return user.roles.find((role): role is AdminUserRole => role === "owner" || role === "technician" || role === "moderator") ?? null;
@@ -72,6 +65,7 @@ function fieldErrorMessage(error: z.ZodError, field: string): string | undefined
   if (!error.issues.some((issue) => issue.path[0] === field)) return undefined;
   if (field === "name") return "Họ tên cần có từ 2 đến 50 ký tự.";
   if (field === "email") return "Vui lòng nhập email hợp lệ.";
+  if (field === "role") return "Vui lòng chọn vai trò tài khoản.";
   if (field === "tenant_id") return "Chọn một tenant hợp lệ cho tài khoản khách hàng.";
   return "Thông tin chưa hợp lệ.";
 }
@@ -131,8 +125,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
   const [view, setView] = useRouteView<AdminAccountView>(entryView);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>("create");
-  const [returnTo, setReturnTo] = useState<"list" | "form">("list");
-  const [form, setForm] = useState<AccountForm>({ name: "", email: "", role: "owner", tenantId: "" });
+  const [form, setForm] = useState<AccountForm>({ name: "", email: "", role: "", tenantId: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [requestError, setRequestError] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
@@ -143,7 +136,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
   const [pageSize, setPageSize] = useState(20);
 
   const isListView = view === "list";
-  const isCreateView = view.startsWith("create-");
+  const isCreateView = view === "create";
   const isDetailView = view === "tenant" || view === "staff";
   const selectedUserId = accountParam && userIdSchema.safeParse(accountParam).success ? accountParam : null;
   const listParams = useMemo(() => ({
@@ -169,7 +162,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     setOverlay(null);
     setErrors({});
     setRequestError("");
-    if (entryView.startsWith("create-")) setForm({ name: "", email: "", role: roleForCreateView(entryView), tenantId: "" });
+    if (entryView === "create") setForm({ name: "", email: "", role: "", tenantId: "" });
   }, [entryView]);
 
   useEffect(() => {
@@ -190,17 +183,13 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     setForm((current) => ({ ...current, [field]: value, ...(field === "role" && value !== "owner" ? { tenantId: "" } : {}) }));
   };
 
-  const beginCreate = (role: AdminUserRole) => {
+  const beginCreate = () => {
     mutations.clearOneTimeCredential();
-    setForm({ name: "", email: "", role, tenantId: "" });
+    setForm({ name: "", email: "", role: "", tenantId: "" });
     setErrors({});
-    setView(role === "owner" ? "create-customer" : role === "moderator" ? "create-moderator" : "create-technician", { account: null });
+    setRequestError("");
+    setView("create", { account: null });
     setOverlay(null);
-  };
-
-  const openRolePicker = () => {
-    setReturnTo(isListView ? "list" : "form");
-    setOverlay("role-picker");
   };
 
   const openUser = (user: AdminUser) => {
@@ -210,10 +199,10 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     setOverlay(null);
   };
 
-  const buildCreateRequest = (): AdminUserCreateRequest => ({
+  const buildCreateRequest = () => ({
     name: form.name,
     email: form.email,
-    role: form.role,
+    ...(form.role ? { role: form.role } : {}),
     ...(form.role === "owner" && form.tenantId ? { tenant_id: form.tenantId } : {}),
   });
 
@@ -222,7 +211,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     const next: AdminUserUpdateRequest = {};
     if (form.name.trim() !== currentUser.name) next.name = form.name.trim();
     if (form.email.trim() !== currentUser.email) next.email = form.email.trim();
-    if (form.role !== currentRole) next.role = form.role;
+    if (form.role && form.role !== currentRole) next.role = form.role;
     if (form.role === "owner") {
       const nextTenantId = form.tenantId || null;
       if (nextTenantId !== (currentUser.tenant_id ?? null)) next.tenant_id = nextTenantId;
@@ -239,7 +228,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
       const parsed = AdminUserCreateRequestSchema.safeParse(buildCreateRequest());
       if (!parsed.success) {
         const next: Record<string, string> = {};
-        for (const field of ["name", "email", "tenant_id"]) {
+        for (const field of ["name", "email", "role", "tenant_id"]) {
           const message = fieldErrorMessage(parsed.error, field);
           if (message) next[field] = message;
         }
@@ -258,7 +247,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
       const parsed = AdminUserUpdateRequestSchema.safeParse(buildUpdateRequest());
       if (!parsed.success) {
         const next: Record<string, string> = {};
-        for (const field of ["name", "email", "tenant_id"]) {
+        for (const field of ["name", "email", "role", "tenant_id"]) {
           const message = fieldErrorMessage(parsed.error, field);
           if (message) next[field] = message;
         }
@@ -316,7 +305,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     const users = listQuery.data?.items ?? [];
     const total = listQuery.data?.total ?? 0;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
-    pageContent = <DoloresPage title="Tài khoản toàn hệ thống" description="Quản lý tài khoản IDaaS theo vai trò, trạng thái và tenant." actions={<DoloresButton onClick={openRolePicker}>Tạo tài khoản</DoloresButton>}>
+    pageContent = <DoloresPage title="Tài khoản toàn hệ thống" description="Quản lý tài khoản IDaaS theo vai trò, trạng thái và tenant." actions={<DoloresButton onClick={beginCreate}>Tạo tài khoản</DoloresButton>}>
       <DoloresPanel>
         <DoloresPanelTitle>Danh sách tài khoản</DoloresPanelTitle>
         <form className="mb-4 grid gap-3 md:grid-cols-[minmax(200px,1fr)_180px_180px_auto]" onSubmit={applySearch}>
@@ -360,18 +349,17 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     const tenantOptions = [{ value: "", label: tenantsQuery.isLoading ? "Đang tải tenant…" : "Chọn tenant" }, ...tenants.map((tenant) => ({ value: tenant.id, label: `${tenant.name} · ${tenant.id}` }))];
     const tenantError = tenantsQuery.isError ? "Không tải được danh sách tenant." : errors.tenant_id;
     const canSubmitCreate = form.role !== "owner" || (!tenantsQuery.isLoading && !tenantsQuery.isError && tenants.length > 0);
-    const title = form.role === "owner" ? "Tạo tài khoản khách hàng" : `Tạo tài khoản ${roleLabels[form.role]}`;
-    pageContent = <DoloresPage title={title} description="Tài khoản được tạo trong IDaaS; mật khẩu tạm thời chỉ được trả về một lần." actions={<>
+    pageContent = <DoloresPage title="Tạo tài khoản" description="Nhập thông tin và chọn vai trò cho tài khoản mới. Mật khẩu tạm thời chỉ được trả về một lần." actions={<>
       <DoloresButton disabled={mutations.create.isPending || !canSubmitCreate} onClick={() => startSave("create")}>{mutations.create.isPending ? "Đang tạo…" : "Tạo tài khoản"}</DoloresButton>
-      <DoloresButton onClick={openRolePicker} variant="secondary">Đổi vai trò</DoloresButton><DoloresButton onClick={() => setView("list", { account: null })} variant="secondary">Hủy</DoloresButton>
+      <DoloresButton onClick={() => setView("list", { account: null })} variant="secondary">Hủy</DoloresButton>
     </>}>
       <DoloresPanel><DoloresPanelTitle>Thông tin tài khoản</DoloresPanelTitle><DoloresFieldGrid>
         <AccountInput label="Họ tên" required error={errors.name} value={form.name} onChange={(value) => updateField("name", value)} />
         <AccountInput label="Email đăng nhập" required type="email" error={errors.email} value={form.email} onChange={(value) => updateField("email", value)} />
-        <AccountSelect label="Vai trò" value={form.role} onChange={(value) => updateField("role", value)} options={roleOptions} />
+        <AccountSelect label="Vai trò" required value={form.role} error={errors.role} onChange={(value) => updateField("role", value)} options={[{ value: "", label: "Chọn vai trò" }, ...roleOptions]} />
         {form.role === "owner" && <AccountSelect label="Tenant được cấp" required value={form.tenantId} error={tenantError} disabled={tenantsQuery.isLoading || tenantsQuery.isError || tenants.length === 0} onChange={(value) => updateField("tenantId", value)} options={tenantOptions} />}
       </DoloresFieldGrid></DoloresPanel>
-      {form.role === "owner" && <DoloresNotice title="Phạm vi tài khoản">Tài khoản khách hàng có vai trò owner và bắt buộc thuộc một tenant. Chọn tenant từ danh sách để gửi đúng tenant_id dạng UUID.</DoloresNotice>}
+      {form.role === "owner" && <DoloresNotice title="Phạm vi tài khoản">Tài khoản owner bắt buộc thuộc một tenant. Chọn tenant từ danh sách để gửi đúng tenant_id dạng UUID.</DoloresNotice>}
       {mutations.create.isError && <DoloresNotice title="Không tạo được tài khoản" tone="warning">{getApiErrorMessage(mutations.create.error)}</DoloresNotice>}
     </DoloresPage>;
   } else if (isDetailView) {
@@ -414,7 +402,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
   const isMutationPending = mutations.create.isPending || mutations.update.isPending || mutations.disable.isPending || mutations.reissueTemporaryPassword.isPending;
   const confirmTitle = pendingAction === "create" ? "Xác nhận tạo tài khoản" : pendingAction === "update" ? "Xác nhận lưu thay đổi" : pendingAction === "disable" ? "Xác nhận vô hiệu hóa tài khoản" : pendingAction === "reactivate" ? "Xác nhận kích hoạt lại tài khoản" : "Xác nhận cấp lại mật khẩu tạm";
   const confirmDescription = pendingAction === "create"
-        ? `${form.name.trim()} · ${form.email.trim()} · ${roleLabels[form.role]}${form.role === "owner" ? ` · Tenant ${form.tenantId}` : ""}. IDaaS sẽ tạo tài khoản, ghi nhận vai trò, đưa hồ sơ vào hàng đợi đồng bộ Dolores và trả mật khẩu tạm thời một lần.`
+        ? `${form.name.trim()} · ${form.email.trim()} · ${form.role ? roleLabels[form.role] : "chưa chọn vai trò"}${form.role === "owner" ? ` · Tenant ${form.tenantId}` : ""}. IDaaS sẽ tạo tài khoản, ghi nhận vai trò, đưa hồ sơ vào hàng đợi đồng bộ Dolores và trả mật khẩu tạm thời một lần.`
     : pendingAction === "disable" ? "Tài khoản sẽ bị chuyển sang DISABLED và các phiên đăng nhập sẽ bị thu hồi. Đây là vô hiệu hóa, không xóa lịch sử tài khoản."
       : pendingAction === "reactivate" ? "Tài khoản sẽ được chuyển lại sang ACTIVE. Yêu cầu đổi mật khẩu lần đăng nhập đầu vẫn được giữ."
         : pendingAction === "reissue" ? "Mật khẩu hiện tại sẽ bị thay thế ngay. Mật khẩu mới chỉ hiển thị một lần và người dùng phải đổi mật khẩu khi đăng nhập."
@@ -425,12 +413,8 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     {overlay === "error" && <ModalFrame labelledBy="account-error-title"><section className="flex w-full max-w-[580px] flex-col gap-5 rounded-[20px] bg-white p-8 text-[#292625]">
       <p className="text-sm font-semibold leading-[1.45]">Yêu cầu chưa hoàn tất</p><h2 id="account-error-title" className="text-[26px] font-semibold leading-[1.45]">Có lỗi khi xử lý tài khoản</h2>
       <p className="text-base leading-[1.45]">{requestError || "Vui lòng thử lại sau."}</p>
-      {Object.entries(errors).map(([field, message]) => <div key={field} className="rounded-[10px] border border-[#B81724] px-4 py-3"><p className="text-xs text-[#706561]">{field === "name" ? "Họ tên" : field === "email" ? "Email đăng nhập" : field === "tenant_id" ? "Tenant" : "Thông tin"}</p><p className="mt-1 text-sm">{message}</p></div>)}
+      {Object.entries(errors).map(([field, message]) => <div key={field} className="rounded-[10px] border border-[#B81724] px-4 py-3"><p className="text-xs text-[#706561]">{field === "name" ? "Họ tên" : field === "email" ? "Email đăng nhập" : field === "role" ? "Vai trò" : field === "tenant_id" ? "Tenant" : "Thông tin"}</p><p className="mt-1 text-sm">{message}</p></div>)}
       <ModalButton primary onClick={() => setOverlay(null)}>Đóng</ModalButton>
-    </section></ModalFrame>}
-    {overlay === "role-picker" && <ModalFrame labelledBy="role-picker-title"><section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
-      <p className="text-[11px] font-medium leading-4 text-[#706561]">Tài khoản IDaaS</p><h2 id="role-picker-title" className="mt-3 text-xl font-semibold leading-7">Chọn vai trò tài khoản</h2><p className="mt-3 text-[13px] leading-5">API hỗ trợ owner, moderator và technician.</p>
-      <div className="mt-5 grid gap-3"><ModalButton onClick={() => beginCreate("owner")} primary>Khách hàng / Tenant</ModalButton><ModalButton onClick={() => beginCreate("moderator")}>Moderator</ModalButton><ModalButton onClick={() => beginCreate("technician")}>Technician</ModalButton><ModalButton onClick={() => setOverlay(null)}>{returnTo === "list" ? "Đóng" : "Quay lại"}</ModalButton></div>
     </section></ModalFrame>}
     {overlay === "confirm" && <ModalFrame labelledBy="account-confirm-title"><section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
       <p className="text-[11px] font-medium leading-4 text-[#706561]">Kiểm tra trước khi tiếp tục</p><h2 id="account-confirm-title" className="mt-3 text-xl font-semibold leading-7">{confirmTitle}</h2>

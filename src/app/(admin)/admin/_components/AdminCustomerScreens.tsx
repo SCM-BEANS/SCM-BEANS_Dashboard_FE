@@ -58,7 +58,7 @@ export default function AdminCustomerScreens({ initialView = "list", tenantId }:
 
   const tenantList = tenants.data ?? [];
   return (
-    <DoloresPage title="Khách hàng & cửa hàng" description="Danh sách tenant từ Dolores trong phạm vi quyền của tài khoản." actions={<><DoloresButton href={PATH_ADMIN.stores}>Xem cửa hàng</DoloresButton><DoloresButton disabled variant="secondary">Tạo tài khoản khách chưa hỗ trợ</DoloresButton></>}>
+    <DoloresPage title="Khách hàng & cửa hàng" description="Danh sách tenant từ Dolores trong phạm vi quyền của tài khoản." actions={<><DoloresButton href={PATH_ADMIN.stores}>Xem cửa hàng</DoloresButton><DoloresButton href={buildRouteUrl(PATH_ADMIN.users, { view: "create" })} variant="secondary">Tạo tài khoản</DoloresButton></>}>
       {tenants.isPending && <DoloresLoadingState />}
       {tenants.data && <>
         <div className="grid grid-cols-4 gap-3">

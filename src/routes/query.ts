@@ -24,11 +24,11 @@ export function buildRouteUrl(pathname: string, updates: QueryUpdates, currentSe
   return `${path}${serialized ? `?${serialized}` : ""}${hash}`;
 }
 
-export const ADMIN_ACCOUNT_VIEWS = ["list", "create-customer", "create-moderator", "create-technician", "tenant", "staff"] as const;
+export const ADMIN_ACCOUNT_VIEWS = ["list", "create", "tenant", "staff"] as const;
 export const ADMIN_CONTRACT_VIEWS = ["list", "detail", "history"] as const;
 export const ADMIN_MACHINE_VIEWS = ["inventory", "stock", "loan-history", "s022", "standard", "mb017", "repair-history", "s018", "repair-history-s018"] as const;
 export const ADMIN_MENU_VIEWS = ["list", "items", "detail", "add", "missing", "ingredients", "edit-espresso", "edit-espresso-60", "edit-espresso-20g", "send", "sent"] as const;
-export const ADMIN_STORE_VIEWS = ["list", "detail"] as const;
+export const ADMIN_STORE_VIEWS = ["list", "detail", "create"] as const;
 export const ADMIN_REPORT_VIEWS = ["overview", "customers"] as const;
 export const ADMIN_CUSTOMER_VIEWS = ["list", "customer", "machines"] as const;
 
@@ -44,8 +44,10 @@ function resolveView<T extends string>(value: unknown, allowed: readonly T[], fa
   return allowed.find((candidate) => candidate === value) ?? fallback;
 }
 
-export const resolveAdminAccountView = (view: unknown): AdminAccountView =>
-  resolveView(view, ADMIN_ACCOUNT_VIEWS, "list");
+export const resolveAdminAccountView = (view: unknown): AdminAccountView => {
+  if (view === "create-customer" || view === "create-moderator" || view === "create-technician") return "create";
+  return resolveView(view, ADMIN_ACCOUNT_VIEWS, "list");
+};
 
 export const resolveAdminContractView = (view: unknown): AdminContractView =>
   resolveView(view, ADMIN_CONTRACT_VIEWS, "list");

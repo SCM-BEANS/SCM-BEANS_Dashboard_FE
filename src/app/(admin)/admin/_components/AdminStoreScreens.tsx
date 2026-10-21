@@ -7,20 +7,34 @@ import { DoloresButton, DoloresField, DoloresFieldGrid, DoloresPanel, DoloresPan
 import { DoloresPage } from "@/app/_shell/dolores/DoloresShell";
 import { useTenants } from "@/hooks/dolores/useTenants";
 import { usePlatformLocations } from "@/hooks/dolores/usePlatformLocations";
+import AdminStoreCreateScreen from "@/app/(admin)/admin/_components/AdminStoreCreateScreen";
 
 export default function AdminStoreScreens({ initialView = "list", tenantId, locationId }: { initialView?: StoreView; tenantId?: string; locationId?: string }) {
   const [view, setView] = useRouteView<StoreView>(initialView);
   const tenants = useTenants();
-  const selectedTenants = tenantId ? tenants.data?.filter((tenant) => tenant.id === tenantId) : tenants.data;
+  const selectedTenants = view === "create"
+    ? undefined
+    : tenantId ? tenants.data?.filter((tenant) => tenant.id === tenantId) : tenants.data;
   const stores = usePlatformLocations(selectedTenants);
   const selected = stores.locations.find(({ location }) => location.id === locationId);
+
+  if (view === "create") {
+    return <AdminStoreCreateScreen
+      tenants={tenants.data ?? []}
+      initialTenantId={tenantId}
+      tenantsLoading={tenants.isPending}
+      tenantsError={tenants.isError}
+      onCancel={() => setView("list", { locationId: null })}
+      onComplete={() => setView("list", { locationId: null })}
+    />;
+  }
 
   if (view === "detail") {
     const isLoading = tenants.isPending || stores.isLoading;
     const hasRequestError = tenants.isError || stores.failedTenants.length > 0;
 
     return (
-      <DoloresPage title={selected?.location.name ?? "Thông tin cửa hàng"} description="Thông tin cửa hàng được trả về từ Dolores." actions={<><DoloresButton onClick={() => setView("list", { locationId: null })} variant="secondary">Về danh sách</DoloresButton><DoloresButton disabled>Chỉnh sửa chưa hỗ trợ</DoloresButton></>}>
+      <DoloresPage title={selected?.location.name ?? "Thông tin cửa hàng"} description="Thông tin cửa hàng được trả về từ Dolores." actions={<><DoloresButton onClick={() => setView("list", { locationId: null })} variant="secondary">Về danh sách</DoloresButton><DoloresButton>Chỉnh sửa chưa hỗ trợ</DoloresButton></>}>
         {isLoading && <DoloresLoadingState />}
         {!isLoading && !selected && hasRequestError && <DoloresEmptyState message="Thông tin cửa hàng hiện chưa có dữ liệu để hiển thị." />}
         {!isLoading && !hasRequestError && !selected && <DoloresEmptyState message="Không tìm thấy cửa hàng đã chọn trong dữ liệu có quyền truy cập." />}
@@ -39,7 +53,7 @@ export default function AdminStoreScreens({ initialView = "list", tenantId, loca
   }
 
   return (
-    <DoloresPage title="Cửa hàng" description="Danh sách cửa hàng theo tenant trong phạm vi quyền của tài khoản." actions={<DoloresButton disabled>Tạo cửa hàng chưa hỗ trợ</DoloresButton>}>
+    <DoloresPage title="Cửa hàng" description="Danh sách cửa hàng theo tenant trong phạm vi quyền của tài khoản." actions={<DoloresButton onClick={() => setView("create", { locationId: null })}>Tạo cửa hàng</DoloresButton>}>
       {tenants.isPending && <DoloresLoadingState />}
       {!tenants.isPending && stores.isLoading && <DoloresLoadingState />}
       {!tenants.isPending && !stores.isLoading && <DoloresPanel><DoloresPanelTitle>Danh sách</DoloresPanelTitle>

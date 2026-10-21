@@ -91,3 +91,12 @@ test('IDaaS request helper forwards relative routes through the shared IDaaS cli
     /relative to the configured API/
   );
 });
+
+test('legacy role-specific account creation URLs resolve to one shared create view', () => {
+  const { resolveAdminAccountView } = loadTypescript('src/routes/query.ts');
+
+  assert.equal(resolveAdminAccountView('create'), 'create');
+  assert.equal(resolveAdminAccountView('create-customer'), 'create');
+  assert.equal(resolveAdminAccountView('create-moderator'), 'create');
+  assert.equal(resolveAdminAccountView('create-technician'), 'create');
+});
