@@ -8,12 +8,21 @@ import { retryDoloresRead } from './queryPolicy';
 export const notificationQueryKeys = {
   all: ['dolores', 'notifications'] as const,
   list: () => [...notificationQueryKeys.all, 'list'] as const,
+  unreadCount: () => [...notificationQueryKeys.all, 'unread-count'] as const,
 };
 
 export function useNotifications() {
   return useQuery({
     queryKey: notificationQueryKeys.list(),
     queryFn: ({ signal }) => notificationsApi.list(signal),
+    retry: retryDoloresRead,
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: notificationQueryKeys.unreadCount(),
+    queryFn: ({ signal }) => notificationsApi.unreadCount(signal),
     retry: retryDoloresRead,
   });
 }

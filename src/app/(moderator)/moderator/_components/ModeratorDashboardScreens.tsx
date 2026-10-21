@@ -23,6 +23,9 @@ import {
 } from "@/app/_ui/dolores/DoloresUI";
 import { isRetrievalAssessment, readDemoFields, readDemoRecord, useDemoRecord, writeDemoRecord, writeDemoFlow } from "@/app/_features/demo-flow/demoFlowStore";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
+import { useDashboardOverview } from "@/hooks/dolores/useDashboardOverview";
+import { useAlerts } from "@/hooks/dolores/useAlerts";
+import { useNotifications, useUnreadNotificationCount } from "@/hooks/dolores/useNotifications";
 
 const getCentralizedModeratorPath = (relativePath: string) => relativePath ? `${PATH_MODERATOR.root}/${relativePath}` : PATH_MODERATOR.root;
 
@@ -32,30 +35,95 @@ function ActionBar({ items }: { items: [string, string, "primary" | "secondary"]
   return <>{items.map(([label, href, variant]) => <DoloresButton key={href + label} href={href} variant={variant}>{label}</DoloresButton>)}</>;
 }
 
+function formatCount(value: number | null | undefined) {
+  return value == null ? "—" : new Intl.NumberFormat("vi-VN").format(value);
+}
+
+function formatApiDate(value: string | null | undefined, includeTime = true) {
+  if (!value) return "—";
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}:\d{2}))?/.exec(value);
+  if (!match) return value;
+  const [, year, month, day, time] = match;
+  return `${day}/${month}/${year}${includeTime && time ? ` ${time}` : ""}`;
+}
+
+function getReadErrorMessage(error: unknown) {
+  const status = error && typeof error === "object" && "status" in error && typeof error.status === "number"
+    ? error.status
+    : undefined;
+  if (status === 401) return "Dolores trả về 401: phiên đăng nhập hoặc token chưa được xác thực. Cần hoàn tất phần xác thực riêng để kiểm tra quyền Moderator.";
+  if (status === 403) return "Dolores trả về 403: tài khoản hiện tại không có quyền hoặc scope để đọc dữ liệu này.";
+  if (status !== undefined) return `Dolores trả về lỗi HTTP ${status}. Vui lòng thử lại sau khi kiểm tra API.`;
+  return "Không thể kết nối hoặc đọc dữ liệu từ Dolores. Vui lòng thử lại.";
+}
+
+function ApiReadStatus<T>({ query, subject }: {
+  query: {
+    data: T | undefined;
+    isPending: boolean;
+    isError: boolean;
+    isFetching: boolean;
+    error: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  subject: string;
+}) {
+  const hasData = query.data !== undefined;
+  if (query.isPending && !hasData) {
+    return <div role="status" aria-live="polite"><DoloresNotice title={`Đang tải ${subject}`}>Đang lấy dữ liệu mới nhất từ Dolores.</DoloresNotice></div>;
+  }
+  if (query.isError) {
+    return <div role="alert" aria-live="assertive"><DoloresNotice title={hasData ? `Không thể cập nhật ${subject}` : `Không thể tải ${subject}`}>
+      <p>{getReadErrorMessage(query.error)}</p>
+      <DoloresButton onClick={() => { void query.refetch(); }} variant="secondary">Thử lại</DoloresButton>
+    </DoloresNotice></div>;
+  }
+  if (query.isFetching && hasData) {
+    return <div role="status" aria-live="polite"><DoloresNotice title={`Đang cập nhật ${subject}`}>Đang kiểm tra dữ liệu mới từ Dolores.</DoloresNotice></div>;
+  }
+  return null;
+}
+
 function Dashboard() {
-  const bars = [["T1", 76], ["T2", 91], ["T3", 83], ["T4", 124], ["T5", 110], ["T6", 142], ["T7", 132], ["T8", 166]] as const;
-  return <DashboardOverview title="Tổng quan hợp đồng & thanh toán" description="Việc ưu tiên cho Moderator: hợp đồng, hóa đơn, máy IoT và phản hồi khách." actions={<DoloresButton href={PATH_MODERATOR.invoices}>Việc cần xử lý</DoloresButton>} showMobileActionsMenu={false} metrics={[
-    { label: "Hợp đồng hiệu lực", value: "98" },
-    { label: "Chứng từ chờ đối chiếu", value: "12" },
-    { label: "Smart IoT đang thuê", value: "56" },
-    { label: "Máy IoT còn trong kho", value: "12" },
+  const query = useDashboardOverview();
+  const metrics = query.data?.operationalMetrics;
+  const dailyUsage = metrics?.dailyAcceptedCupUsage?.slice(-7) ?? [];
+  const maximumCups = Math.max(1, ...dailyUsage.map(({ cups }) => cups ?? 0));
+  const usagePeriod = query.data?.usagePeriodStart && query.data.usagePeriodEnd
+    ? `${formatApiDate(query.data.usagePeriodStart, false)} – ${formatApiDate(query.data.usagePeriodEnd, false)}`
+    : "—";
+
+  return <DashboardOverview title="Tổng quan vận hành" description="Chỉ số vận hành do Dolores trả về cho Moderator." actions={<DoloresButton href={PATH_MODERATOR.invoices}>Việc cần xử lý</DoloresButton>} showMobileActionsMenu={false} metrics={[
+    { label: "Tenant toàn hệ thống", value: formatCount(metrics?.totalTenants) },
+    { label: "Hợp đồng sắp hết hạn · 30 ngày", value: formatCount(metrics?.expiringContractsWithin30Days) },
+    { label: "Ticket bảo trì đang mở", value: formatCount(metrics?.openMaintenanceTickets) },
+    { label: "Work order lắp đặt đang mở", value: formatCount(metrics?.openInstallationWorkOrders) },
   ]}>
-    <DoloresPanel className="dl-moderator-chart">
-      <DoloresPanelTitle>Số ly Smart IoT theo tháng</DoloresPanelTitle>
-      <p className="-mt-3 text-[13px] leading-[1.45] text-[#706561]">Ly hợp lệ đã đồng bộ · dữ liệu minh họa</p>
-      <div className="dl-moderator-bars mt-6 grid grid-cols-[32px_1fr] gap-4">
-        <div className="flex h-[186px] flex-col justify-between pb-5 text-[10px] text-[#706561]"><span>166</span><span>83</span><span>0</span></div>
-        <div className="grid grid-cols-8 items-end gap-3">
-          {bars.map(([month, value]) => <div className="flex h-[186px] flex-col items-stretch justify-end" key={month}>
-            <span className="mb-1 text-center text-[11px] font-medium">{value}</span>
-            <div className="rounded-t-[5px] bg-[#F4E9E3]" style={{ height: `${Math.round((value / 166) * 132)}px` }} />
-            <span className="pt-2 text-[10px] text-[#706561]">{month}</span>
-          </div>)}
-        </div>
-      </div>
-      <p className="dl-chart-note mt-3 text-[11px] leading-[1.45] text-[#706561]">Máy thường không gửi telemetry hoặc số ly lên Dolores.</p>
-    </DoloresPanel>
-    <DoloresPanel><DoloresPanelTitle>Việc cần xử lý</DoloresPanelTitle><p className="text-sm font-semibold">12 chứng từ thanh toán</p><p className="mt-1 text-[13px] text-[#706561]">Tenant tải ảnh chuyển khoản; Moderator so khớp tài khoản công ty.</p></DoloresPanel>
+    <ApiReadStatus query={query} subject="tổng quan vận hành" />
+    {query.data && <>
+      <DoloresPanel className="dl-moderator-chart">
+        <DoloresPanelTitle>Số ly hợp lệ theo ngày</DoloresPanelTitle>
+        <p className="-mt-3 text-[13px] leading-[1.45] text-[#706561]">Khoảng thống kê: {usagePeriod} · tổng {formatCount(metrics?.cupsInSelectedPeriod)} ly</p>
+        {dailyUsage.length > 0 ? <div className="dl-moderator-bars mt-6 grid grid-cols-[32px_1fr] gap-4">
+          <div className="flex h-[186px] flex-col justify-between pb-5 text-[10px] text-[#706561]"><span>{formatCount(maximumCups)}</span><span>{formatCount(Math.round(maximumCups / 2))}</span><span>0</span></div>
+          <div className="grid grid-cols-7 items-end gap-3">
+            {dailyUsage.map(({ date, cups }, index) => {
+              const value = cups ?? 0;
+              return <div className="flex h-[186px] flex-col items-stretch justify-end" key={date ?? index}>
+                <span className="mb-1 text-center text-[11px] font-medium">{formatCount(value)}</span>
+                <div className="rounded-t-[5px] bg-[#F4E9E3]" style={{ height: `${Math.round((value / maximumCups) * 132)}px` }} />
+                <span className="pt-2 text-center text-[10px] text-[#706561]">{formatApiDate(date, false).slice(0, 5)}</span>
+              </div>;
+            })}
+          </div>
+        </div> : <div role="status" aria-live="polite"><DoloresNotice title="Chưa có dữ liệu theo ngày">Dolores chưa trả về số ly hợp lệ trong khoảng thống kê này.</DoloresNotice></div>}
+      </DoloresPanel>
+      <DoloresPanel>
+        <DoloresPanelTitle>Phạm vi dữ liệu</DoloresPanelTitle>
+        <p className="text-sm">Scope: {query.data.scope}</p>
+        <p className="mt-1 text-[13px] text-[#706561]">Cập nhật đến {formatApiDate(query.data.asOfDate, false)}.</p>
+      </DoloresPanel>
+    </>}
   </DashboardOverview>;
 }
 
@@ -517,11 +585,39 @@ function RefurbishmentScreen() {
 }
 
 function Alerts() {
-  return <SceneTable title="Cảnh báo & nhắc việc" description="Theo dõi cảnh báo hợp đồng, kết nối và trạng thái menu." headers={["Cảnh báo", "Khách hàng / máy", "Ngày", "Trạng thái", "Mở"]} rows={[["Mất kết nối / lỗi menu", "Cà phê Mộc · S-018", "02/10/2026", "Cần kiểm tra", <Link href={PATH_MODERATOR.iotMachines} key="iot">Mở ›</Link>], ["Hợp đồng sắp hết hạn", "C-204", "31/10/2026", "Chưa phản hồi", <Link href={PATH_MODERATOR.contractExpiry} key="exp">Mở ›</Link>]]} actions={[["Yêu cầu kỹ thuật", PATH_MODERATOR.technicalRequests, "primary"], ["Thông báo", PATH_MODERATOR.notifications, "secondary"]]} />;
+  const query = useAlerts();
+  const rows = (query.data ?? []).map((alert) => [
+    alert.level,
+    alert.message,
+    alert.machineId ? `Mã máy ${alert.machineId}` : "Hệ thống",
+    formatApiDate(alert.ts),
+    alert.acknowledged ? "Đã ghi nhận" : "Chưa ghi nhận",
+  ]);
+  return <DoloresPage title="Cảnh báo hệ thống" description="Cảnh báo đang hoạt động do Dolores trả về. API hiện không giới hạn danh sách theo tenant." actions={<ActionBar items={[["Yêu cầu kỹ thuật", PATH_MODERATOR.technicalRequests, "primary"], ["Thông báo", PATH_MODERATOR.notifications, "secondary"]]} />}>
+    <ApiReadStatus query={query} subject="cảnh báo" />
+    {query.data !== undefined && rows.length === 0 && !query.isError && <div role="status" aria-live="polite"><DoloresNotice title="Không có cảnh báo đang hoạt động">Dolores hiện không trả về cảnh báo nào.</DoloresNotice></div>}
+    {query.data !== undefined && rows.length > 0 && <DoloresPanel><DoloresPanelTitle>Cảnh báo từ Dolores</DoloresPanelTitle><DoloresTable headers={["Mức độ", "Cảnh báo", "Đối tượng", "Thời điểm", "Trạng thái"]} rows={rows} /></DoloresPanel>}
+  </DoloresPage>;
 }
 
 function Notifications() {
-  return <SceneTable title="Thông báo" description="Thông báo liên quan đến hợp đồng, thanh toán, máy và công việc." headers={["Nội dung", "Liên quan", "Ngày", "Trạng thái", "Mở"]} rows={[["Kết quả Technician YC-017", "S-018 · C-204", "01/10/2026", "Đã báo kết quả", <Link href={PATH_MODERATOR.technicalRequestDetail("YC-017")} key="yc">Mở ›</Link>], ["Hóa đơn HD-09-204 cần đối soát", "Cà phê Mộc", "30/09/2026", "Chờ xử lý", <Link href={PATH_MODERATOR.invoiceReconcile} key="bill">Mở ›</Link>], ["Menu S-018 chờ xác nhận", "Mùa hè · v3", "02/10/2026", "Đang chờ máy", <Link href={PATH_MODERATOR.menuSent} key="menu">Mở ›</Link>]]} actions={[["Cảnh báo & nhắc việc", PATH_MODERATOR.notificationAlerts, "primary"]]} />;
+  const notificationsQuery = useNotifications();
+  const unreadCountQuery = useUnreadNotificationCount();
+  const rows = (notificationsQuery.data ?? []).map((notification) => [
+    <div key={notification.id}><strong>{notification.title}</strong><p>{notification.message}</p></div>,
+    notification.type,
+    formatApiDate(notification.createdAt),
+    notification.read ? "Đã đọc" : "Chưa đọc",
+  ]);
+  return <DoloresPage title="Thông báo" description="Thông báo trong phạm vi operator do Dolores trả về." actions={<ActionBar items={[["Cảnh báo & nhắc việc", PATH_MODERATOR.notificationAlerts, "primary"]]} />}>
+    <DoloresPanel><DoloresPanelTitle>Thông báo chưa đọc</DoloresPanelTitle>
+      <p className="text-2xl font-semibold" role="status" aria-live="polite">{unreadCountQuery.data ? formatCount(unreadCountQuery.data.unreadCount) : "—"}</p>
+      <ApiReadStatus query={unreadCountQuery} subject="số thông báo chưa đọc" />
+    </DoloresPanel>
+    <ApiReadStatus query={notificationsQuery} subject="thông báo" />
+    {notificationsQuery.data !== undefined && rows.length === 0 && !notificationsQuery.isError && <div role="status" aria-live="polite"><DoloresNotice title="Không có thông báo">Dolores hiện không trả về thông báo nào.</DoloresNotice></div>}
+    {notificationsQuery.data !== undefined && rows.length > 0 && <DoloresPanel><DoloresPanelTitle>Danh sách thông báo</DoloresPanelTitle><DoloresTable headers={["Nội dung", "Loại", "Ngày", "Trạng thái"]} rows={rows} /></DoloresPanel>}
+  </DoloresPage>;
 }
 
 function TechRequestsAlias({ path }: { path: string }) { return <TechnicalScreens path={path} />; }

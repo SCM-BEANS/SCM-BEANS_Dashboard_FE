@@ -1,17 +1,17 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminUsersApi } from '@/apis/dolores/adminUsers.api';
+import { adminUsersApi } from '@/apis/idaas/adminUsers.api';
 import type {
   AdminUserCreateRequest,
   AdminUserListParams,
   AdminUserOneTimeCredential,
   AdminUserUpdateRequest,
-} from '@/schemas/dolores/adminUsers';
+} from '@/schemas/idaas/adminUsers';
 import { useCallback, useState } from 'react';
 
 export const adminUserQueryKeys = {
-  all: ['dolores', 'admin-users'] as const,
+  all: ['idaas', 'admin-users'] as const,
   list: (params: AdminUserListParams) => [...adminUserQueryKeys.all, 'list', params] as const,
   detail: (userId: string | null) => [...adminUserQueryKeys.all, 'detail', userId] as const,
 };

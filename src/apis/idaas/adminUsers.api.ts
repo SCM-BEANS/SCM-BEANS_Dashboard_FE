@@ -1,4 +1,4 @@
-import { requestDolores } from './client';
+import { requestIdaas } from './client';
 import {
   AdminUserCreateRequestSchema,
   AdminUserCreateResponseSchema,
@@ -11,7 +11,7 @@ import {
   type AdminUserCreateRequest,
   type AdminUserListParams,
   type AdminUserUpdateRequest,
-} from '@/schemas/dolores/adminUsers';
+} from '@/schemas/idaas/adminUsers';
 import { z } from 'zod';
 
 const UserIdSchema = z.string().uuid();
@@ -19,7 +19,7 @@ const UserIdSchema = z.string().uuid();
 export const adminUsersApi = {
   list(params: AdminUserListParams, signal?: AbortSignal) {
     const query = AdminUserListParamsSchema.parse(params);
-    return requestDolores(
+    return requestIdaas(
       { method: 'GET', url: '/admin/users', params: query, signal },
       AdminUserListResponseSchema
     );
@@ -27,7 +27,7 @@ export const adminUsersApi = {
 
   getById(userId: string, signal?: AbortSignal) {
     const id = UserIdSchema.parse(userId);
-    return requestDolores(
+    return requestIdaas(
       { method: 'GET', url: '/admin/users/' + encodeURIComponent(id), signal },
       AdminUserSchema
     );
@@ -35,7 +35,7 @@ export const adminUsersApi = {
 
   create(input: AdminUserCreateRequest) {
     const payload = AdminUserCreateRequestSchema.parse(input);
-    return requestDolores(
+    return requestIdaas(
       { method: 'POST', url: '/admin/users', data: payload },
       AdminUserCreateResponseSchema
     );
@@ -44,7 +44,7 @@ export const adminUsersApi = {
   update(userId: string, input: AdminUserUpdateRequest) {
     const id = UserIdSchema.parse(userId);
     const payload = AdminUserUpdateRequestSchema.parse(input);
-    return requestDolores(
+    return requestIdaas(
       { method: 'PATCH', url: '/admin/users/' + encodeURIComponent(id), data: payload },
       AdminUserUpdateResponseSchema
     );
@@ -52,7 +52,7 @@ export const adminUsersApi = {
 
   async disable(userId: string) {
     const id = UserIdSchema.parse(userId);
-    await requestDolores(
+    await requestIdaas(
       { method: 'DELETE', url: '/admin/users/' + encodeURIComponent(id) },
       z.unknown()
     );
@@ -60,7 +60,7 @@ export const adminUsersApi = {
 
   reissueTemporaryPassword(userId: string) {
     const id = UserIdSchema.parse(userId);
-    return requestDolores(
+    return requestIdaas(
       {
         method: 'POST',
         url: '/admin/users/' + encodeURIComponent(id) + '/temporary-password/reissue',

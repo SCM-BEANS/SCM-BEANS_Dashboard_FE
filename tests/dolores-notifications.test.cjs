@@ -48,7 +48,7 @@ test('notification and alert schemas accept documented DTOs and reject invalid s
   assert.equal(schemas.AlertSchema.safeParse({ ...alert, acknowledged: 'false' }).success, false);
 });
 
-test('notification and alert APIs call only documented list and mark-read routes', async () => {
+test('notification and alert APIs expose only documented list, unread-count, and mark-read routes', async () => {
   const calls = [];
   const responses = [];
   const requestDolores = (config, schema) => {
@@ -75,7 +75,55 @@ test('notification and alert APIs call only documented list and mark-read routes
     ['POST', '/notifications/' + notificationId + '/read', undefined],
     ['GET', '/alerts', signal],
   ]);
-  assert.deepEqual(Object.keys(notificationsApi), ['list', 'markAsRead']);
+  assert.deepEqual(Object.keys(notificationsApi), ['list', 'unreadCount', 'markAsRead']);
   assert.deepEqual(Object.keys(alertsApi), ['list']);
   await assert.rejects(async () => notificationsApi.markAsRead('not-a-uuid'));
+});
+
+test('moderator unread notification count uses the documented response and route', async () => {
+  const calls = [];
+  const response = { unreadCount: 3 };
+  const requestDolores = (config, schema) => {
+    calls.push({ config, schema });
+    return Promise.resolve(response);
+  };
+  const mocks = {
+    './client': { requestDolores },
+    '@/schemas/dolores/notifications': schemas,
+  };
+  const { notificationsApi } = loadTypescript('src/apis/dolores/notifications.api.ts', mocks);
+  const { NotificationUnreadCountSchema } = schemas;
+
+  assert.deepEqual(NotificationUnreadCountSchema.parse(response), response);
+  assert.equal(NotificationUnreadCountSchema.safeParse({ unreadCount: -1 }).success, false);
+  assert.deepEqual(await notificationsApi.unreadCount(), response);
+  assert.deepEqual(calls.map(({ config }) => config), [
+    { method: 'GET', url: '/notifications/unread-count', signal: undefined },
+  ]);
+});
+
+test('moderator unread notification query has its own cache identity and forwards cancellation', async () => {
+  const queryOptions = [];
+  const response = { unreadCount: 3 };
+  const { useUnreadNotificationCount, notificationQueryKeys } = loadTypescript(
+    'src/hooks/dolores/useNotifications.ts',
+    {
+      '@tanstack/react-query': {
+        useQuery: (options) => { queryOptions.push(options); return options; },
+      },
+      '@/apis/dolores/notifications.api': {
+        notificationsApi: { unreadCount: async (signal) => ({ ...response, signal }) },
+      },
+      '@/schemas/dolores/notifications': schemas,
+      './queryPolicy': { retryDoloresRead: () => false },
+    }
+  );
+  const signal = new AbortController().signal;
+
+  const query = useUnreadNotificationCount();
+
+  assert.deepEqual(notificationQueryKeys.unreadCount(), ['dolores', 'notifications', 'unread-count']);
+  assert.deepEqual(query.queryKey, notificationQueryKeys.unreadCount());
+  assert.deepEqual(await query.queryFn({ signal }), { ...response, signal });
+  assert.equal(queryOptions.length, 1);
 });
