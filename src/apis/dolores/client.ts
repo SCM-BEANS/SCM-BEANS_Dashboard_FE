@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 import { z } from 'zod';
 import axiosClient from '@/lib/axios/axiosClient';
@@ -28,7 +28,7 @@ export class DoloresApiError extends Error {
   }
 }
 
-const doloresClient = axios.create({
+export const doloresAxiosClient = axios.create({
   baseURL: '/api/dolores/v1',
   timeout: 10000,
   headers: { Accept: 'application/json' },
@@ -55,7 +55,11 @@ function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
-doloresClient.interceptors.request.use((config) => {
+doloresAxiosClient.interceptors.request.use((config) => {
+  if (!config.url?.startsWith('/') || config.url.startsWith('//')) {
+    throw new DoloresApiError('invalid_request', 400, 'Dolores path must be relative to the configured API.');
+  }
+
   const token = Cookies.get('access_token');
   if (!token) {
     throw new DoloresApiError('unauthenticated', 401, 'Access token is missing.');
@@ -65,7 +69,7 @@ doloresClient.interceptors.request.use((config) => {
   return config;
 });
 
-doloresClient.interceptors.response.use(
+doloresAxiosClient.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
     if (error instanceof DoloresApiError || axios.isCancel(error)) {
@@ -83,10 +87,9 @@ doloresClient.interceptors.response.use(
       try {
         const accessToken = await refreshAccessToken();
         originalRequest.headers.set('Authorization', 'Bearer ' + accessToken);
-        return doloresClient.request(originalRequest);
+        return doloresAxiosClient.request(originalRequest);
       } catch {
         Cookies.remove('access_token');
-        Cookies.remove('refresh_token');
         if (typeof window !== 'undefined') window.location.href = PATH_AUTH.login;
         return Promise.reject(new DoloresApiError('unauthenticated', 401, 'Dolores authentication failed.'));
       }
@@ -120,31 +123,13 @@ doloresClient.interceptors.response.use(
   }
 );
 
-export async function requestDolores<TSchema extends z.ZodTypeAny>(
-  config: AxiosRequestConfig,
+export function parseDoloresResponse<TSchema extends z.ZodTypeAny>(
+  data: unknown,
   schema: TSchema
-): Promise<z.infer<TSchema>> {
-  if (!config.url?.startsWith('/') || config.url.startsWith('//')) {
-    throw new DoloresApiError('invalid_request', 400, 'Dolores path must be relative to the configured API.');
-  }
-
-  const response = await doloresClient.request<unknown>(config);
-  const parsed = schema.safeParse(response.data);
+): z.infer<TSchema> {
+  const parsed = schema.safeParse(data);
   if (!parsed.success) {
     throw new DoloresApiError('invalid_response', null, 'Dolores returned an unexpected response shape.');
   }
   return parsed.data;
-}
-
-export async function requestDoloresBlob(config: AxiosRequestConfig): Promise<Blob> {
-  if (!config.url?.startsWith('/') || config.url.startsWith('//')) {
-    throw new DoloresApiError('invalid_request', 400, 'Dolores path must be relative to the configured API.');
-  }
-
-  const response = await doloresClient.request<Blob>({
-    ...config,
-    headers: { ...config.headers, Accept: '*/*' },
-    responseType: 'blob',
-  });
-  return response.data;
 }

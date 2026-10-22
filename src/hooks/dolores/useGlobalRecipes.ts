@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { recipesApi } from '@/apis/dolores/recipes.api';
-import type { RecipePublishRequest } from '@/schemas/dolores/recipes';
+import type { RecipePublishRequest } from '@/types/dolores/recipes';
 import { retryDoloresRead } from './queryPolicy';
 
 export const globalRecipeQueryKeys = {

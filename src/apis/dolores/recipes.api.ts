@@ -1,33 +1,27 @@
-import { requestDolores } from './client';
+import { doloresAxiosClient, parseDoloresResponse } from './client';
 import {
   GlobalRecipeIdSchema,
   GlobalRecipeSchema,
   GlobalRecipesSchema,
   RecipePublishRequestSchema,
-  type RecipePublishRequest,
 } from '@/schemas/dolores/recipes';
+import type { GlobalRecipe, RecipePublishRequest } from '@/types/dolores/recipes';
 
 export const recipesApi = {
-  listGlobal(signal?: AbortSignal) {
-    return requestDolores(
-      { method: 'GET', url: '/recipes/global', signal },
-      GlobalRecipesSchema
-    );
+  listGlobal: async (signal?: AbortSignal): Promise<GlobalRecipe[]> => {
+    const response = await doloresAxiosClient.get<unknown>('/recipes/global', { signal });
+    return parseDoloresResponse(response.data, GlobalRecipesSchema);
   },
 
-  getGlobalById(id: string, signal?: AbortSignal) {
+  getGlobalById: async (id: string, signal?: AbortSignal): Promise<GlobalRecipe> => {
     const recipeId = GlobalRecipeIdSchema.parse(id);
-    return requestDolores(
-      { method: 'GET', url: '/recipes/global/' + recipeId, signal },
-      GlobalRecipeSchema
-    );
+    const response = await doloresAxiosClient.get<unknown>('/recipes/global/' + recipeId, { signal });
+    return parseDoloresResponse(response.data, GlobalRecipeSchema);
   },
 
-  publishGlobal(input: RecipePublishRequest) {
+  publishGlobal: async (input: RecipePublishRequest): Promise<GlobalRecipe> => {
     const data = RecipePublishRequestSchema.parse(input);
-    return requestDolores(
-      { method: 'POST', url: '/recipes/global', data },
-      GlobalRecipeSchema
-    );
+    const response = await doloresAxiosClient.post<unknown>('/recipes/global', data);
+    return parseDoloresResponse(response.data, GlobalRecipeSchema);
   },
 };

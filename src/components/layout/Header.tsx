@@ -18,6 +18,7 @@ export const Header = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [email, setEmail] = useState("");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -60,13 +61,23 @@ export const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    authService.logout();
-    localStorage.removeItem("email");
-    window.dispatchEvent(new CustomEvent('auth-change'));
-    setIsLoggedIn(false);
-    setIsDropdownOpen(false);
-    router.push(PATH_AUTH.login);
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    let cookieCleared = false;
+    try {
+      cookieCleared = await authService.logout();
+    } catch {
+      cookieCleared = false;
+    } finally {
+      localStorage.removeItem("email");
+      window.dispatchEvent(new CustomEvent('auth-change'));
+      setIsLoggedIn(false);
+      setEmail("");
+      setIsDropdownOpen(false);
+      setIsLoggingOut(false);
+      router.push(cookieCleared ? PATH_AUTH.login : `${PATH_AUTH.login}?error=logout_failed`);
+    }
   };
 
   return (
@@ -132,10 +143,11 @@ export const Header = () => {
                 {isLoggedIn ? (
                   <button 
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
+                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                   </button>
                 ) : (
                   <Link 

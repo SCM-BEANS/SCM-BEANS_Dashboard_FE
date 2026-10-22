@@ -8,6 +8,7 @@ import { DoloresPage } from "@/app/_shell/dolores/DoloresShell";
 import { useRouteView } from "@/app/(admin)/admin/_components/useRouteView";
 import { describeDoloresError } from "@/hooks/dolores/queryPolicy";
 import { useTenants } from "@/hooks/dolores/useTenants";
+import type { Contract, ContractDocument } from "@/types/dolores/contracts";
 import {
   useContractDetail,
   useContractDocuments,
@@ -16,8 +17,7 @@ import {
   useDownloadContractDocument,
   usePlatformContracts,
 } from "@/hooks/dolores/useContracts";
-import { ContractIdSchema, type Contract, type ContractDocument } from "@/schemas/dolores/contracts";
-
+import { ContractIdSchema } from "@/schemas/dolores/contracts";
 function ContractField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-h-[46px] flex-col gap-1">

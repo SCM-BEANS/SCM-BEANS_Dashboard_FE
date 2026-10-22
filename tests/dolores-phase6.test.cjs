@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
+const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
@@ -58,14 +59,11 @@ test('global recipe schemas accept live DTOs and reject malformed identity or mi
 
 test('recipe API uses only documented global list, detail, and publish operations', async () => {
   const schemas = loadTypescript('src/schemas/dolores/recipes.ts');
-  const calls = [];
   const responses = [[recipe], recipe, recipe];
-  const requestDolores = (config, schema) => {
-    calls.push({ config, schema });
-    return Promise.resolve(responses.shift());
-  };
+  const axiosMock = createDoloresAxiosMock(responses);
+  const { calls } = axiosMock;
   const { recipesApi } = loadTypescript('src/apis/dolores/recipes.api.ts', {
-    './client': { requestDolores },
+    './client': axiosMock.module,
     '@/schemas/dolores/recipes': schemas,
   });
   const signal = new AbortController().signal;
@@ -91,13 +89,10 @@ test('invoice schema and API preserve complete unpaged rental invoice DTOs', asy
   assert.equal(schemas.InvoiceSchema.safeParse({ ...invoice, currency: 'USDT' }).success, true);
   assert.equal(schemas.InvoiceSchema.safeParse({ ...invoice, period: '' }).success, true);
 
-  const calls = [];
-  const requestDolores = (config, schema) => {
-    calls.push({ config, schema });
-    return Promise.resolve([invoice]);
-  };
+  const axiosMock = createDoloresAxiosMock([[invoice]]);
+  const { calls } = axiosMock;
   const { billingApi } = loadTypescript('src/apis/dolores/billing.api.ts', {
-    './client': { requestDolores },
+    './client': axiosMock.module,
     '@/schemas/dolores/billing': schemas,
   });
   const signal = new AbortController().signal;
@@ -110,13 +105,10 @@ test('invoice schema and API preserve complete unpaged rental invoice DTOs', asy
 
 test('dashboard date-range requests serialize both dates', async () => {
   const dashboardSchema = loadTypescript('src/schemas/dolores/dashboard.ts');
-  const calls = [];
-  const requestDolores = (config, schema) => {
-    calls.push({ config, schema });
-    return Promise.resolve({ scope: 'SYSTEM' });
-  };
+  const axiosMock = createDoloresAxiosMock([{ scope: 'SYSTEM' }]);
+  const { calls } = axiosMock;
   const { dashboardApi } = loadTypescript('src/apis/dolores/dashboard.api.ts', {
-    './client': { requestDolores },
+    './client': axiosMock.module,
     '@/schemas/dolores/dashboard': dashboardSchema,
   });
   const signal = new AbortController().signal;

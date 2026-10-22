@@ -61,4 +61,3 @@ export const DashboardOverviewSchema = z.object({
   technicianWork: TechnicianWorkMetricsSchema.nullish(),
 });
 
-export type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;

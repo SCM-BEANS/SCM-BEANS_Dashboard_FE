@@ -9,4 +9,3 @@ export const TenantSchema = z.object({
 
 export const TenantListSchema = z.array(TenantSchema);
 
-export type Tenant = z.infer<typeof TenantSchema>;

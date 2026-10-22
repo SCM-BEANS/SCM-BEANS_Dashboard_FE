@@ -2,9 +2,9 @@
 
 ## Status
 
-- Plan status: paused at the user's request (Standard mode; TDD on).
-- Current phase: Phase 1 — paused, implemented, and still unverified pending the required manual/authenticated browser check and a successful production build.
-- Product code status: Phase 1 read integration is implemented; no later phase has started.
+- Plan status: active (Standard mode; TDD on).
+- Current phase: Phase 5 is partial. The per-notification mark-as-read action is connected and automated checks pass; authenticated Moderator write verification remains pending. Phase 4 live invoice verification also remains pending backend access and a renewed browser session.
+- Product code status: Phase 1 is complete. Phase 2 tenant and contract read integration is implemented but remains partial until a valid tenant and contract record can verify tenant-scoped contract and document metadata reads. Phase 3 read integration is implemented; populated machine, location, work-order, and telemetry scenarios remain unverified because the current environment has no records. Phase 4 is partial: invoice list/detail/proof GETs and global recipe reads are wired; buyback detail is wired by UUID while its list remains unavailable. The current backend denies Moderator invoice reads; the user plans to adjust that access. Phase 5 is partial: Moderator can mark individual unread operator notifications as read; remaining write candidates are gated by backend role policy, prerequisites, or missing live verification.
 - Target repository: C:\GitHub\BEANS\SCM-BEANS_Dashboard_FE
 - Scope: integrate API-backed data and supported Moderator workflows into the existing Moderator area.
 - User decisions recorded:
@@ -19,7 +19,7 @@ Replace Moderator demo data with live Dolores data wherever the backend contract
 
 The integration is complete when every in-scope Moderator screen has a recorded API mapping, supported reads use the shared Dolores client and typed query hooks, supported writes use typed mutations with appropriate user feedback and invalidation, and unsupported actions are explicitly unavailable instead of appearing to succeed against demo storage.
 
-A Moderator-authorized session must be used for final end-to-end verification. Until the separate authentication work is complete, code-level verification can proceed, but authenticated browser verification remains blocked and must be reported as pending.
+A Moderator-authorized session must be used for end-to-end verification. Phase 1 has been checked in the signed-in session available on 2026-10-22; each later phase must record its own role-appropriate browser evidence. Authentication implementation remains outside this plan.
 
 ## Decisions and alternatives
 
@@ -67,7 +67,7 @@ This matrix is a starting point from the current code and backend reference. Imp
 | Dashboard | GET /dashboard/overview | Reuse the existing shared dashboard API and hook; verify the MODERATOR/operator response variant and schema |
 | Alerts and notifications | GET /alerts; GET /notifications; GET /notifications/unread-count | Read first. Alert acknowledgement and notification read actions are deferred to a mutation phase. The alerts endpoint's current documented role restriction is broad, so verify actual scoping and do not imply tenant or moderator filtering that the API does not provide |
 | Customers and tenants | GET /tenants and any documented tenant detail/list endpoint | Use only the fields and scope returned by the backend. The current create-account UI is not evidence that Moderator can create an IDaaS or admin user |
-| Contracts | GET /contracts, documented contract detail/history/document reads | Preserve current detail routes only when the backend contract ID can be mapped safely. Owner-only expiry decisions are excluded from Moderator actions |
+| Contracts | GET /contracts/tenant/{tenantId}, GET /contracts/{id}, and documented contract document metadata reads; no GET /contracts collection | Build the list from the authorized tenant list and per-tenant contract reads. Preserve detail routes only for canonical UUIDs; owner-only expiry decisions are excluded |
 | Machines and IoT | GET /machines, GET /locations, documented telemetry reads | Match current UI selection to backend IDs; verify query requirements and telemetry time ranges |
 | Technical requests | Documented maintenance ticket, work-order, and schedule reads | Use the specific supported collection/detail endpoints. Do not treat a locally stored fixture as a server record |
 | Invoices and reconciliation | GET /billing/invoices and documented invoice detail/proof reads | Display server status and amounts as returned; keep all payment, refund, deposit, and review writes deferred |
@@ -90,7 +90,7 @@ This matrix is a starting point from the current code and backend reference. Imp
 
 **Side effects:** Read-only GET requests; cache population only.
 
-**Verification:** TypeScript and lint; schema tests or existing tests for changed response parsing; hook-level checks for query keys and error propagation; manual screen check with representative success, empty, loading, and failure responses. Authenticated browser check is pending the user's separate token fix.
+**Verification:** TypeScript and lint; schema tests or existing tests for changed response parsing; hook-level checks for query keys and error propagation; manual screen check with representative success, empty, and loading responses; automated checks cover representative API failure states. Record the authenticated Moderator browser check when a valid session is available.
 
 **Acceptance:** No dashboard, alert, or notification list in this phase reports demo data as live; API errors remain visible; role-variant dashboard fields render without changing the ADMIN view; no mutation is sent.
 
@@ -125,6 +125,16 @@ This matrix is a starting point from the current code and backend reference. Imp
 **Risks and stop conditions:** The UI may encode fixture IDs in nested routes. If a route cannot be mapped unambiguously to a backend record, preserve the page shell and show a not-found/unavailable state rather than guessing. Do not expose owner-only expiry decisions to Moderator.
 
 ### Phase 3 — Machines, locations, telemetry, and technical-request reads
+
+**Implementation and verification record (2026-10-22):**
+
+- Reused the shared machine, location, telemetry, tenant, and maintenance-ticket APIs/hooks. Added typed, tenant-scoped installation work-order list/detail reads and location detail reads; added response schemas for work-order summary, checklist, accessories, and evidence metadata. Machine timestamp schemas now accept the backend's `LocalDateTime` format as well as offset timestamps.
+- Confirmed the read contract and Moderator scope in the current backend controllers/services for `GET /machines`, `GET /machines/{id}`, `GET /machines/{id}/maintenance-schedule`, `GET /locations?tenantId=...&activeOnly=false`, `GET /locations/{id}`, `GET /telemetry-query/machines/{machineId}/points?from=...&to=...&limit=...&offset=...`, `GET /maintenance-tickets`, `GET /installation-work-orders?tenantId=...`, and `GET /installation-work-orders/{workOrderId}`. The installation work-order list remains tenant-scoped; its detail returns evidence metadata only.
+- Replaced Moderator machine, stock/customer, machine detail, IoT, technical-request, and machine-history fixtures with API-backed read states. Installation work orders link and load by canonical UUID. Machine location detail resolves by `locationId`; telemetry is queried only after selecting a machine whose detail says `SMART_IOT` and submitting a valid explicit date range. Queries are paginated at 100 points and do not poll.
+- Kept machine-loan/substitute flows, legacy `S-018` and `YC-017` detail IDs, and request-creation routes unavailable because no matching Moderator read contract exists. Work-order evidence stays metadata-only. No operational write was added.
+- Automated verification: `node --test` passed (49 tests), `npx tsc --noEmit` passed, and `npm run lint` passed with five warnings in unrelated digital-twin/MFA files. `git diff --check` passed with line-ending conversion warnings only.
+- Authenticated browser verification: machine list, IoT, locations, and technical-request list returned empty arrays and showed their empty states. A valid-shaped but nonexistent machine UUID showed a 404 error state. Legacy `YC-017` showed the explicit unavailable state. The session redirected to login during verification and was restored with the user-provided Moderator account; the browser was returned to `/moderator/machines`.
+- Data limitation: there are no machine, tenant, maintenance-ticket, or installation work-order records in the current environment, so populated list/detail responses and a successful telemetry-range request could not be verified in-browser. Automated tests cover UUID validation, tenant-scoped work-order reads, location detail mapping, range gating, pagination hooks, empty states, and API-error handling.
 
 **Outcome:** Operational screens show live machines, locations, telemetry, maintenance, and work-order data where the backend exposes a compatible Moderator read endpoint.
 
@@ -275,7 +285,7 @@ This matrix is a starting point from the current code and backend reference. Imp
 3. **Identity gate:** Demonstrate deterministic mapping from UI record and route to canonical backend ID. No identifier guessing.
 4. **Read gate:** Verify loading, empty, error, retry, pagination, filtering, and detail-not-found behavior before enabling writes for the same domain.
 5. **Mutation gate:** Review action-to-endpoint mapping, authorization, confirmation, duplicate protection, server confirmation, and cache invalidation before enabling each write.
-6. **Authentication gate:** Use a valid Moderator session for final API verification. Until the user's separate authentication fix is complete, mark browser/API evidence pending; do not alter token handling here.
+6. **Authentication gate:** Use a valid Moderator session for API verification. If one is unavailable for a phase, mark that phase's browser/API evidence pending; do not alter token handling here.
 7. **Regression gate:** Run project lint/build and relevant tests for changed modules. Check shared ADMIN and other-role consumers for schema, cache, and routing regressions.
 8. **Review gate:** Review every phase's diff before proceeding to the next phase. Stop on contract mismatch, role ambiguity, unsafe identity mapping, material UI scope expansion, or failed verification.
 9. **Release gate:** Do not claim live Moderator integration for any screen/action without a successful request and response under the Moderator role. Document unsupported endpoints and pending authenticated verification.
@@ -288,7 +298,7 @@ This matrix is a starting point from the current code and backend reference. Imp
 - The canonical role name is MODERATOR. STAFF compatibility must be confirmed per endpoint and is not a frontend fallback.
 - The API may not expose a Moderator-compatible endpoint for every demo surface. Unsupported routes/actions remain visibly unavailable until the contract exists.
 - The current buyback list has no verified collection API in the inspected reference.
-- Authenticated browser verification cannot be completed until the user's separately planned token fix is available.
+- Phase 1 was verified in an authenticated Moderator session on 2026-10-22; future read and mutation phases must record their own role-appropriate browser evidence.
 - Financial, legal, global-catalog, work-order, and inventory effects require action-specific confirmation and verified backend semantics.
 
 ## Non-goals
@@ -302,9 +312,9 @@ This matrix is a starting point from the current code and backend reference. Imp
 
 ## Execution record
 
-### Phase 1 — Moderator overview, alerts, and notifications reads
+### Phase 1 — Moderator overview, alerts, and notifications reads (initial verification attempt)
 
-- **Status:** unverified. The code-level implementation, focused tests, type check, lint, and compile-mode build passed, but the phase cannot be marked complete because the planned manual screen check could not reach the Moderator UI without an authenticated session and the full production build failed during `.next` prerender output creation.
+- **Status at the time:** unverified; superseded by the authenticated resumed verification below.
 - **Implemented:** dashboard metrics and daily cup usage now use the shared Dolores dashboard query; alerts and notifications use their existing shared read APIs/hooks; unread count uses `GET /notifications/unread-count` with a typed schema and query hook; the three screens show loading, empty, retry, and API error states. No write action was added, and token/login/refresh code was not changed.
 - **TDD:** added the unread-count/API/hook checks and Moderator dashboard render-state tests first; they failed before implementation for the missing behavior, then passed after implementation.
 - **Automated evidence:**
@@ -314,7 +324,84 @@ This matrix is a starting point from the current code and backend reference. Imp
   - `npm run build -- --experimental-build-mode compile` — passed and compiled the Moderator routes.
   - Full `npm run build` and `npm run build -- --webpack` — compilation/type checking completed, then prerender failed with `EPERM` while creating directories under `.next\server\app`; production build remains unverified.
   - `git diff --check` — passed; Git reported only working-copy LF-to-CRLF notices for changed files.
-- **Browser evidence:** opened `http://localhost:3000/moderator`; the application redirected to `/login`. No Moderator session was available, no credentials were entered, and no authenticated Dolores request or write was attempted. The plan's authenticated browser verification remains pending the separate token fix. The component render tests cover representative API success, empty, loading, 401, and 403 states, but do not replace the planned manual browser check.
+- **Browser evidence at the time:** opened `http://localhost:3000/moderator`; the application redirected to `/login`. No Moderator session was available, no credentials were entered, and no authenticated Dolores request or write was attempted. Authenticated browser verification was pending then and was later completed in the signed-in session recorded below. The component render tests covered representative API success, empty, loading, 401, and 403 states.
 - **Review:** separate read-only review found no remaining material correctness or regression issue in the Phase 1 diff. The shared ADMIN dashboard component and API hook were not modified; the dashboard schema remains shared and unchanged.
-- **Gate decision:** paused at the user's request. Phase 1 remains unverified; do not begin Phase 2 until resumed and the required browser check can run with a valid Moderator session and the production build failure is resolved or conclusively classified as an environment limitation.
+- **Gate decision at the time:** Phase 1 remained unverified. This decision was superseded after the user signed in and the production build completed successfully.
 
+### Phase 1 — resumed verification (2026-10-22)
+
+- **Status:** complete. Focused tests, TypeScript, lint, full production build, authenticated browser checks, and a fresh read-only review pass.
+- **Mode/TDD:** Standard; TDD on. Live browser inspection found the shared shell still labeled the three API-backed Phase 1 routes as demo data. Added a narrow route-specific shell label correction and regression tests; unrelated Moderator routes and the Admin account label retain their existing text.
+- **Automated evidence:**
+  - `node --test tests/dolores-telemetry.test.cjs tests/dolores-phase6.test.cjs tests/dolores-notifications.test.cjs tests/dolores-locations.test.cjs tests/dolores-contracts.test.cjs tests/moderator-dashboard.test.cjs tests/moderator-shell-data-label.test.cjs` — 24/24 passed. The shell-label test failed before the correction and passes afterward.
+  - `node_modules/.bin/tsc.cmd --noEmit` — passed.
+  - `npm run lint` — passed with 0 errors and 5 warnings in unrelated Digital Twin/MFA files.
+  - `npm run build` — passed after allowing network access for the Google Fonts requested by Next.js; TypeScript completed and all 35 static pages were generated.
+- **Browser evidence:** in the user's signed-in Moderator session, `/moderator` returned the operator dashboard (`scope: OPERATOR`, seven-day usage period, 0-valued live metrics); `/moderator/notifications` returned unread count `0` and an empty notifications state; `/moderator/notifications/alerts` returned the API's empty alerts state and disclosed that the API does not scope alerts by tenant. All three showed `Dolores • Dữ liệu API`. Loading states were observed during requests; tests cover successful records, empty state, loading, retryable errors, and the distinction between 401 and 403. No credentials were entered by the agent and no write action was attempted.
+- **Review:** a fresh read-only review confirmed the label branch is gated by the Moderator role and the exact three API-backed paths. It does not change Admin or unintegrated Moderator labels, API behavior, authentication, or route authorization. No unresolved Phase 1 correctness or regression issue remains.
+- **Environment:** the first build attempt could not fetch Google Fonts; after network permission was granted, the full build passed. The pre-existing `.env` modification was preserved.
+- **Gate decision:** Phase 1 is accepted and complete. Stop at this phase boundary under Standard mode; Phase 2 remains not started and requires a resumed run.
+
+### Phase 2 — tenant and contract reads (2026-10-22)
+
+- **Status:** partial. Implementation and automated checks pass. In the authenticated Moderator session, tenant list and contract list returned their expected empty states, and nonexistent UUID routes returned 404. No valid tenant/contract is available, so contract-by-tenant reads for a real tenant and document metadata for a real contract remain unverified. Phase 2 is not complete; Phase 3 has not started.
+- **Mode/TDD:** Standard; TDD on. Added `tests/moderator-phase2.test.cjs` first; all seven initial cases failed against the existing demo-only screens/missing UUID hook, then the implementation was added and the tests passed.
+- **Contract gate:** the supplied `report.md` confirms read-route happy cases but its 401 cases do not prove Moderator authorization. Current OpenAPI and backend source were checked directly. Verified reads are `GET /api/v1/tenants`, `GET /api/v1/tenants/{id}`, `GET /api/v1/contracts/tenant/{tenantId}`, `GET /api/v1/contracts/{id}`, and `GET /api/v1/contracts/{contractId}/documents`. There is no `GET /api/v1/contracts` collection and no pagination on the tenant contract list; the UI aggregates per-tenant results with the existing bounded request concurrency. Tenant list requires a global operator; tenant/contract/document reads permit the operator scope. Backend `SecurityCheckService` treats `ROLE_MODERATOR` as the compatibility alias accepted by `ADMIN/STAFF` checks, and `isGlobalOperator()` explicitly includes MODERATOR. Owner-only expiry decisions, mutations, upload, and downloads remain unavailable.
+- **Implemented:** Moderator tenant list/detail now use the shared tenant hooks and render only API tenant fields. Contract lists use `/tenants` followed by `/contracts/tenant/{tenantId}`; details use canonical contract UUIDs and `/contracts/{id}`; details show read-only document metadata. Legacy fixture IDs stay routable but show an unavailable state without sending them to the API. New account/contract, expiry, and other contract write routes show an unavailable state and cannot reach a mutation. The new by-ID query hook and route matcher are additive; the existing ADMIN detail hook, API methods, and screens were not changed. The shared shell now labels only the API-backed Moderator lists and UUID detail routes as API data; unavailable write routes, fixture routes, unrelated Moderator pages, and the Admin account label retain their existing labels.
+- **Automated evidence:**
+  - `node --test tests/*.test.cjs` — 37/37 passed after the shell-label correction (executed through PowerShell file enumeration). The new route-label assertions failed before the correction and passed afterward.
+  - `node_modules/.bin/tsc.cmd --noEmit` — passed.
+  - `npm run lint` — passed with 0 errors and 5 existing warnings in unrelated Digital Twin/MFA files.
+  - `npm run build` before the shell-label correction — passed; all 35 static pages generated and `/moderator/[...sections]` compiled. After the shell-label correction, a fresh build compiled and completed TypeScript, then prerendering failed on `/admin` with `EPERM` creating `.next\server\app\admin.segments\!KGFkbWluKQ`. The build failure occurred after application compilation; the final full production build is not confirmed.
+  - `git diff --check` — passed; Git emitted only LF-to-CRLF working-copy notices.
+- **Browser evidence — initial attempt:** opening `http://localhost:3000/moderator/contracts` first redirected to `/login`; this was superseded by the user's later signed-in session.
+- **Browser evidence — resumed authenticated check:** `/moderator` remained in the Moderator operator area (`scope: OPERATOR`). `/moderator/customers` showed `Dolores • Dữ liệu API` and “Dolores hiện không trả về tenant nào.” `/moderator/contracts` showed `Dolores • Dữ liệu API` and “Không có tenant để truy vấn hợp đồng.” Nonexistent UUIDs on tenant and contract detail routes returned API-backed 404 states. Legacy `C-204` displayed the stale-fixture unavailable state; `/moderator/customers/new`, `/moderator/contracts/new`, and `/moderator/contracts/expiry` displayed unavailable states with no write action. With zero tenants and contracts, a valid per-tenant contract list, valid contract detail, and document metadata response could not be exercised. No write request was attempted.
+- **Regression/review:** the shell-label correction is gated to the API-backed Moderator lists and canonical UUID detail paths. Unsupported write routes, stale fixture IDs, unrelated Moderator routes, and the Admin account label retain their existing labels. ADMIN contract behavior is unchanged; the shared contract hook change remains additive. No mutation is enabled.
+- **Gate decision at that checkpoint:** Phase 2 remained partial because no valid tenant/contract records were available. The user later directed work to continue with Phase 3 and Phase 4, so those phases proceeded while Phase 2 tenant-scoped contract and document checks remain pending.
+
+### Phase 4 — read integration and verification (2026-10-22)
+
+- **Status:** partial. Read-only invoice, proof, global recipe, and UUID buyback detail integrations are implemented. Automated checks pass. The live Moderator invoice read remains pending because current backend code returns 403 for the global Moderator role, and the authenticated browser session expired during verification. The user plans to adjust backend access. No Phase 5 work was started in that Phase 4 run.
+- **Mode/TDD:** Standard; TDD on. Added tests/moderator-phase4.test.cjs before implementation; the initial eight contract/UI cases failed because the new API/schema/screen behavior was absent. After adding the integrations and adapting the existing screen test loaders to mock the extracted modules, all Phase 4 tests pass.
+- **Backend contract evidence:** BillingController.getAllInvoices() and getInvoice() allow ADMIN/STAFF to read globally; other roles require tenant context, so the current global Moderator receives 403. Payment proof list and content GETs are available to global operators including MODERATOR, but require invoice/proof IDs. RecipeController provides global list/detail GETs; publish/delete are writes and remain out of scope. BuybackController provides only GET /{caseId}, guarded by tenant access which permits global operators; it has no collection GET.
+- **Implemented:** Moderator invoices now read the invoice list and UUID detail, render server amount/currency/status/period fields, and read proof metadata/content. Proof content is downloaded through a private GET; objectKey is omitted from the client schema. Global recipe list/detail screens use the existing shared recipes API/hooks. Buyback gets a UUID-validated detail API/schema/hook; the list is explicitly unavailable and old MB-* fixture IDs are never sent to Dolores. Unsupported write routes show unavailable states. No payment, proof-review, recipe, or buyback mutation was added.
+- **Automated evidence:**
+  - node --test tests/moderator-phase4.test.cjs — 9/9 passed.
+  - node --test tests/*.test.cjs — 58/58 passed.
+  - node_modules/.bin/tsc.cmd --noEmit — passed.
+  - npm run lint — passed with 0 errors and 5 existing warnings in unrelated Digital Twin/MFA files.
+  - git diff --check — passed; only working-copy LF-to-CRLF notices were reported.
+  - Production build was not run for Phase 4; .next is shared with the running development server. The prior build record remains in Phase 1/2.
+- **Browser evidence:** The signed-in Moderator session initially showed the machine list's API empty state. Navigating to /moderator/invoices redirected to /login, indicating the browser session had expired. No login automation or write request was performed. Live invoice/proof and recipe reads remain unverified in the browser; current backend source predicts invoice 403 until the user adjusts Moderator access.
+- **Review:** Read-only review confirmed the new calls use the documented GET routes, canonical UUID validation, server-sourced display fields, and no fixture ID for API requests. Private proof object keys and buyback idempotency/correlation fields are not rendered. Dynamic routes were checked against the route catalog. No Phase 4 code-level blocker was found.
+- **Gate decision at that Phase 4 checkpoint:** Phase 4 remained partial under Standard mode. The user later directed continuation to Phase 5; invoice/proof and recipe browser verification remains pending backend access and a renewed authenticated session. The buyback list stays unavailable until a collection endpoint exists.
+
+### Phase 5 — low-risk operational mutations (2026-10-22)
+
+- **Status:** partial. The Moderator notification list now supports marking one unread operator notification as read. Authenticated Moderator write verification remains pending because the browser session expired before this phase; no mutation was sent to Dolores.
+- **Mode/TDD:** Standard; TDD on. Added a dashboard test for the unread-row action first. It failed because the notification screen did not use the existing mutation hook; after wiring the action, the focused test passed. A failure-state test confirms 403 does not produce success feedback and leaves the notification displayed as unread.
+- **Action-to-endpoint review:**
+  - **Enabled:** mark one notification read via POST /api/v1/notifications/{id}/read. NotificationController has a Moderator-specific path that only updates global operator notifications. The existing client method and mutation hook validate UUIDs and invalidate the notification list and unread count after a confirmed response.
+  - **Deferred:** alert acknowledgement uses POST /api/v1/alerts/{id}/ack, but the controller describes admin/technician handling and has no explicit Moderator authorization; keep disabled pending a clear role contract.
+  - **Deferred:** maintenance ticket create documentation mentions Moderator, but its controller operator check accepts ADMIN/STAFF only and its fallback requires tenant context; a global Moderator cannot pass this policy as currently implemented. Assignment explicitly accepts only ADMIN/STAFF.
+  - **Deferred:** installation work-order creation requires the canonical Moderator role but also requires a DRAFT contract, an unarchived MAIN_CONTRACT reference copy, and matching machine/tenant IDs. Creation locks the contract, rejects duplicate open work orders, and has no idempotency replay. No valid records are available to verify this flow or its prerequisites.
+  - **Deferred:** contract document upload creates a private legal reference artifact. There is no valid live contract in the current test session to verify the upload against; it remains unavailable pending contract records and authenticated verification.
+  - No bulk read-all action was added; the screen has no corresponding existing action and a bulk change would affect all operator notifications.
+- **Implemented:** each unread notification row has a Mark-as-read action. It calls the existing useMarkNotificationRead mutation, uses the API response plus query invalidation for the displayed read state, disables repeat submission while pending, and reports API errors inline. No optimistic success state or demo write was added.
+- **Automated evidence:**
+  - node --test tests/moderator-dashboard.test.cjs tests/dolores-notifications.test.cjs — 10/10 passed.
+  - node --test tests/*.test.cjs — 60/60 passed.
+  - node_modules/.bin/tsc.cmd --noEmit — passed.
+  - npm run lint — passed with 0 errors and 5 existing warnings in unrelated Digital Twin/MFA files.
+  - git diff --check — passed; only working-copy LF-to-CRLF notices were reported.
+- **Browser evidence:** not run for a write. The earlier Moderator browser session had expired and no login or mutation was automated. The UI must be tested with an authenticated Moderator and a real unread notification before this action is accepted as live.
+- **Resumed browser check (2026-10-22):** `/moderator/notifications` displayed an unread count of `0` and “Dolores hiện không trả về thông báo nào.” There was no unread notification row to exercise, so no POST was sent. Live write verification remains pending until a real unread notification is available.
+- **Review:** Read-only review confirmed the action targets only an unread row's canonical notification UUID, uses the existing API method, invalidates only the notification query family, and preserves unread state when the mutation fails. Other candidate endpoints remain disabled where Moderator permission or safe preconditions are not established.
+- **Gate decision:** Phase 5 remains partial under Standard mode. Verify one notification mark-as-read request and its updated server response in an authenticated Moderator session. Do not enable alert acknowledgement, maintenance writes, installation work-order creation, or document upload until their role and precondition gates are met. Stop at the Phase 5 boundary; do not start Phase 6 in this run.
+
+### Phase 6 — entry-gate check only (2026-10-22)
+
+- **Status:** not started. No recipe mutation was implemented or sent.
+- **OpenAPI evidence:** `POST /api/v1/recipes/global` requires ADMIN or MODERATOR and publishes a recipe globally, automatically recompiling affected tenants' effective recipes. `DELETE /api/v1/recipes/global/{id}` requires ADMIN or MODERATOR and returns 204; the current contract does not describe deletion audit details or rollback/reversibility.
+- **Browser evidence:** navigating to `/moderator/menu` redirected the current app tab to `/login`; no authenticated recipe read response or safe test recipe was available in this check.
+- **Gate decision:** Phase 6 remains blocked at entry. Recipe reads have not been accepted with current authenticated evidence, there is no available safe test recipe, and deletion consequences need clarification before enabling it. Phase 5 live mark-as-read verification also remains pending because the notification list showed zero unread items.

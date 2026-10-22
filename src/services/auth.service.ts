@@ -1,7 +1,7 @@
 import Cookies from 'js-cookie';
 import axiosClient from '@/lib/axios/axiosClient';
 import { AUTH } from '@/constants/endpoints';
-import { LoginResponse, ApiResponse, User } from '@/types/api.type';
+import { ApiResponse, User } from '@/types/api.type';
 
 const logRolesFromAccessToken = (accessToken: string) => {
   try {
@@ -23,8 +23,8 @@ const logRolesFromAccessToken = (accessToken: string) => {
 
 export const authService = {
   /**
-   * Logs in a user, extracts tokens, and sets them in js-cookie.
-   * Access token expires in 15 minutes, refresh token expires in 7 days.
+   * Logs in a user and stores the JS-readable access token.
+   * The backend sets the refresh token through an HttpOnly cookie.
    */
   login: async (credentials: Record<string, string>): Promise<any> => {
     // Note: Because interceptor extracts data, response IS the payload
@@ -57,12 +57,17 @@ export const authService = {
   },
 
   /**
-   * Logs out the user by clearing cookies.
+   * Expires the browser refresh cookie through the local route and clears the access token.
    */
-  logout: () => {
-    Cookies.remove('access_token');
-    Cookies.remove('refresh_token');
-    // Can trigger a redirect to /login here if needed or handled by component
+  logout: async (): Promise<boolean> => {
+    try {
+      await axiosClient.post(AUTH.LOGOUT, {});
+      return true;
+    } catch {
+      return false;
+    } finally {
+      Cookies.remove('access_token');
+    }
   },
 
   /**

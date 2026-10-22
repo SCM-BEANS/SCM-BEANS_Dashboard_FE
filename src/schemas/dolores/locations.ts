@@ -1,13 +1,17 @@
 import { z } from 'zod';
 
+export const StoreLocationIdSchema = z.string().uuid();
+
 export const StoreLocationSchema = z.object({
-  id: z.string().uuid(),
+  id: StoreLocationIdSchema,
+  tenantId: z.string().uuid().nullish(),
   name: z.string(),
   address: z.string().nullish(),
   city: z.string().nullish(),
   contactPerson: z.string().nullish(),
   phoneNumber: z.string().nullish(),
   active: z.boolean().nullish(),
+  machineCount: z.number().int().nonnegative().nullish(),
 });
 
 const locations = z.array(StoreLocationSchema);
@@ -29,9 +33,8 @@ export const StoreLocationListSchema = z.union([
   z.object({ content: locations, last: z.literal(true) }),
 ]);
 
-export type StoreLocation = z.infer<typeof StoreLocationSchema>;
 
-export function unwrapLocations(response: z.infer<typeof StoreLocationListSchema>): StoreLocation[] {
+export function unwrapLocations(response: z.infer<typeof StoreLocationListSchema>): z.infer<typeof StoreLocationSchema>[] {
   if (Array.isArray(response)) return response;
   if ('data' in response) return locations.parse(response.data);
   if ('locations' in response) return locations.parse(response.locations);

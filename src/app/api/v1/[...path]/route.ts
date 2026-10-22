@@ -32,6 +32,30 @@ async function proxyIdaas(request: NextRequest, context: RouteContext): Promise<
       responseHeaders.delete(name);
     }
 
+    if (request.method === 'POST' && path.length === 2 && path[0] === 'auth' && path[1] === 'login') {
+      responseHeaders.set('Cache-Control', 'no-store');
+      let payload: unknown;
+      try {
+        payload = await upstream.clone().json();
+      } catch {
+        if (upstream.ok) {
+          return NextResponse.json({ message: 'IDaaS login response is invalid.' }, { status: 502 });
+        }
+        return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
+      }
+
+      if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+        if (upstream.ok) {
+          return NextResponse.json({ message: 'IDaaS login response is invalid.' }, { status: 502 });
+        }
+      } else if (Object.prototype.hasOwnProperty.call(payload, 'refresh_token')) {
+        delete (payload as Record<string, unknown>).refresh_token;
+        return new Response(JSON.stringify(payload), { status: upstream.status, headers: responseHeaders });
+      } else if (upstream.ok) {
+        return new Response(JSON.stringify(payload), { status: upstream.status, headers: responseHeaders });
+      }
+    }
+
     return new Response(upstream.body, {
       status: upstream.status,
       headers: responseHeaders,

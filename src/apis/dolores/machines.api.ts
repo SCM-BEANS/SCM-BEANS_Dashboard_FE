@@ -1,4 +1,4 @@
-import { requestDolores } from './client';
+import { doloresAxiosClient, parseDoloresResponse } from './client';
 import {
   InventorySummarySchema,
   MachineDetailSchema,
@@ -8,44 +8,56 @@ import {
   MaintenanceScheduleSchema,
   MaintenanceTicketListSchema,
 } from '@/schemas/dolores/machines';
+import type {
+  InventorySummary,
+  MachineDetail,
+  MachineHeartbeat,
+  MachineInventoryItem,
+  MaintenanceSchedule,
+  MaintenanceTicket,
+} from '@/types/dolores/machines';
 
 function requireMachineId(machineId: string): string {
   return MachineIdSchema.parse(machineId);
 }
 
 export const machinesApi = {
-  list: (signal?: AbortSignal) =>
-    requestDolores({ method: 'GET', url: '/machines', signal }, MachineInventorySchema),
+  list: async (signal?: AbortSignal): Promise<MachineInventoryItem[]> => {
+    const response = await doloresAxiosClient.get<unknown>('/machines', { signal });
+    return parseDoloresResponse(response.data, MachineInventorySchema);
+  },
 
-  getById: (machineId: string, signal?: AbortSignal) =>
-    requestDolores(
-      { method: 'GET', url: '/machines/' + encodeURIComponent(requireMachineId(machineId)), signal },
-      MachineDetailSchema
-    ),
+  getById: async (machineId: string, signal?: AbortSignal): Promise<MachineDetail> => {
+    const response = await doloresAxiosClient.get<unknown>(
+      '/machines/' + encodeURIComponent(requireMachineId(machineId)),
+      { signal }
+    );
+    return parseDoloresResponse(response.data, MachineDetailSchema);
+  },
 
-  getInventorySummary: (signal?: AbortSignal) =>
-    requestDolores({ method: 'GET', url: '/inventory/summary', signal }, InventorySummarySchema),
+  getInventorySummary: async (signal?: AbortSignal): Promise<InventorySummary> => {
+    const response = await doloresAxiosClient.get<unknown>('/inventory/summary', { signal });
+    return parseDoloresResponse(response.data, InventorySummarySchema);
+  },
 
-  listMaintenanceTickets: (signal?: AbortSignal) =>
-    requestDolores({ method: 'GET', url: '/maintenance-tickets', signal }, MaintenanceTicketListSchema),
+  listMaintenanceTickets: async (signal?: AbortSignal): Promise<MaintenanceTicket[]> => {
+    const response = await doloresAxiosClient.get<unknown>('/maintenance-tickets', { signal });
+    return parseDoloresResponse(response.data, MaintenanceTicketListSchema);
+  },
 
-  getMaintenanceSchedule: (machineId: string, signal?: AbortSignal) =>
-    requestDolores(
-      {
-        method: 'GET',
-        url: '/machines/' + encodeURIComponent(requireMachineId(machineId)) + '/maintenance-schedule',
-        signal,
-      },
-      MaintenanceScheduleSchema
-    ),
+  getMaintenanceSchedule: async (machineId: string, signal?: AbortSignal): Promise<MaintenanceSchedule> => {
+    const response = await doloresAxiosClient.get<unknown>(
+      '/machines/' + encodeURIComponent(requireMachineId(machineId)) + '/maintenance-schedule',
+      { signal }
+    );
+    return parseDoloresResponse(response.data, MaintenanceScheduleSchema);
+  },
 
-  getLatestHeartbeat: (machineId: string, signal?: AbortSignal) =>
-    requestDolores(
-      {
-        method: 'GET',
-        url: '/telemetry-query/machines/' + encodeURIComponent(requireMachineId(machineId)) + '/heartbeats/latest',
-        signal,
-      },
-      MachineHeartbeatSchema
-    ),
+  getLatestHeartbeat: async (machineId: string, signal?: AbortSignal): Promise<MachineHeartbeat> => {
+    const response = await doloresAxiosClient.get<unknown>(
+      '/telemetry-query/machines/' + encodeURIComponent(requireMachineId(machineId)) + '/heartbeats/latest',
+      { signal }
+    );
+    return parseDoloresResponse(response.data, MachineHeartbeatSchema);
+  },
 };

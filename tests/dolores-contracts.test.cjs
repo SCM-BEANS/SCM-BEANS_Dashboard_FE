@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
+const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
@@ -70,7 +71,6 @@ test('contract schemas accept supported entity, expiry, and document response fi
 });
 
 test('contract API constructs only tenant-scoped and documented read routes', async () => {
-  const calls = [];
   const otherId = '00000000-0000-4000-8000-000000000005';
   const responseQueue = [
     [],
@@ -78,7 +78,9 @@ test('contract API constructs only tenant-scoped and documented read routes', as
     [],
     { contractId, expiryDate: '2026-12-31' },
     [],
+    new Blob(),
   ];
+  const axiosMock = createDoloresAxiosMock(responseQueue);
   const passSchema = { parse: (value) => value };
   const validateUuid = (value) => {
     if (value !== tenantId && value !== contractId && value !== machineId && value !== documentId) {
@@ -88,11 +90,10 @@ test('contract API constructs only tenant-scoped and documented read routes', as
   };
   const mocks = {
     './client': {
+      ...axiosMock.module,
       DoloresApiError: class DoloresApiError extends Error {
         constructor(kind, status, message) { super(message); this.kind = kind; this.status = status; }
       },
-      requestDolores: (config, schema) => { calls.push({ config, schema }); return Promise.resolve(responseQueue.shift()); },
-      requestDoloresBlob: (config) => { calls.push({ config, blob: true }); return Promise.resolve(new Blob()); },
     },
     '@/schemas/dolores/contracts': {
       ContractIdSchema: { parse: validateUuid },
@@ -104,6 +105,7 @@ test('contract API constructs only tenant-scoped and documented read routes', as
     '@/schemas/dolores/machines': { MachineIdSchema: { parse: validateUuid } },
     '@/schemas/dolores/tenants': { TenantSchema: { shape: { id: { parse: validateUuid } } } },
   };
+  const { calls } = axiosMock;
   const { contractsApi } = loadTypescript('src/apis/dolores/contracts.api.ts', mocks);
 
   await contractsApi.listByTenant(tenantId);

@@ -2,19 +2,17 @@
 
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { contractsApi } from '@/apis/dolores/contracts.api';
-import {
-  ContractIdSchema,
-  type Contract,
-  type ContractDocument,
-} from '@/schemas/dolores/contracts';
+import { ContractIdSchema } from '@/schemas/dolores/contracts';
 import { MachineIdSchema } from '@/schemas/dolores/machines';
-import type { Tenant } from '@/schemas/dolores/tenants';
+import type { Contract } from '@/types/dolores/contracts';
+import type { Tenant } from '@/types/dolores/tenants';
 import { retryDoloresRead } from './queryPolicy';
 import { withTenantRequestSlot } from './tenantRequestLimiter';
 
 export const contractQueryKeys = {
   all: ['dolores', 'contracts'] as const,
   byTenant: (tenantId: string) => [...contractQueryKeys.all, 'tenant', tenantId] as const,
+  byId: (contractId: string) => [...contractQueryKeys.all, 'id', contractId] as const,
   detail: (tenantId: string, contractId: string) => [...contractQueryKeys.all, 'detail', tenantId, contractId] as const,
   history: (tenantId: string, machineId: string) => [...contractQueryKeys.all, 'history', tenantId, machineId] as const,
   expiryStatus: (tenantId: string, contractId: string) => [...contractQueryKeys.all, 'expiry', tenantId, contractId] as const,
@@ -64,6 +62,16 @@ export function useContractDetail(tenantId: string | undefined, contractId: stri
     queryKey: contractQueryKeys.detail(tenantId ?? '', contractId ?? ''),
     queryFn: ({ signal }) => contractsApi.getById(contractId!, signal),
     enabled: enabled && validTenantId && validContractId,
+    retry: retryDoloresRead,
+  });
+}
+
+export function useContractById(contractId: string | undefined, enabled = true) {
+  const validContractId = Boolean(contractId && ContractIdSchema.safeParse(contractId).success);
+  return useQuery({
+    queryKey: contractQueryKeys.byId(contractId ?? ''),
+    queryFn: ({ signal }) => contractsApi.getById(contractId!, signal),
+    enabled: enabled && validContractId,
     retry: retryDoloresRead,
   });
 }

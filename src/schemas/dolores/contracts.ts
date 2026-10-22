@@ -62,6 +62,3 @@ export const ContractDocumentSchema = z.object({
 
 export const ContractDocumentListSchema = z.array(ContractDocumentSchema);
 
-export type Contract = z.infer<typeof ContractSchema>;
-export type ContractExpiryStatus = z.infer<typeof ContractExpiryStatusSchema>;
-export type ContractDocument = z.infer<typeof ContractDocumentSchema>;

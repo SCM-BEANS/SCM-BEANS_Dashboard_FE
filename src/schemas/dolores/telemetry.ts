@@ -14,4 +14,3 @@ export const TelemetryPointSchema = z.object({
 
 export const TelemetryPointListSchema = z.array(TelemetryPointSchema);
 
-export type TelemetryPoint = z.infer<typeof TelemetryPointSchema>;

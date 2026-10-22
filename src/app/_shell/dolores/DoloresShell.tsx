@@ -1,7 +1,7 @@
 "use client";
 
 import { getRoleNavigationState, isCurrentPath, ROLE_LABEL } from "@/routes/navigation";
-import { PATH_PUBLIC } from "@/routes/path";
+import { PATH_MODERATOR, PATH_PUBLIC } from "@/routes/path";
 import type { AppRole } from "@/routes/routes";
 import { DoloresIconView } from "@/app/_ui/dolores/DoloresUI";
 import Link from "next/link";
@@ -23,6 +23,30 @@ export const DoloresShellFocusContext = createContext<{
 export function DoloresShell({ role, children }: { role: DoloresRole; children: ReactNode }) {
   const pathname = usePathname();
   const isAdminUsersRoute = pathname === "/admin/users";
+  const isModeratorApiReadRoute = role === "moderator" && (
+    [
+      PATH_MODERATOR.root,
+      PATH_MODERATOR.contracts,
+      PATH_MODERATOR.customers,
+      PATH_MODERATOR.notifications,
+      PATH_MODERATOR.notificationAlerts,
+      PATH_MODERATOR.machines,
+      PATH_MODERATOR.machinesList,
+      PATH_MODERATOR.machineStock,
+      PATH_MODERATOR.machineCustomer,
+      PATH_MODERATOR.machineRepairHistory,
+      PATH_MODERATOR.iot,
+      PATH_MODERATOR.iotCustomer,
+      PATH_MODERATOR.iotMachines,
+      PATH_MODERATOR.technicalRequests,
+      PATH_MODERATOR.technicalRequestsList,
+      PATH_MODERATOR.machineHistory,
+    ].some((route) => route === pathname) ||
+    [PATH_MODERATOR.contracts, PATH_MODERATOR.customers, PATH_MODERATOR.machines, PATH_MODERATOR.technicalRequests, PATH_MODERATOR.machineHistory].some((base) => {
+      const id = pathname.startsWith(`${base}/`) ? pathname.slice(base.length + 1) : "";
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    })
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { nav, selectionPath, mobileSelectionPath, selectedItem, notificationsHref, mobileItems } = getRoleNavigationState(role, pathname);
   const [focusLabel, setFocusLabel] = useState<string | null>(null);
@@ -74,7 +98,7 @@ export function DoloresShell({ role, children }: { role: DoloresRole; children: 
         </nav>
         <div className="mt-auto pt-4 text-xs leading-[1.45] text-[#706561]">
           <p>Không gian {ROLE_LABEL[role]}</p>
-          <p>{isAdminUsersRoute ? "Dolores • Quản lý tài khoản" : "Dolores • Dữ liệu minh họa"}</p>
+          <p>{isAdminUsersRoute ? "Dolores • Quản lý tài khoản" : isModeratorApiReadRoute ? "Dolores • Dữ liệu API" : "Dolores • Dữ liệu minh họa"}</p>
         </div>
       </aside>
       <DoloresShellFocusContext.Provider value={{ setFocusLabel }}>

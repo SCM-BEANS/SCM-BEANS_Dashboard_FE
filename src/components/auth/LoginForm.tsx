@@ -31,8 +31,11 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('error') === 'role_unavailable') {
+    const error = new URLSearchParams(window.location.search).get('error');
+    if (error === 'role_unavailable') {
       setErrorMsg('Tài khoản chưa được gán vai trò phù hợp. Vui lòng liên hệ quản trị viên.');
+    } else if (error === 'logout_failed') {
+      setErrorMsg('Trạng thái đăng nhập trên trang đã được xóa, nhưng không thể xác nhận đã xóa cookie phiên trên thiết bị này. Bạn có thể đăng nhập lại.');
     }
   }, []);
 
@@ -81,7 +84,7 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
 
         const roleHome = getPrimaryRoleHomePath(response.access_token);
         if (!roleHome) {
-          authService.logout();
+          await authService.logout();
           throw new Error('Không tìm thấy role hợp lệ trong tài khoản. Vui lòng liên hệ quản trị viên.');
         }
 
@@ -185,7 +188,7 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
 
         const roleHome = getPrimaryRoleHomePath(response.access_token);
         if (!roleHome) {
-          authService.logout();
+          await authService.logout();
           throw new Error('Không tìm thấy role hợp lệ trong tài khoản. Vui lòng liên hệ quản trị viên.');
         }
         
@@ -235,7 +238,7 @@ export function LoginForm({ onSuccess, showBackground = false }: LoginFormProps)
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
+          <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
             {errorMsg}
           </div>
         )}

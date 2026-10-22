@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Tenant } from "@/schemas/dolores/tenants";
+import type { Tenant } from "@/types/dolores/tenants";
 import {
   DoloresButton,
   DoloresField,

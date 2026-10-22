@@ -1,15 +1,13 @@
-import { requestDolores } from './client';
+import { doloresAxiosClient, parseDoloresResponse } from './client';
 import { DashboardOverviewSchema } from '@/schemas/dolores/dashboard';
+import type { DashboardOverview } from '@/types/dolores/dashboard';
 
 export const dashboardApi = {
-  getOverview: (signal?: AbortSignal, fromDate?: string, toDate?: string) =>
-    requestDolores(
-      {
-        method: 'GET',
-        url: '/dashboard/overview',
-        signal,
-        ...(fromDate && toDate ? { params: { fromDate, toDate } } : {}),
-      },
-      DashboardOverviewSchema
-    ),
+  getOverview: async (signal?: AbortSignal, fromDate?: string, toDate?: string): Promise<DashboardOverview> => {
+    const response = await doloresAxiosClient.get<unknown>('/dashboard/overview', {
+      signal,
+      ...(fromDate && toDate ? { params: { fromDate, toDate } } : {}),
+    });
+    return parseDoloresResponse(response.data, DashboardOverviewSchema);
+  },
 };

@@ -29,5 +29,3 @@ export const AlertSchema = z.object({
 
 export const AlertsSchema = z.array(AlertSchema);
 
-export type Notification = z.infer<typeof NotificationSchema>;
-export type Alert = z.infer<typeof AlertSchema>;

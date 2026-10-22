@@ -3,6 +3,9 @@ import { z } from 'zod';
 const uuid = z.string().uuid();
 const optionalText = z.string().nullish();
 
+export const InvoiceIdSchema = uuid;
+export const PaymentProofIdSchema = uuid;
+
 export const InvoiceSchema = z.object({
   id: uuid,
   subscriptionId: uuid.nullish(),
@@ -27,4 +30,22 @@ export const InvoiceSchema = z.object({
 
 export const InvoicesSchema = z.array(InvoiceSchema);
 
-export type Invoice = z.infer<typeof InvoiceSchema>;
+export const PaymentProofSchema = z.object({
+  id: PaymentProofIdSchema,
+  tenantId: uuid,
+  invoiceId: InvoiceIdSchema,
+  paymentId: uuid,
+  originalFilename: z.string(),
+  contentType: z.string(),
+  sizeBytes: z.number().int().nonnegative(),
+  sha256: z.string(),
+  status: z.enum(['SUBMITTED', 'APPROVED', 'REJECTED']),
+  submittedBy: z.string(),
+  submittedAt: z.string(),
+  reviewedBy: optionalText,
+  reviewedAt: optionalText,
+  reviewReason: optionalText,
+});
+
+export const PaymentProofsSchema = z.array(PaymentProofSchema);
+

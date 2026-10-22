@@ -26,7 +26,7 @@ import {
 } from '@/hooks/dolores/useMachines';
 import { useMachineTelemetryPoints, type TelemetryPointsRange } from '@/hooks/dolores/useTelemetry';
 import { PATH_ADMIN } from '@/routes/path';
-import type { MaintenanceTicket } from '@/schemas/dolores/machines';
+import type { MaintenanceTicket } from '@/types/dolores/machines';
 
 const MACHINE_STATUS_LABELS: Record<string, string> = {
   IN_WAREHOUSE: 'Trong kho',

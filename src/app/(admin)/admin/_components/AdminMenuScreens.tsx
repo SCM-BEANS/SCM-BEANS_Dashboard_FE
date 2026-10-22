@@ -19,7 +19,7 @@ import { useRouteView } from '@/app/(admin)/admin/_components/useRouteView';
 import { describeDoloresError } from '@/hooks/dolores/queryPolicy';
 import { useGlobalRecipe, useGlobalRecipes, usePublishGlobalRecipe } from '@/hooks/dolores/useGlobalRecipes';
 import type { AdminMenuView } from '@/routes/query';
-import type { RecipePublishRequest } from '@/schemas/dolores/recipes';
+import type { RecipePublishRequest } from '@/types/dolores/recipes';
 
 export type { AdminMenuView } from '@/routes/query';
 

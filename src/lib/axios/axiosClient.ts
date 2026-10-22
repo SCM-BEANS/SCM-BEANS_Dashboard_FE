@@ -64,8 +64,8 @@ axiosClient.interceptors.response.use(
 
     // 401 Unauthorized handling & Theft Detection Prevention
     if (error.response.status === 401 && originalRequest) {
-      // Skip refresh logic if the request was already trying to login or refresh
-      if (originalRequest.url?.includes(AUTH.LOGIN) || originalRequest.url?.includes(AUTH.REFRESH)) {
+      // Auth endpoints must not start another refresh attempt.
+      if (originalRequest.url?.includes(AUTH.LOGIN) || originalRequest.url?.includes(AUTH.REFRESH) || originalRequest.url?.includes(AUTH.LOGOUT)) {
         return Promise.reject(error.response.data || error);
       }
 
@@ -95,11 +95,12 @@ axiosClient.interceptors.response.use(
           .post(AUTH.REFRESH, {})
           .then((res: any) => {
             const newAccessToken = res.data?.access_token || res.access_token;
-            const newRefreshToken = res.data?.refresh_token || res.refresh_token;
+            if (typeof newAccessToken !== 'string' || !newAccessToken) {
+              throw new Error('Token refresh response did not include an access token.');
+            }
 
-            // Update cookies with new tokens
+            // The backend rotates the HttpOnly refresh cookie through Set-Cookie.
             Cookies.set('access_token', newAccessToken, { expires: 15 / (24 * 60), secure: true });
-            Cookies.set('refresh_token', newRefreshToken, { expires: 7, secure: true });
 
             // Update Authorization header for original request
             if (originalRequest.headers) {
@@ -116,7 +117,6 @@ axiosClient.interceptors.response.use(
             // Refresh failed (e.g., token expired, or theft detection locked the account)
             processQueue(err, null);
             Cookies.remove('access_token');
-            Cookies.remove('refresh_token');
             if (typeof window !== 'undefined') window.location.href = PATH_AUTH.login;
             reject(err.response?.data || err);
           })

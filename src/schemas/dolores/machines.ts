@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 const uuid = z.string().uuid();
 const count = z.number().int().nonnegative();
-const dateTime = z.string().datetime({ offset: true });
+// Machine and maintenance entities use LocalDateTime; telemetry and other DTOs
+// may include an explicit UTC offset. Accept both wire formats.
+const dateTime = z.union([z.string().datetime({ offset: true }), z.string().datetime({ local: true })]);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const MachineIdSchema = uuid;
@@ -123,8 +125,3 @@ export const MachineHeartbeatSchema = z.object({
   health: HeartbeatHealthSchema.nullish(),
 });
 
-export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
-export type MachineDetail = z.infer<typeof MachineDetailSchema>;
-export type InventorySummary = z.infer<typeof InventorySummarySchema>;
-export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;
-export type MachineHeartbeat = z.infer<typeof MachineHeartbeatSchema>;

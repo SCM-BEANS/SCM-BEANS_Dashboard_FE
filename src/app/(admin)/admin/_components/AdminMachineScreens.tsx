@@ -12,7 +12,7 @@ import { DoloresPage } from '@/app/_shell/dolores/DoloresShell';
 import { useInventorySummary, useMachineInventory } from '@/hooks/dolores/useMachines';
 import type { AdminMachineView } from '@/routes/query';
 import { PATH_ADMIN } from '@/routes/path';
-import type { MachineInventoryItem } from '@/schemas/dolores/machines';
+import type { MachineInventoryItem } from '@/types/dolores/machines';
 
 const MACHINE_STATUSES = [
   'IN_WAREHOUSE',

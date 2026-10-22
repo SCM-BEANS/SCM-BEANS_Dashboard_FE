@@ -17,5 +17,3 @@ export const RecipePublishRequestSchema = z.object({
   dosageBounds: z.array(z.string()),
 });
 
-export type GlobalRecipe = z.infer<typeof GlobalRecipeSchema>;
-export type RecipePublishRequest = z.infer<typeof RecipePublishRequestSchema>;

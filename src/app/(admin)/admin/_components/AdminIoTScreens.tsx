@@ -21,8 +21,8 @@ import { usePlatformContracts } from '@/hooks/dolores/useContracts';
 import { usePlatformLocations } from '@/hooks/dolores/usePlatformLocations';
 import { useTenants } from '@/hooks/dolores/useTenants';
 import { PATH_ADMIN } from '@/routes/path';
-import type { Contract } from '@/schemas/dolores/contracts';
-import type { MachineInventoryItem } from '@/schemas/dolores/machines';
+import type { Contract } from '@/types/dolores/contracts';
+import type { MachineInventoryItem } from '@/types/dolores/machines';
 
 type AdminIoTScreensProps = {
   selectedTenantId?: string;

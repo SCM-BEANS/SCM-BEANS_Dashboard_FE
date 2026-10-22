@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
+const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
@@ -49,14 +50,11 @@ test('notification and alert schemas accept documented DTOs and reject invalid s
 });
 
 test('notification and alert APIs expose only documented list, unread-count, and mark-read routes', async () => {
-  const calls = [];
   const responses = [];
-  const requestDolores = (config, schema) => {
-    calls.push({ config, schema });
-    return Promise.resolve(responses.shift());
-  };
+  const axiosMock = createDoloresAxiosMock(responses);
+  const { calls } = axiosMock;
   const mocks = {
-    './client': { requestDolores },
+    './client': axiosMock.module,
     '@/schemas/dolores/notifications': schemas,
   };
   const { notificationsApi } = loadTypescript('src/apis/dolores/notifications.api.ts', mocks);
@@ -81,14 +79,11 @@ test('notification and alert APIs expose only documented list, unread-count, and
 });
 
 test('moderator unread notification count uses the documented response and route', async () => {
-  const calls = [];
   const response = { unreadCount: 3 };
-  const requestDolores = (config, schema) => {
-    calls.push({ config, schema });
-    return Promise.resolve(response);
-  };
+  const axiosMock = createDoloresAxiosMock([response]);
+  const { calls } = axiosMock;
   const mocks = {
-    './client': { requestDolores },
+    './client': axiosMock.module,
     '@/schemas/dolores/notifications': schemas,
   };
   const { notificationsApi } = loadTypescript('src/apis/dolores/notifications.api.ts', mocks);

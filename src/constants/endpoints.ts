@@ -4,6 +4,7 @@ export const AUTH = {
   VERIFY: '/auth/verify',
   LOGIN_MFA: '/auth/login/mfa',
   REFRESH: '/auth/refresh',
+  LOGOUT: '/auth/logout',
   RESEND: '/auth/resend',
   MFA_SETUP: '/auth/mfa/setup',
   MFA_QRCODE_BASE64: '/auth/mfa/qrcode/base64',
