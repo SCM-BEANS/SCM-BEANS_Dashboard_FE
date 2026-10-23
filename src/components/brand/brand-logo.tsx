@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import logoImage from "@/assets/logo.png";
-import { ROUTES } from "@/routes/routes";
+import { PATH_HOME } from "@/routes/path";
 
 interface BrandLogoProps {
   href?: string;
@@ -12,7 +12,7 @@ interface BrandLogoProps {
 }
 
 export function BrandLogo({
-  href = ROUTES.HOME_SECTIONS.TOP,
+  href = PATH_HOME.SECTIONS.TOP,
   priority = false,
   ariaLabel,
   brandName,

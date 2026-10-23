@@ -1,0 +1,190 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+
+export const config = {
+  api: { bodyParser: false },
+};
+
+const DEFAULT_IDAAS_URL = "http://localhost:4000/api/v1";
+const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+const REQUEST_TIMEOUT_MS = 15_000;
+
+const requestHeadersToSkip = new Set([
+  "host",
+  "connection",
+  "content-length",
+  "transfer-encoding",
+  "accept-encoding",
+]);
+
+const responseHeadersToSkip = new Set([
+  "connection",
+  "content-length",
+  "content-encoding",
+  "transfer-encoding",
+  "set-cookie",
+]);
+
+function normalizeApiUrl(value: string): string {
+  const url = new URL(value);
+
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("Invalid IDaaS API URL");
+  }
+
+  return url.toString().replace(/\/+$/, "");
+}
+
+async function getIdaasApiBaseUrl(): Promise<string> {
+  const localUrl = normalizeApiUrl(
+    process.env.IDAAS_API_LOCAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      DEFAULT_IDAAS_URL,
+  );
+  const configuredIp = process.env.IDAAS_API_IP_URL?.trim();
+
+  if (!configuredIp) return localUrl;
+
+  const ipUrl = normalizeApiUrl(configuredIp);
+  if (ipUrl === localUrl) return ipUrl;
+
+  try {
+    const health = await fetch(new URL("/health", ipUrl), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(1_500),
+    });
+    if (health.status < 500) return ipUrl;
+  } catch {
+    // Use the local service when the configured IP is unavailable.
+  }
+
+  return localUrl;
+}
+
+function getPath(req: NextApiRequest): string[] | null {
+  const segments = req.query.path;
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  if (
+    segments.some(
+      (segment) =>
+        !segment ||
+        segment === "." ||
+        segment === ".." ||
+        segment.includes("/") ||
+        segment.includes("\\"),
+    )
+  ) {
+    return null;
+  }
+  return segments;
+}
+
+async function readBody(req: NextApiRequest): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buffer.length;
+    if (total > MAX_REQUEST_BYTES) throw new Error("Request body too large");
+    chunks.push(buffer);
+  }
+
+  return Buffer.concat(chunks);
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const segments = getPath(req);
+  if (!segments) {
+    res.status(400).json({ error: "Invalid API path" });
+    return;
+  }
+
+  let baseUrl: string;
+  try {
+    baseUrl = await getIdaasApiBaseUrl();
+  } catch {
+    res.status(500).json({ error: "Invalid IDaaS API configuration" });
+    return;
+  }
+
+  const target = new URL(`${baseUrl}/${segments.map(encodeURIComponent).join("/")}`);
+  target.search = new URL(req.url || "/", "http://localhost").search;
+
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (requestHeadersToSkip.has(name) || value === undefined) continue;
+    headers.set(name, Array.isArray(value) ? value.join(", ") : value);
+  }
+
+  const method = req.method || "GET";
+  let body: Buffer | undefined;
+  if (method !== "GET" && method !== "HEAD") {
+    try {
+      body = await readBody(req);
+    } catch {
+      res.status(413).json({ error: "Request body too large" });
+      return;
+    }
+  }
+
+  try {
+    const upstream = await fetch(target, {
+      method,
+      headers,
+      body: body ? new Uint8Array(body) : undefined,
+      redirect: "manual",
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+
+    let responseBody = Buffer.from(await upstream.arrayBuffer());
+    let genericErrorBody = false;
+    const isAuthTokenResponse =
+      method === "POST" &&
+      segments[0] === "auth" &&
+      ((segments[1] === "login" &&
+        (segments.length === 2 ||
+          (segments.length === 3 && segments[2] === "mfa"))) ||
+        (segments[1] === "refresh" && segments.length === 2));
+
+    if (isAuthTokenResponse) {
+      try {
+        const payload: unknown = JSON.parse(responseBody.toString("utf8"));
+        if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+          throw new Error("Invalid authentication response");
+        }
+        const { refresh_token: _refreshToken, ...publicPayload } = payload as Record<
+          string,
+          unknown
+        >;
+        responseBody = Buffer.from(JSON.stringify(publicPayload));
+      } catch {
+        if (upstream.ok) {
+          res.setHeader("Cache-Control", "no-store");
+          res.status(502).json({ error: "Invalid IDaaS authentication response" });
+          return;
+        }
+        responseBody = Buffer.from(JSON.stringify({ error: "IDaaS authentication failed" }));
+        genericErrorBody = true;
+      }
+    }
+
+    res.status(upstream.status);
+    upstream.headers.forEach((value, name) => {
+      if (!responseHeadersToSkip.has(name)) res.setHeader(name, value);
+    });
+    if (genericErrorBody) res.setHeader("Content-Type", "application/json");
+    const cookies = upstream.headers.getSetCookie();
+    if (cookies.length) res.setHeader("Set-Cookie", cookies);
+    res.setHeader("Cache-Control", "no-store");
+    res.end(responseBody);
+  } catch {
+    res.status(502).json({ error: "IDaaS API is unavailable" });
+  }
+}

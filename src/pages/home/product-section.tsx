@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ArrowRight, Check } from "lucide-react";
 import { ActionButton } from "@/components/button/action-button";
 import { SectionHeading } from "@/components/heading/section-heading";
-import { HOME_SECTION_IDS, ROUTES } from "@/routes/routes";
+import { HOME_SECTION_IDS, PATH_HOME } from "@/routes/path";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import coffeeMachineImage from "@/assets/coffee-machine-float.png";
 
@@ -36,7 +36,7 @@ export function ProductSection() {
               </li>
             ))}
           </ul>
-          <ActionButton href={ROUTES.HOME_SECTIONS.TECHNOLOGY} variant="text" icon={<ArrowRight size={15} />}>
+          <ActionButton href={PATH_HOME.SECTIONS.TECHNOLOGY} variant="text" icon={<ArrowRight size={15} />}>
             {HOME_MESSAGES.PRODUCT.ACTION}
           </ActionButton>
         </div>

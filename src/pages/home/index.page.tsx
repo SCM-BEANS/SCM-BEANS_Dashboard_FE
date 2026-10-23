@@ -5,7 +5,12 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { ActionButton } from "@/components/button/action-button";
 import { SectionHeading } from "@/components/heading/section-heading";
-import { HOME_SECTION_IDS, ROUTES } from "@/routes/routes";
+import { HOME_SECTION_IDS, PATH_AUTH } from "@/routes/path";
+import {
+  HOME_FOOTER_DISCOVERY_LINKS,
+  HOME_FOOTER_PRODUCT_LINKS,
+  HOME_NAVIGATION_LINKS,
+} from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { TYPOGRAPHY_STYLES } from "@/text/typography";
 import coffeeMonitoringImage from "@/assets/coffee-live-monitoring-20260928.png";
@@ -29,26 +34,6 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
-const HOME_NAVIGATION_LINKS = [
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0], HREF: ROUTES.HOME_SECTIONS.SOLUTIONS },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[1], HREF: ROUTES.HOME_SECTIONS.PRODUCTS },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[2], HREF: ROUTES.HOME_SECTIONS.TECHNOLOGY },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[3], HREF: ROUTES.HOME_SECTIONS.CUSTOMERS },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[4], HREF: ROUTES.HOME_SECTIONS.NEWS },
-];
-
-const HOME_FOOTER_PRODUCT_LINKS = [
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[0], HREF: ROUTES.HOME_SECTIONS.PRODUCTS },
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[1], HREF: ROUTES.HOME_SECTIONS.TECHNOLOGY },
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[2], HREF: ROUTES.HOME_SECTIONS.SOLUTIONS },
-];
-
-const HOME_FOOTER_DISCOVERY_LINKS = [
-  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[0], HREF: ROUTES.HOME_SECTIONS.ABOUT },
-  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[1], HREF: ROUTES.HOME_SECTIONS.CUSTOMERS },
-  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[2], HREF: ROUTES.HOME_SECTIONS.NEWS },
-];
 
 const styles = [
   TYPOGRAPHY_STYLES,
@@ -191,7 +176,7 @@ export default function HomePage() {
             </nav>
 
             <div className="nav-actions">
-              <Link href={ROUTES.LOGIN} className="nav-login">
+              <Link href={PATH_AUTH.LOGIN} className="nav-login">
                 {HOME_MESSAGES.NAVIGATION.LOGIN}
               </Link>
               <button
@@ -216,7 +201,7 @@ export default function HomePage() {
                     {item.LABEL}
                   </Link>
                 ))}
-                <Link href={ROUTES.LOGIN} onClick={() => setMenuOpen(false)}>
+                <Link href={PATH_AUTH.LOGIN} onClick={() => setMenuOpen(false)}>
                   {HOME_MESSAGES.NAVIGATION.LOGIN}
                 </Link>
               </nav>
@@ -340,7 +325,7 @@ export default function HomePage() {
                   <ActionButton href={`mailto:${HOME_MESSAGES.CONTACT.EMAIL}`} variant="light" icon={<ArrowRight size={15} />}>
                     {HOME_MESSAGES.CONTACT.CONSULT_ACTION}
                   </ActionButton>
-                  <ActionButton href={ROUTES.LOGIN} variant="outline">
+                  <ActionButton href={PATH_AUTH.LOGIN} variant="outline">
                     {HOME_MESSAGES.CONTACT.DASHBOARD_ACTION}
                   </ActionButton>
                 </div>
