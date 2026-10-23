@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { ActionButton } from "@/components/button/action-button";
 import { SectionHeading } from "@/components/heading/section-heading";
+import { HOME_SECTION_IDS, ROUTES } from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { TYPOGRAPHY_STYLES } from "@/text/typography";
 import coffeeMonitoringImage from "@/assets/coffee-live-monitoring-20260928.png";
@@ -28,6 +29,26 @@ import {
   X,
   Zap,
 } from "lucide-react";
+
+const HOME_NAVIGATION_LINKS = [
+  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0], HREF: ROUTES.HOME_SECTIONS.SOLUTIONS },
+  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[1], HREF: ROUTES.HOME_SECTIONS.PRODUCTS },
+  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[2], HREF: ROUTES.HOME_SECTIONS.TECHNOLOGY },
+  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[3], HREF: ROUTES.HOME_SECTIONS.CUSTOMERS },
+  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[4], HREF: ROUTES.HOME_SECTIONS.NEWS },
+];
+
+const HOME_FOOTER_PRODUCT_LINKS = [
+  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[0], HREF: ROUTES.HOME_SECTIONS.PRODUCTS },
+  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[1], HREF: ROUTES.HOME_SECTIONS.TECHNOLOGY },
+  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[2], HREF: ROUTES.HOME_SECTIONS.SOLUTIONS },
+];
+
+const HOME_FOOTER_DISCOVERY_LINKS = [
+  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[0], HREF: ROUTES.HOME_SECTIONS.ABOUT },
+  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[1], HREF: ROUTES.HOME_SECTIONS.CUSTOMERS },
+  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[2], HREF: ROUTES.HOME_SECTIONS.NEWS },
+];
 
 const styles = [
   TYPOGRAPHY_STYLES,
@@ -162,7 +183,7 @@ export default function HomePage() {
             />
 
             <nav className="nav-links" aria-label={HOME_MESSAGES.NAVIGATION.DESKTOP_ARIA_LABEL}>
-              {HOME_MESSAGES.NAVIGATION.ITEMS.map((item) => (
+              {HOME_NAVIGATION_LINKS.map((item) => (
                 <Link key={item.HREF} href={item.HREF}>
                   {item.LABEL}
                 </Link>
@@ -170,7 +191,7 @@ export default function HomePage() {
             </nav>
 
             <div className="nav-actions">
-              <Link href={HOME_MESSAGES.NAVIGATION.LOGIN_HREF} className="nav-login">
+              <Link href={ROUTES.LOGIN} className="nav-login">
                 {HOME_MESSAGES.NAVIGATION.LOGIN}
               </Link>
               <button
@@ -186,7 +207,7 @@ export default function HomePage() {
 
             {menuOpen && (
               <nav className="mobile-menu" aria-label={HOME_MESSAGES.NAVIGATION.MOBILE_ARIA_LABEL}>
-                {HOME_MESSAGES.NAVIGATION.ITEMS.map((item) => (
+                {HOME_NAVIGATION_LINKS.map((item) => (
                   <Link
                     key={item.HREF}
                     href={item.HREF}
@@ -195,7 +216,7 @@ export default function HomePage() {
                     {item.LABEL}
                   </Link>
                 ))}
-                <Link href={HOME_MESSAGES.NAVIGATION.LOGIN_HREF} onClick={() => setMenuOpen(false)}>
+                <Link href={ROUTES.LOGIN} onClick={() => setMenuOpen(false)}>
                   {HOME_MESSAGES.NAVIGATION.LOGIN}
                 </Link>
               </nav>
@@ -203,11 +224,11 @@ export default function HomePage() {
           </div>
         </header>
 
-        <main id="top">
+        <main id={HOME_SECTION_IDS.TOP}>
           <HeroSection />
           <ProductSection />
 
-          <section id="technology" className="section technology-section">
+          <section id={HOME_SECTION_IDS.TECHNOLOGY} className="section technology-section">
             <div className="wrap technology-grid">
               <SectionHeading
                 eyebrow={HOME_MESSAGES.TECHNOLOGY.EYEBROW}
@@ -232,7 +253,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="about" className="section distribution-section">
+          <section id={HOME_SECTION_IDS.ABOUT} className="section distribution-section">
             <div className="wrap distribution-grid">
               <SectionHeading
                 eyebrow={HOME_MESSAGES.DISTRIBUTION.EYEBROW}
@@ -266,7 +287,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="customers" className="section testimonial-section">
+          <section id={HOME_SECTION_IDS.CUSTOMERS} className="section testimonial-section">
             <div className="wrap">
               <SectionHeading
                 eyebrow={HOME_MESSAGES.CUSTOMERS.EYEBROW}
@@ -288,7 +309,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="news" className="section news-section">
+          <section id={HOME_SECTION_IDS.NEWS} className="section news-section">
             <div className="wrap">
               <SectionHeading
                 eyebrow={HOME_MESSAGES.NEWS.EYEBROW}
@@ -309,7 +330,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="contact" className="contact-section">
+          <section id={HOME_SECTION_IDS.CONTACT} className="contact-section">
             <div className="wrap">
               <div className="contact-panel">
                 <div className="eyebrow">{HOME_MESSAGES.CONTACT.EYEBROW}</div>
@@ -319,7 +340,7 @@ export default function HomePage() {
                   <ActionButton href={`mailto:${HOME_MESSAGES.CONTACT.EMAIL}`} variant="light" icon={<ArrowRight size={15} />}>
                     {HOME_MESSAGES.CONTACT.CONSULT_ACTION}
                   </ActionButton>
-                  <ActionButton href={HOME_MESSAGES.NAVIGATION.LOGIN_HREF} variant="outline">
+                  <ActionButton href={ROUTES.LOGIN} variant="outline">
                     {HOME_MESSAGES.CONTACT.DASHBOARD_ACTION}
                   </ActionButton>
                 </div>
@@ -342,7 +363,7 @@ export default function HomePage() {
               <div>
                 <h3>{HOME_MESSAGES.FOOTER.PRODUCT_TITLE}</h3>
                 <div className="footer-links">
-                  {HOME_MESSAGES.FOOTER.PRODUCT_LINKS.map((item) => (
+                  {HOME_FOOTER_PRODUCT_LINKS.map((item) => (
                     <Link key={item.HREF} href={item.HREF}>{item.LABEL}</Link>
                   ))}
                 </div>
@@ -350,7 +371,7 @@ export default function HomePage() {
               <div>
                 <h3>{HOME_MESSAGES.FOOTER.DISCOVERY_TITLE}</h3>
                 <div className="footer-links">
-                  {HOME_MESSAGES.FOOTER.DISCOVERY_LINKS.map((item) => (
+                  {HOME_FOOTER_DISCOVERY_LINKS.map((item) => (
                     <Link key={item.HREF} href={item.HREF}>{item.LABEL}</Link>
                   ))}
                 </div>

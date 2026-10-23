@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { ActionButton } from "@/components/button/action-button";
+import { ROUTES } from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 
 export function HeroSection() {
@@ -17,14 +18,14 @@ export function HeroSection() {
             {HOME_MESSAGES.HERO.DESCRIPTION}
           </p>
           <div className="button-row">
-            <ActionButton href="#contact" variant="primary" icon={<ArrowRight size={16} />}>
+            <ActionButton href={ROUTES.HOME_SECTIONS.CONTACT} variant="primary" icon={<ArrowRight size={16} />}>
               {HOME_MESSAGES.HERO.PRIMARY_ACTION}
             </ActionButton>
-            <ActionButton href="#products" variant="outline">
+            <ActionButton href={ROUTES.HOME_SECTIONS.PRODUCTS} variant="outline">
               {HOME_MESSAGES.HERO.SECONDARY_ACTION}
             </ActionButton>
           </div>
-          <a className="hero-note" href="#solutions">
+          <a className="hero-note" href={ROUTES.HOME_SECTIONS.SOLUTIONS}>
             <ArrowDown size={14} /> {HOME_MESSAGES.HERO.MORE_ACTION}
           </a>
         </div>

@@ -2,12 +2,13 @@ import Image from "next/image";
 import { ArrowRight, Check } from "lucide-react";
 import { ActionButton } from "@/components/button/action-button";
 import { SectionHeading } from "@/components/heading/section-heading";
+import { HOME_SECTION_IDS, ROUTES } from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import coffeeMachineImage from "@/assets/coffee-machine-float.png";
 
 export function ProductSection() {
   return (
-    <section id="solutions" className="section product-section">
+    <section id={HOME_SECTION_IDS.SOLUTIONS} className="section product-section">
       <div className="wrap product-grid">
         <div className="product-image">
           <Image
@@ -19,7 +20,7 @@ export function ProductSection() {
           <span className="product-label">{HOME_MESSAGES.PRODUCT.IMAGE_LABEL}</span>
         </div>
 
-        <div id="products" className="product-copy">
+        <div id={HOME_SECTION_IDS.PRODUCTS} className="product-copy">
           <SectionHeading
             eyebrow={HOME_MESSAGES.PRODUCT.EYEBROW}
             title={HOME_MESSAGES.PRODUCT.TITLE}
@@ -35,7 +36,7 @@ export function ProductSection() {
               </li>
             ))}
           </ul>
-          <ActionButton href="#technology" variant="text" icon={<ArrowRight size={15} />}>
+          <ActionButton href={ROUTES.HOME_SECTIONS.TECHNOLOGY} variant="text" icon={<ArrowRight size={15} />}>
             {HOME_MESSAGES.PRODUCT.ACTION}
           </ActionButton>
         </div>
