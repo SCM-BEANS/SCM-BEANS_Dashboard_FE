@@ -30,7 +30,10 @@ export const ADMIN_OPERATIONS_MESSAGES = {
     DETAIL: "Thông tin hợp đồng", HISTORY: "Lịch sử theo máy", DOCUMENTS: "Tài liệu trong hồ sơ",
     DOWNLOAD: "Tải xuống", NO_MACHINE: "Chưa gắn máy", DRAFT: "Bản nháp", ACTIVE: "Đang hiệu lực",
     TERMINATED: "Đã kết thúc", UNKNOWN_OWNER: "Không tải được tên Owner",
-    CREATE: "Tạo hợp đồng", CREATE_UNAVAILABLE: "API Dolores hiện được nối ở trang này chưa hỗ trợ tạo hợp đồng; thao tác sẽ khả dụng khi backend xác nhận endpoint tạo.",
+    CREATE: "Tạo hợp đồng", CREATE_TITLE: "Đàm phán & lập hợp đồng thuê",
+    CREATE_DESCRIPTION: "Ghi nhận thỏa thuận để chuyển sang bước lập và ký hợp đồng ngoài Dolores.",
+    CREATE_SUBMIT: "Lưu thông tin đàm phán",
+    CREATE_UNAVAILABLE: "Mẫu này lấy từ luồng Moderator trên nhánh Sơn và chỉ dùng để nhập thông tin xem trước. Luồng Moderator không ghi hợp đồng lên backend; Dolores hiện chưa có API tạo hợp đồng được nối, nên chưa thể lưu dữ liệu.",
   },
   MACHINES: {
     TITLE: "Kho máy", DESCRIPTION: "Thiết bị và tồn kho được tải từ Dolores.",

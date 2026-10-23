@@ -69,13 +69,11 @@ function ContractsContent() {
   } });
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/contracts", query }, undefined, { shallow: true });
   const ownerName = (id: string) => owners.data?.find((item) => item.idaasUserId === id)?.fullName ?? `${T.COMMON.OWNER} ${id.slice(0, 8)}`;
-  const pageTitle = view === "history" ? T.CONTRACTS.HISTORY : view === "detail" ? `${T.CONTRACTS.DETAIL} · ${contractId.slice(0, 8).toUpperCase()}` : T.CONTRACTS.TITLE;
+  const pageTitle = view === "create" ? T.CONTRACTS.CREATE_TITLE : view === "history" ? T.CONTRACTS.HISTORY : view === "detail" ? `${T.CONTRACTS.DETAIL} · ${contractId.slice(0, 8).toUpperCase()}` : T.CONTRACTS.TITLE;
 
   return <>
   <div className={styles.pageContent}>
-    <div className={styles.pageHeading}><h1>{pageTitle}</h1><p>{T.CONTRACTS.DESCRIPTION}</p></div>
-    {(view === "" || view === "list") && <p id="create-contract-unavailable" className={styles.operationsNotice} role="note">{T.CONTRACTS.CREATE_UNAVAILABLE}</p>}
-
+    <div className={styles.pageHeading}><h1>{pageTitle}</h1><p>{view === "create" ? T.CONTRACTS.CREATE_DESCRIPTION : T.CONTRACTS.DESCRIPTION}</p></div>
     {(view === "" || view === "list") && <>
       {contracts.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -90,6 +88,18 @@ function ContractsContent() {
           </tr>)}</tbody>
         </table></div>}
       </section>}
+    </>}
+    {view === "create" && <>
+      <section className={styles.panel}>
+        <h2>Thông tin thỏa thuận</h2>
+        <form id="contract-create-form" className={styles.operationsGrid} onSubmit={(event) => event.preventDefault()}>
+          <label htmlFor="contract-customer"><span>Khách hàng</span><input id="contract-customer" name="customer" type="text" autoComplete="organization" /></label>
+          <label htmlFor="contract-store"><span>Cửa hàng</span><input id="contract-store" name="store" type="text" autoComplete="organization-title" /></label>
+          <label htmlFor="contract-machine-type"><span>Loại máy</span><select id="contract-machine-type" name="machineType" defaultValue=""><option value="" disabled>Chọn loại máy</option><option value="standard">Máy thường</option><option value="smart-iot">Smart IoT</option></select></label>
+          <label htmlFor="contract-agreed-terms"><span>Điều khoản đã thống nhất</span><input id="contract-agreed-terms" name="agreedTerms" type="text" /></label>
+        </form>
+      </section>
+      <p id="create-contract-unavailable" className={styles.operationsNotice} role="note">{T.CONTRACTS.CREATE_UNAVAILABLE}</p>
     </>}
     {view === "detail" && <>
       {!ContractIdSchema.safeParse(contractId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã hợp đồng không hợp lệ.</div>}
@@ -133,8 +143,13 @@ function ContractsContent() {
   <AdminActionBar>
     {view === "" || view === "list" ? (
       <>
-        <ButtonBar type="button" disabled aria-describedby="create-contract-unavailable" title={T.CONTRACTS.CREATE_UNAVAILABLE}>{T.CONTRACTS.CREATE}</ButtonBar>
+        <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
         <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
+      </>
+    ) : view === "create" ? (
+      <>
+        <ButtonBar type="submit" form="contract-create-form" disabled aria-describedby="create-contract-unavailable" title={T.CONTRACTS.CREATE_UNAVAILABLE}>{T.CONTRACTS.CREATE_SUBMIT}</ButtonBar>
+        <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
       </>
     ) : (
       <>

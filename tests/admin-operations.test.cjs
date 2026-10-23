@@ -203,6 +203,58 @@ test("contracts API validates lists, related data, machine history, and Blob dow
   await assert.rejects(contractsApi.getById("not-a-uuid"));
 });
 
+test("contract create action opens the Moderator form and keeps backend submission unavailable", () => {
+  const React = require("react");
+  const { renderToStaticMarkup } = require("react-dom/server");
+  const contractSchemas = loadModule("src/schema/contracts.schema.ts");
+  const { ADMIN_OPERATIONS_MESSAGES } = loadModule("src/text/admin/admin-operations-messages.ts");
+
+  const renderPage = (view) => {
+    const buttons = [];
+    const navigation = [];
+    const query = view ? { view } : {};
+    const { default: AdminContractsPage } = loadModule("src/pages/admin/contracts.page.tsx", {
+      "next/router": { useRouter: () => ({ query, push: (...args) => { navigation.push(args); } }) },
+      "@tanstack/react-query": {
+        useQuery: () => ({ data: [], isPending: false, isFetching: false, isError: false, refetch: async () => {} }),
+        useMutation: () => ({ mutate: () => {}, isPending: false, isError: false }),
+      },
+      "@/apis/contracts.api": { contractsApi: {
+        list: async () => [], getById: async () => ({}), getExpiry: async () => ({}),
+        getDocuments: async () => [], getMachineHistory: async () => [], downloadDocument: async () => new Blob(),
+      } },
+      "@/apis/profiles.api": { profilesApi: { list: async () => [] } },
+      "@/schema/contracts.schema": contractSchemas,
+      "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES },
+      "@/components/button/button-bar": { ButtonBar: ({ children, ...props }) => {
+        buttons.push({ children, ...props });
+        return React.createElement("button", props, children);
+      } },
+      "./admin-shell": {
+        AdminShell: ({ children }) => children,
+        adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
+      },
+    });
+    const html = renderToStaticMarkup(React.createElement(AdminContractsPage));
+    return { html, buttons, navigation };
+  };
+
+  const list = renderPage("");
+  const openForm = list.buttons.find((button) => button.children === "Tạo hợp đồng");
+  assert.equal(openForm.disabled, undefined);
+  openForm.onClick();
+  assert.equal(list.navigation[0][0].query.view, "create");
+
+  const create = renderPage("create");
+  assert.match(create.html, /Khách hàng/);
+  assert.match(create.html, /Cửa hàng/);
+  assert.match(create.html, /Loại máy/);
+  assert.match(create.html, /Điều khoản đã thống nhất/);
+  assert.match(create.html, /chưa thể lưu dữ liệu/);
+  const submit = create.buttons.find((button) => button.children === "Lưu thông tin đàm phán");
+  assert.equal(submit.disabled, true);
+});
+
 test("admin operations preserve 401 and 403 responses for the shared auth and forbidden states", async () => {
   for (const status of [401, 403]) {
     const axiosClient = {
