@@ -27,3 +27,19 @@ export const PATH_HOME = {
 export const PATH_AUTH = {
   LOGIN: "/login",
 } as const;
+
+const ADMIN_ROOT = "/admin";
+
+export const PATH_ADMIN = {
+  ROOT: ADMIN_ROOT,
+  USERS: `${ADMIN_ROOT}/users`,
+  BUSINESSES: `${ADMIN_ROOT}/businesses`,
+  STORES: `${ADMIN_ROOT}/stores`,
+  CONTRACTS: `${ADMIN_ROOT}/contracts`,
+  MACHINES: `${ADMIN_ROOT}/machines`,
+  MACHINE_DETAIL: (id: string) => `${ADMIN_ROOT}/machines/${encodeURIComponent(id)}`,
+  IOT: `${ADMIN_ROOT}/iot`,
+  MENU: `${ADMIN_ROOT}/menu`,
+  REPORTS: `${ADMIN_ROOT}/reports`,
+  NOTIFICATIONS: `${ADMIN_ROOT}/notifications`,
+} as const;

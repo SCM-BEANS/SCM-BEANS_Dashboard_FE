@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
+import { getPostLoginPath } from "@/lib/auth-role";
 import landingHeroImage from "@/assets/landing-hero-desktop.jpg";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { PATH_HOME } from "@/routes/path";
@@ -51,7 +52,7 @@ export default function LoginPage() {
       sameSite: "lax",
       secure: window.location.protocol === "https:",
     });
-    void router.replace(PATH_HOME.ROOT);
+    void router.replace(getPostLoginPath(response.access_token));
   }
 
   function openMfa(token: string) {

@@ -12,6 +12,8 @@ export const axiosClient = axios.create({
   withCredentials: true,
 });
 
+export const DOLORES_API_BASE_URL = "/api/dolores/v1";
+
 const unauthenticatedPaths = new Set([
   "/auth/login",
   "/auth/login/mfa",
