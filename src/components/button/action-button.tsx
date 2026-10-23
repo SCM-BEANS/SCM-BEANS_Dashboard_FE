@@ -40,7 +40,7 @@ export function ActionButton({
           border: 1px solid transparent;
           border-radius: 4px;
           font: inherit;
-          font-size: 13px;
+          font-size: var(--font-size-control, 13px);
           font-weight: 700;
           line-height: 1.2;
           text-decoration: none;

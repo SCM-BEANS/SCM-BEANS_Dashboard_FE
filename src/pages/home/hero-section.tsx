@@ -1,29 +1,31 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { ActionButton } from "@/components/button/action-button";
+import { HOME_MESSAGES } from "@/text/home/home-messages";
 
 export function HeroSection() {
   return (
     <section className="hero">
       <div className="wrap">
         <div className="hero-content">
-          <div className="eyebrow">Giải pháp cà phê thông minh</div>
+          <div className="eyebrow">{HOME_MESSAGES.HERO.EYEBROW}</div>
           <h1>
-            Nâng tầm trải nghiệm
+            {HOME_MESSAGES.HERO.TITLE_START}
             <br />
-            <em>cà phê của bạn</em>
+            <em>{HOME_MESSAGES.HERO.TITLE_ACCENT}</em>
           </h1>
           <p className="hero-copy">
-            Tối ưu vận hành, kết nối thiết bị và mở rộng kinh doanh với giải pháp
-            máy pha cà phê thông minh tích hợp IoT và Cloud từ DOLORES COFFEE.
+            {HOME_MESSAGES.HERO.DESCRIPTION}
           </p>
           <div className="button-row">
             <ActionButton href="#contact" variant="primary" icon={<ArrowRight size={16} />}>
-              Khám phá giải pháp
+              {HOME_MESSAGES.HERO.PRIMARY_ACTION}
             </ActionButton>
-            <ActionButton href="#products" variant="outline">Xem sản phẩm</ActionButton>
+            <ActionButton href="#products" variant="outline">
+              {HOME_MESSAGES.HERO.SECONDARY_ACTION}
+            </ActionButton>
           </div>
           <a className="hero-note" href="#solutions">
-            <ArrowDown size={14} /> Khám phá thêm
+            <ArrowDown size={14} /> {HOME_MESSAGES.HERO.MORE_ACTION}
           </a>
         </div>
       </div>

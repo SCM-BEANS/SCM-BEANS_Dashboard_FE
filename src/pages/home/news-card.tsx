@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { ActionButton } from "@/components/button/action-button";
+import { HOME_MESSAGES } from "@/text/home/home-messages";
 
 interface NewsCardProps {
   category: string;
@@ -28,7 +29,7 @@ export function NewsCard({ category, date, title, image }: NewsCardProps) {
         </div>
         <h3>{title}</h3>
         <ActionButton href="#contact" variant="text" icon={<ArrowRight size={14} />}>
-          Đọc thêm
+          {HOME_MESSAGES.NEWS.READ_MORE}
         </ActionButton>
       </div>
     </article>

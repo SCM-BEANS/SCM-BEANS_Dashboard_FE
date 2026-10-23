@@ -5,11 +5,20 @@ import logoImage from "@/assets/logo.png";
 interface BrandLogoProps {
   href?: string;
   priority?: boolean;
+  ariaLabel: string;
+  brandName: string;
+  brandTagline: string;
 }
 
-export function BrandLogo({ href = "#top", priority = false }: BrandLogoProps) {
+export function BrandLogo({
+  href = "#top",
+  priority = false,
+  ariaLabel,
+  brandName,
+  brandTagline,
+}: BrandLogoProps) {
   return (
-    <Link href={href} className="brand" aria-label="DOLORES COFFEE trang chủ">
+    <Link href={href} className="brand" aria-label={ariaLabel}>
       <Image
         src={logoImage}
         alt=""
@@ -19,8 +28,8 @@ export function BrandLogo({ href = "#top", priority = false }: BrandLogoProps) {
         priority={priority}
       />
       <span className="brand-name">
-        <strong>DOLORES</strong>
-        <span>COFFEE</span>
+        <strong>{brandName}</strong>
+        <span>{brandTagline}</span>
       </span>
     </Link>
   );
