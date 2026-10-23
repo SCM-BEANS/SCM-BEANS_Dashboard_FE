@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Tenant } from "@/types/dolores/tenants";
+import { AdminConfirmStoreCreateDialog } from "@/app/(admin)/admin/_components/AdminConfirmationDialogs";
 import {
   DoloresButton,
   DoloresField,
@@ -25,50 +26,14 @@ type StoreForm = {
 type StoreField = keyof StoreForm;
 type StoreDialogState = "confirm" | "success" | null;
 
-function StoreDialog({
-  state,
-  storeName,
-  tenantName,
-  onConfirm,
-  onClose,
-}: {
-  state: Exclude<StoreDialogState, null>;
-  storeName: string;
-  tenantName: string;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
-  const success = state === "success";
-
+function StoreSuccessDialog({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#302927]/25 px-6" role="presentation">
-      <section
-        aria-labelledby="store-dialog-title"
-        aria-modal="true"
-        className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl"
-        role="dialog"
-      >
-        <p className="text-[11px] font-medium leading-4 text-[#706561]">
-          {success ? "✓  Đã hoàn tất" : "Xác nhận thông tin"}
-        </p>
-        <h2 id="store-dialog-title" className="mt-3 text-xl font-semibold leading-7">
-          {success ? "Đã hoàn tất bản xem trước" : "Xác nhận · Thông tin cửa hàng"}
-        </h2>
-        <p className="mt-3 text-[13px] leading-5 text-[#706561]">
-          {success
-            ? "Luồng tạo cửa hàng đã hoàn tất ở giao diện mẫu. Thông tin chưa được lưu vào hệ thống."
-            : `Tên cửa hàng: ${storeName}. Tenant phụ trách: ${tenantName}.`}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          {success ? (
-            <DoloresButton onClick={onClose}>Về danh sách</DoloresButton>
-          ) : (
-            <>
-              <DoloresButton onClick={onConfirm}>Xác nhận</DoloresButton>
-              <DoloresButton onClick={onClose} variant="secondary">Đóng</DoloresButton>
-            </>
-          )}
-        </div>
+      <section aria-labelledby="store-success-title" aria-modal="true" className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl" role="dialog">
+        <p className="text-[11px] font-medium leading-4 text-[#706561]">✓  Đã hoàn tất</p>
+        <h2 id="store-success-title" className="mt-3 text-xl font-semibold leading-7">Đã hoàn tất bản xem trước</h2>
+        <p className="mt-3 text-[13px] leading-5 text-[#706561]">Luồng tạo cửa hàng đã hoàn tất ở giao diện mẫu. Thông tin chưa được lưu vào hệ thống.</p>
+        <div className="mt-6 flex flex-wrap gap-3"><DoloresButton onClick={onComplete}>Về danh sách</DoloresButton></div>
       </section>
     </div>
   );
@@ -210,15 +175,8 @@ export default function AdminStoreCreateScreen({
         {!tenantsLoading && !tenantsError && tenants.length === 0 && <DoloresNotice title="Chưa có tenant" tone="warning">Cần có tenant trước khi tạo thông tin cửa hàng.</DoloresNotice>}
       </DoloresPage>
 
-      {dialog && (
-        <StoreDialog
-          state={dialog}
-          storeName={form.name.trim()}
-          tenantName={tenantName}
-          onConfirm={() => setDialog("success")}
-          onClose={dialog === "success" ? finishPreview : closeDialog}
-        />
-      )}
+      <AdminConfirmStoreCreateDialog open={dialog === "confirm"} storeName={form.name.trim()} tenantName={tenantName} onConfirm={() => setDialog("success")} onClose={closeDialog} />
+      {dialog === "success" && <StoreSuccessDialog onComplete={finishPreview} />}
     </>
   );
 }

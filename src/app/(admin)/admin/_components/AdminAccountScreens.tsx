@@ -4,6 +4,13 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { useRouteView } from "@/app/(admin)/admin/_components/useRouteView";
+import {
+  AdminConfirmAccountCreateDialog,
+  AdminConfirmAccountDisableDialog,
+  AdminConfirmAccountReactivateDialog,
+  AdminConfirmAccountUpdateDialog,
+  AdminConfirmPasswordReissueDialog,
+} from "@/app/(admin)/admin/_components/AdminConfirmationDialogs";
 import { DoloresButton, DoloresField, DoloresFieldGrid, DoloresNotice, DoloresPanel, DoloresPanelTitle, DoloresTable } from "@/app/_ui/dolores/DoloresUI";
 import { DoloresPage } from "@/app/_shell/dolores/DoloresShell";
 import { useTenants } from "@/hooks/dolores/useTenants";
@@ -149,7 +156,7 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
 
   const listQuery = useAdminUsers(listParams, isListView);
   const detailQuery = useAdminUser(selectedUserId, isDetailView);
-  const tenantsQuery = useTenants(isListView || form.role === "owner");
+  const tenantsQuery = useTenants(isListView || (isDetailView && form.role === "owner"));
   const mutations = useAdminUserMutations();
   const { clearOneTimeCredential } = mutations;
   const currentUser = detailQuery.data;
@@ -203,7 +210,6 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
     name: form.name,
     email: form.email,
     ...(form.role ? { role: form.role } : {}),
-    ...(form.role === "owner" && form.tenantId ? { tenant_id: form.tenantId } : {}),
   });
 
   const buildUpdateRequest = (): AdminUserUpdateRequest => {
@@ -346,20 +352,15 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
       </DoloresPanel>
     </DoloresPage>;
   } else if (isCreateView) {
-    const tenantOptions = [{ value: "", label: tenantsQuery.isLoading ? "Đang tải tenant…" : "Chọn tenant" }, ...tenants.map((tenant) => ({ value: tenant.id, label: `${tenant.name} · ${tenant.id}` }))];
-    const tenantError = tenantsQuery.isError ? "Không tải được danh sách tenant." : errors.tenant_id;
-    const canSubmitCreate = form.role !== "owner" || (!tenantsQuery.isLoading && !tenantsQuery.isError && tenants.length > 0);
     pageContent = <DoloresPage title="Tạo tài khoản" description="Nhập thông tin và chọn vai trò cho tài khoản mới. Mật khẩu tạm thời chỉ được trả về một lần." actions={<>
-      <DoloresButton disabled={mutations.create.isPending || !canSubmitCreate} onClick={() => startSave("create")}>{mutations.create.isPending ? "Đang tạo…" : "Tạo tài khoản"}</DoloresButton>
+      <DoloresButton disabled={mutations.create.isPending} onClick={() => startSave("create")}>{mutations.create.isPending ? "Đang tạo…" : "Tạo tài khoản"}</DoloresButton>
       <DoloresButton onClick={() => setView("list", { account: null })} variant="secondary">Hủy</DoloresButton>
     </>}>
       <DoloresPanel><DoloresPanelTitle>Thông tin tài khoản</DoloresPanelTitle><DoloresFieldGrid>
         <AccountInput label="Họ tên" required error={errors.name} value={form.name} onChange={(value) => updateField("name", value)} />
         <AccountInput label="Email đăng nhập" required type="email" error={errors.email} value={form.email} onChange={(value) => updateField("email", value)} />
         <AccountSelect label="Vai trò" required value={form.role} error={errors.role} onChange={(value) => updateField("role", value)} options={[{ value: "", label: "Chọn vai trò" }, ...roleOptions]} />
-        {form.role === "owner" && <AccountSelect label="Tenant được cấp" required value={form.tenantId} error={tenantError} disabled={tenantsQuery.isLoading || tenantsQuery.isError || tenants.length === 0} onChange={(value) => updateField("tenantId", value)} options={tenantOptions} />}
       </DoloresFieldGrid></DoloresPanel>
-      {form.role === "owner" && <DoloresNotice title="Phạm vi tài khoản">Tài khoản owner bắt buộc thuộc một tenant. Chọn tenant từ danh sách để gửi đúng tenant_id dạng UUID.</DoloresNotice>}
       {mutations.create.isError && <DoloresNotice title="Không tạo được tài khoản" tone="warning">{getApiErrorMessage(mutations.create.error)}</DoloresNotice>}
     </DoloresPage>;
   } else if (isDetailView) {
@@ -400,14 +401,6 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
   }
 
   const isMutationPending = mutations.create.isPending || mutations.update.isPending || mutations.disable.isPending || mutations.reissueTemporaryPassword.isPending;
-  const confirmTitle = pendingAction === "create" ? "Xác nhận tạo tài khoản" : pendingAction === "update" ? "Xác nhận lưu thay đổi" : pendingAction === "disable" ? "Xác nhận vô hiệu hóa tài khoản" : pendingAction === "reactivate" ? "Xác nhận kích hoạt lại tài khoản" : "Xác nhận cấp lại mật khẩu tạm";
-  const confirmDescription = pendingAction === "create"
-        ? `${form.name.trim()} · ${form.email.trim()} · ${form.role ? roleLabels[form.role] : "chưa chọn vai trò"}${form.role === "owner" ? ` · Tenant ${form.tenantId}` : ""}. IDaaS sẽ tạo tài khoản, ghi nhận vai trò, đưa hồ sơ vào hàng đợi đồng bộ Dolores và trả mật khẩu tạm thời một lần.`
-    : pendingAction === "disable" ? "Tài khoản sẽ bị chuyển sang DISABLED và các phiên đăng nhập sẽ bị thu hồi. Đây là vô hiệu hóa, không xóa lịch sử tài khoản."
-      : pendingAction === "reactivate" ? "Tài khoản sẽ được chuyển lại sang ACTIVE. Yêu cầu đổi mật khẩu lần đăng nhập đầu vẫn được giữ."
-        : pendingAction === "reissue" ? "Mật khẩu hiện tại sẽ bị thay thế ngay. Mật khẩu mới chỉ hiển thị một lần và người dùng phải đổi mật khẩu khi đăng nhập."
-          : "Chỉ các trường đã thay đổi sẽ được gửi lên API. Thay đổi email hoặc vai trò có thể thu hồi phiên đăng nhập hiện tại.";
-
   return <>
     {pageContent}
     {overlay === "error" && <ModalFrame labelledBy="account-error-title"><section className="flex w-full max-w-[580px] flex-col gap-5 rounded-[20px] bg-white p-8 text-[#292625]">
@@ -415,13 +408,6 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
       <p className="text-base leading-[1.45]">{requestError || "Vui lòng thử lại sau."}</p>
       {Object.entries(errors).map(([field, message]) => <div key={field} className="rounded-[10px] border border-[#B81724] px-4 py-3"><p className="text-xs text-[#706561]">{field === "name" ? "Họ tên" : field === "email" ? "Email đăng nhập" : field === "role" ? "Vai trò" : field === "tenant_id" ? "Tenant" : "Thông tin"}</p><p className="mt-1 text-sm">{message}</p></div>)}
       <ModalButton primary onClick={() => setOverlay(null)}>Đóng</ModalButton>
-    </section></ModalFrame>}
-    {overlay === "confirm" && <ModalFrame labelledBy="account-confirm-title"><section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
-      <p className="text-[11px] font-medium leading-4 text-[#706561]">Kiểm tra trước khi tiếp tục</p><h2 id="account-confirm-title" className="mt-3 text-xl font-semibold leading-7">{confirmTitle}</h2>
-      <p className="mt-3 text-[13px] leading-5">{confirmDescription}</p><div className="mt-5 grid gap-3">
-        <ModalButton onClick={() => void confirmAction()} primary disabled={isMutationPending}>{isMutationPending ? "Đang xử lý…" : "Xác nhận"}</ModalButton>
-        <ModalButton onClick={() => setOverlay(null)} disabled={isMutationPending}>Đóng</ModalButton>
-      </div>
     </section></ModalFrame>}
     {overlay === "success" && <ModalFrame labelledBy="account-success-title"><section className="w-full max-w-[580px] rounded-[20px] bg-white p-8 shadow-xl">
       <p className="text-[11px] font-medium leading-4 text-[#706561]">Thông tin tài khoản</p>
@@ -433,5 +419,10 @@ export default function AdminAccountScreens({ initialView = "list" }: { initialV
       </div>}
       <div className="mt-5"><ModalButton onClick={finishSuccess} primary>{pendingAction === "reissue" ? "Đóng" : "Về danh sách"}</ModalButton></div>
     </section></ModalFrame>}
+    <AdminConfirmAccountCreateDialog open={overlay === "confirm" && pendingAction === "create"} accountName={form.name.trim()} email={form.email.trim()} role={form.role} isPending={isMutationPending} onConfirm={() => void confirmAction()} onClose={() => setOverlay(null)} />
+    <AdminConfirmAccountUpdateDialog open={overlay === "confirm" && pendingAction === "update"} isPending={isMutationPending} onConfirm={() => void confirmAction()} onClose={() => setOverlay(null)} />
+    <AdminConfirmAccountDisableDialog open={overlay === "confirm" && pendingAction === "disable"} isPending={isMutationPending} onConfirm={() => void confirmAction()} onClose={() => setOverlay(null)} />
+    <AdminConfirmAccountReactivateDialog open={overlay === "confirm" && pendingAction === "reactivate"} isPending={isMutationPending} onConfirm={() => void confirmAction()} onClose={() => setOverlay(null)} />
+    <AdminConfirmPasswordReissueDialog open={overlay === "confirm" && pendingAction === "reissue"} isPending={isMutationPending} onConfirm={() => void confirmAction()} onClose={() => setOverlay(null)} />
   </>;
 }

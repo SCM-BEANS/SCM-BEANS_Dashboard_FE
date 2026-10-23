@@ -40,9 +40,6 @@ export const AdminUserCreateRequestSchema = z.object({
   role: AdminUserRoleSchema,
   tenant_id: TenantIdSchema.optional(),
 }).superRefine((value, context) => {
-  if (value.role === 'owner' && !value.tenant_id) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenant_id'], message: 'Tenant is required for owner accounts.' });
-  }
   if (value.role !== 'owner' && value.tenant_id) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['tenant_id'], message: 'Only owner accounts can have a tenant.' });
   }

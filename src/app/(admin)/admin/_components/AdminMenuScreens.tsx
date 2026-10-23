@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { DoloresApiErrorState, DoloresEmptyState, DoloresLoadingState } from '@/app/_ui/dolores/DoloresApiState';
+import { AdminConfirmGlobalRecipePublishDialog } from '@/app/(admin)/admin/_components/AdminConfirmationDialogs';
 import {
   DoloresButton,
   DoloresField,
@@ -48,8 +49,6 @@ export default function AdminMenuScreens({
   const [dosageBoundsText, setDosageBoundsText] = useState('');
   const [pendingRecipe, setPendingRecipe] = useState<RecipePublishRequest | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const publishDialogRef = useRef<HTMLDialogElement>(null);
-  const publishCancelRef = useRef<HTMLButtonElement>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<unknown>(null);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
@@ -64,17 +63,6 @@ export default function AdminMenuScreens({
     setPublishError(null);
     setPublishSuccess(null);
   }, [initialView]);
-
-  useEffect(() => {
-    const dialog = publishDialogRef.current;
-    if (!dialog) return;
-    if (confirmOpen && !dialog.open) {
-      dialog.showModal();
-      publishCancelRef.current?.focus();
-    } else if (!confirmOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [confirmOpen]);
 
   const linkTo = (nextView: AdminMenuView, id?: string) =>
     buildRouteUrl(basePath, { view: nextView, id });
@@ -236,32 +224,13 @@ export default function AdminMenuScreens({
             </DoloresNotice>}
           </form>
         </DoloresPage>
-        <dialog
-          ref={publishDialogRef}
-          className="m-auto w-[calc(100%-3rem)] max-w-[580px] rounded-[20px] border-0 bg-white p-8 shadow-xl backdrop:bg-[#302927]/25"
-          aria-labelledby="recipe-publish-confirm-title"
-          aria-describedby="recipe-publish-confirm-description"
-          onCancel={(event) => {
-            event.preventDefault();
-            setConfirmOpen(false);
-            setPendingRecipe(null);
-          }}
-        >
-          {pendingRecipe && <>
-            <p className="text-[11px] font-medium leading-4 text-[#706561]">Xác nhận tác động toàn hệ thống</p>
-            <h2 id="recipe-publish-confirm-title" className="mt-3 text-xl font-semibold leading-7">Phát hành {pendingRecipe.name}?</h2>
-            <p id="recipe-publish-confirm-description" className="mt-3 text-[13px] leading-5 text-[#302927]">API sẽ tạo Global Recipe mới, biên dịch lại effective recipes liên quan và yêu cầu đồng bộ trên tất cả máy. Thao tác này không giới hạn vào một tenant hoặc máy.</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <DoloresButton type="button" onClick={confirmPublish} disabled={publish.isPending}>Xác nhận phát hành</DoloresButton>
-              <button
-                ref={publishCancelRef}
-                type="button"
-                className="inline-flex h-12 shrink-0 items-center justify-center rounded-[10px] border border-[#E9E2DC] bg-white px-4 py-3 text-sm font-medium text-[#302927] transition-opacity hover:opacity-[0.88] active:opacity-[0.72] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B81724]"
-                onClick={() => { setConfirmOpen(false); setPendingRecipe(null); }}
-              >Quay lại</button>
-            </div>
-          </>}
-        </dialog>
+        <AdminConfirmGlobalRecipePublishDialog
+          open={confirmOpen && pendingRecipe !== null}
+          recipeName={pendingRecipe?.name ?? null}
+          isPending={publish.isPending}
+          onConfirm={confirmPublish}
+          onClose={() => { setConfirmOpen(false); setPendingRecipe(null); }}
+        />
       </>
     );
   }
