@@ -35,6 +35,25 @@ function tokenWithRoles(roles) {
   return `header.${payload}.signature`;
 }
 
+function adminPageDependencies() {
+  const React = require("react");
+  return {
+    "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "@/components/button/button-bar": {
+      ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
+        ? React.createElement("a", { href, ref, ...props }, children)
+        : React.createElement("button", { ref, ...props }, children)),
+    },
+    "@/routes/path": {
+      PATH_ADMIN: {
+        REPORTS: "/admin/reports",
+        IOT: "/admin/iot",
+        MACHINES: "/admin/machines",
+      },
+    },
+  };
+}
+
 test("admin role routing accepts IDaaS roles and rejects malformed tokens", () => {
   const roles = loadModule("src/lib/auth-role.ts", {
     "@/routes/path": {
@@ -208,7 +227,7 @@ test("a second Dolores 401 stops after one refresh", async () => {
   }
 });
 
-test("admin overview shows API metrics and leaves future actions disabled", () => {
+test("admin overview shows API metrics and links to available admin pages", () => {
   const React = require("react");
   const { renderToStaticMarkup } = require("react-dom/server");
   const { ADMIN_MESSAGES } = loadModule("src/text/admin/admin-messages.ts");
@@ -231,6 +250,7 @@ test("admin overview shows API metrics and leaves future actions disabled", () =
     isError: false,
   };
   const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+    ...adminPageDependencies(),
     "@tanstack/react-query": { useQuery: () => result },
     "@/apis/dashboard.api": { dashboardApi: {} },
     "@/text/admin/admin-messages": { ADMIN_MESSAGES },
@@ -245,7 +265,10 @@ test("admin overview shows API metrics and leaves future actions disabled", () =
   assert.match(html, /Khách hàng/);
   assert.match(html, /2026-10-22/);
   assert.match(html, /1\.000/);
-  assert.equal((html.match(/disabled=""/g) || []).length, 3);
+  assert.equal((html.match(/disabled=""/g) || []).length, 0);
+  assert.match(html, /href="\/admin\/reports"/);
+  assert.match(html, /href="\/admin\/iot"/);
+  assert.match(html, /href="\/admin\/machines"/);
 });
 
 test("admin overview renders retry feedback when Dolores fails", () => {
@@ -253,6 +276,7 @@ test("admin overview renders retry feedback when Dolores fails", () => {
   const { renderToStaticMarkup } = require("react-dom/server");
   const { ADMIN_MESSAGES } = loadModule("src/text/admin/admin-messages.ts");
   const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+    ...adminPageDependencies(),
     "@tanstack/react-query": {
       useQuery: () => ({
         isPending: false,
@@ -281,6 +305,7 @@ test("admin overview distinguishes loading, empty data, and forbidden access", (
   const { ADMIN_MESSAGES } = loadModule("src/text/admin/admin-messages.ts");
   const renderState = (query) => {
     const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+      ...adminPageDependencies(),
       "@tanstack/react-query": { useQuery: () => query },
       "@/apis/dashboard.api": { dashboardApi: {} },
       "@/text/admin/admin-messages": { ADMIN_MESSAGES },

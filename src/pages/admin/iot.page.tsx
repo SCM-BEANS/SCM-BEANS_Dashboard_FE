@@ -8,9 +8,11 @@ import { locationsApi } from "@/apis/locations.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { PATH_ADMIN } from "@/routes/path";
+import { ButtonBar } from "@/components/button/button-bar";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const PAGE_SIZE = 20;
@@ -82,8 +84,10 @@ function IoTContent() {
 
   if (hasOwnerId && !validOwnerId && router.isReady) {
     return <AdminShell><div className={styles.pageContent}>
-      <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID}</p><button type="button" onClick={() => navigate({})}>{T.IOT.BACK}</button></div>
-    </div></AdminShell>;
+      <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID}</p></div>
+    </div><AdminActionBar>
+      <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
+    </AdminActionBar></AdminShell>;
   }
 
   if (hasOwnerId) {
@@ -98,11 +102,6 @@ function IoTContent() {
         <div className={styles.pageHeading}>
           <h1>{profile.data ? `${T.IOT.OWNER_DETAIL}: ${profile.data.fullName}` : T.IOT.OWNER_DETAIL}</h1>
           <p>{T.IOT.DESCRIPTION}</p>
-        </div>
-        <div className={styles.pageActions}>
-          <button className={styles.accountSecondaryButton} type="button" onClick={() => navigate({})}>{T.IOT.BACK}</button>
-          <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</Link>
-          <button type="button" onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</button>
         </div>
 
         {profile.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
@@ -143,13 +142,17 @@ function IoTContent() {
           </section>
         </>}
       </div>
+      <AdminActionBar>
+        <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
+        <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
+        <ButtonBar type="button" disabled={profile.isFetching || machines.isFetching || contracts.isFetching || locations.isFetching} onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
+      </AdminActionBar>
     </AdminShell>;
   }
 
   return <AdminShell>
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}><h1>{T.IOT.TITLE}</h1><p>{T.IOT.DESCRIPTION}</p></div>
-      <div className={styles.pageActions}><Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</Link></div>
       <div className={styles.metricsGrid}>
         <article className={styles.metricCard}><span>{T.IOT.OWNER}</span><strong>{owners.data ? count(owners.data.totalElements) : "—"}</strong></article>
         <article className={styles.metricCard}><span>{T.IOT.MACHINES}</span><strong>{machines.data ? count(machines.data.length) : "—"}</strong></article>
@@ -177,6 +180,10 @@ function IoTContent() {
         </div>
       </section>}
     </div>
+    <AdminActionBar>
+      <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
+      <ButtonBar type="button" disabled={owners.isFetching || machines.isFetching || contracts.isFetching} onClick={() => { void Promise.all([owners.refetch(), machines.refetch(), contracts.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
+    </AdminActionBar>
   </AdminShell>;
 }
 

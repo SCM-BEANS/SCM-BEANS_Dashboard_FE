@@ -37,10 +37,9 @@
 .desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: white; color: #706561; font-size: 14px; }
 .headerPending { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; opacity: .5; }
 .main { min-height: 0; flex: 1; overflow: auto; }
-.actionDock { display: flex; min-height: 80px; flex: 0 0 80px; align-items: center; padding: 12px 32px; background: white; }
 .mobileHeader, .mobileNav, .menuBackdrop { display: none; }
 
-.pageContent { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 22px; padding: 28px 32px 48px; margin: 0 auto; }
+.pageContent { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 22px; padding: 28px 32px 112px; margin: 0 auto; }
 .pageHeading { display: flex; flex-direction: column; gap: 6px; }
 .pageHeading h1 { margin: 0; font-size: 27px; line-height: 1.4; }
 .pageHeading p { margin: 6px 0 0; color: #706561; font-size: 14px; line-height: 1.5; }
@@ -149,7 +148,6 @@
   .mobileNav { display: flex; min-height: 64px; flex: 0 0 64px; align-items: stretch; justify-content: space-around; border-top: 1px solid #e9e2dc; background: white; }
   .mobileNavActive, .mobileNavButton { display: flex; min-width: 100px; align-items: center; justify-content: center; gap: 8px; border: 0; background: white; color: #b81724 !important; font-size: 14px; font-weight: 600; }
   .mobileNavButton { color: #706561 !important; cursor: pointer; }
-  .actionDock { min-height: 64px; flex-basis: 64px; padding: 8px 16px; overflow-x: auto; }
   .pageActions { flex-wrap: nowrap; }
   .pageActions button { white-space: nowrap; }
   .menuBackdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; background: #30292766; }
@@ -157,7 +155,7 @@
   .mobileMenuHeader { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 14px; }
   .mobileMenuHeader button { display: flex; width: 38px; height: 38px; align-items: center; justify-content: center; border: 0; background: transparent; }
   .mobileMenuNav { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-  .pageContent { gap: 16px; padding: 20px 16px 28px; }
+  .pageContent { gap: 16px; padding: 20px 16px 144px; }
   .pageHeading { flex-direction: column; }
   .pageHeading h1 { font-size: 24px; }
   .pageActions { justify-content: flex-start; }

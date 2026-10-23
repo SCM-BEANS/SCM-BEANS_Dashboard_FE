@@ -32,7 +32,7 @@ export const locationsApi = {
       baseURL: DOLORES_API_BASE_URL, params: { ownerId: validOwner },
     });
     const created = LocationSchema.parse(response.data);
-    const responseOwnerId = created.ownerId ?? created.tenantId;
+    const responseOwnerId = created.ownerId;
     if (responseOwnerId && responseOwnerId !== validOwner) {
       throw new LocationOwnerMismatchError();
     }

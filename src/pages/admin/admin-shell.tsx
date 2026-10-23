@@ -17,6 +17,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { hasAdminRole } from "@/lib/auth-role";
 import { PATH_ADMIN, PATH_AUTH, PATH_HOME } from "@/routes/path";
 import { ADMIN_ENABLED_PATHS, ADMIN_NAVIGATION_LINKS } from "@/routes/routes";
@@ -167,7 +169,10 @@ export function AdminShell({
         </aside>
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
-            <span>{ADMIN_MESSAGES.ROLE} / {currentSection.LABEL}</span>
+            <AdminBreadcrumb
+              rootLabel={ADMIN_MESSAGES.ROLE}
+              currentLabel={currentSection.LABEL}
+            />
             <span className={styles.headerPending} title={ADMIN_MESSAGES.NAVIGATION.PENDING}>
               {ADMIN_MESSAGES.NAVIGATION.NOTIFICATIONS}
             </span>
@@ -181,7 +186,7 @@ export function AdminShell({
             </span>
           </header>
           <main className={styles.main}>{children}</main>
-          {actions && <footer className={styles.actionDock}>{actions}</footer>}
+          {actions && <AdminActionBar>{actions}</AdminActionBar>}
           <nav className={styles.mobileNav} aria-label="Điều hướng chính Admin">
             <Link className={styles.mobileNavActive} href={currentSection.HREF} aria-current="page">
               {currentSection.LABEL}

@@ -134,9 +134,16 @@ function queryClient() {
 
 const styleMap = new Proxy({}, { get: (_target, key) => String(key) });
 function pageMocks(apiMocks, router = { isReady: true, query: {} }) {
+  const ButtonBar = React.forwardRef(({ href, children, ...props }, ref) => href
+    ? React.createElement("a", { href, ref, ...props }, children)
+    : React.createElement("button", { ref, ...props }, children));
   return {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "next/router": { useRouter: () => router },
+    "@/components/button/button-bar": { ButtonBar },
+    "@/components/action-bar/admin-action-bar": {
+      AdminActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
+    },
     "./admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },
     "../admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },
     "@/routes/path": pathModule,
@@ -165,6 +172,7 @@ test("machine inventory page renders loaded rows and a meaningful empty state", 
   client.setQueryData(["dolores", "machines", "inventory"], [inventoryItem]);
   client.setQueryData(["dolores", "machines", "inventory-summary"], { totalMachines: 1, statusCounts: { IN_WAREHOUSE: 1 } });
   const markup = renderPage(Page, client);
+  assert.match(markup, /data-action-bar="true"/);
   assert.match(markup, /TEST_DATA-MACHINE-01/);
   assert.match(markup, new RegExp(`/admin/machines/${machineId}`));
   assert.match(markup, /Owner ID/);

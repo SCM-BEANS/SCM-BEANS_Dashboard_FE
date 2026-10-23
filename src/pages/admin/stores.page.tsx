@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
 import type { AdminUser } from "@/schema/admin-users.schema";
@@ -52,7 +54,7 @@ export async function loadOwnerLocations(signal?: AbortSignal, selectedOwnerId?:
       const owner = batch[position];
       if (result.status === "rejected") { failed.push(owner.fullName || owner.idaasUserId); return; }
       for (const location of result.value) {
-        const responseOwnerId = location.ownerId ?? location.tenantId;
+        const responseOwnerId = location.ownerId;
         if (responseOwnerId && responseOwnerId !== owner.idaasUserId) { failed.push(owner.fullName || owner.idaasUserId); continue; }
         locations.push({ owner, location });
       }
@@ -93,7 +95,7 @@ function StoresContent() {
     queryFn: ({ signal }) => locationsApi.getById(locationId, signal),
     enabled: view === "detail" && LocationIdSchema.safeParse(locationId).success,
   });
-  const detailOwnerId = detail.data?.ownerId ?? detail.data?.tenantId ?? initialOwnerId;
+  const detailOwnerId = detail.data?.ownerId ?? initialOwnerId;
   const detailOwner = useQuery({
     queryKey: ["dolores", "profile", detailOwnerId],
     queryFn: ({ signal }) => profilesApi.getById(detailOwnerId, signal),
@@ -137,7 +139,7 @@ function StoresContent() {
     saveButtonRef.current?.focus();
   };
   const selectedOwner = detailOwner.data;
-  const responseOwnerId = detail.data?.ownerId ?? detail.data?.tenantId;
+  const responseOwnerId = detail.data?.ownerId;
   const ownerMismatch = Boolean(initialOwnerId && responseOwnerId && initialOwnerId !== responseOwnerId);
   const title = view === "create" ? "Tạo cửa hàng" : view === "detail" ? detail.data?.name ?? T.STORES.DETAIL : T.STORES.TITLE;
 
@@ -149,10 +151,7 @@ function StoresContent() {
         <option value="">{T.STORES.ALL_OWNERS}</option>{listing.data?.owners.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName}</option>)}
       </select></label>
     </div>}
-    {view === "create" && <div className={styles.pageActions}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>{T.STORES.CANCEL}</button></div>}
-    {view === "detail" && <div className={styles.pageActions}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>Về danh sách</button><button className={styles.accountSecondaryButton} type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</button></div>}
-
-    {view === "create" && <form className={styles.panel} onSubmit={submit}>
+    {view === "create" && <form id="store-create-form" className={styles.panel} onSubmit={submit}>
       <h2>Thông tin cửa hàng</h2>
       <div className={styles.operationsGrid}>
         <label>{T.STORES.NAME} *<input required maxLength={160} value={form.name} onChange={(event) => setField("name", event.target.value)} /></label>
@@ -167,7 +166,6 @@ function StoresContent() {
       {owners.isError && <p className={styles.operationsNotice} role="alert">{errorText(owners.error)} Cần tải được Owner để tạo cửa hàng.</p>}
       {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       {blockResubmit && <div className={styles.operationsButtons}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>{T.STORES.CHECK_LIST}</button></div>}
-      <div className={styles.operationsButtons}><button ref={saveButtonRef} className={styles.accountPrimaryButton} type="submit" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</button></div>
     </form>}
 
     {view === "detail" && <>
@@ -177,7 +175,7 @@ function StoresContent() {
       {ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
       {detail.data && !ownerMismatch && <section className={styles.panel}><h2>{T.STORES.DETAIL}</h2><div className={styles.operationsGrid}>
         <div><span>{T.STORES.NAME}</span><strong>{detail.data.name}</strong></div>
-        <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? (detail.data.ownerId ?? detail.data.tenantId ?? "—")}</strong></div>
+        <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? (detail.data.ownerId ?? "—")}</strong></div>
         <div><span>{T.STORES.ADDRESS}</span><strong>{detail.data.address || "—"}</strong></div>
         <div><span>{T.STORES.CITY}</span><strong>{detail.data.city || "—"}</strong></div>
         <div><span>{T.STORES.CONTACT}</span><strong>{detail.data.contactPerson || "—"}</strong></div>
@@ -219,11 +217,19 @@ function StoresContent() {
       <div className={styles.operationsButtons}><button className={styles.accountPrimaryButton} type="button" disabled={create.isPending || blockResubmit || !ProfileIdSchema.safeParse(form.ownerId).success} onClick={() => create.mutate()}>{create.isPending ? T.STORES.SAVING : T.STORES.CONFIRM}</button><button className={styles.accountSecondaryButton} type="button" disabled={create.isPending} onClick={closeConfirmation}>{T.STORES.CANCEL}</button></div>
     </section></div>}
   </div>
-  {view === "list" && <div className={styles.accountActionsDock}>
-    <div className={styles.accountActions}>
-      <button className={styles.accountPrimaryButton} type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) }); }}>{T.STORES.CREATE}</button>
-    </div>
-  </div>}
+  {view === "list" && (
+    <AdminActionBar>
+      <ButtonBar type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) }); }}>{T.STORES.CREATE}</ButtonBar>
+    </AdminActionBar>
+  )}
+  {view === "create" && <AdminActionBar>
+    <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
+    <ButtonBar type="button" onClick={() => navigate()}>{T.STORES.CANCEL}</ButtonBar>
+  </AdminActionBar>}
+  {view === "detail" && <AdminActionBar>
+    <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
+    <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>
+  </AdminActionBar>}
   </>;
 }
 

@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { tenantsApi } from "@/apis/tenants.api";
 import { PATH_ADMIN } from "@/routes/path";
 import {
@@ -385,9 +387,9 @@ function AdminUsersContent() {
 
   if (view === "list") {
     actions = (
-      <button className={styles.accountPrimaryButton} type="button" onClick={openCreate}>
+      <ButtonBar type="button" onClick={openCreate}>
         {T.LIST.CREATE}
-      </button>
+      </ButtonBar>
     );
     content = (
       <section className={styles.panel}>
@@ -469,8 +471,8 @@ function AdminUsersContent() {
     title = T.FORM.CREATE_TITLE;
     description = T.FORM.CREATE_DESCRIPTION;
     actions = <>
-      <button className={styles.accountPrimaryButton} type="button" onClick={prepareCreate}>{T.LIST.CREATE}</button>
-      <button className={styles.accountSecondaryButton} type="button" onClick={backToList}>{T.FORM.CANCEL}</button>
+      <ButtonBar type="button" onClick={prepareCreate}>{T.LIST.CREATE}</ButtonBar>
+      <ButtonBar type="button" onClick={backToList}>{T.FORM.CANCEL}</ButtonBar>
     </>;
     content = <section className={styles.panel}>
       <h2>{T.FORM.DETAIL_TITLE}</h2>
@@ -488,18 +490,18 @@ function AdminUsersContent() {
     title = T.FORM.DETAIL_TITLE;
     description = T.FORM.DETAIL_DESCRIPTION;
     actions = <>
-      <button className={styles.accountPrimaryButton} type="button" disabled={!canManage || busy || detailQuery.isPending}
-        onClick={prepareUpdate}>{T.FORM.SAVE}</button>
+      <ButtonBar type="button" disabled={!canManage || busy || detailQuery.isPending}
+        onClick={prepareUpdate}>{T.FORM.SAVE}</ButtonBar>
       {user?.status === "ACTIVE" ? (
-        <button className={styles.accountSecondaryButton} type="button" disabled={!canManage || busy}
-          onClick={() => prepareAccountAction("disable")}>{T.FORM.DISABLE}</button>
+        <ButtonBar type="button" disabled={!canManage || busy}
+          onClick={() => prepareAccountAction("disable")}>{T.FORM.DISABLE}</ButtonBar>
       ) : user?.status === "DISABLED" ? (
-        <button className={styles.accountSecondaryButton} type="button" disabled={!canManage || busy}
-          onClick={() => prepareAccountAction("reactivate")}>{T.FORM.REACTIVATE}</button>
+        <ButtonBar type="button" disabled={!canManage || busy}
+          onClick={() => prepareAccountAction("reactivate")}>{T.FORM.REACTIVATE}</ButtonBar>
       ) : null}
-      <button className={styles.accountSecondaryButton} type="button" disabled={!canManage || user?.status !== "ACTIVE" || busy}
-        onClick={() => prepareAccountAction("reissue")}>{T.FORM.REISSUE}</button>
-      <button className={styles.accountSecondaryButton} type="button" onClick={backToList}>{T.FORM.BACK}</button>
+      <ButtonBar type="button" disabled={!canManage || user?.status !== "ACTIVE" || busy}
+        onClick={() => prepareAccountAction("reissue")}>{T.FORM.REISSUE}</ButtonBar>
+      <ButtonBar type="button" onClick={backToList}>{T.FORM.BACK}</ButtonBar>
     </>;
     content = !validId ? (
       <div className={styles.errorNotice} role="alert">{T.FORM.INVALID_ID}</div>
@@ -543,9 +545,7 @@ function AdminUsersContent() {
         </div>
         {content}
       </div>
-      <div className={styles.accountActionsDock}>
-        <div className={styles.accountActions}>{actions}</div>
-      </div>
+      <AdminActionBar>{actions}</AdminActionBar>
       {dialog && <ActionDialog kind={dialog} action={action} busy={busy} error={requestError}
         credential={credential} onConfirm={() => void confirmAction()} onClose={closeDialog} />}
     </>

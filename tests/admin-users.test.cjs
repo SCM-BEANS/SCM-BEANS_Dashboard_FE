@@ -19,8 +19,19 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) =>
-    Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    if (id === "@/components/action-bar/admin-action-bar") {
+      return { AdminActionBar: ({ children }) => children };
+    }
+    if (id === "@/components/button/button-bar") {
+      const React = require("react");
+      return { ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
+        ? React.createElement("a", { href, ref, ...props }, children)
+        : React.createElement("button", { ref, ...props }, children)) };
+    }
+    return require(id);
+  };
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }

@@ -3,11 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { ZodError } from "zod";
 import { recipesApi } from "@/apis/recipes.api";
+import { ButtonBar } from "@/components/button/button-bar";
 import {
   RecipePublishRequestSchema,
   type RecipePublishRequest,
 } from "@/schema/recipes.schema";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const RECIPE_QUERY_KEY = ["dolores", "recipes", "global"] as const;
@@ -119,6 +121,7 @@ function MenuContent() {
   };
 
   return (
+    <>
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}>
         <h1>{ADMIN_MESSAGES.MENU.TITLE}</h1>
@@ -186,7 +189,7 @@ function MenuContent() {
 
       <section className={styles.panel} aria-labelledby="publish-global-recipe-title">
         <h2 id="publish-global-recipe-title">{ADMIN_MESSAGES.MENU.CREATE}</h2>
-        <form onSubmit={submitDraft}>
+        <form id="global-recipe-form" onSubmit={submitDraft}>
           <div className={styles.operationsGrid}>
             <label>
               {ADMIN_MESSAGES.MENU.NAME}
@@ -219,11 +222,6 @@ function MenuContent() {
           {formError && <p className={styles.accountInlineWarning} role="alert">{formError}</p>}
           {publish.isError && <p className={styles.accountInlineWarning} role="alert">{errorMessage(publish.error)}</p>}
           {successMessage && <p className={styles.notice} role="status">{successMessage}</p>}
-          <div className={styles.operationsButtons}>
-            <button ref={publishButtonRef} className={styles.accountPrimaryButton} type="submit" disabled={publish.isPending}>
-              {ADMIN_MESSAGES.MENU.PUBLISH}
-            </button>
-          </div>
         </form>
       </section>
 
@@ -265,6 +263,15 @@ function MenuContent() {
         </div>
       )}
     </div>
+    <AdminActionBar>
+      <ButtonBar ref={publishButtonRef} type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
+        {ADMIN_MESSAGES.MENU.PUBLISH}
+      </ButtonBar>
+      <ButtonBar type="button" disabled={recipes.isFetching} onClick={() => void recipes.refetch()}>
+        {ADMIN_MESSAGES.MENU.RETRY}
+      </ButtonBar>
+    </AdminActionBar>
+    </>
   );
 }
 

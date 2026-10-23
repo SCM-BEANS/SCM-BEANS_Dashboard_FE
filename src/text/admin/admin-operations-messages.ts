@@ -30,6 +30,7 @@ export const ADMIN_OPERATIONS_MESSAGES = {
     DETAIL: "Thông tin hợp đồng", HISTORY: "Lịch sử theo máy", DOCUMENTS: "Tài liệu trong hồ sơ",
     DOWNLOAD: "Tải xuống", NO_MACHINE: "Chưa gắn máy", DRAFT: "Bản nháp", ACTIVE: "Đang hiệu lực",
     TERMINATED: "Đã kết thúc", UNKNOWN_OWNER: "Không tải được tên Owner",
+    CREATE: "Tạo hợp đồng", CREATE_UNAVAILABLE: "API Dolores hiện được nối ở trang này chưa hỗ trợ tạo hợp đồng; thao tác sẽ khả dụng khi backend xác nhận endpoint tạo.",
   },
   MACHINES: {
     TITLE: "Kho máy", DESCRIPTION: "Thiết bị và tồn kho được tải từ Dolores.",

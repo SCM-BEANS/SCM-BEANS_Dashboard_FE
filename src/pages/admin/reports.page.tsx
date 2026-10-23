@@ -5,6 +5,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ZodError } from "zod";
 import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -106,13 +108,14 @@ function ReportContent() {
   );
 
   return (
+    <>
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}>
         <h1>{ADMIN_MESSAGES.REPORTS.TITLE}</h1>
         <p>{ADMIN_MESSAGES.REPORTS.DESCRIPTION}</p>
       </div>
 
-      <form className={styles.operationsFilters} onSubmit={applyRange}>
+      <form id="report-range-form" className={styles.operationsFilters} onSubmit={applyRange}>
         <label>
           {ADMIN_MESSAGES.REPORTS.FROM}
           <input
@@ -130,12 +133,6 @@ function ReportContent() {
             onChange={(event) => setToDate(event.target.value)}
           />
         </label>
-        <button className={styles.accountPrimaryButton} type="submit">
-          {ADMIN_MESSAGES.REPORTS.APPLY}
-        </button>
-        <button className={styles.accountSecondaryButton} type="button" onClick={useDefaultRange}>
-          {ADMIN_MESSAGES.REPORTS.ALL_PERIODS}
-        </button>
       </form>
       {rangeError && <p className={styles.accountInlineWarning} role="alert">{rangeError}</p>}
       {hasDateQuery && !rangeIsValid && (
@@ -198,7 +195,7 @@ function ReportContent() {
         )}
       </section>
 
-      <section className={styles.panel}>
+      <section id="rental-invoices" className={styles.panel}>
         <h2>{ADMIN_MESSAGES.REPORTS.INVOICES}</h2>
         <p className={styles.panelSubtitle}>{ADMIN_MESSAGES.REPORTS.NOTE}</p>
         {invoices.isPending && <p role="status">{ADMIN_MESSAGES.REPORTS.LOADING_INVOICES}</p>}
@@ -241,6 +238,25 @@ function ReportContent() {
         )}
       </section>
     </div>
+    <AdminActionBar>
+      <ButtonBar type="submit" form="report-range-form">
+        {ADMIN_MESSAGES.REPORTS.APPLY}
+      </ButtonBar>
+      <ButtonBar type="button" onClick={useDefaultRange}>
+        {ADMIN_MESSAGES.REPORTS.ALL_PERIODS}
+      </ButtonBar>
+      <ButtonBar href="#rental-invoices">
+        {ADMIN_MESSAGES.REPORTS.INVOICES}
+      </ButtonBar>
+      <ButtonBar
+        type="button"
+        disabled={overview.isFetching || invoices.isFetching}
+        onClick={() => void Promise.all([overview.refetch(), invoices.refetch()])}
+      >
+        {ADMIN_MESSAGES.REPORTS.RETRY}
+      </ButtonBar>
+    </AdminActionBar>
+    </>
   );
 }
 

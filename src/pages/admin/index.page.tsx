@@ -2,6 +2,8 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
@@ -148,17 +150,11 @@ function AdminOverview() {
 export default function AdminPage() {
   return (
     <AdminShell actions={
-      <div className={styles.pageActions}>
-        <button type="button" disabled title={ADMIN_MESSAGES.NAVIGATION.PENDING}>
-          {ADMIN_MESSAGES.NAVIGATION.REPORTS}
-        </button>
-        <button type="button" disabled title={ADMIN_MESSAGES.NAVIGATION.PENDING}>
-          {ADMIN_MESSAGES.NAVIGATION.IOT}
-        </button>
-        <button type="button" disabled title={ADMIN_MESSAGES.NAVIGATION.PENDING}>
-          {ADMIN_MESSAGES.NAVIGATION.MACHINES}
-        </button>
-      </div>
+      <>
+        <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.NAVIGATION.REPORTS}</ButtonBar>
+        <ButtonBar href={PATH_ADMIN.IOT}>{ADMIN_MESSAGES.NAVIGATION.IOT}</ButtonBar>
+        <ButtonBar href={PATH_ADMIN.MACHINES}>{ADMIN_MESSAGES.NAVIGATION.MACHINES}</ButtonBar>
+      </>
     }>
       <AdminOverview />
     </AdminShell>

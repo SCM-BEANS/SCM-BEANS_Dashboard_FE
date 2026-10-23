@@ -5,8 +5,10 @@ import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { PATH_ADMIN } from "@/routes/path";
+import { ButtonBar } from "@/components/button/button-bar";
 import { MachineStatusSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const STATUSES = MachineStatusSchema.options;
@@ -77,13 +79,6 @@ function MachinesContent() {
           <h1>{T.MACHINES.TITLE}</h1>
           <p>{T.MACHINES.DESCRIPTION}</p>
         </div>
-        <div className={styles.pageActions}>
-          <button type="button" onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
-            {T.COMMON.RETRY}
-          </button>
-          <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</Link>
-        </div>
-
         <div className={styles.metricsGrid}>
           <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
           <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
@@ -121,6 +116,12 @@ function MachinesContent() {
           </div>}
         </section>
       </div>
+      <AdminActionBar>
+        <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
+        <ButtonBar type="button" disabled={inventory.isFetching || summary.isFetching} onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
+          {T.COMMON.RETRY}
+        </ButtonBar>
+      </AdminActionBar>
     </AdminShell>
   );
 }

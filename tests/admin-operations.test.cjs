@@ -36,7 +36,19 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    if (id === "@/components/action-bar/admin-action-bar") {
+      return { AdminActionBar: ({ children }) => children };
+    }
+    if (id === "@/components/button/button-bar") {
+      const React = require("react");
+      return { ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
+        ? React.createElement("a", { href, ref, ...props }, children)
+        : React.createElement("button", { ref, ...props }, children)) };
+    }
+    return require(id);
+  };
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -74,6 +86,61 @@ test("profile API lists, details, contracts, and history with the Dolores base U
   await assert.rejects(profilesApi.getById("invalid-id"));
 });
 
+test("businesses page delegates Owner, search, status, and pagination filters to IDaaS", async () => {
+  const React = require("react");
+  const { renderToStaticMarkup } = require("react-dom/server");
+  const adminUserSchemas = loadModule("src/schema/admin-users.schema.ts");
+  const { ADMIN_OPERATIONS_MESSAGES } = loadModule("src/text/admin/admin-operations-messages.ts");
+  const ownerUser = {
+    id: ownerId,
+    name: "TEST_DATA IDaaS Owner",
+    email: "owner@example.invalid",
+    roles: ["owner"],
+    tenant_id: null,
+    status: "ACTIVE",
+    email_verified: true,
+    created_at: "2026-10-23T00:00:00Z",
+    updated_at: "2026-10-23T00:00:00Z",
+  };
+  const listResponse = { items: [ownerUser], page: 2, page_size: 20, total: 41 };
+  const listCalls = [];
+  const queryOptions = [];
+  const { default: AdminBusinessesPage } = loadModule("src/pages/admin/businesses.page.tsx", {
+    "next/router": { useRouter: () => ({
+      isReady: true,
+      query: { q: "owner", status: "ACTIVE", page: "2" },
+      push: () => {},
+    }) },
+    "@tanstack/react-query": { useQuery: (options) => {
+      queryOptions.push(options);
+      if (options.queryKey[0] === "idaas" && options.queryKey[2] === "businesses") {
+        return { data: listResponse, isPending: false, isError: false, refetch: () => {} };
+      }
+      return { data: undefined, isPending: true, isError: false, refetch: () => {} };
+    } },
+    "@/apis/admin-users.api": { adminUsersApi: {
+      list: async (params) => { listCalls.push(params); return listResponse; },
+      getById: async () => ownerUser,
+    } },
+    "@/apis/profiles.api": { profilesApi: { getContracts: async () => page([]) } },
+    "@/schema/admin-users.schema": adminUserSchemas,
+    "@/routes/path": { PATH_ADMIN: { STORES: "/admin/stores", USERS: "/admin/users" } },
+    "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES },
+    "./admin-shell": {
+      AdminShell: ({ children }) => children,
+      adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
+    },
+  });
+
+  const html = renderToStaticMarkup(React.createElement(AdminBusinessesPage));
+  const listQuery = queryOptions.find((options) => options.queryKey[0] === "idaas" && options.queryKey[2] === "businesses");
+  assert.equal(listQuery.enabled, true);
+  await listQuery.queryFn({ signal: new AbortController().signal });
+  assert.deepEqual(listCalls, [{ role: "owner", q: "owner", status: "ACTIVE", page: 2, page_size: 20 }]);
+  assert.match(html, /TEST_DATA IDaaS Owner/);
+  assert.match(html, /41 khách hàng/);
+});
+
 test("locations API scopes list and create by the verified Owner UUID", async () => {
   const { client, calls } = clientFor((url, config) => url === "/locations" && config.method === "POST" ? location : url === "/locations" ? [location] : location);
   client.post = async (url, data, config = {}) => { calls.push({ method: "POST", url, data, config }); return { data: location }; };
@@ -85,9 +152,16 @@ test("locations API scopes list and create by the verified Owner UUID", async ()
   assert.deepEqual(calls.map((call) => `${call.method} ${call.url}`), ["GET /locations", `GET /locations/${locationId}`, "POST /locations"]);
   assert.deepEqual(calls[0].config.params, { ownerId });
   assert.deepEqual(calls[2].config.params, { ownerId });
-  assert.equal(calls[2].data.name, "TEST_DATA Store");
+  assert.equal(calls[2].config.baseURL, "/api/dolores/v1");
+  assert.deepEqual(calls[2].data, { name: "TEST_DATA Store", city: "Test City" });
   await assert.rejects(locationsApi.list({ ownerId: "invalid" }));
   await assert.rejects(locationsApi.create(ownerId, { name: " " }));
+
+  const tenantOnlyClient = {
+    post: async () => ({ data: { ...location, ownerId: undefined, tenantId: documentId } }),
+  };
+  const tenantOnlyApi = loadModule("src/apis/locations.api.ts", { ...schemaMocks, "@/lib/http": httpMock(tenantOnlyClient) }).locationsApi;
+  assert.equal((await tenantOnlyApi.create(ownerId, { name: "TEST_DATA Store" })).tenantId, documentId);
 
   const wrongOwnerClient = {
     post: async () => ({ data: { ...location, ownerId: documentId } }),
@@ -157,7 +231,12 @@ test("store fan-out keeps successful Owner data, records partial failures, and c
       await new Promise((resolve) => setTimeout(resolve, 3));
       inFlight -= 1;
       if (requestedOwnerId === owners[6].idaasUserId) throw Object.assign(new Error("forbidden"), { response: { status: 403 } });
-      return [{ ...location, id: requestedOwnerId.slice(0, 8) + "-0000-4000-8000-000000000099", ownerId: requestedOwnerId }];
+      return [{
+        ...location,
+        id: requestedOwnerId.slice(0, 8) + "-0000-4000-8000-000000000099",
+        ownerId: undefined,
+        tenantId: documentId,
+      }];
     },
   };
   const pageModule = loadModule("src/pages/admin/stores.page.tsx", {

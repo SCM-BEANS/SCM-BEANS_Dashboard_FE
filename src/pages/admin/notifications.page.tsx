@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ZodError } from "zod";
 import { notificationsApi } from "@/apis/notifications.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import type { Notification } from "@/schema/notifications.schema";
+import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
@@ -44,6 +47,7 @@ function NotificationContent() {
   });
 
   return (
+    <>
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}>
         <h1>{ADMIN_MESSAGES.NOTIFICATIONS.TITLE}</h1>
@@ -150,6 +154,19 @@ function NotificationContent() {
         )}
       </section>
     </div>
+    <AdminActionBar>
+      <ButtonBar href={PATH_ADMIN.REPORTS}>
+        {ADMIN_MESSAGES.REPORTS.TITLE}
+      </ButtonBar>
+      <ButtonBar
+        type="button"
+        disabled={notifications.isFetching || alerts.isFetching}
+        onClick={() => void Promise.all([notifications.refetch(), alerts.refetch()])}
+      >
+        {ADMIN_MESSAGES.NOTIFICATIONS.RETRY}
+      </ButtonBar>
+    </AdminActionBar>
+    </>
   );
 }
 

@@ -1,0 +1,31 @@
+.dock {
+  position: fixed;
+  z-index: 5;
+  inset: auto 0 0 240px;
+  display: flex;
+  min-width: 0;
+  height: 80px;
+  align-items: center;
+  padding: 12px 32px;
+  border-top: 1px solid #e9e2dc;
+  background: #fff;
+}
+
+.actions {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 1023px) {
+  .dock {
+    bottom: 64px;
+    left: 0;
+    height: 64px;
+    padding: 8px 16px;
+  }
+}

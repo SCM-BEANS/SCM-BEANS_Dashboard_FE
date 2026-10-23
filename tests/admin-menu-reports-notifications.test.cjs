@@ -117,11 +117,21 @@ const httpMock = (client) => ({
   DOLORES_API_BASE_URL: "/api/dolores/v1",
 });
 const classNames = new Proxy({}, { get: (_target, key) => String(key) });
+const actionBarMock = {
+  AdminActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
+};
+const ButtonBar = React.forwardRef(({ href, children, ...props }, ref) => href
+  ? React.createElement("a", { href, ref, ...props }, children)
+  : React.createElement("button", { ref, ...props }, children));
+const pathModule = loadModule("src/routes/path.ts");
 const adminShellMocks = {
   "./admin-shell": {
     AdminShell: ({ children }) => React.createElement("main", null, children),
     adminStyles: classNames,
   },
+  "@/components/button/button-bar": { ButtonBar },
+  "@/components/action-bar/admin-action-bar": actionBarMock,
+  "@/routes/path": pathModule,
 };
 
 function renderPage(Page) {
@@ -306,6 +316,7 @@ test("reports page displays aggregate dashboard finance and full rental rows wit
     },
   }).default;
   const markup = renderPage(Page);
+  assert.match(markup, /data-action-bar="true"/);
   const dashboardQuery = calls.find((item) => item && item.queryKey?.[1] === "dashboard");
   const requested = await dashboardQuery.queryFn({ signal: new AbortController().signal });
   const dashboardCall = calls.find(Array.isArray);
@@ -355,6 +366,7 @@ test("notification page is read-only for alerts and changes the cache only after
     },
   }).default;
   const markup = renderPage(Page);
+  assert.match(markup, /data-action-bar="true"/);
 
   assert.match(markup, /TEST_DATA Notification/);
   assert.match(markup, /TEST_DATA Alert message/);

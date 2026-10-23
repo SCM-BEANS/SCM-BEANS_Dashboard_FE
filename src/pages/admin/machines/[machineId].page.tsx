@@ -1,14 +1,15 @@
 import axios from "axios";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
 import { z } from "zod";
 import { machinesApi } from "@/apis/machines.api";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
+import { ButtonBar } from "@/components/button/button-bar";
 import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 type Range = { from: string; to: string };
@@ -102,6 +103,20 @@ function MachineDetailContent() {
     enabled: validId && isSmartIot && range !== null,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flatMap((page) => page) ?? [], [points.data]);
+  const refresh = () => {
+    void Promise.all([
+      machine.refetch(),
+      schedule.refetch(),
+      isSmartIot ? heartbeat.refetch() : Promise.resolve(),
+    ]);
+  };
+  const actionBar = (showRefresh: boolean) => (
+    <AdminActionBar>
+      {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
+      <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</ButtonBar>
+      {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
+    </AdminActionBar>
+  );
 
   const submitRange = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,15 +139,15 @@ function MachineDetailContent() {
     setRangeError("");
   };
 
-  if (!router.isReady) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
+  if (!router.isReady) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(false)}</AdminShell>;
   if (!validId) return <AdminShell><div className={styles.pageContent}>
-    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p><Link href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</Link></div>
-  </div></AdminShell>;
-  if (machine.isPending) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
+    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p></div>
+  </div>{actionBar(false)}</AdminShell>;
+  if (machine.isPending) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
-    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(machine.error)}</p><div className={styles.operationsButtons}><button type="button" onClick={() => void machine.refetch()}>{T.COMMON.RETRY}</button><Link href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</Link></div></div>
-  </div></AdminShell>;
-  if (!machine.data) return <AdminShell><div className={styles.pageContent}><p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div></AdminShell>;
+    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(machine.error)}</p></div>
+  </div>{actionBar(true)}</AdminShell>;
+  if (!machine.data) return <AdminShell><div className={styles.pageContent}><p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
 
   const device = machine.data;
   const health = heartbeat.data?.health;
@@ -144,12 +159,6 @@ function MachineDetailContent() {
         <h1>{T.MACHINES.DETAIL} · {device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}</h1>
         <p>{device.id}</p>
       </div>
-      <div className={styles.pageActions}>
-        <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</Link>
-        <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</Link>
-        <button type="button" onClick={() => { void Promise.all([machine.refetch(), schedule.refetch(), isSmartIot ? heartbeat.refetch() : Promise.resolve()]); }}>{T.COMMON.RETRY}</button>
-      </div>
-
       <div className={styles.metricsGrid}>
         <article className={styles.metricCard}><span>{T.MACHINES.STATUS}</span><strong>{device.status ? STATUS_LABELS[device.status] ?? device.status : "—"}</strong></article>
         <article className={styles.metricCard}><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineTypeLabel}</strong></article>
@@ -237,6 +246,7 @@ function MachineDetailContent() {
         <p className={styles.emptyText}>{device.machineType === "CONVENTIONAL" ? "Máy thường không có heartbeat hoặc telemetry IoT." : "Chưa truy vấn heartbeat vì backend chưa xác nhận loại máy là Smart IoT."}</p>
       </section>}
     </div>
+    {actionBar(true)}
   </AdminShell>;
 }
 
