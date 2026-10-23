@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "cluster-03-truc-nen-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "truc_nen-1",
+  "nodeName": "truc_nen-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "screw-axis",
+    "property": "rotation+translation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "angleRangeRadians": [
+      0,
+      6.283185307179586
+    ],
+    "angleRangeKind": "diagnostic-test-envelope",
+    "cadAngularLimit": null,
+    "cadTranslationLimitMeters": null,
+    "translationRangeMeters": [
+      0,
+      -0.004
+    ],
+    "driver": "normalized-progress",
+    "preserveInitialMeshScale": true
+  },
+  "pivot": {
+    "kind": "axis",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.024675690384480725,
+      -0.05725429941739127,
+      -0.05591306053158573
+    ],
+    "localPoint": [
+      -0.05949999999999998,
+      0.19999999999999954,
+      0.031497269574054965
+    ],
+    "axis": [
+      6.165890344762365e-16,
+      4.261501286010193e-15,
+      1
+    ],
+    "localAxis": [
+      -1.2237904587044098e-16,
+      3.88794508401146e-15,
+      1
+    ],
+    "sourceMate": "Concentric23",
+    "targetReferenceType2": 2,
+    "parentReferenceType2": 2
+  },
+  "screw": {
+    "sourceMate": "Screw2",
+    "targetComponent": "truc_nen-1",
+    "fixedReferenceComponent": "box_nen-1",
+    "targetAxis": [
+      6.165890344762365e-16,
+      4.261501286010193e-15,
+      1
+    ],
+    "fixedReferenceAxis": [
+      0,
+      -4e-15,
+      -1
+    ],
+    "pitchMeters": 0.004,
+    "reverse": true,
+    "revolutionType": 1,
+    "mateAlignment": 1,
+    "translationPerRevolutionMeters": -0.004,
+    "rangeIsDiagnosticOnly": true
+  },
+  "constraints": [
+    {
+      "name": "Concentric23",
+      "type": "MateConcentric",
+      "mateType": 1,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "truc_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480732,
+            -0.05725429941739135,
+            -0.07242471551036844,
+            0,
+            4e-15,
+            1,
+            0.004,
+            0
+          ]
+        },
+        {
+          "componentId": "truc_nen-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480725,
+            -0.05725429941739127,
+            -0.05591306053158573,
+            6.165890344762365e-16,
+            4.261501286010193e-15,
+            1,
+            0.004,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lock2",
+      "type": "MateLock",
+      "mateType": 16,
+      "entityCount": 2,
+      "definitionType": "ILockMateFeatureData",
+      "definitionValues": {},
+      "participants": [
+        "truc_nen-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "truc_nen-1",
+          "referenceType": 6,
+          "referenceType2": 0,
+          "entityParams": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 6,
+          "referenceType2": 0,
+          "entityParams": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Screw2",
+      "type": "MateScrew",
+      "mateType": 17,
+      "entityCount": 2,
+      "definitionType": "IScrewMateFeatureData",
+      "definitionValues": {
+        "revolutionType": 1,
+        "revolutionValue": 0.004,
+        "reverse": true,
+        "mateAlignment": 1
+      },
+      "participants": [
+        "truc_nen-1",
+        "box_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "truc_nen-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480697,
+            -0.05725429941739121,
+            -0.04391306053158573,
+            6.165890344762365e-16,
+            4.261501286010193e-15,
+            1,
+            0.005,
+            0
+          ]
+        },
+        {
+          "componentId": "box_nen-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480746,
+            -0.05725429941739077,
+            0.0748494875400684,
+            0,
+            -4e-15,
+            -1,
+            0.02075,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "angleRadians": 0,
+      "translationMeters": 0
+    },
+    {
+      "progress": 0.5,
+      "angleRadians": 3.141592653589793,
+      "translationMeters": -0.002
+    },
+    {
+      "progress": 1,
+      "angleRadians": 6.283185307179586,
+      "translationMeters": -0.004
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-truc-nen-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "truc_nen-1",
+    "parentComponent": "body_may-1",
+    "axisMate": "Concentric23",
+    "screwMate": "Screw2",
+    "lockMate": "Lock2",
+    "readOnlyIntent": true
+  },
+  "targetInitialTransform": [
+    -0.4890736716619372,
+    0.8722424798684776,
+    -3.5378840325448963e-15,
+    -0.8722424798684776,
+    -0.4890736716619372,
+    6.509948313243795e-15,
+    3.947967526848507e-15,
+    6.2697370659216275e-15,
+    0.9999999999999999,
+    0.12067292212532904,
+    0.09245886246717017,
+    -0.08741033010564221,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "glbMatrixTolerance": 0.00001,
+    "glbMatrixResidual": 4.798684776208262e-7,
+    "pivotTransformResidualMeters": 3.1031676915590914e-17,
+    "axisAlignmentDot": 1,
+    "screwAxisAlignmentDot": 1,
+    "targetAxisDirection": [
+      6.165890344762365e-16,
+      4.261501286010193e-15,
+      1
+    ],
+    "parentAxisDirection": [
+      0,
+      4e-15,
+      1
+    ],
+    "screwTargetAxis": [
+      6.165890344762365e-16,
+      4.261501286010193e-15,
+      1
+    ],
+    "screwParentAxis": [
+      0,
+      -4e-15,
+      -1
+    ],
+    "pitchMeters": 0.004,
+    "translationPerRevolutionMeters": -0.004,
+    "cadAngularLimit": null,
+    "cadTranslationLimitMeters": null,
+    "rangeIsDiagnosticOnly": true,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "sampleAnglesRadians": [
+      0,
+      3.141592653589793,
+      6.283185307179586
+    ],
+    "sampleTranslationsMeters": [
+      0,
+      -0.002,
+      -0.004
+    ]
+  }
+}

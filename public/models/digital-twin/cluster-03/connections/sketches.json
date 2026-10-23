@@ -1,0 +1,1988 @@
+{
+  "schemaVersion": "cluster-03-connections.v1",
+  "clusterId": "cluster-03",
+  "coordinateFrame": "solidworks-assembly",
+  "units": "meters",
+  "status": "inventory-captured",
+  "sketches": [
+    {
+      "id": "wiper_gear-1:Sketch1",
+      "partId": "wiper_gear-1",
+      "sourceFile": "wiper_gear.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        -2.1132926699692637e-21,
+        -2.000009673373734e-15,
+        -1,
+        -4.2266057826083335e-36,
+        1,
+        -2.000009673373734e-15,
+        1,
+        0,
+        -2.1132926699692637e-21,
+        0,
+        0,
+        -0.10825000000002989,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        -2.1132926699692637e-21,
+        -4.2266057826083335e-36,
+        1,
+        -2.000009673373734e-15,
+        1,
+        0,
+        -1,
+        -2.000009673373734e-15,
+        -2.1132926699692637e-21,
+        -0.10825000000002989,
+        -2.1650104714276649e-16,
+        -2.2876393152423594e-22,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -3436.4611631860753,
+            9391.101877901638,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            3436.7752195134144,
+            -9390.76761444486,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.15702816366972808,
+            0.16713172838839369,
+            0,
+            0.34366181913497446,
+            -0.939093474617325,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "wiper_gear.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "body_may-1:Sketch1",
+      "partId": "body_may-1",
+      "sourceFile": "body_may.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.08749999999999959,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.08749999999999959,
+        -1.749999999999992e-16,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            -0.10500000000000398,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.10500000000000398,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            -0.145000000000004,
+            0.20000000000000012,
+            0,
+            0,
+            0,
+            1,
+            0.04000000000000001
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.185000000001,
+            0.2000000000370077,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            9999.815000000002,
+            0.19999999996299286,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.185000000000004,
+            0.2000000000000003,
+            0,
+            1,
+            -3.7007434154171856e-15,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "body_may.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "body_may-1:Sketch2",
+      "partId": "body_may-1",
+      "sourceFile": "body_may.SLDPRT",
+      "featureName": "Sketch2",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        -1,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -0.0314999999999996,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        -1,
+        -2e-15,
+        0,
+        -0.0314999999999996,
+        -6.29999999999992e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            0.185000000000004,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            0.185000000000004,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            0.145000000000004,
+            0.20000000000000012,
+            0,
+            0,
+            0,
+            1,
+            0.04000000000000001
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -9999.830000000002,
+            0.1999999999629928,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.170000000002,
+            0.20000000003700766,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.17000000000000398,
+            0.20000000000000023,
+            0,
+            1,
+            3.7007434154171856e-15,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "body_may.SLDPRT",
+        "featureName": "Sketch2",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "body_may-1:Sketch3",
+      "partId": "body_may-1",
+      "sourceFile": "body_may.SLDPRT",
+      "featureName": "Sketch3",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        -1,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -0.0894999999999996,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        -1,
+        -2e-15,
+        0,
+        -0.0894999999999996,
+        -1.789999999999992e-16,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            0.150375000000004,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            0.150375000000004,
+            0.20000000000000012,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            0.145000000000004,
+            0.20000000000000012,
+            0,
+            0,
+            0,
+            1,
+            0.005375000000000011
+          ],
+          "lineParams": null
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "body_may.SLDPRT",
+        "featureName": "Sketch3",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "body_may-1:Sketch6",
+      "partId": "body_may-1",
+      "sourceFile": "body_may.SLDPRT",
+      "featureName": "Sketch6",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.0294999999999996,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.0294999999999996,
+        -5.899999999999921e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            -0.14057634281560352,
+            0.20000000000000015,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.14057634281560352,
+            0.20000000000000015,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            -0.145000000000004,
+            0.20000000000000015,
+            0,
+            0,
+            0,
+            1,
+            0.004423657184400474
+          ],
+          "lineParams": null
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "body_may.SLDPRT",
+        "featureName": "Sketch6",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "oc_right-1:Sketch1",
+      "partId": "oc_right-1",
+      "sourceFile": "oc_right.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        -1,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -0.0329999999999996,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        -1,
+        -2e-15,
+        0,
+        -0.0329999999999996,
+        -6.59999999999992e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            0.18226608177156334,
+            0.22294305745404183,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            0.18226608177156334,
+            0.22294305745404183,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            0.17776608177156333,
+            0.22294305745404183,
+            0,
+            0,
+            0,
+            1,
+            0.004499999999999993
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -9992.433980231388,
+            384.5541640691264,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            9992.789512394931,
+            -384.10827795421835,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.17776608177156333,
+            0.22294305745404183,
+            0,
+            0.9992611746313157,
+            -0.03843312210116723,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "oc_right.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "oc_right-1:Sketch2",
+      "partId": "oc_right-1",
+      "sourceFile": "oc_right.SLDPRT",
+      "featureName": "Sketch2",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        1,
+        0,
+        0,
+        0,
+        0.9992611746313157,
+        -0.038433122101167234,
+        0,
+        0.038433122101167234,
+        0.9992611746313157,
+        0.03300000000000004,
+        -0.22961044699359526,
+        -0.16906634593192016,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        1,
+        0,
+        0,
+        0,
+        0.9992611746313157,
+        0.038433122101167234,
+        0,
+        -0.038433122101167234,
+        0.9992611746313157,
+        -0.03300000000000004,
+        0.22294305745404178,
+        0.17776608177156333,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -1.7969050580210546e-18,
+            0,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "oc_right.SLDPRT",
+        "featureName": "Sketch2",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_right_3-1:Sketch1",
+      "partId": "arm_right_3-1",
+      "sourceFile": "arm_right_3.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.021249999999998607,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.021249999999998607,
+        -4.2499999999997215e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            3420.044291541524,
+            9397.092848771077,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -3420.3585749717004,
+            -9396.759566947152,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.15714171508806504,
+            0.16664091196210037,
+            0,
+            -0.34202014332566116,
+            -0.9396926207859112,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_right_3.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "oc_left-1:Sketch1",
+      "partId": "oc_left-1",
+      "sourceFile": "oc_left.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 3,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.0860000000000006,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.0860000000000006,
+        -1.7200000000000122e-16,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            -0.17326608177156333,
+            0.22294305745404186,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.17326608177156333,
+            0.22294305745404186,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            -0.17776608177156333,
+            0.22294305745404186,
+            0,
+            0,
+            0,
+            1,
+            0.004499999999999993
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -0.17776608177156333,
+            -9999.777056942548,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.17776608177156333,
+            10000.222943057455,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.17776608177156333,
+            0.22294305745404186,
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "index": 2,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            9999.82223391823,
+            0.22294305745404186,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -10000.177766081773,
+            0.22294305745404186,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.17776608177156333,
+            0.22294305745404186,
+            0,
+            -1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "oc_left.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "oc_left-1:Sketch3",
+      "partId": "oc_left-1",
+      "sourceFile": "oc_left.SLDPRT",
+      "featureName": "Sketch3",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.08600000000000105,
+        -0.2229430574540417,
+        -0.17776608177156333,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        -0.08600000000000105,
+        0.2229430574540417,
+        0.17776608177156333,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            10000.000000000002,
+            1.224646799147353e-12,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -10000.000000000002,
+            -1.224646799147353e-12,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -1.7969050580211532e-18,
+            0,
+            0,
+            -1,
+            -1.224646799147353e-16,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "oc_left.SLDPRT",
+        "featureName": "Sketch3",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_left_1-1:Sketch1",
+      "partId": "arm_left_1-1",
+      "sourceFile": "arm_left_1.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.0900000000000006,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.0900000000000006,
+        -1.800000000000012e-16,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -8191.678549322609,
+            5735.973540733473,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            8191.362336457192,
+            -5735.55518628751,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.15810643270862793,
+            0.20917722298161717,
+            0,
+            0.8191520442889897,
+            -0.5735764363510489,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_left_1.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_left_1-1:Sketch2",
+      "partId": "arm_left_1-1",
+      "sourceFile": "arm_left_1.SLDPRT",
+      "featureName": "Sketch2",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        -1.0647276522269302e-15,
+        -3.369508300891156e-17,
+        1,
+        -3.587608662366993e-32,
+        1,
+        3.369508300891156e-17,
+        -1,
+        0,
+        -1.0647276522269302e-15,
+        0,
+        0,
+        0.0870000000000013,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        -1.0647276522269302e-15,
+        -3.587608662366993e-32,
+        -1,
+        -3.369508300891156e-17,
+        1,
+        0,
+        1,
+        3.369508300891156e-17,
+        -1.0647276522269302e-15,
+        -0.0870000000000013,
+        -2.9314722217753494e-18,
+        9.263130574374431e-17,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            -0.24265581998327873,
+            0.2310300629305873,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.24265581998327873,
+            0.2310300629305873,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            -0.24510581998327877,
+            0.2310300629305873,
+            0,
+            0,
+            0,
+            1,
+            0.002450000000000027
+          ],
+          "lineParams": null
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_left_1.SLDPRT",
+        "featureName": "Sketch2",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "gac_coffee-1:Sketch3",
+      "partId": "gac_coffee-1",
+      "sourceFile": "gac_coffee.SLDPRT",
+      "featureName": "Sketch3",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0.017452406437283505,
+        -1.874668589055872e-15,
+        -0.9998476951563913,
+        3.271747815141189e-17,
+        1,
+        -1.8743830679495976e-15,
+        0.9998476951563913,
+        -6.162975822039155e-33,
+        0.017452406437283505,
+        0,
+        9.726653600746199e-36,
+        -0.09043106948585355,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0.017452406437283505,
+        3.271747815141189e-17,
+        0.9998476951563913,
+        -1.874668589055872e-15,
+        1,
+        -6.162975822039155e-33,
+        -0.9998476951563913,
+        -1.8743830679495976e-15,
+        0.017452406437283505,
+        -0.09041729639595814,
+        -1.6950246546085742e-16,
+        0.0015782397792253424,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            10000.25067739201,
+            0.2310013669750183,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -9999.749322607993,
+            0.23100136727140017,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.2506773920082016,
+            0.23100136712320923,
+            0,
+            -1,
+            1.4819093414391643e-14,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "gac_coffee.SLDPRT",
+        "featureName": "Sketch3",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "gac_coffee-1:Sketch4",
+      "partId": "gac_coffee-1",
+      "sourceFile": "gac_coffee.SLDPRT",
+      "featureName": "Sketch4",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0.017452406437283505,
+        -2.1253314109441284e-15,
+        0.9998476951563913,
+        3.7092147597722145e-17,
+        1,
+        2.125007712675968e-15,
+        -0.9998476951563913,
+        0,
+        0.017452406437283505,
+        0,
+        0,
+        0.028550806237755907,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0.017452406437283505,
+        3.7092147597722145e-17,
+        -0.9998476951563913,
+        -2.1253314109441284e-15,
+        1,
+        0,
+        0.9998476951563913,
+        2.125007712675968e-15,
+        0.017452406437283505,
+        -0.028546457811676963,
+        -6.067068345834843e-17,
+        -0.0004982802745734452,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.252754228377,
+            0.23100136712320962,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            9999.747245771627,
+            0.23100136712320962,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.25275422837423833,
+            0.23100136712320962,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "gac_coffee.SLDPRT",
+        "featureName": "Sketch4",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_left_2-1:Sketch1",
+      "partId": "arm_left_2-1",
+      "sourceFile": "arm_left_2.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        -4.5064602281666927e-17,
+        -1.9757767091745806e-15,
+        -1,
+        -8.903759159633318e-32,
+        1,
+        -1.9757767091745806e-15,
+        1,
+        0,
+        -4.5064602281666927e-17,
+        0,
+        0,
+        -0.11170000000000019,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        -4.5064602281666927e-17,
+        -8.903759159633318e-32,
+        1,
+        -1.9757767091745806e-15,
+        1,
+        0,
+        -1,
+        -1.9757767091745806e-15,
+        -4.5064602281666927e-17,
+        -0.11170000000000019,
+        -2.2069425841480104e-16,
+        -5.033716074862204e-18,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            0.1623809838133991,
+            0.1617928074536491,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            0.1623809838133991,
+            0.1617928074536491,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            0.15888098381339905,
+            0.1617928074536491,
+            0,
+            0,
+            0,
+            1,
+            0.0035000000000000473
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -9999.841119016188,
+            0.1617928074536491,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.158880983816,
+            0.1617928074536491,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.15888098381339905,
+            0.1617928074536491,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_left_2.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_left_2-1:Sketch3",
+      "partId": "arm_left_2-1",
+      "sourceFile": "arm_left_2.SLDPRT",
+      "featureName": "Sketch3",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0.11170000000000052,
+        -0.16179280745364888,
+        -0.15888098381339905,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        -0.11170000000000052,
+        0.16179280745364888,
+        0.15888098381339905,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            6.24053836298879e-18,
+            0,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            6.24053836298879e-18,
+            0,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_left_2.SLDPRT",
+        "featureName": "Sketch3",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_left_3-1:Sketch1",
+      "partId": "arm_left_3-1",
+      "sourceFile": "arm_left_3.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.0957500000000296,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.0957500000000296,
+        -1.9150000000005922e-16,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            3420.044291541524,
+            9397.092848771077,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -3420.3585749717004,
+            -9396.759566947152,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.15714171508806504,
+            0.16664091196210035,
+            0,
+            -0.34202014332566116,
+            -0.9396926207859112,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_left_3.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_right_1-1:Sketch1",
+      "partId": "arm_right_1-1",
+      "sourceFile": "arm_right_1.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        -1,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -0.028999999999999592,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        1,
+        -2e-15,
+        1,
+        0,
+        -1,
+        -2e-15,
+        0,
+        -0.028999999999999592,
+        -5.799999999999919e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -8191.376425872354,
+            -5735.565051802215,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            8191.664459907447,
+            5735.963675218768,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            0.14401701754685736,
+            0.1993117082763792,
+            0,
+            0.8191520442889897,
+            0.5735764363510489,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_right_1.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_right_2-1:Sketch1",
+      "partId": "arm_right_2-1",
+      "sourceFile": "arm_right_2.SLDPRT",
+      "featureName": "Sketch1",
+      "segmentCount": 2,
+      "modelToSketchTransform": [
+        0,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0.0178999999999996,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        0,
+        0,
+        -1,
+        -2e-15,
+        1,
+        0,
+        1,
+        2e-15,
+        0,
+        -0.0178999999999996,
+        -3.57999999999992e-17,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3002,
+          "isLine": false,
+          "isCircle": true,
+          "startParameter": 0,
+          "endParameter": 6.283185307179586,
+          "reversed": true,
+          "periodic": true,
+          "evaluateStart": [
+            -0.15614978302703322,
+            0.16179280745364907,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -0.15614978302703322,
+            0.16179280745364907,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": [
+            -0.15888098381339905,
+            0.16179280745364907,
+            0,
+            0,
+            0,
+            1,
+            0.0027312007863658327
+          ],
+          "lineParams": null
+        },
+        {
+          "index": 1,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.158880983814,
+            0.16179280745364907,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            9999.841119016186,
+            0.16179280745364907,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.15888098381339905,
+            0.16179280745364907,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_right_2.SLDPRT",
+        "featureName": "Sketch1",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "arm_right_2-1:Sketch2",
+      "partId": "arm_right_2-1",
+      "sourceFile": "arm_right_2.SLDPRT",
+      "featureName": "Sketch2",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        -1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        -1,
+        -0.017899999999999923,
+        -0.16179280745364905,
+        0.15888098381339905,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        -1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        -1,
+        -0.017899999999999923,
+        0.16179280745364905,
+        0.15888098381339905,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            -10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            10000.000000000002,
+            0,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            9.270483756120488e-19,
+            0,
+            0,
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "arm_right_2.SLDPRT",
+        "featureName": "Sketch2",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "truc_nen-1:Sketch2",
+      "partId": "truc_nen-1",
+      "sourceFile": "truc_nen.SLDPRT",
+      "featureName": "Sketch2",
+      "segmentCount": 1,
+      "modelToSketchTransform": [
+        2.0049832036042253e-15,
+        0.7071067811865426,
+        0.7071067811865525,
+        -2.0049832036041973e-15,
+        0.7071067811865525,
+        -0.7071067811865426,
+        -1,
+        0,
+        2.8354744388673325e-15,
+        9.860761315262648e-32,
+        0,
+        0.17849420971790797,
+        1,
+        0,
+        0,
+        0
+      ],
+      "sketchToModelTransform": [
+        2.0049832036042253e-15,
+        -2.0049832036041973e-15,
+        -1,
+        0.7071067811865426,
+        0.7071067811865525,
+        0,
+        0.7071067811865525,
+        -0.7071067811865426,
+        2.8354744388673325e-15,
+        -0.12621446609406736,
+        0.12621446609406559,
+        -5.06115769140953e-16,
+        1,
+        0,
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "index": 0,
+          "curveIdentity": 3001,
+          "isLine": true,
+          "isCircle": false,
+          "startParameter": -10000.000000000002,
+          "endParameter": 10000.000000000002,
+          "reversed": false,
+          "periodic": false,
+          "evaluateStart": [
+            9999.91913357257,
+            0.09899445854688782,
+            0,
+            6.95229480993957e-310
+          ],
+          "evaluateEnd": [
+            -10000.080866427434,
+            0.09899445868567708,
+            0,
+            6.95229480993957e-310
+          ],
+          "circleParams": null,
+          "lineParams": [
+            -0.08086642743162249,
+            0.09899445861628245,
+            0,
+            -1,
+            6.939462206160428e-15,
+            0
+          ]
+        }
+      ],
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "partFile": "truc_nen.SLDPRT",
+        "featureName": "Sketch2",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    }
+  ]
+}

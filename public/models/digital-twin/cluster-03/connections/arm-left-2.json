@@ -1,0 +1,744 @@
+{
+  "schemaVersion": "cluster-03-arm-left-2-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "arm_left_2-1",
+  "nodeName": "arm_left_2-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "driver-follow",
+    "property": "translation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "preserveInitialOrientation": true,
+    "showGuide": false
+  },
+  "driver": {
+    "partId": "oc_left-1",
+    "motionFile": "/models/digital-twin/cluster-03/connections/oc-left.json",
+    "relation": "rigid-translation",
+    "sourceMates": [
+      "Coincident3",
+      "Concentric2"
+    ],
+    "dependencyPartId": "arm_left_1-1",
+    "dependencyMotionFile": "/models/digital-twin/cluster-03/connections/arm-left-1.json",
+    "sourcePath": "Sketch1:Arc3+Line1"
+  },
+  "anchor": {
+    "kind": "point",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.05667569038448193,
+      -0.06311496490734794,
+      0.08085434034089586
+    ],
+    "localPoint": [
+      -0.092050000000001,
+      0.19311185553215968,
+      0.17232112537816885
+    ],
+    "sourceMate": "Coincident3",
+    "targetReferenceType2": 2,
+    "chainPoint": [
+      -0.05667569038448079,
+      -0.02369034312930654,
+      0.10927415880540917
+    ],
+    "driverPathStart": [
+      -0.05267569038448078,
+      -0.03431124196334906,
+      0.09033556931162615
+    ],
+    "driverPathOffset": [
+      -0.0040000000000000105,
+      0.01062089883404252,
+      0.01893858949378302
+    ],
+    "chainOffset": [
+      -1.1449174941446927e-15,
+      -0.0394246217780414,
+      -0.028419818464513302
+    ]
+  },
+  "path": {
+    "sourcePartId": "body_may-1",
+    "sourceFeature": "Sketch1",
+    "sourceSegments": [
+      "Arc3",
+      "Line1"
+    ],
+    "coordinateFrame": "solidworks-assembly",
+    "segments": [
+      {
+        "kind": "arc",
+        "sourceSegmentIndex": 0,
+        "sourceSegmentName": "Arc3",
+        "center": [
+          -0.05267569038448073,
+          -0.05725429941739091,
+          0.05756948754006651
+        ],
+        "start": [
+          -0.05267569038448077,
+          -0.034311241963348976,
+          0.09033556931162613
+        ],
+        "end": [
+          -0.05267569038448073,
+          -0.05725429941739074,
+          0.09756948754006652
+        ],
+        "radius": 0.04000000000000001,
+        "normal": [
+          1,
+          2e-15,
+          0
+        ],
+        "sweepRadians": 0.6108652381980136,
+        "lengthMeters": 0.02443460952792055
+      },
+      {
+        "kind": "line",
+        "sourceSegmentIndex": 1,
+        "sourceSegmentName": "Line1",
+        "start": [
+          -0.05267569038448073,
+          -0.05725429941739074,
+          0.09756948754006652
+        ],
+        "end": [
+          -0.05267569038448073,
+          -0.0572542994173908,
+          0.0825694875400665
+        ],
+        "direction": [
+          0,
+          -3.7007434154171856e-15,
+          -1
+        ],
+        "lengthMeters": 0.015000000000000013
+      }
+    ],
+    "lengthMeters": 0.039434609527920564,
+    "start": [
+      -0.05267569038448077,
+      -0.034311241963348976,
+      0.09033556931162613
+    ],
+    "end": [
+      -0.05267569038448073,
+      -0.0572542994173908,
+      0.0825694875400665
+    ]
+  },
+  "constraints": [
+    {
+      "name": "Coincident3",
+      "type": "MateCoincident",
+      "mateType": 0,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "arm_left_1-1",
+        "arm_left_2-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_1-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.05667569038448079,
+            -0.02369034312930654,
+            0.10927415880540917,
+            -1,
+            -2e-15,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.05667569038448193,
+            -0.06311496490734794,
+            0.08085434034089586,
+            1,
+            2.0000080187834963e-15,
+            3.2164713501424657e-21,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Concentric2",
+      "type": "MateConcentric",
+      "mateType": 1,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "oc_left-1",
+        "arm_left_2-1"
+      ],
+      "entities": [
+        {
+          "componentId": "oc_left-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.056725690384480776,
+            -0.03431124196334909,
+            0.09033556931162615,
+            -1,
+            -2.0004182824601233e-15,
+            4.246242551636781e-19,
+            0.004,
+            0
+          ]
+        },
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.05117569038448197,
+            -0.03431124196334909,
+            0.09033556931162617,
+            -1,
+            -2.0000080187834963e-15,
+            -3.2164713501424657e-21,
+            0.00404,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PathMate10",
+      "type": "MatePath",
+      "mateType": 15,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "arm_left_2-1",
+        "arm_left_3-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.060675690384481465,
+            -0.09229695662598972,
+            0.06324946780065155,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "arm_left_3-1",
+          "referenceType": 13,
+          "referenceType2": 0,
+          "entityParams": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PathMate11",
+      "type": "MatePath",
+      "mateType": 15,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "arm_left_2-1",
+        "wiper_gear-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.07317569038448146,
+            -0.09229695662598972,
+            0.06324946780065155,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "wiper_gear-1",
+          "referenceType": 1,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.07317569038448146,
+            -0.09180339807375609,
+            0.06316946807867149,
+            2.231090009821715e-15,
+            -0.987117104467573,
+            0.15999944396014246,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LimitDistance1",
+      "type": "MateLimitDistanceDim",
+      "mateType": 5,
+      "entityCount": 2,
+      "definitionType": "IDistanceMateFeatureData",
+      "definitionValues": {
+        "distance": 0.005000000000000074,
+        "minimumDistance": 0.0010023467014082278,
+        "maximumDistance": 0.005002130598430025,
+        "isAdvancedMate": true,
+        "flipDimension": false,
+        "mateAlignment": 0
+      },
+      "participants": [
+        "arm_left_2-1",
+        "arm_left_3-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.060675690384481465,
+            -0.09229695662598972,
+            0.06324946780065155,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "arm_left_3-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.060675690384482193,
+            -0.09723254214832766,
+            0.06404946502045225,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LimitDistance2",
+      "type": "MateLimitDistanceDim",
+      "mateType": 5,
+      "entityCount": 2,
+      "definitionType": "IDistanceMateFeatureData",
+      "definitionValues": {
+        "distance": 0.006000000000000063,
+        "minimumDistance": 0.0010024611735712065,
+        "maximumDistance": 0.0065024611735712175,
+        "isAdvancedMate": true,
+        "flipDimension": false,
+        "mateAlignment": 1970039909
+      },
+      "participants": [
+        "arm_left_2-1",
+        "wiper_gear-1"
+      ],
+      "entities": [
+        {
+          "componentId": "arm_left_2-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.07317569038448146,
+            -0.09229695662598972,
+            0.06324946780065155,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "wiper_gear-1",
+          "referenceType": 0,
+          "referenceType2": 0,
+          "entityParams": [
+            -0.07317569038448145,
+            -0.09821965925279519,
+            0.06420946446441239,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "driverPathPoint": [
+        -0.05267569038448077,
+        -0.034311241963348976,
+        0.09033556931162613
+      ],
+      "armAnchorPoint": [
+        -0.056675690384481926,
+        -0.06311496490734786,
+        0.08085434034089585
+      ],
+      "translationDelta": [
+        6.938893903907228e-18,
+        8.326672684688674e-17,
+        -1.3877787807814457e-17
+      ]
+    },
+    {
+      "progress": 0.5,
+      "driverPathPoint": [
+        -0.052675690384480736,
+        -0.05254792184498293,
+        0.09729164772988921
+      ],
+      "armAnchorPoint": [
+        -0.05667569038448189,
+        -0.08135164478898181,
+        0.08781041875915893
+      ],
+      "translationDelta": [
+        4.163336342344337e-17,
+        -0.01823667988163387,
+        0.0069560784182630675
+      ]
+    },
+    {
+      "progress": 1,
+      "driverPathPoint": [
+        -0.05267569038448073,
+        -0.0572542994173908,
+        0.0825694875400665
+      ],
+      "armAnchorPoint": [
+        -0.056675690384481885,
+        -0.08605802236138968,
+        0.07308825856933622
+      ],
+      "translationDelta": [
+        4.85722573273506e-17,
+        -0.022943057454041738,
+        -0.007766081771559644
+      ]
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-arm-left-2-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "arm_left_2-1",
+    "parentComponent": "body_may-1",
+    "driverComponent": "oc_left-1",
+    "dependencyComponent": "arm_left_1-1",
+    "driverMates": [
+      "Coincident3",
+      "Concentric2"
+    ],
+    "connectionMates": [
+      "PathMate10",
+      "LimitDistance1",
+      "PathMate11",
+      "LimitDistance2"
+    ],
+    "deferredMates": [],
+    "readOnlyIntent": true
+  },
+  "targetInitialTransform": [
+    1,
+    1.8872946316965273e-17,
+    -2.740475537210256e-16,
+    1.88565436486335e-17,
+    0.9905675362332655,
+    0.13702538509618786,
+    2.7404868283717185e-16,
+    -0.13702538509618784,
+    0.9905675362332654,
+    0.03537430961551902,
+    -0.23079293129412162,
+    -0.11630259863683412,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "driverInitialTransform": [
+    1,
+    4.1828246012928427e-19,
+    -4.2446308304679884e-19,
+    -1.9041125301867026e-18,
+    0.9999999999999968,
+    -8.058605843961317e-8,
+    9.841744992812016e-20,
+    8.058605851301038e-8,
+    0.9999999999999969,
+    0.03532430961552027,
+    -0.2572543137428579,
+    -0.08743049449383439,
+    1,
+    0,
+    0,
+    0
+  ],
+  "connection": {
+    "kind": "point-on-path",
+    "status": "verified",
+    "mate": "PathMate10",
+    "sourcePartId": "arm_left_2-1",
+    "targetPartId": "arm_left_3-1",
+    "sourcePoint": [
+      -0.060675690384481465,
+      -0.09229695662598972,
+      0.06324946780065155
+    ],
+    "sourceLocalPoint": [
+      -0.09605000000000054,
+      0.16179280745364888,
+      0.15888098381339902
+    ],
+    "targetPath": {
+      "sourceFeature": "Sketch1",
+      "sourceSegment": "Line1",
+      "point": [
+        -0.06067569038448221,
+        -0.09229695662598972,
+        0.06324946780065152
+      ],
+      "direction": [
+        1.974234208935155e-15,
+        -0.9871171044675737,
+        0.15999944396013782
+      ],
+      "start": [
+        -0.06067569038448221,
+        -0.09229695662598972,
+        0.06324946780065152
+      ],
+      "end": [
+        -0.060675690384482193,
+        -0.09723254214832766,
+        0.06404946502045225
+      ],
+      "localPoint": [
+        -0.15714171508806504,
+        0.16664091196210035,
+        0
+      ],
+      "localDirection": [
+        -0.34202014332566116,
+        -0.9396926207859112,
+        0
+      ],
+      "localStart": [
+        -0.15714171508806504,
+        0.16664091196210035,
+        0
+      ],
+      "localEnd": [
+        -0.15885181580469337,
+        0.16194244885817072,
+        0
+      ],
+      "parameterRange": [
+        0,
+        1
+      ],
+      "lengthMeters": 0.00500000000000008,
+      "coordinateFrame": "solidworks-assembly"
+    },
+    "driverAxis": {
+      "sourceMate": "Concentric2",
+      "partId": "oc_left-1",
+      "point": [
+        -0.056725690384480776,
+        -0.03431124196334909,
+        0.09033556931162615
+      ],
+      "axis": [
+        -1,
+        -2.0004182824601233e-15,
+        4.246242551636781e-19
+      ],
+      "localPoint": [
+        -0.09205000000000105,
+        0.22294305745404164,
+        0.17776608177156333
+      ],
+      "localAxis": [
+        -1,
+        -1.998514169964149e-15,
+        3.2604559941079578e-19
+      ]
+    },
+    "limit": {
+      "mate": "LimitDistance1",
+      "sourcePoint": [
+        -0.060675690384481465,
+        -0.09229695662598972,
+        0.06324946780065155
+      ],
+      "targetPoint": [
+        -0.060675690384482193,
+        -0.09723254214832766,
+        0.06404946502045225
+      ],
+      "distanceMeters": 0.005000000000000074,
+      "minimumDistanceMeters": 0.0010023467014082278,
+      "maximumDistanceMeters": 0.005002130598430025
+    },
+    "validation": {
+      "pathResidualMeters": 7.429669904675679e-16,
+      "limitDistanceResidualMeters": 1.734723475976807e-18,
+      "lineProjectionMeters": 4.440876665295652e-18,
+      "toleranceMeters": 1e-8
+    }
+  },
+  "wiperConnection": {
+    "kind": "point-on-path",
+    "status": "verified",
+    "mate": "PathMate11",
+    "sourcePartId": "arm_left_2-1",
+    "targetPartId": "wiper_gear-1",
+    "sourcePoint": [
+      -0.07317569038448146,
+      -0.09229695662598972,
+      0.06324946780065155
+    ],
+    "targetPath": {
+      "sourceFeature": "Sketch1",
+      "sourceSegment": "Line1",
+      "point": [
+        -0.07317569038448146,
+        -0.09180339807375609,
+        0.06316946807867149
+      ],
+      "direction": [
+        2.231090009821715e-15,
+        -0.987117104467573,
+        0.15999944396014246
+      ],
+      "coordinateFrame": "solidworks-assembly"
+    },
+    "limit": {
+      "mate": "LimitDistance2",
+      "targetPoint": [
+        -0.07317569038448145,
+        -0.09821965925279519,
+        0.06420946446441239
+      ],
+      "distanceMeters": 0.006000000000000063,
+      "minimumDistanceMeters": 0.0010024611735712065,
+      "maximumDistanceMeters": 0.0065024611735712175
+    },
+    "validation": {
+      "pathResidualMeters": 0,
+      "limitDistanceResidualMeters": 0,
+      "lineProjectionMeters": 0,
+      "toleranceMeters": 1e-8
+    }
+  },
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "glbMatrixResidual": 4.637667345708252e-7,
+    "concentricAxisAlignmentDot": 1,
+    "initialMatingPointResidualMeters": 8.469999434971913e-17,
+    "chainOffsetMeters": 0.048600276582520675,
+    "connectionPathResidualMeters": 7.429669904675679e-16,
+    "connectionLimitDistanceResidualMeters": 1.734723475976807e-18,
+    "connectionLineProjectionMeters": 4.440876665295652e-18,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "sampleArmAnchorPoints": [
+      [
+        -0.056675690384481926,
+        -0.06311496490734786,
+        0.08085434034089585
+      ],
+      [
+        -0.05667569038448189,
+        -0.08135164478898181,
+        0.08781041875915893
+      ],
+      [
+        -0.056675690384481885,
+        -0.08605802236138968,
+        0.07308825856933622
+      ]
+    ],
+    "preservedOrientation": true
+  }
+}

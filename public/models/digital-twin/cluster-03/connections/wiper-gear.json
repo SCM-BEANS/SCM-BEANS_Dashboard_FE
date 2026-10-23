@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "cluster-03-wiper-gear-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "wiper_gear-1",
+  "nodeName": "wiper_gear-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "axis-rotation",
+    "property": "rotation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "angleRangeRadians": [
+      0,
+      6.283185307179586
+    ],
+    "angleRangeKind": "diagnostic-test-envelope",
+    "cadAngularLimit": null,
+    "driver": "GearMate2",
+    "preserveInitialMeshScale": true
+  },
+  "pivot": {
+    "kind": "axis",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.06317660667070882,
+      -0.05725429941739091,
+      0.057569487540066494
+    ],
+    "localPoint": [
+      -0.0982509162862576,
+      0.2,
+      0.145000000000004
+    ],
+    "axis": [
+      -1,
+      -1.999998527466835e-15,
+      -4.652606402989229e-22
+    ],
+    "localAxis": [
+      -1,
+      -2.0000000000000005e-15,
+      2.5304340268682215e-31
+    ],
+    "sourceMate": "Concentric7",
+    "targetReferenceType2": 2,
+    "driverReferenceType2": 2
+  },
+  "gear": {
+    "sourceMate": "GearMate2",
+    "drivingComponent": "gear_motor_chinh-1",
+    "ratioNumerator": 0.008,
+    "ratioDenominator": 0.008,
+    "ratio": 1,
+    "reverse": true,
+    "drivingAxis": [
+      1,
+      -2.0166173804045197e-15,
+      -6.938942623752423e-16
+    ],
+    "drivenAxis": [
+      -1,
+      -1.999998527466835e-15,
+      -4.652606402989229e-22
+    ]
+  },
+  "connection": {
+    "kind": "gear-follow",
+    "sourceMate": "GearMate2",
+    "sourcePartId": "gear_motor_chinh-1",
+    "targetPartId": "wiper_gear-1",
+    "dependentMates": [
+      "Concentric7",
+      "PathMate11",
+      "LimitDistance2",
+      "Coincident7"
+    ]
+  },
+  "constraints": [
+    {
+      "name": "Concentric7",
+      "type": "MateConcentric",
+      "participants": [
+        "truc_chinh-1",
+        "wiper_gear-1"
+      ]
+    },
+    {
+      "name": "PathMate11",
+      "type": "MatePath",
+      "participants": [
+        "arm_left_2-1",
+        "wiper_gear-1"
+      ]
+    },
+    {
+      "name": "LimitDistance2",
+      "type": "MateLimitDistanceDim",
+      "participants": [
+        "arm_left_2-1",
+        "wiper_gear-1"
+      ],
+      "distanceMeters": 0.006000000000000063,
+      "minimumDistanceMeters": 0.0010024611735712065,
+      "maximumDistanceMeters": 0.0065024611735712175
+    },
+    {
+      "name": "Coincident7",
+      "type": "MateCoincident",
+      "participants": [
+        "arm_left_3-1",
+        "wiper_gear-1"
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "angleRadians": 0
+    },
+    {
+      "progress": 0.5,
+      "angleRadians": -3.141592653589793
+    },
+    {
+      "progress": 1,
+      "angleRadians": -6.283185307179586
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-wiper-gear-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "wiper_gear-1",
+    "parentComponent": "body_may-1",
+    "axisMate": "Concentric7",
+    "gearMate": "GearMate2",
+    "drivingComponent": "gear_motor_chinh-1",
+    "readOnlyIntent": true
+  }
+}

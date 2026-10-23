@@ -1,0 +1,785 @@
+{
+  "schemaVersion": "cluster-03-connections.v1",
+  "clusterId": "cluster-03",
+  "coordinateFrame": "solidworks-assembly",
+  "units": "meters",
+  "status": "inventory-only",
+  "runtimeReady": false,
+  "extraction": {
+    "source": "Final.SLDASM feature tree",
+    "mateFeatureCount": 51,
+    "nextRequiredEvidence": [
+      "resolved parent component",
+      "resolved child component",
+      "reference entities for both sides",
+      "pivot or axis in assembly coordinates"
+    ]
+  },
+  "constraints": [
+    {
+      "id": "cad-mate-001",
+      "name": "Coincident1",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident1",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-002",
+      "name": "Concentric1",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric1",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-003",
+      "name": "Coincident2",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident2",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-004",
+      "name": "PathMate7",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate7",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-005",
+      "name": "PathMate8",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate8",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-006",
+      "name": "Coincident3",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident3",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-007",
+      "name": "Concentric2",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric2",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-008",
+      "name": "Concentric3",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric3",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-009",
+      "name": "Distance1",
+      "type": "MateDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Distance1",
+        "featureType": "MateDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-010",
+      "name": "Coincident5",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident5",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-011",
+      "name": "Parallel1",
+      "type": "MateParallel",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Parallel1",
+        "featureType": "MateParallel",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-012",
+      "name": "Concentric6",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric6",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-013",
+      "name": "PathMate10",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate10",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-014",
+      "name": "Coincident7",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident7",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-015",
+      "name": "Concentric7",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric7",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-016",
+      "name": "PathMate11",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate11",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-017",
+      "name": "LimitDistance1",
+      "type": "MateLimitDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "LimitDistance1",
+        "featureType": "MateLimitDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-018",
+      "name": "LimitDistance2",
+      "type": "MateLimitDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "LimitDistance2",
+        "featureType": "MateLimitDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-019",
+      "name": "Parallel2",
+      "type": "MateParallel",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Parallel2",
+        "featureType": "MateParallel",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-020",
+      "name": "Distance4",
+      "type": "MateDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Distance4",
+        "featureType": "MateDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-021",
+      "name": "Concentric12",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric12",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-022",
+      "name": "GearMate2",
+      "type": "MateGearDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "GearMate2",
+        "featureType": "MateGearDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-023",
+      "name": "Concentric13",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric13",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-024",
+      "name": "Concentric14",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric14",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-025",
+      "name": "Coincident8",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident8",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-026",
+      "name": "Coincident10",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident10",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-027",
+      "name": "Tangent3",
+      "type": "MateTangent",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Tangent3",
+        "featureType": "MateTangent",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-028",
+      "name": "Coincident11",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident11",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-029",
+      "name": "Coincident12",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident12",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-030",
+      "name": "Concentric17",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric17",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-031",
+      "name": "PathMate12",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate12",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-032",
+      "name": "PathMate13",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate13",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-033",
+      "name": "Concentric20",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric20",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-034",
+      "name": "Coincident13",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident13",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-035",
+      "name": "Concentric21",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric21",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-036",
+      "name": "Parallel7",
+      "type": "MateParallel",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Parallel7",
+        "featureType": "MateParallel",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-037",
+      "name": "Coincident15",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident15",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-038",
+      "name": "Concentric22",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric22",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-039",
+      "name": "PathMate14",
+      "type": "MatePath",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "PathMate14",
+        "featureType": "MatePath",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-040",
+      "name": "Concentric23",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric23",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-041",
+      "name": "Concentric27",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric27",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-042",
+      "name": "Parallel14",
+      "type": "MateParallel",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Parallel14",
+        "featureType": "MateParallel",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-043",
+      "name": "Coincident19",
+      "type": "MateCoincident",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Coincident19",
+        "featureType": "MateCoincident",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-044",
+      "name": "Lock2",
+      "type": "MateLock",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Lock2",
+        "featureType": "MateLock",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-045",
+      "name": "Concentric28",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric28",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-046",
+      "name": "LimitDistance4",
+      "type": "MateLimitDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "LimitDistance4",
+        "featureType": "MateLimitDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-047",
+      "name": "Screw2",
+      "type": "MateScrew",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Screw2",
+        "featureType": "MateScrew",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-048",
+      "name": "Parallel15",
+      "type": "MateParallel",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Parallel15",
+        "featureType": "MateParallel",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-049",
+      "name": "Concentric30",
+      "type": "MateConcentric",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Concentric30",
+        "featureType": "MateConcentric",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-050",
+      "name": "Distance20",
+      "type": "MateDistanceDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "Distance20",
+        "featureType": "MateDistanceDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    },
+    {
+      "id": "cad-mate-051",
+      "name": "GearMate4",
+      "type": "MateGearDim",
+      "parentId": null,
+      "childId": null,
+      "status": "pending-mate-entity-extraction",
+      "requiresEntityExtraction": true,
+      "sourceEvidence": {
+        "assemblyFile": "Final.SLDASM",
+        "featureName": "GearMate4",
+        "featureType": "MateGearDim",
+        "inventorySchema": "cluster-03-cad-inventory.v1"
+      }
+    }
+  ]
+}

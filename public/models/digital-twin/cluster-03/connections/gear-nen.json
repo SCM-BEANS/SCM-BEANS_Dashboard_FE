@@ -1,0 +1,455 @@
+{
+  "schemaVersion": "cluster-03-gear-nen-motion.v1",
+  "clusterId": "cluster-03",
+  "status": "verified",
+  "runtimeReady": true,
+  "units": "meters",
+  "coordinateFrame": "solidworks-assembly",
+  "partId": "gear_nen-1",
+  "nodeName": "gear_nen-1",
+  "parentId": "body_may-1",
+  "motion": {
+    "kind": "axis-rotation",
+    "property": "rotation",
+    "progressRange": [
+      0,
+      1
+    ],
+    "initialProgress": 0,
+    "angleRangeRadians": [
+      0,
+      6.283185307179586
+    ],
+    "angleRangeKind": "diagnostic-test-envelope",
+    "cadAngularLimit": null,
+    "driver": "normalized-progress",
+    "preserveInitialMeshScale": true
+  },
+  "pivot": {
+    "kind": "axis",
+    "space": "solidworks-assembly",
+    "point": [
+      -0.024675690384567503,
+      -0.057254299417500376,
+      -0.03893051245993158
+    ],
+    "localPoint": [
+      -0.05950000000000001,
+      0.20000000000000004,
+      0.0485000000000059
+    ],
+    "axis": [
+      -2.0780419536897073e-16,
+      -3.848548080272432e-15,
+      -1
+    ],
+    "localAxis": [
+      3.944304526105059e-31,
+      -4.000000000000002e-15,
+      -1
+    ],
+    "sourceMate": "Concentric27",
+    "targetReferenceType2": 2,
+    "parentReferenceType2": 2
+  },
+  "gear": {
+    "sourceMate": "GearMate4",
+    "drivenComponent": "gear_motor_nen-1",
+    "ratioNumerator": 0.008,
+    "ratioDenominator": 0.008061088074535322,
+    "ratio": 0.9924218574502,
+    "reverse": true,
+    "targetAxis": [
+      -2.0780419536897073e-16,
+      -3.848548080272432e-15,
+      -1
+    ],
+    "drivenAxis": [
+      9.35079158259422e-17,
+      1.129095829703111e-15,
+      1
+    ],
+    "couplingStatus": "runtime-gear-follow"
+  },
+  "limits": {
+    "sourceMate": "LimitDistance4",
+    "kind": "distance",
+    "appliesTo": [
+      "box_nen-1",
+      "gear_nen-1"
+    ],
+    "distanceMeters": 0.055779999999999996,
+    "minimumDistanceMeters": 0.0010000000000000009,
+    "maximumDistanceMeters": 0.055779999999999996,
+    "runtimeUse": "constraint-evidence-only"
+  },
+  "constraints": [
+    {
+      "name": "Concentric27",
+      "type": "MateConcentric",
+      "mateType": 1,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480732,
+            -0.0572542994173913,
+            -0.052930512459931495,
+            0,
+            4e-15,
+            1,
+            0.007,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 7,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384567503,
+            -0.057254299417500376,
+            -0.03893051245993158,
+            -2.0780419536897073e-16,
+            -3.848548080272432e-15,
+            -1,
+            0.008726646259969245,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Parallel14",
+      "type": "MateParallel",
+      "mateType": 3,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480732,
+            -0.05725429941739127,
+            -0.04893051245993149,
+            0,
+            4e-15,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.02467569038456753,
+            -0.057254299417500404,
+            -0.04893051245993149,
+            -2.0780419536897073e-16,
+            -3.848548080272432e-15,
+            -1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Coincident19",
+      "type": "MateCoincident",
+      "mateType": 0,
+      "entityCount": 2,
+      "definitionType": null,
+      "definitionValues": null,
+      "participants": [
+        "body_may-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "body_may-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384480732,
+            -0.05725429941739127,
+            -0.04893051245993149,
+            0,
+            4e-15,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.02467569038456753,
+            -0.057254299417500404,
+            -0.04893051245993149,
+            -2.0780419536897073e-16,
+            -3.848548080272432e-15,
+            -1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lock2",
+      "type": "MateLock",
+      "mateType": 16,
+      "entityCount": 2,
+      "definitionType": "ILockMateFeatureData",
+      "definitionValues": {},
+      "participants": [
+        "truc_nen-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "truc_nen-1",
+          "referenceType": 6,
+          "referenceType2": 0,
+          "entityParams": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 6,
+          "referenceType2": 0,
+          "entityParams": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "LimitDistance4",
+      "type": "MateLimitDistanceDim",
+      "mateType": 5,
+      "entityCount": 2,
+      "definitionType": "IDistanceMateFeatureData",
+      "definitionValues": {
+        "distance": 0.055779999999999996,
+        "minimumDistance": 0.0010000000000000009,
+        "maximumDistance": 0.055779999999999996,
+        "isAdvancedMate": true,
+        "flipDimension": false,
+        "mateAlignment": 1
+      },
+      "participants": [
+        "box_nen-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "box_nen-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024972613178227535,
+            -0.03819005255893421,
+            0.02184948754006833,
+            2.15312739460914e-16,
+            -4.000213028675287e-15,
+            -1,
+            0,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 3,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.02467569038456749,
+            -0.05725429941750032,
+            -0.03393051245993159,
+            2.0780419536897073e-16,
+            3.848548080272432e-15,
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GearMate4",
+      "type": "MateGearDim",
+      "mateType": 10,
+      "entityCount": 2,
+      "definitionType": "IGearMateFeatureData",
+      "definitionValues": {
+        "gearRatioNumerator": 0.008,
+        "gearRatioDenominator": 0.008061088074535322,
+        "reverse": true
+      },
+      "participants": [
+        "gear_motor_nen-1",
+        "gear_nen-1"
+      ],
+      "entities": [
+        {
+          "componentId": "gear_motor_nen-1",
+          "referenceType": 4,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.024675690384481336,
+            -0.013454299417389931,
+            -0.041480512459933706,
+            9.35079158259422e-17,
+            1.129095829703111e-15,
+            1,
+            0.004030544037267661,
+            0
+          ]
+        },
+        {
+          "componentId": "gear_nen-1",
+          "referenceType": 7,
+          "referenceType2": 2,
+          "entityParams": [
+            -0.02467569038456753,
+            -0.057254299417500376,
+            -0.04143051245993158,
+            -2.0780419536897073e-16,
+            -3.848548080272432e-15,
+            -1,
+            0.01745329251994154,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "progress": 0,
+      "angleRadians": 0
+    },
+    {
+      "progress": 0.5,
+      "angleRadians": 3.141592653589793
+    },
+    {
+      "progress": 1,
+      "angleRadians": 6.283185307179586
+    }
+  ],
+  "sourceEvidence": {
+    "assemblyFile": "Final.SLDASM",
+    "inventorySchema": "cluster-03-cad-inventory.v1",
+    "cadEvidenceSchema": "cluster-03-gear-nen-cad-connection.v1",
+    "solidWorksRevision": "32.1.0",
+    "sessionMode": "new-read-only-session",
+    "targetComponent": "gear_nen-1",
+    "parentComponent": "body_may-1",
+    "axisMate": "Concentric27",
+    "gearMate": "GearMate4",
+    "limitMate": "LimitDistance4",
+    "drivenComponent": "gear_motor_nen-1",
+    "readOnlyIntent": true
+  },
+  "targetInitialTransform": [
+    0.6374935052508277,
+    -0.7704557292687318,
+    2.832662092900481e-15,
+    0.7704557292687318,
+    0.6374935052508277,
+    1.386471661292683e-15,
+    -2.874018721705957e-15,
+    1.2985740592691205e-15,
+    1,
+    -0.14083597267588946,
+    -0.23059511635915547,
+    -0.08743051245993759,
+    1,
+    0,
+    0,
+    0
+  ],
+  "parentInitialTransform": [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0.034824309615519265,
+    -0.25725429941739086,
+    -0.08743051245993748,
+    1,
+    0,
+    0,
+    0
+  ],
+  "validation": {
+    "toleranceMeters": 1e-8,
+    "glbMatrixTolerance": 0.00001,
+    "glbMatrixResidual": 4.947491722973041e-7,
+    "pivotTransformResidualMeters": 6.938893903907228e-17,
+    "axisAlignmentDot": 1,
+    "gearTargetAxisAlignmentDot": 1,
+    "gearDrivenAxisAlignmentDot": 1,
+    "ratio": 0.9924218574502,
+    "ratioNumerator": 0.008,
+    "ratioDenominator": 0.008061088074535322,
+    "reverse": true,
+    "distanceMeters": 0.055779999999999996,
+    "minimumDistanceMeters": 0.0010000000000000009,
+    "maximumDistanceMeters": 0.055779999999999996,
+    "cadAngularLimit": null,
+    "rangeIsDiagnosticOnly": true,
+    "sampleProgress": [
+      0,
+      0.5,
+      1
+    ],
+    "sampleAnglesRadians": [
+      0,
+      3.141592653589793,
+      6.283185307179586
+    ]
+  }
+}
