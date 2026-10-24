@@ -1,8 +1,6 @@
-import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { ZodError } from "zod";
 import { billingApi } from "@/apis/billing.api";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { recipesApi } from "@/apis/recipes.api";
@@ -14,6 +12,7 @@ import {
   type PaymentProof,
 } from "@/schema/billing.schema";
 import { GlobalRecipeIdSchema, type GlobalRecipe } from "@/schema/recipes.schema";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { moderatorStyles as styles } from "./moderator-shell";
 
@@ -24,17 +23,6 @@ function amountText(value: number | null | undefined, currency: string): string 
   return value == null
     ? "—"
     : new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 20 }).format(value) + " " + currency;
-}
-
-function readErrorMessage(error: unknown): string {
-  if (error instanceof ZodError) return messages.INVALID_RESPONSE;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 401) return messages.UNAUTHENTICATED;
-    if (error.response?.status === 403) return messages.FORBIDDEN;
-    if (error.response?.status === 404) return messages.NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) return messages.UNAVAILABLE;
-  }
-  return messages.READ_ERROR;
 }
 
 function QueryFeedback({
@@ -55,7 +43,7 @@ function QueryFeedback({
   if (query.isError) {
     return (
       <div className={styles.pendingNotice} role="alert">
-        <p>{readErrorMessage(query.error)}</p>
+        <p>{getApiErrorMessage(query.error)}</p>
         <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>
           {messages.RETRY}
         </button>
@@ -158,7 +146,7 @@ function PaymentProofList({
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
     } catch (error) {
-      setDownloadError(readErrorMessage(error));
+      setDownloadError(getApiErrorMessage(error));
     } finally {
       setDownloadingId(null);
     }

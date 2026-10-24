@@ -1,6 +1,7 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   ContractDocumentsSchema, ContractExpirySchema, ContractIdSchema,
+  CreateContractRequestSchema, CreateContractResponseSchema, type CreateContractRequest,
   ContractListSchema, ContractSchema, ModeratorContractListSchema, ModeratorContractSchema,
 } from "@/schema/contracts.schema";
 import { TenantIdSchema } from "@/schema/tenants.schema";
@@ -8,6 +9,11 @@ import { TenantIdSchema } from "@/schema/tenants.schema";
 const contractPath = (id: string) => `/contracts/${encodeURIComponent(ContractIdSchema.parse(id))}`;
 
 export const contractsApi = {
+  async create(input: CreateContractRequest) {
+    const request = CreateContractRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>("/contracts", request, { baseURL: DOLORES_API_BASE_URL });
+    return CreateContractResponseSchema.parse(response.data);
+  },
   async list(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/contracts", { baseURL: DOLORES_API_BASE_URL, signal });
     return ContractListSchema.parse(response.data);

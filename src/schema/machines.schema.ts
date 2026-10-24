@@ -22,6 +22,13 @@ export const MachineStatusSchema = z.enum([
 
 export const MachineTypeSchema = z.enum(["CONVENTIONAL", "SMART_IOT"]);
 
+export const CreateMachineRequestSchema = z.object({
+  serialNumber: z.string().trim().min(1),
+  status: z.literal("IN_WAREHOUSE"),
+  cupsServedSinceLastDescale: countSchema,
+  region: z.string().trim().min(1).optional(),
+});
+
 export const MachineInventoryItemSchema = z.object({
   id: MachineIdSchema,
   ownerId: z.string().uuid().nullish(),
@@ -104,6 +111,7 @@ export const MaintenanceTicketListSchema = z.array(MaintenanceTicketSchema);
 
 export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
 export type Machine = z.infer<typeof MachineSchema>;
+export type CreateMachineRequest = z.infer<typeof CreateMachineRequestSchema>;
 export type InventorySummary = z.infer<typeof InventorySummarySchema>;
 export type MaintenanceSchedule = z.infer<typeof MaintenanceScheduleSchema>;
 export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;

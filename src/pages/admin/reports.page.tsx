@@ -1,10 +1,9 @@
-import axios from "axios";
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
-import { ZodError } from "zod";
 import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
@@ -19,17 +18,6 @@ const INVOICE_QUERY_KEY = ["dolores", "billing", "invoices"] as const;
 
 function queryString(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ZodError) return ADMIN_MESSAGES.OVERVIEW.INVALID_RESPONSE;
-  if (axios.isAxiosError(error) && error.response?.status === 403) {
-    return ADMIN_MESSAGES.OVERVIEW.FORBIDDEN;
-  }
-  if (axios.isAxiosError(error) && (error.response?.status === 502 || !error.response)) {
-    return ADMIN_MESSAGES.OVERVIEW.UNAVAILABLE;
-  }
-  return ADMIN_MESSAGES.OVERVIEW.ERROR;
 }
 
 function displayAmount(value: number | null | undefined, currency: string | null | undefined): string {
@@ -144,7 +132,7 @@ function ReportContent() {
         {overview.isPending && <p role="status">{ADMIN_MESSAGES.OVERVIEW.LOADING}</p>}
         {overview.isError && (
           <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-            <p>{errorMessage(overview.error)}</p>
+            <p>{getApiErrorMessage(overview.error)}</p>
             <button type="button" onClick={() => void overview.refetch()}>{ADMIN_MESSAGES.REPORTS.RETRY}</button>
           </div>
         )}
@@ -201,7 +189,7 @@ function ReportContent() {
         {invoices.isPending && <p role="status">{ADMIN_MESSAGES.REPORTS.LOADING_INVOICES}</p>}
         {invoices.isError && (
           <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-            <p>{errorMessage(invoices.error)}</p>
+            <p>{getApiErrorMessage(invoices.error)}</p>
             <button type="button" onClick={() => void invoices.refetch()}>{ADMIN_MESSAGES.REPORTS.RETRY}</button>
           </div>
         )}

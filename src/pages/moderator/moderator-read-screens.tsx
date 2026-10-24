@@ -1,13 +1,12 @@
-import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { lazy, Suspense } from "react";
-import { ZodError } from "zod";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { notificationsApi } from "@/apis/notifications.api";
 import { tenantsApi } from "@/apis/tenants.api";
 import { PATH_MODERATOR } from "@/routes/path";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { ContractIdSchema, type ModeratorContract } from "@/schema/contracts.schema";
 import { TenantIdSchema, type Tenant } from "@/schema/tenants.schema";
 import { moderatorStyles as styles } from "./moderator-shell";
@@ -44,19 +43,6 @@ function moneyFormat(currency: string, value: number | null | undefined): string
 const countFormat = (value: number | null | undefined) =>
   value == null ? "—" : numberFormat.format(value);
 
-function readErrorMessage(error: unknown): string {
-  if (error instanceof ZodError) return MODERATOR_MESSAGES.READ_SCREENS.INVALID_RESPONSE;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 401) return MODERATOR_MESSAGES.READ_SCREENS.UNAUTHENTICATED;
-    if (error.response?.status === 403) return MODERATOR_MESSAGES.READ_SCREENS.FORBIDDEN;
-    if (error.response?.status === 404) return MODERATOR_MESSAGES.READ_SCREENS.NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) {
-      return MODERATOR_MESSAGES.READ_SCREENS.UNAVAILABLE;
-    }
-  }
-  return MODERATOR_MESSAGES.READ_SCREENS.READ_ERROR;
-}
-
 function QueryFeedback({
   query,
   loadingMessage,
@@ -77,7 +63,7 @@ function QueryFeedback({
   if (query.isError) {
     return (
       <div className={styles.pendingNotice} role="alert">
-        <p>{errorMessage ?? readErrorMessage(query.error)}</p>
+        <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
         <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>
           {MODERATOR_MESSAGES.READ_SCREENS.RETRY}
         </button>
@@ -224,7 +210,7 @@ function NotificationsScreen() {
         <QueryFeedback
           query={unreadCount}
           loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_UNREAD_COUNT}
-          errorMessage={MODERATOR_MESSAGES.READ_SCREENS.UNREAD_COUNT_UNAVAILABLE + " " + readErrorMessage(unreadCount.error)}
+          errorMessage={MODERATOR_MESSAGES.READ_SCREENS.UNREAD_COUNT_UNAVAILABLE + " " + getApiErrorMessage(unreadCount.error)}
         />
         {!unreadCount.isPending && !unreadCount.isError && (
           <p style={{ marginBottom: 0, fontSize: 24 }}>
@@ -243,7 +229,7 @@ function NotificationsScreen() {
         />
         {markReadMutation.isError && (
           <p className={styles.partialNotice} role="alert" aria-live="assertive">
-            {MODERATOR_MESSAGES.READ_SCREENS.MARK_READ_ERROR} {readErrorMessage(markReadMutation.error)}
+            {MODERATOR_MESSAGES.READ_SCREENS.MARK_READ_ERROR} {getApiErrorMessage(markReadMutation.error, "mutation")}
           </p>
         )}
         {notifications.data?.length === 0 && !notifications.isError && (
@@ -516,7 +502,7 @@ function ContractListScreen() {
           <p>{MODERATOR_MESSAGES.READ_SCREENS.PARTIAL_CONTRACT_FAILURE}</p>
           <ul>
             {contractReads.data.failedTenants.map(({ tenant, error }) => (
-              <li key={tenant.id}>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_TENANT_FAILURE} {tenant.name}: {readErrorMessage(error)}</li>
+              <li key={tenant.id}>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_TENANT_FAILURE} {tenant.name}: {getApiErrorMessage(error)}</li>
             ))}
           </ul>
           <button className={styles.retryButton} type="button" onClick={() => void contractReads.refetch()}>
@@ -671,8 +657,11 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
     return <TenantDetailScreen id={sectionPath.slice("customers/".length)} />;
   }
   if (sectionPath === "contracts" || sectionPath === "contracts/list") return <ContractListScreen />;
-  if (sectionPath === "contracts/new" || sectionPath === "contracts/expiry") {
+  if (sectionPath === "contracts/new") {
     return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.NEW_CONTRACT_UNAVAILABLE} />;
+  }
+  if (sectionPath === "contracts/expiry") {
+    return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_EXPIRY_UNAVAILABLE} />;
   }
   if (sectionPath.startsWith("contracts/")) {
     return <ContractDetailScreen id={sectionPath.slice("contracts/".length)} />;

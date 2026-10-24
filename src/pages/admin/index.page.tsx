@@ -1,7 +1,6 @@
-import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -19,17 +18,6 @@ function count(value: number | null | undefined): string {
 
 function amount(value: number | null | undefined): string {
   return value == null ? "—" : money.format(value);
-}
-
-function describeError(error: unknown): string {
-  if (error instanceof z.ZodError) return ADMIN_MESSAGES.OVERVIEW.INVALID_RESPONSE;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return ADMIN_MESSAGES.OVERVIEW.FORBIDDEN;
-    if (error.response?.status === 502 || !error.response) {
-      return ADMIN_MESSAGES.OVERVIEW.UNAVAILABLE;
-    }
-  }
-  return ADMIN_MESSAGES.OVERVIEW.ERROR;
 }
 
 function AdminOverview() {
@@ -62,7 +50,7 @@ function AdminOverview() {
 
       {overview.isError && (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
-          <p>{describeError(overview.error)}</p>
+          <p>{getApiErrorMessage(overview.error)}</p>
           <button type="button" onClick={() => void overview.refetch()}>
             {ADMIN_MESSAGES.OVERVIEW.RETRY}
           </button>

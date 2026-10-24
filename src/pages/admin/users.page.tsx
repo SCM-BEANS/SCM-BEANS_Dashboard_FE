@@ -1,9 +1,8 @@
-import axios from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { tenantsApi } from "@/apis/tenants.api";
@@ -59,24 +58,6 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
 }
 
-function errorMessage(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID_RESPONSE;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 409) return T.COMMON.EMAIL_EXISTS;
-    if (error.response?.status === 404) return T.COMMON.NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) return T.COMMON.UNAVAILABLE;
-  }
-  return T.COMMON.GENERIC_ERROR;
-}
-
-function tenantErrorMessage(error: unknown): string {
-  if (axios.isAxiosError(error) && error.response?.status === 404) {
-    return T.COMMON.TENANT_NOT_DEPLOYED;
-  }
-  return errorMessage(error);
-}
-
 function actionDescription(action: Action): string {
   return T.DIALOG[action.kind.toUpperCase() as Uppercase<Action["kind"]>];
 }
@@ -125,7 +106,7 @@ function ActionDialog({
         }}
       >
         <h2 id="account-dialog-title">
-          {kind === "confirm" ? T.DIALOG.CONFIRM : kind === "success" ? T.DIALOG.SUCCESS : T.COMMON.GENERIC_ERROR}
+          {kind === "confirm" ? T.DIALOG.CONFIRM : kind === "success" ? T.DIALOG.SUCCESS : API_ERROR_MESSAGES.GENERIC}
         </h2>
         {kind === "confirm" && action && <p>{actionDescription(action)}</p>}
         {kind === "error" && <p role="alert">{error}</p>}
@@ -336,7 +317,7 @@ function AdminUsersContent() {
       setDialog("success");
     } catch (error) {
       setCredential(null);
-      setRequestError(errorMessage(error));
+      setRequestError(getApiErrorMessage(error, "mutation"));
       setDialog("error");
     } finally {
       setBusy(false);
@@ -409,12 +390,12 @@ function AdminUsersContent() {
           </select>
           <button type="submit" className={styles.accountSecondaryButton}>{T.LIST.SEARCH_BUTTON}</button>
         </form>
-        {tenantsQuery.isError && <p className={styles.accountInlineWarning}>{T.LIST.TENANT_ERROR} {tenantErrorMessage(tenantsQuery.error)}</p>}
+        {tenantsQuery.isError && <p className={styles.accountInlineWarning}>{T.LIST.TENANT_ERROR} {getApiErrorMessage(tenantsQuery.error)}</p>}
         {!router.isReady || listQuery.isPending ? (
           <p role="status">{T.LIST.LOADING}</p>
         ) : listQuery.isError ? (
           <div className={styles.errorNotice} role="alert">
-            <p>{listQuery.error && errorMessage(listQuery.error)}</p>
+            <p>{listQuery.error && getApiErrorMessage(listQuery.error)}</p>
             <button className={styles.accountSecondaryButton} type="button" onClick={() => void listQuery.refetch()}>
               {T.COMMON.RETRY}
             </button>
@@ -509,7 +490,7 @@ function AdminUsersContent() {
       <section className={styles.panel} role="status">{T.FORM.DETAIL_LOADING}</section>
     ) : detailQuery.isError ? (
       <div className={styles.errorNotice} role="alert">
-        <p>{errorMessage(detailQuery.error)}</p>
+        <p>{getApiErrorMessage(detailQuery.error)}</p>
         <button className={styles.accountSecondaryButton} type="button" onClick={() => void detailQuery.refetch()}>{T.COMMON.RETRY}</button>
       </div>
     ) : user ? (
@@ -529,7 +510,7 @@ function AdminUsersContent() {
             <div><span>{T.FORM.CREATED}</span><strong>{formatDate(user.created_at)}</strong></div>
             <div><span>{T.FORM.UPDATED}</span><strong>{formatDate(user.updated_at)}</strong></div>
           </div>
-          {tenantsQuery.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {tenantErrorMessage(tenantsQuery.error)}</p>}
+          {tenantsQuery.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {getApiErrorMessage(tenantsQuery.error)}</p>}
           {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
         </section>
       </>

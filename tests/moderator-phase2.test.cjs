@@ -245,12 +245,17 @@ test('contract detail renders read-only metadata and handles empty, forbidden, a
 });
 
 test('new and expiry contract routes remain unavailable without write controls', () => {
-  for (const sectionPath of ['contracts/new', 'contracts/expiry', 'customers/new']) {
+  for (const sectionPath of ['contracts/new', 'customers/new']) {
     const { html, queryOptions } = renderModerator(sectionPath, []);
     assert.match(html, /chưa khả dụng/);
     assert.doesNotMatch(html, /<button|<form/);
     assert.equal(queryOptions.length, 0);
   }
+
+  const expiry = renderModerator('contracts/expiry', []);
+  assert.match(expiry.html, /chỉ dành cho Owner/);
+  assert.doesNotMatch(expiry.html, /<button|<form/);
+  assert.equal(expiry.queryOptions.length, 0);
 });
 
 test('Pages Router detail routes pass only the URL segment into shared screen modules', async () => {

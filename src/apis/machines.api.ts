@@ -4,6 +4,8 @@ import {
   MachineIdSchema,
   MachineInventorySchema,
   MachineSchema,
+  CreateMachineRequestSchema,
+  type CreateMachineRequest,
   MaintenanceTicketListSchema,
   MaintenanceScheduleSchema,
 } from "@/schema/machines.schema";
@@ -18,6 +20,10 @@ export class MachineIdentityMismatchError extends Error {
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
 export const machinesApi = {
+  async create(input: CreateMachineRequest) {
+    const request = CreateMachineRequestSchema.parse(input);
+    await axiosClient.post<unknown>("/machines", request, { baseURL: DOLORES_API_BASE_URL });
+  },
   async list(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/machines", {
       baseURL: DOLORES_API_BASE_URL,

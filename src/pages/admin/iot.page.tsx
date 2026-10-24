@@ -1,9 +1,8 @@
-import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { contractsApi } from "@/apis/contracts.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { locationsApi } from "@/apis/locations.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -16,16 +15,6 @@ import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const PAGE_SIZE = 20;
-
-function errorText(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 404) return T.IOT.OWNER_NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) return "Không kết nối được tới Dolores. Vui lòng thử lại sau.";
-  }
-  return T.COMMON.ERROR;
-}
 
 function count(value: number | undefined): string {
   return value === undefined ? "—" : new Intl.NumberFormat("vi-VN").format(value);
@@ -84,7 +73,7 @@ function IoTContent() {
 
   if (hasOwnerId && !validOwnerId && router.isReady) {
     return <AdminShell><div className={styles.pageContent}>
-      <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID}</p></div>
+      <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID_OWNER_ID}</p></div>
     </div><AdminActionBar>
       <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
     </AdminActionBar></AdminShell>;
@@ -105,7 +94,7 @@ function IoTContent() {
         </div>
 
         {profile.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-        {profile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(profile.error)}</p><button type="button" onClick={() => void profile.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {profile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(profile.error)}</p><button type="button" onClick={() => void profile.refetch()}>{T.COMMON.RETRY}</button></div>}
         {profile.data && <>
           <div className={styles.metricsGrid}>
             <article className={styles.metricCard}><span>{T.IOT.STORES}</span><strong>{locations.isError ? "—" : locations.isPending ? "…" : count(ownerLocations.length)}</strong></article>
@@ -113,9 +102,9 @@ function IoTContent() {
             <article className={styles.metricCard}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.isError ? "—" : contracts.isPending ? "…" : count(activeSmartContracts.length)}</strong></article>
             <article className={styles.metricCard}><span>{T.IOT.OWNER}</span><strong>{profile.data.idaasUserId.slice(0, 8).toUpperCase()}</strong></article>
           </div>
-          {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
-          {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
-          {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
 
           <section className={styles.panel}>
             <h2>{T.IOT.STORES}</h2>
@@ -159,9 +148,9 @@ function IoTContent() {
         <article className={styles.metricCard}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.data ? count(allContracts.filter((contract) => contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) : "—"}</strong></article>
       </div>
       {owners.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-      {owners.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(owners.error)}</p><button type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</button></div>}
-      {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
-      {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {owners.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(owners.error)}</p><button type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
       {owners.data && <section className={styles.panel}>
         <h2>{T.IOT.OWNER}</h2>
         {ownerRows.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}

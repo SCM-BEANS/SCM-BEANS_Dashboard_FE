@@ -17,6 +17,9 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ButtonBar } from "@/components/button/button-bar";
+import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { hasModeratorRole } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
 import {
@@ -135,6 +138,56 @@ export function ModeratorShell({
       ? pathname === item.HREF
       : pathname === item.HREF || pathname.startsWith(item.HREF + "/"),
   );
+  const renderBreadcrumb = () => (
+    <AdminBreadcrumb
+      className={styles.breadcrumb}
+      rootLabel={MODERATOR_MESSAGES.ROLE}
+      rootHref={PATH_MODERATOR.ROOT}
+      currentLabel={pageTitle || currentSection.LABEL}
+    />
+  );
+  const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;
+  const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
+  const disabledAction = (label: string) => (
+    <>
+      <ButtonBar disabled aria-describedby="moderator-action-unavailable">{label}</ButtonBar>
+      <span className={styles.actionHint} id="moderator-action-unavailable" role="note">
+        {actionMessages.WRITE_UNAVAILABLE}
+      </span>
+    </>
+  );
+  const renderActions = () => {
+    if (!isSectionList) {
+      return <ButtonBar href={currentSection.HREF}>{actionMessages.BACK_TO_SECTION}</ButtonBar>;
+    }
+
+    switch (currentSection.HREF) {
+      case PATH_MODERATOR.ROOT:
+        return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.PENDING_WORK}</ButtonBar>;
+      case PATH_MODERATOR.CONTRACTS:
+        return disabledAction(actionMessages.CREATE_CONTRACT);
+      case PATH_MODERATOR.CUSTOMERS:
+        return disabledAction(actionMessages.CREATE_CUSTOMER);
+      case PATH_MODERATOR.INVOICES:
+        return disabledAction(actionMessages.RECONCILE_INVOICE);
+      case PATH_MODERATOR.MACHINES:
+        return <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>;
+      case PATH_MODERATOR.IOT:
+        return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
+      case PATH_MODERATOR.MENU:
+        return disabledAction(actionMessages.ADD_RECIPE);
+      case PATH_MODERATOR.TECHNICAL_REQUESTS:
+        return disabledAction(actionMessages.CREATE_TECHNICAL_REQUEST);
+      case PATH_MODERATOR.MACHINE_HISTORY:
+        return <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUESTS}>{actionMessages.TECHNICAL_REQUESTS}</ButtonBar>;
+      case PATH_MODERATOR.BUYBACK:
+        return disabledAction(actionMessages.CREATE_BUYBACK_REQUEST);
+      case PATH_MODERATOR.NOTIFICATIONS:
+        return <ButtonBar href={PATH_MODERATOR.NOTIFICATION_ALERTS}>{actionMessages.ALERTS}</ButtonBar>;
+      default:
+        return <ButtonBar href={PATH_MODERATOR.ROOT}>{actionMessages.OVERVIEW}</ButtonBar>;
+    }
+  };
 
   return (
     <>
@@ -154,9 +207,7 @@ export function ModeratorShell({
         </aside>
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
-            <p>
-              {MODERATOR_MESSAGES.ROLE} <span aria-hidden="true">/</span> {pageTitle || currentSection.LABEL}
-            </p>
+            {renderBreadcrumb()}
             <Link className={styles.headerLink} href={notificationsLink.HREF}>
               {MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS}
             </Link>
@@ -169,7 +220,11 @@ export function ModeratorShell({
               {MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS}
             </Link>
           </header>
+          <div className={styles.mobileBreadcrumb}>
+            {renderBreadcrumb()}
+          </div>
           <main className={styles.main}>{children}</main>
+          <AdminActionBar label={actionMessages.LABEL}>{renderActions()}</AdminActionBar>
           <nav className={styles.mobileNav} aria-label={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}>
             {currentMobileItem
               ? (

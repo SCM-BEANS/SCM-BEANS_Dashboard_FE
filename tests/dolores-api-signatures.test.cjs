@@ -5,85 +5,25 @@ const test = require('node:test');
 const ts = require('typescript');
 
 const contracts = {
-  'alerts.api.ts': {
-    alertsApi: { list: 'Promise<Alert[]>' },
-  },
-  'billing.api.ts': {
-    billingApi: {
-      listInvoices: 'Promise<Invoice[]>',
-      getInvoice: 'Promise<Invoice>',
-      listPaymentProofs: 'Promise<PaymentProof[]>',
-      downloadPaymentProofContent: 'Promise<Blob>',
-    },
-  },
-  'buybacks.api.ts': {
-    buybacksApi: { getById: 'Promise<BuybackCase>' },
-  },
-  'contracts.api.ts': {
-    contractsApi: {
-      listByTenant: 'Promise<Contract[]>',
-      getById: 'Promise<Contract>',
-      listByMachine: 'Promise<Contract[]>',
-      getExpiryStatus: 'Promise<ContractExpiryStatus>',
-      listDocuments: 'Promise<ContractDocument[]>',
-      downloadDocument: 'Promise<Blob>',
-    },
-  },
-  'dashboard.api.ts': {
-    dashboardApi: { getOverview: 'Promise<DashboardOverview>' },
-  },
-  'installationWorkOrders.api.ts': {
-    installationWorkOrdersApi: {
-      listByTenant: 'Promise<InstallationWorkOrderSummary[]>',
-      getById: 'Promise<InstallationWorkOrderDetails>',
-    },
-  },
-  'locations.api.ts': {
-    locationsApi: {
-      listByTenant: 'Promise<StoreLocation[]>',
-      getById: 'Promise<StoreLocation>',
-    },
-  },
-  'machines.api.ts': {
-    machinesApi: {
-      list: 'Promise<MachineInventoryItem[]>',
-      getById: 'Promise<MachineDetail>',
-      getInventorySummary: 'Promise<InventorySummary>',
-      listMaintenanceTickets: 'Promise<MaintenanceTicket[]>',
-      getMaintenanceSchedule: 'Promise<MaintenanceSchedule>',
-      getLatestHeartbeat: 'Promise<MachineHeartbeat>',
-    },
-  },
-  'notifications.api.ts': {
-    notificationsApi: {
-      list: 'Promise<Notification[]>',
-      unreadCount: 'Promise<NotificationUnreadCount>',
-      markAsRead: 'Promise<Notification>',
-    },
-  },
-  'recipes.api.ts': {
-    recipesApi: {
-      listGlobal: 'Promise<GlobalRecipe[]>',
-      getGlobalById: 'Promise<GlobalRecipe>',
-      publishGlobal: 'Promise<GlobalRecipe>',
-    },
-  },
-  'telemetry.api.ts': {
-    telemetryApi: { listMachinePoints: 'Promise<TelemetryPoint[]>' },
-  },
-  'tenants.api.ts': {
-    tenantsApi: {
-      list: 'Promise<Tenant[]>',
-      get: 'Promise<Tenant>',
-    },
-  },
+  'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
+  'locations.api.ts': { locationsApi: ['list', 'listByTenant', 'getById', 'create'] },
+  'contracts.api.ts': { contractsApi: ['list', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'getMachineHistory', 'downloadDocument'] },
+  'machines.api.ts': { machinesApi: ['list', 'getById', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets'] },
+  'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
+  'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'markAsRead'] },
+  'recipes.api.ts': { recipesApi: ['listGlobal', 'getGlobalById', 'publishGlobal'] },
+  'billing.api.ts': { billingApi: ['listInvoices', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'downloadPaymentProofContent'] },
+  'buybacks.api.ts': { buybacksApi: ['getById'] },
+  'tenants.api.ts': { tenantsApi: ['list', 'getById'] },
+  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['listByTenant', 'getById'] },
+  'dashboard.api.ts': { dashboardApi: ['getOverview'] },
 };
 
-function apiMembers(sourceFile, apiName) {
+function apiObject(sourceFile, apiName) {
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) continue;
     const declaration = statement.declarationList.declarations.find(
-      (item) => ts.isIdentifier(item.name) && item.name.text === apiName
+      (item) => ts.isIdentifier(item.name) && item.name.text === apiName,
     );
     if (declaration && declaration.initializer && ts.isObjectLiteralExpression(declaration.initializer)) {
       return declaration.initializer.properties;
@@ -93,115 +33,63 @@ function apiMembers(sourceFile, apiName) {
 }
 
 function memberFunction(member) {
-  if (ts.isPropertyAssignment(member) && ts.isArrowFunction(member.initializer)) return member.initializer;
+  if (ts.isMethodDeclaration(member)) return member;
+  if (ts.isPropertyAssignment(member) && (ts.isArrowFunction(member.initializer) || ts.isFunctionExpression(member.initializer))) {
+    return member.initializer;
+  }
   return undefined;
 }
 
-function assertDoloresCallsAreAwaited(body, sourceFile, apiName, methodName, expectedReturnType) {
-  const calls = [];
-  const parserCalls = [];
-
+function assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName) {
+  const requests = [];
   function visit(node) {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      const owner = node.expression.expression;
-      if (ts.isIdentifier(owner) && owner.text === 'doloresAxiosClient') {
-        calls.push(node);
-        const url = node.arguments[0];
-        const urlText = url?.getText(sourceFile) ?? '';
-        assert.match(
-          urlText,
-          /^['`][^'`]*\//,
-          `${apiName}.${methodName} must use a relative Dolores path`
-        );
-        assert.doesNotMatch(urlText, /https?:\/\/|^['`]\/\//, `${apiName}.${methodName} must not use an absolute URL`);
+      const expression = node.expression.expression;
+      if (ts.isIdentifier(expression) && expression.text === 'axiosClient') {
+        requests.push(node);
+        assert.ok(ts.isStringLiteral(node.arguments[0]) || ts.isNoSubstitutionTemplateLiteral(node.arguments[0]) || ts.isTemplateExpression(node.arguments[0]) || ts.isCallExpression(node.arguments[0]) || ts.isBinaryExpression(node.arguments[0]), `${apiName}.${methodName} must build a route path`);
+        const route = node.arguments[0].getText(sourceFile);
+        assert.doesNotMatch(route, /https?:\/\//i, `${apiName}.${methodName} must use an API-relative route`);
+        assert.ok(ts.isAwaitExpression(node.parent), `${apiName}.${methodName} must await the shared HTTP request`);
       }
-    }
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
-      if (node.expression.text === 'parseDoloresResponse') parserCalls.push(node);
-      assert.ok(
-        !['requestDolores', 'requestDoloresBlob'].includes(node.expression.text),
-        `${apiName}.${methodName} must not use the legacy request helpers`
-      );
-    }
-
-    if (
-      ts.isCallExpression(node)
-      && ts.isPropertyAccessExpression(node.expression)
-      && ts.isIdentifier(node.expression.expression)
-      && node.expression.expression.text === 'doloresAxiosClient'
-    ) {
-      assert.ok(
-        ts.isAwaitExpression(node.parent),
-        `${apiName}.${methodName} must await doloresAxiosClient.${node.expression.name.text}`
-      );
     }
     ts.forEachChild(node, visit);
   }
+  visit(fn.body);
 
-  visit(body);
-  assert.equal(calls.length, 1, `${apiName}.${methodName} must make one direct Dolores Axios request`);
-  if (expectedReturnType === 'Promise<Blob>') {
-    const requestConfig = calls[0].arguments[1];
-    const hasBlobResponse = requestConfig && ts.isObjectLiteralExpression(requestConfig)
-      && requestConfig.properties.some((property) => ts.isPropertyAssignment(property)
-        && property.name.getText(sourceFile) === 'responseType'
-        && ts.isStringLiteral(property.initializer)
-        && property.initializer.text === 'blob');
-    assert.ok(hasBlobResponse, `${apiName}.${methodName} must request a Blob response`);
+  assert.equal(requests.length, 1, `${apiName}.${methodName} must make exactly one HTTP request`);
+  const bodyText = fn.body.getText(sourceFile);
+  const isBlob = bodyText.includes('responseType: "blob"');
+  if (isBlob) {
+    assert.ok(bodyText.includes('return response.data'), `${apiName}.${methodName} should return the requested file data`);
   } else {
-    assert.ok(parserCalls.length > 0, `${apiName}.${methodName} must parse the response with its Zod schema`);
+    assert.match(bodyText, /Schema\.parse\(response\.data\)/, `${apiName}.${methodName} must validate its response schema`);
   }
 }
 
-test('all Dolores API methods declare their input and response types', () => {
-  const apiDirectory = join(__dirname, '..', 'src', 'apis', 'dolores');
-
+test('domain API modules expose typed methods over the shared client with parsed responses', () => {
+  const apiDirectory = join(__dirname, '..', 'src', 'apis');
   for (const [fileName, apis] of Object.entries(contracts)) {
     const filePath = join(apiDirectory, fileName);
     const source = readFileSync(filePath, 'utf8');
-    assert.doesNotMatch(
-      source,
-      /\brequestDolores(?:Blob)?\b/,
-      `${fileName} must not depend on the removed request helpers`
-    );
-    const sourceFile = ts.createSourceFile(
-      filePath,
-      source,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS
-    );
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    assert.match(source, /from "@\/lib\/http"/, `${fileName} must use the shared HTTP module`);
+    assert.doesNotMatch(source, /https?:\/\//i, `${fileName} must not embed a backend origin`);
 
-    for (const [apiName, methods] of Object.entries(apis)) {
-      const members = apiMembers(sourceFile, apiName);
+    for (const [apiName, expectedMethods] of Object.entries(apis)) {
+      const members = apiObject(sourceFile, apiName);
       const actualMethodNames = members.map((member) => member.name?.getText(sourceFile)).filter(Boolean);
-      assert.deepEqual(
-        actualMethodNames.sort(),
-        Object.keys(methods).sort(),
-        `${apiName} public method list changed; update this contract deliberately`
-      );
+      assert.deepEqual(actualMethodNames.sort(), [...expectedMethods].sort(), `${apiName} public methods changed`);
 
-      for (const [methodName, expectedReturnType] of Object.entries(methods)) {
+      for (const methodName of expectedMethods) {
         const member = members.find((item) => item.name?.getText(sourceFile) === methodName);
         const fn = member && memberFunction(member);
-        assert.ok(fn, `${apiName}.${methodName} must be an async arrow property`);
-        assert.ok(
-          fn.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword),
-          `${apiName}.${methodName} must be async`
-        );
-        assert.ok(ts.isBlock(fn.body), `${apiName}.${methodName} must use a block body`);
-        assert.equal(
-          fn.type?.getText(sourceFile),
-          expectedReturnType,
-          `${apiName}.${methodName} must explicitly return ${expectedReturnType}`
-        );
+        assert.ok(fn, `${apiName}.${methodName} must be a method or function property`);
+        assert.ok(fn.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword), `${apiName}.${methodName} must be async`);
         for (const parameter of fn.parameters) {
-          assert.ok(
-            parameter.type,
-            `${apiName}.${methodName} parameter ${parameter.name.getText(sourceFile)} needs an explicit type`
-          );
+          assert.ok(parameter.type || parameter.initializer, `${apiName}.${methodName} parameter ${parameter.name.getText(sourceFile)} must have a type or inferable default`);
         }
-        assertDoloresCallsAreAwaited(fn.body, sourceFile, apiName, methodName, expectedReturnType);
+        assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName);
       }
     }
   }

@@ -57,6 +57,9 @@ function moderatorShellHarness({ pathname, hasRole }) {
   const icon = () => null;
   const { paths, routeCatalog } = routeModules();
   const messages = loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES;
+  const { AdminBreadcrumb } = loadModule("src/components/heading/admin-breadcrumb.tsx", {
+    "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+  });
   const { ModeratorShell } = loadModule("src/pages/moderator/moderator-shell.tsx", {
     "react": hookReact,
     "js-cookie": { __esModule: true, default: { get: () => "moderator-token" } },
@@ -73,6 +76,15 @@ function moderatorShellHarness({ pathname, hasRole }) {
     "@/routes/path": paths,
     "@/routes/routes": routeCatalog,
     "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
+    "@/components/action-bar/admin-action-bar": {
+      AdminActionBar: ({ children, label }) => React.createElement("footer", { "aria-label": label }, children),
+    },
+    "@/components/button/button-bar": {
+      ButtonBar: ({ children, href, ...props }) => href
+        ? React.createElement("a", { href, ...props }, children)
+        : React.createElement("button", props, children),
+    },
+    "@/components/heading/admin-breadcrumb": { AdminBreadcrumb },
     "./moderator-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
 
@@ -167,7 +179,7 @@ test("Moderator shell shows its navigation and selects the current nested sectio
 
   assert.match(html, /data-role="moderator"/);
   assert.match(html, /href="\/moderator\/contracts"[^>]*aria-current="page"/);
-  assert.match(html, /Moderator <span aria-hidden="true">\/<\/span> Hợp đồng/);
+  assert.match(html, /<nav[^>]*><a href="\/moderator"><span>Moderator<\/span><\/a><span aria-hidden="true"> \/ <\/span><span aria-current="page">Hợp đồng<\/span><\/nav>/);
   assert.match(html, /Tài khoản khách/);
   assert.match(html, /Giám sát Smart IoT/);
   assert.match(html, /href="\/moderator\/notifications"/);
@@ -186,4 +198,33 @@ test("Moderator shell keeps other roles out of the Moderator navigation", () => 
   assert.match(html, /href="\/login"/);
   assert.doesNotMatch(html, /data-role="moderator"/);
   assert.doesNotMatch(html, /href="\/moderator\/contracts"/);
+  assert.doesNotMatch(html, /<footer/);
+});
+
+test("Moderator shell shows a contextual action bar on list and detail routes", () => {
+  const contracts = moderatorShellHarness({
+    pathname: "/moderator/contracts",
+    hasRole: () => true,
+  });
+  contracts.render();
+  const contractsHtml = contracts.render();
+  assert.match(contractsHtml, /<footer aria-label="Thao tác Moderator">/);
+  assert.match(contractsHtml, /<button disabled="" aria-describedby="moderator-action-unavailable">Tạo hồ sơ hợp đồng<\/button>/);
+  assert.match(contractsHtml, /id="moderator-action-unavailable" role="note">.*API.*quyền/);
+
+  const detail = moderatorShellHarness({
+    pathname: "/moderator/contracts/00000000-0000-4000-8000-000000000000",
+    hasRole: () => true,
+  });
+  detail.render();
+  const detailHtml = detail.render();
+  assert.match(detailHtml, /<footer aria-label="Thao tác Moderator"><a href="\/moderator\/contracts">Về danh sách<\/a><\/footer>/);
+
+  const overview = moderatorShellHarness({
+    pathname: "/moderator",
+    hasRole: () => true,
+  });
+  overview.render();
+  const overviewHtml = overview.render();
+  assert.match(overviewHtml, /<footer aria-label="Thao tác Moderator"><a href="\/moderator\/invoices">Việc cần xử lý<\/a><\/footer>/);
 });

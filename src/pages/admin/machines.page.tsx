@@ -1,12 +1,13 @@
-import axios from "axios";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/router";
+import { useState, type FormEvent } from "react";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
+import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
-import { MachineStatusSchema } from "@/schema/machines.schema";
+import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "./admin-shell";
@@ -14,6 +15,10 @@ import { AdminShell, adminStyles as styles } from "./admin-shell";
 const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
 type StatusFilter = "ALL" | MachineStatus;
+type MachineCreateForm = { serialNumber: string; region: string };
+
+const initialMachineForm: MachineCreateForm = { serialNumber: "", region: "" };
+const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 
 const STATUS_LABELS: Record<MachineStatus, string> = {
   IN_WAREHOUSE: "Trong kho",
@@ -26,16 +31,6 @@ const STATUS_LABELS: Record<MachineStatus, string> = {
   AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
   RETIRED: "Đã ngừng sử dụng",
 };
-
-function errorText(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 404) return T.MACHINES.NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) return "Không kết nối được tới Dolores. Vui lòng thử lại sau.";
-  }
-  return T.COMMON.ERROR;
-}
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -53,15 +48,77 @@ function statusLabel(status: MachineStatus | null | undefined): string {
 }
 
 function MachinesContent() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const view = queryValue(router.query.view);
+  const isCreateView = view === "create";
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [form, setForm] = useState<MachineCreateForm>(initialMachineForm);
+  const [requestError, setRequestError] = useState("");
+  const [blockResubmit, setBlockResubmit] = useState(false);
+  const [successNotice, setSuccessNotice] = useState("");
   const inventory = useQuery({
     queryKey: ["dolores", "machines", "inventory"],
     queryFn: ({ signal }) => machinesApi.list(signal),
+    enabled: !isCreateView,
   });
   const summary = useQuery({
     queryKey: ["dolores", "machines", "inventory-summary"],
     queryFn: ({ signal }) => machinesApi.getInventorySummary(signal),
+    enabled: !isCreateView,
   });
+  const create = useMutation({
+    mutationFn: (request: CreateMachineRequest) => machinesApi.create(request),
+    onSuccess: async () => {
+      setRequestError("");
+      setSuccessNotice(T.MACHINES.CREATE_SUCCESS);
+      setBlockResubmit(false);
+      setForm(initialMachineForm);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
+      ]);
+      void router.push(PATH_ADMIN.MACHINES, undefined, { shallow: true });
+    },
+    onError: (error: unknown) => {
+      if (isUncertainApiMutation(error)) {
+        setBlockResubmit(true);
+        setRequestError(getApiErrorMessage(error, "mutation"));
+        void queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] });
+        void queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] });
+        return;
+      }
+      setRequestError(getApiErrorMessage(error, "mutation"));
+    },
+  });
+
+  const navigateToList = () => void router.push(PATH_ADMIN.MACHINES, undefined, { shallow: true });
+  const navigateToCreate = () => {
+    setRequestError("");
+    setSuccessNotice("");
+    setBlockResubmit(false);
+    setForm(initialMachineForm);
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create" } }, undefined, { shallow: true });
+  };
+  const setField = <K extends keyof MachineCreateForm>(key: K, value: MachineCreateForm[K]) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (create.isPending || blockResubmit) return;
+    setRequestError("");
+    const result = CreateMachineRequestSchema.safeParse({
+      serialNumber: form.serialNumber,
+      region: form.region.trim() || undefined,
+      status: "IN_WAREHOUSE",
+      cupsServedSinceLastDescale: 0,
+    });
+    if (!result.success) {
+      setRequestError(T.MACHINES.CREATE_INVALID);
+      return;
+    }
+    create.mutate(result.data);
+  };
 
   const visibleMachines = (inventory.data ?? []).filter(
     (machine) => statusFilter === "ALL" || machine.status === statusFilter,
@@ -76,52 +133,77 @@ function MachinesContent() {
     <AdminShell>
       <div className={styles.pageContent}>
         <div className={styles.pageHeading}>
-          <h1>{T.MACHINES.TITLE}</h1>
-          <p>{T.MACHINES.DESCRIPTION}</p>
+          <h1>{isCreateView ? T.MACHINES.CREATE_TITLE : T.MACHINES.TITLE}</h1>
+          <p>{isCreateView ? T.MACHINES.CREATE_DESCRIPTION : T.MACHINES.DESCRIPTION}</p>
         </div>
-        <div className={styles.metricsGrid}>
-          <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
-          <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
-          <article className={styles.metricCard}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
-          <article className={styles.metricCard}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
-        </div>
+        {isCreateView ? (
+          <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+            <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
+            <div className={styles.operationsGrid}>
+              <label>{T.MACHINES.CREATE_SERIAL} *<input required autoComplete="off" value={form.serialNumber} onChange={(event) => setField("serialNumber", event.target.value)} /></label>
+              <label>{T.MACHINES.CREATE_REGION}<input value={form.region} onChange={(event) => setField("region", event.target.value)} /></label>
+              <div><span>{T.MACHINES.CREATE_INITIAL_STATUS}</span><strong>{STATUS_LABELS.IN_WAREHOUSE} (IN_WAREHOUSE)</strong></div>
+              <div><span>{T.MACHINES.CREATE_INITIAL_CUPS}</span><strong>0</strong></div>
+            </div>
+            {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+            {blockResubmit && <div className={styles.operationsButtons}><ButtonBar type="button" onClick={navigateToList}>{T.MACHINES.CHECK_LIST}</ButtonBar></div>}
+          </form>
+        ) : (
+          <>
+            {successNotice && <p className={styles.successNotice} role="status">{successNotice}</p>}
+            <div className={styles.metricsGrid}>
+              <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
+              <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
+              <article className={styles.metricCard}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
+              <article className={styles.metricCard}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
+            </div>
 
-        {summary.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-        {summary.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(summary.error)}</p><button type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</button></div>}
+            {summary.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+            {summary.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(summary.error)}</p><button type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</button></div>}
 
-        <section className={styles.panel}>
-          <h2>{T.MACHINES.TITLE}</h2>
-          <div className={styles.operationsButtons} role="group" aria-label={T.MACHINES.STATUS}>
-            <button className={statusFilter === "ALL" ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === "ALL"} onClick={() => setStatusFilter("ALL")}>{T.MACHINES.FILTER_ALL}</button>
-            {STATUSES.map((status) => (
-              <button className={statusFilter === status ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === status} key={status} onClick={() => setStatusFilter(status)}>{STATUS_LABELS[status]}</button>
-            ))}
-          </div>
-          {inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-          {inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
-          {inventory.data && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
-          {inventory.data && visibleMachines.length > 0 && <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead><tr><th>{T.MACHINES.MACHINE_ID}</th><th>{T.MACHINES.SERIAL}</th><th>{T.MACHINES.STATUS}</th><th>{T.MACHINES.OWNER_ID}</th><th>{T.MACHINES.REGION}</th><th>{T.MACHINES.CONTRACT_PERIOD}</th><th>{T.MACHINES.DEPLOYED_AT}</th></tr></thead>
-              <tbody>{visibleMachines.map((machine) => <tr key={machine.id}>
-                <td><Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link></td>
-                <td>{machine.serialNumber ?? "—"}</td>
-                <td>{statusLabel(machine.status)}</td>
-                <td title={machine.ownerId ?? undefined}>{machine.ownerId ?? "—"}</td>
-                <td>{machine.region ?? "—"}</td>
-                <td>{formatPeriod(machine.contractStartDate, machine.contractEndDate)}</td>
-                <td>{formatDate(machine.deployedAt)}</td>
-              </tr>)}</tbody>
-            </table>
-          </div>}
-        </section>
+            <section className={styles.panel}>
+              <h2>{T.MACHINES.TITLE}</h2>
+              <div className={styles.operationsButtons} role="group" aria-label={T.MACHINES.STATUS}>
+                <button className={statusFilter === "ALL" ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === "ALL"} onClick={() => setStatusFilter("ALL")}>{T.MACHINES.FILTER_ALL}</button>
+                {STATUSES.map((status) => (
+                  <button className={statusFilter === status ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === status} key={status} onClick={() => setStatusFilter(status)}>{STATUS_LABELS[status]}</button>
+                ))}
+              </div>
+              {inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
+              {inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {inventory.data && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
+              {inventory.data && visibleMachines.length > 0 && <div className={styles.tableScroll}>
+                <table className={styles.operationsTable}>
+                  <thead><tr><th>{T.MACHINES.MACHINE_ID}</th><th>{T.MACHINES.SERIAL}</th><th>{T.MACHINES.STATUS}</th><th>{T.MACHINES.OWNER_ID}</th><th>{T.MACHINES.REGION}</th><th>{T.MACHINES.CONTRACT_PERIOD}</th><th>{T.MACHINES.DEPLOYED_AT}</th></tr></thead>
+                  <tbody>{visibleMachines.map((machine) => <tr key={machine.id}>
+                    <td><Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link></td>
+                    <td>{machine.serialNumber ?? "—"}</td>
+                    <td>{statusLabel(machine.status)}</td>
+                    <td title={machine.ownerId ?? undefined}>{machine.ownerId ?? "—"}</td>
+                    <td>{machine.region ?? "—"}</td>
+                    <td>{formatPeriod(machine.contractStartDate, machine.contractEndDate)}</td>
+                    <td>{formatDate(machine.deployedAt)}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>}
+            </section>
+          </>
+        )}
       </div>
-      <AdminActionBar>
-        <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
-        <ButtonBar type="button" disabled={inventory.isFetching || summary.isFetching} onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
-          {T.COMMON.RETRY}
-        </ButtonBar>
-      </AdminActionBar>
+      {isCreateView ? (
+        <AdminActionBar>
+          <ButtonBar type="submit" form="machine-create-form" disabled={create.isPending || blockResubmit}>{create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}</ButtonBar>
+          <ButtonBar type="button" disabled={create.isPending} onClick={navigateToList}>{T.MACHINES.CANCEL}</ButtonBar>
+        </AdminActionBar>
+      ) : (
+        <AdminActionBar>
+          <ButtonBar type="button" onClick={navigateToCreate}>{T.MACHINES.CREATE}</ButtonBar>
+          <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
+          <ButtonBar type="button" disabled={inventory.isFetching || summary.isFetching} onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
+            {T.COMMON.RETRY}
+          </ButtonBar>
+        </AdminActionBar>
+      )}
     </AdminShell>
   );
 }

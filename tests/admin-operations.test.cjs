@@ -69,6 +69,7 @@ const schemaMocks = {
   "@/schema/profiles.schema": loadModule("src/schema/profiles.schema.ts"),
   "@/schema/locations.schema": loadModule("src/schema/locations.schema.ts"),
   "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
+  "@/schema/tenants.schema": loadModule("src/schema/tenants.schema.ts"),
 };
 
 test("profile API lists, details, contracts, and history with the Dolores base URL", async () => {
@@ -203,7 +204,7 @@ test("contracts API validates lists, related data, machine history, and Blob dow
   await assert.rejects(contractsApi.getById("not-a-uuid"));
 });
 
-test("contract create action opens the Moderator form and keeps backend submission unavailable", () => {
+test("contract create action opens the API-backed request form", () => {
   const React = require("react");
   const { renderToStaticMarkup } = require("react-dom/server");
   const contractSchemas = loadModule("src/schema/contracts.schema.ts");
@@ -224,6 +225,7 @@ test("contract create action opens the Moderator form and keeps backend submissi
         getDocuments: async () => [], getMachineHistory: async () => [], downloadDocument: async () => new Blob(),
       } },
       "@/apis/profiles.api": { profilesApi: { list: async () => [] } },
+      "@/apis/machines.api": { machinesApi: { list: async () => [] } },
       "@/schema/contracts.schema": contractSchemas,
       "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES },
       "@/components/button/button-bar": { ButtonBar: ({ children, ...props }) => {
@@ -246,12 +248,15 @@ test("contract create action opens the Moderator form and keeps backend submissi
   assert.equal(list.navigation[0][0].query.view, "create");
 
   const create = renderPage("create");
-  assert.match(create.html, /Khách hàng/);
-  assert.match(create.html, /Cửa hàng/);
-  assert.match(create.html, /Loại máy/);
-  assert.match(create.html, /Điều khoản đã thống nhất/);
-  assert.match(create.html, /chưa thể lưu dữ liệu/);
-  const submit = create.buttons.find((button) => button.children === "Lưu thông tin đàm phán");
+  assert.match(create.html, /Owner/);
+  assert.match(create.html, /Máy đang ở kho/);
+  assert.match(create.html, /Ngày bắt đầu/);
+  assert.match(create.html, /Phí thuê hàng tháng/);
+  assert.match(create.html, /contractTermsSnapshot\.maintenanceIntervalMonths/);
+  assert.match(create.html, /contractTermsSnapshot\.allowedReplacementMachineTypes/);
+  assert.doesNotMatch(create.html, /chưa thể lưu dữ liệu/);
+  const submit = create.buttons.find((button) => button.form === "contract-create-form");
+  assert.equal(submit.children, "Tạo hợp đồng");
   assert.equal(submit.disabled, true);
 });
 

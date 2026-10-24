@@ -3,209 +3,136 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
-const { z } = require('zod');
 
-function loadClient() {
-  const fileName = join(__dirname, '..', 'src', 'apis', 'dolores', 'client.ts');
+function loadHttp(options = {}) {
+  const fileName = join(__dirname, '..', 'src', 'lib', 'http.ts');
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2020,
-      esModuleInterop: true,
-    },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   });
-
-  const createdConfigs = [];
-  const calls = [];
   const requestInterceptors = [];
   const responseInterceptors = [];
+  const calls = [];
   const cookieWrites = [];
   const cookieRemovals = [];
-  const responseQueue = [];
-  let token = 'access-token';
-
-  const instance = {
-    interceptors: {
-      request: { use: (fulfilled, rejected) => requestInterceptors.push({ fulfilled, rejected }) },
-      response: { use: (fulfilled, rejected) => responseInterceptors.push({ fulfilled, rejected }) },
-    },
-    request: async (config) => {
-      calls.push(config);
-      return responseQueue.shift();
-    },
-    get(url, config) {
-      return this.request({ ...config, method: 'GET', url });
-    },
-    post(url, data, config) {
-      return this.request({ ...config, method: 'POST', url, data });
-    },
+  const client = function (config) {
+    calls.push({ method: 'retry', config });
+    if (options.retryError) return Promise.reject(options.retryError);
+    return Promise.resolve({ data: 'retried' });
   };
-
+  client.interceptors = {
+    request: { use: (fulfilled, rejected) => requestInterceptors.push({ fulfilled, rejected }) },
+    response: { use: (fulfilled, rejected) => responseInterceptors.push({ fulfilled, rejected }) },
+  };
+  client.post = async (...args) => {
+    calls.push({ method: 'POST', args });
+    if (options.refreshError) throw options.refreshError;
+    return options.refreshResponse ?? { data: { access_token: 'refreshed-access-token', expires_in: 900 } };
+  };
   const axios = {
-    create: (config) => {
-      createdConfigs.push(config);
-      return instance;
-    },
-    isCancel: (error) => error?.isCancel === true,
-    isAxiosError: (error) => error?.isAxiosError === true,
+    create: (config) => { client.defaults = config; return client; },
+    isAxiosError: (error) => Boolean(error?.isAxiosError),
   };
   const cookies = {
-    get: () => token,
+    get: () => 'current-access-token',
     set: (...args) => cookieWrites.push(args),
-    remove: (name) => cookieRemovals.push(name),
-  };
-  const sharedClientCalls = [];
-  let sharedClientResponse = { access_token: 'refreshed-access-token' };
-  const sharedClient = {
-    post: async (...args) => {
-      sharedClientCalls.push(args);
-      return sharedClientResponse;
-    },
+    remove: (...args) => cookieRemovals.push(args),
   };
   const mocks = {
     axios: { __esModule: true, default: axios },
     'js-cookie': { __esModule: true, default: cookies },
-    zod: require('zod'),
-    '@/lib/axios/axiosClient': { __esModule: true, default: sharedClient },
-    '@/constants/endpoints': { AUTH: { REFRESH: '/auth/refresh' } },
-    '@/routes/path': { PATH_AUTH: { login: '/login' } },
+    '@/routes/path': { PATH_AUTH: { LOGIN: '/login' } },
+    '@/schema/auth.schema': { LoginSuccessResponseSchema: { parse: (value) => value } },
   };
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
+  return { ...loaded.exports, calls, client, cookieWrites, cookieRemovals, requestInterceptors, responseInterceptors };
+}
 
+function headerBag(values = {}) {
+  const data = { ...values };
   return {
-    ...loaded.exports,
-    calls,
-    cookieWrites,
-    cookieRemovals,
-    createdConfigs,
-    instance,
-    requestInterceptors,
-    responseInterceptors,
-    responseQueue,
-    setToken(value) { token = value; },
-    setSharedClientResponse(value) { sharedClientResponse = value; },
-    sharedClientCalls,
+    values: data,
+    set(name, value) { data[name] = value; },
+    delete(name) { delete data[name]; },
   };
 }
 
-function makeRequestConfig() {
-  const values = {};
-  return {
-    headers: { set: (name, value) => { values[name] = value; } },
-    values,
-  };
-}
-
-test('dedicated client retains Dolores configuration and validates JSON responses', async () => {
-  const client = loadClient();
-  assert.deepEqual(client.createdConfigs, [{
-    baseURL: '/api/dolores/v1',
-    timeout: 10000,
-    headers: { Accept: 'application/json' },
-  }]);
-  assert.equal(typeof client.doloresAxiosClient.get, 'function');
-  assert.equal(typeof client.doloresAxiosClient.post, 'function');
-
-  const signal = new AbortController().signal;
-  client.responseQueue.push({ data: ['direct'] });
-  assert.deepEqual(await client.doloresAxiosClient.get('/direct', { signal }), { data: ['direct'] });
-  assert.deepEqual(client.calls[0], { signal, method: 'GET', url: '/direct' });
-
-  const schema = z.array(z.string());
-  assert.deepEqual(client.parseDoloresResponse(['parsed'], schema), ['parsed']);
-  assert.throws(
-    () => client.parseDoloresResponse({ invalid: true }, schema),
-    (error) => error instanceof client.DoloresApiError && error.kind === 'invalid_response'
-  );
-
-  const requestInterceptor = client.requestInterceptors[0].fulfilled;
-  assert.throws(
-    () => requestInterceptor({ ...makeRequestConfig(), url: 'https://example.test/alerts' }),
-    (error) => error instanceof client.DoloresApiError && error.kind === 'invalid_request'
-  );
-  assert.equal(client.calls.length, 1);
+test('shared HTTP client has separate IDaaS and Dolores base paths', () => {
+  const http = loadHttp();
+  assert.equal(http.axiosClient.defaults.baseURL, '/api/v1');
+  assert.equal(http.DOLORES_API_BASE_URL, '/api/dolores/v1');
+  assert.equal(http.axiosClient.defaults.timeout, 10000);
+  assert.equal(http.axiosClient.defaults.withCredentials, true);
 });
 
-test('request interceptor attaches the access token and rejects a missing token', async () => {
-  const client = loadClient();
-  const requestInterceptor = client.requestInterceptors[0].fulfilled;
-  const config = { ...makeRequestConfig(), url: '/alerts' };
+test('request interceptor adds bearer auth to protected requests and removes it from login', async () => {
+  const http = loadHttp();
+  const previousWindow = global.window;
+  global.window = { location: { protocol: 'http:', pathname: '/login', assign() {} } };
 
-  assert.equal(await requestInterceptor(config), config);
-  assert.equal(config.values.Authorization, 'Bearer access-token');
+  try {
+    const protectedHeaders = headerBag();
+    const protectedRequest = { url: '/machines', baseURL: http.DOLORES_API_BASE_URL, headers: protectedHeaders };
+    await http.requestInterceptors[0].fulfilled(protectedRequest);
+    assert.equal(protectedHeaders.values.Authorization, 'Bearer current-access-token');
 
-  client.setToken(undefined);
-  assert.throws(
-    () => requestInterceptor({ ...makeRequestConfig(), url: '/alerts' }),
-    (error) => error instanceof client.DoloresApiError && error.kind === 'unauthenticated'
-  );
+    const loginHeaders = headerBag({ Authorization: 'stale-token' });
+    await http.requestInterceptors[0].fulfilled({ url: '/auth/login', headers: loginHeaders });
+    assert.equal(Object.hasOwn(loginHeaders.values, 'Authorization'), false);
+  } finally {
+    if (previousWindow === undefined) delete global.window;
+    else global.window = previousWindow;
+  }
 });
 
-test('response interceptor maps Dolores failures, refreshes once on 401, and passes cancellation through', async () => {
-  const client = loadClient();
-  const rejectResponse = client.responseInterceptors[0].rejected;
+test('Dolores 401 refreshes through IDaaS once and preserves the Dolores base URL for retry', async () => {
+  const http = loadHttp({ refreshResponse: { data: {
+    access_token: 'refreshed-access-token', expires_in: 3600, refresh_token: 'never-store-this',
+  } } });
+  const previousWindow = global.window;
+  global.window = { location: { protocol: 'https:', pathname: '/moderator/machines', assign() {} } };
 
-  await assert.rejects(
-    rejectResponse({ isAxiosError: true, response: { status: 403 } }),
-    (error) => error instanceof client.DoloresApiError && error.kind === 'forbidden' && error.status === 403
-  );
+  try {
+    const requestHeaders = headerBag();
+    const originalRequest = {
+      url: '/machines', baseURL: http.DOLORES_API_BASE_URL, responseType: 'blob', headers: requestHeaders,
+    };
+    const result = await http.responseInterceptors[0].rejected({
+      config: originalRequest,
+      response: { status: 401 },
+    });
 
-  const requestConfig = makeRequestConfig();
-  const unauthorized = {
-    isAxiosError: true,
-    config: { ...requestConfig, headers: requestConfig.headers },
-    response: { status: 401 },
-  };
-  client.responseQueue.push({ data: ['retried'] });
-  const retriedResponse = await rejectResponse(unauthorized);
-  assert.deepEqual(retriedResponse, { data: ['retried'] });
-  assert.equal(unauthorized.config._retry, true);
-  assert.equal(requestConfig.values.Authorization, 'Bearer refreshed-access-token');
-  assert.deepEqual(client.sharedClientCalls, [['/auth/refresh', {}]]);
-  assert.equal(client.cookieWrites[0][0], 'access_token');
-  assert.deepEqual(client.cookieWrites.map(([name]) => name), ['access_token']);
-
-  const cancellation = { isCancel: true };
-  await assert.rejects(rejectResponse(cancellation), (error) => error === cancellation);
+    assert.deepEqual(result, { data: 'retried' });
+    assert.equal(originalRequest._retry, true);
+    assert.equal(requestHeaders.values.Authorization, 'Bearer refreshed-access-token');
+    assert.deepEqual(http.calls.map(({ method }) => method), ['POST', 'retry']);
+    assert.deepEqual(http.calls[0].args, ['/auth/refresh', {}]);
+    assert.equal(http.calls[1].config.baseURL, '/api/dolores/v1');
+    assert.equal(http.calls[1].config.responseType, 'blob');
+    assert.deepEqual(http.cookieWrites.map(([name]) => name), ['access_token']);
+    assert.equal(http.cookieWrites[0][2].secure, true);
+    assert.deepEqual(http.cookieRemovals, []);
+  } finally {
+    if (previousWindow === undefined) delete global.window;
+    else global.window = previousWindow;
+  }
 });
 
-test('Dolores refresh failure preserves its error contract without JS refresh-cookie removal', async () => {
-  const client = loadClient();
-  client.setSharedClientResponse({});
-  const rejectResponse = client.responseInterceptors[0].rejected;
-  const requestConfig = makeRequestConfig();
-  const unauthorized = {
-    isAxiosError: true,
-    config: { ...requestConfig, headers: requestConfig.headers },
-    response: { status: 401 },
-  };
-  // A missing refreshed access token exercises the existing failure branch.
-  await assert.rejects(
-    rejectResponse(unauthorized),
-    (error) => error instanceof client.DoloresApiError && error.kind === 'unauthenticated'
-  );
-  assert.deepEqual(client.cookieRemovals, ['access_token']);
-  assert.equal(client.sharedClientCalls.length, 1);
-});
+test('a retried Dolores request cannot refresh twice', async () => {
+  const http = loadHttp({ retryError: { isAxiosError: true, response: { status: 401 } } });
+  const previousWindow = global.window;
+  global.window = { location: { protocol: 'http:', pathname: '/moderator', assign() {} } };
 
-test('direct Dolores Axios requests keep binary response handling on the dedicated client', async () => {
-  const client = loadClient();
-  const blob = new Blob(['pdf']);
-  client.responseQueue.push({ data: blob });
-
-  const response = await client.doloresAxiosClient.get('/files/1', {
-    headers: { Accept: '*/*' },
-    responseType: 'blob',
-  });
-  assert.equal(response.data, blob);
-  assert.deepEqual(client.calls, [{
-    method: 'GET',
-    url: '/files/1',
-    headers: { Accept: '*/*' },
-    responseType: 'blob',
-  }]);
+  try {
+    const request = { url: '/machines', baseURL: http.DOLORES_API_BASE_URL, headers: headerBag(), _retry: true };
+    const error = { config: request, response: { status: 401 } };
+    await assert.rejects(http.responseInterceptors[0].rejected(error), (result) => result === error);
+    assert.deepEqual(http.calls, []);
+  } finally {
+    if (previousWindow === undefined) delete global.window;
+    else global.window = previousWindow;
+  }
 });

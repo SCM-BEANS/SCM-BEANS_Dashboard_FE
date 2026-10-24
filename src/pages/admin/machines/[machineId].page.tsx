@@ -1,9 +1,8 @@
-import axios from "axios";
 import { useRouter } from "next/router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { machinesApi } from "@/apis/machines.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PATH_ADMIN } from "@/routes/path";
@@ -25,17 +24,6 @@ const STATUS_LABELS: Record<string, string> = {
   AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
   RETIRED: "Đã ngừng sử dụng",
 };
-
-function errorText(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 404) return T.MACHINES.NOT_FOUND;
-    if (error.response?.status === 503) return "Dịch vụ telemetry hiện chưa sẵn sàng. Vui lòng thử lại sau.";
-    if (error.response?.status === 502 || !error.response) return "Không kết nối được tới Dolores. Vui lòng thử lại sau.";
-  }
-  return T.COMMON.ERROR;
-}
 
 function formatDate(value: string | null | undefined, time = false): string {
   if (!value) return "—";
@@ -145,7 +133,7 @@ function MachineDetailContent() {
   </div>{actionBar(false)}</AdminShell>;
   if (machine.isPending) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
-    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(machine.error)}</p></div>
+    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p></div>
   </div>{actionBar(true)}</AdminShell>;
   if (!machine.data) return <AdminShell><div className={styles.pageContent}><p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
 
@@ -181,7 +169,7 @@ function MachineDetailContent() {
       <section className={styles.panel}>
         <h2>{T.MACHINES.PREVENTIVE}</h2>
         {schedule.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-        {schedule.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(schedule.error)}</p><button type="button" onClick={() => void schedule.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {schedule.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><button type="button" onClick={() => void schedule.refetch()}>{T.COMMON.RETRY}</button></div>}
         {schedule.data && <div className={styles.operationsGrid}>
           <div><span>{T.MACHINES.NEXT_MAINTENANCE}</span><strong>{formatDate(schedule.data.nextPreventiveMaintenanceAt, true)}</strong></div>
           <div><span>{T.MACHINES.CUPS}</span><strong>{formatNumber(schedule.data.cupsServedSinceLastDescale)}</strong></div>
@@ -200,7 +188,7 @@ function MachineDetailContent() {
         <section className={styles.panel}>
           <h2>{T.MACHINES.HEARTBEAT}</h2>
           {heartbeat.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-          {heartbeat.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(heartbeat.error)}</p><button type="button" onClick={() => void heartbeat.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {heartbeat.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(heartbeat.error)}</p><button type="button" onClick={() => void heartbeat.refetch()}>{T.COMMON.RETRY}</button></div>}
           {heartbeat.data && <>
             <div className={styles.operationsGrid}>
               <div><span>{T.MACHINES.HEARTBEAT_STATUS}</span><strong>{heartbeat.data.status}</strong></div>
@@ -228,7 +216,7 @@ function MachineDetailContent() {
           {rangeError && <p className={styles.accountInlineWarning} role="alert">{rangeError}</p>}
           {!range && <p className={styles.emptyText}>{T.MACHINES.SELECT_RANGE}</p>}
           {points.isPending && range && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-          {points.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(points.error)}</p><button type="button" onClick={() => void points.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {points.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(points.error)}</p><button type="button" onClick={() => void points.refetch()}>{T.COMMON.RETRY}</button></div>}
           {points.data && telemetryPoints.length === 0 && <p className={styles.emptyText}>{T.MACHINES.NO_POINTS}</p>}
           {telemetryPoints.length > 0 && <>
             <p className={styles.panelSubtitle}>{formatNumber(telemetryPoints.length)} điểm đã tải.</p>

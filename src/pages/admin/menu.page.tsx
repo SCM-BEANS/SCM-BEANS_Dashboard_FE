@@ -1,8 +1,7 @@
-import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ZodError } from "zod";
 import { recipesApi } from "@/apis/recipes.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import {
   RecipePublishRequestSchema,
@@ -14,14 +13,6 @@ import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const RECIPE_QUERY_KEY = ["dolores", "recipes", "global"] as const;
 const EMPTY_DRAFT = { name: "", steps: "", dosageBounds: "" };
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ZodError) return ADMIN_MESSAGES.MENU.INVALID;
-  if (axios.isAxiosError(error) && error.response?.status === 403) {
-    return ADMIN_MESSAGES.AUTH.FORBIDDEN;
-  }
-  return ADMIN_MESSAGES.MENU.ERROR;
-}
 
 const textareaStyle = {
   width: "100%",
@@ -87,7 +78,7 @@ function MenuContent() {
     setPendingPublish(input.data);
   };
 
-  const recipeError = recipe.isError ? errorMessage(recipe.error) : "";
+  const recipeError = recipe.isError ? getApiErrorMessage(recipe.error) : "";
 
   useEffect(() => {
     if (pendingPublish) {
@@ -131,7 +122,7 @@ function MenuContent() {
       {recipes.isPending && <div className={styles.notice} role="status">{ADMIN_MESSAGES.MENU.LOADING}</div>}
       {recipes.isError && (
         <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-          <p>{errorMessage(recipes.error)}</p>
+          <p>{getApiErrorMessage(recipes.error)}</p>
           <button type="button" onClick={() => void recipes.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
         </div>
       )}
@@ -220,7 +211,7 @@ function MenuContent() {
             </label>
           </div>
           {formError && <p className={styles.accountInlineWarning} role="alert">{formError}</p>}
-          {publish.isError && <p className={styles.accountInlineWarning} role="alert">{errorMessage(publish.error)}</p>}
+          {publish.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
           {successMessage && <p className={styles.notice} role="status">{successMessage}</p>}
         </form>
       </section>
@@ -239,7 +230,7 @@ function MenuContent() {
             <h2 id="publish-confirm-title">{ADMIN_MESSAGES.MENU.CONFIRM_TITLE}</h2>
             <p>{ADMIN_MESSAGES.MENU.PUBLISH_WARNING}</p>
             <p><strong>{pendingPublish.name}</strong></p>
-            {publish.isError && <p className={styles.accountInlineWarning} role="alert">{errorMessage(publish.error)}</p>}
+            {publish.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
             <div className={styles.operationsButtons}>
               <button
                 className={styles.accountPrimaryButton}

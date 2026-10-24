@@ -8,122 +8,138 @@ const uuid = (suffix) => `00000000-0000-4000-8000-${suffix.padStart(12, '0')}`;
 const ids = {
   tenant: uuid('1'), invoice: uuid('2'), proof: uuid('3'), buyback: uuid('4'),
   contract: uuid('5'), machine: uuid('6'), document: uuid('7'), workOrder: uuid('8'),
-  location: uuid('9'), notification: uuid('10'), recipe: uuid('11'),
+  location: uuid('9'), notification: uuid('10'), recipe: uuid('11'), profile: uuid('12'),
 };
-const passSchema = { parse: (value) => value };
-const tenantSchema = { ...passSchema, shape: { id: passSchema } };
-const schemas = new Proxy({}, {
-  get(_target, name) {
-    if (name === 'TenantSchema') return tenantSchema;
+const passthrough = { parse: (value) => value, safeParse: (value) => ({ success: true, data: value }) };
+const schemas = new Proxy({ shape: { ownerId: passthrough } }, {
+  get(target, name) {
     if (name === 'unwrapLocations') return (value) => value;
-    if (name === 'InvoicesSchema') return { ...passSchema, element: passSchema };
-    return passSchema;
+    if (name === 'shape') return target.shape;
+    if (name === 'LocationListParamsSchema') return { ...passthrough, shape: { ownerId: passthrough } };
+    return passthrough;
   },
 });
 
-function loadApi(relativePath, client) {
+function loadApi(relativePath, axiosClient) {
   const fileName = join(__dirname, '..', relativePath);
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
-  });
-  const module = { exports: {} };
-  const mocks = {
-    './client': {
-      doloresAxiosClient: client,
-      DoloresApiError: class DoloresApiError extends Error {},
-      parseDoloresResponse: (data, schema) => schema.parse(data),
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
     },
+  });
+  const mocks = {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
   };
   const mockedRequire = (id) => {
-    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
-    if (id.startsWith('@/schemas/dolores/')) return schemas;
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id.startsWith('@/schema/')) return schemas;
     return require(id);
   };
-  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
-  return module.exports;
+  const loaded = { exports: {} };
+  new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
+  return loaded.exports;
 }
 
-test('all Dolores API methods preserve their Axios method, route, payload, query, signal, and Blob config', async () => {
+test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals, and file responses', async () => {
   const signal = new AbortController().signal;
-  const recipeInput = { name: 'API test recipe', steps: ['BREW:25s'], dosageBounds: ['water:30:50'] };
   const blob = new Blob(['document']);
+  const profile = { id: ids.profile, idaasUserId: ids.profile };
+  const location = { id: ids.location, ownerId: ids.profile };
+  const contract = { id: ids.contract, tenantId: ids.tenant };
+  const machine = { id: ids.machine };
+  const notification = { id: ids.notification, read: true };
+  const recipe = { id: ids.recipe };
+  const tenant = { id: ids.tenant, name: 'Test tenant' };
+  const invoice = { id: ids.invoice };
+  const workOrder = { id: ids.workOrder, tenantId: ids.tenant };
+  const workOrderDetails = { workOrder: { id: ids.workOrder } };
   const calls = [];
   let responseData;
-  const client = {
-    get(url, config) {
-      calls.push({ method: 'GET', args: [...arguments] });
-      return Promise.resolve({ data: responseData });
+  const axiosClient = {
+    get: async (url, config = {}) => {
+      calls.push({ method: 'GET', url, config });
+      return { data: responseData };
     },
-    post(url, data, config) {
-      calls.push({ method: 'POST', args: [...arguments] });
-      return Promise.resolve({ data: responseData });
+    post: async (url, data, config = {}) => {
+      calls.push({ method: 'POST', url, data, config });
+      return { data: responseData };
     },
   };
-
   const apis = {
-    alerts: loadApi('src/apis/dolores/alerts.api.ts', client).alertsApi,
-    billing: loadApi('src/apis/dolores/billing.api.ts', client).billingApi,
-    buybacks: loadApi('src/apis/dolores/buybacks.api.ts', client).buybacksApi,
-    contracts: loadApi('src/apis/dolores/contracts.api.ts', client).contractsApi,
-    dashboard: loadApi('src/apis/dolores/dashboard.api.ts', client).dashboardApi,
-    installation: loadApi('src/apis/dolores/installationWorkOrders.api.ts', client).installationWorkOrdersApi,
-    locations: loadApi('src/apis/dolores/locations.api.ts', client).locationsApi,
-    machines: loadApi('src/apis/dolores/machines.api.ts', client).machinesApi,
-    notifications: loadApi('src/apis/dolores/notifications.api.ts', client).notificationsApi,
-    recipes: loadApi('src/apis/dolores/recipes.api.ts', client).recipesApi,
-    telemetry: loadApi('src/apis/dolores/telemetry.api.ts', client).telemetryApi,
-    tenants: loadApi('src/apis/dolores/tenants.api.ts', client).tenantsApi,
+    profiles: loadApi('src/apis/profiles.api.ts', axiosClient).profilesApi,
+    locations: loadApi('src/apis/locations.api.ts', axiosClient).locationsApi,
+    contracts: loadApi('src/apis/contracts.api.ts', axiosClient).contractsApi,
+    machines: loadApi('src/apis/machines.api.ts', axiosClient).machinesApi,
+    telemetry: loadApi('src/apis/telemetry.api.ts', axiosClient).telemetryApi,
+    notifications: loadApi('src/apis/notifications.api.ts', axiosClient).notificationsApi,
+    recipes: loadApi('src/apis/recipes.api.ts', axiosClient).recipesApi,
+    billing: loadApi('src/apis/billing.api.ts', axiosClient).billingApi,
+    buybacks: loadApi('src/apis/buybacks.api.ts', axiosClient).buybacksApi,
+    tenants: loadApi('src/apis/tenants.api.ts', axiosClient).tenantsApi,
+    workOrders: loadApi('src/apis/installation-work-orders.api.ts', axiosClient).installationWorkOrdersApi,
+    dashboard: loadApi('src/apis/dashboard.api.ts', axiosClient).dashboardApi,
   };
+  const recipeInput = { name: 'Test recipe', steps: ['BREW:25s'], dosageBounds: ['water:30:50'] };
 
   const operations = [
-    ['alerts', 'list', [signal], [], ['GET', '/alerts', { signal }]],
-    ['billing', 'listInvoices', [signal], [], ['GET', '/billing/invoices', { signal }]],
-    ['billing', 'getInvoice', [ids.invoice, signal], {}, ['GET', `/billing/invoices/${ids.invoice}`, { signal }]],
-    ['billing', 'listPaymentProofs', [ids.invoice, signal], [], ['GET', `/billing/invoices/${ids.invoice}/payment-proofs`, { signal }]],
-    ['billing', 'downloadPaymentProofContent', [ids.proof], blob, ['GET', `/billing/payment-proofs/${ids.proof}/content`, { headers: { Accept: '*/*' }, responseType: 'blob' }]],
-    ['buybacks', 'getById', [ids.buyback, signal], {}, ['GET', `/buybacks/${ids.buyback}`, { signal }]],
-    ['contracts', 'listByTenant', [ids.tenant, signal], [], ['GET', `/contracts/tenant/${ids.tenant}`, { signal }]],
-    ['contracts', 'getById', [ids.contract, signal], { id: ids.contract }, ['GET', `/contracts/${ids.contract}`, { signal }]],
-    ['contracts', 'listByMachine', [ids.machine, signal], [], ['GET', `/contracts/machine/${ids.machine}/history`, { signal }]],
-    ['contracts', 'getExpiryStatus', [ids.contract, signal], { contractId: ids.contract }, ['GET', `/contracts/${ids.contract}/expiry-status`, { signal }]],
-    ['contracts', 'listDocuments', [ids.contract, signal], [], ['GET', `/contracts/${ids.contract}/documents`, { signal }]],
-    ['contracts', 'downloadDocument', [ids.contract, ids.document], blob, ['GET', `/contracts/${ids.contract}/documents/${ids.document}`, { headers: { Accept: '*/*' }, responseType: 'blob' }]],
-    ['dashboard', 'getOverview', [signal, '2026-10-01', '2026-10-07'], {}, ['GET', '/dashboard/overview', { signal, params: { fromDate: '2026-10-01', toDate: '2026-10-07' } }]],
-    ['installation', 'listByTenant', [ids.tenant, signal], [], ['GET', '/installation-work-orders', { params: { tenantId: ids.tenant }, signal }]],
-    ['installation', 'getById', [ids.workOrder, signal], {}, ['GET', `/installation-work-orders/${ids.workOrder}`, { signal }]],
-    ['locations', 'listByTenant', [ids.tenant, signal], [], ['GET', '/locations', { params: { tenantId: ids.tenant, activeOnly: false }, signal }]],
-    ['locations', 'getById', [ids.location, signal], {}, ['GET', `/locations/${ids.location}`, { signal }]],
-    ['machines', 'list', [signal], [], ['GET', '/machines', { signal }]],
-    ['machines', 'getById', [ids.machine, signal], {}, ['GET', `/machines/${ids.machine}`, { signal }]],
-    ['machines', 'getInventorySummary', [signal], {}, ['GET', '/inventory/summary', { signal }]],
-    ['machines', 'listMaintenanceTickets', [signal], [], ['GET', '/maintenance-tickets', { signal }]],
-    ['machines', 'getMaintenanceSchedule', [ids.machine, signal], {}, ['GET', `/machines/${ids.machine}/maintenance-schedule`, { signal }]],
-    ['machines', 'getLatestHeartbeat', [ids.machine, signal], {}, ['GET', `/telemetry-query/machines/${ids.machine}/heartbeats/latest`, { signal }]],
-    ['notifications', 'list', [signal], [], ['GET', '/notifications', { signal }]],
-    ['notifications', 'unreadCount', [signal], {}, ['GET', '/notifications/unread-count', { signal }]],
-    ['notifications', 'markAsRead', [ids.notification], {}, ['POST', `/notifications/${ids.notification}/read`]],
-    ['recipes', 'listGlobal', [signal], [], ['GET', '/recipes/global', { signal }]],
-    ['recipes', 'getGlobalById', [ids.recipe, signal], {}, ['GET', `/recipes/global/${ids.recipe}`, { signal }]],
-    ['recipes', 'publishGlobal', [recipeInput], recipeInput, ['POST', '/recipes/global', recipeInput]],
-    ['telemetry', 'listMachinePoints', [ids.machine, '2026-10-01T00:00:00', '2026-10-02T00:00:00', 25, signal], [], ['GET', `/telemetry-query/machines/${ids.machine}/points`, { params: { from: '2026-10-01T00:00:00', to: '2026-10-02T00:00:00', limit: 100, offset: 25 }, signal }]],
-    ['tenants', 'list', [signal], [], ['GET', '/tenants', { signal }]],
-    ['tenants', 'get', [ids.tenant, signal], {}, ['GET', `/tenants/${ids.tenant}`, { signal }]],
+    ['profiles', 'list', [{ role: 'OWNER', page: 1, size: 20 }, signal], { items: [profile] }, 'GET', '/profiles', { baseURL: '/api/dolores/v1', params: { role: 'OWNER', page: 1, size: 20 }, signal }],
+    ['profiles', 'getById', [ids.profile, signal], profile, 'GET', `/profiles/${ids.profile}`, { baseURL: '/api/dolores/v1', signal }],
+    ['profiles', 'getHistory', [ids.profile, 2, 10, signal], { items: [] }, 'GET', `/profiles/${ids.profile}/history`, { baseURL: '/api/dolores/v1', params: { page: 2, size: 10 }, signal }],
+    ['profiles', 'getContracts', [ids.profile, 3, 15, signal], { items: [] }, 'GET', `/profiles/${ids.profile}/contracts`, { baseURL: '/api/dolores/v1', params: { page: 3, size: 15 }, signal }],
+    ['locations', 'list', [{ ownerId: ids.profile }, signal], [location], 'GET', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile }, signal }],
+    ['locations', 'listByTenant', [ids.tenant, signal], [{ id: ids.location, tenantId: ids.tenant }], 'GET', '/locations', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant, activeOnly: false }, signal }],
+    ['locations', 'getById', [ids.location, signal], location, 'GET', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1', signal }],
+    ['locations', 'create', [ids.profile, { name: 'Test store', city: 'Test City' }], location, 'POST', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile } }, { name: 'Test store', city: 'Test City' }],
+    ['contracts', 'list', [signal], [], 'GET', '/contracts', { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'listByTenant', [ids.tenant, signal], [contract], 'GET', `/contracts/tenant/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'getById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'getModeratorById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'getExpiry', [ids.contract, signal], {}, 'GET', `/contracts/${ids.contract}/expiry-status`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'getDocuments', [ids.contract, signal], [], 'GET', `/contracts/${ids.contract}/documents`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'getMachineHistory', [ids.machine, signal], [contract], 'GET', `/contracts/machine/${ids.machine}/history`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'downloadDocument', [ids.contract, ids.document, signal], blob, 'GET', `/contracts/${ids.contract}/documents/${ids.document}`, { baseURL: '/api/dolores/v1', responseType: 'blob', signal }],
+    ['machines', 'list', [signal], [machine], 'GET', '/machines', { baseURL: '/api/dolores/v1', signal }],
+    ['machines', 'getById', [ids.machine, signal], machine, 'GET', `/machines/${ids.machine}`, { baseURL: '/api/dolores/v1', signal }],
+    ['machines', 'getInventorySummary', [signal], {}, 'GET', '/inventory/summary', { baseURL: '/api/dolores/v1', signal }],
+    ['machines', 'getMaintenanceSchedule', [ids.machine, signal], {}, 'GET', `/machines/${ids.machine}/maintenance-schedule`, { baseURL: '/api/dolores/v1', signal }],
+    ['machines', 'listMaintenanceTickets', [signal], [], 'GET', '/maintenance-tickets', { baseURL: '/api/dolores/v1', signal }],
+    ['telemetry', 'getLatestHeartbeat', [ids.machine, signal], { machineId: ids.machine }, 'GET', `/telemetry-query/machines/${ids.machine}/heartbeats/latest`, { baseURL: '/api/dolores/v1', signal }],
+    ['telemetry', 'listMachinePoints', [ids.machine, { from: '2026-10-01T00:00:00Z', to: '2026-10-02T00:00:00Z' }, 25, signal], [{ machineId: ids.machine }], 'GET', `/telemetry-query/machines/${ids.machine}/points`, { baseURL: '/api/dolores/v1', params: { from: '2026-10-01T00:00:00Z', to: '2026-10-02T00:00:00Z', limit: 100, offset: 25 }, signal }],
+    ['notifications', 'list', [signal], [], 'GET', '/notifications', { baseURL: '/api/dolores/v1', signal }],
+    ['notifications', 'unreadCount', [signal], { unreadCount: 0 }, 'GET', '/notifications/unread-count', { baseURL: '/api/dolores/v1', signal }],
+    ['notifications', 'listAlerts', [signal], [], 'GET', '/alerts', { baseURL: '/api/dolores/v1', signal }],
+    ['notifications', 'markAsRead', [ids.notification], notification, 'POST', `/notifications/${ids.notification}/read`, { baseURL: '/api/dolores/v1' }, undefined],
+    ['recipes', 'listGlobal', [signal], [recipe], 'GET', '/recipes/global', { baseURL: '/api/dolores/v1', signal }],
+    ['recipes', 'getGlobalById', [ids.recipe, signal], recipe, 'GET', `/recipes/global/${ids.recipe}`, { baseURL: '/api/dolores/v1', signal }],
+    ['recipes', 'publishGlobal', [recipeInput], recipe, 'POST', '/recipes/global', { baseURL: '/api/dolores/v1' }, recipeInput],
+    ['billing', 'listInvoices', [signal], [], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'listModeratorInvoices', [signal], [invoice], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'getModeratorInvoice', [ids.invoice, signal], invoice, 'GET', `/billing/invoices/${ids.invoice}`, { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'listPaymentProofs', [ids.invoice, signal], [], 'GET', `/billing/invoices/${ids.invoice}/payment-proofs`, { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'downloadPaymentProofContent', [ids.proof, signal], blob, 'GET', `/billing/payment-proofs/${ids.proof}/content`, { baseURL: '/api/dolores/v1', headers: { Accept: '*/*' }, responseType: 'blob', signal }],
+    ['buybacks', 'getById', [ids.buyback, signal], { id: ids.buyback }, 'GET', `/buybacks/${ids.buyback}`, { baseURL: '/api/dolores/v1', signal }],
+    ['tenants', 'list', [signal], [tenant], 'GET', '/tenants', { baseURL: '/api/dolores/v1', signal }],
+    ['tenants', 'getById', [ids.tenant, signal], tenant, 'GET', `/tenants/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
+    ['workOrders', 'listByTenant', [ids.tenant, signal], [workOrder], 'GET', '/installation-work-orders', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant }, signal }],
+    ['workOrders', 'getById', [ids.workOrder, signal], workOrderDetails, 'GET', `/installation-work-orders/${ids.workOrder}`, { baseURL: '/api/dolores/v1', signal }],
+    ['dashboard', 'getOverview', [signal, '2026-10-01', '2026-10-07'], {}, 'GET', '/dashboard/overview', { baseURL: '/api/dolores/v1', signal, params: { fromDate: '2026-10-01', toDate: '2026-10-07' } }],
   ];
 
-  for (const [apiName, methodName, args, expectedResponse, expectedCall] of operations) {
+  for (const [apiName, methodName, args, expectedResponse, method, url, config, data] of operations) {
     responseData = expectedResponse;
-    assert.deepEqual(
-      await apis[apiName][methodName](...args),
-      expectedResponse,
-      `${apiName}.${methodName} returns parsed response data`
-    );
-    assert.deepEqual(calls.at(-1), {
-      method: expectedCall[0],
-      args: expectedCall.slice(1),
-    }, `${apiName}.${methodName} preserves its Axios call contract`);
+    const result = await apis[apiName][methodName](...args);
+    assert.deepEqual(result, expectedResponse, `${apiName}.${methodName} returns parsed response data`);
+    const actual = calls.at(-1);
+    assert.equal(actual.method, method, `${apiName}.${methodName} uses the expected HTTP method`);
+    assert.equal(actual.url, url, `${apiName}.${methodName} uses the expected relative route`);
+    assert.deepEqual(actual.config, config, `${apiName}.${methodName} preserves query, signal, and response config`);
+    if (method === 'POST') assert.deepEqual(actual.data, data, `${apiName}.${methodName} preserves its body`);
   }
 
-  assert.equal(calls.length, 32);
+  assert.equal(calls.length, operations.length);
+  assert.ok(calls.every((call) => !/^https?:\/\//i.test(call.url)), 'Dolores requests must use relative paths');
 });

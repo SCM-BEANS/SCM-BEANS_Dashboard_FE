@@ -1,9 +1,8 @@
-import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { PATH_ADMIN } from "@/routes/path";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { AdminUserIdSchema } from "@/schema/admin-users.schema";
@@ -14,16 +13,6 @@ import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 function queryValue(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
-}
-
-function apiError(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 404) return "Không tìm thấy tài khoản Owner này.";
-    if (error.response?.status === 502 || !error.response) return "Không kết nối được tới dịch vụ. Vui lòng thử lại sau.";
-  }
-  return T.COMMON.ERROR;
 }
 
 function formatDate(value: string | null | undefined): string {
@@ -86,7 +75,7 @@ function BusinessesContent() {
         <>
           {!validOwnerId && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã tài khoản không hợp lệ.</div>}
           {validOwnerId && detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-          {validOwnerId && detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{apiError(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
+          {validOwnerId && detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
           {detail.data && <>
             <section className={styles.panel}>
               <h2>{T.BUSINESSES.DETAIL}</h2>
@@ -103,7 +92,7 @@ function BusinessesContent() {
             <section className={styles.panel}>
               <h2>{ownerContracts.data ? `${ownerContracts.data.totalElements} ${T.BUSINESSES.CONTRACTS}` : T.BUSINESSES.CONTRACTS}</h2>
               {ownerContracts.isPending && <p role="status">{T.COMMON.LOADING}</p>}
-              {ownerContracts.isError && <div className={styles.operationsNotice} role="alert">{apiError(ownerContracts.error)} <button type="button" onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {ownerContracts.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(ownerContracts.error)} <button type="button" onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button></div>}
               {ownerContracts.data && ownerContracts.data.items.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
               {ownerContracts.data && ownerContracts.data.items.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}>
                 <thead><tr><th>Hợp đồng</th><th>Máy</th><th>Thời hạn</th><th>Trạng thái</th></tr></thead>
@@ -130,7 +119,7 @@ function BusinessesContent() {
           <button className={styles.accountPrimaryButton} type="submit">Tìm kiếm</button>
         </form>
         {list.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-        {list.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{apiError(list.error)}</p><button type="button" onClick={() => void list.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {list.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><button type="button" onClick={() => void list.refetch()}>{T.COMMON.RETRY}</button></div>}
         {list.data && <section className={styles.panel}>
           <h2>{list.data.total} khách hàng</h2>
           {list.data.items.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <div className={styles.tableScroll}><table className={styles.operationsTable}>

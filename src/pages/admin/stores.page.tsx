@@ -1,9 +1,8 @@
-import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
@@ -64,18 +63,6 @@ export async function loadOwnerLocations(signal?: AbortSignal, selectedOwnerId?:
   return { owners, locations, failed };
 }
 
-function errorText(error: unknown): string {
-  if (error instanceof z.ZodError) return T.COMMON.INVALID;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 403) return T.COMMON.FORBIDDEN;
-    if (error.response?.status === 404) return "Không tìm thấy cửa hàng này.";
-    if (error.response?.status === 400 || error.response?.status === 422) return "Thông tin cửa hàng chưa hợp lệ. Kiểm tra các trường rồi thử lại.";
-    if (error.response?.status === 409) return "Cửa hàng đang xung đột với dữ liệu hiện tại. Tải lại danh sách trước khi thử lại.";
-    if (error.response?.status === 502 || !error.response) return T.STORES.UNCERTAIN_RESULT;
-  }
-  return T.COMMON.ERROR;
-}
-
 function StoresContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -114,17 +101,17 @@ function StoresContent() {
     onError: (error: unknown) => {
       if (error instanceof LocationOwnerMismatchError) {
         setBlockResubmit(true); setConfirmOpen(false);
-        setRequestError(T.STORES.OWNER_MISMATCH);
+        setRequestError(API_ERROR_MESSAGES.LOCATION_OWNER_MISMATCH);
         void queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] });
         return;
       }
-      if (axios.isAxiosError(error) && (!error.response || error.response.status >= 500)) {
+      if (isUncertainApiMutation(error)) {
         setBlockResubmit(true); setConfirmOpen(false);
-        setRequestError(T.STORES.UNCERTAIN_RESULT);
+        setRequestError(getApiErrorMessage(error, "mutation"));
         void queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] });
         return;
       }
-      setRequestError(errorText(error));
+      setRequestError(getApiErrorMessage(error, "mutation"));
     },
   });
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/stores", query }, undefined, { shallow: true });
@@ -163,7 +150,7 @@ function StoresContent() {
         <label>{T.STORES.CONTACT}<input maxLength={160} value={form.contactPerson} onChange={(event) => setField("contactPerson", event.target.value)} /></label>
         <label>{T.STORES.PHONE}<input maxLength={40} value={form.phoneNumber} onChange={(event) => setField("phoneNumber", event.target.value)} /></label>
       </div>
-      {owners.isError && <p className={styles.operationsNotice} role="alert">{errorText(owners.error)} Cần tải được Owner để tạo cửa hàng.</p>}
+      {owners.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(owners.error)} Cần tải được Owner để tạo cửa hàng.</p>}
       {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       {blockResubmit && <div className={styles.operationsButtons}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>{T.STORES.CHECK_LIST}</button></div>}
     </form>}
@@ -171,7 +158,7 @@ function StoresContent() {
     {view === "detail" && <>
       {!LocationIdSchema.safeParse(locationId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã cửa hàng không hợp lệ.</div>}
       {detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-      {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
       {ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
       {detail.data && !ownerMismatch && <section className={styles.panel}><h2>{T.STORES.DETAIL}</h2><div className={styles.operationsGrid}>
         <div><span>{T.STORES.NAME}</span><strong>{detail.data.name}</strong></div>
@@ -187,7 +174,7 @@ function StoresContent() {
 
     {view !== "detail" && view !== "create" && <>
       {listing.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-      {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{errorText(listing.error)}</p><button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(listing.error)}</p><button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
       {listing.data && <>
         {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
         <section className={styles.panel}><h2>{listing.data.locations.length} cửa hàng</h2>

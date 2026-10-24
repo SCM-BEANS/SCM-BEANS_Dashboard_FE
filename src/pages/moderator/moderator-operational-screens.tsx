@@ -1,8 +1,6 @@
-import axios from "axios";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Children, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { ZodError } from "zod";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { locationsApi } from "@/apis/locations.api";
 import { machinesApi } from "@/apis/machines.api";
@@ -19,6 +17,7 @@ import {
 import { TenantIdSchema, type Tenant } from "@/schema/tenants.schema";
 import { TelemetryPointsParamsSchema, type MachineHeartbeat, type TelemetryPoint } from "@/schema/telemetry.schema";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
+import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { moderatorStyles as styles } from "./moderator-shell";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
@@ -31,17 +30,6 @@ function formatDate(value: string | null | undefined): string {
   return Number.isNaN(timestamp)
     ? value
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
-}
-
-function readErrorMessage(error: unknown): string {
-  if (error instanceof ZodError) return messages.INVALID_RESPONSE;
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 401) return messages.UNAUTHENTICATED;
-    if (error.response?.status === 403) return messages.FORBIDDEN;
-    if (error.response?.status === 404) return messages.NOT_FOUND;
-    if (error.response?.status === 502 || !error.response) return messages.UNAVAILABLE;
-  }
-  return messages.READ_ERROR;
 }
 
 function QueryFeedback({
@@ -57,7 +45,7 @@ function QueryFeedback({
   if (query.isError) {
     return (
       <div className={styles.pendingNotice} role="alert">
-        <p>{errorMessage ?? readErrorMessage(query.error)}</p>
+        <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
         <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>{messages.RETRY}</button>
       </div>
     );
@@ -260,7 +248,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             </dl>
             {locationId && (
               !validLocationId
-                ? <p className={styles.pendingNotice} role="alert">{messages.INVALID_RESPONSE}</p>
+                ? <p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p>
                 : locationScopeMismatch
                   ? <p className={styles.partialNotice} role="alert">{messages.LOCATION_MACHINE_SCOPE_MISMATCH}</p>
                   : <QueryFeedback query={location} loadingMessage={messages.LOCATION_LOADING} />
@@ -373,7 +361,7 @@ function TenantPartialFailure({
   return (
     <div className={styles.partialNotice} role="alert">
       <p>{messages.PARTIAL_TENANT_FAILURE}</p>
-      <ul>{failedTenants.map(({ tenant, error }) => <li key={tenant.id}>{tenant.name}: {subject} — {readErrorMessage(error)}</li>)}</ul>
+      <ul>{failedTenants.map(({ tenant, error }) => <li key={tenant.id}>{tenant.name}: {subject} — {getApiErrorMessage(error)}</li>)}</ul>
       <button className={styles.retryButton} type="button" onClick={() => void retry()}>{messages.RETRY}</button>
     </div>
   );

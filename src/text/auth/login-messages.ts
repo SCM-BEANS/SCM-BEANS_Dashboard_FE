@@ -40,9 +40,5 @@ export const LOGIN_MESSAGES = {
     INVALID_EMAIL: "Vui lòng nhập email hợp lệ.",
     MISSING_PASSWORD: "Vui lòng nhập mật khẩu.",
     MISSING_CODE: "Vui lòng nhập mã xác thực.",
-    INVALID_CREDENTIALS: "Email hoặc mật khẩu không đúng.",
-    INVALID_CODE: "Mã xác thực không đúng hoặc đã hết hạn.",
-    UNAVAILABLE: "Không thể kết nối máy chủ. Vui lòng thử lại sau.",
-    GENERIC: "Không thể đăng nhập. Vui lòng thử lại.",
   },
 } as const;

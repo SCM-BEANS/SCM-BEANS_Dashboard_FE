@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { getPostLoginPath } from "@/lib/auth-role";
 import landingHeroImage from "@/assets/landing-hero-desktop.jpg";
 import { BrandLogo } from "@/components/brand/brand-logo";
@@ -21,19 +22,6 @@ import { LOGIN_MESSAGES } from "@/text/auth/login-messages";
 import { TYPOGRAPHY_STYLES } from "@/text/typography";
 
 type LoginStep = "credentials" | "mfa";
-
-function getErrorMessage(error: unknown, step: LoginStep): string {
-  if (!axios.isAxiosError(error)) return LOGIN_MESSAGES.ERRORS.GENERIC;
-  if (error.response?.status === 401) {
-    return step === "mfa"
-      ? LOGIN_MESSAGES.ERRORS.INVALID_CODE
-      : LOGIN_MESSAGES.ERRORS.INVALID_CREDENTIALS;
-  }
-  if (error.response?.status === 502 || !error.response) {
-    return LOGIN_MESSAGES.ERRORS.UNAVAILABLE;
-  }
-  return LOGIN_MESSAGES.ERRORS.GENERIC;
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -95,7 +83,7 @@ export default function LoginPage() {
         if (mfa?.success) {
           openMfa(mfa.data.temp_token);
         } else {
-          setErrorMessage(getErrorMessage(error, step));
+          setErrorMessage(getApiErrorMessage(error, step === "mfa" ? "mfa" : "login"));
         }
       } finally {
         setLoading(false);
@@ -113,7 +101,7 @@ export default function LoginPage() {
     try {
       completeLogin(await authApi.loginMfa(request.data));
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, step));
+      setErrorMessage(getApiErrorMessage(error, step === "mfa" ? "mfa" : "login"));
     } finally {
       setLoading(false);
     }

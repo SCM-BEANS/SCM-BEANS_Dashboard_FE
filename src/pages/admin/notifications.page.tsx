@@ -1,8 +1,7 @@
-import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ZodError } from "zod";
 import { notificationsApi } from "@/apis/notifications.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import type { Notification } from "@/schema/notifications.schema";
@@ -12,14 +11,6 @@ import { AdminShell, adminStyles as styles } from "./admin-shell";
 
 const NOTIFICATIONS_QUERY_KEY = ["dolores", "notifications"] as const;
 const ALERTS_QUERY_KEY = ["dolores", "alerts"] as const;
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ZodError) return ADMIN_MESSAGES.NOTIFICATIONS.INVALID;
-  if (axios.isAxiosError(error) && error.response?.status === 403) {
-    return ADMIN_MESSAGES.OVERVIEW.FORBIDDEN;
-  }
-  return ADMIN_MESSAGES.NOTIFICATIONS.ERROR;
-}
 
 function NotificationContent() {
   const queryClient = useQueryClient();
@@ -43,7 +34,7 @@ function NotificationContent() {
       await queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
       setStatusMessage(ADMIN_MESSAGES.NOTIFICATIONS.READ_SUCCESS);
     },
-    onError: () => setStatusMessage(ADMIN_MESSAGES.NOTIFICATIONS.READ_ERROR),
+    onError: (error: unknown) => setStatusMessage(getApiErrorMessage(error, "mutation")),
   });
 
   return (
@@ -64,7 +55,7 @@ function NotificationContent() {
         {notifications.isPending && <p role="status">{ADMIN_MESSAGES.NOTIFICATIONS.LOADING}</p>}
         {notifications.isError && (
           <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-            <p>{errorMessage(notifications.error)}</p>
+            <p>{getApiErrorMessage(notifications.error)}</p>
             <button type="button" onClick={() => void notifications.refetch()}>{ADMIN_MESSAGES.NOTIFICATIONS.RETRY}</button>
           </div>
         )}
@@ -119,7 +110,7 @@ function NotificationContent() {
         {alerts.isPending && <p role="status">{ADMIN_MESSAGES.NOTIFICATIONS.LOADING}</p>}
         {alerts.isError && (
           <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-            <p>{errorMessage(alerts.error)}</p>
+            <p>{getApiErrorMessage(alerts.error)}</p>
             <button type="button" onClick={() => void alerts.refetch()}>{ADMIN_MESSAGES.NOTIFICATIONS.RETRY}</button>
           </div>
         )}
