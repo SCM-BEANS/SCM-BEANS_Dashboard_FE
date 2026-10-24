@@ -33,9 +33,6 @@
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 .desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: #fff; color: #706561; font-size: 14px; }
-.breadcrumb { display: inline-flex; align-items: center; font-size: 14px; }
-.breadcrumb a { color: #b81724; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.breadcrumb [aria-current="page"] { color: #302927; font-weight: 600; }
 .headerLink { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; }
 .main { min-height: 0; flex: 1; overflow: auto; }
 .mobileHeader, .mobileBreadcrumb, .mobileNav, .menuBackdrop { display: none; }
@@ -46,11 +43,6 @@
 .pageHeading h1 { margin: 0; font-size: 27px; line-height: 1.4; }
 .pageHeading p { margin: 6px 0 0; color: #706561; font-size: 14px; line-height: 1.5; }
 .pendingNotice, .notFoundNotice { padding: 18px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; color: #706561; font-size: 14px; line-height: 1.6; }
-.tableScroll { width: 100%; overflow-x: auto; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
-.dataTable { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; }
-.dataTable th, .dataTable td { padding: 14px 16px; vertical-align: top; }
-.dataTable th { background: #f8f6f3; color: #706561; font-size: 14px; font-weight: 600; }
-.dataTable td { border-top: 1px solid #eee8e3; color: #302927; font-size: 14px; }
 .tableLink { color: #b81724 !important; font-weight: 600; text-decoration: underline !important; text-underline-offset: 3px; }
 .detailGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
 .detailItem { min-width: 0; padding: 16px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
@@ -91,7 +83,6 @@
   .mobileMenuNav { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
   .pageContent { gap: 16px; padding: 20px 16px 104px; }
   .pageHeading h1 { font-size: 24px; }
-  .dataTable { min-width: 620px; }
   .formPanel { padding: 14px; }
 }
 

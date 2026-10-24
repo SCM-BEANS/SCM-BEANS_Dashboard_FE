@@ -9,8 +9,9 @@ import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema, CreateContractRequestSchema } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 function date(value: string | null | undefined): string {
@@ -215,14 +216,17 @@ function ContractsContent() {
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contracts.data && <section className={styles.panel}><h2>{contracts.data.length} hợp đồng</h2>
         {owners.isError && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)}</p>}
-        {contracts.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <div className={styles.tableScroll}><table className={styles.operationsTable}>
-          <thead><tr><th>Hợp đồng</th><th>{T.COMMON.OWNER}</th><th>Máy</th><th>Thời hạn</th><th>Trạng thái</th></tr></thead>
-          <tbody>{contracts.data.map((item) => <tr key={item.id}>
-            <td><button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button></td>
-            <td title={item.ownerId}>{ownerName(item.ownerId)}</td><td>{item.machineId?.slice(0, 8).toUpperCase() ?? T.CONTRACTS.NO_MACHINE}</td>
-            <td>{date(item.startDate)} – {date(item.endDate)}</td><td>{status(item.status)}</td>
-          </tr>)}</tbody>
-        </table></div>}
+        {contracts.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+          rows={contracts.data}
+          rowKey={(item) => item.id}
+          columns={[
+            { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button> },
+            { key: "owner", header: T.COMMON.OWNER, render: (item) => ownerName(item.ownerId), cellProps: (item) => ({ title: item.ownerId }) },
+            { key: "machine", header: "Máy", render: (item) => item.machineId?.slice(0, 8).toUpperCase() ?? T.CONTRACTS.NO_MACHINE },
+            { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
+            { key: "status", header: "Trạng thái", render: (item) => status(item.status) },
+          ]}
+        />}
       </section>}
     </>}
     {view === "create" && <>
@@ -306,9 +310,17 @@ function ContractsContent() {
           {documents.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {documents.data && documents.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-          {documents.data && documents.data.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}><thead><tr><th>Tệp</th><th>Loại</th><th>Dung lượng · phiên bản</th><th>Ngày tải</th><th /></tr></thead>
-            <tbody>{documents.data.map((doc) => <tr key={doc.id}><td>{doc.originalFilename}</td><td>{doc.documentType}</td><td>{(doc.sizeBytes / 1024 / 1024).toFixed(2)} MB · v{doc.version}</td><td>{doc.archivedAt ? "Đã lưu trữ" : dateTime(doc.uploadedAt)}</td>
-              <td><ButtonBar type="button" disabled={download.isPending} onClick={() => download.mutate({ id: doc.id, filename: doc.originalFilename })}>{download.isPending && download.variables?.id === doc.id ? "Đang tải…" : T.CONTRACTS.DOWNLOAD}</ButtonBar></td></tr>)}</tbody></table></div>}
+          {documents.data && documents.data.length > 0 && <DataTable
+            rows={documents.data}
+            rowKey={(doc) => doc.id}
+            columns={[
+              { key: "file", header: "Tệp", render: (doc) => doc.originalFilename },
+              { key: "type", header: "Loại", render: (doc) => doc.documentType },
+              { key: "size", header: "Dung lượng · phiên bản", render: (doc) => `${(doc.sizeBytes / 1024 / 1024).toFixed(2)} MB · v${doc.version}` },
+              { key: "uploaded", header: "Ngày tải", render: (doc) => doc.archivedAt ? "Đã lưu trữ" : dateTime(doc.uploadedAt) },
+              { key: "actions", header: "", render: (doc) => <ButtonBar type="button" disabled={download.isPending} onClick={() => download.mutate({ id: doc.id, filename: doc.originalFilename })}>{download.isPending && download.variables?.id === doc.id ? "Đang tải…" : T.CONTRACTS.DOWNLOAD}</ButtonBar> },
+            ]}
+          />}
           {download.isError && <p className={styles.operationsNotice} role="alert">Không tải được tài liệu. Vui lòng thử lại.</p>}
         </section>
       </>}
@@ -317,9 +329,16 @@ function ContractsContent() {
       {!ContractIdSchema.safeParse(machineId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã máy không hợp lệ.</div>}
       {history.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {history.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(history.error)}</p><ButtonBar type="button" onClick={() => void history.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-      {history.data && <section className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <div className={styles.tableScroll}><table className={styles.operationsTable}><thead><tr><th>Hợp đồng</th><th>{T.COMMON.OWNER}</th><th>Thời hạn</th><th>Trạng thái</th></tr></thead>
-        <tbody>{history.data.map((item) => <tr key={item.id}><td><button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button></td><td>{ownerName(item.ownerId)}</td><td>{date(item.startDate)} – {date(item.endDate)}</td><td>{status(item.status)}</td></tr>)}</tbody>
-      </table></div>}</section>}
+      {history.data && <section className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+        rows={history.data}
+        rowKey={(item) => item.id}
+        columns={[
+          { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button> },
+          { key: "owner", header: T.COMMON.OWNER, render: (item) => ownerName(item.ownerId) },
+          { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
+          { key: "status", header: "Trạng thái", render: (item) => status(item.status) },
+        ]}
+      />}</section>}
     </>}
   </div>
   <AdminActionBar>

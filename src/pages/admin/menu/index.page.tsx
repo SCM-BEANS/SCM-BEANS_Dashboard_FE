@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { recipesApi } from "@/apis/recipes.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { DataTable } from "@/components/table/data-table";
+import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
 import {
   RecipePublishRequestSchema,
@@ -9,7 +12,7 @@ import {
 } from "@/schema/recipes.schema";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const RECIPE_QUERY_KEY = ["dolores", "recipes", "global"] as const;
 const EMPTY_DRAFT = { name: "", steps: "", dosageBounds: "" };
@@ -26,10 +29,14 @@ const textareaStyle = {
 } as const;
 
 function MenuContent() {
+  const router = useRouter();
+  const view = typeof router.query.view === "string" ? router.query.view : "list";
+  const isCreateView = view === "create";
   const queryClient = useQueryClient();
   const recipes = useQuery({
     queryKey: RECIPE_QUERY_KEY,
     queryFn: ({ signal }) => recipesApi.listGlobal(signal),
+    enabled: !isCreateView,
   });
   const [selectedRecipeId, setSelectedRecipeId] = useState("");
   const [draft, setDraft] = useState(EMPTY_DRAFT);
@@ -41,12 +48,11 @@ function MenuContent() {
   const publishButtonRef = useRef<HTMLButtonElement>(null);
   const dialogWasOpen = useRef(false);
 
-  const selectedRecipeIdValue =
-    selectedRecipeId || recipes.data?.[0]?.id || "";
+  const selectedRecipeIdValue = isCreateView ? "" : selectedRecipeId || recipes.data?.[0]?.id || "";
   const recipe = useQuery({
     queryKey: [...RECIPE_QUERY_KEY, selectedRecipeIdValue],
     queryFn: ({ signal }) => recipesApi.getGlobalById(selectedRecipeIdValue, signal),
-    enabled: Boolean(selectedRecipeIdValue),
+    enabled: !isCreateView && Boolean(selectedRecipeIdValue),
   });
 
   const publish = useMutation({
@@ -58,6 +64,7 @@ function MenuContent() {
       setDraft(EMPTY_DRAFT);
       setFormError("");
       setSuccessMessage(ADMIN_MESSAGES.MENU.PUBLISHED);
+      await router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
     },
   });
 
@@ -78,6 +85,15 @@ function MenuContent() {
     setPendingPublish(input.data);
   };
 
+  const navigateToList = () => void router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
+  const navigateToCreate = () => {
+    setDraft(EMPTY_DRAFT);
+    setFormError("");
+    setSuccessMessage("");
+    publish.reset();
+    void router.push({ pathname: PATH_ADMIN.MENU, query: { view: "create" } }, undefined, { shallow: true });
+  };
+
   const recipeError = recipe.isError ? getApiErrorMessage(recipe.error) : "";
 
   useEffect(() => {
@@ -94,7 +110,9 @@ function MenuContent() {
 
   const handleDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape" && !publish.isPending) {
-      setPendingPublish(null);
+      if (pendingPublish) {
+        setPendingPublish(null);
+      }
       return;
     }
     if (event.key !== "Tab") return;
@@ -115,75 +133,15 @@ function MenuContent() {
     <>
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}>
-        <h1>{ADMIN_MESSAGES.MENU.TITLE}</h1>
-        <p>{ADMIN_MESSAGES.MENU.DESCRIPTION}</p>
+        <h1>{isCreateView ? ADMIN_MESSAGES.MENU.CREATE : ADMIN_MESSAGES.MENU.TITLE}</h1>
+        <p>{isCreateView ? ADMIN_MESSAGES.MENU.CREATE_DESCRIPTION : ADMIN_MESSAGES.MENU.DESCRIPTION}</p>
       </div>
-
-      {recipes.isPending && <div className={styles.notice} role="status">{ADMIN_MESSAGES.MENU.LOADING}</div>}
-      {recipes.isError && (
-        <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-          <p>{getApiErrorMessage(recipes.error)}</p>
-          <button type="button" onClick={() => void recipes.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
-        </div>
-      )}
-      {recipes.data?.length === 0 && <p className={styles.emptyText}>{ADMIN_MESSAGES.MENU.EMPTY}</p>}
-      {recipes.data && recipes.data.length > 0 && (
-        <section className={styles.panel} aria-labelledby="global-recipes-title">
-          <h2 id="global-recipes-title">{ADMIN_MESSAGES.MENU.RECIPES}</h2>
-          <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead><tr><th>{ADMIN_MESSAGES.MENU.NAME}</th><th>{ADMIN_MESSAGES.MENU.SELECT}</th></tr></thead>
-              <tbody>
-                {recipes.data.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.name}</td>
-                    <td>
-                      <button
-                        className={styles.accountTextButton}
-                        type="button"
-                        aria-pressed={selectedRecipeIdValue === item.id}
-                        onClick={() => setSelectedRecipeId(item.id)}
-                      >
-                        {ADMIN_MESSAGES.MENU.SELECT}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {selectedRecipeIdValue && (
-        <section className={styles.panel} aria-labelledby="global-recipe-detail-title">
-          <div className={styles.pageHeading}>
-            <h2 id="global-recipe-detail-title">{ADMIN_MESSAGES.MENU.DETAIL}</h2>
-            <p>{ADMIN_MESSAGES.MENU.EDIT_UNAVAILABLE}</p>
-          </div>
-          {recipe.isPending && <p role="status">{ADMIN_MESSAGES.MENU.LOADING}</p>}
-          {recipe.isError && (
-            <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
-              <p>{recipeError}</p>
-              <button type="button" onClick={() => void recipe.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
-            </div>
-          )}
-          {recipe.data && (
-            <div className={styles.operationsGrid}>
-              <div><span>{ADMIN_MESSAGES.MENU.NAME}</span><strong>{recipe.data.name}</strong></div>
-              <div><span>{ADMIN_MESSAGES.MENU.STEPS}</span><strong>{recipe.data.steps.join(" · ")}</strong></div>
-              <div><span>{ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS}</span><strong>{recipe.data.dosageBounds.join(" · ")}</strong></div>
-            </div>
-          )}
-        </section>
-      )}
-
-      <section className={styles.panel} aria-labelledby="publish-global-recipe-title">
-        <h2 id="publish-global-recipe-title">{ADMIN_MESSAGES.MENU.CREATE}</h2>
-        <form id="global-recipe-form" onSubmit={submitDraft}>
+      {isCreateView ? (
+        <form id="global-recipe-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submitDraft}>
+          <h2>{ADMIN_MESSAGES.MENU.CREATE_FORM_TITLE}</h2>
           <div className={styles.operationsGrid}>
             <label>
-              {ADMIN_MESSAGES.MENU.NAME}
+              {ADMIN_MESSAGES.MENU.NAME} *
               <input
                 required
                 maxLength={160}
@@ -192,7 +150,7 @@ function MenuContent() {
               />
             </label>
             <label>
-              {ADMIN_MESSAGES.MENU.STEPS}
+              {ADMIN_MESSAGES.MENU.STEPS} *
               <textarea
                 required
                 value={draft.steps}
@@ -201,7 +159,7 @@ function MenuContent() {
               />
             </label>
             <label>
-              {ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS}
+              {ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS} *
               <textarea
                 required
                 value={draft.dosageBounds}
@@ -212,9 +170,65 @@ function MenuContent() {
           </div>
           {formError && <p className={styles.accountInlineWarning} role="alert">{formError}</p>}
           {publish.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
-          {successMessage && <p className={styles.notice} role="status">{successMessage}</p>}
         </form>
-      </section>
+      ) : (
+        <>
+          {successMessage && <p className={styles.notice} role="status">{successMessage}</p>}
+          {recipes.isPending && <div className={styles.notice} role="status">{ADMIN_MESSAGES.MENU.LOADING}</div>}
+          {recipes.isError && (
+            <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+              <p>{getApiErrorMessage(recipes.error)}</p>
+              <button type="button" onClick={() => void recipes.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
+            </div>
+          )}
+          {recipes.data?.length === 0 && <p className={styles.emptyText}>{ADMIN_MESSAGES.MENU.EMPTY}</p>}
+          {recipes.data && recipes.data.length > 0 && (
+            <section className={styles.panel} aria-labelledby="global-recipes-title">
+              <h2 id="global-recipes-title">{ADMIN_MESSAGES.MENU.RECIPES}</h2>
+              <DataTable
+                rows={recipes.data}
+                rowKey={(item) => item.id}
+                columns={[
+                  { key: "name", header: ADMIN_MESSAGES.MENU.NAME, render: (item) => item.name },
+                  { key: "select", header: ADMIN_MESSAGES.MENU.SELECT, render: (item) => (
+                    <button
+                      className={styles.accountTextButton}
+                      type="button"
+                      aria-pressed={selectedRecipeIdValue === item.id}
+                      onClick={() => setSelectedRecipeId(item.id)}
+                    >
+                      {ADMIN_MESSAGES.MENU.SELECT}
+                    </button>
+                  ) },
+                ]}
+              />
+            </section>
+          )}
+
+          {selectedRecipeIdValue && (
+            <section className={styles.panel} aria-labelledby="global-recipe-detail-title">
+              <div className={styles.pageHeading}>
+                <h2 id="global-recipe-detail-title">{ADMIN_MESSAGES.MENU.DETAIL}</h2>
+                <p>{ADMIN_MESSAGES.MENU.EDIT_UNAVAILABLE}</p>
+              </div>
+              {recipe.isPending && <p role="status">{ADMIN_MESSAGES.MENU.LOADING}</p>}
+              {recipe.isError && (
+                <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+                  <p>{recipeError}</p>
+                  <button type="button" onClick={() => void recipe.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
+                </div>
+              )}
+              {recipe.data && (
+                <div className={styles.operationsGrid}>
+                  <div><span>{ADMIN_MESSAGES.MENU.NAME}</span><strong>{recipe.data.name}</strong></div>
+                  <div><span>{ADMIN_MESSAGES.MENU.STEPS}</span><strong>{recipe.data.steps.join(" · ")}</strong></div>
+                  <div><span>{ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS}</span><strong>{recipe.data.dosageBounds.join(" · ")}</strong></div>
+                </div>
+              )}
+            </section>
+          )}
+        </>
+      )}
 
       {pendingPublish && (
         <div className={styles.operationsDialogBackdrop}>
@@ -254,14 +268,25 @@ function MenuContent() {
         </div>
       )}
     </div>
-    <AdminActionBar>
-      <ButtonBar ref={publishButtonRef} type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
-        {ADMIN_MESSAGES.MENU.PUBLISH}
-      </ButtonBar>
-      <ButtonBar type="button" disabled={recipes.isFetching} onClick={() => void recipes.refetch()}>
-        {ADMIN_MESSAGES.MENU.RETRY}
-      </ButtonBar>
-    </AdminActionBar>
+    {isCreateView ? (
+      <AdminActionBar>
+        <ButtonBar ref={publishButtonRef} type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
+          {ADMIN_MESSAGES.MENU.PUBLISH}
+        </ButtonBar>
+        <ButtonBar type="button" disabled={publish.isPending} onClick={navigateToList}>
+          {ADMIN_MESSAGES.MENU.CANCEL}
+        </ButtonBar>
+      </AdminActionBar>
+    ) : (
+      <AdminActionBar>
+        <ButtonBar type="button" onClick={navigateToCreate}>
+          {ADMIN_MESSAGES.MENU.CREATE}
+        </ButtonBar>
+        <ButtonBar type="button" disabled={recipes.isFetching} onClick={() => void recipes.refetch()}>
+          {ADMIN_MESSAGES.MENU.RETRY}
+        </ButtonBar>
+      </AdminActionBar>
+    )}
     </>
   );
 }

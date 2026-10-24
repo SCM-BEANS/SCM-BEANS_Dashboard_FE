@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -11,7 +12,7 @@ import type { AdminUser } from "@/schema/admin-users.schema";
 import { LocationIdSchema, type LocationCreate } from "@/schema/locations.schema";
 import { ProfileIdSchema, type Profile } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 type OwnerLocations = { owners: Profile[]; locations: Array<{ owner: Profile; location: Awaited<ReturnType<typeof locationsApi.list>>[number] }>; failed: string[] };
 type StoreForm = LocationCreate & { ownerId: string };
@@ -178,14 +179,19 @@ function StoresContent() {
       {listing.data && <>
         {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
         <section className={styles.panel}><h2>{listing.data.locations.length} cửa hàng</h2>
-          {listing.data.locations.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <div className={styles.tableScroll}><table className={styles.operationsTable}>
-            <thead><tr><th>{T.STORES.NAME}</th><th>{T.STORES.OWNER}</th><th>{T.STORES.ADDRESS}</th><th>Trạng thái</th><th /></tr></thead>
-            <tbody>{listing.data.locations.map(({ owner, location }) => <tr key={location.id}>
-              <td>{location.name}</td><td>{owner.fullName}</td><td>{[location.address, location.city].filter(Boolean).join(", ") || "—"}</td>
-              <td>{location.active == null ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</td>
-              <td><button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId })}>Chi tiết</button></td>
-            </tr>)}</tbody>
-          </table></div>}
+          {listing.data.locations.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+            rows={listing.data.locations}
+            rowKey={({ location }) => location.id}
+            columns={[
+              { key: "name", header: T.STORES.NAME, render: ({ location }) => location.name },
+              { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
+              { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
+              { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
+              { key: "actions", header: "", render: ({ owner, location }) => (
+                <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId })}>Chi tiết</button>
+              ) },
+            ]}
+          />}
         </section>
       </>}
     </>}

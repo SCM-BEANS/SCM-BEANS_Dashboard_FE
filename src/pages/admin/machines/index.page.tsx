@@ -7,10 +7,11 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
@@ -30,6 +31,18 @@ const STATUS_LABELS: Record<MachineStatus, string> = {
   PENDING_QA: "Chờ kiểm định",
   AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
   RETIRED: "Đã ngừng sử dụng",
+};
+
+const STATUS_FILTER_LABELS: Record<MachineStatus, string> = {
+  IN_WAREHOUSE: "Trong kho",
+  PENDING_ACTIVATION: "Chờ kích hoạt",
+  DEPLOYED_CONTRACT_OWNER: "Owner hợp đồng",
+  DEPLOYED_STORE_OWNER: "Owner cửa hàng",
+  UNDER_MAINTENANCE: "Bảo trì",
+  REFURBISHING: "Tân trang",
+  PENDING_QA: "Chờ kiểm định",
+  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
+  RETIRED: "Ngừng sử dụng",
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -162,30 +175,42 @@ function MachinesContent() {
             {summary.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(summary.error)}</p><button type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</button></div>}
 
             <section className={styles.panel}>
-              <h2>{T.MACHINES.TITLE}</h2>
-              <div className={styles.operationsButtons} role="group" aria-label={T.MACHINES.STATUS}>
-                <button className={statusFilter === "ALL" ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === "ALL"} onClick={() => setStatusFilter("ALL")}>{T.MACHINES.FILTER_ALL}</button>
-                {STATUSES.map((status) => (
-                  <button className={statusFilter === status ? styles.accountPrimaryButton : styles.accountSecondaryButton} type="button" aria-pressed={statusFilter === status} key={status} onClick={() => setStatusFilter(status)}>{STATUS_LABELS[status]}</button>
-                ))}
+              <div className={styles.machineInventoryHeading}>
+                <h2>{T.MACHINES.TITLE}</h2>
+                {inventory.data && <span className={styles.machineFilterCount} aria-live="polite">{visibleMachines.length} / {inventory.data.length} máy</span>}
+              </div>
+              <div className={styles.machineFilterToolbar}>
+                <label className={styles.machineFilterControl}>
+                  <span className={styles.machineFilterLabel}>Trạng thái</span>
+                  <select
+                    className={styles.machineStatusSelect}
+                    aria-label="Lọc máy theo trạng thái"
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                  >
+                    <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
+                    {STATUSES.map((status) => (
+                      <option value={status} key={status}>{STATUS_FILTER_LABELS[status]}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
               {inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
               {inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
               {inventory.data && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
-              {inventory.data && visibleMachines.length > 0 && <div className={styles.tableScroll}>
-                <table className={styles.operationsTable}>
-                  <thead><tr><th>{T.MACHINES.MACHINE_ID}</th><th>{T.MACHINES.SERIAL}</th><th>{T.MACHINES.STATUS}</th><th>{T.MACHINES.OWNER_ID}</th><th>{T.MACHINES.REGION}</th><th>{T.MACHINES.CONTRACT_PERIOD}</th><th>{T.MACHINES.DEPLOYED_AT}</th></tr></thead>
-                  <tbody>{visibleMachines.map((machine) => <tr key={machine.id}>
-                    <td><Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link></td>
-                    <td>{machine.serialNumber ?? "—"}</td>
-                    <td>{statusLabel(machine.status)}</td>
-                    <td title={machine.ownerId ?? undefined}>{machine.ownerId ?? "—"}</td>
-                    <td>{machine.region ?? "—"}</td>
-                    <td>{formatPeriod(machine.contractStartDate, machine.contractEndDate)}</td>
-                    <td>{formatDate(machine.deployedAt)}</td>
-                  </tr>)}</tbody>
-                </table>
-              </div>}
+              {inventory.data && visibleMachines.length > 0 && <DataTable
+                rows={visibleMachines}
+                rowKey={(machine) => machine.id}
+                columns={[
+                  { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
+                  { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
+                  { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
+                  { key: "owner", header: T.MACHINES.OWNER_ID, render: (machine) => machine.ownerId ?? "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
+                  { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
+                  { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+                  { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, render: (machine) => formatDate(machine.deployedAt) },
+                ]}
+              />}
             </section>
           </>
         )}

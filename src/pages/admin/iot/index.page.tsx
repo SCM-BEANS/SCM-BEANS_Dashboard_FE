@@ -8,11 +8,12 @@ import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const PAGE_SIZE = 20;
 
@@ -110,23 +111,34 @@ function IoTContent() {
             <h2>{T.IOT.STORES}</h2>
             {locations.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
             {locations.data && ownerLocations.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-            {ownerLocations.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}>
-              <thead><tr><th>{T.STORES.NAME}</th><th>{T.STORES.ADDRESS}</th><th>{T.STORES.CITY}</th><th>{T.MACHINES.STATUS}</th></tr></thead>
-              <tbody>{ownerLocations.map((location) => <tr key={location.id}><td>{location.name}</td><td>{location.address ?? "—"}</td><td>{location.city ?? "—"}</td><td>{location.active === undefined ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</td></tr>)}</tbody>
-            </table></div>}
+            {ownerLocations.length > 0 && <DataTable
+              rows={ownerLocations}
+              rowKey={(location) => location.id}
+              columns={[
+                { key: "name", header: T.STORES.NAME, render: (location) => location.name },
+                { key: "address", header: T.STORES.ADDRESS, render: (location) => location.address ?? "—" },
+                { key: "city", header: T.STORES.CITY, render: (location) => location.city ?? "—" },
+                { key: "status", header: T.MACHINES.STATUS, render: (location) => location.active === undefined ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
+              ]}
+            />}
           </section>
 
           <section className={styles.panel}>
             <h2>{T.IOT.OWNER_DETAIL}</h2>
             {machines.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
             {machines.data && ownerMachines.length === 0 && <p className={styles.emptyText}>{T.IOT.NO_SMART_MACHINES}</p>}
-            {ownerMachines.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}>
-              <thead><tr><th>{T.MACHINES.SERIAL}</th><th>{T.IOT.MACHINE_TYPE_CONTRACT}</th><th>{T.MACHINES.STATUS}</th><th>{T.MACHINES.REGION}</th><th>{T.MACHINES.DEPLOYED_AT}</th><th>{T.MACHINES.OPEN_DETAIL}</th></tr></thead>
-              <tbody>{ownerMachines.map((machine) => <tr key={machine.id}>
-                <td>{machine.serialNumber ?? machine.id}</td><td>{machineTypeFor(machine.id, ownerContracts)}</td><td>{machine.status ?? "—"}</td><td>{machine.region ?? "—"}</td><td>{machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—"}</td>
-                <td><Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{T.MACHINES.OPEN_DETAIL}</Link></td>
-              </tr>)}</tbody>
-            </table></div>}
+            {ownerMachines.length > 0 && <DataTable
+              rows={ownerMachines}
+              rowKey={(machine) => machine.id}
+              columns={[
+                { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? machine.id },
+                { key: "type", header: T.IOT.MACHINE_TYPE_CONTRACT, render: (machine) => machineTypeFor(machine.id, ownerContracts) },
+                { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ?? "—" },
+                { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
+                { key: "deployed", header: T.MACHINES.DEPLOYED_AT, render: (machine) => machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—" },
+                { key: "actions", header: T.MACHINES.OPEN_DETAIL, render: (machine) => <Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{T.MACHINES.OPEN_DETAIL}</Link> },
+              ]}
+            />}
             {smartMachineIds.size === 0 && ownerMachines.length > 0 && <p className={styles.panelSubtitle}>{T.IOT.NO_SMART_MACHINES}</p>}
           </section>
         </>}
@@ -154,15 +166,18 @@ function IoTContent() {
       {owners.data && <section className={styles.panel}>
         <h2>{T.IOT.OWNER}</h2>
         {ownerRows.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-        {ownerRows.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}>
-          <thead><tr><th>{T.COMMON.NAME}</th><th>{T.COMMON.EMAIL}</th><th>{T.MACHINES.OWNER_ID}</th><th>{T.IOT.MACHINES}</th><th>{T.IOT.SMART_CONTRACTS}</th><th>{T.IOT.VIEW_OWNER}</th></tr></thead>
-          <tbody>{ownerRows.map((owner) => <tr key={owner.idaasUserId}>
-            <td>{owner.fullName || "—"}</td><td>{owner.email || "—"}</td><td title={owner.idaasUserId}>{owner.idaasUserId.slice(0, 8).toUpperCase()}</td>
-            <td>{machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length)}</td>
-            <td>{contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length)}</td>
-            <td><button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId })}>{T.IOT.VIEW_OWNER}</button></td>
-          </tr>)}</tbody>
-        </table></div>}
+        {ownerRows.length > 0 && <DataTable
+          rows={ownerRows}
+          rowKey={(owner) => owner.idaasUserId}
+          columns={[
+            { key: "name", header: T.COMMON.NAME, render: (owner) => owner.fullName || "—" },
+            { key: "email", header: T.COMMON.EMAIL, render: (owner) => owner.email || "—" },
+            { key: "id", header: T.MACHINES.OWNER_ID, render: (owner) => owner.idaasUserId.slice(0, 8).toUpperCase(), cellProps: (owner) => ({ title: owner.idaasUserId }) },
+            { key: "machines", header: T.IOT.MACHINES, render: (owner) => machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length) },
+            { key: "contracts", header: T.IOT.SMART_CONTRACTS, render: (owner) => contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) },
+            { key: "actions", header: T.IOT.VIEW_OWNER, render: (owner) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId })}>{T.IOT.VIEW_OWNER}</button> },
+          ]}
+        />}
         <div className={styles.operationsPagination}>
           <span>{T.BUSINESSES.PAGE} {page + 1} / {owners.data.totalPages || 1}</span>
           <div><button className={styles.accountSecondaryButton} type="button" disabled={page <= 0} onClick={() => navigate({ page: page - 1 })}>{T.BUSINESSES.PREVIOUS}</button><button className={styles.accountSecondaryButton} type="button" disabled={page >= maxPage} onClick={() => navigate({ page: page + 1 })}>{T.BUSINESSES.NEXT}</button></div>

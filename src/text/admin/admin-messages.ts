@@ -41,6 +41,8 @@ export const ADMIN_MESSAGES = {
   MENU: {
     TITLE: "Menu & công thức",
     DESCRIPTION: "Quản lý công thức áp dụng chung cho các Owner.",
+    CREATE_DESCRIPTION: "Nhập thông tin công thức để phát hành áp dụng toàn cục.",
+    CREATE_FORM_TITLE: "Thông tin công thức",
     RECIPES: "Công thức toàn cục",
     DETAIL: "Chi tiết công thức",
     NAME: "Tên công thức",
@@ -114,6 +116,8 @@ export const ADMIN_MESSAGES = {
   AUTH: {
     CHECKING: "Đang kiểm tra quyền truy cập…",
     FORBIDDEN: "Tài khoản này không có quyền vào khu vực Admin.",
+    LOGOUT: "Đăng xuất",
+    LOGGING_OUT: "Đang đăng xuất…",
     LOGIN: "Đến trang đăng nhập",
     HOME: "Về trang chủ",
   },

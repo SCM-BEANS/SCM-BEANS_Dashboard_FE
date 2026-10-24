@@ -22,4 +22,8 @@ export const authApi = {
     const response = await axiosClient.post<unknown>("/auth/login/mfa", request);
     return LoginSuccessResponseSchema.parse(response.data);
   },
+
+  async logout(): Promise<void> {
+    await axiosClient.post("/auth/logout", {});
+  },
 };

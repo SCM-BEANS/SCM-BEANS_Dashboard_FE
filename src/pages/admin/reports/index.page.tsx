@@ -4,12 +4,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { DataTable } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const countFormatter = new Intl.NumberFormat("vi-VN");
 const amountFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 });
@@ -167,19 +168,14 @@ function ReportContent() {
           <p className={styles.emptyText}>{ADMIN_MESSAGES.OVERVIEW.NO_DAILY_DATA}</p>
         )}
         {overview.data && dailyUsage.length > 0 && (
-          <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead><tr><th>{ADMIN_MESSAGES.OVERVIEW.DATE}</th><th>{ADMIN_MESSAGES.OVERVIEW.CUP_COUNT}</th></tr></thead>
-              <tbody>
-                {dailyUsage.map((day, index) => (
-                  <tr key={(day.date || "unknown") + "-" + index}>
-                    <td>{day.date || "—"}</td>
-                    <td>{day.cups == null ? "—" : countFormatter.format(day.cups)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={dailyUsage}
+            rowKey={(day, index) => `${day.date || "unknown"}-${index}`}
+            columns={[
+              { key: "date", header: ADMIN_MESSAGES.OVERVIEW.DATE, render: (day) => day.date || "—" },
+              { key: "cups", header: ADMIN_MESSAGES.OVERVIEW.CUP_COUNT, render: (day) => day.cups == null ? "—" : countFormatter.format(day.cups) },
+            ]}
+          />
         )}
       </section>
 
@@ -197,32 +193,18 @@ function ReportContent() {
           <p className={styles.emptyText}>{ADMIN_MESSAGES.REPORTS.EMPTY_INVOICES}</p>
         )}
         {invoices.data && rentalInvoices.length > 0 && (
-          <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead>
-                <tr>
-                  <th>{ADMIN_MESSAGES.REPORTS.INVOICE_PERIOD}</th>
-                  <th>{ADMIN_MESSAGES.REPORTS.OWNER_ID}</th>
-                  <th>{ADMIN_MESSAGES.REPORTS.CONTRACT_ID}</th>
-                  <th>{ADMIN_MESSAGES.REPORTS.AMOUNT}</th>
-                  <th>{ADMIN_MESSAGES.REPORTS.STATUS}</th>
-                  <th>{ADMIN_MESSAGES.REPORTS.CREATED}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rentalInvoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td>{invoice.period}</td>
-                    <td>{invoice.ownerId}</td>
-                    <td>{invoice.contractId}</td>
-                    <td>{displayAmount(invoice.amount, invoice.currency)}</td>
-                    <td>{invoice.status}</td>
-                    <td>{invoice.createdAt || invoice.dueDate || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={rentalInvoices}
+            rowKey={(invoice) => invoice.id}
+            columns={[
+              { key: "period", header: ADMIN_MESSAGES.REPORTS.INVOICE_PERIOD, render: (invoice) => invoice.period },
+              { key: "owner", header: ADMIN_MESSAGES.REPORTS.OWNER_ID, render: (invoice) => invoice.ownerId },
+              { key: "contract", header: ADMIN_MESSAGES.REPORTS.CONTRACT_ID, render: (invoice) => invoice.contractId },
+              { key: "amount", header: ADMIN_MESSAGES.REPORTS.AMOUNT, render: (invoice) => displayAmount(invoice.amount, invoice.currency) },
+              { key: "status", header: ADMIN_MESSAGES.REPORTS.STATUS, render: (invoice) => invoice.status },
+              { key: "created", header: ADMIN_MESSAGES.REPORTS.CREATED, render: (invoice) => invoice.createdAt || invoice.dueDate || "—" },
+            ]}
+          />
         )}
       </section>
     </div>

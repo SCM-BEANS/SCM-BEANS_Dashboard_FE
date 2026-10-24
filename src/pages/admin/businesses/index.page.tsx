@@ -7,9 +7,10 @@ import { adminUsersApi } from "@/apis/admin-users.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { AdminUserIdSchema } from "@/schema/admin-users.schema";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 function queryValue(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
@@ -94,13 +95,16 @@ function BusinessesContent() {
               {ownerContracts.isPending && <p role="status">{T.COMMON.LOADING}</p>}
               {ownerContracts.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(ownerContracts.error)} <button type="button" onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button></div>}
               {ownerContracts.data && ownerContracts.data.items.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-              {ownerContracts.data && ownerContracts.data.items.length > 0 && <div className={styles.tableScroll}><table className={styles.operationsTable}>
-                <thead><tr><th>Hợp đồng</th><th>Máy</th><th>Thời hạn</th><th>Trạng thái</th></tr></thead>
-                <tbody>{ownerContracts.data.items.map((contract, index) => <tr key={contract.id ?? contract.contractId ?? index}>
-                  <td>{contract.id ?? contract.contractId ?? "—"}</td><td>{contract.machineId ?? "—"}</td>
-                  <td>{contract.startDate ?? "—"} – {contract.endDate ?? "—"}</td><td>{contract.status ?? "—"}</td>
-                </tr>)}</tbody>
-              </table></div>}
+              {ownerContracts.data && ownerContracts.data.items.length > 0 && <DataTable
+                rows={ownerContracts.data.items}
+                rowKey={(contract, index) => contract.id ?? contract.contractId ?? index}
+                columns={[
+                  { key: "contract", header: "Hợp đồng", render: (contract) => contract.id ?? contract.contractId ?? "—" },
+                  { key: "machine", header: "Máy", render: (contract) => contract.machineId ?? "—" },
+                  { key: "period", header: "Thời hạn", render: (contract) => `${contract.startDate ?? "—"} – ${contract.endDate ?? "—"}` },
+                  { key: "status", header: "Trạng thái", render: (contract) => contract.status ?? "—" },
+                ]}
+              />}
               {ownerContracts.data && ownerContracts.data.totalPages > 1 && <div className={styles.operationsPagination}>
                 <span>{T.BUSINESSES.PAGE} {ownerContracts.data.page + 1}/{ownerContracts.data.totalPages}</span>
                 <div><button className={styles.accountSecondaryButton} type="button" disabled={contractPage <= 0} onClick={() => navigate({ view: "detail", id: ownerId, q: queryValue(router.query.q), status, page, contractPage: contractPage - 1 })}>{T.BUSINESSES.PREVIOUS}</button>
@@ -122,13 +126,19 @@ function BusinessesContent() {
         {list.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><button type="button" onClick={() => void list.refetch()}>{T.COMMON.RETRY}</button></div>}
         {list.data && <section className={styles.panel}>
           <h2>{list.data.total} khách hàng</h2>
-          {list.data.items.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <div className={styles.tableScroll}><table className={styles.operationsTable}>
-            <thead><tr><th>{T.COMMON.OWNER}</th><th>Email</th><th>Trạng thái</th><th>Ngày tạo</th><th /></tr></thead>
-            <tbody>{list.data.items.map((owner) => <tr key={owner.id}>
-              <td>{owner.name || "—"}</td><td>{owner.email || "—"}</td><td>{owner.status}</td><td>{formatDate(owner.created_at)}</td>
-              <td><button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: owner.id, q: queryValue(router.query.q), status, page })}>Chi tiết</button></td>
-            </tr>)}</tbody>
-          </table></div>}
+          {list.data.items.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+            rows={list.data.items}
+            rowKey={(owner) => owner.id}
+            columns={[
+              { key: "owner", header: T.COMMON.OWNER, render: (owner) => owner.name || "—" },
+              { key: "email", header: "Email", render: (owner) => owner.email || "—" },
+              { key: "status", header: "Trạng thái", render: (owner) => owner.status },
+              { key: "created", header: "Ngày tạo", render: (owner) => formatDate(owner.created_at) },
+              { key: "actions", header: "", render: (owner) => (
+                <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: owner.id, q: queryValue(router.query.q), status, page })}>Chi tiết</button>
+              ) },
+            ]}
+          />}
           <div className={styles.operationsPagination}>
             <span>{T.BUSINESSES.PAGE} {page}/{totalPages}</span>
             <div><button className={styles.accountSecondaryButton} type="button" disabled={page <= 1} onClick={() => navigate({ q: queryValue(router.query.q), status, page: page - 1 })}>{T.BUSINESSES.PREVIOUS}</button>

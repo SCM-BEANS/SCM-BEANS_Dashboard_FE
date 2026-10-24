@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { tenantsApi } from "@/apis/tenants.api";
 import { PATH_ADMIN } from "@/routes/path";
@@ -19,7 +20,7 @@ import {
   type AdminUserUpdate,
 } from "@/schema/admin-users.schema";
 import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 type View = "list" | "create" | "detail";
 type FormState = { name: string; email: string; role: AdminUserRole | ""; tenantId: string };
@@ -404,32 +405,27 @@ function AdminUsersContent() {
           <p>{T.LIST.EMPTY}</p>
         ) : (
           <>
-            <div className={styles.accountTableScroll}>
-              <table className={styles.accountTable}>
-                <thead><tr>
-                  <th>{T.FORM.NAME}</th><th>Email</th><th>{T.FORM.ROLE}</th>
-                  <th>Phạm vi tenant</th><th>{T.FORM.STATUS}</th><th></th>
-                </tr></thead>
-                <tbody>
-                  {listQuery.data.items.map((entry) => {
-                    const entryRole = supportedRole(entry);
-                    const tenantLabel = entry.tenant_id
-                      ? tenantNames.get(entry.tenant_id) ?? entry.tenant_id
-                      : entryRole === "owner" ? T.FORM.TENANT_UNASSIGNED : T.FORM.GLOBAL_SCOPE;
-                    return (
-                      <tr key={entry.id}>
-                        <td><strong>{entry.name}</strong></td>
-                        <td>{entry.email}</td>
-                        <td>{entryRole ? roleLabels[entryRole] : entry.roles.join(", ")}</td>
-                        <td>{tenantLabel}</td>
-                        <td>{entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</td>
-                        <td><button className={styles.accountTextButton} type="button" onClick={() => openDetail(entry.id)}>{T.LIST.DETAIL}</button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              variant="accounts"
+              rows={listQuery.data.items}
+              rowKey={(entry) => entry.id}
+              columns={[
+                { key: "name", header: T.FORM.NAME, render: (entry) => <strong>{entry.name}</strong> },
+                { key: "email", header: "Email", render: (entry) => entry.email },
+                { key: "role", header: T.FORM.ROLE, render: (entry) => {
+                  const role = supportedRole(entry);
+                  return role ? roleLabels[role] : entry.roles.join(", ");
+                } },
+                { key: "tenant", header: "Phạm vi tenant", render: (entry) => {
+                  const role = supportedRole(entry);
+                  return entry.tenant_id
+                    ? tenantNames.get(entry.tenant_id) ?? entry.tenant_id
+                    : role === "owner" ? T.FORM.TENANT_UNASSIGNED : T.FORM.GLOBAL_SCOPE;
+                } },
+                { key: "status", header: T.FORM.STATUS, render: (entry) => entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED },
+                { key: "actions", header: "", render: (entry) => <button className={styles.accountTextButton} type="button" onClick={() => openDetail(entry.id)}>{T.LIST.DETAIL}</button> },
+              ]}
+            />
             <div className={styles.accountPagination}>
               <span>{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} / {total} tài khoản</span>
               <div>

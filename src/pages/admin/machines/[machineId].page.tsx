@@ -5,6 +5,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
@@ -220,12 +221,16 @@ function MachineDetailContent() {
           {points.data && telemetryPoints.length === 0 && <p className={styles.emptyText}>{T.MACHINES.NO_POINTS}</p>}
           {telemetryPoints.length > 0 && <>
             <p className={styles.panelSubtitle}>{formatNumber(telemetryPoints.length)} điểm đã tải.</p>
-            <div className={styles.tableScroll}><table className={styles.operationsTable}>
-              <thead><tr><th>{T.MACHINES.POINT_TIME}</th><th>{T.MACHINES.FIELD}</th><th>{T.MACHINES.VALUE}</th><th>Sub-state</th></tr></thead>
-              <tbody>{telemetryPoints.map((point, index) => <tr key={`${point.timestamp}-${point.field}-${index}`}>
-                <td>{formatDate(point.timestamp, true)}</td><td>{point.field}</td><td>{formatTelemetryValue(point.value)}</td><td>{point.subState ?? "—"}</td>
-              </tr>)}</tbody>
-            </table></div>
+            <DataTable
+              rows={telemetryPoints}
+              rowKey={(point, index) => `${point.timestamp}-${point.field}-${index}`}
+              columns={[
+                { key: "time", header: T.MACHINES.POINT_TIME, render: (point) => formatDate(point.timestamp, true) },
+                { key: "field", header: T.MACHINES.FIELD, render: (point) => point.field },
+                { key: "value", header: T.MACHINES.VALUE, render: (point) => formatTelemetryValue(point.value) },
+                { key: "sub-state", header: "Sub-state", render: (point) => point.subState ?? "—" },
+              ]}
+            />
             {points.hasNextPage && <button className={styles.accountSecondaryButton} type="button" disabled={points.isFetchingNextPage} onClick={() => void points.fetchNextPage()}>{points.isFetchingNextPage ? T.COMMON.LOADING : T.MACHINES.MORE}</button>}
           </>}
         </section>

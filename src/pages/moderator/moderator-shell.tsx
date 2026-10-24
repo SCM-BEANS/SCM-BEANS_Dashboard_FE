@@ -140,10 +140,8 @@ export function ModeratorShell({
   );
   const renderBreadcrumb = () => (
     <AdminBreadcrumb
-      className={styles.breadcrumb}
       rootLabel={MODERATOR_MESSAGES.ROLE}
-      rootHref={PATH_MODERATOR.ROOT}
-      currentLabel={pageTitle || currentSection.LABEL}
+      currentLabel={currentSection.LABEL}
     />
   );
   const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;

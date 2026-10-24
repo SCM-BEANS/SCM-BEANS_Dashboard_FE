@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { notificationsApi } from "@/apis/notifications.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { DataTable } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import type { Notification } from "@/schema/notifications.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import { AdminShell, adminStyles as styles } from "./admin-shell";
+import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const NOTIFICATIONS_QUERY_KEY = ["dolores", "notifications"] as const;
 const ALERTS_QUERY_KEY = ["dolores", "alerts"] as const;
@@ -63,44 +64,31 @@ function NotificationContent() {
           <p className={styles.emptyText}>{ADMIN_MESSAGES.NOTIFICATIONS.EMPTY_NOTIFICATIONS}</p>
         )}
         {notifications.data && notifications.data.length > 0 && (
-          <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead>
-                <tr>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.SUBJECT}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.OWNER_ID}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.TIME}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.STATUS}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.MARK_READ}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notifications.data.map((item) => (
-                  <tr key={item.id}>
-                    <td><strong>{item.title}</strong><br />{item.message}</td>
-                    <td>{item.ownerId || "—"}</td>
-                    <td>{item.createdAt}</td>
-                    <td>{item.read ? ADMIN_MESSAGES.NOTIFICATIONS.READ : ADMIN_MESSAGES.NOTIFICATIONS.UNREAD}</td>
-                    <td>
-                      <button
-                        className={styles.accountSecondaryButton}
-                        type="button"
-                        disabled={item.read || markRead.isPending}
-                        onClick={() => {
-                          setStatusMessage("");
-                          markRead.mutate(item.id);
-                        }}
-                      >
-                        {markRead.isPending && markRead.variables === item.id
-                          ? ADMIN_MESSAGES.NOTIFICATIONS.MARKING_READ
-                          : ADMIN_MESSAGES.NOTIFICATIONS.MARK_READ}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={notifications.data}
+            rowKey={(item) => item.id}
+            columns={[
+              { key: "subject", header: ADMIN_MESSAGES.NOTIFICATIONS.SUBJECT, render: (item) => <><strong>{item.title}</strong><br />{item.message}</> },
+              { key: "owner", header: ADMIN_MESSAGES.NOTIFICATIONS.OWNER_ID, render: (item) => item.ownerId || "—" },
+              { key: "time", header: ADMIN_MESSAGES.NOTIFICATIONS.TIME, render: (item) => item.createdAt },
+              { key: "status", header: ADMIN_MESSAGES.NOTIFICATIONS.STATUS, render: (item) => item.read ? ADMIN_MESSAGES.NOTIFICATIONS.READ : ADMIN_MESSAGES.NOTIFICATIONS.UNREAD },
+              { key: "mark-read", header: ADMIN_MESSAGES.NOTIFICATIONS.MARK_READ, render: (item) => (
+                <button
+                  className={styles.accountSecondaryButton}
+                  type="button"
+                  disabled={item.read || markRead.isPending}
+                  onClick={() => {
+                    setStatusMessage("");
+                    markRead.mutate(item.id);
+                  }}
+                >
+                  {markRead.isPending && markRead.variables === item.id
+                    ? ADMIN_MESSAGES.NOTIFICATIONS.MARKING_READ
+                    : ADMIN_MESSAGES.NOTIFICATIONS.MARK_READ}
+                </button>
+              ) },
+            ]}
+          />
         )}
       </section>
 
@@ -118,30 +106,17 @@ function NotificationContent() {
           <p className={styles.emptyText}>{ADMIN_MESSAGES.NOTIFICATIONS.EMPTY_ALERTS}</p>
         )}
         {alerts.data && alerts.data.length > 0 && (
-          <div className={styles.tableScroll}>
-            <table className={styles.operationsTable}>
-              <thead>
-                <tr>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.LEVEL}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.MACHINE_ID}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.TIME}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.CONTENT}</th>
-                  <th>{ADMIN_MESSAGES.NOTIFICATIONS.STATUS}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.data.map((alert) => (
-                  <tr key={alert.id}>
-                    <td>{alert.level}</td>
-                    <td>{alert.machineId || "—"}</td>
-                    <td>{alert.ts}</td>
-                    <td>{alert.message}</td>
-                    <td>{alert.acknowledged ? ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACKNOWLEDGED : ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACTIVE}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            rows={alerts.data}
+            rowKey={(alert) => alert.id}
+            columns={[
+              { key: "level", header: ADMIN_MESSAGES.NOTIFICATIONS.LEVEL, render: (alert) => alert.level },
+              { key: "machine", header: ADMIN_MESSAGES.NOTIFICATIONS.MACHINE_ID, render: (alert) => alert.machineId || "—" },
+              { key: "time", header: ADMIN_MESSAGES.NOTIFICATIONS.TIME, render: (alert) => alert.ts },
+              { key: "content", header: ADMIN_MESSAGES.NOTIFICATIONS.CONTENT, render: (alert) => alert.message },
+              { key: "status", header: ADMIN_MESSAGES.NOTIFICATIONS.STATUS, render: (alert) => alert.acknowledged ? ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACKNOWLEDGED : ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACTIVE },
+            ]}
+          />
         )}
       </section>
     </div>

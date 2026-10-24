@@ -1,0 +1,91 @@
+.container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.moderatorContainer {
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.operations {
+  min-width: 680px;
+}
+
+.accounts {
+  min-width: 760px;
+}
+
+.standard {
+  min-width: 400px;
+}
+
+.moderator {
+  min-width: 680px;
+}
+
+.table.moderator th,
+.table.moderator td {
+  padding: 14px 16px;
+  vertical-align: top;
+}
+
+.table.moderator th {
+  background: #f8f6f3;
+  color: #706561;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.table.moderator td {
+  border-top: 1px solid #eee8e3;
+  border-bottom: 0;
+  color: #302927;
+  font-size: 14px;
+}
+
+.table th {
+  padding: 12px 10px;
+  background: #f7f5f3;
+  color: #706561;
+  font-weight: 600;
+}
+
+.standard th {
+  padding: 14px 10px;
+}
+
+.table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f0ece8;
+  overflow-wrap: anywhere;
+}
+
+.accounts th {
+  padding: 12px 10px;
+}
+
+.accounts td {
+  padding: 11px 10px;
+}
+
+.standard td {
+  padding: 15px 10px;
+}
+
+@media (max-width: 1023px) {
+  .moderator {
+    min-width: 620px;
+  }
+}
+
+
+

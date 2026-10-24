@@ -32,6 +32,9 @@
 .navItemActive { background: #f9e9ea; color: #b81724 !important; font-weight: 600; }
 .navItemDisabled { cursor: not-allowed; opacity: .48; }
 .sidebarFootnote { margin: 16px 8px 0; color: #706561; font-size: 12px; line-height: 1.5; }
+.shell .logoutButton { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; margin-top: 12px; padding: 0 14px; border: 1px solid #f0d9da; border-radius: 10px; background: #fff; color: #a91d26; font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.logoutButton:hover:not(:disabled) { border-color: #dfb8bb; background: #fdf4f4; }
+.logoutButton:disabled { cursor: wait; opacity: .6; }
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 .desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: white; color: #706561; font-size: 14px; }
@@ -63,10 +66,6 @@
 .panel { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .panel h2 { margin: 0 0 14px; font-size: 19px; }
 .panelSubtitle, .emptyText { margin: 0 0 14px; color: #706561; font-size: 14px; line-height: 1.5; }
-.tableScroll { width: 100%; overflow-x: auto; }
-.tableScroll table { width: 100%; min-width: 400px; border-collapse: collapse; text-align: left; font-size: 14px; }
-.tableScroll th { padding: 14px 10px; background: #f7f5f3; color: #706561; font-weight: 600; }
-.tableScroll td { padding: 15px 10px; border-bottom: 1px solid #f0ece8; }
 .financeGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .financeGrid div { display: flex; flex-direction: column; gap: 6px; }
 .financeGrid strong { overflow-wrap: anywhere; font-size: 15px; }
@@ -91,10 +90,6 @@
 .accountTextButton { min-height: 40px; border: 0; background: transparent; color: #b81724; font: inherit; font-weight: 600; cursor: pointer; }
 .accountTextButton:hover { text-decoration: underline; }
 .accountInlineWarning { margin: 12px 0; color: #9a301d; font-size: 14px; line-height: 1.5; }
-.accountTableScroll { width: 100%; overflow-x: auto; }
-.accountTable { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; font-size: 14px; }
-.accountTable th { padding: 12px 10px; background: #f7f5f3; color: #706561; font-weight: 600; }
-.accountTable td { padding: 11px 10px; border-bottom: 1px solid #f0ece8; overflow-wrap: anywhere; }
 .accountPagination, .accountPagination > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .accountPagination { justify-content: space-between; margin-top: 18px; color: #706561; font-size: 13px; }
 .accountPagination label { display: inline-flex; align-items: center; gap: 6px; }
@@ -129,12 +124,17 @@
 .contractCheckboxGroup label, .contractCheckbox { display: flex; align-items: center; gap: 8px; color: #302927; font-size: 14px; }
 .operationsGrid > label.contractCheckbox { flex-direction: row; align-items: center; }
 .contractCheckboxGroup input, .contractCheckbox input { width: 18px; min-width: 18px; min-height: 18px; margin: 0; padding: 0; accent-color: #8a5a44; }
-.operationsTable { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; font-size: 14px; }
-.operationsTable th { padding: 12px 10px; background: #f7f5f3; color: #706561; font-weight: 600; }
-.operationsTable td { padding: 12px 10px; border-bottom: 1px solid #f0ece8; overflow-wrap: anywhere; }
 .operationsPagination, .operationsPagination > div, .operationsButtons { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .operationsPagination { justify-content: space-between; margin-top: 18px; color: #706561; font-size: 13px; }
 .operationsButtons { margin-top: 20px; }
+.machineInventoryHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.machineInventoryHeading h2 { margin: 0; }
+.machineFilterCount { padding: 5px 10px; border: 1px solid #eee8e3; border-radius: 999px; background: #f8f6f4; color: #706561; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.machineFilterToolbar { display: flex; align-items: center; margin-bottom: 18px; }
+.machineFilterControl { display: inline-flex; align-items: center; gap: 12px; }
+.machineFilterLabel { color: #706561; font-size: 13px; font-weight: 600; }
+.machineStatusSelect { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; font-size: 14px; cursor: pointer; }
+.machineStatusSelect:focus-visible { border-color: #b81724; outline: 3px solid #b8172433; outline-offset: 2px; }
 .operationsNotice { padding: 14px 16px; border-radius: 10px; background: #fff2e6; color: #693c2c; font-size: 14px; line-height: 1.5; }
 .operationsNotice button { min-height: 36px; margin-left: 8px; padding: 0 10px; border: 1px solid #e9e2dc; border-radius: 8px; background: white; color: #302927; cursor: pointer; }
 .operationsDialogBackdrop { position: fixed; z-index: 35; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; background: #30292766; }
@@ -163,7 +163,7 @@
   .mobileMenu { display: flex; width: 100%; max-height: 82vh; flex-direction: column; padding: 20px 16px 24px; border-radius: 20px 20px 0 0; background: white; }
   .mobileMenuHeader { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 14px; }
   .mobileMenuHeader button { display: flex; width: 38px; height: 38px; align-items: center; justify-content: center; border: 0; background: transparent; }
-  .mobileMenuNav { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .mobileMenuNav { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 4px; overflow-y: auto; }
   .pageContent { gap: 16px; padding: 20px 16px 144px; }
   .pageHeading { flex-direction: column; }
   .pageHeading h1 { font-size: 24px; }
@@ -181,6 +181,8 @@
   .metricCard { min-height: 94px; gap: 10px; padding: 14px; }
   .metricCard strong { font-size: 19px; }
   .panel { padding: 18px 16px; }
+  .machineFilterControl { width: 100%; justify-content: space-between; gap: 10px; }
+  .machineStatusSelect { min-width: 0; flex: 1; }
   .financeGrid { gap: 16px; }
   .accountFilters, .accountFormGrid { grid-template-columns: 1fr; }
   .operationsFilters, .operationsGrid { grid-template-columns: 1fr; }
