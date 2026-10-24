@@ -1,4 +1,4 @@
-import { PATH_ADMIN, PATH_HOME } from "@/routes/path";
+import { PATH_ADMIN, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
 
 function readRoles(accessToken: string): string[] {
   try {
@@ -26,6 +26,14 @@ export function hasAdminRole(accessToken: string): boolean {
   );
 }
 
+export function hasModeratorRole(accessToken: string): boolean {
+  return readRoles(accessToken).some(
+    (role) => role.trim().toUpperCase().replace(/^ROLE_/, "") === "MODERATOR",
+  );
+}
+
 export function getPostLoginPath(accessToken: string): string {
-  return hasAdminRole(accessToken) ? PATH_ADMIN.ROOT : PATH_HOME.ROOT;
+  if (hasAdminRole(accessToken)) return PATH_ADMIN.ROOT;
+  if (hasModeratorRole(accessToken)) return PATH_MODERATOR.ROOT;
+  return PATH_HOME.ROOT;
 }

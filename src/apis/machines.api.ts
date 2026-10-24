@@ -4,6 +4,7 @@ import {
   MachineIdSchema,
   MachineInventorySchema,
   MachineSchema,
+  MaintenanceTicketListSchema,
   MaintenanceScheduleSchema,
 } from "@/schema/machines.schema";
 
@@ -47,5 +48,12 @@ export const machinesApi = {
       signal,
     });
     return MaintenanceScheduleSchema.parse(response.data);
+  },
+  async listMaintenanceTickets(signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>("/maintenance-tickets", {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
+    return MaintenanceTicketListSchema.parse(response.data);
   },
 };

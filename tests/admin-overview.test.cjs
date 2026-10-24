@@ -59,12 +59,19 @@ test("admin role routing accepts IDaaS roles and rejects malformed tokens", () =
     "@/routes/path": {
       PATH_ADMIN: { ROOT: "/admin" },
       PATH_HOME: { ROOT: "/" },
+      PATH_MODERATOR: { ROOT: "/moderator" },
     },
   });
 
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["admin"])), "/admin");
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["ROLE_ADMIN"])), "/admin");
+  assert.equal(roles.hasModeratorRole(tokenWithRoles(["moderator"])), true);
+  assert.equal(roles.hasModeratorRole(tokenWithRoles(["ROLE_MODERATOR"])), true);
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["moderator"])), "/moderator");
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["ROLE_MODERATOR"])), "/moderator");
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["owner"])), "/");
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["admin", "moderator"])), "/admin");
+  assert.equal(roles.hasModeratorRole("invalid"), false);
   assert.equal(roles.hasAdminRole("invalid"), false);
 });
 

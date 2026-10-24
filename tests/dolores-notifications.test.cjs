@@ -1,124 +1,124 @@
-const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
-const test = require('node:test');
-const ts = require('typescript');
-const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
+const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+const test = require("node:test");
+const ts = require("typescript");
 
 function loadTypescript(relativePath, mocks = {}) {
-  const fileName = join(__dirname, '..', relativePath);
-  const source = readFileSync(fileName, 'utf8');
+  const fileName = join(__dirname, "..", relativePath);
+  const source = readFileSync(fileName, "utf8");
   const { outputText } = ts.transpileModule(source, {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
   const module = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
-  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
+  new Function("require", "exports", "module", outputText)(mockedRequire, module.exports, module);
   return module.exports;
 }
 
-const notificationId = '00000000-0000-4000-8000-000000000001';
-const tenantId = '00000000-0000-4000-8000-000000000002';
-const machineId = '00000000-0000-4000-8000-000000000003';
-const schemas = loadTypescript('src/schemas/dolores/notifications.ts');
+const notificationId = "00000000-0000-4000-8000-000000000001";
+const machineId = "00000000-0000-4000-8000-000000000003";
+const schemas = loadTypescript("src/schema/notifications.schema.ts", { zod: require("zod") });
 
-test('notification and alert schemas accept documented DTOs and reject invalid state types', () => {
+test("notification and alert schemas validate server records including nullable timestamps", () => {
   const notification = {
     id: notificationId,
-    tenantId,
-    title: 'Bảo trì đến hạn',
-    message: 'Máy cần được kiểm tra.',
-    type: 'MAINTENANCE',
+    ownerId: null,
+    title: "Maintenance due",
+    message: "Machine needs service.",
+    type: "MAINTENANCE",
     read: false,
-    createdAt: '2026-10-21T10:15:00+07:00',
+    createdAt: null,
   };
-  const globalNotification = { ...notification, tenantId: null, createdAt: null };
   const alert = {
     id: notificationId,
-    level: 'HIGH',
+    level: "HIGH",
     machineId,
-    message: 'Máy mất kết nối.',
+    message: "Machine disconnected.",
     acknowledged: false,
-    ts: '2026-10-21T10:15:00',
+    ts: "2026-10-21T10:15:00Z",
   };
 
-  assert.deepEqual(schemas.NotificationsSchema.parse([notification, globalNotification]), [notification, globalNotification]);
-  assert.deepEqual(schemas.AlertsSchema.parse([{ ...alert, machineId: null }]), [{ ...alert, machineId: null }]);
-  assert.equal(schemas.NotificationSchema.safeParse({ ...notification, read: 'false' }).success, false);
-  assert.equal(schemas.AlertSchema.safeParse({ ...alert, acknowledged: 'false' }).success, false);
+  assert.deepEqual(schemas.NotificationsSchema.parse([notification]), [notification]);
+  assert.deepEqual(schemas.AlertsSchema.parse([alert]), [alert]);
+  assert.equal(schemas.NotificationSchema.safeParse({ ...notification, read: "false" }).success, false);
+  assert.equal(schemas.AlertSchema.safeParse({ ...alert, acknowledged: "false" }).success, false);
 });
 
-test('notification and alert APIs expose only documented list, unread-count, and mark-read routes', async () => {
-  const responses = [];
-  const axiosMock = createDoloresAxiosMock(responses);
-  const { calls } = axiosMock;
-  const mocks = {
-    './client': axiosMock.module,
-    '@/schemas/dolores/notifications': schemas,
-  };
-  const { notificationsApi } = loadTypescript('src/apis/dolores/notifications.api.ts', mocks);
-  const { alertsApi } = loadTypescript('src/apis/dolores/alerts.api.ts', mocks);
-  const signal = new AbortController().signal;
-
-  responses.push([]);
-  await notificationsApi.list(signal);
-  responses.push({ id: notificationId, tenantId, title: 'Test', message: 'Test', type: 'SYSTEM', read: true, createdAt: null });
-  await notificationsApi.markAsRead(notificationId);
-  responses.push([]);
-  await alertsApi.list(signal);
-
-  assert.deepEqual(calls.map(({ config }) => [config.method, config.url, config.signal]), [
-    ['GET', '/notifications', signal],
-    ['POST', '/notifications/' + notificationId + '/read', undefined],
-    ['GET', '/alerts', signal],
-  ]);
-  assert.deepEqual(Object.keys(notificationsApi), ['list', 'unreadCount', 'markAsRead']);
-  assert.deepEqual(Object.keys(alertsApi), ['list']);
-  await assert.rejects(async () => notificationsApi.markAsRead('not-a-uuid'));
-});
-
-test('moderator unread notification count uses the documented response and route', async () => {
-  const response = { unreadCount: 3 };
-  const axiosMock = createDoloresAxiosMock([response]);
-  const { calls } = axiosMock;
-  const mocks = {
-    './client': axiosMock.module,
-    '@/schemas/dolores/notifications': schemas,
-  };
-  const { notificationsApi } = loadTypescript('src/apis/dolores/notifications.api.ts', mocks);
-  const { NotificationUnreadCountSchema } = schemas;
-
-  assert.deepEqual(NotificationUnreadCountSchema.parse(response), response);
-  assert.equal(NotificationUnreadCountSchema.safeParse({ unreadCount: -1 }).success, false);
-  assert.deepEqual(await notificationsApi.unreadCount(), response);
-  assert.deepEqual(calls.map(({ config }) => config), [
-    { method: 'GET', url: '/notifications/unread-count', signal: undefined },
-  ]);
-});
-
-test('moderator unread notification query has its own cache identity and forwards cancellation', async () => {
-  const queryOptions = [];
-  const response = { unreadCount: 3 };
-  const { useUnreadNotificationCount, notificationQueryKeys } = loadTypescript(
-    'src/hooks/dolores/useNotifications.ts',
-    {
-      '@tanstack/react-query': {
-        useQuery: (options) => { queryOptions.push(options); return options; },
-      },
-      '@/apis/dolores/notifications.api': {
-        notificationsApi: { unreadCount: async (signal) => ({ ...response, signal }) },
-      },
-      '@/schemas/dolores/notifications': schemas,
-      './queryPolicy': { retryDoloresRead: () => false },
-    }
+test("unread-count schema accepts a nonnegative integer only", () => {
+  assert.deepEqual(
+    schemas.NotificationUnreadCountSchema.parse({ unreadCount: 3, source: "Dolores" }),
+    { unreadCount: 3, source: "Dolores" },
   );
+  assert.equal(schemas.NotificationUnreadCountSchema.safeParse({ unreadCount: -1 }).success, false);
+  assert.equal(schemas.NotificationUnreadCountSchema.safeParse({ unreadCount: 1.5 }).success, false);
+  assert.equal(schemas.NotificationUnreadCountSchema.safeParse({ unreadCount: "3" }).success, false);
+});
+
+test("shared Dolores notification API reads records and marks one UUID notification as read", async () => {
+  const calls = [];
+  let postResponse = {
+    id: notificationId,
+    ownerId: null,
+    title: "Maintenance due",
+    message: "Machine needs service.",
+    type: "MAINTENANCE",
+    read: true,
+    createdAt: null,
+  };
+  const responses = {
+    "/notifications": [{
+      id: notificationId,
+      ownerId: null,
+      title: "Maintenance due",
+      message: "Machine needs service.",
+      type: "MAINTENANCE",
+      read: false,
+      createdAt: null,
+    }],
+    "/notifications/unread-count": { unreadCount: 1 },
+    "/alerts": [{
+      id: notificationId,
+      level: "HIGH",
+      machineId,
+      message: "Machine disconnected.",
+      acknowledged: false,
+      ts: "2026-10-21T10:15:00Z",
+    }],
+  };
+  const axiosClient = {
+    get: async (url, config) => {
+      calls.push({ method: "GET", url, ...config });
+      return { data: responses[url] };
+    },
+    post: async (url, data, config) => {
+      calls.push({ method: "POST", url, data, ...config });
+      return { data: postResponse };
+    },
+  };
+  const { notificationsApi } = loadTypescript("src/apis/notifications.api.ts", {
+    "@/lib/http": { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" },
+    "@/schema/notifications.schema": schemas,
+  });
   const signal = new AbortController().signal;
 
-  const query = useUnreadNotificationCount();
+  assert.equal((await notificationsApi.list(signal)).length, 1);
+  assert.deepEqual(await notificationsApi.unreadCount(signal), { unreadCount: 1 });
+  assert.equal((await notificationsApi.listAlerts(signal)).length, 1);
+  assert.deepEqual(await notificationsApi.markAsRead(notificationId), postResponse);
+  assert.deepEqual(calls, [
+    { method: "GET", url: "/notifications", baseURL: "/api/dolores/v1", signal },
+    { method: "GET", url: "/notifications/unread-count", baseURL: "/api/dolores/v1", signal },
+    { method: "GET", url: "/alerts", baseURL: "/api/dolores/v1", signal },
+    { method: "POST", url: "/notifications/" + notificationId + "/read", data: undefined, baseURL: "/api/dolores/v1" },
+  ]);
+  await assert.rejects(notificationsApi.markAsRead("not-a-uuid"), /uuid/i);
+  assert.equal(calls.filter((call) => call.method === "POST").length, 1);
 
-  assert.deepEqual(notificationQueryKeys.unreadCount(), ['dolores', 'notifications', 'unread-count']);
-  assert.deepEqual(query.queryKey, notificationQueryKeys.unreadCount());
-  assert.deepEqual(await query.queryFn({ signal }), { ...response, signal });
-  assert.equal(queryOptions.length, 1);
+  postResponse = { ...postResponse, read: false };
+  await assert.rejects(notificationsApi.markAsRead(notificationId), /did not confirm/i);
+  postResponse = { ...postResponse, id: machineId, read: true };
+  await assert.rejects(notificationsApi.markAsRead(notificationId), /did not confirm/i);
+  assert.equal(typeof notificationsApi.markAsRead, "function");
 });

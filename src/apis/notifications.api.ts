@@ -4,6 +4,7 @@ import {
   AlertsSchema,
   NotificationIdSchema,
   NotificationSchema,
+  NotificationUnreadCountSchema,
   NotificationsSchema,
 } from "@/schema/notifications.schema";
 
@@ -14,6 +15,14 @@ export const notificationsApi = {
       signal,
     });
     return NotificationsSchema.parse(response.data);
+  },
+
+  async unreadCount(signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>("/notifications/unread-count", {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
+    return NotificationUnreadCountSchema.parse(response.data);
   },
 
   async listAlerts(signal?: AbortSignal) {

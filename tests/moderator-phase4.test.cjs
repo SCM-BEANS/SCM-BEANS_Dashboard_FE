@@ -5,7 +5,6 @@ const test = require('node:test');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const ts = require('typescript');
-const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
@@ -44,7 +43,7 @@ const invoice = {
   currency: 'VND',
   dueDate: '2026-10-31',
   lineItems: '[{"description":"Monthly rental","amount":1250000}]',
-  paidAt: '2026-10-20T10:00:00',
+  paidAt: '2026-10-20T10:00:00Z',
 };
 const proof = {
   id: proofId,
@@ -58,7 +57,7 @@ const proof = {
   sha256: 'abc123',
   status: 'SUBMITTED',
   submittedBy: 'tenant@example.test',
-  submittedAt: '2026-10-20T10:00:00',
+  submittedAt: '2026-10-20T10:00:00Z',
   reviewedBy: null,
   reviewedAt: null,
   reviewReason: null,
@@ -79,9 +78,9 @@ const buybackCase = {
   approvedPrice: null,
   currency: 'VND',
   externalAgreementReference: null,
-  reason: 'Máy cần đổi mới',
+  reason: 'Machine replacement requested',
   requestedBy: 'tenant@example.test',
-  requestedAt: '2026-10-20T10:00:00',
+  requestedAt: '2026-10-20T10:00:00Z',
   approvedBy: null,
   approvedAt: null,
   rejectedBy: null,
@@ -90,270 +89,266 @@ const buybackCase = {
   cancelledBy: null,
   cancelledAt: null,
   cancellationReason: null,
-  collectionEvidence: null,
+  collectionEvidence: 'private/evidence/path.pdf',
   collectedBy: null,
   collectedAt: null,
   idempotencyKey: 'private-idempotency-key',
   correlationId: 'private-correlation-id',
-  createdAt: '2026-10-20T10:00:00',
-  updatedAt: '2026-10-20T10:00:00',
+  createdAt: '2026-10-20T10:00:00Z',
+  updatedAt: '2026-10-20T10:00:00Z',
   version: 0,
 };
 
-test('Phase 4 schemas accept backend invoice, payment proof, recipe, and buyback read records', () => {
-  const billingSchemas = loadTypescript('src/schemas/dolores/billing.ts');
-  const recipeSchemas = loadTypescript('src/schemas/dolores/recipes.ts');
-  const buybackSchemas = loadTypescript('src/schemas/dolores/buybacks.ts');
+function query(data, overrides = {}) {
+  return {
+    data,
+    isPending: false,
+    isError: false,
+    error: null,
+    refetch: async () => {},
+    ...overrides,
+  };
+}
 
-  assert.equal(billingSchemas.InvoiceSchema.parse(invoice).amount, 1250000);
-  assert.equal(billingSchemas.PaymentProofSchema.parse(proof).originalFilename, 'transfer-proof.jpg');
-  assert.equal(Object.hasOwn(billingSchemas.PaymentProofSchema.parse(proof), 'objectKey'), false);
-  assert.equal(recipeSchemas.GlobalRecipeSchema.parse(recipe).id, recipeId);
-  assert.equal(buybackSchemas.BuybackCaseSchema.parse(buybackCase).requestedPrice, 4000000);
-  assert.equal(buybackSchemas.BuybackCaseSchema.safeParse({ ...buybackCase, id: 'MB-2026-017' }).success, false);
-  assert.equal(billingSchemas.PaymentProofSchema.safeParse({ ...proof, status: 'APPROVED_BY_ADMIN' }).success, false);
+function loadScreen(exportName, queryResults = {}) {
+  const options = [];
+  const styles = new Proxy({}, { get: (_target, key) => String(key) });
+  const useQuery = (queryOptions) => {
+    options.push(queryOptions);
+    return queryResults[JSON.stringify(queryOptions.queryKey)] ??
+      query(undefined, { isPending: queryOptions.enabled !== false });
+  };
+  const screenModule = loadTypescript('src/pages/moderator/moderator-finance-catalog-screens.tsx', {
+    '@tanstack/react-query': { useQuery },
+    'next/link': ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children),
+    '@/apis/billing.api': { billingApi: {
+      listModeratorInvoices: async () => [invoice],
+      getModeratorInvoice: async () => invoice,
+      listPaymentProofs: async () => [proof],
+      downloadPaymentProofContent: async () => new Blob(['proof']),
+    } },
+    '@/apis/buybacks.api': { buybacksApi: { getById: async () => buybackCase } },
+    '@/apis/recipes.api': { recipesApi: {
+      listGlobal: async () => [recipe],
+      getGlobalById: async () => recipe,
+    } },
+    '@/schema/buybacks.schema': loadTypescript('src/schema/buybacks.schema.ts'),
+    '@/schema/billing.schema': loadTypescript('src/schema/billing.schema.ts'),
+    '@/schema/recipes.schema': loadTypescript('src/schema/recipes.schema.ts'),
+    '@/text/moderator/moderator-messages': loadTypescript('src/text/moderator/moderator-messages.ts'),
+    '@/routes/path': loadTypescript('src/routes/path.ts'),
+    './moderator-shell': { moderatorStyles: styles },
+  });
+  return {
+    options,
+    html: (props) => renderToStaticMarkup(React.createElement(screenModule[exportName], props)),
+  };
+}
+
+test('Phase 4 schemas validate read records and strip private storage/correlation fields', () => {
+  const billing = loadTypescript('src/schema/billing.schema.ts');
+  const recipes = loadTypescript('src/schema/recipes.schema.ts');
+  const buybacks = loadTypescript('src/schema/buybacks.schema.ts');
+
+  assert.equal(billing.ModeratorInvoiceSchema.parse(invoice).amount, 1250000);
+  assert.equal(billing.ModeratorInvoiceSchema.safeParse({ ...invoice, amount: '1250000' }).success, false);
+  assert.equal(billing.ModeratorInvoiceSchema.safeParse({ ...invoice, status: 'SETTLED_BY_ADMIN' }).success, false);
+  const parsedProof = billing.PaymentProofSchema.parse(proof);
+  assert.equal(parsedProof.originalFilename, 'transfer-proof.jpg');
+  assert.equal(Object.hasOwn(parsedProof, 'objectKey'), false);
+  assert.equal(billing.PaymentProofSchema.safeParse({ ...proof, status: 'APPROVED_BY_ADMIN' }).success, false);
+  assert.equal(recipes.GlobalRecipeSchema.parse(recipe).id, recipeId);
+  const parsedBuyback = buybacks.BuybackCaseSchema.parse(buybackCase);
+  assert.equal(parsedBuyback.requestedPrice, 4000000);
+  assert.equal(Object.hasOwn(parsedBuyback, 'idempotencyKey'), false);
+  assert.equal(Object.hasOwn(parsedBuyback, 'correlationId'), false);
+  assert.equal(buybacks.BuybackCaseSchema.safeParse({ ...buybackCase, id: 'MB-2026-017' }).success, false);
 });
 
-test('billing read API uses only the documented invoice and private proof GET routes', async () => {
-  const schemas = loadTypescript('src/schemas/dolores/billing.ts');
-  const axiosMock = createDoloresAxiosMock([[invoice], invoice, [proof], new Blob(['proof'])]);
-  const { calls } = axiosMock;
-  const { billingApi } = loadTypescript('src/apis/dolores/billing.api.ts', {
-    './client': axiosMock.module,
-    '@/schemas/dolores/billing': schemas,
+test('billing API uses only documented GET routes, checks UUID identity and invoice proof scope', async () => {
+  const schemas = loadTypescript('src/schema/billing.schema.ts');
+  const calls = [];
+  const responses = [[invoice], invoice, [proof], new Blob(['proof'])];
+  const axiosClient = {
+    async get(url, config) {
+      calls.push({ method: 'GET', url, config });
+      return { data: responses.shift() };
+    },
+  };
+  const { billingApi } = loadTypescript('src/apis/billing.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/billing.schema': schemas,
   });
   const signal = new AbortController().signal;
 
-  assert.deepEqual(await billingApi.listInvoices(signal), [invoice]);
-  assert.deepEqual(await billingApi.getInvoice(invoiceId, signal), invoice);
+  assert.deepEqual(await billingApi.listModeratorInvoices(signal), [invoice]);
+  assert.deepEqual(await billingApi.getModeratorInvoice(invoiceId, signal), schemas.ModeratorInvoiceSchema.parse(invoice));
   assert.deepEqual(await billingApi.listPaymentProofs(invoiceId, signal), [schemas.PaymentProofSchema.parse(proof)]);
-  assert.equal(await billingApi.downloadPaymentProofContent(proofId).then((blob) => blob.text()), 'proof');
-  assert.deepEqual(calls.map(({ config }) => [config.responseType === 'blob' ? 'blob' : 'json', config.method, config.url, config.signal, config.responseType]), [
-    ['json', 'GET', '/billing/invoices', signal, undefined],
-    ['json', 'GET', `/billing/invoices/${invoiceId}`, signal, undefined],
-    ['json', 'GET', `/billing/invoices/${invoiceId}/payment-proofs`, signal, undefined],
-    ['blob', 'GET', `/billing/payment-proofs/${proofId}/content`, undefined, 'blob'],
+  assert.equal(await billingApi.downloadPaymentProofContent(proofId, signal).then((blob) => blob.text()), 'proof');
+  assert.deepEqual(calls.map(({ method, url, config }) => [
+    method, url, config.baseURL, config.signal, config.responseType, config.headers,
+  ]), [
+    ['GET', '/billing/invoices', '/api/dolores/v1', signal, undefined, undefined],
+    ['GET', '/billing/invoices/' + invoiceId, '/api/dolores/v1', signal, undefined, undefined],
+    ['GET', '/billing/invoices/' + invoiceId + '/payment-proofs', '/api/dolores/v1', signal, undefined, undefined],
+    ['GET', '/billing/payment-proofs/' + proofId + '/content', '/api/dolores/v1', signal, 'blob', { Accept: '*/*' }],
   ]);
-  const callCountBeforeInvalidIds = calls.length;
-  await assert.rejects(billingApi.getInvoice('not-a-uuid'), /uuid/i);
+
+  const callCount = calls.length;
+  await assert.rejects(billingApi.getModeratorInvoice('not-a-uuid'), /uuid/i);
+  await assert.rejects(billingApi.listPaymentProofs('not-a-uuid'), /uuid/i);
   await assert.rejects(billingApi.downloadPaymentProofContent('not-a-uuid'), /uuid/i);
-  assert.equal(calls.length, callCountBeforeInvalidIds);
+  assert.equal(calls.length, callCount);
+
+  const mismatchCalls = [];
+  const mismatchApi = loadTypescript('src/apis/billing.api.ts', {
+    '@/lib/http': {
+      DOLORES_API_BASE_URL: '/api/dolores/v1',
+      axiosClient: { get: async (url) => { mismatchCalls.push(url); return { data: { ...invoice, id: proofId } }; } },
+    },
+    '@/schema/billing.schema': schemas,
+  }).billingApi;
+  await assert.rejects(mismatchApi.getModeratorInvoice(invoiceId), /does not match/i);
+  assert.deepEqual(mismatchCalls, ['/billing/invoices/' + invoiceId]);
+
+  const wrongProofScopeApi = loadTypescript('src/apis/billing.api.ts', {
+    '@/lib/http': {
+      DOLORES_API_BASE_URL: '/api/dolores/v1',
+      axiosClient: { get: async () => ({ data: [{ ...proof, invoiceId: contractId }] }) },
+    },
+    '@/schema/billing.schema': schemas,
+  }).billingApi;
+  await assert.rejects(wrongProofScopeApi.listPaymentProofs(invoiceId), /different invoice/i);
 });
 
-test('buyback detail API requires a canonical UUID and has no invented collection method', async () => {
-  const schemas = loadTypescript('src/schemas/dolores/buybacks.ts');
-  const axiosMock = createDoloresAxiosMock([buybackCase]);
-  const { calls } = axiosMock;
-  const { buybacksApi } = loadTypescript('src/apis/dolores/buybacks.api.ts', {
-    './client': axiosMock.module,
-    '@/schemas/dolores/buybacks': schemas,
+test('buyback client has UUID detail only and never invents a collection request', async () => {
+  const schemas = loadTypescript('src/schema/buybacks.schema.ts');
+  const calls = [];
+  const { buybacksApi } = loadTypescript('src/apis/buybacks.api.ts', {
+    '@/lib/http': {
+      DOLORES_API_BASE_URL: '/api/dolores/v1',
+      axiosClient: { get: async (url, config) => { calls.push({ url, config }); return { data: buybackCase }; } },
+    },
+    '@/schema/buybacks.schema': schemas,
   });
   const signal = new AbortController().signal;
 
   assert.equal((await buybacksApi.getById(buybackId, signal)).id, buybackId);
-  assert.deepEqual(calls.map(({ config }) => config), [
-    { method: 'GET', url: `/buybacks/${buybackId}`, signal },
+  assert.deepEqual(calls.map(({ url, config }) => [url, config.baseURL, config.signal]), [
+    ['/buybacks/' + buybackId, '/api/dolores/v1', signal],
   ]);
-  assert.equal(Object.hasOwn(buybacksApi, 'list'), false);
-  const callCountBeforeInvalidId = calls.length;
+  assert.deepEqual(Object.keys(buybacksApi), ['getById']);
   await assert.rejects(buybacksApi.getById('MB-2026-017'), /uuid/i);
-  assert.equal(calls.length, callCountBeforeInvalidId);
+  assert.equal(calls.length, 1);
 });
 
-test('billing and buyback detail hooks pass cancellation signals and disable invalid IDs', async () => {
-  const billingOptions = [];
-  const billingCalls = [];
-  const billingReactQuery = {
-    useQuery: (options) => { billingOptions.push(options); return options; },
-    useMutation: (options) => options,
-  };
-  const billingApiMock = {
-    listInvoices: async (signal) => { billingCalls.push(['list', signal]); return [invoice]; },
-    getInvoice: async (id, signal) => { billingCalls.push(['invoice', id, signal]); return invoice; },
-    listPaymentProofs: async (id, signal) => { billingCalls.push(['proofs', id, signal]); return [proof]; },
-    downloadPaymentProofContent: async (id) => { billingCalls.push(['content', id]); return new Blob(); },
-  };
-  const billingSchemas = loadTypescript('src/schemas/dolores/billing.ts');
-  const billingHooks = loadTypescript('src/hooks/dolores/useBillingInvoices.ts', {
-    '@tanstack/react-query': billingReactQuery,
-    '@/apis/dolores/billing.api': { billingApi: billingApiMock },
-    '@/schemas/dolores/billing': billingSchemas,
-    './queryPolicy': { retryDoloresRead: () => false },
+test('Moderator invoice list renders backend values and keeps a 403 distinct from empty', () => {
+  const listKey = JSON.stringify(['dolores', 'moderator', 'billing', 'invoices']);
+  const screen = loadScreen('ModeratorInvoicesScreen', {
+    [listKey]: query([invoice]),
   });
-  const signal = new AbortController().signal;
-  const invoiceQuery = billingHooks.useBillingInvoice(invoiceId);
-  const proofsQuery = billingHooks.useInvoicePaymentProofs(invoiceId);
-  const invalidInvoiceQuery = billingHooks.useBillingInvoice('HD-09-204');
+  const html = screen.html({ sectionPath: 'invoices' });
 
-  assert.equal(invoiceQuery.enabled, true);
-  assert.equal(proofsQuery.enabled, true);
-  assert.equal(invalidInvoiceQuery.enabled, false);
-  assert.equal(await invoiceQuery.queryFn({ signal }), invoice);
-  assert.deepEqual(await proofsQuery.queryFn({ signal }), [proof]);
-  assert.deepEqual(billingCalls, [['invoice', invoiceId, signal], ['proofs', invoiceId, signal]]);
-  assert.throws(() => invalidInvoiceQuery.queryFn({ signal }));
+  assert.match(html, /1\.250\.000 VND/);
+  assert.match(html, /PAID/);
+  assert.match(html, /2026-10/);
+  assert.match(html, new RegExp('/moderator/invoices/' + invoiceId));
+  assert.equal(screen.options[0].enabled, true);
+  assert.equal(screen.options[1].enabled, false);
 
-  const buybackOptions = [];
-  const buybacksApiMock = { getById: async (id, querySignal) => { buybackCalls.push([id, querySignal]); return buybackCase; } };
-  const buybackCalls = [];
-  const buybackHooks = loadTypescript('src/hooks/dolores/useBuybacks.ts', {
-    '@tanstack/react-query': { useQuery: (options) => { buybackOptions.push(options); return options; } },
-    '@/apis/dolores/buybacks.api': { buybacksApi: buybacksApiMock },
-    '@/schemas/dolores/buybacks': loadTypescript('src/schemas/dolores/buybacks.ts'),
-    './queryPolicy': { retryDoloresRead: () => false },
+  const forbidden = Object.assign(new Error('forbidden'), {
+    isAxiosError: true,
+    response: { status: 403 },
   });
-  const buybackQuery = buybackHooks.useBuybackCase(buybackId);
-  assert.equal(buybackQuery.enabled, true);
-  assert.equal(await buybackQuery.queryFn({ signal }), buybackCase);
-  assert.deepEqual(buybackCalls, [[buybackId, signal]]);
+  const forbiddenScreen = loadScreen('ModeratorInvoicesScreen', {
+    [listKey]: query(undefined, { isError: true, error: forbidden }),
+  });
+  const forbiddenHtml = forbiddenScreen.html({ sectionPath: 'invoices' });
+  assert.match(forbiddenHtml, /không có quyền đọc/i);
+  assert.doesNotMatch(forbiddenHtml, /không trả về hóa đơn nào/i);
 });
 
-function query(data, overrides = {}) {
-  return { data, isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {}, ...overrides };
-}
-
-function screenMocks(overrides = {}) {
-  const calls = { invoiceIds: [], proofInvoiceIds: [], recipeIds: [], buybackIds: [] };
-  const results = {
-    invoices: query([invoice]),
-    invoice: query(invoice),
-    proofs: query([proof]),
-    recipes: query([recipe]),
-    recipe: query(recipe),
-    buyback: query(buybackCase),
-    download: { mutate: () => {}, isPending: false, isError: false, error: null },
-    ...overrides,
-  };
-  const paths = {
-    root: '/moderator',
-    invoices: '/moderator/invoices',
-    invoicesList: '/moderator/invoices/list',
-    invoiceReconcile: '/moderator/invoices/reconcile',
-    invoiceDetail: (id) => `/moderator/invoices/${encodeURIComponent(id)}`,
-    menu: '/moderator/menu',
-    menuItems: '/moderator/menu/items',
-    menuIngredients: '/moderator/menu/ingredients',
-    menuRecipeDetail: (id) => `/moderator/menu/${encodeURIComponent(id)}`,
-    buyback: '/moderator/buyback',
-    buybackList: '/moderator/buyback/list',
-    buybackDetail: (id) => `/moderator/buyback/${encodeURIComponent(id)}`,
-  };
-  const ui = {
-    DoloresPage: ({ title, description, actions, children }) => React.createElement('main', null,
-      React.createElement('h1', null, title), description && React.createElement('p', null, description), actions, children),
-    DoloresButton: ({ href, children, onClick, disabled }) => href
-      ? React.createElement('a', { href, 'aria-disabled': disabled }, children)
-      : React.createElement('button', { onClick, disabled }, children),
-    DoloresField: ({ label, value, children }) => React.createElement('div', null, `${label}: `, children ?? value),
-    DoloresFieldGrid: ({ children }) => React.createElement('div', null, children),
-    DoloresNotice: ({ title, children }) => React.createElement('aside', null, React.createElement('strong', null, title), children),
-    DoloresPanel: ({ children }) => React.createElement('section', null, children),
-    DoloresPanelTitle: ({ children }) => React.createElement('h2', null, children),
-    DoloresTable: ({ headers, rows }) => React.createElement('table', null,
-      React.createElement('thead', null, React.createElement('tr', null, headers.map((header) => React.createElement('th', { key: header }, header)))),
-      React.createElement('tbody', null, rows.map((row, rowIndex) => React.createElement('tr', { key: rowIndex }, row.map((cell, cellIndex) => React.createElement('td', { key: cellIndex }, cell))))))
-  };
-  const mocks = {
-    'next/link': ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children),
-    '@/routes/path': { PATH_MODERATOR: paths },
-    '@/app/_shell/dolores/DoloresShell': { DoloresPage: ui.DoloresPage },
-    '@/app/_ui/dolores/DoloresUI': ui,
-    '@/ui/dolores/DoloresUI': ui,
-    '@/hooks/dolores/useBillingInvoices': {
-      useBillingInvoices: () => results.invoices,
-      useBillingInvoice: (id) => { calls.invoiceIds.push(id); return results.invoice; },
-      useInvoicePaymentProofs: (id) => { calls.proofInvoiceIds.push(id); return results.proofs; },
-      useDownloadPaymentProof: () => results.download,
-    },
-    '@/hooks/dolores/useGlobalRecipes': {
-      useGlobalRecipes: () => results.recipes,
-      useGlobalRecipe: (id) => { calls.recipeIds.push(id); return results.recipe; },
-    },
-    '@/hooks/dolores/useBuybacks': {
-      useBuybackCase: (id) => { calls.buybackIds.push(id); return results.buyback; },
-    },
-    '@/schemas/dolores/billing': loadTypescript('src/schemas/dolores/billing.ts'),
-    '@/schemas/dolores/recipes': loadTypescript('src/schemas/dolores/recipes.ts'),
-    '@/schemas/dolores/buybacks': loadTypescript('src/schemas/dolores/buybacks.ts'),
-  };
-  return { mocks, calls };
-}
-
-function renderScreen(exportName, path, overrides) {
-  const { mocks, calls } = screenMocks(overrides);
-  const screens = loadTypescript('src/app/(moderator)/moderator/_components/ModeratorBillingRecipeScreens.tsx', mocks);
-  const html = renderToStaticMarkup(React.createElement(screens[exportName], { path }));
-  return { html, calls };
-}
-
-test('Moderator invoice list renders API amounts/statuses, UUID details, and truthful empty/error states', () => {
-  const populated = renderScreen('ModeratorInvoicesScreen', 'invoices');
-  assert.match(populated.html, /2026-10/);
-  assert.match(populated.html, /1\.250\.000/);
-  assert.match(populated.html, /PAID/);
-  assert.match(populated.html, new RegExp(`/moderator/invoices/${invoiceId}`));
-  assert.doesNotMatch(populated.html, /Cà phê Mộc|HD-09-204|2\.750\.000/);
-
-  const empty = renderScreen('ModeratorInvoicesScreen', 'invoices', { invoices: query([]) });
-  assert.match(empty.html, /Không có hóa đơn/);
-  const failure = renderScreen('ModeratorInvoicesScreen', 'invoices', {
-    invoices: query(undefined, { isError: true, error: { status: 403 } }),
+test('invoice detail renders proof metadata and never exposes private object keys', () => {
+  const invoiceKey = JSON.stringify(['dolores', 'moderator', 'billing', 'invoice', invoiceId]);
+  const proofsKey = JSON.stringify(['dolores', 'moderator', 'billing', 'invoice', invoiceId, 'proofs']);
+  const screen = loadScreen('ModeratorInvoicesScreen', {
+    [invoiceKey]: query(invoice),
+    [proofsKey]: query([proof]),
   });
-  assert.match(failure.html, /403/);
-  assert.doesNotMatch(failure.html, /Không có hóa đơn/);
-});
+  const html = screen.html({ sectionPath: 'invoices/' + invoiceId });
 
-test('Moderator invoice detail reads invoice and payment proof metadata by UUID without financial actions', () => {
-  const { html, calls } = renderScreen('ModeratorInvoicesScreen', `invoices/${invoiceId}`);
-  assert.deepEqual(calls.invoiceIds, [invoiceId]);
-  assert.deepEqual(calls.proofInvoiceIds, [invoiceId]);
-  assert.match(html, /1\.250\.000/);
   assert.match(html, /PAID/);
   assert.match(html, /transfer-proof\.jpg/);
-  assert.match(html, /SUBMITTED/);
-  assert.doesNotMatch(html, /private\/path|idempotency|Xác nhận khoản đã nhận|Duyệt chứng từ/);
+  assert.match(html, /Tải chứng từ/);
+  assert.doesNotMatch(html, /private\/path\/should-not-render\.jpg/);
+  assert.equal(screen.options[0].enabled, false);
+  assert.equal(screen.options[1].enabled, true);
+  assert.equal(screen.options[2].enabled, true);
+
+  const invalid = loadScreen('ModeratorInvoicesScreen');
+  assert.match(invalid.html({ sectionPath: 'invoices/HD-09-204' }), /không phải UUID hợp lệ/i);
+  assert.equal(invalid.options[1].enabled, false);
+  assert.equal(invalid.options[2].enabled, false);
 });
 
-test('Moderator global recipe list and detail render only backend values and contain no publish/sync actions', () => {
-  const list = renderScreen('ModeratorRecipesScreen', 'menu');
-  assert.match(list.html, /API Espresso/);
-  assert.match(list.html, /GRIND:8s/);
-  assert.match(list.html, /bean:6:12/);
-  assert.match(list.html, new RegExp(`/moderator/menu/${recipeId}`));
-  assert.doesNotMatch(list.html, /Cà phê sữa tươi|Thêm món|Gửi menu xuống máy/);
+test('global recipes are read-only; list and detail show Dolores values', () => {
+  const listKey = JSON.stringify(['dolores', 'moderator', 'recipes', 'global']);
+  const detailKey = JSON.stringify(['dolores', 'moderator', 'recipes', 'global', recipeId]);
+  const list = loadScreen('ModeratorRecipesScreen', { [listKey]: query([recipe]) });
+  const listHtml = list.html({ sectionPath: 'menu' });
+  assert.match(listHtml, /API Espresso/);
+  assert.match(listHtml, new RegExp('/moderator/menu/' + recipeId));
+  assert.doesNotMatch(listHtml, /<button/);
 
-  const detail = renderScreen('ModeratorRecipesScreen', `menu/${recipeId}`);
-  assert.deepEqual(detail.calls.recipeIds, [recipeId]);
-  assert.match(detail.html, /BREW:25s/);
-  assert.match(detail.html, /water:30:50/);
-  assert.doesNotMatch(detail.html, /Lưu món|Gửi menu/);
+  const detail = loadScreen('ModeratorRecipesScreen', { [detailKey]: query(recipe) });
+  const detailHtml = detail.html({ sectionPath: 'menu/' + recipeId });
+  assert.match(detailHtml, /GRIND:8s/);
+  assert.match(detailHtml, /bean:6:12/);
+  assert.equal(detail.options[1].enabled, true);
+
+  const invalid = loadScreen('ModeratorRecipesScreen');
+  assert.match(invalid.html({ sectionPath: 'menu/add' }), /không phải UUID hợp lệ/i);
+  assert.equal(invalid.options[1].enabled, false);
 });
 
-test('buyback list is explicitly unavailable; only canonical UUID details make a read request', () => {
-  const list = renderScreen('ModeratorBuybackScreen', 'buyback');
-  assert.match(list.html, /chưa có API danh sách/i);
-  assert.doesNotMatch(list.html, /MB-2026-017|MB-017|Nguyễn Minh Anh/);
-  assert.deepEqual(list.calls.buybackIds, []);
+test('buyback list is unavailable and only a valid UUID detail can query Dolores', () => {
+  const list = loadScreen('ModeratorBuybackScreen');
+  const listHtml = list.html({ sectionPath: 'buyback' });
+  assert.match(listHtml, /chưa có API danh sách/i);
+  assert.equal(list.options[0].enabled, false);
 
-  const legacy = renderScreen('ModeratorBuybackScreen', 'buyback/MB-2026-017');
-  assert.deepEqual(legacy.calls.buybackIds, []);
-  assert.match(legacy.html, /UUID/i);
+  const detailKey = JSON.stringify(['dolores', 'moderator', 'buybacks', buybackId]);
+  const detail = loadScreen('ModeratorBuybackScreen', { [detailKey]: query(buybackCase) });
+  const detailHtml = detail.html({ sectionPath: 'buyback/' + buybackId });
+  assert.match(detailHtml, /4\.000\.000 VND/);
+  assert.match(detailHtml, /Đã có chứng cứ/);
+  assert.doesNotMatch(detailHtml, /private\/evidence\/path\.pdf/);
+  assert.doesNotMatch(detailHtml, /private-idempotency-key|private-correlation-id/);
+  assert.equal(detail.options[0].enabled, true);
 
-  const detail = renderScreen('ModeratorBuybackScreen', `buyback/${buybackId}`);
-  assert.deepEqual(detail.calls.buybackIds, [buybackId]);
-  assert.match(detail.html, /Máy cần đổi mới/);
-  assert.match(detail.html, /REQUESTED/);
-  assert.doesNotMatch(detail.html, /idempotency-key|correlation-id|Ghi nhận|Tạo hồ sơ/);
+  const legacy = loadScreen('ModeratorBuybackScreen');
+  assert.match(legacy.html({ sectionPath: 'buyback/MB-2026-017' }), /dữ liệu mẫu cũ/i);
+  assert.equal(legacy.options[0].enabled, false);
 });
 
-test('Moderator dynamic read detail paths are accepted only for canonical UUIDs', () => {
-  const paths = loadTypescript('src/routes/path.ts');
-  const { isSupportedModeratorSection } = loadTypescript('src/routes/routes.ts', { './path': paths });
+test('route read allowlist includes only Phase 4 read paths and leaves write sections pending', () => {
+  const route = loadTypescript('src/pages/moderator/[[...sections]].page.tsx', {
+    '@/routes/routes': { isSupportedModeratorSection: () => true, MODERATOR_NAVIGATION_LINKS: [] },
+    '@/routes/path': loadTypescript('src/routes/path.ts'),
+    '@/text/moderator/moderator-messages': loadTypescript('src/text/moderator/moderator-messages.ts'),
+    './moderator-shell': {
+      ModeratorShell: ({ children }) => React.createElement(React.Fragment, null, children),
+      moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }),
+    },
+  });
 
-  assert.equal(isSupportedModeratorSection(`invoices/${invoiceId}`), true);
-  assert.equal(isSupportedModeratorSection(`menu/${recipeId}`), true);
-  assert.equal(isSupportedModeratorSection(`buyback/${buybackId}`), true);
-  assert.equal(isSupportedModeratorSection('invoices/HD-09-204'), false);
-  assert.equal(isSupportedModeratorSection('menu/espresso'), true);
-  assert.equal(isSupportedModeratorSection('buyback/MB-2026-017'), true);
+  assert.equal(route.isModeratorReadRoute('invoices'), true);
+  assert.equal(route.isModeratorReadRoute('invoices/' + invoiceId), true);
+  assert.equal(route.isModeratorReadRoute('invoices/reconcile'), false);
+  assert.equal(route.isModeratorReadRoute('menu'), true);
+  assert.equal(route.isModeratorReadRoute('menu/' + recipeId), true);
+  assert.equal(route.isModeratorReadRoute('menu/add'), false);
+  assert.equal(route.isModeratorReadRoute('buyback'), true);
+  assert.equal(route.isModeratorReadRoute('buyback/MB-2026-017'), true);
+  assert.equal(route.isModeratorReadRoute('buyback/documents'), false);
 });

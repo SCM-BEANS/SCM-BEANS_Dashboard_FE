@@ -5,7 +5,6 @@ const test = require('node:test');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const ts = require('typescript');
-const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
@@ -27,53 +26,19 @@ function loadTypescript(relativePath, mocks = {}) {
 
 const machineId = '00000000-0000-4000-8000-000000000111';
 const tenantId = '00000000-0000-4000-8000-000000000101';
+const otherTenantId = '00000000-0000-4000-8000-000000000102';
 const workOrderId = '00000000-0000-4000-8000-000000000211';
 const checklistId = '00000000-0000-4000-8000-000000000311';
 const locationId = '00000000-0000-4000-8000-000000000711';
-const paths = {
-  root: '/moderator',
-  machines: '/moderator/machines',
-  machinesList: '/moderator/machines/list',
-  machineDetail: (id) => `/moderator/machines/${encodeURIComponent(id)}`,
-  machineStock: '/moderator/machines/stock',
-  machineCustomer: '/moderator/machines/customer',
-  machineLoans: '/moderator/machines/loans',
-  machineRepairHistory: '/moderator/machines/repair-history',
-  machineSubstitute: '/moderator/machines/substitute',
-  machineSubstituteReturn: '/moderator/machines/substitute/return',
-  iot: '/moderator/iot',
-  iotCustomer: '/moderator/iot/customer',
-  iotMachines: '/moderator/iot/machines',
-  technicalRequests: '/moderator/technical-requests',
-  technicalRequestsList: '/moderator/technical-requests/list',
-  technicalRequestDetail: (id) => `/moderator/technical-requests/${encodeURIComponent(id)}`,
-  newTechnicalRequest: '/moderator/technical-requests/new',
-  technicalRequestType: (kind) => `/moderator/technical-requests/new/${kind}`,
-  machineHistory: '/moderator/machine-history',
-  machineHistoryDetail: (id) => `/moderator/machine-history/${encodeURIComponent(id)}`,
-  contracts: '/moderator/contracts',
-  notifications: '/moderator/notifications',
-};
-
-function query(data, overrides = {}) {
-  return { data, isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {}, ...overrides };
-}
-
+const tenant = { id: tenantId, name: 'Tenant kiểm thử', type: 'contract_owner' };
 const machine = {
   id: machineId,
   tenantId,
   serialNumber: 'API-SMART-111',
   status: 'DEPLOYED_CONTRACT_OWNER',
-  deployedAt: '2026-10-20T10:00:00Z',
-  region: 'Quận 3',
-  ownerType: 'TENANT',
-  contractStartDate: '2026-10-01',
-  contractEndDate: '2027-10-01',
-  monthlyRentalFee: 750000,
   machineType: 'SMART_IOT',
-  locationId: null,
+  locationId,
 };
-const tenant = { id: tenantId, name: 'Tenant kiểm thử', type: 'contract_owner' };
 const workOrder = {
   id: workOrderId,
   tenantId,
@@ -90,281 +55,372 @@ const workOrder = {
   createdAt: '2026-10-20T09:00:00Z',
   updatedAt: '2026-10-20T09:00:00Z',
 };
+const workOrderDetails = {
+  workOrder,
+  checklistItems: [{ id: checklistId, itemCode: 'POWER', label: 'Kiểm tra nguồn', required: true, displayOrder: 1, result: 'PASSED', notes: 'Đạt', completedBy: null, completedAt: null }],
+  accessories: [],
+  evidence: [{ id: '00000000-0000-4000-8000-000000000501', originalFilename: 'handover.pdf', contentType: 'application/pdf', sizeBytes: 512, sha256: 'sha-test', uploadedBy: null, uploadedAt: '2026-10-20T10:00:00Z' }],
+};
 
-function renderOperational(componentName, path, resultOverrides = {}) {
-  const calls = { details: [], locationIds: [], telemetry: [] };
-  const results = {
-    inventory: query([machine]),
-    machineDetail: query({ ...machine, locationId, nextPreventiveMaintenanceAt: '2026-11-01T09:00:00Z', cupsServedSinceLastDescale: 20 }),
-    locationDetail: query({ id: locationId, tenantId, name: 'API location', address: '12 Main Street', active: true, machineCount: 1 }),
-    schedule: query({ nextPreventiveMaintenanceAt: '2026-11-01T09:00:00Z', cupsServedSinceLastDescale: 20 }),
-    tickets: query([]),
-    tenants: query([tenant]),
-    locations: { locations: [], failedTenants: [], isLoading: false, retryFailed: () => {}, refetchAll: () => {} },
-    workOrders: { workOrders: [{ tenant, workOrder }], failedTenants: [], isLoading: false, retryFailed: () => {}, refetchAll: () => {} },
-    workOrderDetail: query({ workOrder, checklistItems: [{ id: checklistId, itemCode: 'POWER', label: 'Kiểm tra nguồn', required: true, displayOrder: 1, result: 'PASSED', notes: 'Đạt', completedBy: null, completedAt: null }], accessories: [], evidence: [{ id: '00000000-0000-4000-8000-000000000501', originalFilename: 'handover.pdf', contentType: 'application/pdf', sizeBytes: 512, sha256: 'sha-test', uploadedBy: null, uploadedAt: '2026-10-20T10:00:00Z' }] }),
-    telemetry: query({ pages: [[]], pageParams: [0], hasNextPage: false, isFetchingNextPage: false, fetchNextPage: async () => {} }),
-    ...resultOverrides,
-  };
-
-  const MockPage = ({ title, description, actions, children }) => React.createElement('main', null,
-    React.createElement('h1', null, title), description && React.createElement('p', null, description), actions, children);
-  const MockTable = ({ headers, rows, emptyMessage }) => React.createElement('table', null,
-    React.createElement('thead', null, React.createElement('tr', null, headers.map((header) => React.createElement('th', { key: header }, header)))),
-    React.createElement('tbody', null, rows.length ? rows.map((row, rowIndex) => React.createElement('tr', { key: rowIndex }, row.map((cell, cellIndex) => React.createElement('td', { key: cellIndex }, cell)))) : emptyMessage && React.createElement('tr', null, React.createElement('td', null, emptyMessage))));
-  const ui = {
-    DoloresButton: ({ href, children, onClick, disabled, type }) => href
-      ? React.createElement('a', { href, 'aria-disabled': disabled }, children)
-      : React.createElement('button', { onClick, disabled, type }, children),
-    DoloresField: ({ label, value, children }) => React.createElement('div', null, `${label}: `, children ?? value),
-    DoloresFieldGrid: ({ children }) => React.createElement('div', null, children),
-    DoloresMetric: ({ label, value }) => React.createElement('p', null, `${label}: ${value}`),
-    DoloresNotice: ({ title, children }) => React.createElement('aside', null, React.createElement('strong', null, title), children),
-    DoloresPanel: ({ children }) => React.createElement('section', null, children),
-    DoloresPanelTitle: ({ children }) => React.createElement('h2', null, children),
-    DoloresTable: MockTable,
-  };
-  const machinePresentation = {
-    MachineIdentityLabel: ({ machine: value }) => React.createElement('span', null, value.displayId),
-    MachineStatusLabel: ({ status }) => React.createElement('span', null, status?.label),
-    MachineTypeLabel: ({ machine: value }) => React.createElement('span', null, value.typeLabel),
-  };
-  const module = loadTypescript('src/app/(moderator)/moderator/_components/ModeratorOperationalScreens.tsx', {
-    'next/link': ({ href, children }) => React.createElement('a', { href }, children),
-    '@/app/_shell/dolores/DoloresShell': { DoloresPage: MockPage },
-    '@/app/_ui/dolores/DoloresUI': ui,
-    '@/app/_features/machines/MachinePresentation': machinePresentation,
-    '@/routes/path': { PATH_MODERATOR: paths },
-    '@/hooks/dolores/useMachines': {
-      useMachineInventory: () => results.inventory,
-      isMachineId: (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
-      useMachineDetail: (id) => { calls.details.push(id); return results.machineDetail; },
-      useMachineMaintenanceSchedule: () => results.schedule,
-      useMachineMaintenanceTickets: () => results.tickets,
-    },
-    '@/hooks/dolores/useTenants': { useTenants: () => results.tenants },
-    '@/hooks/dolores/usePlatformLocations': {
-      usePlatformLocations: () => results.locations,
-      useLocationById: (id) => { if (id) calls.locationIds.push(id); return results.locationDetail; },
-    },
-    '@/hooks/dolores/useInstallationWorkOrders': {
-      usePlatformInstallationWorkOrders: () => results.workOrders,
-      useInstallationWorkOrderById: (id) => { calls.details.push(id); return results.workOrderDetail; },
-    },
-    '@/hooks/dolores/useTelemetry': { useMachineTelemetryPoints: (id, range, enabled) => { calls.telemetry.push({ id, range, enabled }); return results.telemetry; } },
-  });
-  const Component = module[componentName];
-  const html = renderToStaticMarkup(React.createElement(Component, { path }));
-  return { html, calls };
+function query(data, overrides = {}) {
+  return { data, isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {}, ...overrides };
 }
 
-test('installation work-order schema validates canonical IDs and detail metadata without download URLs', () => {
-  const { InstallationWorkOrderDetailsSchema, InstallationWorkOrderSummarySchema } = loadTypescript('src/schemas/dolores/installationWorkOrders.ts');
-  assert.equal(InstallationWorkOrderSummarySchema.parse(workOrder).id, workOrderId);
-  assert.throws(() => InstallationWorkOrderSummarySchema.parse({ ...workOrder, id: 'YC-017' }));
-  const details = {
-    workOrder,
-    checklistItems: [{ id: checklistId, itemCode: 'POWER', label: 'Kiểm tra nguồn', required: true, displayOrder: 1, result: 'PASSED', notes: null, completedBy: null, completedAt: null }],
-    accessories: [],
-    evidence: [{ id: '00000000-0000-4000-8000-000000000501', originalFilename: 'handover.pdf', contentType: 'application/pdf', sizeBytes: 512, sha256: 'sha-test', uploadedBy: null, uploadedAt: '2026-10-20T10:00:00Z' }],
-  };
-  assert.equal(InstallationWorkOrderDetailsSchema.parse(details).evidence[0].originalFilename, 'handover.pdf');
-  assert.throws(() => InstallationWorkOrderDetailsSchema.parse({ ...details, evidence: [{ ...details.evidence[0], sizeBytes: -1 }] }));
-});
-
-test('machine and maintenance schemas accept backend LocalDateTime values without an offset', () => {
-  const { MachineInventoryItemSchema, MachineDetailSchema, MaintenanceScheduleSchema } = loadTypescript('src/schemas/dolores/machines.ts');
-  assert.equal(MachineInventoryItemSchema.parse({ ...machine, deployedAt: '2026-10-20T10:00:00' }).deployedAt, '2026-10-20T10:00:00');
-  assert.equal(MachineDetailSchema.parse({ ...machine, nextPreventiveMaintenanceAt: '2026-11-01T09:00:00' }).nextPreventiveMaintenanceAt, '2026-11-01T09:00:00');
-  assert.equal(MaintenanceScheduleSchema.parse({ nextPreventiveMaintenanceAt: '2026-11-01T09:00:00', cupsServedSinceLastDescale: 20 }).cupsServedSinceLastDescale, 20);
-});
-
-test('installation work-order API uses tenant-scoped list and UUID detail paths', async () => {
-  const axiosMock = createDoloresAxiosMock([[], []]);
-  const { calls } = axiosMock;
-  const schema = { parse: (value) => value };
-  const { installationWorkOrdersApi } = loadTypescript('src/apis/dolores/installationWorkOrders.api.ts', {
-    './client': axiosMock.module,
-    '@/schemas/dolores/installationWorkOrders': {
-      InstallationWorkOrderListSchema: schema,
-      InstallationWorkOrderDetailsSchema: schema,
-      InstallationWorkOrderTenantIdSchema: { parse: (value) => { if (value !== tenantId) throw new Error('invalid tenant UUID'); return value; } },
-      InstallationWorkOrderIdSchema: { parse: (value) => { if (value !== workOrderId) throw new Error('invalid UUID'); return value; } },
-    },
-  });
-  await installationWorkOrdersApi.listByTenant(tenantId);
-  await installationWorkOrdersApi.getById(workOrderId);
-  assert.deepEqual(calls.map(({ config: { method, url, params } }) => ({ method, url, params })), [
-    { method: 'GET', url: '/installation-work-orders', params: { tenantId } },
-    { method: 'GET', url: `/installation-work-orders/${workOrderId}`, params: undefined },
-  ]);
-  await assert.rejects(installationWorkOrdersApi.getById('YC-017'), /invalid UUID/);
-  assert.equal(calls.length, 2);
-});
-
-test('location detail API and hook use a canonical UUID route and reject fixture identifiers', async () => {
-  const axiosMock = createDoloresAxiosMock([{ id: locationId, name: 'API location' }]);
-  const { calls: requests } = axiosMock;
-  const passthroughSchema = { parse: (value) => value };
-  const { locationsApi } = loadTypescript('src/apis/dolores/locations.api.ts', {
-    './client': axiosMock.module,
-    '@/schemas/dolores/locations': {
-      StoreLocationIdSchema: { parse: (id) => { if (id !== locationId) throw new Error('invalid UUID'); return id; } },
-      StoreLocationListSchema: passthroughSchema,
-      StoreLocationSchema: passthroughSchema,
-      unwrapLocations: (response) => response,
-    },
-  });
-  await locationsApi.getById(locationId);
-  assert.equal(requests[0].config.url, `/locations/${locationId}`);
-  await assert.rejects(locationsApi.getById('S-018'), /invalid UUID/);
-  assert.equal(requests.length, 1);
-
+function loadOperational(queryResults = {}, infiniteResult, apiOverrides = {}) {
   const queryOptions = [];
-  const { useLocationById } = loadTypescript('src/hooks/dolores/usePlatformLocations.ts', {
-    '@tanstack/react-query': {
-      useQueries: () => [],
-      useQuery: (options) => { queryOptions.push(options); return options; },
+  const infiniteOptions = [];
+  const styles = new Proxy({}, { get: (_target, key) => String(key) });
+  const getKey = (options) => JSON.stringify(options.queryKey);
+  const useQuery = (options) => {
+    queryOptions.push(options);
+    return queryResults[getKey(options)] ?? query(undefined, { isPending: options.enabled !== false });
+  };
+  const useInfiniteQuery = (options) => {
+    infiniteOptions.push(options);
+    return infiniteResult ?? query(undefined, { isPending: options.enabled !== false, hasNextPage: false, fetchNextPage: async () => {} });
+  };
+  const schemas = {
+    '@/schema/locations.schema': loadTypescript('src/schema/locations.schema.ts'),
+    '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
+    '@/schema/installation-work-orders.schema': loadTypescript('src/schema/installation-work-orders.schema.ts'),
+    '@/schema/tenants.schema': loadTypescript('src/schema/tenants.schema.ts'),
+    '@/schema/telemetry.schema': loadTypescript('src/schema/telemetry.schema.ts', {
+      '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
+    }),
+  };
+  const module = loadTypescript('src/pages/moderator/moderator-operational-screens.tsx', {
+    '@tanstack/react-query': { useQuery, useInfiniteQuery },
+    axios: { isAxiosError: (error) => Boolean(error && typeof error === 'object' && 'response' in error) },
+    'next/link': ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children),
+    '@/apis/installation-work-orders.api': { installationWorkOrdersApi: { listByTenant: async () => [], getById: async () => workOrderDetails, ...apiOverrides.installationWorkOrdersApi } },
+    '@/apis/locations.api': { locationsApi: { listByTenant: async () => [], getById: async () => ({ id: locationId, name: 'API location' }), ...apiOverrides.locationsApi } },
+    '@/apis/machines.api': {
+      machinesApi: {
+        list: async () => [machine], getById: async () => machine,
+        getInventorySummary: async () => ({ totalMachines: 1 }),
+        getMaintenanceSchedule: async () => ({ nextPreventiveMaintenanceAt: null, cupsServedSinceLastDescale: 0 }),
+        listMaintenanceTickets: async () => [],
+      },
     },
-    '@/apis/dolores/locations.api': { locationsApi: { getById: async (id) => ({ id }), listByTenant: async () => [] } },
-    '@/schemas/dolores/locations': { StoreLocationIdSchema: { safeParse: (id) => ({ success: id === locationId }) } },
-    '@/schemas/dolores/tenants': {},
-    './queryPolicy': { retryDoloresRead: () => false },
-    './tenantRequestLimiter': { withTenantRequestSlot: (_signal, request) => request() },
+    '@/apis/telemetry.api': { telemetryApi: { getLatestHeartbeat: async () => ({ machineId, status: 'ONLINE' }), listMachinePoints: async () => [] }, TELEMETRY_POINTS_PAGE_SIZE: 100 },
+    '@/apis/tenants.api': { tenantsApi: { list: async () => [tenant] } },
+    '@/routes/path': loadTypescript('src/routes/path.ts'),
+    '@/text/moderator/moderator-messages': loadTypescript('src/text/moderator/moderator-messages.ts'),
+    './moderator-shell': { moderatorStyles: styles },
+    ...schemas,
   });
-  useLocationById('location-fixture');
-  useLocationById(locationId);
-  assert.equal(queryOptions[0].enabled, false);
-  assert.equal(queryOptions[1].enabled, true);
-  assert.deepEqual(queryOptions[1].queryKey, ['dolores', 'locations', 'id', locationId]);
+  return { module, queryOptions, infiniteOptions };
+}
+
+function renderOperational(name, path, queryResults = {}, infiniteResult, apiOverrides) {
+  const loaded = loadOperational(queryResults, infiniteResult, apiOverrides);
+  const Component = loaded.module[name];
+  const html = renderToStaticMarkup(React.createElement(Component, { path }));
+  return { html, ...loaded };
+}
+
+function mockAxios(responses) {
+  const calls = [];
+  return {
+    calls,
+    axiosClient: {
+      get: async (url, config) => {
+        calls.push({ url, config });
+        return { data: responses.shift() };
+      },
+    },
+  };
+}
+
+test('work-order schema validates canonical IDs, checklist/accessory data, and metadata-only evidence', () => {
+  const schema = loadTypescript('src/schema/installation-work-orders.schema.ts');
+  assert.equal(schema.InstallationWorkOrderSummarySchema.parse(workOrder).id, workOrderId);
+  assert.equal(schema.InstallationWorkOrderDetailsSchema.parse(workOrderDetails).evidence[0].originalFilename, 'handover.pdf');
+  assert.equal('url' in schema.InstallationWorkOrderDetailsSchema.parse({
+    ...workOrderDetails,
+    evidence: [{ ...workOrderDetails.evidence[0], url: 'private-url' }],
+  }).evidence[0], false);
+  assert.equal(schema.InstallationWorkOrderSummarySchema.safeParse({ ...workOrder, id: 'YC-017' }).success, false);
+  assert.equal(schema.InstallationWorkOrderDetailsSchema.safeParse({
+    ...workOrderDetails,
+    evidence: [{ ...workOrderDetails.evidence[0], sizeBytes: -1 }],
+  }).success, false);
 });
 
-test('installation work-order hooks gate requests on canonical IDs and keep tenant reads bounded', () => {
-  const queries = [];
-  const singleQueries = [];
-  const { usePlatformInstallationWorkOrders, useInstallationWorkOrderById } = loadTypescript('src/hooks/dolores/useInstallationWorkOrders.ts', {
-    '@tanstack/react-query': {
-      useQueries: ({ queries: values }) => { queries.push(...values); return values.map(() => ({ data: undefined, isPending: true, isError: false, error: null, refetch: async () => {} })); },
-      useQuery: (options) => { singleQueries.push(options); return options; },
-    },
-    '@/apis/dolores/installationWorkOrders.api': { installationWorkOrdersApi: { listByTenant: async () => [], getById: async () => ({}) } },
-    '@/schemas/dolores/installationWorkOrders': {
-      InstallationWorkOrderIdSchema: { safeParse: (id) => ({ success: id === workOrderId }) },
-      InstallationWorkOrderTenantIdSchema: { safeParse: (id) => ({ success: id === tenantId }) },
-    },
-    '@/schemas/dolores/tenants': {},
-    './queryPolicy': { retryDoloresRead: () => false },
-    './tenantRequestLimiter': { withTenantRequestSlot: (_signal, request) => request() },
-  });
-  usePlatformInstallationWorkOrders([tenant, { ...tenant, id: 'tenant-fixture' }], true);
-  assert.equal(queries.length, 2);
-  assert.equal(queries[0].enabled, true);
-  assert.equal(queries[1].enabled, false);
-  useInstallationWorkOrderById('YC-017');
-  useInstallationWorkOrderById(workOrderId);
-  assert.equal(singleQueries[0].enabled, false);
-  assert.equal(singleQueries[1].enabled, true);
-  assert.deepEqual(singleQueries[1].queryKey, ['dolores', 'installation-work-orders', 'id', workOrderId]);
+test('installation work-order API uses shared Dolores client, tenant scope, UUID detail, and response identity guards', async () => {
+  const axios = mockAxios([[workOrder], workOrderDetails]);
+  const schema = loadTypescript('src/schema/installation-work-orders.schema.ts');
+  const api = loadTypescript('src/apis/installation-work-orders.api.ts', {
+    '@/lib/http': { axiosClient: axios.axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/installation-work-orders.schema': schema,
+  }).installationWorkOrdersApi;
+  const signal = new AbortController().signal;
+  assert.deepEqual(await api.listByTenant(tenantId, signal), [workOrder]);
+  assert.deepEqual(await api.getById(workOrderId, signal), workOrderDetails);
+  assert.deepEqual(axios.calls.map(({ url, config }) => [url, config]), [
+    ['/installation-work-orders', { baseURL: '/api/dolores/v1', params: { tenantId }, signal }],
+    [`/installation-work-orders/${workOrderId}`, { baseURL: '/api/dolores/v1', signal }],
+  ]);
+  await assert.rejects(api.listByTenant('tenant-fixture'));
+  await assert.rejects(api.getById('YC-017'));
+  assert.equal(axios.calls.length, 2);
+
+  const mismatch = mockAxios([[{ ...workOrder, tenantId: otherTenantId }]]);
+  const mismatchApi = loadTypescript('src/apis/installation-work-orders.api.ts', {
+    '@/lib/http': { axiosClient: mismatch.axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/installation-work-orders.schema': schema,
+  }).installationWorkOrdersApi;
+  await assert.rejects(mismatchApi.listByTenant(tenantId), /outside the requested tenant scope/);
+
+  const wrongWorkOrder = { ...workOrderDetails, workOrder: { ...workOrder, id: '00000000-0000-4000-8000-000000000212' } };
+  const identityMismatch = mockAxios([wrongWorkOrder]);
+  const identityMismatchApi = loadTypescript('src/apis/installation-work-orders.api.ts', {
+    '@/lib/http': { axiosClient: identityMismatch.axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/installation-work-orders.schema': schema,
+  }).installationWorkOrdersApi;
+  await assert.rejects(identityMismatchApi.getById(workOrderId), /different installation work order/);
 });
 
-test('telemetry hook waits for an explicit UUID and range and does not poll automatically', async () => {
-  const optionsList = [];
-  const requests = [];
-  const { useMachineTelemetryPoints } = loadTypescript('src/hooks/dolores/useTelemetry.ts', {
-    '@tanstack/react-query': { useInfiniteQuery: (options) => { optionsList.push(options); return options; } },
-    '@/apis/dolores/telemetry.api': {
-      TELEMETRY_POINTS_PAGE_SIZE: 100,
-      telemetryApi: { listMachinePoints: async (...args) => { requests.push(args); return []; } },
-    },
-    '@/hooks/dolores/queryPolicy': { retryDoloresRead: () => false },
-    '@/schemas/dolores/machines': { MachineIdSchema: { safeParse: (id) => ({ success: id === machineId }) } },
-  });
-  useMachineTelemetryPoints('S-018', null, true);
-  assert.equal(optionsList[0].enabled, false);
-  assert.deepEqual(optionsList[0].queryKey, ['dolores', 'telemetry', 'points', 'S-018', null, null]);
-  const range = { from: '2026-10-20T00:00:00Z', to: '2026-10-21T00:00:00Z' };
-  useMachineTelemetryPoints(machineId, range, true);
-  assert.equal(optionsList[1].enabled, true);
-  assert.equal(optionsList[1].refetchInterval, undefined);
-  await optionsList[1].queryFn({ signal: new AbortController().signal, pageParam: 100 });
-  assert.equal(requests[0][0], machineId);
-  assert.equal(requests[0][1], range.from);
-  assert.equal(requests[0][2], range.to);
-  assert.equal(requests[0][3], 100);
+test('machine list renders API UUIDs, and legacy detail IDs do not enable any request', () => {
+  const results = {
+    [JSON.stringify(['dolores', 'machines'])]: query([machine]),
+    [JSON.stringify(['dolores', 'inventory-summary'])]: query({ totalMachines: 1 }),
+  };
+  const list = renderOperational('ModeratorMachinesScreen', 'machines', results);
+  assert.match(list.html, /API-SMART-111/);
+  assert.match(list.html, new RegExp(`href="/moderator/machines/${machineId}"`));
+  assert.doesNotMatch(list.html, /S-018|C-204/);
+
+  const legacy = renderOperational('ModeratorMachinesScreen', 'machines/S-018');
+  assert.match(legacy.html, /không phải UUID từ API/);
+  assert.equal(legacy.queryOptions.some((options) => options.enabled), false);
 });
 
-test('machine and technical Moderator screens render API records with UUID routes and explicit empty/error states', () => {
-  const machines = renderOperational('ModeratorMachinesScreen', 'machines');
-  assert.match(machines.html, /API-SMART-111/);
-  assert.match(machines.html, new RegExp(`href="${paths.machineDetail(machineId)}"`));
-  assert.doesNotMatch(machines.html, /S-018|C-204/);
-
-  const empty = renderOperational('ModeratorMachinesScreen', 'machines', { inventory: query([]) });
+test('machine empty and forbidden responses stay distinct', () => {
+  const empty = renderOperational('ModeratorMachinesScreen', 'machines', {
+    [JSON.stringify(['dolores', 'machines'])]: query([]),
+    [JSON.stringify(['dolores', 'inventory-summary'])]: query({ totalMachines: 0 }),
+  });
   assert.match(empty.html, /không trả về máy nào/i);
 
-  const failed = renderOperational('ModeratorMachinesScreen', 'machines', { inventory: query(undefined, { data: undefined, isError: true, error: { status: 503 } }) });
-  assert.match(failed.html, /503/);
-  assert.doesNotMatch(failed.html, /Không có máy/);
-
-  const staleEmpty = renderOperational('ModeratorMachinesScreen', 'machines', { inventory: query([], { isError: true, error: { status: 503 } }) });
-  assert.match(staleEmpty.html, /503/);
-  assert.doesNotMatch(staleEmpty.html, /Dolores không trả về máy nào/i);
-
-  const technical = renderOperational('ModeratorTechnicalScreen', 'technical-requests', {
-    tickets: query([{ id: '00000000-0000-4000-8000-000000000601', machineId, tenantId, status: 'PENDING', source: 'MODERATOR', notes: 'API maintenance' }]),
+  const forbidden = renderOperational('ModeratorMachinesScreen', 'machines', {
+    [JSON.stringify(['dolores', 'machines'])]: query(undefined, { data: undefined, isError: true, error: { response: { status: 403 } } }),
+    [JSON.stringify(['dolores', 'inventory-summary'])]: query({ totalMachines: 0 }),
   });
-  assert.match(technical.html, /API maintenance/);
-  assert.match(technical.html, new RegExp(`href="${paths.technicalRequestDetail(workOrderId)}"`));
-  assert.doesNotMatch(technical.html, /YC-017|YC-018|Nguyễn Văn Nam/);
-
-  const failedEmptyTickets = renderOperational('ModeratorTechnicalScreen', 'machine-history', {
-    tickets: query([], { isError: true, error: { status: 503 } }),
-  });
-  assert.match(failedEmptyTickets.html, /503/);
-  assert.doesNotMatch(failedEmptyTickets.html, /Dolores không trả về ticket bảo trì phù hợp/);
+  assert.match(forbidden.html, /không có quyền đọc dữ liệu/i);
+  assert.doesNotMatch(forbidden.html, /không trả về máy nào/i);
 });
 
-test('Moderator machine and work-order details reject fixture IDs and show API detail metadata', () => {
-  const staleMachine = renderOperational('ModeratorMachinesScreen', 'machines/S-018');
-  assert.match(staleMachine.html, /ID máy mẫu cũ/);
-  assert.deepEqual(staleMachine.calls.details, ['S-018']);
+test('machine history filters the global maintenance collection by canonical machine UUID and shows the scope', () => {
+  const otherMachineId = '00000000-0000-4000-8000-000000000112';
+  const results = {
+    [JSON.stringify(['dolores', 'maintenance-tickets'])]: query([
+      { id: '00000000-0000-4000-8000-000000000601', machineId, tenantId, status: 'PENDING', notes: 'Ticket đúng máy' },
+      { id: '00000000-0000-4000-8000-000000000602', machineId: otherMachineId, tenantId, status: 'RESOLVED', notes: 'Ticket máy khác' },
+    ]),
+  };
+  const history = renderOperational('ModeratorTechnicalScreen', `machine-history/${machineId}`, results);
+  assert.match(history.html, /Ticket đúng máy/);
+  assert.doesNotMatch(history.html, /Ticket máy khác/);
+  assert.match(history.html, /lọc theo UUID máy ở phía giao diện/);
+});
 
-  const staleWorkOrder = renderOperational('ModeratorTechnicalScreen', 'technical-requests/YC-017');
-  assert.match(staleWorkOrder.html, /ID yêu cầu mẫu cũ/);
+test('machine detail loads its schedule, location, and only tickets with the matching machine UUID', () => {
+  const otherMachineId = '00000000-0000-4000-8000-000000000112';
+  const results = {
+    [JSON.stringify(['dolores', 'machines', 'id', machineId])]: query({ ...machine, nextPreventiveMaintenanceAt: '2026-11-01T09:00:00Z' }),
+    [JSON.stringify(['dolores', 'machines', 'maintenance-schedule', machineId])]: query({ nextPreventiveMaintenanceAt: '2026-11-01T09:00:00Z', cupsServedSinceLastDescale: 20 }),
+    [JSON.stringify(['dolores', 'maintenance-tickets'])]: query([
+      { id: '00000000-0000-4000-8000-000000000601', machineId, tenantId, status: 'PENDING', notes: 'Ticket của máy này' },
+      { id: '00000000-0000-4000-8000-000000000602', machineId: otherMachineId, tenantId, status: 'RESOLVED', notes: 'Ticket máy khác' },
+    ]),
+    [JSON.stringify(['dolores', 'locations', 'id', locationId])]: query({ id: locationId, tenantId, name: 'API location' }),
+  };
+  const detail = renderOperational('ModeratorMachinesScreen', `machines/${machineId}`, results);
+  assert.match(detail.html, /API-SMART-111/);
+  assert.match(detail.html, /API location/);
+  assert.match(detail.html, /Ticket của máy này/);
+  assert.doesNotMatch(detail.html, /Ticket máy khác/);
+  assert.ok(detail.queryOptions.every((options) => options.retry === false));
 
-  const detail = renderOperational('ModeratorTechnicalScreen', `technical-requests/${workOrderId}`);
+  const mismatchedLocation = renderOperational('ModeratorMachinesScreen', `machines/${machineId}`, {
+    ...results,
+    [JSON.stringify(['dolores', 'locations', 'id', locationId])]: query({ id: locationId, tenantId: otherTenantId, name: 'Cross-tenant location' }),
+  });
+  assert.doesNotMatch(mismatchedLocation.html, /Cross-tenant location/);
+  assert.match(mismatchedLocation.html, /không khớp hồ sơ máy/);
+});
+
+test('tenant-scoped location fan-out is bounded and preserves partial failures without presenting an empty result', async () => {
+  const tenants = Array.from({ length: 8 }, (_value, index) => ({
+    id: `00000000-0000-4000-8000-${String(index + 101).padStart(12, '0')}`,
+    name: `Tenant ${index}`,
+  }));
+  let active = 0;
+  let maximum = 0;
+  const { queryOptions } = renderOperational('ModeratorIoTScreen', 'iot/customer', {
+    [JSON.stringify(['dolores', 'tenants'])]: query(tenants),
+  }, undefined, {
+    locationsApi: {
+      listByTenant: async (id) => {
+        active += 1;
+        maximum = Math.max(maximum, active);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        active -= 1;
+        if (id === tenants[2].id) throw { response: { status: 403 } };
+        return [{ id: locationId, tenantId: id, name: `Location ${id}` }];
+      },
+    },
+  });
+  const locationsQuery = queryOptions.find((options) => options.queryKey[2] === 'locations-by-tenant');
+  const result = await locationsQuery.queryFn({ signal: new AbortController().signal });
+  assert.equal(maximum, 5);
+  assert.equal(result.records.length, 7);
+  assert.deepEqual(result.failedTenants.map(({ tenant: failedTenant }) => failedTenant.id), [tenants[2].id]);
+
+  const rendered = renderOperational('ModeratorIoTScreen', 'iot/customer', {
+    [JSON.stringify(['dolores', 'tenants'])]: query(tenants),
+    [JSON.stringify(['dolores', 'moderator', 'locations-by-tenant', tenants.map(({ id }) => id)])]: query(result),
+  });
+  assert.match(rendered.html, /một số tenant chưa tải được/i);
+  assert.doesNotMatch(rendered.html, /không trả về địa điểm cho tenant nào/i);
+  assert.match(rendered.html, /Chưa xác định/);
+});
+
+test('work-order fan-out is bounded, passes cancellation, and keeps successful tenant records on partial failure', async () => {
+  const tenants = Array.from({ length: 8 }, (_value, index) => ({
+    id: `00000000-0000-4000-8000-${String(index + 201).padStart(12, '0')}`,
+    name: `Tenant ${index}`,
+  }));
+  const tenantIds = tenants.map(({ id }) => id);
+  let active = 0;
+  let maximum = 0;
+  const apiCalls = [];
+  const { queryOptions } = renderOperational('ModeratorTechnicalScreen', 'technical-requests', {
+    [JSON.stringify(['dolores', 'tenants'])]: query(tenants),
+    [JSON.stringify(['dolores', 'maintenance-tickets'])]: query([]),
+  }, undefined, {
+    installationWorkOrdersApi: {
+      listByTenant: async (id, signal) => {
+        apiCalls.push({ id, signal });
+        active += 1;
+        maximum = Math.max(maximum, active);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        active -= 1;
+        if (id === tenants[4].id) throw { response: { status: 503 } };
+        return [{ ...workOrder, id: `00000000-0000-4000-8000-${String(Number(id.slice(-4)) + 300).padStart(12, '0')}`, tenantId: id }];
+      },
+    },
+  });
+  const workOrdersQuery = queryOptions.find((options) => options.queryKey[2] === 'installation-work-orders-by-tenant');
+  const signal = new AbortController().signal;
+  const result = await workOrdersQuery.queryFn({ signal });
+  assert.equal(maximum, 5);
+  assert.equal(result.records.length, 7);
+  assert.equal(result.failedTenants[0].tenant.id, tenants[4].id);
+  assert.ok(apiCalls.every((call) => call.signal === signal));
+
+  const rendered = renderOperational('ModeratorTechnicalScreen', 'technical-requests', {
+    [JSON.stringify(['dolores', 'tenants'])]: query(tenants),
+    [JSON.stringify(['dolores', 'maintenance-tickets'])]: query([]),
+    [JSON.stringify(['dolores', 'moderator', 'installation-work-orders-by-tenant', tenantIds])]: query(result),
+  });
+  assert.match(rendered.html, /một số tenant chưa tải được/i);
+  assert.doesNotMatch(rendered.html, /không trả về ticket hoặc work order/i);
+
+  const aborted = new AbortController();
+  aborted.abort();
+  let requestsAfterAbort = 0;
+  const abortCase = renderOperational('ModeratorTechnicalScreen', 'technical-requests', {
+    [JSON.stringify(['dolores', 'tenants'])]: query(tenants),
+    [JSON.stringify(['dolores', 'maintenance-tickets'])]: query([]),
+  }, undefined, {
+    installationWorkOrdersApi: { listByTenant: async () => { requestsAfterAbort += 1; return []; } },
+  });
+  const abortQuery = abortCase.queryOptions.find((options) => options.queryKey[2] === 'installation-work-orders-by-tenant');
+  await assert.rejects(abortQuery.queryFn({ signal: aborted.signal }), { name: 'AbortError' });
+  assert.equal(requestsAfterAbort, 0);
+});
+
+test('IoT waits for a selected and API-confirmed Smart IoT machine plus explicit date range, without polling', () => {
+  const results = { [JSON.stringify(['dolores', 'machines'])]: query([machine]) };
+  const iot = renderOperational('ModeratorIoTScreen', 'iot/machines', results);
+  assert.match(iot.html, /Chọn máy/);
+  assert.doesNotMatch(iot.html, /Từ ngày/);
+  assert.match(iot.html, /Chọn một machine UUID/);
+  const telemetryOptions = iot.infiniteOptions[0];
+  assert.equal(telemetryOptions.enabled, false);
+  assert.equal(telemetryOptions.refetchInterval, undefined);
+  assert.deepEqual(telemetryOptions.queryKey, ['dolores', 'telemetry', 'points', '', null]);
+  assert.equal(telemetryOptions.getNextPageParam(new Array(100), [], 99_900), 100_000);
+  assert.equal(telemetryOptions.getNextPageParam(new Array(100), [], 100_000), undefined);
+  assert.equal(telemetryOptions.getNextPageParam(new Array(99), [], 0), undefined);
+  assert.equal(iot.queryOptions.find((options) => options.queryKey[1] === 'telemetry' && options.queryKey[2] === 'heartbeat').enabled, false);
+});
+
+test('work-order detail renders read-only checklist and evidence metadata without download links', () => {
+  const results = { [JSON.stringify(['dolores', 'installation-work-orders', 'id', workOrderId])]: query(workOrderDetails) };
+  const detail = renderOperational('ModeratorTechnicalScreen', `technical-requests/${workOrderId}`, results);
   assert.match(detail.html, /Kiểm tra nguồn/);
   assert.match(detail.html, /handover\.pdf/);
-  assert.doesNotMatch(detail.html, /Tải xuống|presigned|object.storage/);
+  assert.match(detail.html, /512 bytes/);
+  assert.doesNotMatch(detail.html, /private-url|presigned|object\.storage|Tải xuống/);
+
+  const legacy = renderOperational('ModeratorTechnicalScreen', 'technical-requests/YC-017');
+  assert.match(legacy.html, /dữ liệu mẫu cũ/);
+  assert.equal(legacy.queryOptions.find((options) => options.queryKey[1] === 'installation-work-orders').enabled, false);
 });
 
-test('machine detail resolves locationId through the authorized location detail endpoint', () => {
-  const detail = renderOperational('ModeratorMachinesScreen', `machines/${machineId}`);
-  assert.match(detail.html, /API location/);
-  assert.deepEqual(detail.calls.locationIds, [locationId]);
+test('technical create action stays disabled with an explanation and sends no write request', () => {
+  const screen = renderOperational('ModeratorTechnicalScreen', 'technical-requests/new');
+  assert.match(screen.html, /Tạo yêu cầu/);
+  assert.match(screen.html, /đang bị khóa/);
+  assert.match(screen.html, /<button[^>]*disabled/);
+  assert.equal(screen.queryOptions.some((options) => options.enabled), false);
 });
 
-test('IoT telemetry query starts only after an explicit machine and bounded date range are selected', () => {
-  const rendered = renderOperational('ModeratorIoTScreen', 'iot/machines');
-  assert.match(rendered.html, /Chọn khoảng thời gian/);
-  assert.match(rendered.html, /API-SMART-111/);
-  assert.deepEqual(rendered.calls.telemetry, [{ id: machineId, range: null, enabled: false }]);
-  assert.doesNotMatch(rendered.html, /Đã đồng bộ 09:42|Số liệu hiển thị là dữ liệu demo/);
-});
-
-test('Phase 3 UUID routes accept canonical machine, maintenance-history, and work-order IDs', () => {
-  const pathModule = loadTypescript('src/routes/path.ts');
-  const routeModule = loadTypescript('src/routes/routes.ts', { './path': pathModule });
-  assert.equal(routeModule.isSupportedModeratorSection(`machines/${machineId}`), true);
-  assert.equal(routeModule.isSupportedModeratorSection(`machine-history/${machineId}`), true);
-  assert.equal(routeModule.isSupportedModeratorSection(`technical-requests/${workOrderId}`), true);
-  assert.equal(routeModule.isSupportedModeratorSection('technical-requests/YC-017'), true);
-});
-
-test('Moderator Phase 3 API read routes receive the API data label', () => {
-  const relativePath = 'src/app/_shell/dolores/DoloresShell.tsx';
-  const source = readFileSync(join(__dirname, '..', relativePath), 'utf8');
-  for (const route of ['PATH_MODERATOR.machines', 'PATH_MODERATOR.machineStock', 'PATH_MODERATOR.iot', 'PATH_MODERATOR.iotMachines', 'PATH_MODERATOR.technicalRequests', 'PATH_MODERATOR.machineHistory']) {
-    assert.ok(source.includes(route), `Expected ${route} in API route labels`);
+test('catch-all route sends machine, IoT, technical, and machine-history paths to the read-screen boundary', async () => {
+  const messages = loadTypescript('src/text/moderator/moderator-messages.ts').MODERATOR_MESSAGES;
+  const styles = new Proxy({}, { get: (_target, key) => String(key) });
+  const route = loadTypescript('src/pages/moderator/[[...sections]].page.tsx', {
+    '@/routes/routes': { isSupportedModeratorSection: () => true, MODERATOR_NAVIGATION_LINKS: [] },
+    '@/routes/path': { PATH_MODERATOR: { ROOT: '/moderator' } },
+    '@/text/moderator/moderator-messages': { MODERATOR_MESSAGES: messages },
+    './moderator-shell': { ModeratorShell: ({ children }) => React.createElement('main', null, children), moderatorStyles: styles },
+    './moderator-read-screens': { ModeratorReadScreen: () => React.createElement('p', null, 'read') },
+  });
+  for (const section of ['machines', `machines/${machineId}`, 'iot/customer', 'technical-requests', `technical-requests/${workOrderId}`, 'machine-history', `machine-history/${machineId}`]) {
+    assert.equal(route.isModeratorReadRoute(section), true, section);
+    assert.deepEqual(await route.getServerSideProps({ params: { sections: section.split('/') } }), { props: { sectionPath: section } });
   }
+  assert.equal(route.isModeratorReadRoute('menu'), true);
+});
+
+test('shared read-screen dispatcher classifies Phase 3 paths for lazy operational screens', () => {
+  const styles = new Proxy({}, { get: (_target, key) => String(key) });
+  const path = loadTypescript('src/routes/path.ts');
+  const messages = loadTypescript('src/text/moderator/moderator-messages.ts');
+  const module = loadTypescript('src/pages/moderator/moderator-read-screens.tsx', {
+    '@tanstack/react-query': { useQuery: () => query(undefined) },
+    axios: { isAxiosError: () => false },
+    'next/link': ({ href, children }) => React.createElement('a', { href }, children),
+    '@/apis/dashboard.api': { dashboardApi: {} },
+    '@/apis/contracts.api': { contractsApi: {} },
+    '@/apis/notifications.api': { notificationsApi: {} },
+    '@/apis/tenants.api': { tenantsApi: {} },
+    '@/routes/path': path,
+    '@/schema/contracts.schema': loadTypescript('src/schema/contracts.schema.ts'),
+    '@/schema/tenants.schema': loadTypescript('src/schema/tenants.schema.ts'),
+    './moderator-shell': { moderatorStyles: styles },
+    '@/text/moderator/moderator-messages': messages,
+  });
+  for (const [sectionPath, expected] of [
+    ['machines', 'machines'],
+    ['iot/customer', 'iot'],
+    ['technical-requests', 'technical'],
+    [`machine-history/${machineId}`, 'technical'],
+  ]) {
+    assert.equal(module.getOperationalScreenKind(sectionPath), expected, sectionPath);
+  }
+  assert.equal(module.getOperationalScreenKind('contracts'), null);
 });

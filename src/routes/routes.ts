@@ -1,7 +1,9 @@
 import { PATH_HOME } from "./path";
 import { PATH_ADMIN } from "./path";
+import { PATH_MODERATOR } from "./path";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
+import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
 export const HOME_NAVIGATION_LINKS = [
   { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0], HREF: PATH_HOME.SECTIONS.SOLUTIONS },
@@ -49,3 +51,65 @@ export const ADMIN_ENABLED_PATHS = new Set<string>([
   PATH_ADMIN.REPORTS,
   PATH_ADMIN.NOTIFICATIONS,
 ]);
+
+export const MODERATOR_NAVIGATION_LINKS = [
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_MODERATOR.ROOT, ICON: "LayoutDashboard" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_MODERATOR.CONTRACTS, ICON: "FileText" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.CUSTOMERS, HREF: PATH_MODERATOR.CUSTOMERS, ICON: "Users" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_MODERATOR.INVOICES, ICON: "FileText" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_MODERATOR.MACHINES, ICON: "Coffee" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT, HREF: PATH_MODERATOR.IOT, ICON: "Activity" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MENU, HREF: PATH_MODERATOR.MENU, ICON: "Utensils" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS, HREF: PATH_MODERATOR.TECHNICAL_REQUESTS, ICON: "Wrench" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINE_HISTORY, HREF: PATH_MODERATOR.MACHINE_HISTORY, ICON: "ClipboardCheck" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.BUYBACK, HREF: PATH_MODERATOR.BUYBACK, ICON: "Package" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_MODERATOR.NOTIFICATIONS, ICON: "Bell" },
+] as const;
+
+export const MODERATOR_MOBILE_NAVIGATION_LINKS = [
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_MODERATOR.ROOT, EXACT: true },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_MODERATOR.CONTRACTS },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT_SHORT, HREF: PATH_MODERATOR.IOT },
+] as const;
+
+function staticPaths(group: Record<string, string | ((value: string) => string)>): string[] {
+  return Object.values(group).filter((value): value is string => typeof value === "string");
+}
+
+const moderatorDynamicSections = [
+  { base: PATH_MODERATOR.INVOICES, segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
+  { base: PATH_MODERATOR.MENU, segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
+  { base: PATH_MODERATOR.CONTRACTS, segment: /^(?:C-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+  { base: PATH_MODERATOR.CUSTOMERS, segment: /^[a-z0-9]+(?:-[a-z0-9]+)*$/i },
+  { base: PATH_MODERATOR.MACHINES, segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+  { base: PATH_MODERATOR.TECHNICAL_REQUESTS, segment: /^(?:YC-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+  { base: PATH_MODERATOR.MACHINE_HISTORY, segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+  { base: PATH_MODERATOR.BUYBACK, segment: /^(?:MB-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+] as const;
+
+export const MODERATOR_ROUTE_CATALOG = {
+  root: PATH_MODERATOR.ROOT,
+  pages: [PATH_MODERATOR.ROOT],
+  sections: staticPaths(PATH_MODERATOR).filter((path) => path !== PATH_MODERATOR.ROOT),
+  dynamicSections: moderatorDynamicSections,
+} as const;
+
+const moderatorExactPaths = new Set([
+  ...MODERATOR_ROUTE_CATALOG.pages,
+  ...MODERATOR_ROUTE_CATALOG.sections,
+]);
+
+export function isSupportedModeratorSection(section: string): boolean {
+  if (section && (section.startsWith("/") || section.endsWith("/") || section.includes("//"))) {
+    return false;
+  }
+  const pathname = section
+    ? PATH_MODERATOR.ROOT + "/" + section
+    : PATH_MODERATOR.ROOT;
+
+  if (moderatorExactPaths.has(pathname)) return true;
+  return moderatorDynamicSections.some(({ base, segment }) =>
+    pathname.startsWith(base + "/") &&
+    segment.test(pathname.slice(base.length + 1)),
+  );
+}

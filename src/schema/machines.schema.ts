@@ -25,10 +25,14 @@ export const MachineTypeSchema = z.enum(["CONVENTIONAL", "SMART_IOT"]);
 export const MachineInventoryItemSchema = z.object({
   id: MachineIdSchema,
   ownerId: z.string().uuid().nullish(),
+  tenantId: z.string().uuid().nullish(),
+  locationId: z.string().uuid().nullish(),
+  machineType: MachineTypeSchema.nullish(),
   serialNumber: z.string().nullish(),
   status: MachineStatusSchema.nullish(),
   deployedAt: dateTimeSchema.nullish(),
   region: z.string().nullish(),
+  ownerType: z.string().nullish(),
   contractStartDate: dateSchema.nullish(),
   contractEndDate: dateSchema.nullish(),
   monthlyRentalFee: z.number().nullish(),
@@ -39,12 +43,17 @@ export const MachineInventorySchema = z.array(MachineInventoryItemSchema);
 export const MachineSchema = z.object({
   id: MachineIdSchema,
   ownerId: z.string().uuid().nullish(),
+  tenantId: z.string().uuid().nullish(),
   serialNumber: z.string().nullish(),
   status: MachineStatusSchema.nullish(),
   deployedAt: dateTimeSchema.nullish(),
   nextPreventiveMaintenanceAt: dateTimeSchema.nullish(),
   cupsServedSinceLastDescale: countSchema.nullish(),
   region: z.string().nullish(),
+  ownerType: z.string().nullish(),
+  contractStartDate: dateSchema.nullish(),
+  contractEndDate: dateSchema.nullish(),
+  monthlyRentalFee: z.number().nullish(),
   locationId: z.string().uuid().nullish(),
   machineType: MachineTypeSchema.nullish(),
   machineTypeMappedAt: dateTimeSchema.nullish(),
@@ -62,7 +71,39 @@ export const MaintenanceScheduleSchema = z.object({
   cupsServedSinceLastDescale: countSchema.nullish(),
 }).passthrough();
 
+export const MaintenanceTicketSchema = z.object({
+  id: z.string().uuid().nullish(),
+  machineId: MachineIdSchema.nullish(),
+  tenantId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  terminationCaseId: z.string().uuid().nullish(),
+  alertLevel: z.string().nullish(),
+  createdFromAlertId: z.string().uuid().nullish(),
+  source: z.string().nullish(),
+  preventiveSubtype: z.string().nullish(),
+  createdBy: z.string().nullish(),
+  acknowledgedAt: dateTimeSchema.nullish(),
+  resolvedAt: dateTimeSchema.nullish(),
+  assignedTo: z.string().nullish(),
+  status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"]).nullish(),
+  partsCost: z.number().nullish(),
+  partsReplaced: z.string().nullish(),
+  startedAt: dateTimeSchema.nullish(),
+  resolutionDurationMinutes: countSchema.nullish(),
+  diagnosis: z.string().nullish(),
+  responsibility: z.enum(["TENANT", "COMPANY", "UNKNOWN"]).nullish(),
+  estimatedCost: z.number().nullish(),
+  actualCost: z.number().nullish(),
+  notes: z.string().nullish(),
+  evidenceReference: z.string().nullish(),
+  resolutionResult: z.string().nullish(),
+  completedAt: dateTimeSchema.nullish(),
+}).passthrough();
+
+export const MaintenanceTicketListSchema = z.array(MaintenanceTicketSchema);
+
 export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
 export type Machine = z.infer<typeof MachineSchema>;
 export type InventorySummary = z.infer<typeof InventorySummarySchema>;
 export type MaintenanceSchedule = z.infer<typeof MaintenanceScheduleSchema>;
+export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;

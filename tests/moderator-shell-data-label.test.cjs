@@ -1,105 +1,189 @@
-const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
-const test = require('node:test');
-const React = require('react');
-const { renderToStaticMarkup } = require('react-dom/server');
-const ts = require('typescript');
+const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+const test = require("node:test");
+const React = require("react");
+const { renderToStaticMarkup } = require("react-dom/server");
+const ts = require("typescript");
 
-function renderShell(pathname, role = 'moderator') {
-  const relativePath = 'src/app/_shell/dolores/DoloresShell.tsx';
-  const fileName = join(__dirname, '..', relativePath);
-  const source = readFileSync(fileName, 'utf8');
+const root = join(__dirname, "..");
+
+function loadModule(relativePath, mocks = {}) {
+  const fileName = join(root, relativePath);
+  const source = readFileSync(fileName, "utf8");
   const { outputText } = ts.transpileModule(source, {
     fileName,
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2020,
+      target: ts.ScriptTarget.ES2022,
       jsx: ts.JsxEmit.ReactJSX,
       esModuleInterop: true,
     },
   });
-  const mockedRequire = (id) => {
-    if (id === '@/routes/navigation') {
-      return {
-        getRoleNavigationState: () => ({
-          nav: [{ href: '/moderator', label: 'Tổng quan', icon: 'overview' }],
-          selectionPath: pathname,
-          mobileSelectionPath: pathname,
-          selectedItem: { label: 'Tổng quan' },
-          notificationsHref: '/moderator/notifications',
-          mobileItems: [],
-        }),
-        isCurrentPath: () => false,
-        ROLE_LABEL: { moderator: 'Moderator', admin: 'Admin' },
-      };
-    }
-    if (id === '@/routes/path') {
-      return {
-        PATH_PUBLIC: { home: '/' },
-        PATH_MODERATOR: {
-          root: '/moderator',
-          contracts: '/moderator/contracts',
-          customers: '/moderator/customers',
-          machines: '/moderator/machines',
-          machinesList: '/moderator/machines/list',
-          machineStock: '/moderator/machines/stock',
-          machineCustomer: '/moderator/machines/customer',
-          machineRepairHistory: '/moderator/machines/repair-history',
-          iot: '/moderator/iot',
-          iotCustomer: '/moderator/iot/customer',
-          iotMachines: '/moderator/iot/machines',
-          technicalRequests: '/moderator/technical-requests',
-          technicalRequestsList: '/moderator/technical-requests/list',
-          machineHistory: '/moderator/machine-history',
-          notifications: '/moderator/notifications',
-          notificationAlerts: '/moderator/notifications/alerts',
-        },
-      };
-    }
-    if (id === '@/app/_ui/dolores/DoloresUI') return { DoloresIconView: () => null };
-    if (id === 'next/link') return ({ href, children }) => React.createElement('a', { href }, children);
-    if (id === 'next/navigation') return { usePathname: () => pathname };
-    if (id === './DoloresShell.module.css') return {};
-    return require(id);
-  };
-  const module = { exports: {} };
-  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
-  const { DoloresShell } = module.exports;
-  return renderToStaticMarkup(React.createElement(
-    DoloresShell,
-    { role, children: React.createElement('main', null, 'Page content') },
-  ));
+  const loaded = { exports: {} };
+  const mockedRequire = (id) =>
+    Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  new Function("require", "module", "exports", outputText)(
+    mockedRequire,
+    loaded,
+    loaded.exports,
+  );
+  return loaded.exports;
 }
 
-test('Moderator API-backed overview, tenant, contract, and notification routes are labeled as API data', () => {
-  for (const pathname of [
-    '/moderator',
-    '/moderator/contracts',
-    '/moderator/contracts/00000000-0000-4000-8000-000000000000',
-    '/moderator/customers',
-    '/moderator/customers/00000000-0000-4000-8000-000000000000',
-    '/moderator/notifications',
-    '/moderator/notifications/alerts',
-    '/moderator/machines',
-    '/moderator/machines/stock',
-    '/moderator/machines/00000000-0000-4000-8000-000000000101',
-    '/moderator/iot/machines',
-    '/moderator/iot/customer',
-    '/moderator/technical-requests',
-    '/moderator/technical-requests/00000000-0000-4000-8000-000000000101',
-    '/moderator/machine-history',
+function routeModules() {
+  const paths = loadModule("src/routes/path.ts");
+  const routeCatalog = loadModule("src/routes/routes.ts", {
+    "./path": paths,
+    "@/text/home/home-messages": loadModule("src/text/home/home-messages.ts"),
+    "@/text/admin/admin-messages": loadModule("src/text/admin/admin-messages.ts"),
+    "@/text/moderator/moderator-messages": {
+      MODERATOR_MESSAGES: loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES,
+    },
+  });
+  return { paths, routeCatalog };
+}
+
+function moderatorShellHarness({ pathname, hasRole }) {
+  let accessState = "checking";
+  const hookReact = {
+    ...React,
+    useState: (initialValue) => initialValue === "checking"
+      ? [accessState, (nextValue) => { accessState = nextValue; }]
+      : [initialValue, () => {}],
+    useEffect: (effect) => effect(),
+    useRef: (initialValue) => ({ current: initialValue }),
+  };
+  const icon = () => null;
+  const { paths, routeCatalog } = routeModules();
+  const messages = loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES;
+  const { ModeratorShell } = loadModule("src/pages/moderator/moderator-shell.tsx", {
+    "react": hookReact,
+    "js-cookie": { __esModule: true, default: { get: () => "moderator-token" } },
+    "lucide-react": new Proxy({}, { get: () => icon }),
+    "next/head": () => null,
+    "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "next/router": {
+      useRouter: () => ({
+        asPath: pathname,
+        replace: () => Promise.resolve(true),
+      }),
+    },
+    "@/lib/auth-role": { hasModeratorRole: hasRole },
+    "@/routes/path": paths,
+    "@/routes/routes": routeCatalog,
+    "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
+    "./moderator-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+  });
+
+  return {
+    render: () => renderToStaticMarkup(
+      React.createElement(ModeratorShell, {
+        pageTitle: "Hợp đồng",
+        children: React.createElement("p", null, "Nội dung"),
+      }),
+    ),
+  };
+}
+
+test("Moderator route catalog accepts known pages and valid IDs, and rejects unknown paths", () => {
+  const { routeCatalog } = routeModules();
+  const validSections = [
+    "",
+    "contracts",
+    "contracts/C-204",
+    "contracts/00000000-0000-4000-8000-000000000000",
+    "customers/nguyen-minh-anh",
+    "invoices/00000000-0000-4000-8000-000000000001",
+    "machines/S-018",
+    "machines/00000000-0000-4000-8000-000000000101",
+    "technical-requests/YC-017",
+    "machine-history/S-018",
+    "buyback/MB-2026-017",
+  ];
+  for (const section of validSections) {
+    assert.equal(
+      routeCatalog.isSupportedModeratorSection(section),
+      true,
+      "Expected supported route section: " + section,
+    );
+  }
+
+  for (const section of [
+    "unknown",
+    "//contracts",
+    "contracts//C-204",
+    "contracts/not-a-record",
+    "contracts/C-20",
+    "machines/not-a-machine-id",
+    "machine-history/not-a-machine-id",
+    "invoices/HD-09-204",
+    "menu/espresso/invalid",
+    "technical-requests/YC-17",
   ]) {
-    const html = renderShell(pathname);
-    assert.match(html, /Dolores • Dữ liệu API/, `Expected API label for ${pathname}`);
-    assert.doesNotMatch(html, /Dolores • Dữ liệu minh họa/, `Expected no demo label for ${pathname}`);
+    assert.equal(
+      routeCatalog.isSupportedModeratorSection(section),
+      false,
+      "Expected unsupported route section: " + section,
+    );
   }
 });
 
-test('unintegrated Moderator routes and the Admin user screen keep their existing labels', () => {
-  assert.match(renderShell('/moderator/invoices'), /Dolores • Dữ liệu minh họa/);
-  assert.match(renderShell('/moderator/contracts/new'), /Dolores • Dữ liệu minh họa/);
-  assert.match(renderShell('/moderator/contracts/expiry'), /Dolores • Dữ liệu minh họa/);
-  assert.match(renderShell('/moderator/customers/new'), /Dolores • Dữ liệu minh họa/);
-  assert.match(renderShell('/admin/users', 'admin'), /Dolores • Quản lý tài khoản/);
+test("Moderator Pages Router entry returns 404 for unsupported sections", async () => {
+  const { paths, routeCatalog } = routeModules();
+  const page = loadModule("src/pages/moderator/[[...sections]].page.tsx", {
+    "@/routes/routes": routeCatalog,
+    "@/routes/path": paths,
+    "@/text/moderator/moderator-messages": {
+      MODERATOR_MESSAGES: loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES,
+    },
+    "./moderator-shell": {
+      ModeratorShell: ({ children }) => children,
+      moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }),
+    },
+  });
+
+  assert.deepEqual(
+    await page.getServerSideProps({ params: { sections: ["contracts", "C-204"] } }),
+    { props: { sectionPath: "contracts/C-204" } },
+  );
+  const detailHtml = renderToStaticMarkup(
+    React.createElement(page.default, { sectionPath: "contracts/C-204" }),
+  );
+  assert.match(detailHtml, /<h1>Hợp đồng<\/h1>/);
+  assert.deepEqual(
+    await page.getServerSideProps({ params: { sections: ["unknown"] } }),
+    { notFound: true },
+  );
+});
+
+test("Moderator shell shows its navigation and selects the current nested section", () => {
+  const shell = moderatorShellHarness({
+    pathname: "/moderator/contracts/C-204",
+    hasRole: () => true,
+  });
+  shell.render();
+  const html = shell.render();
+
+  assert.match(html, /data-role="moderator"/);
+  assert.match(html, /href="\/moderator\/contracts"[^>]*aria-current="page"/);
+  assert.match(html, /Moderator <span aria-hidden="true">\/<\/span> Hợp đồng/);
+  assert.match(html, /Tài khoản khách/);
+  assert.match(html, /Giám sát Smart IoT/);
+  assert.match(html, /href="\/moderator\/notifications"/);
+});
+
+test("Moderator shell keeps other roles out of the Moderator navigation", () => {
+  const shell = moderatorShellHarness({
+    pathname: "/moderator/contracts",
+    hasRole: () => false,
+  });
+  shell.render();
+  const html = shell.render();
+
+  assert.match(html, /Tài khoản này không có quyền vào khu vực Moderator/);
+  assert.match(html, /href="\/"/);
+  assert.match(html, /href="\/login"/);
+  assert.doesNotMatch(html, /data-role="moderator"/);
+  assert.doesNotMatch(html, /href="\/moderator\/contracts"/);
 });

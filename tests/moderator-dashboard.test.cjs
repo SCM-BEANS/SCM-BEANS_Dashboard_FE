@@ -1,14 +1,14 @@
-const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
-const test = require('node:test');
-const React = require('react');
-const { renderToStaticMarkup } = require('react-dom/server');
-const ts = require('typescript');
+const assert = require("node:assert/strict");
+const { readFileSync } = require("node:fs");
+const { join } = require("node:path");
+const test = require("node:test");
+const React = require("react");
+const { renderToStaticMarkup } = require("react-dom/server");
+const ts = require("typescript");
 
 function loadTypescript(relativePath, mocks = {}) {
-  const fileName = join(__dirname, '..', relativePath);
-  const source = readFileSync(fileName, 'utf8');
+  const fileName = join(__dirname, "..", relativePath);
+  const source = readFileSync(fileName, "utf8");
   const { outputText } = ts.transpileModule(source, {
     fileName,
     compilerOptions: {
@@ -20,276 +20,336 @@ function loadTypescript(relativePath, mocks = {}) {
   });
   const module = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
-  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
+  new Function("require", "exports", "module", outputText)(mockedRequire, module.exports, module);
   return module.exports;
 }
 
-const uuid = '00000000-0000-4000-8000-000000000101';
+const dashboardKey = JSON.stringify(["dolores", "dashboard", "overview"]);
+const notificationsKey = JSON.stringify(["dolores", "notifications"]);
+const unreadCountKey = JSON.stringify(["dolores", "notifications", "unread-count"]);
+const alertsKey = JSON.stringify(["dolores", "alerts"]);
+const defaultQuery = { data: undefined, isPending: false, isError: false, error: null, refetch: async () => {} };
+const styles = {
+  pageContent: "pageContent",
+  pageHeading: "pageHeading",
+  pendingNotice: "pendingNotice",
+  partialNotice: "partialNotice",
+  retryButton: "retryButton",
+  errorNotice: "errorNotice",
+};
 
-function renderModerator(sections, queryResults = {}) {
-  const hookCalls = [];
+function renderScreen(sectionPath, states = {}, mutationState = {}, notificationApiOverrides = {}) {
+  const queryOptions = [];
+  const mutationOptions = [];
+  const apiCalls = [];
   const mutationCalls = [];
-  const buttons = [];
-  const results = {
-    dashboard: { data: undefined, isPending: false, isError: false, error: null, refetch: async () => {} },
-    alerts: { data: [], isPending: false, isError: false, error: null, refetch: async () => {} },
-    notifications: { data: [], isPending: false, isError: false, error: null, refetch: async () => {} },
-    unreadCount: { data: { unreadCount: 0 }, isPending: false, isError: false, error: null, refetch: async () => {} },
-    markReadMutation: { mutate: (id) => mutationCalls.push(id), isPending: false, isError: false, error: null },
-    ...queryResults,
-  };
-
-  const MockPage = ({ title, description, actions, children }) => React.createElement(
-    'main',
-    null,
-    React.createElement('h1', null, title),
-    description && React.createElement('p', null, description),
-    actions,
-    children
-  );
-  const MockPanel = ({ children }) => React.createElement('section', null, children);
-  const MockTable = ({ headers, rows }) => React.createElement(
-    'table',
-    null,
-    React.createElement('thead', null, React.createElement('tr', null, headers.map((header) => React.createElement('th', { key: header }, header)))),
-    React.createElement('tbody', null, rows.map((row, rowIndex) => React.createElement(
-      'tr',
-      { key: rowIndex },
-      row.map((cell, cellIndex) => React.createElement('td', { key: cellIndex }, cell))
-    )))
-  );
-  const MockButton = ({ href, children, onClick, disabled }) => href
-    ? React.createElement('a', { href }, children)
-    : (buttons.push({ label: typeof children === 'string' ? children : '', onClick, disabled }), React.createElement('button', { onClick, disabled }, children));
-  const ui = {
-    DoloresButton: MockButton,
-    DoloresField: () => null,
-    DoloresFieldGrid: ({ children }) => React.createElement('div', null, children),
-    DoloresMetric: ({ label, value }) => React.createElement('p', null, `${label}: ${value}`),
-    DoloresNotice: ({ title, children }) => React.createElement('div', { role: 'status' }, React.createElement('strong', null, title), children),
-    DoloresPanel: MockPanel,
-    DoloresPanelTitle: ({ children }) => React.createElement('h2', null, children),
-    DoloresTable: MockTable,
-  };
-  const root = '/moderator';
-  const moderatorPaths = {
-    root,
-    invoices: `${root}/invoices`,
-    technicalRequests: `${root}/technical-requests`,
-    notifications: `${root}/notifications`,
-    notificationAlerts: `${root}/notifications/alerts`,
-    iotMachines: `${root}/iot/machines`,
-    contractExpiry: `${root}/contracts/expiry`,
-    technicalRequestDetail: () => `${root}/technical-requests/detail`,
-    invoiceReconcile: `${root}/invoices/reconcile`,
-    menuSent: `${root}/menu/sent`,
-  };
-  const { ModeratorSectionPage } = loadTypescript(
-    'src/app/(moderator)/moderator/_components/ModeratorDashboardScreens.tsx',
-    {
-      'next/link': ({ href, children }) => React.createElement('a', { href }, children),
-      '@/app/_features/dashboard/DashboardOverview': {
-        DashboardOverview: ({ title, description, actions, metrics = [], children }) => React.createElement(
-          'main',
-          null,
-          React.createElement('h1', null, title),
-          description && React.createElement('p', null, description),
-          actions,
-          metrics.map(({ label, value }) => React.createElement('p', { key: label }, `${label}: ${value}`)),
-          children
-        ),
+  const invalidations = [];
+  const messages = loadTypescript("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES;
+  const module = loadTypescript("src/pages/moderator/moderator-read-screens.tsx", {
+    "@tanstack/react-query": {
+      useQuery: (options) => {
+        queryOptions.push(options);
+        return states[JSON.stringify(options.queryKey)] ?? defaultQuery;
       },
-      '@/app/_features/machines/MachinePresentation': {},
-      './ModeratorOperationalScreens': { ModeratorMachinesScreen: () => null, ModeratorIoTScreen: () => null, ModeratorTechnicalScreen: () => null },
-      './ModeratorBillingRecipeScreens': { ModeratorBuybackScreen: () => null, ModeratorInvoicesScreen: () => null, ModeratorRecipesScreen: () => null },
-      '@/app/_shell/dolores/DoloresShell': { DoloresPage: MockPage },
-      '@/app/_ui/dolores/DoloresUI': ui,
-      '@/app/_features/demo-flow/demoFlowStore': {
-        isRetrievalAssessment: () => false,
-        readDemoFields: () => [],
-        readDemoRecord: () => null,
-        useDemoRecord: () => null,
-        writeDemoRecord: () => false,
-        writeDemoFlow: () => false,
+      useMutation: (options) => {
+        mutationOptions.push(options);
+        return {
+          mutate: (id) => mutationCalls.push(id),
+          isPending: false,
+          variables: undefined,
+          isError: false,
+          error: null,
+          ...mutationState,
+        };
       },
-      '@/routes/path': {
-        PATH_MODERATOR: moderatorPaths,
-        PATH_TECHNICIAN: { taskRefurbishment: `${root}/technician/refurbishment` },
-      },
-      '@/hooks/dolores/useDashboardOverview': {
-        useDashboardOverview: () => { hookCalls.push('dashboard'); return results.dashboard; },
-      },
-      '@/hooks/dolores/useAlerts': {
-        useAlerts: () => { hookCalls.push('alerts'); return results.alerts; },
-      },
-      '@/hooks/dolores/useNotifications': {
-        useNotifications: () => { hookCalls.push('notifications'); return results.notifications; },
-        useUnreadNotificationCount: () => { hookCalls.push('unreadCount'); return results.unreadCount; },
-        useMarkNotificationRead: () => { hookCalls.push('markRead'); return results.markReadMutation; },
-      },
-      '@/hooks/dolores/useTenants': {
-        useTenants: () => ({ data: [], isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {} }),
-        useTenant: () => ({ data: undefined, isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {} }),
-      },
-      '@/hooks/dolores/useContracts': {
-        usePlatformContracts: () => ({ contracts: [], completedTenantCount: 0, failedTenants: [], isLoading: false, retryFailed: () => {}, refetchAll: () => {} }),
-        useContractById: () => ({ data: undefined, isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {} }),
-        useContractDocuments: () => ({ data: [], isPending: false, isError: false, isFetching: false, error: null, refetch: async () => {} }),
-      },
-      '@/app/_shell/dolores/DoloresShell.module.css': {},
-    }
-  );
-  const html = renderToStaticMarkup(React.createElement(ModeratorSectionPage, { sections }));
-  return { html, hookCalls, mutationCalls, buttons };
-}
-
-test('moderator dashboard renders operator metrics and daily cup usage from the API', () => {
-  const { html, hookCalls } = renderModerator([], {
-    dashboard: {
-      data: {
-        scope: 'OPERATOR',
-        asOfDate: '2026-10-21',
-        usagePeriodStart: '2026-10-15',
-        usagePeriodEnd: '2026-10-21',
-        operationalMetrics: {
-          totalTenants: 17,
-          expiringContractsWithin30Days: 2,
-          cupsInSelectedPeriod: 91,
-          dailyAcceptedCupUsage: [{ date: '2026-10-20', cups: 14 }],
-          openMaintenanceTickets: 3,
-          openInstallationWorkOrders: 4,
+      useQueryClient: () => ({
+        invalidateQueries: async (filters) => { invalidations.push(filters); },
+      }),
+    },
+    "@/apis/dashboard.api": {
+      dashboardApi: {
+        getOverview: async (signal) => {
+          apiCalls.push(["dashboard", signal]);
+          return { scope: "OPERATOR" };
         },
       },
-      isPending: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
     },
-  });
-
-  assert.ok(hookCalls.includes('dashboard'));
-  assert.match(html, /Scope: OPERATOR/);
-  assert.match(html, /Tenant[^<]*: 17/);
-  assert.match(html, /14/);
-  assert.match(html, /20\/10/);
-  assert.doesNotMatch(html, /Chứng từ chờ đối chiếu|Smart IoT đang thuê|98/);
-});
-
-test('moderator alerts and notifications render API records and server unread count', () => {
-  const alertMessage = 'TDD alert from Dolores';
-  const notificationTitle = 'TDD notification from Dolores';
-  const { html: alertHtml, hookCalls: alertHookCalls } = renderModerator(['notifications', 'alerts'], {
-    alerts: {
-      data: [{ id: uuid, level: 'HIGH', machineId: null, message: alertMessage, acknowledged: false, ts: '2026-10-20T13:05:00' }],
-      isPending: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
+    "@/apis/contracts.api": {
+      contractsApi: {
+        listByTenant: async () => [],
+        getModeratorById: async () => undefined,
+        getDocuments: async () => [],
+      },
     },
-  });
-  const { html: notificationHtml, hookCalls: notificationHookCalls } = renderModerator(['notifications'], {
-    notifications: {
-      data: [{ id: uuid, tenantId: null, title: notificationTitle, message: 'API notification body', type: 'SYSTEM', read: false, createdAt: '2026-10-20T13:05:00Z' }],
-      isPending: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
+    "@/apis/notifications.api": {
+      notificationsApi: {
+        list: async (signal) => {
+          apiCalls.push(["notifications", signal]);
+          return [];
+        },
+        unreadCount: async (signal) => {
+          apiCalls.push(["unreadCount", signal]);
+          return { unreadCount: 0 };
+        },
+        markAsRead: async (id) => {
+          apiCalls.push(["markAsRead", id]);
+          return { id, title: "Server notice", message: "Read notification", type: "SYSTEM", read: true };
+        },
+        listAlerts: async (signal) => {
+          apiCalls.push(["alerts", signal]);
+          return [];
+        },
+        ...notificationApiOverrides,
+      },
     },
-    unreadCount: { data: { unreadCount: 3 }, isPending: false, isError: false, error: null, refetch: async () => {} },
-  });
-
-  assert.ok(alertHookCalls.includes('alerts'));
-  assert.match(alertHtml, new RegExp(alertMessage));
-  assert.doesNotMatch(alertHtml, /Mất kết nối \/ lỗi menu|Hợp đồng sắp hết hạn/);
-  assert.ok(notificationHookCalls.includes('notifications'));
-  assert.ok(notificationHookCalls.includes('unreadCount'));
-  assert.match(notificationHtml, new RegExp(notificationTitle));
-  assert.match(notificationHtml, /API notification body/);
-  assert.match(notificationHtml, /3/);
-  assert.doesNotMatch(notificationHtml, /Kết quả Technician YC-017|Hóa đơn HD-09-204/);
-});
-
-test('moderator can mark an unread notification as read through the API mutation', () => {
-  const { html, hookCalls, mutationCalls, buttons } = renderModerator(['notifications'], {
-    notifications: {
-      data: [
-        { id: uuid, tenantId: null, title: 'Unread notice', message: 'Needs attention', type: 'SYSTEM', read: false, createdAt: '2026-10-20T13:05:00Z' },
-        { id: '00000000-0000-4000-8000-000000000102', tenantId: null, title: 'Already read', message: 'Done', type: 'SYSTEM', read: true, createdAt: '2026-10-20T12:05:00Z' },
-      ],
-      isPending: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
+    "@/apis/tenants.api": {
+      tenantsApi: { list: async () => [], getById: async () => undefined },
     },
-  });
-
-  assert.ok(hookCalls.includes('markRead'));
-  assert.match(html, /Unread notice/);
-  assert.match(html, /Already read/);
-  assert.match(html, /Đánh dấu đã đọc/);
-  const button = buttons.find((item) => item.label === 'Đánh dấu đã đọc');
-  assert.ok(button);
-  button.onClick();
-  assert.deepEqual(mutationCalls, [uuid]);
-});
-
-test('failed notification writes keep the item unread and show the API error', () => {
-  const { html, buttons } = renderModerator(['notifications'], {
-    notifications: {
-      data: [{ id: uuid, tenantId: null, title: 'Unread notice', message: 'Needs attention', type: 'SYSTEM', read: false, createdAt: '2026-10-20T13:05:00Z' }],
-      isPending: false,
-      isError: false,
-      error: null,
-      refetch: async () => {},
+    "@/schema/contracts.schema": {
+      ContractIdSchema: { safeParse: (value) => ({ success: /^[0-9a-f-]{36}$/i.test(value) }) },
     },
-    markReadMutation: { mutate: () => {}, isPending: false, isError: true, error: { status: 403 } },
+    "@/schema/tenants.schema": {
+      TenantIdSchema: { safeParse: (value) => ({ success: /^[0-9a-f-]{36}$/i.test(value) }) },
+    },
+    "next/link": ({ href, children }) => React.createElement("a", { href }, children),
+    "@/routes/path": {
+      PATH_MODERATOR: {
+        NOTIFICATIONS: "/moderator/notifications",
+        NOTIFICATION_ALERTS: "/moderator/notifications/alerts",
+      },
+    },
+    "./moderator-shell": { moderatorStyles: styles },
+    "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
+  });
+  const component = module.ModeratorReadScreen({ sectionPath });
+  const tree = typeof component.type === "function" ? component.type(component.props) : component;
+  const html = renderToStaticMarkup(tree);
+  return { html, tree, queryOptions, mutationOptions, apiCalls, mutationCalls, invalidations, messages };
+}
+
+function result(data) {
+  return { data, isPending: false, isError: false, error: null, refetch: async () => {} };
+}
+
+function findElements(root, type) {
+  if (Array.isArray(root)) return root.flatMap((child) => findElements(child, type));
+  if (!React.isValidElement(root)) return [];
+  const matches = root.type === type ? [root] : [];
+  return [...matches, ...findElements(root.props.children, type)];
+}
+
+test("overview renders only values returned by the operator dashboard API", () => {
+  const { html } = renderScreen("", {
+    [dashboardKey]: result({
+      scope: "OPERATOR",
+      asOfDate: "2026-10-22",
+      operationalMetrics: {
+        totalOwners: 5,
+        cupsInSelectedPeriod: 41,
+        dailyAcceptedCupUsage: [{ date: "2026-10-21", cups: 13 }],
+        openMaintenanceTickets: 2,
+        openInstallationWorkOrders: 1,
+      },
+      financialMetrics: [{ currency: "VND", amountIssued: 100000, outstandingBalance: 25000 }],
+    }),
   });
 
-  assert.match(html, /403/);
-  assert.match(html, /Chưa đọc/);
-  assert.ok(buttons.some((button) => button.label === 'Đánh dấu đã đọc'));
-  assert.doesNotMatch(html, /Đã đánh dấu thành công/);
+  assert.match(html, /OPERATOR/);
+  assert.match(html, /Tổng số Owner/);
+  assert.match(html, />5</);
+  assert.match(html, />41</);
+  assert.match(html, /2026-10-21/);
+  assert.match(html, /25/);
+  assert.doesNotMatch(html, /demo|fixture/i);
 });
 
-test('moderator read errors remain visible and are not shown as empty results', () => {
-  const { html } = renderModerator(['notifications', 'alerts'], {
-    alerts: { data: undefined, isPending: false, isError: true, error: { status: 403 }, refetch: async () => {} },
+test("notifications offer mark-as-read only for unread records while alerts remain read-only", () => {
+  const notificationId = "00000000-0000-4000-8000-000000000101";
+  const alertId = "00000000-0000-4000-8000-000000000102";
+  const { html: notificationHtml } = renderScreen("notifications", {
+    [notificationsKey]: result([{
+      id: notificationId,
+      ownerId: null,
+      title: "Server notice",
+      message: "Read-only notification",
+      type: "SYSTEM",
+      createdAt: null,
+      read: false,
+    }]),
+    [unreadCountKey]: result({ unreadCount: 3 }),
+  });
+  const { html: alertsHtml } = renderScreen("notifications/alerts", {
+    [alertsKey]: result([{
+      id: alertId,
+      level: "HIGH",
+      machineId: null,
+      message: "Server alert",
+      acknowledged: false,
+      ts: "2026-10-21T10:00:00Z",
+    }]),
   });
 
-  assert.match(html, /403/);
-  assert.match(html, /role="alert"/);
-  assert.match(html, /Thử lại/);
-  assert.doesNotMatch(html, /Chưa có cảnh báo|Không có dữ liệu/);
+  assert.match(notificationHtml, /Server notice/);
+  assert.match(notificationHtml, /Read-only notification/);
+  assert.match(notificationHtml, /Chưa đọc/);
+  assert.match(notificationHtml, />3</);
+  assert.match(notificationHtml, /Đánh dấu đã đọc/);
+  assert.match(alertsHtml, /Server alert/);
+  assert.match(alertsHtml, /không lọc theo Owner hoặc tenant/);
+  assert.match(alertsHtml, /Đang hoạt động/);
+  assert.doesNotMatch(alertsHtml, /<button/);
 });
 
-test('moderator notification errors distinguish missing authentication from forbidden scope', () => {
-  const { html } = renderModerator(['notifications'], {
-    unreadCount: { data: undefined, isPending: false, isError: true, error: { status: 401 }, refetch: async () => {} },
+test("mark-as-read submits the clicked notification and refreshes list/count only after a confirmed response", async () => {
+  const notificationId = "00000000-0000-4000-8000-000000000101";
+  const notification = {
+    id: notificationId,
+    ownerId: null,
+    title: "Server notice",
+    message: "Read-only notification",
+    type: "SYSTEM",
+    createdAt: null,
+    read: false,
+  };
+  const screen = renderScreen("notifications", {
+    [notificationsKey]: result([notification]),
+    [unreadCountKey]: result({ unreadCount: 1 }),
   });
+  const markReadButton = findElements(screen.tree, "button")
+    .find((button) => button.props.children === screen.messages.READ_SCREENS.MARK_READ);
 
-  assert.match(html, /401/);
-  assert.match(html, /token/i);
-  assert.match(html, /role="alert"/);
-  assert.doesNotMatch(html, /403/);
+  assert.ok(markReadButton);
+  markReadButton.props.onClick();
+  assert.deepEqual(screen.mutationCalls, [notificationId]);
+  assert.deepEqual(screen.invalidations, []);
+
+  const confirmed = await screen.mutationOptions[0].mutationFn(notificationId);
+  await screen.mutationOptions[0].onSuccess(confirmed);
+  assert.equal(confirmed.read, true);
+  assert.deepEqual(screen.apiCalls.filter(([name]) => name === "markAsRead"), [["markAsRead", notificationId]]);
+  assert.deepEqual(screen.invalidations, [{ queryKey: ["dolores", "notifications"] }]);
 });
 
-test('moderator read screens expose loading and empty states explicitly', () => {
-  const { html: loadingHtml } = renderModerator([], {
-    dashboard: { data: undefined, isPending: true, isError: false, error: null, refetch: async () => {} },
+test("mark-as-read prevents duplicate submissions and keeps failed records unread", async () => {
+  const notificationId = "00000000-0000-4000-8000-000000000101";
+  const notification = {
+    id: notificationId,
+    ownerId: null,
+    title: "Server notice",
+    message: "Read-only notification",
+    type: "SYSTEM",
+    createdAt: null,
+    read: false,
+  };
+  const pending = renderScreen("notifications", {
+    [notificationsKey]: result([notification]),
+    [unreadCountKey]: result({ unreadCount: 1 }),
+  }, { isPending: true, variables: notificationId });
+  const pendingButton = findElements(pending.tree, "button")[0];
+  assert.equal(pendingButton.props.disabled, true);
+  assert.equal(pendingButton.props.children, pending.messages.READ_SCREENS.MARKING_READ);
+
+  const failure = new Error("write rejected");
+  const rejected = renderScreen("notifications", {
+    [notificationsKey]: result([notification]),
+    [unreadCountKey]: result({ unreadCount: 1 }),
+  }, { isError: true, error: failure }, {
+    markAsRead: async () => { throw failure; },
   });
-  const { html: emptyAlertsHtml } = renderModerator(['notifications', 'alerts'], {
-    alerts: { data: [], isPending: false, isError: false, error: null, refetch: async () => {} },
+  assert.match(rejected.html, /role="alert"/);
+  assert.match(rejected.html, /Không thể đánh dấu thông báo đã đọc/);
+  assert.match(rejected.html, /Chưa đọc/);
+  assert.equal(findElements(rejected.tree, "button").length, 1);
+  await assert.rejects(rejected.mutationOptions[0].mutationFn(notificationId), /write rejected/);
+  assert.deepEqual(rejected.invalidations, []);
+
+  const alreadyRead = renderScreen("notifications", {
+    [notificationsKey]: result([{ ...notification, read: true }]),
+    [unreadCountKey]: result({ unreadCount: 0 }),
   });
-  const { html: emptyNotificationsHtml } = renderModerator(['notifications'], {
-    notifications: { data: [], isPending: false, isError: false, error: null, refetch: async () => {} },
-    unreadCount: { data: { unreadCount: 0 }, isPending: false, isError: false, error: null, refetch: async () => {} },
+  assert.equal(findElements(alreadyRead.tree, "button").length, 0);
+});
+
+test("read screens distinguish loading, empty, 401, 403, and failed requests from empty results", () => {
+  const { html: loadingHtml } = renderScreen("", {
+    [dashboardKey]: { ...defaultQuery, isPending: true },
+  });
+  const { html: emptyOverviewHtml } = renderScreen("", {
+    [dashboardKey]: result({ scope: "OPERATOR" }),
+  });
+  const { html: emptyAlertsHtml } = renderScreen("notifications/alerts", {
+    [alertsKey]: result([]),
+  });
+  const { html: emptyNotificationsHtml } = renderScreen("notifications", {
+    [notificationsKey]: result([]),
+    [unreadCountKey]: result({ unreadCount: 0 }),
+  });
+  const unauthorized = Object.assign(new Error("unauthorized"), {
+    isAxiosError: true,
+    response: { status: 401 },
+  });
+  const forbidden = Object.assign(new Error("forbidden"), {
+    isAxiosError: true,
+    response: { status: 403 },
+  });
+  const { html: unauthorizedHtml } = renderScreen("notifications", {
+    [notificationsKey]: { ...defaultQuery, isError: true, error: unauthorized },
+    [unreadCountKey]: result({ unreadCount: 0 }),
+  });
+  const { html: forbiddenHtml } = renderScreen("", {
+    [dashboardKey]: { ...defaultQuery, isError: true, error: forbidden },
+  });
+  const networkError = Object.assign(new Error("offline"), { isAxiosError: true });
+  const { html: networkErrorHtml } = renderScreen("notifications/alerts", {
+    [alertsKey]: { ...defaultQuery, isError: true, error: networkError },
+  });
+  const { html: staleEmptyErrorHtml } = renderScreen("notifications/alerts", {
+    [alertsKey]: { ...result([]), isError: true, error: networkError },
   });
 
   assert.match(loadingHtml, /Đang tải tổng quan vận hành/);
-  assert.match(loadingHtml, /aria-live="polite"/);
-  assert.match(emptyAlertsHtml, /Không có cảnh báo đang hoạt động/);
-  assert.match(emptyAlertsHtml, /aria-live="polite"/);
-  assert.match(emptyNotificationsHtml, /Không có thông báo/);
-  assert.match(emptyNotificationsHtml, /Thông báo chưa đọc/);
+  assert.match(emptyOverviewHtml, /Dolores chưa trả về số liệu tổng quan/);
+  assert.match(emptyNotificationsHtml, /Dolores hiện không trả về thông báo nào/);
   assert.match(emptyNotificationsHtml, />0</);
+  assert.match(emptyAlertsHtml, /Dolores hiện không trả về cảnh báo nào/);
+  assert.match(unauthorizedHtml, /đăng nhập lại/);
+  assert.match(forbiddenHtml, /không có quyền đọc dữ liệu này/);
+  assert.match(networkErrorHtml, /Dolores hiện không phản hồi/);
+  assert.match(networkErrorHtml, /Thử lại/);
+  assert.match(networkErrorHtml, /role="alert"/);
+  assert.match(staleEmptyErrorHtml, /Dolores hiện không phản hồi/);
+  assert.doesNotMatch(unauthorizedHtml, /không trả về thông báo nào/);
+  assert.doesNotMatch(forbiddenHtml, /chưa trả về số liệu tổng quan/);
+  assert.doesNotMatch(networkErrorHtml, /không trả về cảnh báo nào/);
+  assert.doesNotMatch(staleEmptyErrorHtml, /không trả về cảnh báo nào/);
+});
+
+test("query functions pass cancellation signals and rendering does not send a write", async () => {
+  const dashboard = renderScreen("", {
+    [dashboardKey]: result({ operationalMetrics: {} }),
+  });
+  const notifications = renderScreen("notifications", {
+    [notificationsKey]: result([]),
+    [unreadCountKey]: result({ unreadCount: 0 }),
+  });
+  const alerts = renderScreen("notifications/alerts", {
+    [alertsKey]: result([]),
+  });
+  const signal = new AbortController().signal;
+
+  await Promise.all([
+    ...dashboard.queryOptions,
+    ...notifications.queryOptions,
+    ...alerts.queryOptions,
+  ].map((options) => options.queryFn({ signal })));
+
+  assert.deepEqual(dashboard.apiCalls, [["dashboard", signal]]);
+  assert.deepEqual(notifications.apiCalls, [["notifications", signal], ["unreadCount", signal]]);
+  assert.deepEqual(notifications.mutationCalls, []);
+  assert.deepEqual(alerts.apiCalls, [["alerts", signal]]);
+  assert.equal([
+    ...dashboard.queryOptions,
+    ...notifications.queryOptions,
+    ...alerts.queryOptions,
+  ].some((options) => options.mutationFn), false);
 });

@@ -3,14 +3,13 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
-const { createDoloresAxiosMock } = require('./helpers/doloresAxiosMock.cjs');
 
 function loadTypescript(relativePath, mocks = {}) {
   const fileName = join(__dirname, '..', relativePath);
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
   });
   const module = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
@@ -18,124 +17,127 @@ function loadTypescript(relativePath, mocks = {}) {
   return module.exports;
 }
 
-const {
-  ContractSchema,
-  ContractListSchema,
-  ContractExpiryStatusSchema,
-  ContractDocumentListSchema,
-} = loadTypescript('src/schemas/dolores/contracts.ts');
-
-const tenantId = '00000000-0000-4000-8000-000000000001';
-const contractId = '00000000-0000-4000-8000-000000000002';
-const machineId = '00000000-0000-4000-8000-000000000003';
-const documentId = '00000000-0000-4000-8000-000000000004';
-
-const contract = {
+const tenantId = '00000000-0000-4000-8000-000000000101';
+const contractId = '00000000-0000-4000-8000-000000000201';
+const documentId = '00000000-0000-4000-8000-000000000301';
+const ownerContract = { id: contractId, ownerId: tenantId, status: 'ACTIVE' };
+const moderatorContract = {
   id: contractId,
   tenantId,
-  machineId,
-  endDate: '2026-12-31',
-  startDate: '2026-01-01',
+  machineId: null,
+  startDate: '2026-03-01',
+  endDate: '2027-03-01',
+  terms: 'API terms',
   monthlyRentalFee: 750000,
-  machineTypeSnapshot: 'SMART_IOT',
+  machineTypeSnapshot: 'CONVENTIONAL',
   depositAmount: '10000000.00',
   installationFee: null,
-  paygUnitPrice: 1000,
-  offlineLimitMinutes: 7200,
+  paygUnitPrice: null,
+  offlineLimitMinutes: null,
+  termsSnapshot: null,
   status: 'ACTIVE',
   legacyUnmapped: false,
 };
+const document = {
+  id: documentId,
+  contractId,
+  documentType: 'MAIN_CONTRACT',
+  originalFilename: 'signed.pdf',
+  contentType: 'application/pdf',
+  sizeBytes: 1024,
+  version: 1,
+  uploadedAt: '2026-10-20T10:00:00Z',
+  uploadedBy: null,
+  archivedAt: null,
+};
+const tenant = { id: tenantId, name: 'Khách kiểm thử', type: 'contract_owner', billingExempt: false };
 
-test('contract schemas accept supported entity, expiry, and document response fields', () => {
-  assert.equal(ContractSchema.parse(contract).id, contractId);
-  assert.equal(ContractListSchema.parse([contract]).length, 1);
-  assert.equal(ContractListSchema.safeParse({ content: [contract], last: true }).success, false);
-  assert.equal(ContractSchema.safeParse({ ...contract, status: 'RENEWED' }).success, false);
+function createAxiosClient(responseQueue) {
+  const calls = [];
+  const axiosClient = {
+    async get(url, config = {}) {
+      calls.push({ method: 'GET', url, config });
+      return { data: responseQueue.shift() };
+    },
+  };
+  return { axiosClient, calls };
+}
 
-  const expiry = ContractExpiryStatusSchema.parse({ contractId, expiryDate: '2026-12-31', decision: 'CONTINUE' });
-  assert.equal(expiry.contractId, contractId);
+function loadContractsApi(responses, contractSchemas, tenantSchemas) {
+  const { axiosClient, calls } = createAxiosClient(responses);
+  const module = loadTypescript('src/apis/contracts.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/contracts.schema': contractSchemas,
+    '@/schema/tenants.schema': tenantSchemas,
+  });
+  return { api: module.contractsApi, calls };
+}
 
-  const document = ContractDocumentListSchema.parse([{
-    id: documentId,
-    contractId,
-    documentType: 'MAIN_CONTRACT',
-    originalFilename: 'signed.pdf',
-    contentType: 'application/pdf',
-    sizeBytes: 1024,
-    sha256: 'abc123',
-    version: 1,
-    uploadedAt: '2026-10-20T10:00:00',
-    archivedAt: null,
-  }]);
-  assert.equal(document[0].originalFilename, 'signed.pdf');
+test('Admin owner contract schema and Moderator tenant contract schema remain separate', () => {
+  const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
+  assert.equal(contractSchemas.ContractSchema.parse(ownerContract).ownerId, tenantId);
+  assert.equal(contractSchemas.ContractSchema.safeParse(moderatorContract).success, false);
+  assert.equal(contractSchemas.ModeratorContractSchema.parse(moderatorContract).tenantId, tenantId);
+  assert.equal(contractSchemas.ContractListSchema.safeParse({ content: [ownerContract], last: true }).success, false);
+  assert.equal(contractSchemas.ModeratorContractSchema.safeParse({ ...moderatorContract, id: 'legacy-C-204' }).success, false);
+  assert.equal(contractSchemas.ContractDocumentsSchema.parse([document])[0].originalFilename, 'signed.pdf');
 });
 
-test('contract API constructs only tenant-scoped and documented read routes', async () => {
-  const otherId = '00000000-0000-4000-8000-000000000005';
-  const responseQueue = [
-    [],
-    contract,
-    [],
-    { contractId, expiryDate: '2026-12-31' },
-    [],
-    new Blob(),
-  ];
-  const axiosMock = createDoloresAxiosMock(responseQueue);
-  const passSchema = { parse: (value) => value };
-  const validateUuid = (value) => {
-    if (value !== tenantId && value !== contractId && value !== machineId && value !== documentId) {
-      throw new Error('Invalid UUID');
-    }
-    return value;
-  };
-  const mocks = {
-    './client': {
-      ...axiosMock.module,
-      DoloresApiError: class DoloresApiError extends Error {
-        constructor(kind, status, message) { super(message); this.kind = kind; this.status = status; }
-      },
-    },
-    '@/schemas/dolores/contracts': {
-      ContractIdSchema: { parse: validateUuid },
-      ContractListSchema: passSchema,
-      ContractDocumentListSchema: passSchema,
-      ContractExpiryStatusSchema: passSchema,
-      ContractSchema: passSchema,
-    },
-    '@/schemas/dolores/machines': { MachineIdSchema: { parse: validateUuid } },
-    '@/schemas/dolores/tenants': { TenantSchema: { shape: { id: { parse: validateUuid } } } },
-  };
-  const { calls } = axiosMock;
-  const { contractsApi } = loadTypescript('src/apis/dolores/contracts.api.ts', mocks);
+test('Moderator contract reads use only tenant-scoped, canonical GET endpoints', async () => {
+  const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
+  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
+  const { api, calls } = loadContractsApi([
+    [moderatorContract],
+    moderatorContract,
+    [document],
+    [{ ...moderatorContract, tenantId: '00000000-0000-4000-8000-000000000102' }],
+  ], contractSchemas, tenantSchemas);
 
-  await contractsApi.listByTenant(tenantId);
-  await contractsApi.getById(contractId);
-  await contractsApi.listByMachine(machineId);
-  await contractsApi.getExpiryStatus(contractId);
-  await contractsApi.listDocuments(contractId);
-  await contractsApi.downloadDocument(contractId, documentId);
+  assert.equal((await api.listByTenant(tenantId))[0].id, contractId);
+  assert.equal((await api.getModeratorById(contractId)).tenantId, tenantId);
+  assert.equal((await api.getDocuments(contractId))[0].contractId, contractId);
+  await assert.rejects(api.listByTenant(tenantId), /outside the requested tenant scope/);
+  await assert.rejects(api.listByTenant('not-a-uuid'));
+  await assert.rejects(api.getModeratorById('C-204'));
 
-  assert.deepEqual(calls.map(({ config }) => `${config.method} ${config.url}`), [
-    `GET /contracts/tenant/${tenantId}`,
-    `GET /contracts/${contractId}`,
-    `GET /contracts/machine/${machineId}/history`,
-    `GET /contracts/${contractId}/expiry-status`,
-    `GET /contracts/${contractId}/documents`,
-    `GET /contracts/${contractId}/documents/${documentId}`,
+  assert.deepEqual(calls.map(({ method, url }) => method + ' ' + url), [
+    'GET /contracts/tenant/' + tenantId,
+    'GET /contracts/' + contractId,
+    'GET /contracts/' + contractId + '/documents',
+    'GET /contracts/tenant/' + tenantId,
   ]);
-  assert.deepEqual(Object.keys(contractsApi), [
-    'listByTenant', 'getById', 'listByMachine', 'getExpiryStatus', 'listDocuments', 'downloadDocument',
-  ]);
-  await assert.rejects(contractsApi.listByTenant('not-a-tenant-uuid'), /Invalid UUID/);
+  assert.ok(calls.every(({ config }) => config.baseURL === '/api/dolores/v1'));
+});
 
-  responseQueue.push([{ ...contract, tenantId: otherId }]);
-  await assert.rejects(contractsApi.listByTenant(tenantId), { kind: 'invalid_response' });
-  responseQueue.push({ ...contract, id: otherId });
-  await assert.rejects(contractsApi.getById(contractId), { kind: 'invalid_response' });
-  responseQueue.push([{ ...contract, machineId: otherId }]);
-  await assert.rejects(contractsApi.listByMachine(machineId), { kind: 'invalid_response' });
-  responseQueue.push({ contractId: otherId, expiryDate: '2026-12-31' });
-  await assert.rejects(contractsApi.getExpiryStatus(contractId), { kind: 'invalid_response' });
-  responseQueue.push([{ id: documentId, contractId: otherId }]);
-  await assert.rejects(contractsApi.listDocuments(contractId), { kind: 'invalid_response' });
+test('existing Admin contract list and detail methods retain the ownerId contract', async () => {
+  const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
+  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
+  const { api, calls } = loadContractsApi([[ownerContract], ownerContract], contractSchemas, tenantSchemas);
+
+  assert.equal((await api.list())[0].ownerId, tenantId);
+  assert.equal((await api.getById(contractId)).ownerId, tenantId);
+  assert.deepEqual(calls.map(({ method, url }) => method + ' ' + url), [
+    'GET /contracts',
+    'GET /contracts/' + contractId,
+  ]);
+});
+
+test('tenant API validates UUID detail and confirms response identity', async () => {
+  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
+  const { axiosClient, calls } = createAxiosClient([[tenant], tenant, { ...tenant, id: '00000000-0000-4000-8000-000000000102' }]);
+  const { tenantsApi } = loadTypescript('src/apis/tenants.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/tenants.schema': tenantSchemas,
+  });
+
+  assert.equal((await tenantsApi.list())[0].id, tenantId);
+  assert.equal((await tenantsApi.getById(tenantId)).name, 'Khách kiểm thử');
+  await assert.rejects(tenantsApi.getById('nguyen-minh-anh'));
+  await assert.rejects(tenantsApi.getById(tenantId), /does not match the requested ID/);
+  assert.deepEqual(calls.map(({ method, url }) => method + ' ' + url), [
+    'GET /tenants',
+    'GET /tenants/' + tenantId,
+    'GET /tenants/' + tenantId,
+  ]);
+  assert.ok(calls.every(({ config }) => config.baseURL === '/api/dolores/v1'));
 });

@@ -8,11 +8,14 @@ export const NotificationSchema = z.object({
   title: z.string(),
   message: z.string(),
   type: z.string(),
-  createdAt: z.string(),
+  createdAt: z.string().nullish(),
   read: z.boolean(),
 }).passthrough();
 
 export const NotificationsSchema = z.array(NotificationSchema);
+export const NotificationUnreadCountSchema = z.object({
+  unreadCount: z.number().int().nonnegative(),
+}).passthrough();
 
 export const AlertSchema = z.object({
   id: z.string().uuid(),
@@ -26,4 +29,5 @@ export const AlertSchema = z.object({
 export const AlertsSchema = z.array(AlertSchema);
 
 export type Notification = z.infer<typeof NotificationSchema>;
+export type NotificationUnreadCount = z.infer<typeof NotificationUnreadCountSchema>;
 export type Alert = z.infer<typeof AlertSchema>;
