@@ -67,23 +67,31 @@ test('Admin user operations use the IDaaS routes on the shared /api/v1 client', 
   assert.equal(calls.length, 6, 'invalid UUIDs must be rejected before reaching IDaaS');
 });
 
-test('admin route catalog points to the current Pages Router account and menu pages', () => {
+test('admin has no account-management page while implemented pages remain in the route catalog', () => {
   const path = loadTypescript('src/routes/path.ts');
+  const navText = { NAVIGATION: new Proxy({}, { get: (_target, key) => String(key) }) };
   const routeMocks = {
     './path': path,
     '@/text/home/home-messages': { HOME_MESSAGES: { NAVIGATION: { ITEMS: [] }, FOOTER: { PRODUCT_LINKS: [], DISCOVERY_LINKS: [] } } },
     '@/text/admin/admin-messages': { ADMIN_MESSAGES: { NAVIGATION: new Proxy({}, { get: (_target, key) => String(key) }) } },
     '@/text/moderator/moderator-messages': { MODERATOR_MESSAGES: { NAVIGATION: new Proxy({}, { get: (_target, key) => String(key) }) } },
+    '@/text/customer/customer-messages': { CUSTOMER_MESSAGES: navText },
+    '@/text/technician/technician-messages': { TECHNICIAN_MESSAGES: navText },
+    '@/schema/contracts.schema': { ContractIdSchema: passSchema },
+    '@/schema/billing.schema': { InvoiceIdSchema: passSchema },
+    '@/schema/machines.schema': { MachineIdSchema: passSchema },
+    '@/schema/recipes.schema': { GlobalRecipeIdSchema: passSchema },
+    '@/schema/installation-work-orders.schema': { InstallationWorkOrderIdSchema: passSchema },
   };
   const routes = loadTypescript('src/routes/routes.ts', routeMocks);
   const root = join(__dirname, '..');
 
-  assert.equal(path.PATH_ADMIN.USERS, '/admin/users');
+  assert.equal(path.PATH_ADMIN.USERS, undefined);
+  assert.equal(routes.ADMIN_ENABLED_PATHS.has('/admin/users'), false);
+  assert.equal(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === '/admin/users'), false);
   assert.equal(path.PATH_ADMIN.MENU, '/admin/menu');
-  assert.ok(routes.ADMIN_ENABLED_PATHS.has(path.PATH_ADMIN.USERS));
   assert.ok(routes.ADMIN_ENABLED_PATHS.has(path.PATH_ADMIN.MENU));
-  assert.ok(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === path.PATH_ADMIN.USERS));
   assert.ok(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === path.PATH_ADMIN.MENU));
-  assert.ok(existsSync(join(root, 'src', 'pages', 'admin', 'users.page.tsx')));
-  assert.ok(existsSync(join(root, 'src', 'pages', 'admin', 'menu.page.tsx')));
+  assert.equal(existsSync(join(root, 'src', 'pages', 'admin', 'users', 'index.page.tsx')), false);
+  assert.ok(existsSync(join(root, 'src', 'pages', 'admin', 'menu', 'index.page.tsx')));
 });

@@ -16,6 +16,7 @@ export const APP_MESSAGES = {
     INVALID_MFA_CODE: "Mã xác thực không đúng hoặc đã hết hạn.",
     LOGIN_UNAVAILABLE: "Không thể kết nối máy chủ. Vui lòng thử lại sau.",
     LOGIN_GENERIC: "Không thể đăng nhập. Vui lòng thử lại.",
+    LOGIN_ACCOUNT_NOT_READY: "Tài khoản chưa hoàn tất xác minh hoặc khởi tạo. Hãy kiểm tra email hoặc liên hệ quản trị viên.",
   },
   CONTRACT: {
     MACHINE_ALREADY_IN_USE: "Máy này đang được sử dụng.",

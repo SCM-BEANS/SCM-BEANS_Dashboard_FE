@@ -19,6 +19,9 @@ const unauthenticatedPaths = new Set([
   "/auth/login/mfa",
   "/auth/refresh",
   "/auth/logout",
+  "/auth/verify",
+  "/auth/resend",
+  "/auth/first-login/password-change",
 ]);
 
 function requestPath(url?: string): string | undefined {

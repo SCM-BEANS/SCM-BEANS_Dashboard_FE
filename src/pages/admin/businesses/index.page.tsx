@@ -155,7 +155,6 @@ function BusinessesContent() {
     ) : (
       <AdminActionBar>
         <ButtonBar type="button" onClick={() => void router.push(PATH_ADMIN.STORES)}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>
-        <ButtonBar type="button" onClick={() => void router.push({ pathname: PATH_ADMIN.USERS, query: { view: "create" } })}>{T.BUSINESSES.CREATE_ACCOUNT}</ButtonBar>
       </AdminActionBar>
     )}
     </>

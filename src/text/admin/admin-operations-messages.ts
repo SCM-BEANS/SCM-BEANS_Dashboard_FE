@@ -7,7 +7,7 @@ export const ADMIN_OPERATIONS_MESSAGES = {
   BUSINESSES: {
     TITLE: "Khách hàng", DESCRIPTION: "Hồ sơ Owner lấy từ Dolores.", SEARCH: "Tìm theo tên, email hoặc số điện thoại",
     STATUS: "Trạng thái", ROLE: "Vai trò", CREATED: "Ngày tạo", DETAIL: "Thông tin khách hàng",
-    CONTRACTS: "Hợp đồng của khách hàng", VIEW_STORES: "Xem cửa hàng", CREATE_ACCOUNT: "Tạo tài khoản",
+    CONTRACTS: "Hợp đồng của khách hàng", VIEW_STORES: "Xem cửa hàng",
     PREVIOUS: "Trước", NEXT: "Sau", PAGE: "Trang", BACK_TO_LIST: "Về danh sách",
   },
   STORES: {

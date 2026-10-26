@@ -33,6 +33,8 @@ export function getApiErrorMessage(error: unknown, intent: ApiErrorIntent = "rea
           ? API_ERROR_MESSAGES.INVALID_MFA_CODE
           : API_ERROR_MESSAGES.INVALID_CREDENTIALS;
       }
+      if (error.response?.status === 403) return API_ERROR_MESSAGES.LOGIN_ACCOUNT_NOT_READY;
+      if (error.response?.status === 429) return API_ERROR_MESSAGES.RATE_LIMITED;
       if (!error.response || error.response.status >= 500) return API_ERROR_MESSAGES.LOGIN_UNAVAILABLE;
     }
     return API_ERROR_MESSAGES.LOGIN_GENERIC;
