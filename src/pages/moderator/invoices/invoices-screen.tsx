@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { billingApi } from "@/apis/billing.api";
+import { profilesApi } from "@/apis/profiles.api";
 
 import { PATH_MODERATOR } from "@/routes/path";
 
@@ -23,9 +24,74 @@ const messages = MODERATOR_MESSAGES.READ_SCREENS;
 const numberFormat = new Intl.NumberFormat("vi-VN");
 
 function amountText(value: number | null | undefined, currency: string): string {
-  return value == null
-    ? "—"
-    : new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 20 }).format(value) + " " + currency;
+  if (value == null) return "—";
+  const formatted = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 20 }).format(value);
+  return currency.toUpperCase() === "VND" ? `${formatted}đ` : `${formatted} ${currency}`.trim();
+}
+
+type InvoiceListRow = {
+  invoice: ModeratorInvoice;
+  customerName: string;
+  proofSummary: string;
+};
+
+async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
+  const invoices = await billingApi.listModeratorInvoices(signal);
+  const ownerIds = [...new Set(invoices.flatMap((invoice) => invoice.ownerId ? [invoice.ownerId] : []))];
+
+  const [profiles, proofLookups] = await Promise.all([
+    Promise.all(ownerIds.map(async (ownerId) => {
+      try {
+        const profile = await profilesApi.getById(ownerId, signal);
+        return [ownerId, profile.fullName || profile.email] as const;
+      } catch (error) {
+        if (signal.aborted) throw error;
+        return [ownerId, ""] as const;
+      }
+    })),
+    Promise.all(invoices.map(async (invoice) => {
+      try {
+        return await billingApi.listPaymentProofs(invoice.id, signal);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        return null;
+      }
+    })),
+  ]);
+
+  const customerNames = new Map(profiles);
+  return invoices.map((invoice, index) => {
+    const proofs = proofLookups[index];
+    const proofSummary = proofs === null
+      ? messages.INVOICE_PROOF_UNAVAILABLE
+      : proofs.length === 0
+        ? messages.INVOICE_NO_PAYMENT_PROOF
+        : [...new Set(proofs.map((proof) => {
+          if (proof.status === "APPROVED") return messages.PROOF_RECONCILIATION_LABELS.APPROVED;
+          if (proof.status === "REJECTED") return messages.PROOF_RECONCILIATION_LABELS.REJECTED;
+          return proof.contentType.startsWith("image/")
+            ? messages.PROOF_RECONCILIATION_LABELS.SUBMITTED_IMAGE
+            : messages.PROOF_RECONCILIATION_LABELS.SUBMITTED_FILE;
+        }))].join(" · ");
+
+    return {
+      invoice,
+      customerName: (invoice.ownerId && customerNames.get(invoice.ownerId)) || invoice.ownerId || "—",
+      proofSummary,
+    };
+  });
+}
+
+function billingPeriodText(invoice: ModeratorInvoice): string {
+  const period = invoice.period.trim() || invoice.billingPeriodStart?.slice(0, 7) || "";
+  const yearMonth = /^(\d{4})-(\d{2})$/.exec(period);
+  if (yearMonth) return `${messages.BILLING_MONTH} ${yearMonth[2]}`;
+  if (/^\d{1,2}$/.test(period)) return `${messages.BILLING_MONTH} ${period.padStart(2, "0")}`;
+  return period || "—";
+}
+
+function invoiceStatusText(status: ModeratorInvoice["status"]): string {
+  return messages.INVOICE_STATUS_LABELS[status];
 }
 
 function QueryFeedback({
@@ -65,19 +131,25 @@ function DetailField({ label, value }: { label: string; value: string | number |
   );
 }
 
-function InvoiceList({ invoices }: { invoices: ModeratorInvoice[] }) {
-  if (invoices.length === 0) {
+function InvoiceList({ rows }: { rows: InvoiceListRow[] }) {
+  if (rows.length === 0) {
     return <p className={styles.pendingNotice} role="status">{messages.EMPTY_INVOICES}</p>;
   }
   return (
-    <DataTable variant="moderator" headers={[messages.INVOICE_ID, messages.INVOICE_OWNER, messages.INVOICE_PERIOD, messages.INVOICE_AMOUNT, messages.INVOICE_STATUS]}>
-      {invoices.map((invoice) => (
+    <DataTable variant="moderator" headers={[
+      messages.INVOICE_CUSTOMER,
+      messages.INVOICE_PERIOD,
+      messages.INVOICE_AMOUNT,
+      messages.INVOICE_EVIDENCE_RECONCILIATION,
+      messages.INVOICE_STATUS,
+    ]}>
+      {rows.map(({ invoice, customerName, proofSummary }) => (
         <tr key={invoice.id}>
-          <td><Link className={styles.tableLink} href={PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>{invoice.id}</Link></td>
-          <td>{invoice.ownerId ?? invoice.tenantId ?? "—"}</td>
-          <td>{invoice.period}</td>
+          <td><Link className={styles.tableLink} href={PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>{customerName} ›</Link></td>
+          <td>{billingPeriodText(invoice)}</td>
           <td>{amountText(invoice.amount, invoice.currency)}</td>
-          <td>{invoice.status}</td>
+          <td>{proofSummary}</td>
+          <td>{invoiceStatusText(invoice.status)}</td>
         </tr>
       ))}
     </DataTable>
@@ -181,7 +253,7 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
   const validId = InvoiceIdSchema.safeParse(requestedId).success ? requestedId : "";
   const invoices = useQuery({
     queryKey: ["dolores", "moderator", "billing", "invoices"],
-    queryFn: ({ signal }) => billingApi.listModeratorInvoices(signal),
+    queryFn: ({ signal }) => loadInvoiceRows(signal),
     enabled: isList,
   });
   const invoice = useQuery({
@@ -204,7 +276,7 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
       {isList ? (
         <>
           <QueryFeedback query={invoices} loadingMessage={messages.LOADING_INVOICES} />
-          {invoices.data && !invoices.isError && <InvoiceList invoices={invoices.data} />}
+          {invoices.data && !invoices.isError && <InvoiceList rows={invoices.data} />}
         </>
       ) : validId ? (
         <>

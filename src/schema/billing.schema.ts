@@ -36,6 +36,8 @@ export const ModeratorInvoiceSchema = z.object({
   ownerId: z.string().uuid().nullish(),
   tenantId: z.string().uuid().nullish(),
   contractId: z.string().uuid().nullish(),
+  repairCostReviewId: z.string().uuid().nullish(),
+  repairCostDecisionId: z.string().uuid().nullish(),
   amount: z.number().finite(),
   period: z.string(),
   type: z.enum(["SUPPLY", "RENTAL"]),
