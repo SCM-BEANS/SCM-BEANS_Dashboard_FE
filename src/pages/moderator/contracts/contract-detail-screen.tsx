@@ -58,8 +58,8 @@ function PageHeading({ title, description }: { title: string; description: strin
 export function ContractDetailScreen({ id }: { id: string }) {
   const validId = ContractIdSchema.safeParse(id).success;
   const contract = useQuery({
-    queryKey: ["dolores", "moderator", "contracts", "id", id],
-    queryFn: ({ signal }) => contractsApi.getModeratorById(id, signal),
+    queryKey: ["dolores", "contracts", "id", id],
+    queryFn: ({ signal }) => contractsApi.getById(id, signal),
     enabled: validId,
     retry: false,
   });
@@ -84,7 +84,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
         <>
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID}</dt><dd>{contract.data.id}</dd></div>
-            <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_TENANT_ID}</dt><dd>{contract.data.tenantId}</dd></div>
+            <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID}</dt><dd>{contract.data.ownerId}</dd></div>
             <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_MACHINE_ID}</dt><dd>{contract.data.machineId ?? "â€”"}</dd></div>
             <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_STATUS}</dt><dd>{contract.data.status}</dd></div>
             <div className={styles.detailItem}><dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_PERIOD}</dt><dd>{contract.data.startDate ?? "â€”"} â€“ {contract.data.endDate ?? "â€”"}</dd></div>

@@ -7,7 +7,9 @@ const NotificationsScreen = lazy(() => import("./notifications/notifications-scr
 const AlertsScreen = lazy(() => import("./alerts/alerts-screen").then((module) => ({ default: module.AlertsScreen })));
 const TenantListScreen = lazy(() => import("./customers/customer-list-screen").then((module) => ({ default: module.TenantListScreen })));
 const TenantDetailScreen = lazy(() => import("./customers/customer-detail-screen").then((module) => ({ default: module.TenantDetailScreen })));
+const CustomerCreateScreen = lazy(() => import("./customers/customer-create-screen").then((module) => ({ default: module.ModeratorCustomerCreateScreen })));
 const ContractListScreen = lazy(() => import("./contracts/contract-list-screen").then((module) => ({ default: module.ContractListScreen })));
+const ContractCreateScreen = lazy(() => import("./contracts/contract-create-screen").then((module) => ({ default: module.ContractCreateScreen })));
 const ContractDetailScreen = lazy(() => import("./contracts/contract-detail-screen").then((module) => ({ default: module.ContractDetailScreen })));
 const ModeratorMachinesScreen = lazy(() => import("./machines/machines-screen").then((module) => ({ default: module.ModeratorMachinesScreen })));
 const ModeratorIoTScreen = lazy(() => import("./iot/iot-screen").then((module) => ({ default: module.ModeratorIoTScreen })));
@@ -65,7 +67,7 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
     return loadScreen(<TenantListScreen />);
   }
   if (sectionPath === "customers/new") {
-    return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.NEW_TENANT_UNAVAILABLE} />;
+    return loadScreen(<CustomerCreateScreen />);
   }
   if (sectionPath.startsWith("customers/")) {
     return loadScreen(<TenantDetailScreen id={sectionPath.slice("customers/".length)} />);
@@ -74,7 +76,7 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
     return loadScreen(<ContractListScreen />);
   }
   if (sectionPath === "contracts/new") {
-    return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.NEW_CONTRACT_UNAVAILABLE} />;
+    return loadScreen(<ContractCreateScreen />);
   }
   if (sectionPath === "contracts/expiry") {
     return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_EXPIRY_UNAVAILABLE} />;

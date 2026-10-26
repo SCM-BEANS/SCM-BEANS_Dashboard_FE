@@ -201,7 +201,6 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
         <h1>{messages.INVOICES_TITLE}</h1>
         <p>{messages.INVOICES_DESCRIPTION}</p>
       </header>
-      <p className={styles.partialNotice} role="note">{messages.INVOICE_ACCESS_NOTE}</p>
       {isList ? (
         <>
           <QueryFeedback query={invoices} loadingMessage={messages.LOADING_INVOICES} />

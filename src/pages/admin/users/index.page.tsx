@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { AccountCreateForm } from "@/components/account/account-create-form";
+import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -28,7 +30,7 @@ type Action =
   | { kind: "create"; input: AdminUserCreate }
   | { kind: "update"; userId: string; input: AdminUserUpdate }
   | { kind: "disable" | "reactivate" | "reissue"; userId: string };
-type Credential = { password: string; expiresAt: string; emailVerificationStarted?: boolean };
+type Credential = AccountCredential;
 
 const emptyForm: FormState = { name: "", email: "", role: "", tenantId: "" };
 const roleLabels: Record<AdminUserRole, string> = {
@@ -85,6 +87,10 @@ function ActionDialog({
     dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
   }, [kind]);
 
+  if (kind === "success" && credential) {
+    return <AccountSuccessDialog credential={credential} onClose={onClose} />;
+  }
+
   return (
     <div className={styles.accountDialogBackdrop}>
       <div
@@ -111,18 +117,7 @@ function ActionDialog({
         </h2>
         {kind === "confirm" && action && <p>{actionDescription(action)}</p>}
         {kind === "error" && <p role="alert">{error}</p>}
-        {kind === "success" && credential && (
-          <div className={styles.accountCredential}>
-            <strong>{T.DIALOG.PASSWORD_ONCE}</strong>
-            <code>{credential.password}</code>
-            <p>{T.DIALOG.PASSWORD_EXPIRY}: {formatDate(credential.expiresAt)}</p>
-            {credential.emailVerificationStarted !== undefined && (
-              <p>{credential.emailVerificationStarted
-                ? T.DIALOG.VERIFICATION_STARTED
-                : T.DIALOG.VERIFICATION_NOT_STARTED}</p>
-            )}
-          </div>
-        )}
+
         <div className={styles.accountDialogActions}>
           {kind === "confirm" && (
             <button type="button" className={styles.accountPrimaryButton} disabled={busy} onClick={onConfirm}>
@@ -303,6 +298,7 @@ function AdminUsersContent() {
           password: result.temporary_password,
           expiresAt: result.temporary_password_expires_at,
           emailVerificationStarted: result.email_verification_started,
+          onboardingEmailSent: result.onboarding_email_sent,
         });
       } else if (action.kind === "update") {
         await adminUsersApi.update(action.userId, action.input);
@@ -448,21 +444,26 @@ function AdminUsersContent() {
     title = T.FORM.CREATE_TITLE;
     description = T.FORM.CREATE_DESCRIPTION;
     actions = <>
-      <ButtonBar type="button" onClick={prepareCreate}>{T.LIST.CREATE}</ButtonBar>
+      <ButtonBar type="submit" form="admin-user-create-form">{T.LIST.CREATE}</ButtonBar>
       <ButtonBar type="button" onClick={backToList}>{T.FORM.CANCEL}</ButtonBar>
     </>;
-    content = <section className={styles.panel}>
-      <h2>{T.FORM.DETAIL_TITLE}</h2>
-      <div className={styles.accountFormGrid}>
-        <label>{T.FORM.NAME}<input value={form.name} maxLength={50} onChange={(event) => updateField("name", event.target.value)} /></label>
-        <label>{T.FORM.EMAIL}<input type="email" value={form.email} maxLength={255} onChange={(event) => updateField("email", event.target.value)} /></label>
-        <label>{T.FORM.ROLE}<select value={form.role} onChange={(event) => updateField("role", event.target.value)}>
-          <option value="">{T.FORM.SELECT_ROLE}</option>
-          {(Object.keys(roleLabels) as AdminUserRole[]).map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}
-        </select></label>
-      </div>
-      {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
-    </section>;
+    content = (
+      <AccountCreateForm
+        id="admin-user-create-form"
+        title={T.FORM.DETAIL_TITLE}
+        value={{ name: form.name, email: form.email, role: form.role }}
+        roleOptions={(Object.keys(roleLabels) as AdminUserRole[]).map((value) => ({
+          value,
+          label: roleLabels[value],
+        }))}
+        onChange={updateField}
+        onSubmit={(event) => {
+          event.preventDefault();
+          prepareCreate();
+        }}
+        error={requestError}
+      />
+    );
   } else {
     title = T.FORM.DETAIL_TITLE;
     description = T.FORM.DETAIL_DESCRIPTION;

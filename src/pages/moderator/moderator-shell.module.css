@@ -14,23 +14,6 @@
 .shell a { color: inherit; text-decoration: none; }
 .shell :focus-visible, .menuBackdrop :focus-visible, .accessScreen :focus-visible { outline: 3px solid #b81724; outline-offset: 3px; }
 
-.sidebar {
-  display: flex;
-  width: 240px;
-  flex: 0 0 240px;
-  flex-direction: column;
-  padding: 24px 12px 20px;
-  border-right: 1px solid #e9e2dc;
-  background: #fff;
-}
-
-.brand { padding: 0 8px; color: #b81724 !important; font-size: 28px; font-weight: 700; }
-.roleLabel { margin: 4px 8px 24px; color: #706561; font-size: 13px; }
-.sidebarNav { display: flex; flex: 1; flex-direction: column; gap: 4px; overflow-y: auto; }
-.navItem { display: flex; min-height: 47px; align-items: center; gap: 12px; padding: 0 15px; border-radius: 10px; color: #706561 !important; font-size: 14px; }
-.navItem:hover { background: #f7f5f3; }
-.navItemActive { background: #f9e9ea; color: #b81724 !important; font-weight: 600; }
-
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 .desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: #fff; color: #706561; font-size: 14px; }
 .headerLink { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; }
@@ -54,8 +37,25 @@
 .formPanel { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .formRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
 .formField { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #706561; font-size: 13px; font-weight: 600; }
-.formField input, .formField select { min-height: 42px; min-width: 0; padding: 8px 11px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; }
+.formField input, .formField select, .formField textarea { min-height: 42px; min-width: 0; padding: 8px 11px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; }
+.formField textarea { min-height: 104px; resize: vertical; }
+.formField input:focus-visible, .formField select:focus-visible, .formField textarea:focus-visible { border-color: #b81724; }
+.contractForm { display: flex; flex-direction: column; gap: 18px; }
+.contractForm fieldset { display: flex; min-width: 0; flex-direction: column; gap: 18px; padding: 0; margin: 0; border: 0; }
+.contractForm fieldset:disabled { opacity: .72; }
+.contractForm h3 { margin: 0; color: #302927; font-size: 17px; }
+.contractSnapshot { padding-top: 18px; border-top: 1px solid #eee7e1; }
+.contractCheckboxGroup { display: flex; flex-wrap: wrap; gap: 14px; }
+.contractCheckboxGroup label, .contractCheckbox { display: flex; align-items: center; gap: 8px; color: #302927; font-size: 14px; font-weight: 500; }
+.contractCheckboxGroup input, .contractCheckbox input { width: 18px; min-width: 18px; min-height: 18px; margin: 0; accent-color: #b81724; }
+.contractCheckbox { min-height: 42px; }
+.contractNotice { padding: 12px 14px; margin: 0; border: 1px solid #f1d2a8; border-radius: 10px; background: #fff9ef; color: #8a4b12; font-size: 14px; line-height: 1.5; }
+.contractError { border-color: #efc3c5; background: #fff4f4; color: #8c1d26; }
+.contractActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .formHint { margin: 0; color: #706561; font-size: 13px; line-height: 1.5; }
+.createActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.credentialValue { overflow-wrap: anywhere; margin: 8px 0; }
+.credentialValue code { display: block; padding: 12px; border-radius: 8px; background: #fff; font-size: 14px; user-select: all; }
 .disabledAction { min-height: 40px; align-self: flex-start; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 8px; background: #f8f6f3; color: #706561; cursor: not-allowed; }
 .sectionTitle { margin: 0 0 12px; font-size: 17px; }
 .codeValue { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
@@ -67,7 +67,7 @@
 .accessLinks a { color: #b81724; }
 
 @media (max-width: 1023px) {
-  .sidebar, .desktopHeader { display: none; }
+  .desktopHeader { display: none; }
   .shell { flex-direction: column; }
   .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: #fff; }
   .mobileBreadcrumb { display: flex; min-height: 36px; align-items: center; padding: 0 16px 10px; border-bottom: 1px solid #e9e2dc; background: #fff; }
@@ -80,7 +80,7 @@
   .mobileMenu { display: flex; width: 100%; max-height: 82vh; flex-direction: column; padding: 20px 16px 24px; border-radius: 20px 20px 0 0; background: #fff; }
   .mobileMenuHeader { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 14px; }
   .mobileMenuHeader button { display: flex; width: 38px; height: 38px; align-items: center; justify-content: center; border: 0; background: transparent; }
-  .mobileMenuNav { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .mobileMenuNav { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 4px; overflow-y: auto; }
   .pageContent { gap: 16px; padding: 20px 16px 104px; }
   .pageHeading h1 { font-size: 24px; }
   .formPanel { padding: 14px; }

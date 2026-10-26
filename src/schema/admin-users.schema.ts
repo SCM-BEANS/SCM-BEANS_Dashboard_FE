@@ -52,10 +52,16 @@ export const AdminUserCreateResponseSchema = z.object({
   role: AdminUserRoleSchema,
   tenant_id: uuid.nullish(),
   status: AdminUserStatusSchema,
-  email_verification_started: z.boolean(),
+  email_verification_started: z.boolean().optional(),
+  onboarding_email_sent: z.boolean().optional(),
   temporary_password: z.string().min(1),
-  temporary_password_expires_at: timestamp,
-});
+  temporary_password_expires_at: timestamp.nullish(),
+}).refine(
+  (response) =>
+    response.email_verification_started !== undefined ||
+    response.onboarding_email_sent !== undefined,
+  { message: "Response must include an onboarding or email verification status." },
+);
 
 export const AdminUserUpdateSchema = z.object({
   name: z.string().trim().min(2).max(50).optional(),

@@ -17,7 +17,7 @@ function loadTypescript(relativePath, mocks = {}) {
   return loaded.exports;
 }
 
-const passSchema = { parse: (value) => value };
+const passSchema = { parse: (value) => value, safeParse: (value) => ({ success: true, data: value }) };
 const userSchemas = new Proxy({}, {
   get: (_target, name) => name === 'AdminUserIdSchema'
     ? { parse(value) {
@@ -39,6 +39,7 @@ test('Admin user operations use the IDaaS routes on the shared /api/v1 client', 
   };
   const { adminUsersApi } = loadTypescript('src/apis/admin-users.api.ts', {
     '@/lib/http': { axiosClient },
+    '@/lib/api-errors': { AccountCreatedResponseValidationError: class extends Error {} },
     '@/schema/admin-users.schema': userSchemas,
   });
   const signal = new AbortController().signal;

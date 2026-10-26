@@ -65,6 +65,22 @@ test("IDaaS schemas enforce role, pagination, and safe status changes", () => {
   assert.throws(() => schemas.AdminUserUpdateSchema.parse({}));
 });
 
+test("IDaaS create response accepts onboarding-email payload without expiry", () => {
+  const schemas = loadModule("src/schema/admin-users.schema.ts");
+  const response = schemas.AdminUserCreateResponseSchema.parse({
+    id: userId,
+    name: "Test Owner",
+    email: "owner@example.invalid",
+    role: "owner",
+    status: "ACTIVE",
+    temporary_password: "TEST_DATA-once",
+    onboarding_email_sent: true,
+  });
+
+  assert.equal(response.onboarding_email_sent, true);
+  assert.equal(response.temporary_password_expires_at, undefined);
+});
+
 test("admin account API uses IDaaS paths and validates every response", async () => {
   const schemas = loadModule("src/schema/admin-users.schema.ts");
   const calls = [];
@@ -93,6 +109,7 @@ test("admin account API uses IDaaS paths and validates every response", async ()
   };
   const { adminUsersApi } = loadModule("src/apis/admin-users.api.ts", {
     "@/lib/http": { axiosClient },
+    "@/lib/api-errors": { AccountCreatedResponseValidationError: class extends Error {} },
     "@/schema/admin-users.schema": schemas,
   });
   const signal = new AbortController().signal;

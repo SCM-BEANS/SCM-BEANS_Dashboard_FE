@@ -5,7 +5,6 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
-  LogOut,
   Menu,
   Package,
   Store,
@@ -16,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
+import { Sidebar, SidebarLogoutButton, SidebarNavigation, type SidebarItem } from "@/components/sidebar/sidebar";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_ENABLED_PATHS, ADMIN_NAVIGATION_LINKS } from "@/routes/routes";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -36,6 +36,14 @@ const NAV_ICONS = {
 
 type NavigationItem = (typeof ADMIN_NAVIGATION_LINKS)[number];
 
+const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS.map((item) => ({
+  label: item.LABEL,
+  href: item.HREF,
+  icon: NAV_ICONS[item.ICON],
+  enabled: ADMIN_ENABLED_PATHS.has(item.HREF),
+  title: ADMIN_ENABLED_PATHS.has(item.HREF) ? undefined : ADMIN_MESSAGES.NAVIGATION.PENDING,
+}));
+
 export function getCurrentAdminSection(pathname: string): NavigationItem {
   return ADMIN_NAVIGATION_LINKS.find(
     (item) => pathname === item.HREF ||
@@ -43,64 +51,26 @@ export function getCurrentAdminSection(pathname: string): NavigationItem {
   ) ?? ADMIN_NAVIGATION_LINKS[0];
 }
 
-function NavigationLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
-  return ADMIN_NAVIGATION_LINKS.map((item) => {
-    const Icon = NAV_ICONS[item.ICON];
-    const enabled = ADMIN_ENABLED_PATHS.has(item.HREF);
-    const active = pathname === item.HREF ||
-      (item.HREF !== PATH_ADMIN.ROOT && pathname.startsWith(`${item.HREF}/`));
-    const content = (
-      <>
-        <Icon size={20} aria-hidden="true" />
-        <span>{item.LABEL}</span>
-      </>
-    );
-
-    return enabled ? (
-      <Link
-        href={item.HREF}
-        className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
-        aria-current={active ? "page" : undefined}
-        key={item.HREF}
-        onClick={onNavigate}
-      >
-        {content}
-      </Link>
-    ) : (
-      <span
-        className={`${styles.navItem} ${styles.navItemDisabled}`}
-        aria-disabled="true"
-        title={ADMIN_MESSAGES.NAVIGATION.PENDING}
-        key={item.HREF}
-      >
-        {content}
-      </span>
-    );
-  });
-}
-
-function LogoutButton({ loggingOut, onLogout }: { loggingOut: boolean; onLogout: () => void | Promise<void> }) {
-  return (
-    <button className={styles.logoutButton} type="button" onClick={() => void onLogout()} disabled={loggingOut}>
-      <LogOut size={18} aria-hidden="true" />
-      <span>{loggingOut ? ADMIN_MESSAGES.AUTH.LOGGING_OUT : ADMIN_MESSAGES.AUTH.LOGOUT}</span>
-    </button>
-  );
-}
-
 export function AdminSidebarMenu({ loggingOut, onLogout }: { loggingOut: boolean; onLogout: () => void | Promise<void> }) {
   const { pathname } = useRouter();
 
   return (
-    <aside className={styles.sidebar}>
-      <Link className={styles.brand} href={PATH_ADMIN.ROOT}>{ADMIN_MESSAGES.BRAND}</Link>
-      <p className={styles.roleLabel}>{ADMIN_MESSAGES.ROLE}</p>
-      <nav className={styles.sidebarNav} aria-label="Điều hướng Admin">
-        <NavigationLinks pathname={pathname} />
-      </nav>
-      <p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>
-      <LogoutButton loggingOut={loggingOut} onLogout={onLogout} />
-    </aside>
+    <Sidebar
+      brand={ADMIN_MESSAGES.BRAND}
+      brandHref={PATH_ADMIN.ROOT}
+      roleLabel={ADMIN_MESSAGES.ROLE}
+      pathname={pathname}
+      rootHref={PATH_ADMIN.ROOT}
+      navigationLabel={"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}
+      items={ADMIN_SIDEBAR_ITEMS}
+      footer={<p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>}
+      logout={{
+        label: ADMIN_MESSAGES.AUTH.LOGOUT,
+        pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT,
+        pending: loggingOut,
+        onLogout,
+      }}
+    />
   );
 }
 
@@ -139,7 +109,7 @@ export function AdminMobileMenu({
 
   return (
     <>
-      <nav className={styles.mobileNav} aria-label="Điều hướng chính Admin">
+      <nav className={styles.mobileNav} aria-label={"\u0110i\u1ec1u h\u01b0\u1edbng ch\u00ednh Admin"}>
         <Link className={styles.mobileNavActive} href={currentSection.HREF} aria-current="page">
           {currentSection.LABEL}
         </Link>
@@ -163,7 +133,7 @@ export function AdminMobileMenu({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Tất cả trang Admin"
+            aria-label={"T\u1ea5t c\u1ea3 trang Admin"}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => {
               if (event.key !== "Tab") return;
@@ -183,17 +153,24 @@ export function AdminMobileMenu({
             }}
           >
             <div className={styles.mobileMenuHeader}>
-              <strong>Điều hướng Admin</strong>
-              <button type="button" ref={closeRef} aria-label="Đóng menu" onClick={() => setOpen(false)}>
+              <strong>{"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}</strong>
+              <button type="button" ref={closeRef} aria-label={"\u0110\u00f3ng menu"} onClick={() => setOpen(false)}>
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <nav className={styles.mobileMenuNav}>
-              <NavigationLinks pathname={router.pathname} onNavigate={() => setOpen(false)} />
-            </nav>
+            <SidebarNavigation
+              items={ADMIN_SIDEBAR_ITEMS}
+              pathname={router.pathname}
+              rootHref={PATH_ADMIN.ROOT}
+              navigationLabel={"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}
+              className={styles.mobileMenuNav}
+              onNavigate={() => setOpen(false)}
+            />
             <p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>
-            <LogoutButton
-              loggingOut={loggingOut}
+            <SidebarLogoutButton
+              label={ADMIN_MESSAGES.AUTH.LOGOUT}
+              pendingLabel={ADMIN_MESSAGES.AUTH.LOGGING_OUT}
+              pending={loggingOut}
               onLogout={() => {
                 setOpen(false);
                 return onLogout();

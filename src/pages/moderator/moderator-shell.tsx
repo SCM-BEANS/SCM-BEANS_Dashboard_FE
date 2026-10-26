@@ -17,9 +17,11 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { authApi } from "@/apis/auth.api";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { Sidebar, SidebarLogoutButton, SidebarNavigation, type SidebarItem } from "@/components/sidebar/sidebar";
 import { hasModeratorRole } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
 import {
@@ -42,6 +44,12 @@ const NAV_ICONS = {
   Wrench,
 } as const;
 
+const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS.map((item) => ({
+  label: item.LABEL,
+  href: item.HREF,
+  icon: NAV_ICONS[item.ICON],
+}));
+
 export function ModeratorShell({
   children,
   pageTitle,
@@ -51,6 +59,7 @@ export function ModeratorShell({
 }) {
   const router = useRouter();
   const [access, setAccess] = useState<"checking" | "allowed" | "forbidden">("checking");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
@@ -90,6 +99,19 @@ export function ModeratorShell({
     wasMenuOpen.current = mobileMenuOpen;
   }, [mobileMenuOpen]);
 
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await authApi.logout();
+    } catch {
+      // Clear the browser access token even if the remote logout request fails.
+    } finally {
+      Cookies.remove("access_token", { path: "/" });
+      void router.replace(PATH_AUTH.LOGIN);
+    }
+  };
+
   if (access !== "allowed") {
     return (
       <div className={styles.accessScreen} role="status">
@@ -108,27 +130,6 @@ export function ModeratorShell({
       </div>
     );
   }
-
-  const renderNavigation = (closeMenu = false) =>
-    MODERATOR_NAVIGATION_LINKS.map((item) => {
-      const Icon = NAV_ICONS[item.ICON];
-      const active =
-        pathname === item.HREF ||
-        (item.HREF !== PATH_MODERATOR.ROOT && pathname.startsWith(item.HREF + "/"));
-
-      return (
-        <Link
-          href={item.HREF}
-          className={styles.navItem + (active ? " " + styles.navItemActive : "")}
-          aria-current={active ? "page" : undefined}
-          key={item.HREF}
-          onClick={closeMenu ? () => setMobileMenuOpen(false) : undefined}
-        >
-          <Icon size={20} aria-hidden="true" />
-          <span>{item.LABEL}</span>
-        </Link>
-      );
-    });
 
   const notificationsLink = MODERATOR_NAVIGATION_LINKS.find(
     (item) => item.HREF === PATH_MODERATOR.NOTIFICATIONS,
@@ -163,9 +164,9 @@ export function ModeratorShell({
       case PATH_MODERATOR.ROOT:
         return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.PENDING_WORK}</ButtonBar>;
       case PATH_MODERATOR.CONTRACTS:
-        return disabledAction(actionMessages.CREATE_CONTRACT);
+        return <ButtonBar href={PATH_MODERATOR.NEW_CONTRACT}>{actionMessages.CREATE_CONTRACT}</ButtonBar>;
       case PATH_MODERATOR.CUSTOMERS:
-        return disabledAction(actionMessages.CREATE_CUSTOMER);
+        return <ButtonBar href={PATH_MODERATOR.NEW_CUSTOMER}>{actionMessages.CREATE_CUSTOMER}</ButtonBar>;
       case PATH_MODERATOR.INVOICES:
         return disabledAction(actionMessages.RECONCILE_INVOICE);
       case PATH_MODERATOR.MACHINES:
@@ -194,15 +195,21 @@ export function ModeratorShell({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.shell} data-role="moderator">
-        <aside className={styles.sidebar}>
-          <Link className={styles.brand} href={PATH_MODERATOR.ROOT}>
-            {MODERATOR_MESSAGES.BRAND}
-          </Link>
-          <p className={styles.roleLabel}>{MODERATOR_MESSAGES.ROLE}</p>
-          <nav className={styles.sidebarNav} aria-label={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}>
-            {renderNavigation()}
-          </nav>
-        </aside>
+        <Sidebar
+          brand={MODERATOR_MESSAGES.BRAND}
+          brandHref={PATH_MODERATOR.ROOT}
+          roleLabel={MODERATOR_MESSAGES.ROLE}
+          pathname={pathname}
+          rootHref={PATH_MODERATOR.ROOT}
+          navigationLabel={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}
+          items={MODERATOR_SIDEBAR_ITEMS}
+          logout={{
+            label: MODERATOR_MESSAGES.AUTH.LOGOUT,
+            pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT,
+            pending: loggingOut,
+            onLogout: handleLogout,
+          }}
+        />
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             {renderBreadcrumb()}
@@ -291,7 +298,23 @@ export function ModeratorShell({
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <nav className={styles.mobileMenuNav}>{renderNavigation(true)}</nav>
+            <SidebarNavigation
+              items={MODERATOR_SIDEBAR_ITEMS}
+              pathname={pathname}
+              rootHref={PATH_MODERATOR.ROOT}
+              navigationLabel={MODERATOR_MESSAGES.ROUTES.ALL_PAGES_LABEL}
+              className={styles.mobileMenuNav}
+              onNavigate={() => setMobileMenuOpen(false)}
+            />
+            <SidebarLogoutButton
+              label={MODERATOR_MESSAGES.AUTH.LOGOUT}
+              pendingLabel={MODERATOR_MESSAGES.AUTH.LOGGING_OUT}
+              pending={loggingOut}
+              onLogout={() => {
+                setMobileMenuOpen(false);
+                return handleLogout();
+              }}
+            />
           </section>
         </div>
       )}

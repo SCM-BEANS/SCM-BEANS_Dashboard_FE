@@ -1,4 +1,5 @@
 import { axiosClient } from "@/lib/http";
+import { AccountCreatedResponseValidationError } from "@/lib/api-errors";
 import {
   AdminUserCreateResponseSchema,
   AdminUserCreateSchema,
@@ -37,7 +38,14 @@ export const adminUsersApi = {
       "/admin/users",
       AdminUserCreateSchema.parse(input),
     );
-    return AdminUserCreateResponseSchema.parse(response.data);
+    const parsed = AdminUserCreateResponseSchema.safeParse(response.data);
+    if (!parsed.success) {
+      if (response.status === 201) {
+        throw new AccountCreatedResponseValidationError();
+      }
+      throw parsed.error;
+    }
+    return parsed.data;
   },
 
   async update(userId: string, input: AdminUserUpdate) {
