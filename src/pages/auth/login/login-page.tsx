@@ -1,15 +1,14 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { ArrowRight, KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
+import { LiquidSuccessSplash } from "@/components/auth/liquid-success-splash";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { getPostLoginPath } from "@/lib/auth-role";
-import landingHeroImage from "@/assets/landing-hero-desktop.jpg";
-import { BrandLogo } from "@/components/brand/brand-logo";
 import { PATH_HOME } from "@/routes/path";
 import {
   FirstLoginPasswordChangeRequestSchema,
@@ -23,9 +22,9 @@ import {
   type TLoginResponse,
 } from "@/schema/auth.schema";
 import { LOGIN_MESSAGES } from "@/text/auth/login-messages";
-import { TYPOGRAPHY_STYLES } from "@/text/typography";
 
 type LoginStep = "credentials" | "mfa" | "email-verification" | "password-change";
+type PasswordFieldName = "password" | "newPassword" | "confirmNewPassword";
 
 function isEmailVerificationRequired(error: unknown): boolean {
   if (!axios.isAxiosError(error) || error.response?.status !== 403) return false;
@@ -65,6 +64,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [passwordVisibility, setPasswordVisibility] = useState<Record<PasswordFieldName, boolean>>({
+    password: false,
+    newPassword: false,
+    confirmNewPassword: false,
+  });
+  const [loginSuccessDestination, setLoginSuccessDestination] = useState("");
 
   function completeLogin(response: TLoginMfaResponse) {
     Cookies.set("access_token", response.access_token, {
@@ -73,7 +78,18 @@ export default function LoginPage() {
       sameSite: "lax",
       secure: window.location.protocol === "https:",
     });
-    void router.replace(getPostLoginPath(response.access_token));
+    const destination = getPostLoginPath(response.access_token);
+    let reducedMotion = false;
+    try {
+      reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    } catch {
+      reducedMotion = false;
+    }
+    if (reducedMotion) {
+      void router.replace(destination);
+      return;
+    }
+    setLoginSuccessDestination(destination);
   }
 
   function openMfa(token: string) {
@@ -320,6 +336,21 @@ export default function LoginPage() {
     setSuccessMessage("");
   }
 
+  function passwordVisibilityToggle(field: PasswordFieldName, label: string) {
+    const visible = passwordVisibility[field];
+    return (
+      <button
+        type="button"
+        className="password-toggle"
+        aria-label={`${visible ? "Ẩn" : "Hiện"} ${label}`}
+        aria-pressed={visible}
+        onClick={() => setPasswordVisibility((current) => ({ ...current, [field]: !current[field] }))}
+      >
+        {visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+      </button>
+    );
+  }
+
   const isMfa = step === "mfa";
   const isEmailVerification = step === "email-verification";
   const isCodeEntry = isMfa || isEmailVerification;
@@ -341,38 +372,15 @@ export default function LoginPage() {
       </Head>
 
       <main className="login-page">
-        <aside
-          className="story-panel"
-          style={{ backgroundImage: `url(${landingHeroImage.src})` }}
-        >
-          <div className="story-overlay" />
-          <div className="story-content">
-            <BrandLogo
-              href={PATH_HOME.ROOT}
-              priority
-              ariaLabel={LOGIN_MESSAGES.BRAND.HOME_LABEL}
-              brandName={LOGIN_MESSAGES.BRAND.NAME}
-              brandTagline={LOGIN_MESSAGES.BRAND.TAGLINE}
-            />
-            <div className="story-copy">
-              <p className="eyebrow">{LOGIN_MESSAGES.INTRO.EYEBROW}</p>
-              <h1>{LOGIN_MESSAGES.INTRO.TITLE}</h1>
-              <p>{LOGIN_MESSAGES.INTRO.DESCRIPTION}</p>
-            </div>
-          </div>
-        </aside>
-
-        <section className="form-panel" aria-labelledby="login-title">
-          <div className="mobile-brand">
-            <BrandLogo
-              href={PATH_HOME.ROOT}
-              ariaLabel={LOGIN_MESSAGES.BRAND.HOME_LABEL}
-              brandName={LOGIN_MESSAGES.BRAND.NAME}
-              brandTagline={LOGIN_MESSAGES.BRAND.TAGLINE}
-            />
-          </div>
-
-          <div className="form-wrap">
+        <section className="login-card" aria-labelledby="login-title">
+          <Link
+            href={PATH_HOME.ROOT}
+            className="login-brand"
+            aria-label={LOGIN_MESSAGES.BRAND.HOME_LABEL}
+          >
+            dolores.
+          </Link>
+          <div className="form-wrap login-content" key={step} data-step={step}>
             <div className="form-icon" aria-hidden="true">
               {isCodeEntry ? <ShieldCheck size={25} /> : <LockKeyhole size={25} />}
             </div>
@@ -437,7 +445,7 @@ export default function LoginPage() {
                       <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-password"
-                        type="password"
+                        type={passwordVisibility.password ? "text" : "password"}
                         autoComplete="current-password"
                         placeholder={LOGIN_MESSAGES.FORM.PASSWORD_PLACEHOLDER}
                         value={password}
@@ -445,6 +453,7 @@ export default function LoginPage() {
                         disabled={loading}
                         required
                       />
+                      {passwordVisibilityToggle("password", "mật khẩu")}
                     </div>
                   </div>
                 </>
@@ -458,7 +467,7 @@ export default function LoginPage() {
                       <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-new-password"
-                        type="password"
+                        type={passwordVisibility.newPassword ? "text" : "password"}
                         autoComplete="new-password"
                         minLength={8}
                         maxLength={72}
@@ -469,6 +478,7 @@ export default function LoginPage() {
                         required
                         autoFocus
                       />
+                      {passwordVisibilityToggle("newPassword", "mật khẩu mới")}
                     </div>
                   </div>
                   <div className="field">
@@ -479,7 +489,7 @@ export default function LoginPage() {
                       <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-confirm-new-password"
-                        type="password"
+                        type={passwordVisibility.confirmNewPassword ? "text" : "password"}
                         autoComplete="new-password"
                         minLength={8}
                         maxLength={72}
@@ -489,6 +499,7 @@ export default function LoginPage() {
                         disabled={loading}
                         required
                       />
+                      {passwordVisibilityToggle("confirmNewPassword", "xác nhận mật khẩu mới")}
                     </div>
                   </div>
                 </>
@@ -549,60 +560,62 @@ export default function LoginPage() {
         </section>
       </main>
 
+      {loginSuccessDestination && (
+        <LiquidSuccessSplash
+          onComplete={() => {
+            const destination = loginSuccessDestination;
+            setLoginSuccessDestination("");
+            void router.replace(destination);
+          }}
+        />
+      )}
+
       <style jsx global>{`
-        ${TYPOGRAPHY_STYLES}
         html, body, #__next { min-height: 100%; }
-        body { margin: 0; font-family: var(--font-family-body); }
+        body { margin: 0; }
         *, *::before, *::after { box-sizing: border-box; }
-        .login-page .brand { display: inline-flex; align-items: center; gap: 11px; color: #fff; text-decoration: none; }
-        .login-page .brand-mark { width: 46px; height: 46px; object-fit: contain; }
-        .login-page .brand-name { display: flex; flex-direction: column; line-height: 1; letter-spacing: .17em; }
-        .login-page .brand-name strong { font-size: var(--font-size-brand); }
-        .login-page .brand-name span { margin-top: 4px; font-size: var(--font-size-brand-tagline); }
-        .login-page .mobile-brand .brand { color: #6e2028; }
-        .login-page .secondary-link { display: table; margin: 25px auto 0; padding: 4px; border: 0; color: #7a3038; background: transparent; font: inherit; font-size: var(--font-size-control); font-weight: 700; text-decoration: none; cursor: pointer; }
+        .login-page .secondary-link { display: table; margin: 24px auto 0; padding: 8px; border: 0; color: #706561; background: transparent; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .login-page .login-brand { display: inline-flex; margin: 0 0 32px; color: #b81724; font-size: 34px; font-weight: 800; letter-spacing: -.07em; line-height: 1; text-decoration: none; }
+        .login-page .password-toggle { flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #706561; background: transparent; cursor: pointer; }
+        .login-page .password-toggle:hover { color: #b81724; background: #f9e9ea; }
+        .login-page .password-toggle:focus-visible { outline: 3px solid rgba(184, 23, 36, .32); outline-offset: 1px; }
         .login-page .secondary-link:hover { text-decoration: underline; }
         .login-page .secondary-link:disabled { opacity: .55; cursor: not-allowed; }
       `}</style>
 
       <style jsx>{`
-        .login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(440px, 48%); background: #fffaf7; }
-        .story-panel { position: relative; min-height: 100vh; color: #fff; background-color: #3d1119; background-position: center; background-size: cover; }
-        .story-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(28, 7, 10, .56), rgba(54, 13, 18, .72)); }
-        .story-content { position: relative; min-height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(30px, 5vw, 72px); }
-        .story-copy { max-width: 590px; padding-bottom: 7vh; }
-        .eyebrow, .form-eyebrow { margin: 0; font-size: var(--font-size-small); font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
-        .eyebrow { color: #f6c9a1; }
-        .story-copy h1 { margin: 20px 0; font-family: var(--font-family-display); font-size: clamp(42px, 5vw, 68px); font-weight: 500; line-height: 1.08; }
-        .story-copy > p:last-child { max-width: 420px; margin: 0; color: #f4e8e1; font-size: var(--font-size-body-large); line-height: 1.7; }
-        .form-panel { display: flex; align-items: center; justify-content: center; padding: 64px clamp(28px, 6vw, 90px); }
-        .mobile-brand { display: none; }
-        .form-wrap { width: min(100%, 440px); }
-        .form-icon { width: 54px; height: 54px; display: grid; place-items: center; margin-bottom: 28px; border-radius: 16px; color: #802e36; background: #f5e6df; }
-        .form-eyebrow { color: #9b5d51; }
-        h2 { margin: 12px 0 10px; color: #2d171a; font-family: var(--font-family-display); font-size: clamp(36px, 4vw, 48px); font-weight: 500; }
-        .form-description { margin: 0 0 38px; color: #79696b; font-size: var(--font-size-body); line-height: 1.6; }
-        form { display: grid; gap: 22px; }
-        .field { display: grid; gap: 10px; }
-        label { color: #39262a; font-size: var(--font-size-control); font-weight: 700; }
-        .input-wrap { height: 54px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border: 1px solid #dacbcb; border-radius: 8px; color: #8b7677; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
-        .input-wrap:focus-within { border-color: #8b3038; box-shadow: 0 0 0 3px rgba(139, 48, 56, .12); }
-        input { min-width: 0; width: 100%; border: 0; outline: 0; color: #2d171a; background: transparent; font: inherit; font-size: var(--font-size-body-small); }
-        input::placeholder { color: #a49596; }
+        .login-page { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; color: #302927; background: #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
+        .login-card { width: min(100%, 420px); padding: clamp(24px, 5vw, 36px); border: 1px solid #e9e2dc; border-radius: 20px; background: #fff; box-shadow: 0 18px 48px rgba(48, 41, 39, .07); animation: login-card-enter 200ms ease-out both; }
+        .login-content { animation: login-step-enter 160ms ease both; }
+        @keyframes login-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes login-step-enter { from { opacity: 0; } to { opacity: 1; } }
+        .form-wrap { width: 100%; }
+        .form-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 22px; border-radius: 14px; color: #b81724; background: #f9e9ea; }
+        .form-eyebrow { margin: 0; color: #706561; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        h2 { margin: 8px 0 8px; color: #302927; font-size: 28px; font-weight: 700; line-height: 1.25; }
+        .form-description { margin: 0 0 26px; color: #706561; font-size: 15px; line-height: 1.55; }
+        form { display: grid; gap: 18px; }
+        .field { display: grid; gap: 8px; }
+        label { color: #302927; font-size: 14px; font-weight: 600; }
+        .input-wrap { min-height: 50px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 10px; color: #706561; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
+        .input-wrap:focus-within { border-color: #b81724; box-shadow: 0 0 0 3px rgba(184, 23, 36, .11); }
+        input { min-width: 0; width: 100%; border: 0; outline: 0; color: #302927; background: transparent; font: inherit; font-size: 15px; }
+        input::placeholder { color: #9a918d; }
         input:disabled { cursor: not-allowed; }
-        .error-message, .success-message { margin: -4px 0 0; padding: 12px 14px; border-radius: 7px; font-size: var(--font-size-control); line-height: 1.5; }
-        .error-message { color: #912c36; background: #fae9e8; }
+        .error-message, .success-message { margin: -2px 0 0; padding: 12px 14px; border-radius: 9px; font-size: 14px; line-height: 1.5; }
+        .error-message { color: #a82920; background: #fcecea; }
         .success-message { color: #24653c; background: #e8f5eb; }
-        .submit-button { min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; border: 0; border-radius: 8px; color: #fff; background: #721c24; font: inherit; font-size: var(--font-size-body-small); font-weight: 700; cursor: pointer; transition: background .2s ease, transform .2s ease; }
-        .submit-button:hover:not(:disabled) { background: #59151d; transform: translateY(-1px); }
+        .submit-button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; border: 0; border-radius: 10px; color: #fff; background: #b81724; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .2s ease, transform .2s ease; }
+        .submit-button:hover:not(:disabled) { background: #99131d; transform: translateY(-1px); }
         .submit-button:disabled { opacity: .65; cursor: wait; }
-        .submit-button:focus-visible, .secondary-link:focus-visible { outline: 3px solid #ca8b6c; outline-offset: 3px; }
-        @media (max-width: 900px) {
-          .login-page { display: block; min-height: 100vh; }
-          .story-panel { display: none; }
-          .form-panel { display: block; min-height: 100vh; padding: 28px 24px 64px; }
-          .mobile-brand { display: block; margin-bottom: clamp(70px, 12vh, 125px); }
-          .form-wrap { margin: 0 auto; }
+        .submit-button:focus-visible, .secondary-link:focus-visible { outline: 3px solid rgba(184, 23, 36, .32); outline-offset: 3px; }
+        @media (max-width: 420px) {
+          .login-page { padding: 16px; }
+          .login-card { padding: 24px; border-radius: 16px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .login-card, .login-content { animation: none; }
+          .login-page * { transition-duration: 0ms !important; }
         }
       `}</style>
     </>

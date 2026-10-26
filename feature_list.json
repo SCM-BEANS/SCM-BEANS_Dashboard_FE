@@ -1,0 +1,32 @@
+[
+  {
+    "id": "phase-01-product-native-login-shell",
+    "title": "Product-native login shell",
+    "status": "passing-unverified",
+    "evidence": "fast mode — no test evidence",
+    "user_visible_behavior": "The login route uses a centered responsive card, Dolores wordmark, and shared light dashboard palette without the large hero image.",
+    "verification_command": "node --test tests/login-ui-shell.test.cjs; manual browser check at 1440x900, 390x844, and 360x640; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build",
+    "notes": "Covers stories: P1 login focus, P1 visual consistency",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-auth-steps-accessibility-motion",
+    "title": "Auth steps, accessibility, and motion",
+    "status": "passing-unverified",
+    "evidence": "fast mode — no test evidence",
+    "user_visible_behavior": "Credentials, MFA, email OTP, and first-login password change share one layout with accessible controls and reduced-motion support.",
+    "verification_command": "node --test tests/login-auth-steps.test.cjs; manual keyboard/state walkthrough; verify transitions at 180-220ms/140-180ms and zero motion under prefers-reduced-motion; lint and TypeScript checks",
+    "notes": "Covers stories: P1 multi-step flow, P2 password visibility",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-login-success-liquid-splash",
+    "title": "Login success liquid splash",
+    "status": "passing-unverified",
+    "evidence": "fast mode — no test evidence",
+    "user_visible_behavior": "A visual-only Dolores-colored liquid success splash runs after final authentication, then safely routes to the dashboard within 1.5 seconds.",
+    "verification_command": "node --test tests/login-success-splash.test.cjs; controlled success/challenge/failure walkthrough; assert no audio, max 1.5s, reduced-motion skips animation, and redirect survives animation failure; production build",
+    "notes": "Covers stories: P2 success feedback",
+    "priority": "P2"
+  }
+]
