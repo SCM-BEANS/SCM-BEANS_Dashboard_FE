@@ -9,9 +9,10 @@ import {
 } from "@/schema/notifications.schema";
 
 export const notificationsApi = {
-  async list(signal?: AbortSignal) {
+  async list(signal?: AbortSignal, unreadOnly?: boolean) {
     const response = await axiosClient.get<unknown>("/notifications", {
       baseURL: DOLORES_API_BASE_URL,
+      ...(unreadOnly === undefined ? {} : { params: { unreadOnly } }),
       signal,
     });
     return NotificationsSchema.parse(response.data);
@@ -45,5 +46,14 @@ export const notificationsApi = {
       throw new Error("Dolores did not confirm that the notification was marked as read.");
     }
     return notification;
+  },
+
+  async markAllAsRead() {
+    const response = await axiosClient.post<unknown>(
+      "/notifications/read-all",
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return response.data;
   },
 };

@@ -26,6 +26,23 @@ function readRoles(accessToken: string): string[] {
   }
 }
 
+export function getAccessTokenSubject(accessToken: string): string | null {
+  try {
+    const segment = accessToken.split(".")[1];
+    if (!segment) return null;
+    const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const bytes = Uint8Array.from(atob(padded), (character) =>
+      character.charCodeAt(0),
+    );
+    const payload: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!payload || typeof payload !== "object" || !("sub" in payload)) return null;
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
 export function hasAdminRole(accessToken: string): boolean {
   return readRoles(accessToken).some(
     (role) => role.trim().toUpperCase().replace(/^ROLE_/, "") === "ADMIN",

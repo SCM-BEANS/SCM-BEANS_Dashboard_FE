@@ -1,3 +1,8 @@
+import { useRef, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { machinesApi } from "@/apis/machines.api";
+import { notificationsApi } from "@/apis/notifications.api";
+import { recipesApi } from "@/apis/recipes.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
@@ -20,6 +25,13 @@ export interface CustomerWorkflowDescriptor {
 }
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
+
+function createIdempotencyKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+}
 
 const screens: Record<string, CustomerWorkflowDescriptor> = {
   "invoices/payment": {
@@ -100,17 +112,17 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     title: messages.SUPPORT_TITLE,
     description: messages.SUPPORT_DESCRIPTION,
     reason: messages.SUPPORT_API_REASON,
-    actions: [messages.ACTION_CREATE_SUPPORT],
+    actions: [messages.REPAIR_INTAKE_SUBMIT],
   },
   "support/new": {
     title: messages.SUPPORT_NEW_TITLE,
     description: messages.SUPPORT_NEW_DESCRIPTION,
     reason: messages.SUPPORT_API_REASON,
     fields: [
-      { label: messages.FIELD_MACHINE, type: "text" },
-      { label: messages.FIELD_SUPPORT_DETAILS, type: "textarea" },
+      { label: messages.REPAIR_INTAKE_MACHINE, type: "text" },
+      { label: messages.REPAIR_INTAKE_DESCRIPTION, type: "textarea" },
     ],
-    actions: [messages.ACTION_CREATE_SUPPORT],
+    actions: [messages.REPAIR_INTAKE_SUBMIT],
   },
   "support/menu": {
     title: messages.SUPPORT_MENU_TITLE,
@@ -143,7 +155,7 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
   "buyback/documents/confirmed": {
     title: messages.BUYBACK_CONFIRMED_TITLE,
     description: messages.BUYBACK_DOCUMENTS_DESCRIPTION,
-    reason: messages.BUYBACK_CONFIRMED_REASON,
+    reason: messages.BUYBACK_API_REASON,
   },
   "buyback/issue": {
     title: messages.BUYBACK_ISSUE_TITLE,
@@ -157,7 +169,7 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     description: messages.NOTIFICATIONS_DESCRIPTION,
     reason: messages.NOTIFICATIONS_SCOPE_REASON,
     filters: [messages.NOTIFICATIONS_FILTER_ALL, messages.NOTIFICATIONS_FILTER_UNREAD],
-    actions: [messages.ACTION_MARK_READ],
+    actions: [messages.NOTIFICATIONS_MARK_ALL],
   },
 };
 
@@ -177,7 +189,7 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
 }
 
 function renderField(field: WorkflowField, index: number) {
-  const id = `customer-workflow-field-${index}`;
+  const id = "customer-workflow-field-" + index;
 
   return (
     <label className={styles.workflowField} htmlFor={id} key={field.label}>
@@ -253,9 +265,299 @@ function getCustomerWorkflowActions(sectionPath: string, screen: CustomerWorkflo
   return [...blockedActions, ...(navigationActions[sectionPath] ?? [link("Về tổng quan", "/dashboard", "secondary")])];
 }
 
+function RepairIntakeForm({ title, description }: { title: string; description: string }) {
+  const [machineId, setMachineId] = useState("");
+  const [issueDescription, setIssueDescription] = useState("");
+  const [validationError, setValidationError] = useState("");
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const machineQuery = useQuery({
+    queryKey: ["owner-machines-for-repair-intake"],
+    queryFn: ({ signal }) => machinesApi.list(signal),
+  });
+  const submitMutation = useMutation({
+    mutationFn: (input: { machineId: string; issueDescription: string; idempotencyKey: string }) =>
+      machinesApi.createRepairIntake(input),
+    onSuccess: () => {
+      setIssueDescription("");
+      idempotencyKeyRef.current = null;
+    },
+  });
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!machineId || !issueDescription.trim() || issueDescription.trim().length > 4000) {
+      setValidationError(messages.REPAIR_INTAKE_VALIDATION);
+      return;
+    }
+    setValidationError("");
+    idempotencyKeyRef.current ??= createIdempotencyKey();
+    submitMutation.mutate({
+      machineId,
+      issueDescription: issueDescription.trim(),
+      idempotencyKey: idempotencyKeyRef.current,
+    });
+  };
+
+  return (
+    <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
+      <header className={styles.pageHeading}>
+        <h1 id="customer-workflow-title">{title}</h1>
+        <p>{description}</p>
+      </header>
+      <form className={styles.dataPanel} onSubmit={submit}>
+        <h2>{messages.REPAIR_INTAKE_SUBMIT}</h2>
+        <p>{messages.SUPPORT_API_REASON}</p>
+        {machineQuery.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
+        {machineQuery.isError ? <p className={styles.errorNotice} role="alert">{messages.REPAIR_INTAKE_MACHINES_ERROR}</p> : null}
+        {!machineQuery.isPending && !machineQuery.isError && !machineQuery.data?.length
+          ? <p className={styles.emptyNotice} role="status">{messages.REPAIR_INTAKE_NO_MACHINES}</p>
+          : null}
+        {machineQuery.data?.length ? (
+          <>
+            <label className={styles.formField}>
+              <span>{messages.REPAIR_INTAKE_MACHINE}</span>
+              <select
+                onChange={(event) => {
+                  idempotencyKeyRef.current = null;
+                  submitMutation.reset();
+                  setMachineId(event.target.value);
+                }}
+                required
+                value={machineId}
+              >
+                <option value="">{messages.FIELD_MACHINE}</option>
+                {machineQuery.data.map((machine) => (
+                  <option key={machine.id} value={machine.id}>
+                    {(machine.serialNumber || CUSTOMER_MESSAGES.READ_SCREENS.MACHINE_NO_SERIAL) + " · " + (machine.machineType || "—")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.formField}>
+              <span>{messages.REPAIR_INTAKE_DESCRIPTION}</span>
+              <textarea
+                maxLength={4000}
+                onChange={(event) => {
+                  idempotencyKeyRef.current = null;
+                  submitMutation.reset();
+                  setIssueDescription(event.target.value);
+                }}
+                placeholder={messages.REPAIR_INTAKE_DESCRIPTION_HINT}
+                required
+                rows={5}
+                value={issueDescription}
+              />
+              <small>{issueDescription.length} / 4000</small>
+            </label>
+            {validationError ? <p className={styles.errorNotice} role="alert">{validationError}</p> : null}
+            {submitMutation.isError ? <p className={styles.errorNotice} role="alert">{messages.REPAIR_INTAKE_ERROR}</p> : null}
+            {submitMutation.isSuccess ? <p className={styles.successNotice} role="status">{messages.REPAIR_INTAKE_SUCCESS}</p> : null}
+            <button
+              className={styles.primaryButton}
+              disabled={submitMutation.isPending || !issueDescription.trim()}
+              type="submit"
+            >
+              {submitMutation.isPending ? messages.REPAIR_INTAKE_SENDING : messages.REPAIR_INTAKE_SUBMIT}
+            </button>
+          </>
+        ) : null}
+      </form>
+    </section>
+  );
+}
+
+function LocalRecipeForm() {
+  const queryClient = useQueryClient();
+  const [globalRecipeId, setGlobalRecipeId] = useState("");
+  const [overridesText, setOverridesText] = useState("");
+  const [validationError, setValidationError] = useState("");
+  const globalRecipes = useQuery({
+    queryKey: ["owner-global-recipes"],
+    queryFn: ({ signal }) => recipesApi.listGlobal(signal),
+  });
+  const saveMutation = useMutation({
+    mutationFn: (input: { globalRecipeId: string; dosageOverrides: string[] }) =>
+      recipesApi.upsertLocal(input),
+    onSuccess: async () => {
+      setOverridesText("");
+      setValidationError("");
+      await queryClient.invalidateQueries({ queryKey: ["owner-local-recipes"] });
+    },
+  });
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const dosageOverrides = overridesText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!globalRecipeId || dosageOverrides.length === 0) {
+      setValidationError(messages.LOCAL_RECIPE_ERROR);
+      return;
+    }
+    setValidationError("");
+    saveMutation.mutate({ globalRecipeId, dosageOverrides });
+  };
+
+  return (
+    <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
+      <header className={styles.pageHeading}>
+        <h1 id="customer-workflow-title">{messages.MENU_ADD_DISH_TITLE}</h1>
+        <p>{messages.MENU_ADD_DISH_DESCRIPTION}</p>
+      </header>
+      <form className={styles.dataPanel} onSubmit={submit}>
+        {globalRecipes.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
+        {globalRecipes.isError ? <p className={styles.errorNotice} role="alert">{CUSTOMER_MESSAGES.READ_SCREENS.LOAD_ERROR}</p> : null}
+        {!globalRecipes.isPending && !globalRecipes.isError && !globalRecipes.data?.length
+          ? <p className={styles.emptyNotice} role="status">{messages.LOCAL_RECIPE_NO_GLOBAL}</p>
+          : null}
+        {globalRecipes.data?.length ? (
+          <>
+            <label className={styles.formField}>
+              <span>{messages.LOCAL_RECIPE_SELECT_GLOBAL}</span>
+              <select
+                onChange={(event) => {
+                  saveMutation.reset();
+                  setGlobalRecipeId(event.target.value);
+                }}
+                required
+                value={globalRecipeId}
+              >
+                <option value="">{messages.LOCAL_RECIPE_SELECT_GLOBAL}</option>
+                {globalRecipes.data.map((recipe) => (
+                  <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.formField}>
+              <span>{messages.LOCAL_RECIPE_OVERRIDES}</span>
+              <textarea
+                onChange={(event) => {
+                  saveMutation.reset();
+                  setOverridesText(event.target.value);
+                }}
+                placeholder={messages.LOCAL_RECIPE_OVERRIDES_HINT}
+                required
+                rows={5}
+                value={overridesText}
+              />
+            </label>
+            {validationError ? <p className={styles.errorNotice} role="alert">{validationError}</p> : null}
+            {saveMutation.isError ? <p className={styles.errorNotice} role="alert">{messages.LOCAL_RECIPE_ERROR}</p> : null}
+            {saveMutation.isSuccess ? <p className={styles.successNotice} role="status">{messages.LOCAL_RECIPE_SUCCESS}</p> : null}
+            <button className={styles.primaryButton} disabled={saveMutation.isPending} type="submit">
+              {saveMutation.isPending ? messages.LOCAL_RECIPE_SAVING : messages.LOCAL_RECIPE_SAVE}
+            </button>
+          </>
+        ) : null}
+      </form>
+    </section>
+  );
+}
+
+function NotificationInbox() {
+  const queryClient = useQueryClient();
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const list = useQuery({
+    queryKey: ["owner-notifications", unreadOnly],
+    queryFn: ({ signal }) => notificationsApi.list(signal, unreadOnly ? true : undefined),
+  });
+  const unreadCount = useQuery({
+    queryKey: ["owner-notification-unread-count"],
+    queryFn: ({ signal }) => notificationsApi.unreadCount(signal),
+  });
+  const markOne = useMutation({
+    mutationFn: (id: string) => notificationsApi.markAsRead(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["owner-notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["owner-notification-unread-count"] });
+    },
+  });
+  const markAll = useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["owner-notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["owner-notification-unread-count"] });
+    },
+  });
+
+  return (
+    <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
+      <header className={styles.pageHeading}>
+        <h1 id="customer-workflow-title">{messages.NOTIFICATIONS_TITLE}</h1>
+        <p>{messages.NOTIFICATIONS_DESCRIPTION}</p>
+      </header>
+      <div className={styles.dataPanel}>
+        <div className={styles.actionRow} role="group" aria-label={messages.NOTIFICATIONS_FILTER_LABEL}>
+          <button className={styles.secondaryButton} aria-pressed={!unreadOnly} onClick={() => setUnreadOnly(false)} type="button">
+            {messages.NOTIFICATIONS_FILTER_ALL}
+          </button>
+          <button className={styles.secondaryButton} aria-pressed={unreadOnly} onClick={() => setUnreadOnly(true)} type="button">
+            {messages.NOTIFICATIONS_FILTER_UNREAD}
+          </button>
+          <span>{messages.NOTIFICATIONS_UNREAD_COUNT}: {unreadCount.data?.unreadCount ?? "—"}</span>
+          <button
+            className={styles.primaryButton}
+            disabled={markAll.isPending || (unreadCount.isSuccess && unreadCount.data.unreadCount === 0)}
+            onClick={() => markAll.mutate()}
+            type="button"
+          >
+            {messages.NOTIFICATIONS_MARK_ALL}
+          </button>
+        </div>
+        {markOne.isError || markAll.isError ? <p className={styles.errorNotice} role="alert">{messages.NOTIFICATIONS_MARK_ERROR}</p> : null}
+        {markOne.isSuccess ? <p className={styles.successNotice} role="status">{messages.NOTIFICATIONS_MARKED_ONE}</p> : null}
+        {markAll.isSuccess ? <p className={styles.successNotice} role="status">{messages.NOTIFICATIONS_MARKED_ALL}</p> : null}
+        {list.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
+        {list.isError ? <p className={styles.errorNotice} role="alert">{CUSTOMER_MESSAGES.READ_SCREENS.LOAD_ERROR}</p> : null}
+        {!list.isPending && !list.isError && !list.data?.length
+          ? <p className={styles.emptyNotice} role="status">{messages.NOTIFICATIONS_EMPTY}</p>
+          : null}
+        {list.data?.length ? (
+          <div className={styles.recordList}>
+            {list.data.map((notification) => (
+              <article className={styles.recordCard} key={notification.id}>
+                <div className={styles.notificationCard}>
+                  <div className={styles.notificationMeta}>
+                    <span className={styles.unreadBadge}>
+                      {notification.read ? messages.NOTIFICATIONS_READ_BADGE : messages.NOTIFICATIONS_UNREAD_BADGE}
+                    </span>
+                    <span>{notification.type}</span>
+                    <time dateTime={notification.createdAt ?? undefined}>
+                      {notification.createdAt ? new Date(notification.createdAt).toLocaleString("vi-VN") : "—"}
+                    </time>
+                  </div>
+                  <h2>{notification.title}</h2>
+                  <p>{notification.message}</p>
+                </div>
+                {!notification.read ? (
+                  <button
+                    className={styles.secondaryButton}
+                    disabled={markOne.isPending}
+                    onClick={() => markOne.mutate(notification.id)}
+                    type="button"
+                  >
+                    {messages.NOTIFICATIONS_MARK_ONE}
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
+
+  if (sectionPath === "support" || sectionPath === "support/new") {
+    return <RepairIntakeForm title={screen.title} description={screen.description} />;
+  }
+  if (sectionPath === "menu/add-dish") return <LocalRecipeForm />;
+  if (sectionPath === "notifications") return <NotificationInbox />;
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-workflow-title">

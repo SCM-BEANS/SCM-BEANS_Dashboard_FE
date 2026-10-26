@@ -217,6 +217,247 @@
   cursor: not-allowed;
 }
 
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 14px;
+}
+
+.metricCard,
+.dataPanel,
+.recordCard,
+.detailItem {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.metricCard {
+  display: grid;
+  gap: 10px;
+}
+
+.metricCard span,
+.detailItem dt {
+  color: #706561;
+  font-size: 13px;
+}
+
+.metricCard strong {
+  color: #302927;
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.dataPanel {
+  display: grid;
+  gap: 14px;
+}
+
+.dataPanel h2,
+.dataPanel h3 {
+  margin: 0;
+  color: #302927;
+}
+
+.dataPanel p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.dataPanel h3 {
+  font-size: 15px;
+}
+
+.recordList {
+  display: grid;
+  gap: 12px;
+}
+
+.recordCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.recordCard h2,
+.recordCard h3 {
+  margin: 0 0 8px;
+  color: #302927;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.recordCard p {
+  margin: 4px 0 0;
+  color: #706561;
+  font-size: 14px;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.detailItem {
+  display: grid;
+  gap: 8px;
+}
+
+.detailItem dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #302927;
+  font-size: 15px;
+}
+
+.loadingNotice,
+.emptyNotice,
+.errorNotice,
+.successNotice {
+  padding: 16px 18px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #706561;
+  line-height: 1.55;
+}
+
+.errorNotice {
+  border-color: #f0c9c5;
+  color: #a52a1f;
+}
+
+.successNotice {
+  border-color: #b8d9c0;
+  color: #23613b;
+}
+
+.dataFootnote {
+  color: #706561;
+  font-size: 13px;
+}
+
+.secondaryLink,
+.secondaryButton,
+.primaryButton {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #e1d8d2;
+  border-radius: 8px;
+  background: #fff;
+  color: #a9101c !important;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.secondaryButton,
+.primaryButton {
+  cursor: pointer;
+}
+
+.primaryButton {
+  border-color: #b81724;
+  background: #b81724;
+  color: #fff !important;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #706561;
+  font-size: 14px;
+}
+
+.recipeSteps,
+.simpleList {
+  display: grid;
+  gap: 8px;
+  padding-left: 22px;
+  margin: 0;
+  color: #504845;
+  line-height: 1.55;
+}
+
+.formField {
+  display: grid;
+  gap: 7px;
+  color: #504845;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.formField input,
+.formField select,
+.formField textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #ded6d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+}
+
+.formField textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.notificationCard {
+  display: grid;
+  gap: 8px;
+}
+
+.notificationCard p {
+  color: #706561;
+}
+
+.notificationMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #706561;
+  font-size: 13px;
+}
+
+.unreadBadge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f9e9ea;
+  color: #a9101c;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .accessScreen {
   position: fixed;
   inset: 0;
@@ -354,6 +595,10 @@
 
   .pageHeading h1 {
     font-size: 24px;
+  }
+
+  .detailGrid {
+    grid-template-columns: 1fr;
   }
 }
 

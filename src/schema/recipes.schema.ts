@@ -17,5 +17,21 @@ export const GlobalRecipeSchema = z.object({
 
 export const GlobalRecipesSchema = z.array(GlobalRecipeSchema);
 
+export const LocalRecipeIdSchema = z.string().uuid();
+export const LocalRecipeSchema = z.object({
+  id: LocalRecipeIdSchema,
+  ownerId: z.string().uuid().nullish(),
+  globalRecipeId: GlobalRecipeIdSchema,
+  dosageOverrides: z.array(z.string()),
+}).passthrough();
+export const LocalRecipesSchema = z.array(LocalRecipeSchema);
+export const LocalRecipeUpsertRequestSchema = z.object({
+  id: LocalRecipeIdSchema.optional(),
+  globalRecipeId: GlobalRecipeIdSchema,
+  dosageOverrides: z.array(z.string()),
+}).strict();
+
 export type GlobalRecipe = z.infer<typeof GlobalRecipeSchema>;
 export type RecipePublishRequest = z.infer<typeof RecipePublishRequestSchema>;
+export type LocalRecipe = z.infer<typeof LocalRecipeSchema>;
+export type LocalRecipeUpsertRequest = z.infer<typeof LocalRecipeUpsertRequestSchema>;

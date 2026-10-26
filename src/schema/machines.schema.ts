@@ -109,6 +109,18 @@ export const MaintenanceTicketSchema = z.object({
 
 export const MaintenanceTicketListSchema = z.array(MaintenanceTicketSchema);
 
+export const RepairIntakeRequestSchema = z.object({
+  machineId: MachineIdSchema,
+  idempotencyKey: z.string().min(1).max(128),
+  issueDescription: z.string().max(4000),
+  evidenceReference: z.string().max(512).optional(),
+}).strict();
+
+export const RepairIntakeResponseSchema = z.record(z.string(), z.unknown());
+
+export type RepairIntakeRequest = z.infer<typeof RepairIntakeRequestSchema>;
+export type RepairIntakeResponse = z.infer<typeof RepairIntakeResponseSchema>;
+
 export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
 export type Machine = z.infer<typeof MachineSchema>;
 export type CreateMachineRequest = z.infer<typeof CreateMachineRequestSchema>;

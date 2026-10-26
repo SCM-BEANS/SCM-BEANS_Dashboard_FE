@@ -8,6 +8,9 @@ import {
   type CreateMachineRequest,
   MaintenanceTicketListSchema,
   MaintenanceScheduleSchema,
+  RepairIntakeRequestSchema,
+  RepairIntakeResponseSchema,
+  type RepairIntakeRequest,
 } from "@/schema/machines.schema";
 
 export class MachineIdentityMismatchError extends Error {
@@ -61,5 +64,14 @@ export const machinesApi = {
       signal,
     });
     return MaintenanceTicketListSchema.parse(response.data);
+  },
+  async createRepairIntake(input: RepairIntakeRequest) {
+    const request = RepairIntakeRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      "/repair-cases/intakes",
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return RepairIntakeResponseSchema.parse(response.data);
   },
 };

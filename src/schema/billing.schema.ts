@@ -16,7 +16,7 @@ export const InvoiceSchema = z.object({
   billingPeriodStart: z.string().nullish(),
   billingPeriodEnd: z.string().nullish(),
   dueDate: z.string().nullish(),
-  lineItems: z.array(z.unknown()).nullish(),
+  lineItems: z.union([z.array(z.unknown()), z.string()]).nullish(),
   rentalFeeSnapshot: z.number().nullish(),
   overageCups: z.number().nullish(),
   overageUnitPrice: z.number().nullish(),
@@ -25,6 +25,24 @@ export const InvoiceSchema = z.object({
 }).passthrough();
 
 export const InvoicesSchema = z.array(InvoiceSchema);
+
+export const InvoiceLineItemSchema = z.object({
+  id: z.string().uuid().nullish(),
+  invoiceId: InvoiceIdSchema,
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  machineId: z.string().uuid().nullish(),
+  repairCaseId: z.string().uuid().nullish(),
+  serviceCode: z.string().nullish(),
+  description: z.string().nullish(),
+  quantity: z.number().nullish(),
+  unitPrice: z.number().nullish(),
+  amount: z.number().nullish(),
+  effectiveStart: z.string().nullish(),
+  effectiveEnd: z.string().nullish(),
+  createdAt: z.string().nullish(),
+}).passthrough();
+export const InvoiceLineItemsSchema = z.array(InvoiceLineItemSchema);
 
 export type Invoice = z.infer<typeof InvoiceSchema>;
 
@@ -62,7 +80,8 @@ export const ModeratorInvoicesSchema = z.array(ModeratorInvoiceSchema);
 export const PaymentProofSchema = z.object({
   id: PaymentProofIdSchema,
   invoiceId: InvoiceIdSchema,
-  tenantId: z.string().uuid(),
+  ownerId: z.string().uuid().nullish(),
+  tenantId: z.string().uuid().nullish(),
   paymentId: z.string().uuid(),
   originalFilename: z.string(),
   contentType: z.string(),
@@ -77,6 +96,8 @@ export const PaymentProofSchema = z.object({
 });
 
 export const PaymentProofsSchema = z.array(PaymentProofSchema);
+export const PaymentProofSubmitResponseSchema = z.object({}).passthrough();
 
 export type ModeratorInvoice = z.infer<typeof ModeratorInvoiceSchema>;
 export type PaymentProof = z.infer<typeof PaymentProofSchema>;
+export type InvoiceLineItem = z.infer<typeof InvoiceLineItemSchema>;
