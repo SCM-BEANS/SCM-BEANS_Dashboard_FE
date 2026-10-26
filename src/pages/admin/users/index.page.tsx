@@ -25,14 +25,14 @@ import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 type View = "list" | "create" | "detail";
-type FormState = { name: string; email: string; role: AdminUserRole | ""; tenantId: string };
+type FormState = { name: string; email: string; role: AdminUserRole | "" };
 type Action =
   | { kind: "create"; input: AdminUserCreate }
   | { kind: "update"; userId: string; input: AdminUserUpdate }
   | { kind: "disable" | "reactivate" | "reissue"; userId: string };
 type Credential = AccountCredential;
 
-const emptyForm: FormState = { name: "", email: "", role: "", tenantId: "" };
+const emptyForm: FormState = { name: "", email: "", role: "" };
 const roleLabels: Record<AdminUserRole, string> = {
   owner: T.COMMON.OWNER,
   moderator: T.COMMON.MODERATOR,
@@ -179,7 +179,7 @@ function AdminUsersContent() {
   const tenantsQuery = useQuery({
     queryKey: ["dolores", "tenants"],
     queryFn: ({ signal }) => tenantsApi.list(signal),
-    enabled: router.isReady && (view === "list" || (view === "detail" && form.role === "owner")),
+    enabled: router.isReady && view === "list",
     staleTime: 60_000,
   });
   const tenants = tenantsQuery.data ?? [];
@@ -191,7 +191,6 @@ function AdminUsersContent() {
       name: user.name,
       email: user.email,
       role: supportedRole(user) ?? "",
-      tenantId: user.tenant_id ?? "",
     });
   }, [user]);
 
@@ -236,11 +235,7 @@ function AdminUsersContent() {
   }
 
   function updateField(field: keyof FormState, value: string) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-      ...(field === "role" && value !== "owner" ? { tenantId: "" } : {}),
-    }));
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   function prepareCreate() {
@@ -260,16 +255,11 @@ function AdminUsersContent() {
 
   function prepareUpdate() {
     if (!user || !currentRole) return;
-    if (form.role === "owner" && !form.tenantId && currentRole !== "owner") {
-      setRequestError(T.FORM.TENANT_REQUIRED);
-      return;
-    }
     const input: AdminUserUpdate = {};
     if (form.name.trim() !== user.name) input.name = form.name;
     if (form.email.trim() !== user.email) input.email = form.email;
     if (form.role && form.role !== currentRole) input.role = form.role;
-    const nextTenantId = form.role === "owner" ? form.tenantId || null : null;
-    if (nextTenantId !== (user.tenant_id ?? null)) input.tenant_id = nextTenantId;
+    if (form.role !== "owner" && user.tenant_id) input.tenant_id = null;
     const parsed = AdminUserUpdateSchema.safeParse(input);
     if (!parsed.success) {
       setRequestError(Object.keys(input).length ? T.FORM.INVALID : T.FORM.NO_CHANGE);
@@ -340,17 +330,6 @@ function AdminUsersContent() {
       <option value="">{T.COMMON.ALL_ROLES}</option>
       {(Object.keys(roleLabels) as AdminUserRole[]).map((value) => (
         <option key={value} value={value}>{roleLabels[value]}</option>
-      ))}
-    </>
-  );
-  const tenantOptions = (
-    <>
-      <option value="">{T.FORM.TENANT_PLACEHOLDER}</option>
-      {form.tenantId && !tenantNames.has(form.tenantId) && (
-        <option value={form.tenantId}>{form.tenantId}</option>
-      )}
-      {tenants.map((tenant) => (
-        <option key={tenant.id} value={tenant.id}>{tenant.name} · {tenant.id}</option>
       ))}
     </>
   );
@@ -499,15 +478,11 @@ function AdminUsersContent() {
             <label>{T.FORM.NAME}<input value={form.name} maxLength={50} disabled={!canManage} onChange={(event) => updateField("name", event.target.value)} /></label>
             <label>{T.FORM.EMAIL}<input type="email" value={form.email} maxLength={255} disabled={!canManage} onChange={(event) => updateField("email", event.target.value)} /></label>
             <label>{T.FORM.ROLE}<select value={form.role} disabled={!canManage} onChange={(event) => updateField("role", event.target.value)}>{roleOptions}</select></label>
-            {form.role === "owner" && <label>{T.FORM.TENANT}<select value={form.tenantId}
-              disabled={!canManage || tenantsQuery.isPending || tenantsQuery.isError || tenants.length === 0}
-              onChange={(event) => updateField("tenantId", event.target.value)}>{tenantOptions}</select></label>}
             <div><span>{T.FORM.STATUS}</span><strong>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</strong></div>
             <div><span>{T.FORM.VERIFIED}</span><strong>{user.email_verified ? T.FORM.YES : T.FORM.NO}</strong></div>
             <div><span>{T.FORM.CREATED}</span><strong>{formatDate(user.created_at)}</strong></div>
             <div><span>{T.FORM.UPDATED}</span><strong>{formatDate(user.updated_at)}</strong></div>
           </div>
-          {tenantsQuery.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {getApiErrorMessage(tenantsQuery.error)}</p>}
           {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
         </section>
       </>
