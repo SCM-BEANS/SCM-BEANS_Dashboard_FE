@@ -5,8 +5,8 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 const OverviewScreen = lazy(() => import("./overview/overview-screen").then((module) => ({ default: module.OverviewScreen })));
 const NotificationsScreen = lazy(() => import("./notifications/notifications-screen").then((module) => ({ default: module.NotificationsScreen })));
 const AlertsScreen = lazy(() => import("./alerts/alerts-screen").then((module) => ({ default: module.AlertsScreen })));
-const TenantListScreen = lazy(() => import("./customers/customer-list-screen").then((module) => ({ default: module.TenantListScreen })));
-const TenantDetailScreen = lazy(() => import("./customers/customer-detail-screen").then((module) => ({ default: module.TenantDetailScreen })));
+const CustomerProfileListScreen = lazy(() => import("./customers/customer-list-screen").then((module) => ({ default: module.CustomerProfileListScreen })));
+const CustomerProfileDetailScreen = lazy(() => import("./customers/customer-detail-screen").then((module) => ({ default: module.CustomerProfileDetailScreen })));
 const CustomerCreateScreen = lazy(() => import("./customers/customer-create-screen").then((module) => ({ default: module.ModeratorCustomerCreateScreen })));
 const ContractListScreen = lazy(() => import("./contracts/contract-list-screen").then((module) => ({ default: module.ContractListScreen })));
 const ContractCreateScreen = lazy(() => import("./contracts/contract-create-screen").then((module) => ({ default: module.ContractCreateScreen })));
@@ -64,13 +64,13 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
     return loadScreen(<ModeratorBuybackScreen sectionPath={sectionPath} />);
   }
   if (sectionPath === "customers" || sectionPath === "customers/list") {
-    return loadScreen(<TenantListScreen />);
+    return loadScreen(<CustomerProfileListScreen />);
   }
   if (sectionPath === "customers/new") {
     return loadScreen(<CustomerCreateScreen />);
   }
   if (sectionPath.startsWith("customers/")) {
-    return loadScreen(<TenantDetailScreen id={sectionPath.slice("customers/".length)} />);
+    return loadScreen(<CustomerProfileDetailScreen id={sectionPath.slice("customers/".length)} />);
   }
   if (sectionPath === "contracts" || sectionPath === "contracts/list") {
     return loadScreen(<ContractListScreen />);
