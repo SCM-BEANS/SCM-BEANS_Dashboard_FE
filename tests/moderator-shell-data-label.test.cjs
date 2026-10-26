@@ -93,8 +93,8 @@ function moderatorShellHarness({ pathname, hasRole }) {
     "@/routes/path": paths,
     "@/routes/routes": routeCatalog,
     "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
-    "@/components/action-bar/admin-action-bar": {
-      AdminActionBar: ({ children, label }) => React.createElement("footer", { "aria-label": label }, children),
+    "@/components/action-bar/action-bar": {
+      ActionBar: ({ children, label }) => React.createElement("footer", { "aria-label": label }, children),
     },
     "@/components/button/button-bar": {
       ButtonBar: ({ children, href, ...props }) => href

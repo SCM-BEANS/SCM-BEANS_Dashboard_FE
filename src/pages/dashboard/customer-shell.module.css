@@ -84,7 +84,7 @@
   min-height: 100%;
   flex-direction: column;
   gap: 22px;
-  padding: 28px 32px 48px;
+  padding: 28px 32px 112px;
   margin: 0 auto;
 }
 
@@ -349,7 +349,7 @@
 
   .pageContent {
     gap: 16px;
-    padding: 20px 16px 28px;
+    padding: 20px 16px 104px;
   }
 
   .pageHeading h1 {
@@ -359,7 +359,7 @@
 
 @media (max-width: 600px) {
   .pageContent {
-    padding: 18px 14px 24px;
+    padding: 18px 14px 100px;
   }
 
   .pageHeading h1 {

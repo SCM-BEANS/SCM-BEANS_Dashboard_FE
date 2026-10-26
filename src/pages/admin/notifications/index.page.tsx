@@ -4,7 +4,7 @@ import { notificationsApi } from "@/apis/notifications.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import type { Notification } from "@/schema/notifications.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -120,7 +120,7 @@ function NotificationContent() {
         )}
       </section>
     </div>
-    <AdminActionBar>
+    <ActionBar>
       <ButtonBar href={PATH_ADMIN.REPORTS}>
         {ADMIN_MESSAGES.REPORTS.TITLE}
       </ButtonBar>
@@ -131,7 +131,7 @@ function NotificationContent() {
       >
         {ADMIN_MESSAGES.NOTIFICATIONS.RETRY}
       </ButtonBar>
-    </AdminActionBar>
+    </ActionBar>
     </>
   );
 }

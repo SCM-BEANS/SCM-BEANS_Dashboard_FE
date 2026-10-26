@@ -6,7 +6,7 @@ import { dashboardApi } from "@/apis/dashboard.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -208,7 +208,7 @@ function ReportContent() {
         )}
       </section>
     </div>
-    <AdminActionBar>
+    <ActionBar>
       <ButtonBar type="submit" form="report-range-form">
         {ADMIN_MESSAGES.REPORTS.APPLY}
       </ButtonBar>
@@ -225,7 +225,7 @@ function ReportContent() {
       >
         {ADMIN_MESSAGES.REPORTS.RETRY}
       </ButtonBar>
-    </AdminActionBar>
+    </ActionBar>
     </>
   );
 }

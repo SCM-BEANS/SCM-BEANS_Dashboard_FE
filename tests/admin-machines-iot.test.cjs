@@ -141,8 +141,8 @@ function pageMocks(apiMocks, router = { isReady: true, query: {} }) {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "next/router": { useRouter: () => router },
     "@/components/button/button-bar": { ButtonBar },
-    "@/components/action-bar/admin-action-bar": {
-      AdminActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
+    "@/components/action-bar/action-bar": {
+      ActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
     },
     "./admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },
     "../admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },

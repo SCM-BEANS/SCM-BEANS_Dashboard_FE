@@ -12,7 +12,7 @@ import {
   type RecipePublishRequest,
 } from "@/schema/recipes.schema";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const RECIPE_QUERY_KEY = ["dolores", "recipes", "global"] as const;
@@ -230,23 +230,23 @@ function MenuContent() {
       )}
     </div>
     {isCreateView ? (
-      <AdminActionBar>
+      <ActionBar>
         <ButtonBar type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
           {ADMIN_MESSAGES.MENU.PUBLISH}
         </ButtonBar>
         <ButtonBar type="button" disabled={publish.isPending} onClick={navigateToList}>
           {ADMIN_MESSAGES.MENU.CANCEL}
         </ButtonBar>
-      </AdminActionBar>
+      </ActionBar>
     ) : (
-      <AdminActionBar>
+      <ActionBar>
         <ButtonBar type="button" onClick={navigateToCreate}>
           {ADMIN_MESSAGES.MENU.CREATE}
         </ButtonBar>
         <ButtonBar type="button" disabled={recipes.isFetching} onClick={() => void recipes.refetch()}>
           {ADMIN_MESSAGES.MENU.RETRY}
         </ButtonBar>
-      </AdminActionBar>
+      </ActionBar>
     )}
     </>
   );

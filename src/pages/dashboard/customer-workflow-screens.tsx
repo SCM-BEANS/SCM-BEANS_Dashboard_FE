@@ -1,4 +1,6 @@
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
+import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import styles from "./customer-shell.module.css";
 
 type WorkflowFieldType = "text" | "textarea" | "file";
@@ -189,6 +191,68 @@ function renderField(field: WorkflowField, index: number) {
   );
 }
 
+function getCustomerWorkflowActions(sectionPath: string, screen: CustomerWorkflowDescriptor): ActionBarAction[] {
+  const blocked = (label: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
+    label,
+    variant,
+    disabled: true,
+    describedBy: "customer-workflow-reason",
+  });
+  const link = (label: string, href: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
+    label,
+    href,
+    variant,
+  });
+  const blockedActions = (screen.actions ?? []).map((action) => blocked(action));
+
+  if (sectionPath === "support") {
+    return [link("Gửi yêu cầu mới", "/dashboard/support/new"), link("Cập nhật menu cần hỗ trợ", "/dashboard/support/menu", "secondary")];
+  }
+  if (sectionPath === "buyback") {
+    return [link("Gửi đề nghị thu mua", "/dashboard/buyback/new"), link("Xem chứng từ thu mua", "/dashboard/buyback/documents", "secondary")];
+  }
+  if (sectionPath === "invoices/refund") {
+    return [blocked("Gửi yêu cầu hoàn tiền"), link("Về hóa đơn", "/dashboard/invoices", "secondary")];
+  }
+  if (sectionPath === "menu/sent") {
+    return [link("Về menu của tôi", "/dashboard/menu"), blocked("Gửi menu riêng đến máy", "secondary")];
+  }
+  if (sectionPath === "menu/applied") {
+    return [link("Về menu của tôi", "/dashboard/menu")];
+  }
+  if (
+    sectionPath.startsWith("support/") &&
+    sectionPath.split("/").length === 2 &&
+    !["support/new", "support/menu"].includes(sectionPath)
+  ) {
+    return [link("Về yêu cầu hỗ trợ", "/dashboard/support"), link("Xem lịch sử máy", "/dashboard/machines/history", "secondary")];
+  }
+  if (sectionPath === "buyback/documents/confirmed") {
+    return [link("Về hồ sơ thu mua", "/dashboard/buyback"), link("Xem lại chứng từ", "/dashboard/buyback/documents", "secondary")];
+  }
+
+  const navigationActions: Record<string, ActionBarAction[]> = {
+    "invoices/payment": [link("Về hóa đơn", "/dashboard/invoices", "secondary")],
+    "invoices/shortfall": [link("Xem phần còn thiếu", "/dashboard/invoices", "secondary")],
+    "invoices/reminder": [link("Về hóa đơn", "/dashboard/invoices", "secondary")],
+    "invoices/standard-payment": [link("Về hóa đơn", "/dashboard/invoices", "secondary")],
+    "menu/espresso": [link("Về menu của tôi", "/dashboard/menu", "secondary")],
+    "menu/fresh-milk": [link("Về menu của tôi", "/dashboard/menu", "secondary")],
+    "menu/add-dish": [link("Hủy", "/dashboard/menu", "secondary")],
+    "support/new": [link("Về yêu cầu hỗ trợ", "/dashboard/support", "secondary")],
+    "support/menu": [link("Xem máy của tôi", "/dashboard/machines", "secondary")],
+    "buyback/new": [link("Về thu mua máy cũ", "/dashboard/buyback", "secondary")],
+    "buyback/documents": [link("Có vấn đề cần trao đổi", "/dashboard/buyback/issue", "secondary")],
+    "buyback/issue": [link("Về chứng từ thu mua", "/dashboard/buyback/documents", "secondary")],
+    notifications: [
+      link("Về tổng quan", "/dashboard"),
+      link("Chưa đọc", "/dashboard/notifications?view=unread", "secondary"),
+    ],
+  };
+
+  return [...blockedActions, ...(navigationActions[sectionPath] ?? [link("Về tổng quan", "/dashboard", "secondary")])];
+}
+
 export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
@@ -227,21 +291,9 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
           ))}
         </div>
       ) : null}
-      {screen.actions?.length ? (
-        <div className={styles.workflowActions}>
-          {screen.actions.map((action) => (
-            <button
-              aria-describedby="customer-workflow-reason"
-              className={styles.workflowAction}
-              disabled
-              key={action}
-              type="button"
-            >
-              {action}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <ActionBar label={`Thao tác ${screen.title}`}>
+        <ActionBarActions actions={getCustomerWorkflowActions(sectionPath, screen)} />
+      </ActionBar>
     </section>
   );
 }

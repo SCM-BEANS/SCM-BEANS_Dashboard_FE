@@ -8,7 +8,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { AdminUserIdSchema } from "@/schema/admin-users.schema";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
@@ -148,14 +148,14 @@ function BusinessesContent() {
       </>}
     </div>
     {view === "detail" ? (
-      <AdminActionBar>
+      <ActionBar>
         <ButtonBar type="button" onClick={() => navigate({ q: queryValue(router.query.q), status, page })}>{T.BUSINESSES.BACK_TO_LIST}</ButtonBar>
         {detail.data && <ButtonBar type="button" onClick={() => void router.push({ pathname: PATH_ADMIN.STORES, query: { ownerId: detail.data!.id } })}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>}
-      </AdminActionBar>
+      </ActionBar>
     ) : (
-      <AdminActionBar>
+      <ActionBar>
         <ButtonBar type="button" onClick={() => void router.push(PATH_ADMIN.STORES)}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>
-      </AdminActionBar>
+      </ActionBar>
     )}
     </>
   );

@@ -9,7 +9,7 @@ import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 type Range = { from: string; to: string };
@@ -100,11 +100,11 @@ function MachineDetailContent() {
     ]);
   };
   const actionBar = (showRefresh: boolean) => (
-    <AdminActionBar>
+    <ActionBar>
       {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
       <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</ButtonBar>
       {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
-    </AdminActionBar>
+    </ActionBar>
   );
 
   const submitRange = (event: FormEvent<HTMLFormElement>) => {

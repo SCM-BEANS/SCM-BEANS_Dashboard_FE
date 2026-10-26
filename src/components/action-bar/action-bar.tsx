@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
-import styles from "./admin-action-bar.module.css";
+import styles from "./action-bar.module.css";
 
-interface AdminActionBarProps {
+interface ActionBarProps {
   children: ReactNode;
   label?: string;
 }
 
-export function AdminActionBar({
+export function ActionBar({
   children,
   label = "Thao tác trang",
-}: AdminActionBarProps) {
+}: ActionBarProps) {
   return (
     <footer className={styles.dock} aria-label={label}>
       <div className={styles.actions}>{children}</div>

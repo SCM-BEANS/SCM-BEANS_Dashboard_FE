@@ -1,4 +1,6 @@
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
+import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import styles from "./technician-shell.module.css";
 
 type TechnicianFieldType = "text" | "textarea" | "file";
@@ -227,6 +229,53 @@ function renderField(item: TechnicianField, index: number) {
   );
 }
 
+function getTechnicianActionItems(sectionPath: string, screen: TechnicianScreenDescriptor): ActionBarAction[] {
+  const blocked = (label: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
+    label,
+    variant,
+    disabled: true,
+    describedBy: "technician-screen-reason",
+  });
+  const link = (label: string, href: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
+    label,
+    href,
+    variant,
+  });
+  const blockedActions = (screen.actions ?? []).map((action) => blocked(action));
+
+  if (!sectionPath || sectionPath === "tasks") {
+    return [blocked("Mở chi tiết công việc")];
+  }
+  if (sectionPath === "history") {
+    return [blocked("Xem lịch sử chi tiết"), link("Ghi nhận bảo trì", "/technician/tasks/maintenance-history", "secondary")];
+  }
+  if (sectionPath === "notifications") {
+    return [link("Mở công việc được giao", "/technician/tasks"), ...blockedActions];
+  }
+  if (sectionPath.startsWith("history/")) {
+    return [
+      link("Ghi nhận bảo trì", "/technician/tasks/maintenance-history"),
+      link("Về danh sách lịch sử", "/technician/history", "secondary"),
+    ];
+  }
+  if (screen.title === messages.TASK_DETAIL_TITLE) {
+    return [
+      ...blockedActions,
+      link("Nhập kết quả thu hồi", "/technician/tasks/retrieval", "secondary"),
+      link("Về danh sách công việc", "/technician/tasks", "secondary"),
+    ];
+  }
+
+  const formNavigation: Record<string, ActionBarAction[]> = {
+    "tasks/substitute": [link("Ghi nhận trả máy thay", "/technician/tasks/substitute-return", "secondary")],
+    "tasks/substitute-return": [link("Về máy thay thế", "/technician/tasks/substitute", "secondary")],
+    "tasks/buyback-assessment": [link("Về công việc", "/technician/tasks", "secondary")],
+    "tasks/maintenance-history": [link("Về lịch sử máy", "/technician/history", "secondary")],
+  };
+
+  return [...blockedActions, ...(formNavigation[sectionPath] ?? [])];
+}
+
 export function TechnicianRouteScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getTechnicianScreenDescriptor(sectionPath);
 
@@ -263,21 +312,9 @@ export function TechnicianRouteScreen({ sectionPath }: { sectionPath: string }) 
           {screen.fields.map(renderField)}
         </fieldset>
       ) : null}
-      {screen.actions?.length ? (
-        <div className={styles.workflowActions}>
-          {screen.actions.map((action) => (
-            <button
-              aria-describedby="technician-screen-reason"
-              className={styles.workflowAction}
-              disabled
-              key={action}
-              type="button"
-            >
-              {action}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <ActionBar label={`Thao tác ${screen.title}`}>
+        <ActionBarActions actions={getTechnicianActionItems(sectionPath, screen)} />
+      </ActionBar>
     </section>
   );
 }

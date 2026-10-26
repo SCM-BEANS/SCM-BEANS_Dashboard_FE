@@ -38,8 +38,8 @@ function loadModule(relativePath, mocks = {}) {
   const loaded = { exports: {} };
   const mockedRequire = (id) => {
     if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
-    if (id === "@/components/action-bar/admin-action-bar") {
-      return { AdminActionBar: ({ children }) => children };
+    if (id === "@/components/action-bar/action-bar") {
+      return { ActionBar: ({ children }) => children };
     }
     if (id === "@/components/button/button-bar") {
       const React = require("react");

@@ -160,7 +160,7 @@ test('reports page isolates query keys by URL date range and passes the range to
       '@/routes/path': { PATH_ADMIN: { REPORTS: '/admin/reports' } },
       '@/text/admin/admin-messages': { ADMIN_MESSAGES: new Proxy({}, { get: () => new Proxy({}, { get: (_t, key) => String(key) }) }) },
       '@/components/button/button-bar': { ButtonBar: ({ children, ...props }) => React.createElement('button', props, children) },
-      '@/components/action-bar/admin-action-bar': { AdminActionBar: ({ children }) => React.createElement('div', null, children) },
+      '@/components/action-bar/action-bar': { ActionBar: ({ children }) => React.createElement('div', null, children) },
       './admin-shell': { AdminShell: ({ children }) => children, adminStyles: new Proxy({}, { get: (_t, key) => String(key) }) },
     });
     renderToStaticMarkup(React.createElement(reportModule.default));

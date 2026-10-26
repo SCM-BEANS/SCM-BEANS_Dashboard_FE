@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { Sidebar, SidebarLogoutButton, SidebarNavigation, type SidebarItem } from "@/components/sidebar/sidebar";
@@ -229,7 +229,7 @@ export function ModeratorShell({
             {renderBreadcrumb()}
           </div>
           <main className={styles.main}>{children}</main>
-          <AdminActionBar label={actionMessages.LABEL}>{renderActions()}</AdminActionBar>
+          <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>
           <nav className={styles.mobileNav} aria-label={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}>
             {currentMobileItem
               ? (

@@ -12,7 +12,7 @@ import { DataTable } from "@/components/table/data-table";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const PAGE_SIZE = 20;
@@ -75,9 +75,9 @@ function IoTContent() {
   if (hasOwnerId && !validOwnerId && router.isReady) {
     return <AdminShell><div className={styles.pageContent}>
       <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID_OWNER_ID}</p></div>
-    </div><AdminActionBar>
+    </div><ActionBar>
       <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
-    </AdminActionBar></AdminShell>;
+    </ActionBar></AdminShell>;
   }
 
   if (hasOwnerId) {
@@ -143,11 +143,11 @@ function IoTContent() {
           </section>
         </>}
       </div>
-      <AdminActionBar>
+      <ActionBar>
         <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
         <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
         <ButtonBar type="button" disabled={profile.isFetching || machines.isFetching || contracts.isFetching || locations.isFetching} onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-      </AdminActionBar>
+      </ActionBar>
     </AdminShell>;
   }
 
@@ -184,10 +184,10 @@ function IoTContent() {
         </div>
       </section>}
     </div>
-    <AdminActionBar>
+    <ActionBar>
       <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
       <ButtonBar type="button" disabled={owners.isFetching || machines.isFetching || contracts.isFetching} onClick={() => { void Promise.all([owners.refetch(), machines.refetch(), contracts.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-    </AdminActionBar>
+    </ActionBar>
   </AdminShell>;
 }
 

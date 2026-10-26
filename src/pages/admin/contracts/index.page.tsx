@@ -11,7 +11,7 @@ import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-me
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
@@ -340,7 +340,7 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  <AdminActionBar>
+  <ActionBar>
     {view === "" || view === "list" ? (
       <>
         <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
@@ -358,7 +358,7 @@ function ContractsContent() {
         {view === "history" && <ButtonBar type="button" onClick={() => navigate({ view: "detail", id: contractId })}>{T.CONTRACTS.DETAIL}</ButtonBar>}
       </>
     )}
-  </AdminActionBar>
+  </ActionBar>
   {(view === "" || view === "list") && createdContractId && (
     <NotificationDialog
       variant="success"

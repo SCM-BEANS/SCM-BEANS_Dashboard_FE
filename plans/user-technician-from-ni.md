@@ -33,7 +33,7 @@ The plan includes `/dashboard/notifications` and `/technician/notifications` bec
 - Runtime stack: Next.js 16, React 19, TypeScript 5, TanStack Query 5, Axios, and Zod. `tsconfig.json` is strict and maps `@/*` to `src/*`.
 - `src/pages/_app.page.tsx` creates the application QueryClient. Query defaults include a 30-second stale time, no retry, and no refetch on window focus.
 - `src/lib/http.ts` attaches the browser access token and refreshes the session. Dolores requests use `/api/dolores/v1`, rewritten by `next.config.js` to `DOLORES_API_URL`. IDaaS uses the Next API proxy under `src/pages/api/v1`. `vercel.json` uses the standard Next build output; no backend source or deployment service is part of this workspace.
-- Shared target UI includes `Sidebar`, `ButtonBar`, `AdminActionBar`, and `DataTable`. Moderator shell patterns include role guarding, responsive navigation, route metadata, and page-level CSS Modules.
+- Shared target UI includes `Sidebar`, `ButtonBar`, `ActionBar`, and `DataTable`. Moderator shell patterns include role guarding, responsive navigation, route metadata, and page-level CSS Modules.
 - The current IDaaS UI role schema includes `owner`, `technician`, and `moderator`. `src/lib/auth-role.ts` currently recognizes only `ADMIN` and `MODERATOR`; `getPostLoginPath` sends other roles to the home page.
 - The working tree already contains local notification-dialog changes from the preceding task. Those files are outside this plan's implementation scope and must remain untouched during planning.
 

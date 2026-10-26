@@ -30,16 +30,35 @@ function loadModule(relativePath, mocks = {}) {
 const paths = loadModule("src/routes/path.ts");
 const customerMessages = loadModule("src/text/customer/customer-messages.ts").CUSTOMER_MESSAGES;
 const technicianMessages = loadModule("src/text/technician/technician-messages.ts").TECHNICIAN_MESSAGES;
+const actionBar = loadModule("src/components/action-bar/action-bar.tsx", {
+  "./action-bar.module.css": {
+    dock: "actionDock",
+    actions: "actionActions",
+  },
+});
+const buttonBar = loadModule("src/components/button/button-bar.tsx", {
+  "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+  "./button-bar.module.css": { button: "buttonBar" },
+});
+const actionBarActions = loadModule("src/components/action-bar/action-bar-actions.tsx", {
+  "@/components/button/button-bar": buttonBar,
+});
 const customerReadScreens = loadModule("src/pages/dashboard/customer-read-screens.tsx", {
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
+  "@/components/action-bar/action-bar": actionBar,
+  "@/components/action-bar/action-bar-actions": actionBarActions,
   "./customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const customerWorkflowScreens = loadModule("src/pages/dashboard/customer-workflow-screens.tsx", {
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
+  "@/components/action-bar/action-bar": actionBar,
+  "@/components/action-bar/action-bar-actions": actionBarActions,
   "./customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const technicianRouteScreens = loadModule("src/pages/technician/technician-route-screens.tsx", {
   "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
+  "@/components/action-bar/action-bar": actionBar,
+  "@/components/action-bar/action-bar-actions": actionBarActions,
   "./technician-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const tokenWithRoles = (roles) => `header.${Buffer.from(JSON.stringify({ roles })).toString("base64url")}.signature`;
@@ -311,7 +330,14 @@ test("Owner Phase 2 read routes show scoped-data unavailable states while action
   ];
 
   for (const section of readSections) {
-    assert.equal(customerReadScreens.getCustomerScreenDescriptor(section).availability, "unavailable", section);
+    const descriptor = customerReadScreens.getCustomerScreenDescriptor(section);
+    assert.equal(descriptor.availability, "unavailable", section);
+    assert.ok(descriptor.actions.length > 0, `ActionBar actions missing: ${section}`);
+    const html = renderToStaticMarkup(
+      React.createElement(customerReadScreens.CustomerReadScreen, { sectionPath: section }),
+    );
+    assert.match(html, /<footer class="actionDock" aria-label="Thao tác /, section);
+    assert.match(html, /class="buttonBar"/, section);
   }
 
   const pendingSections = [
@@ -382,10 +408,12 @@ test("Owner Phase 3 routes resolve to unavailable workflows with disabled action
     const html = renderToStaticMarkup(
       React.createElement(customerWorkflowScreens.CustomerWorkflowScreen, { sectionPath: section }),
     );
+    assert.match(html, /<footer class="actionDock" aria-label="Thao tác /, section);
+    assert.match(html, /class="buttonBar"/, section);
     assert.match(html, /role="status"/, section);
     assert.doesNotMatch(html, /C-204|S-018|YC-017|MB-017/, section);
     if (descriptor.fields?.length) assert.match(html, /<fieldset[^>]*disabled/, section);
-    if (descriptor.actions?.length || descriptor.filters?.length) {
+    if ((descriptor.actions?.length && !["support", "buyback"].includes(section)) || descriptor.filters?.length) {
       assert.match(html, /<button[^>]*disabled/, section);
     }
   }
@@ -453,6 +481,8 @@ test("Technician Phase 4 routes expose unavailable reads and all nine disabled w
       React.createElement(technicianRouteScreens.TechnicianRouteScreen, { sectionPath: section }),
     );
     assert.ok(descriptor, section);
+    assert.match(html, /<footer class="actionDock" aria-label="Thao tác /, section);
+    assert.match(html, /class="buttonBar"/, section);
     assert.match(html, /role="status"/, section);
     assert.doesNotMatch(html, /YC-017|S-018|MB-017|C-204/, section);
     if (descriptor.fields?.length) assert.match(html, /<fieldset[^>]*disabled/, section);

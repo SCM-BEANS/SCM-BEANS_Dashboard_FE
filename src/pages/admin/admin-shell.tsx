@@ -3,7 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { authApi } from "@/apis/auth.api";
 import { hasAdminRole } from "@/lib/auth-role";
@@ -99,7 +99,7 @@ export function AdminShell({
             </span>
           </header>
           <main className={styles.main}>{children}</main>
-          {actions && <AdminActionBar>{actions}</AdminActionBar>}
+          {actions && <ActionBar>{actions}</ActionBar>}
           <AdminMobileMenu currentSection={currentSection} loggingOut={loggingOut} onLogout={handleLogout} />
         </div>
       </div>

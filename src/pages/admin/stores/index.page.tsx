@@ -5,7 +5,7 @@ import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -223,18 +223,18 @@ function StoresContent() {
     />}
   </div>
   {view === "list" && (
-    <AdminActionBar>
+    <ActionBar>
       <ButtonBar type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) }); }}>{T.STORES.CREATE}</ButtonBar>
-    </AdminActionBar>
+    </ActionBar>
   )}
-  {view === "create" && <AdminActionBar>
+  {view === "create" && <ActionBar>
     <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
     <ButtonBar type="button" onClick={() => navigate()}>{T.STORES.CANCEL}</ButtonBar>
-  </AdminActionBar>}
-  {view === "detail" && <AdminActionBar>
+  </ActionBar>}
+  {view === "detail" && <ActionBar>
     <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
     <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>
-  </AdminActionBar>}
+  </ActionBar>}
   </>;
 }
 

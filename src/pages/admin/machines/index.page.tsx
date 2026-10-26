@@ -11,7 +11,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { DataTable } from "@/components/table/data-table";
 import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const STATUSES = MachineStatusSchema.options;
@@ -216,18 +216,18 @@ function MachinesContent() {
         )}
       </div>
       {isCreateView ? (
-        <AdminActionBar>
+        <ActionBar>
           <ButtonBar type="submit" form="machine-create-form" disabled={create.isPending || blockResubmit}>{create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}</ButtonBar>
           <ButtonBar type="button" disabled={create.isPending} onClick={navigateToList}>{T.MACHINES.CANCEL}</ButtonBar>
-        </AdminActionBar>
+        </ActionBar>
       ) : (
-        <AdminActionBar>
+        <ActionBar>
           <ButtonBar type="button" onClick={navigateToCreate}>{T.MACHINES.CREATE}</ButtonBar>
           <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
           <ButtonBar type="button" disabled={inventory.isFetching || summary.isFetching} onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
             {T.COMMON.RETRY}
           </ButtonBar>
-        </AdminActionBar>
+        </ActionBar>
       )}
       {successSerialNumber && (
         <NotificationDialog

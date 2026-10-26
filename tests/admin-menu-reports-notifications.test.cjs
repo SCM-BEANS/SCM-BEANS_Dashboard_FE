@@ -118,7 +118,7 @@ const httpMock = (client) => ({
 });
 const classNames = new Proxy({}, { get: (_target, key) => String(key) });
 const actionBarMock = {
-  AdminActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
+  ActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
 };
 const ButtonBar = React.forwardRef(({ href, children, ...props }, ref) => href
   ? React.createElement("a", { href, ref, ...props }, children)
@@ -130,7 +130,7 @@ const adminShellMocks = {
     adminStyles: classNames,
   },
   "@/components/button/button-bar": { ButtonBar },
-  "@/components/action-bar/admin-action-bar": actionBarMock,
+  "@/components/action-bar/action-bar": actionBarMock,
   "@/routes/path": pathModule,
 };
 
