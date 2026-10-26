@@ -1,0 +1,143 @@
+.backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgba(41, 38, 37, 0.22);
+}
+
+.dialog {
+  display: flex;
+  width: min(100%, 580px);
+  max-height: calc(100dvh - 48px);
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 32px;
+  border-radius: 20px;
+  background: #fff;
+  color: #292625;
+  box-shadow: none;
+}
+
+.dialog > * {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #292625;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.successMark {
+  color: #292625;
+  font-weight: 700;
+}
+
+.title {
+  color: #302927;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 38px;
+}
+
+.description {
+  color: #302927;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 23px;
+}
+
+.actions {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 1px solid #b81724;
+  background: #b81724;
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.secondaryButton {
+  border: 1px solid #e9e2dc;
+  background: #fff;
+  color: #302927;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: #f7f5f3;
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 3px solid #b8172433;
+  outline-offset: 2px;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 1023px) {
+  .backdrop {
+    padding: 16px;
+    background: rgba(41, 38, 36, 0.2);
+  }
+
+  .dialog {
+    width: min(100%, 358px);
+    max-height: calc(100dvh - 32px);
+    gap: 16px;
+    padding: 24px 20px;
+  }
+
+  .title {
+    font-size: 22px;
+    line-height: 32px;
+  }
+
+  .description {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    min-height: 52px;
+    padding: 8px 12px;
+  }
+}

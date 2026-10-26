@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { AccountCreateForm } from "@/components/account/account-create-form";
 import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -62,7 +63,33 @@ function formatDate(value: string): string {
 }
 
 function actionDescription(action: Action): string {
+  if (action.kind === "create") {
+    return `${action.input.name} \u00b7 ${action.input.email} \u00b7 vai tr\u00f2 ${roleLabels[action.input.role]}. ${T.DIALOG.CREATE}`;
+  }
   return T.DIALOG[action.kind.toUpperCase() as Uppercase<Action["kind"]>];
+}
+
+function actionTitle(action: Action | null): string {
+  if (!action) return T.DIALOG.CONFIRM;
+  if (action.kind === "create") return `T\u1ea1o t\u00e0i kho\u1ea3n ${roleLabels[action.input.role]}`;
+  if (action.kind === "update") return "L\u01b0u quy\u1ec1n v\u00e0 tr\u1ea1ng th\u00e1i t\u00e0i kho\u1ea3n";
+  if (action.kind === "disable") return "V\u00f4 hi\u1ec7u h\u00f3a t\u00e0i kho\u1ea3n";
+  if (action.kind === "reactivate") return "K\u00edch ho\u1ea1t l\u1ea1i t\u00e0i kho\u1ea3n";
+  return "C\u1ea5p l\u1ea1i m\u1eadt kh\u1ea9u t\u1ea1m th\u1eddi";
+}
+
+function actionSuccessTitle(action: Action | null): string {
+  if (action?.kind === "update") return "\u0110\u00e3 l\u01b0u th\u00f4ng tin";
+  if (action?.kind === "disable") return "\u0110\u00e3 v\u00f4 hi\u1ec7u h\u00f3a t\u00e0i kho\u1ea3n";
+  if (action?.kind === "reactivate") return "\u0110\u00e3 k\u00edch ho\u1ea1t l\u1ea1i t\u00e0i kho\u1ea3n";
+  return T.DIALOG.SUCCESS;
+}
+
+function actionSuccessDescription(action: Action | null): string | undefined {
+  if (action?.kind === "update") return "Admin \u0111\u00e3 c\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i, vai tr\u00f2 v\u00e0 ph\u1ea1m vi t\u00e0i kho\u1ea3n \u0111ang qu\u1ea3n l\u00fd.";
+  if (action?.kind === "disable") return "T\u00e0i kho\u1ea3n \u0111\u00e3 b\u1ecb v\u00f4 hi\u1ec7u h\u00f3a v\u00e0 c\u00e1c phi\u00ean \u0111\u0103ng nh\u1eadp \u0111\u00e3 b\u1ecb thu h\u1ed3i.";
+  if (action?.kind === "reactivate") return "T\u00e0i kho\u1ea3n \u0111\u00e3 ho\u1ea1t \u0111\u1ed9ng tr\u1edf l\u1ea1i.";
+  return undefined;
 }
 
 function ActionDialog({
@@ -82,54 +109,59 @@ function ActionDialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-  }, [kind]);
-
   if (kind === "success" && credential) {
-    return <AccountSuccessDialog credential={credential} onClose={onClose} />;
+    return (
+      <AccountSuccessDialog
+        credential={credential}
+        title={action?.kind === "create" ? "T\u1ea1o t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng" : undefined}
+        summary={action?.kind === "create"
+          ? `${action.input.name} \u00b7 ${action.input.email} \u00b7 vai tr\u00f2 ${roleLabels[action.input.role]}`
+          : undefined}
+        actionLabel={action?.kind === "reissue" ? T.DIALOG.CLOSE : "V\u1ec1 danh s\u00e1ch"}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (kind === "confirm") {
+    return (
+      <NotificationDialog
+        variant="confirm"
+        title={actionTitle(action)}
+        description={action ? actionDescription(action) : undefined}
+        primaryAction={{
+          label: T.DIALOG.PROCEED,
+          pending: busy,
+          pendingLabel: "\u0110ang x\u1eed l\u00fd\u2026",
+          onClick: onConfirm,
+        }}
+        secondaryAction={{ label: T.DIALOG.RETURN, onClick: onClose, disabled: busy }}
+        onClose={onClose}
+        closeOnEscape={!busy}
+      />
+    );
+  }
+
+  if (kind === "success") {
+    return (
+      <NotificationDialog
+        variant="success"
+        title={actionSuccessTitle(action)}
+        description={actionSuccessDescription(action)}
+        primaryAction={{ label: "V\u1ec1 danh s\u00e1ch", onClick: onClose }}
+        onClose={onClose}
+      />
+    );
   }
 
   return (
-    <div className={styles.accountDialogBackdrop}>
-      <div
-        className={styles.accountDialog}
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="account-dialog-title"
-        onKeyDown={(event) => {
-          if (event.key !== "Tab") return;
-          const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])");
-          if (!buttons?.length) return;
-          if (event.shiftKey && document.activeElement === buttons[0]) {
-            event.preventDefault();
-            buttons[buttons.length - 1].focus();
-          } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
-            event.preventDefault();
-            buttons[0].focus();
-          }
-        }}
-      >
-        <h2 id="account-dialog-title">
-          {kind === "confirm" ? T.DIALOG.CONFIRM : kind === "success" ? T.DIALOG.SUCCESS : API_ERROR_MESSAGES.GENERIC}
-        </h2>
-        {kind === "confirm" && action && <p>{actionDescription(action)}</p>}
-        {kind === "error" && <p role="alert">{error}</p>}
-
-        <div className={styles.accountDialogActions}>
-          {kind === "confirm" && (
-            <button type="button" className={styles.accountPrimaryButton} disabled={busy} onClick={onConfirm}>
-              {busy ? "Đang xử lý…" : T.DIALOG.PROCEED}
-            </button>
-          )}
-          <button type="button" className={styles.accountSecondaryButton} disabled={busy} onClick={onClose}>
-            {kind === "confirm" ? T.DIALOG.RETURN : T.DIALOG.CLOSE}
-          </button>
-        </div>
-      </div>
-    </div>
+    <NotificationDialog
+      variant="error"
+      title={API_ERROR_MESSAGES.GENERIC}
+      description={error}
+      primaryAction={{ label: T.DIALOG.CLOSE, onClick: onClose }}
+      onClose={onClose}
+    />
   );
 }
 
@@ -310,7 +342,7 @@ function AdminUsersContent() {
         const result = await adminUsersApi.reissueTemporaryPassword(action.userId);
         setCredential({ password: result.temporary_password, expiresAt: result.temporary_password_expires_at });
       }
-      await queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      await Promise.allSettled([queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] })]);
       setDialog("success");
     } catch (error) {
       setCredential(null);
@@ -508,7 +540,7 @@ function AdminUsersContent() {
             <div><span>{T.FORM.UPDATED}</span><strong>{formatDate(user.updated_at)}</strong></div>
           </div>
           {tenantsQuery.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {getApiErrorMessage(tenantsQuery.error)}</p>}
-          {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
+          {requestError && dialog !== "error" && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
         </section>
       </>
     ) : null;

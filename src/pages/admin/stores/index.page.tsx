@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
 import type { AdminUser } from "@/schema/admin-users.schema";
@@ -74,7 +75,7 @@ function StoresContent() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
+  const [createdStore, setCreatedStore] = useState<{ name: string; ownerName: string } | null>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const listing = useQuery({ queryKey: ["dolores", "admin-stores", initialOwnerId], queryFn: ({ signal }) => loadOwnerLocations(signal, initialOwnerId || undefined), enabled: view === "list" });
   const owners = useQuery({ queryKey: ["idaas", "admin-users", "owner-options"], queryFn: ({ signal }) => loadOwnerUsers(signal), enabled: view === "create" });
@@ -94,9 +95,14 @@ function StoresContent() {
       name: form.name, address: form.address || undefined, city: form.city || undefined,
       contactPerson: form.contactPerson || undefined, phoneNumber: form.phoneNumber || undefined,
     }),
-    onSuccess: async () => {
-      setRequestError(""); setConfirmOpen(false); setForm(emptyForm);
-      await queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] });
+    onSuccess: () => {
+      setRequestError(""); setConfirmOpen(false);
+      setCreatedStore({
+        name: form.name.trim(),
+        ownerName: owners.data?.find((owner) => owner.id === form.ownerId)?.name ?? form.ownerId,
+      });
+      setForm(emptyForm);
+      void Promise.allSettled([queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] })]);
       void router.push({ pathname: "/admin/stores", query: initialOwnerId ? { ownerId: initialOwnerId } : {} }, undefined, { shallow: true });
     },
     onError: (error: unknown) => {
@@ -118,10 +124,6 @@ function StoresContent() {
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/stores", query }, undefined, { shallow: true });
   const submit = (event: FormEvent) => { event.preventDefault(); setRequestError(""); setConfirmOpen(true); };
   const setField = <K extends keyof StoreForm>(key: K, value: StoreForm[K]) => setForm((current) => ({ ...current, [key]: value }));
-  useEffect(() => {
-    if (!confirmOpen) return;
-    dialogRef.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus();
-  }, [confirmOpen]);
   const closeConfirmation = () => {
     setConfirmOpen(false);
     saveButtonRef.current?.focus();
@@ -152,7 +154,7 @@ function StoresContent() {
         <label>{T.STORES.PHONE}<input maxLength={40} value={form.phoneNumber} onChange={(event) => setField("phoneNumber", event.target.value)} /></label>
       </div>
       {owners.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(owners.error)} Cần tải được Owner để tạo cửa hàng.</p>}
-      {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+      {requestError && !confirmOpen && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       {blockResubmit && <div className={styles.operationsButtons}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>{T.STORES.CHECK_LIST}</button></div>}
     </form>}
 
@@ -196,19 +198,29 @@ function StoresContent() {
       </>}
     </>}
 
-    {confirmOpen && <div className={styles.operationsDialogBackdrop} role="presentation"><section ref={dialogRef} className={styles.operationsDialog} role="dialog" aria-modal="true" aria-labelledby="store-confirm-title" tabIndex={-1} onKeyDown={(event) => {
-      if (event.key === "Escape" && !create.isPending) { closeConfirmation(); return; }
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])');
-      if (!focusable?.length) return;
-      const first = focusable[0]; const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    }}>
-      <h2 id="store-confirm-title">{T.STORES.CONFIRM_TITLE}</h2><p>{form.name.trim()} · {owners.data?.find((owner) => owner.id === form.ownerId)?.name}</p>
+    {confirmOpen && <NotificationDialog
+      variant="confirm"
+      title={T.STORES.CONFIRM_TITLE}
+      description={`${form.name.trim()} \u00b7 ${owners.data?.find((owner) => owner.id === form.ownerId)?.name ?? form.ownerId}`}
+      primaryAction={{
+        label: create.isPending ? T.STORES.SAVING : T.STORES.CONFIRM,
+        pending: create.isPending,
+        disabled: blockResubmit || !ProfileIdSchema.safeParse(form.ownerId).success,
+        onClick: () => { setRequestError(""); create.mutate(); },
+      }}
+      secondaryAction={{ label: T.STORES.CANCEL, onClick: closeConfirmation, disabled: create.isPending }}
+      onClose={closeConfirmation}
+      closeOnEscape={!create.isPending}
+    >
       {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      <div className={styles.operationsButtons}><button className={styles.accountPrimaryButton} type="button" disabled={create.isPending || blockResubmit || !ProfileIdSchema.safeParse(form.ownerId).success} onClick={() => create.mutate()}>{create.isPending ? T.STORES.SAVING : T.STORES.CONFIRM}</button><button className={styles.accountSecondaryButton} type="button" disabled={create.isPending} onClick={closeConfirmation}>{T.STORES.CANCEL}</button></div>
-    </section></div>}
+    </NotificationDialog>}
+    {createdStore && <NotificationDialog
+      variant="success"
+      title={T.STORES.CREATED}
+      description={`${createdStore.name} \u00b7 ${createdStore.ownerName}`}
+      primaryAction={{ label: T.STORES.CHECK_LIST, onClick: () => setCreatedStore(null) }}
+      onClose={() => setCreatedStore(null)}
+    />}
   </div>
   {view === "list" && (
     <AdminActionBar>

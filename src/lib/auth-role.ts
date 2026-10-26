@@ -1,4 +1,10 @@
-import { PATH_ADMIN, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
+import {
+  PATH_ADMIN,
+  PATH_CUSTOMER,
+  PATH_HOME,
+  PATH_MODERATOR,
+  PATH_TECHNICIAN,
+} from "@/routes/path";
 
 function readRoles(accessToken: string): string[] {
   try {
@@ -32,8 +38,33 @@ export function hasModeratorRole(accessToken: string): boolean {
   );
 }
 
+export function hasOwnerRole(accessToken: string): boolean {
+  return readRoles(accessToken).some(
+    (role) => role.trim().toUpperCase().replace(/^ROLE_/, "") === "OWNER",
+  );
+}
+
+export function hasTechnicianRole(accessToken: string): boolean {
+  return readRoles(accessToken).some(
+    (role) => role.trim().toUpperCase().replace(/^ROLE_/, "") === "TECHNICIAN",
+  );
+}
+
+export function canAccessCustomerArea(accessToken: string): boolean {
+  return hasOwnerRole(accessToken) && !hasTechnicianRole(accessToken);
+}
+
+export function canAccessTechnicianArea(accessToken: string): boolean {
+  return hasTechnicianRole(accessToken) && !hasOwnerRole(accessToken);
+}
+
 export function getPostLoginPath(accessToken: string): string {
   if (hasAdminRole(accessToken)) return PATH_ADMIN.ROOT;
   if (hasModeratorRole(accessToken)) return PATH_MODERATOR.ROOT;
+  const isOwner = hasOwnerRole(accessToken);
+  const isTechnician = hasTechnicianRole(accessToken);
+  if (isOwner && isTechnician) return PATH_HOME.ROOT;
+  if (isOwner) return PATH_CUSTOMER.ROOT;
+  if (isTechnician) return PATH_TECHNICIAN.ROOT;
   return PATH_HOME.ROOT;
 }

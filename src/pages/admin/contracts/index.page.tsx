@@ -9,6 +9,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema, CreateContractRequestSchema } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ButtonBar } from "@/components/button/button-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
 import { AdminActionBar } from "@/components/action-bar/admin-action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
@@ -210,7 +211,6 @@ function ContractsContent() {
   return <>
   <div className={styles.pageContent}>
     <div className={styles.pageHeading}><h1>{pageTitle}</h1><p>{view === "create" ? T.CONTRACTS.CREATE_DESCRIPTION : T.CONTRACTS.DESCRIPTION}</p></div>
-    {(view === "" || view === "list") && createdContractId && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.CREATED} Mã hợp đồng: {createdContractId}</p>}
     {(view === "" || view === "list") && <>
       {contracts.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -282,7 +282,6 @@ function ContractsContent() {
           {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
           {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
           {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-          {createdContractId && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.CREATED} Mã hợp đồng: {createdContractId}</p>}
           {blockResubmit && <div className={styles.operationsButtons}><ButtonBar type="button" onClick={() => navigate()}>{T.CONTRACTS.CHECK_LIST}</ButtonBar></div>}
         </form>
       </section>
@@ -360,6 +359,22 @@ function ContractsContent() {
       </>
     )}
   </AdminActionBar>
+  {(view === "" || view === "list") && createdContractId && (
+    <NotificationDialog
+      variant="success"
+      title={T.CONTRACTS.CREATED}
+      description={`M\u00e3 h\u1ee3p \u0111\u1ed3ng: ${createdContractId}`}
+      primaryAction={{
+        label: T.CONTRACTS.DETAIL,
+        onClick: () => {
+          const id = createdContractId;
+          setCreatedContractId("");
+          navigate({ view: "detail", id });
+        },
+      }}
+      onClose={() => setCreatedContractId("")}
+    />
+  )}
   </>;
 }
 

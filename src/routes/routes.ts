@@ -1,9 +1,20 @@
-import { PATH_HOME } from "./path";
-import { PATH_ADMIN } from "./path";
-import { PATH_MODERATOR } from "./path";
+import {
+  PATH_ADMIN,
+  PATH_CUSTOMER,
+  PATH_HOME,
+  PATH_MODERATOR,
+  PATH_TECHNICIAN,
+} from "./path";
+import { ContractIdSchema } from "@/schema/contracts.schema";
+import { InvoiceIdSchema } from "@/schema/billing.schema";
+import { MachineIdSchema } from "@/schema/machines.schema";
+import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
+import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
+import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
+import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 
 export const HOME_NAVIGATION_LINKS = [
   { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0], HREF: PATH_HOME.SECTIONS.SOLUTIONS },
@@ -71,6 +82,151 @@ export const MODERATOR_MOBILE_NAVIGATION_LINKS = [
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_MODERATOR.CONTRACTS },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT_SHORT, HREF: PATH_MODERATOR.IOT },
 ] as const;
+
+export const CUSTOMER_NAVIGATION_LINKS = [
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_CUSTOMER.ROOT, ICON: "LayoutDashboard" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_CUSTOMER.CONTRACTS, ICON: "FileText" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_CUSTOMER.MACHINES, ICON: "Coffee" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MENU, HREF: PATH_CUSTOMER.MENU, ICON: "Utensils" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_CUSTOMER.INVOICES, ICON: "FileText" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.SUPPORT, HREF: PATH_CUSTOMER.SUPPORT, ICON: "Wrench" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.BUYBACK, HREF: PATH_CUSTOMER.BUYBACK, ICON: "Package" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_CUSTOMER.NOTIFICATIONS, ICON: "Bell" },
+] as const;
+
+export const TECHNICIAN_NAVIGATION_LINKS = [
+  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.TASKS, HREF: PATH_TECHNICIAN.TASKS, ICON: "ClipboardCheck" },
+  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.HISTORY, HREF: PATH_TECHNICIAN.HISTORY, ICON: "Coffee" },
+  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_TECHNICIAN.NOTIFICATIONS, ICON: "Bell" },
+] as const;
+
+const customerStaticSections = [
+  "contracts",
+  "contracts/new",
+  "contracts/expiry",
+  "contracts/end-early",
+  "contracts/end",
+  "contracts/deposit-complete",
+  "machines",
+  "machines/substitute",
+  "machines/history",
+  "invoices",
+  "invoices/payment",
+  "invoices/shortfall",
+  "invoices/refund",
+  "invoices/reminder",
+  "invoices/standard",
+  "invoices/standard-payment",
+  "menu",
+  "menu/espresso",
+  "menu/fresh-milk",
+  "menu/add-dish",
+  "menu/sent",
+  "menu/applied",
+  "support",
+  "support/new",
+  "support/menu",
+  "buyback",
+  "buyback/new",
+  "buyback/documents",
+  "buyback/documents/confirmed",
+  "buyback/issue",
+  "notifications",
+] as const;
+
+const technicianStaticSections = [
+  "tasks",
+  "tasks/standard-handover",
+  "tasks/smart-activation",
+  "tasks/repair",
+  "tasks/retrieval",
+  "tasks/substitute",
+  "tasks/substitute-return",
+  "tasks/refurbishment",
+  "tasks/buyback-assessment",
+  "tasks/maintenance-history",
+  "history",
+  "notifications",
+] as const;
+
+export const CUSTOMER_ROUTE_CATALOG = {
+  root: PATH_CUSTOMER.ROOT,
+  pages: [PATH_CUSTOMER.ROOT],
+  sections: customerStaticSections.map((section) => `${PATH_CUSTOMER.ROOT}/${section}`),
+} as const;
+
+export const TECHNICIAN_ROUTE_CATALOG = {
+  root: PATH_TECHNICIAN.ROOT,
+  pages: [PATH_TECHNICIAN.ROOT],
+  sections: technicianStaticSections.map((section) => `${PATH_TECHNICIAN.ROOT}/${section}`),
+} as const;
+
+const customerExactPaths = new Set<string>([
+  ...CUSTOMER_ROUTE_CATALOG.pages,
+  ...CUSTOMER_ROUTE_CATALOG.sections,
+]);
+
+const technicianExactPaths = new Set<string>([
+  ...TECHNICIAN_ROUTE_CATALOG.pages,
+  ...TECHNICIAN_ROUTE_CATALOG.sections,
+]);
+
+function isWellFormedSection(section: string): boolean {
+  return !(
+    section.startsWith("/") ||
+    section.endsWith("/") ||
+    section.includes("//") ||
+    section.includes("\\") ||
+    section.split("/").some((segment) => segment === "." || segment === "..")
+  );
+}
+
+function isUuidRouteSegment(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function isSupportedCustomerSection(section: string): boolean {
+  if (!isWellFormedSection(section)) return false;
+  const pathname = section ? `${PATH_CUSTOMER.ROOT}/${section}` : PATH_CUSTOMER.ROOT;
+  if (customerExactPaths.has(pathname)) return true;
+
+  const segments = section.split("/");
+  if (segments.length === 2) {
+    const [group, id] = segments;
+    if (group === "contracts") return ContractIdSchema.safeParse(id).success;
+    if (group === "machines") return MachineIdSchema.safeParse(id).success;
+    if (group === "invoices") {
+      return InvoiceIdSchema.safeParse(id).success || /^\d{4}-(?:0[1-9]|1[0-2])$/.test(id);
+    }
+    if (group === "menu") return GlobalRecipeIdSchema.safeParse(id).success;
+    if (group === "support") return isUuidRouteSegment(id);
+  }
+
+  if (
+    segments.length === 3 &&
+    segments[0] === "machines" &&
+    segments[2] === "model"
+  ) {
+    return MachineIdSchema.safeParse(segments[1]).success;
+  }
+  return false;
+}
+
+export function isSupportedTechnicianSection(section: string): boolean {
+  if (!isWellFormedSection(section)) return false;
+  const pathname = section ? `${PATH_TECHNICIAN.ROOT}/${section}` : PATH_TECHNICIAN.ROOT;
+  if (technicianExactPaths.has(pathname)) return true;
+
+  const segments = section.split("/");
+  if (segments.length !== 2) return false;
+  if (segments[0] === "tasks") {
+    return InstallationWorkOrderIdSchema.safeParse(segments[1]).success;
+  }
+  if (segments[0] === "history") {
+    return MachineIdSchema.safeParse(segments[1]).success;
+  }
+  return false;
+}
 
 function staticPaths(group: Record<string, string | ((value: string) => string)>): string[] {
   return Object.values(group).filter((value): value is string => typeof value === "string");

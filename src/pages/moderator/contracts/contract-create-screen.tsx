@@ -1,13 +1,16 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { APP_MESSAGES } from "@/constants/messages";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
+import { PATH_MODERATOR } from "@/routes/path";
 import { CreateContractRequestSchema } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { moderatorStyles as styles } from "../moderator-shell";
@@ -64,11 +67,18 @@ const initialForm: ContractFormState = {
 };
 
 export function ContractCreateScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ContractFormState>(initialForm);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [createdContractId, setCreatedContractId] = useState("");
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const openCreatedContract = () => {
+    if (!createdContractId) return;
+    setSuccessDialogOpen(false);
+    void router.push(`${PATH_MODERATOR.CONTRACTS}/${createdContractId}`);
+  };
 
   const owners = useQuery({
     queryKey: ["dolores", "profiles", "owner-directory"],
@@ -91,10 +101,11 @@ export function ContractCreateScreen() {
 
   const create = useMutation({
     mutationFn: (request: z.infer<typeof CreateContractRequestSchema>) => contractsApi.create(request),
-    onSuccess: async ({ id }) => {
+    onSuccess: ({ id }) => {
       setRequestError("");
       setCreatedContractId(id);
-      await queryClient.invalidateQueries({ queryKey: ["dolores", "contracts"] });
+      setSuccessDialogOpen(true);
+      void Promise.allSettled([queryClient.invalidateQueries({ queryKey: ["dolores", "contracts"] })]);
     },
     onError: (error: unknown) => {
       const message = axios.isAxiosError(error) && error.response?.status === 409
@@ -292,13 +303,24 @@ export function ContractCreateScreen() {
           {machines.isError && <p className={styles.contractNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
           {machines.data && warehouseMachines.length === 0 && <p className={styles.contractNotice} role="status">{T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
           {requestError && <p className={`${styles.contractNotice} ${styles.contractError}`} role="alert">{requestError}</p>}
-          {createdContractId && <p className={styles.contractNotice} role="status">{T.CONTRACTS.CREATED} Mã hợp đồng: {createdContractId}</p>}
           {blockResubmit && <p className={styles.contractNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
           <div className={styles.contractActions}>
             <ButtonBar type="submit" disabled={submitDisabled}>{create.isPending ? T.CONTRACTS.CREATING : createdContractId ? "Đã tạo" : T.CONTRACTS.CREATE_SUBMIT}</ButtonBar>
           </div>
         </form>
       </section>
+      {successDialogOpen && createdContractId && (
+        <NotificationDialog
+          variant="success"
+          title={T.CONTRACTS.CREATED}
+          description={`M\u00e3 h\u1ee3p \u0111\u1ed3ng: ${createdContractId}`}
+          primaryAction={{
+            label: "Xem h\u1ee3p \u0111\u1ed3ng",
+            onClick: openCreatedContract,
+          }}
+          onClose={openCreatedContract}
+        />
+      )}
     </div>
   );
 }

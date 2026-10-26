@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
 import styles from "./account-success-dialog.module.css";
 
@@ -17,58 +17,45 @@ function formatDate(value: string): string {
 export function AccountSuccessDialog({
   credential,
   onClose,
+  title = T.DIALOG.SUCCESS,
+  summary,
+  actionLabel = T.DIALOG.CLOSE,
 }: {
   credential: AccountCredential;
   onClose: () => void;
+  title?: string;
+  summary?: string;
+  actionLabel?: string;
 }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    dialogRef.current?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
-  }, []);
-
   return (
-    <div className={styles.backdrop}>
-      <div
-        className={styles.dialog}
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="account-success-title"
-        onKeyDown={(event) => {
-          if (event.key !== "Tab") return;
-          const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])");
-          if (!buttons?.length) return;
-          if (event.shiftKey && document.activeElement === buttons[0]) {
-            event.preventDefault();
-            buttons[buttons.length - 1].focus();
-          } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
-            event.preventDefault();
-            buttons[0].focus();
-          }
-        }}
-      >
-        <h2 id="account-success-title">{T.DIALOG.SUCCESS}</h2>
-        <div className={styles.credential}>
-          <strong>{T.DIALOG.PASSWORD_ONCE}</strong>
-          <code>{credential.password}</code>
-          <p>{T.DIALOG.PASSWORD_EXPIRY}: {credential.expiresAt ? formatDate(credential.expiresAt) : T.DIALOG.PASSWORD_EXPIRY_UNAVAILABLE}</p>
-          {credential.emailVerificationStarted !== undefined ? (
-            <p>{credential.emailVerificationStarted
-              ? T.DIALOG.VERIFICATION_STARTED
-              : T.DIALOG.VERIFICATION_NOT_STARTED}</p>
-          ) : credential.onboardingEmailSent !== undefined ? (
-            <p>{credential.onboardingEmailSent
-              ? T.DIALOG.ONBOARDING_EMAIL_SENT
-              : T.DIALOG.ONBOARDING_EMAIL_NOT_SENT}</p>
-          ) : null}
+    <NotificationDialog
+      variant="success"
+      title={title}
+      description={(
+        <div className={styles.successContent}>
+          {summary && <p className={styles.summary}>{summary}</p>}
+          <div className={styles.credential}>
+            <strong>{T.DIALOG.PASSWORD_ONCE}</strong>
+            <code>{credential.password}</code>
+            <p>
+              {T.DIALOG.PASSWORD_EXPIRY}: {credential.expiresAt
+                ? formatDate(credential.expiresAt)
+                : T.DIALOG.PASSWORD_EXPIRY_UNAVAILABLE}
+            </p>
+            {credential.emailVerificationStarted !== undefined ? (
+              <p>{credential.emailVerificationStarted
+                ? T.DIALOG.VERIFICATION_STARTED
+                : T.DIALOG.VERIFICATION_NOT_STARTED}</p>
+            ) : credential.onboardingEmailSent !== undefined ? (
+              <p>{credential.onboardingEmailSent
+                ? T.DIALOG.ONBOARDING_EMAIL_SENT
+                : T.DIALOG.ONBOARDING_EMAIL_NOT_SENT}</p>
+            ) : null}
+          </div>
         </div>
-        <div className={styles.actions}>
-          <button type="button" className={styles.secondaryButton} onClick={onClose}>
-            {T.DIALOG.CLOSE}
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+      primaryAction={{ label: actionLabel, onClick: onClose }}
+      onClose={onClose}
+    />
   );
 }

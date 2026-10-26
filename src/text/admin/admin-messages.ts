@@ -56,7 +56,7 @@ export const ADMIN_MESSAGES = {
     CONFIRM: "Xác nhận phát hành",
     CANCEL: "Quay lại",
     PUBLISHING: "Đang phát hành…",
-    PUBLISHED: "Công thức đã được phát hành.",
+    PUBLISHED: "Công thức đã được phát hành",
     EDIT_UNAVAILABLE: "Chỉnh sửa chưa được hỗ trợ trong giao diện này.",
     LOADING: "Đang tải công thức…",
     EMPTY: "Chưa có công thức toàn cục.",

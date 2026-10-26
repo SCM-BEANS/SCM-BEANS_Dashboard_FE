@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { recipesApi } from "@/apis/recipes.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import {
   RecipePublishRequestSchema,
   type RecipePublishRequest,
@@ -42,11 +43,7 @@ function MenuContent() {
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [pendingPublish, setPendingPublish] = useState<RecipePublishRequest | null>(null);
   const [formError, setFormError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const dialogRef = useRef<HTMLElement>(null);
-  const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const publishButtonRef = useRef<HTMLButtonElement>(null);
-  const dialogWasOpen = useRef(false);
+  const [publishedRecipeName, setPublishedRecipeName] = useState("");
 
   const selectedRecipeIdValue = isCreateView ? "" : selectedRecipeId || recipes.data?.[0]?.id || "";
   const recipe = useQuery({
@@ -57,20 +54,20 @@ function MenuContent() {
 
   const publish = useMutation({
     mutationFn: (input: RecipePublishRequest) => recipesApi.publishGlobal(input),
-    onSuccess: async (publishedRecipe) => {
-      await queryClient.invalidateQueries({ queryKey: RECIPE_QUERY_KEY });
+    onSuccess: (publishedRecipe) => {
+      void Promise.allSettled([queryClient.invalidateQueries({ queryKey: RECIPE_QUERY_KEY })]);
       setSelectedRecipeId(publishedRecipe.id);
       setPendingPublish(null);
       setDraft(EMPTY_DRAFT);
       setFormError("");
-      setSuccessMessage(ADMIN_MESSAGES.MENU.PUBLISHED);
-      await router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
+      setPublishedRecipeName(publishedRecipe.name);
+      void router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
     },
   });
 
   const submitDraft = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSuccessMessage("");
+    setPublishedRecipeName("");
     publish.reset();
     const input = RecipePublishRequestSchema.safeParse({
       name: draft.name,
@@ -89,45 +86,12 @@ function MenuContent() {
   const navigateToCreate = () => {
     setDraft(EMPTY_DRAFT);
     setFormError("");
-    setSuccessMessage("");
+    setPublishedRecipeName("");
     publish.reset();
     void router.push({ pathname: PATH_ADMIN.MENU, query: { view: "create" } }, undefined, { shallow: true });
   };
 
   const recipeError = recipe.isError ? getApiErrorMessage(recipe.error) : "";
-
-  useEffect(() => {
-    if (pendingPublish) {
-      dialogWasOpen.current = true;
-      cancelButtonRef.current?.focus();
-      return;
-    }
-    if (dialogWasOpen.current) {
-      dialogWasOpen.current = false;
-      publishButtonRef.current?.focus();
-    }
-  }, [pendingPublish]);
-
-  const handleDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === "Escape" && !publish.isPending) {
-      if (pendingPublish) {
-        setPendingPublish(null);
-      }
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled])");
-    if (!focusable?.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
 
   return (
     <>
@@ -169,11 +133,10 @@ function MenuContent() {
             </label>
           </div>
           {formError && <p className={styles.accountInlineWarning} role="alert">{formError}</p>}
-          {publish.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
+          {publish.isError && !pendingPublish && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
         </form>
       ) : (
         <>
-          {successMessage && <p className={styles.notice} role="status">{successMessage}</p>}
           {recipes.isPending && <div className={styles.notice} role="status">{ADMIN_MESSAGES.MENU.LOADING}</div>}
           {recipes.isError && (
             <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
@@ -231,46 +194,44 @@ function MenuContent() {
       )}
 
       {pendingPublish && (
-        <div className={styles.operationsDialogBackdrop}>
-          <section
-            ref={dialogRef}
-            className={styles.operationsDialog}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="publish-confirm-title"
-            tabIndex={-1}
-            onKeyDown={handleDialogKeyDown}
-          >
-            <h2 id="publish-confirm-title">{ADMIN_MESSAGES.MENU.CONFIRM_TITLE}</h2>
-            <p>{ADMIN_MESSAGES.MENU.PUBLISH_WARNING}</p>
-            <p><strong>{pendingPublish.name}</strong></p>
-            {publish.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(publish.error, "mutation")}</p>}
-            <div className={styles.operationsButtons}>
-              <button
-                className={styles.accountPrimaryButton}
-                type="button"
-                disabled={publish.isPending}
-                onClick={() => publish.mutate(pendingPublish)}
-              >
-                {publish.isPending ? ADMIN_MESSAGES.MENU.PUBLISHING : ADMIN_MESSAGES.MENU.CONFIRM}
-              </button>
-              <button
-                ref={cancelButtonRef}
-                className={styles.accountSecondaryButton}
-                type="button"
-                disabled={publish.isPending}
-                onClick={() => setPendingPublish(null)}
-              >
-                {ADMIN_MESSAGES.MENU.CANCEL}
-              </button>
-            </div>
-          </section>
-        </div>
+        <NotificationDialog
+          variant="confirm"
+          title={ADMIN_MESSAGES.MENU.CONFIRM_TITLE}
+          description={ADMIN_MESSAGES.MENU.PUBLISH_WARNING}
+          primaryAction={{
+            label: publish.isPending ? ADMIN_MESSAGES.MENU.PUBLISHING : ADMIN_MESSAGES.MENU.CONFIRM,
+            pending: publish.isPending,
+            onClick: () => publish.mutate(pendingPublish),
+          }}
+          secondaryAction={{
+            label: ADMIN_MESSAGES.MENU.CANCEL,
+            disabled: publish.isPending,
+            onClick: () => setPendingPublish(null),
+          }}
+          onClose={() => setPendingPublish(null)}
+          closeOnEscape={!publish.isPending}
+        >
+          <p><strong>{pendingPublish.name}</strong></p>
+          {publish.isError && (
+            <p className={styles.accountInlineWarning} role="alert">
+              {getApiErrorMessage(publish.error, "mutation")}
+            </p>
+          )}
+        </NotificationDialog>
+      )}
+      {publishedRecipeName && (
+        <NotificationDialog
+          variant="success"
+          title={ADMIN_MESSAGES.MENU.PUBLISHED}
+          description={publishedRecipeName}
+          primaryAction={{ label: ADMIN_MESSAGES.MENU.DETAIL, onClick: () => setPublishedRecipeName("") }}
+          onClose={() => setPublishedRecipeName("")}
+        />
       )}
     </div>
     {isCreateView ? (
       <AdminActionBar>
-        <ButtonBar ref={publishButtonRef} type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
+        <ButtonBar type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
           {ADMIN_MESSAGES.MENU.PUBLISH}
         </ButtonBar>
         <ButtonBar type="button" disabled={publish.isPending} onClick={navigateToList}>

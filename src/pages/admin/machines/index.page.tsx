@@ -7,6 +7,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
 import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
@@ -69,7 +70,7 @@ function MachinesContent() {
   const [form, setForm] = useState<MachineCreateForm>(initialMachineForm);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
-  const [successNotice, setSuccessNotice] = useState("");
+  const [successSerialNumber, setSuccessSerialNumber] = useState("");
   const inventory = useQuery({
     queryKey: ["dolores", "machines", "inventory"],
     queryFn: ({ signal }) => machinesApi.list(signal),
@@ -82,12 +83,12 @@ function MachinesContent() {
   });
   const create = useMutation({
     mutationFn: (request: CreateMachineRequest) => machinesApi.create(request),
-    onSuccess: async () => {
+    onSuccess: (_machine, request) => {
       setRequestError("");
-      setSuccessNotice(T.MACHINES.CREATE_SUCCESS);
+      setSuccessSerialNumber(request.serialNumber);
       setBlockResubmit(false);
       setForm(initialMachineForm);
-      await Promise.all([
+      void Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
       ]);
@@ -108,7 +109,7 @@ function MachinesContent() {
   const navigateToList = () => void router.push(PATH_ADMIN.MACHINES, undefined, { shallow: true });
   const navigateToCreate = () => {
     setRequestError("");
-    setSuccessNotice("");
+    setSuccessSerialNumber("");
     setBlockResubmit(false);
     setForm(initialMachineForm);
     void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create" } }, undefined, { shallow: true });
@@ -163,7 +164,6 @@ function MachinesContent() {
           </form>
         ) : (
           <>
-            {successNotice && <p className={styles.successNotice} role="status">{successNotice}</p>}
             <div className={styles.metricsGrid}>
               <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
               <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
@@ -228,6 +228,15 @@ function MachinesContent() {
             {T.COMMON.RETRY}
           </ButtonBar>
         </AdminActionBar>
+      )}
+      {successSerialNumber && (
+        <NotificationDialog
+          variant="success"
+          title={T.MACHINES.CREATE_SUCCESS}
+          description={`${T.MACHINES.SERIAL}: ${successSerialNumber}`}
+          primaryAction={{ label: T.MACHINES.TITLE, onClick: () => setSuccessSerialNumber("") }}
+          onClose={() => setSuccessSerialNumber("")}
+        />
       )}
     </AdminShell>
   );

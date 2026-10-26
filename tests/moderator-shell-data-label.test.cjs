@@ -35,10 +35,21 @@ function routeModules() {
   const paths = loadModule("src/routes/path.ts");
   const routeCatalog = loadModule("src/routes/routes.ts", {
     "./path": paths,
+    "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
+    "@/schema/billing.schema": loadModule("src/schema/billing.schema.ts"),
+    "@/schema/machines.schema": loadModule("src/schema/machines.schema.ts"),
+    "@/schema/recipes.schema": loadModule("src/schema/recipes.schema.ts"),
+    "@/schema/installation-work-orders.schema": loadModule("src/schema/installation-work-orders.schema.ts"),
     "@/text/home/home-messages": loadModule("src/text/home/home-messages.ts"),
     "@/text/admin/admin-messages": loadModule("src/text/admin/admin-messages.ts"),
     "@/text/moderator/moderator-messages": {
       MODERATOR_MESSAGES: loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES,
+    },
+    "@/text/customer/customer-messages": {
+      CUSTOMER_MESSAGES: loadModule("src/text/customer/customer-messages.ts").CUSTOMER_MESSAGES,
+    },
+    "@/text/technician/technician-messages": {
+      TECHNICIAN_MESSAGES: loadModule("src/text/technician/technician-messages.ts").TECHNICIAN_MESSAGES,
     },
   });
   return { paths, routeCatalog };
@@ -57,6 +68,11 @@ function moderatorShellHarness({ pathname, hasRole }) {
   const icon = () => null;
   const { paths, routeCatalog } = routeModules();
   const messages = loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES;
+  const sidebarModule = loadModule("src/components/sidebar/sidebar.tsx", {
+    "lucide-react": { LogOut: () => null },
+    "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "./sidebar.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+  });
   const { AdminBreadcrumb } = loadModule("src/components/heading/admin-breadcrumb.tsx", {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
   });
@@ -72,6 +88,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
         replace: () => Promise.resolve(true),
       }),
     },
+    "@/apis/auth.api": { authApi: { logout: async () => undefined } },
     "@/lib/auth-role": { hasModeratorRole: hasRole },
     "@/routes/path": paths,
     "@/routes/routes": routeCatalog,
@@ -84,6 +101,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
         ? React.createElement("a", { href, ...props }, children)
         : React.createElement("button", props, children),
     },
+    "@/components/sidebar/sidebar": sidebarModule,
     "@/components/heading/admin-breadcrumb": { AdminBreadcrumb },
     "./moderator-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
@@ -179,7 +197,8 @@ test("Moderator shell shows its navigation and selects the current nested sectio
 
   assert.match(html, /data-role="moderator"/);
   assert.match(html, /href="\/moderator\/contracts"[^>]*aria-current="page"/);
-  assert.match(html, /<nav[^>]*><a href="\/moderator"><span>Moderator<\/span><\/a><span aria-hidden="true"> \/ <\/span><span aria-current="page">Hợp đồng<\/span><\/nav>/);
+  assert.match(html, /<nav aria-label="Đường dẫn">/);
+  assert.match(html, /<span aria-current="page">Hợp đồng<\/span>/);
   assert.match(html, /Tài khoản khách/);
   assert.match(html, /Giám sát Smart IoT/);
   assert.match(html, /href="\/moderator\/notifications"/);
@@ -209,8 +228,7 @@ test("Moderator shell shows a contextual action bar on list and detail routes", 
   contracts.render();
   const contractsHtml = contracts.render();
   assert.match(contractsHtml, /<footer aria-label="Thao tác Moderator">/);
-  assert.match(contractsHtml, /<button disabled="" aria-describedby="moderator-action-unavailable">Tạo hồ sơ hợp đồng<\/button>/);
-  assert.match(contractsHtml, /id="moderator-action-unavailable" role="note">.*API.*quyền/);
+  assert.match(contractsHtml, /<a href="\/moderator\/contracts\/new">Tạo hồ sơ hợp đồng<\/a>/);
 
   const detail = moderatorShellHarness({
     pathname: "/moderator/contracts/00000000-0000-4000-8000-000000000000",

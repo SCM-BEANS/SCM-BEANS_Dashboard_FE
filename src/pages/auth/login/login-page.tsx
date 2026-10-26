@@ -83,7 +83,7 @@ export default function LoginPage() {
         if (mfa?.success) {
           openMfa(mfa.data.temp_token);
         } else {
-          setErrorMessage(getApiErrorMessage(error, step === "mfa" ? "mfa" : "login"));
+        setErrorMessage(getApiErrorMessage(error, "login"));
         }
       } finally {
         setLoading(false);
@@ -101,7 +101,7 @@ export default function LoginPage() {
     try {
       completeLogin(await authApi.loginMfa(request.data));
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, step === "mfa" ? "mfa" : "login"));
+      setErrorMessage(getApiErrorMessage(error, "mfa"));
     } finally {
       setLoading(false);
     }

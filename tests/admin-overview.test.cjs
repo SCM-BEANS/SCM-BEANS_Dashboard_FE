@@ -60,6 +60,8 @@ test("admin role routing accepts IDaaS roles and rejects malformed tokens", () =
       PATH_ADMIN: { ROOT: "/admin" },
       PATH_HOME: { ROOT: "/" },
       PATH_MODERATOR: { ROOT: "/moderator" },
+      PATH_CUSTOMER: { ROOT: "/dashboard" },
+      PATH_TECHNICIAN: { ROOT: "/technician" },
     },
   });
 
@@ -69,7 +71,18 @@ test("admin role routing accepts IDaaS roles and rejects malformed tokens", () =
   assert.equal(roles.hasModeratorRole(tokenWithRoles(["ROLE_MODERATOR"])), true);
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["moderator"])), "/moderator");
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["ROLE_MODERATOR"])), "/moderator");
-  assert.equal(roles.getPostLoginPath(tokenWithRoles(["owner"])), "/");
+  assert.equal(roles.hasOwnerRole(tokenWithRoles(["owner"])), true);
+  assert.equal(roles.hasOwnerRole(tokenWithRoles(["ROLE_OWNER"])), true);
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["owner"])), "/dashboard");
+  assert.equal(roles.hasTechnicianRole(tokenWithRoles(["technician"])), true);
+  assert.equal(roles.hasTechnicianRole(tokenWithRoles(["ROLE_TECHNICIAN"])), true);
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["technician"])), "/technician");
+  assert.equal(roles.canAccessCustomerArea(tokenWithRoles(["owner"])), true);
+  assert.equal(roles.canAccessTechnicianArea(tokenWithRoles(["technician"])), true);
+  assert.equal(roles.canAccessCustomerArea(tokenWithRoles(["owner", "technician"])), false);
+  assert.equal(roles.canAccessTechnicianArea(tokenWithRoles(["owner", "technician"])), false);
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["owner", "technician"])), "/");
+  assert.equal(roles.getPostLoginPath(tokenWithRoles(["guest"])), "/");
   assert.equal(roles.getPostLoginPath(tokenWithRoles(["admin", "moderator"])), "/admin");
   assert.equal(roles.hasModeratorRole("invalid"), false);
   assert.equal(roles.hasAdminRole("invalid"), false);
