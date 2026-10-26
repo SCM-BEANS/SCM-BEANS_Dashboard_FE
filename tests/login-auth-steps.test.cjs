@@ -61,7 +61,7 @@ function loadLoginPage(hooks) {
     "@/apis/auth.api": { authApi: {} },
     "@/lib/api-errors": { getApiErrorMessage: () => "Lỗi đăng nhập" },
     "@/lib/auth-role": { getPostLoginPath: () => "/dashboard" },
-    "@/components/auth/liquid-success-splash": { LiquidSuccessSplash: () => null },
+    "@/pages/auth/login/liquid-success-splash": { LiquidSuccessSplash: () => null },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
     "@/schema/auth.schema": {
       FirstLoginPasswordChangeRequestSchema: {},
@@ -146,8 +146,8 @@ test("login motion is brief and disabled for reduced-motion preferences", () => 
     .map((element) => element.props.children)
     .join("\n");
 
-  assert.match(styles, /login-card-enter\s+200ms/);
-  assert.match(styles, /login-step-enter\s+160ms/);
+  assert.doesNotMatch(styles, /login-card-enter/);
+  assert.match(styles, /login-step-enter\s+180ms/);
   assert.match(styles, /width:\s*44px;\s*min-width:\s*44px;\s*height:\s*44px;\s*min-height:\s*44px/);
   assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /animation:\s*none/);

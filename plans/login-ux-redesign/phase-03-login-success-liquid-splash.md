@@ -6,20 +6,20 @@ Give a clear, brief visual confirmation after the final login response succeeds,
 
 ## Scope and Tasks
 
-1. Create a login-only LiquidSuccessSplash component with an SVG wave that covers and then uncovers the viewport, a checkmark, and the message “Đăng nhập thành công”.
+1. Create a login-only LiquidSuccessSplash component whose Dolores-colored SVG curtain drops from the top with rounded, uneven drips, deepens into a soft liquid belly, and fills the viewport before showing the checkmark and “Đăng nhập thành công”.
 2. Use the Dolores primary red and light product surfaces; do not use the cyan demo colors and do not add sound.
 3. Trigger the effect only from the final completeLogin path after an access token is received. Do not trigger it for OTP/MFA challenge responses, pending requests, or errors.
-4. Keep the entire animation within 1.5 seconds, then call the existing role-based router.replace.
-5. Respect prefers-reduced-motion by skipping the wave and redirecting immediately.
+4. Keep the drip morph, full-screen fill, success message, and fade within 1.5 seconds, then call the existing role-based router.replace.
+5. Respect prefers-reduced-motion by skipping the morph and redirecting immediately.
 6. Guarantee redirect in a fallback path if the animation is interrupted, throws, or fails to initialize.
-7. Add GSAP as a direct package dependency with the lockfile update and load it only for the success overlay; never use a CDN.
+7. Use the existing GSAP dependency, cache its lazy import, and prepare it when the login form receives focus. Interpolate compatible SVG d attributes in sequential tweens; no MorphSVG plugin or CDN is needed. Kill the timeline on completion, fallback, and unmount.
 8. Expose the success message as a screen-reader status without trapping focus or leaving keyboard users behind on the overlay.
 
 ## Files and Modules
 
 - src/pages/auth/login/login-page.tsx
-- src/components/auth/liquid-success-splash.tsx (new, login-only)
-- src/components/auth/liquid-success-splash.module.css (new, if styles are separated)
+- src/pages/auth/login/liquid-success-splash.tsx (new, login-only)
+- src/pages/auth/login/liquid-success-splash.module.css (new, if styles are separated)
 - package.json and package-lock.json (only if GSAP is required)
 
 ## Dependencies
@@ -32,7 +32,7 @@ Give a clear, brief visual confirmation after the final login response succeeds,
 - A final successful login response triggers exactly one splash and then reaches the same role-based destination as before.
 - Invalid credentials, API errors, and OTP/MFA challenges do not show the splash.
 - Splash uses no audio, finishes within 1.5 seconds, and uses Dolores colors.
-- With reduced motion enabled, no wave is animated and the user is redirected without a noticeable wait.
+- With reduced motion enabled, no liquid morph is animated and the user is redirected without a noticeable wait.
 - If the animation fails, the redirect still occurs; no authenticated user remains stuck on the login page.
 - During implementation, run node --test tests/login-success-splash.test.cjs, verify with controlled auth responses, then run lint, TypeScript, and production build.
 

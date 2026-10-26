@@ -1,12 +1,12 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
-import { LiquidSuccessSplash } from "@/components/auth/liquid-success-splash";
+import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/pages/auth/login/liquid-success-splash";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { getPostLoginPath } from "@/lib/auth-role";
 import { PATH_HOME } from "@/routes/path";
@@ -71,6 +71,16 @@ export default function LoginPage() {
   });
   const [loginSuccessDestination, setLoginSuccessDestination] = useState("");
 
+  async function navigateAfterLogin(destination: string) {
+    try {
+      const navigated = await router.replace(destination);
+      if (navigated === false) throw new Error("Navigation cancelled");
+    } catch {
+      setLoginSuccessDestination("");
+      setErrorMessage(LOGIN_MESSAGES.ERRORS.NAVIGATION_FAILED);
+    }
+  }
+
   function completeLogin(response: TLoginMfaResponse) {
     Cookies.set("access_token", response.access_token, {
       expires: response.expires_in / 86_400,
@@ -86,7 +96,7 @@ export default function LoginPage() {
       reducedMotion = false;
     }
     if (reducedMotion) {
-      void router.replace(destination);
+      void navigateAfterLogin(destination);
       return;
     }
     setLoginSuccessDestination(destination);
@@ -298,7 +308,7 @@ export default function LoginPage() {
   }
 
   async function resendEmailVerification() {
-    if (loading) return;
+    if (loading || loginSuccessDestination) return;
     setLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
@@ -314,7 +324,7 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || loginSuccessDestination) return;
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -344,6 +354,7 @@ export default function LoginPage() {
         className="password-toggle"
         aria-label={`${visible ? "Ẩn" : "Hiện"} ${label}`}
         aria-pressed={visible}
+        disabled={loading || Boolean(loginSuccessDestination)}
         onClick={() => setPasswordVisibility((current) => ({ ...current, [field]: !current[field] }))}
       >
         {visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
@@ -371,7 +382,7 @@ export default function LoginPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <main className="login-page">
+      <main className="login-page" inert={Boolean(loginSuccessDestination)}>
         <section className="login-card" aria-labelledby="login-title">
           <Link
             href={PATH_HOME.ROOT}
@@ -381,17 +392,19 @@ export default function LoginPage() {
             dolores.
           </Link>
           <div className="form-wrap login-content" key={step} data-step={step}>
-            <div className="form-icon" aria-hidden="true">
-              {isCodeEntry ? <ShieldCheck size={25} /> : <LockKeyhole size={25} />}
-            </div>
-            <p className="form-eyebrow">{content.EYEBROW}</p>
-            <h2 id="login-title">{content.TITLE}</h2>
-            <p className="form-description">
+            <h1 id="login-title">{content.TITLE}</h1>
+            <p id="login-description" className="form-description">
               {content.DESCRIPTION}
               {isEmailVerification && <><br /><strong>{email}</strong></>}
             </p>
 
-            <form onSubmit={handleSubmit} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              onFocus={() => { void prepareLiquidSuccessAnimation(); }}
+              aria-busy={loading}
+              aria-describedby="login-description"
+              noValidate
+            >
               {isCodeEntry ? (
                 <div className="field">
                   <label htmlFor="login-code">
@@ -400,9 +413,9 @@ export default function LoginPage() {
                       : LOGIN_MESSAGES.FIRST_LOGIN_OTP.CODE_LABEL}
                   </label>
                   <div className="input-wrap">
-                    <KeyRound size={19} aria-hidden="true" />
                     <input
                       id="login-code"
+                      className="code-input"
                       type="text"
                       inputMode="numeric"
                       autoComplete="one-time-code"
@@ -412,7 +425,8 @@ export default function LoginPage() {
                         : LOGIN_MESSAGES.FIRST_LOGIN_OTP.CODE_PLACEHOLDER}
                       value={code}
                       onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                      disabled={loading}
+                      disabled={loading || Boolean(loginSuccessDestination)}
+                      aria-describedby={errorMessage ? "login-feedback" : undefined}
                       required
                       autoFocus
                     />
@@ -423,7 +437,6 @@ export default function LoginPage() {
                   <div className="field">
                     <label htmlFor="login-email">{LOGIN_MESSAGES.FORM.EMAIL_LABEL}</label>
                     <div className="input-wrap">
-                      <Mail size={19} aria-hidden="true" />
                       <input
                         id="login-email"
                         type="email"
@@ -431,7 +444,8 @@ export default function LoginPage() {
                         placeholder={LOGIN_MESSAGES.FORM.EMAIL_PLACEHOLDER}
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        disabled={loading}
+                        disabled={loading || Boolean(loginSuccessDestination)}
+                        aria-describedby={errorMessage ? "login-feedback" : undefined}
                         required
                         autoFocus
                       />
@@ -442,7 +456,6 @@ export default function LoginPage() {
                       {LOGIN_MESSAGES.FORM.PASSWORD_LABEL}
                     </label>
                     <div className="input-wrap">
-                      <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-password"
                         type={passwordVisibility.password ? "text" : "password"}
@@ -450,7 +463,8 @@ export default function LoginPage() {
                         placeholder={LOGIN_MESSAGES.FORM.PASSWORD_PLACEHOLDER}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        disabled={loading}
+                        disabled={loading || Boolean(loginSuccessDestination)}
+                        aria-describedby={errorMessage ? "login-feedback" : undefined}
                         required
                       />
                       {passwordVisibilityToggle("password", "mật khẩu")}
@@ -464,7 +478,6 @@ export default function LoginPage() {
                       {LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.PASSWORD_LABEL}
                     </label>
                     <div className="input-wrap">
-                      <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-new-password"
                         type={passwordVisibility.newPassword ? "text" : "password"}
@@ -474,19 +487,20 @@ export default function LoginPage() {
                         placeholder={LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.PASSWORD_PLACEHOLDER}
                         value={newPassword}
                         onChange={(event) => setNewPassword(event.target.value)}
-                        disabled={loading}
+                        disabled={loading || Boolean(loginSuccessDestination)}
+                        aria-describedby={errorMessage ? "login-feedback" : "login-password-hint"}
                         required
                         autoFocus
                       />
                       {passwordVisibilityToggle("newPassword", "mật khẩu mới")}
                     </div>
                   </div>
+                  <p id="login-password-hint" className="field-hint">{LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.PASSWORD_HINT}</p>
                   <div className="field">
                     <label htmlFor="login-confirm-new-password">
                       {LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.CONFIRM_PASSWORD_LABEL}
                     </label>
                     <div className="input-wrap">
-                      <LockKeyhole size={19} aria-hidden="true" />
                       <input
                         id="login-confirm-new-password"
                         type={passwordVisibility.confirmNewPassword ? "text" : "password"}
@@ -496,7 +510,8 @@ export default function LoginPage() {
                         placeholder={LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.CONFIRM_PASSWORD_PLACEHOLDER}
                         value={confirmNewPassword}
                         onChange={(event) => setConfirmNewPassword(event.target.value)}
-                        disabled={loading}
+                        disabled={loading || Boolean(loginSuccessDestination)}
+                        aria-describedby={errorMessage ? "login-feedback" : undefined}
                         required
                       />
                       {passwordVisibilityToggle("confirmNewPassword", "xác nhận mật khẩu mới")}
@@ -512,14 +527,15 @@ export default function LoginPage() {
               )}
 
               {errorMessage && (
-                <p className="error-message" role="alert">
+                <p id="login-feedback" className="error-message" role="alert">
                   {errorMessage}
                 </p>
               )}
 
-              <button className="submit-button" type="submit" disabled={loading}>
+              <button className="submit-button" type="submit" disabled={loading || Boolean(loginSuccessDestination)}>
+                {loading && <span className="submit-spinner" aria-hidden="true" />}
                 <span>
-                  {loading
+                  {loginSuccessDestination ? LOGIN_MESSAGES.FORM.SUCCESS : loading
                     ? content.SUBMITTING
                     : content.SUBMIT}
                 </span>
@@ -551,21 +567,21 @@ export default function LoginPage() {
                     ? LOGIN_MESSAGES.FIRST_LOGIN_OTP.BACK
                     : LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.BACK}
               </button>
-            ) : (
-              <Link href={PATH_HOME.ROOT} className="secondary-link">
-                {LOGIN_MESSAGES.FORM.BACK_HOME}
-              </Link>
-            )}
+            ) : null}
           </div>
         </section>
+        {step === "credentials" && (
+          <Link href={PATH_HOME.ROOT} className="secondary-link home-link">
+            <ArrowRight size={16} className="back-arrow" aria-hidden="true" />
+            {LOGIN_MESSAGES.FORM.BACK_HOME}
+          </Link>
+        )}
       </main>
 
       {loginSuccessDestination && (
         <LiquidSuccessSplash
           onComplete={() => {
-            const destination = loginSuccessDestination;
-            setLoginSuccessDestination("");
-            void router.replace(destination);
+            void navigateAfterLogin(loginSuccessDestination);
           }}
         />
       )}
@@ -574,48 +590,60 @@ export default function LoginPage() {
         html, body, #__next { min-height: 100%; }
         body { margin: 0; }
         *, *::before, *::after { box-sizing: border-box; }
-        .login-page .secondary-link { display: table; margin: 24px auto 0; padding: 8px; border: 0; color: #706561; background: transparent; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
-        .login-page .login-brand { display: inline-flex; margin: 0 0 32px; color: #b81724; font-size: 34px; font-weight: 800; letter-spacing: -.07em; line-height: 1; text-decoration: none; }
-        .login-page .password-toggle { flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #706561; background: transparent; cursor: pointer; }
+        .login-page .secondary-link { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 16px auto 0; padding: 8px 12px; border: 0; border-radius: 8px; color: #675b57; background: transparent; font: inherit; font-size: .875rem; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .login-page .home-link { margin: 0 auto; }
+        .login-page .back-arrow { transform: rotate(180deg); }
+        .login-page .login-brand { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0 24px; border-radius: 4px; color: #b81724; font-size: 2rem; font-weight: 700; letter-spacing: -.045em; line-height: 1; text-decoration: none; }
+        .login-page .login-brand:focus-visible { outline: 2px solid #b81724; outline-offset: 4px; }
+        .login-page .password-toggle { flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #675b57; background: transparent; cursor: pointer; }
         .login-page .password-toggle:hover { color: #b81724; background: #f9e9ea; }
-        .login-page .password-toggle:focus-visible { outline: 3px solid rgba(184, 23, 36, .32); outline-offset: 1px; }
+        .login-page .password-toggle:focus-visible { outline: 2px solid #b81724; outline-offset: 1px; }
+        .login-page .password-toggle:active:not(:disabled) { background: #f1d6d9; }
+        .login-page .password-toggle:disabled { cursor: not-allowed; opacity: .6; }
         .login-page .secondary-link:hover { text-decoration: underline; }
+        .login-page .secondary-link:active { background: #f1e9e7; }
         .login-page .secondary-link:disabled { opacity: .55; cursor: not-allowed; }
       `}</style>
 
       <style jsx>{`
-        .login-page { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; color: #302927; background: #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
-        .login-card { width: min(100%, 420px); padding: clamp(24px, 5vw, 36px); border: 1px solid #e9e2dc; border-radius: 20px; background: #fff; box-shadow: 0 18px 48px rgba(48, 41, 39, .07); animation: login-card-enter 200ms ease-out both; }
-        .login-content { animation: login-step-enter 160ms ease both; }
-        @keyframes login-card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes login-step-enter { from { opacity: 0; } to { opacity: 1; } }
+        .login-page { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 32px 16px; color: #302927; background: #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
+        .login-card { width: 100%; max-width: 440px; padding: 28px 24px 32px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; box-shadow: 0 4px 24px rgba(48, 41, 39, .035); }
+        .login-content { animation: login-step-enter 180ms cubic-bezier(.22, 1, .36, 1) both; }
+        @keyframes login-step-enter { from { opacity: .7; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .form-wrap { width: 100%; }
-        .form-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 22px; border-radius: 14px; color: #b81724; background: #f9e9ea; }
-        .form-eyebrow { margin: 0; color: #706561; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-        h2 { margin: 8px 0 8px; color: #302927; font-size: 28px; font-weight: 700; line-height: 1.25; }
-        .form-description { margin: 0 0 26px; color: #706561; font-size: 15px; line-height: 1.55; }
-        form { display: grid; gap: 18px; }
+        h1 { margin: 0 0 8px; color: #302927; font-size: 1.75rem; font-weight: 700; line-height: 1.25; letter-spacing: -.025em; text-wrap: balance; }
+        .form-description { margin: 0 0 28px; color: #675b57; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
+        form { display: grid; gap: 20px; }
         .field { display: grid; gap: 8px; }
-        label { color: #302927; font-size: 14px; font-weight: 600; }
-        .input-wrap { min-height: 50px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 10px; color: #706561; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
-        .input-wrap:focus-within { border-color: #b81724; box-shadow: 0 0 0 3px rgba(184, 23, 36, .11); }
-        input { min-width: 0; width: 100%; border: 0; outline: 0; color: #302927; background: transparent; font: inherit; font-size: 15px; }
-        input::placeholder { color: #9a918d; }
+        label { color: #302927; font-size: .875rem; font-weight: 600; }
+        .input-wrap { min-height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 16px; border: 1px solid #968781; border-radius: 10px; color: #675b57; background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
+        .input-wrap:hover { border-color: #887b75; }
+        .input-wrap:focus-within { border-color: #b81724; box-shadow: 0 0 0 3px #f1d6d9; }
+        .input-wrap:has(input:disabled) { background: #f8f6f3; border-color: #d8cfca; }
+        input { min-width: 0; width: 100%; min-height: 50px; padding: 0; border: 0; border-radius: 8px; outline: 0; color: #302927; background: transparent; font: inherit; font-size: 1rem; }
+        input::placeholder { color: #766a65; opacity: 1; }
+        input:focus-visible { outline: 2px solid #b81724; outline-offset: -3px; }
+        .code-input { text-align: center; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
+        .code-input::placeholder { letter-spacing: normal; }
+        .field-hint { margin: -12px 0 0; color: #675b57; font-size: .875rem; line-height: 1.5; }
         input:disabled { cursor: not-allowed; }
-        .error-message, .success-message { margin: -2px 0 0; padding: 12px 14px; border-radius: 9px; font-size: 14px; line-height: 1.5; }
+        .error-message, .success-message { margin: 0; padding: 12px 16px; border-radius: 8px; font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
         .error-message { color: #a82920; background: #fcecea; }
         .success-message { color: #24653c; background: #e8f5eb; }
-        .submit-button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; border: 0; border-radius: 10px; color: #fff; background: #b81724; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .2s ease, transform .2s ease; }
-        .submit-button:hover:not(:disabled) { background: #99131d; transform: translateY(-1px); }
-        .submit-button:disabled { opacity: .65; cursor: wait; }
-        .submit-button:focus-visible, .secondary-link:focus-visible { outline: 3px solid rgba(184, 23, 36, .32); outline-offset: 3px; }
-        @media (max-width: 420px) {
-          .login-page { padding: 16px; }
-          .login-card { padding: 24px; border-radius: 16px; }
+        .submit-button { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; padding: 12px 16px; border: 0; border-radius: 10px; color: #fff; background: #b81724; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 160ms ease, transform 160ms ease; }
+        .submit-button:hover:not(:disabled) { background: #99131d; }
+        .submit-button:active:not(:disabled) { transform: scale(.99); background: #85111b; }
+        .submit-button:disabled { background: #986168; cursor: wait; }
+        .submit-button:focus-visible, .secondary-link:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
+        .submit-spinner { width: 16px; height: 16px; border: 2px solid rgb(255 255 255 / 45%); border-top-color: #fff; border-radius: 50%; animation: login-spin 700ms linear infinite; }
+        @keyframes login-spin { to { transform: rotate(360deg); } }
+        @media (min-width: 640px) {
+          .login-card { padding: 32px 36px 36px; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .login-card, .login-content { animation: none; }
+          .login-content, .submit-spinner { animation: none; }
           .login-page * { transition-duration: 0ms !important; }
+          .submit-button:active:not(:disabled) { transform: none; }
         }
       `}</style>
     </>

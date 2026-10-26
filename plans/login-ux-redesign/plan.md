@@ -27,8 +27,10 @@ Project root: E:/Đồ án/SCM-BEANS_Dashboard_FE (git root; no ancestor .skills
 - The provided Figma file has no login frame; use its shared Dolores wordmark, light surfaces, sans-serif dashboard typography, and color tokens.
 - Do not change shared typography globally; scope login typography and colors to the login route.
 - Keep the existing login and challenge state machine. Only the final authenticated response may trigger the success effect.
-- Use a full-viewport SVG liquid overlay with a success mark and short message. Use Dolores colors, no audio, a 1.5-second hard limit, and skip the wave when reduced motion is requested.
-- Use GSAP with an SVG wave timeline for the liquid splash; add it as a direct dependency and dynamically load it only for the success-only component. Do not load it from a CDN.
+- Keep a compact 440px login card with logo, title, two fields, and the primary action. Remove the decorative lock block and uppercase eyebrow; put the home link outside the card. Use 16px inputs, readable placeholders, visible focus, and controls at least 44px tall.
+- Use a full-viewport Dolores liquid curtain dropping from the top with rounded uneven drips. Interpolate the same SVG commands in two consecutive, non-overlapping stages, then show the success mark and fade. Keep the sequence under 1.5 seconds, use no audio, and skip motion when reduced motion is requested.
+- Prepare the cached GSAP import on form focus to avoid waiting for the animation module after auth success. Use core GSAP attribute interpolation without MorphSVG. Stop the timeline on completion, fallback, and unmount.
+- Keep login-only UI and motion in src/pages/auth/login, including liquid-success-splash.tsx and its CSS module; shared components do not contain login-specific code.
 
 ## Phase Index
 

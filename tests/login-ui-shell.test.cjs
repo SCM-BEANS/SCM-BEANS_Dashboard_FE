@@ -47,7 +47,7 @@ function loadLoginPage() {
         `${brandName} ${brandTagline}`,
       ),
     },
-    "@/components/auth/liquid-success-splash": { LiquidSuccessSplash: () => null },
+    "@/pages/auth/login/liquid-success-splash": { LiquidSuccessSplash: () => null },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
     "@/schema/auth.schema": {
       FirstLoginPasswordChangeRequestSchema: {},
@@ -78,7 +78,9 @@ test("login renders a centered Dolores product card with credentials and no hero
   assert.match(markup, /id="login-email"/);
   assert.match(markup, /id="login-password"/);
   assert.doesNotMatch(markup, /story-panel|story-overlay|story-copy|landing-hero/);
-  assert.match(markup, /max-width:\s*420px/);
+  assert.match(markup, /max-width:\s*440px/);
+  assert.match(markup, /<h1[^>]*id="login-title"/);
+  assert.doesNotMatch(markup, /form-eyebrow|form-icon/);
   assert.match(markup, /#f8f6f3/);
   assert.match(markup, /#b81724/);
 });

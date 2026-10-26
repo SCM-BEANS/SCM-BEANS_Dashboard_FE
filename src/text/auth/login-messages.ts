@@ -17,13 +17,14 @@ export const LOGIN_MESSAGES = {
   FORM: {
     EYEBROW: "Chào mừng trở lại",
     TITLE: "Đăng nhập",
-    DESCRIPTION: "Nhập thông tin tài khoản để tiếp tục.",
+    DESCRIPTION: "Đăng nhập để quản lý và vận hành cùng Dolores.",
     EMAIL_LABEL: "Email",
     EMAIL_PLACEHOLDER: "name@example.com",
     PASSWORD_LABEL: "Mật khẩu",
     PASSWORD_PLACEHOLDER: "Nhập mật khẩu",
     SUBMIT: "Đăng nhập",
     SUBMITTING: "Đang đăng nhập...",
+    SUCCESS: "Đăng nhập thành công",
     BACK_HOME: "Về trang chủ",
   },
   MFA: {
@@ -52,7 +53,8 @@ export const LOGIN_MESSAGES = {
     TITLE: "Đổi mật khẩu tạm",
     DESCRIPTION: "Email đã được xác minh. Hãy tạo mật khẩu mới để tiếp tục vào hệ thống.",
     PASSWORD_LABEL: "Mật khẩu mới",
-    PASSWORD_PLACEHOLDER: "Nhập mật khẩu mới (ít nhất 8 ký tự)",
+    PASSWORD_PLACEHOLDER: "Nhập mật khẩu mới",
+    PASSWORD_HINT: "Sử dụng ít nhất 8 ký tự cho mật khẩu mới.",
     CONFIRM_PASSWORD_LABEL: "Xác nhận mật khẩu mới",
     CONFIRM_PASSWORD_PLACEHOLDER: "Nhập lại mật khẩu mới",
     SUBMIT: "Đổi mật khẩu và đăng nhập",
@@ -65,6 +67,7 @@ export const LOGIN_MESSAGES = {
     PASSWORD_CHANGED_LOGIN_RETRY: "Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới để tiếp tục.",
   },
   ERRORS: {
+    NAVIGATION_FAILED: "Đã đăng nhập nhưng chưa mở được trang tiếp theo. Vui lòng thử lại.",
     INVALID_EMAIL: "Vui lòng nhập email hợp lệ.",
     MISSING_PASSWORD: "Vui lòng nhập mật khẩu.",
     MISSING_CODE: "Vui lòng nhập mã xác thực.",
