@@ -1,8 +1,10 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { isSupportedCustomerSection } from "@/routes/routes";
 import { CustomerShell } from "./customer-shell";
-import { CustomerReadScreen, getCustomerScreenDescriptor } from "./customer-read-screens";
-import { CustomerWorkflowScreen, getCustomerWorkflowDescriptor } from "./customer-workflow-screens";
+import { CustomerReadScreen } from "./read/customer-read-screen";
+import { getCustomerScreenDescriptor } from "./read/customer-read-descriptor";
+import { CustomerWorkflowScreen } from "./workflows/customer-workflow-screen";
+import { getCustomerWorkflowDescriptor } from "./workflows/customer-workflow-descriptor";
 
 interface CustomerPageProps {
   sectionPath: string;

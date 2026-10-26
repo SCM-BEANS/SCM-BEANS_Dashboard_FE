@@ -23,7 +23,7 @@ Tuân thủ kiến trúc và cách chia file hiện tại. Tài liệu API đư�
 
 - Repo dùng Next.js Pages Router và các tầng hiện tại như pages, apis, schema, lib, routes, text, assets, components.
 - Dashboard khách hàng/Owner có route và UI sẵn, nhưng các màn hình Owner cần được nối API theo từng lát cắt.
-- Màn hình đọc và luồng nghiệp vụ nằm chủ yếu ở src/pages/dashboard/customer-read-screens.tsx và src/pages/dashboard/customer-workflow-screens.tsx; route ở src/pages/dashboard/[[...sections]].page.tsx; thứ tự sidebar ở src/routes/routes.ts.
+- Màn hình đọc và luồng nghiệp vụ nằm chủ yếu ở src/pages/dashboard/read/customer-read-screen.tsx và src/pages/dashboard/workflows/customer-workflow-screen.tsx; route ở src/pages/dashboard/[[...sections]].page.tsx; thứ tự sidebar ở src/routes/routes.ts.
 - Có sẵn một số API module dùng ở các vai trò khác; chỉ tái sử dụng khi endpoint và quyền Owner được xác nhận. Không dùng dữ liệu giả để che API thiếu.
 
 ## Kết quả đọc OpenAPI/Swagger

@@ -43,17 +43,17 @@ const buttonBar = loadModule("src/components/button/button-bar.tsx", {
 const actionBarActions = loadModule("src/components/action-bar/action-bar-actions.tsx", {
   "@/components/button/button-bar": buttonBar,
 });
-const customerReadScreens = loadModule("src/pages/dashboard/customer-read-screens.tsx", {
+const customerReadScreens = loadModule("src/pages/dashboard/read/customer-read-screen.tsx", {
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
-  "./customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+  "../customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
-const customerWorkflowScreens = loadModule("src/pages/dashboard/customer-workflow-screens.tsx", {
+const customerWorkflowScreens = loadModule("src/pages/dashboard/workflows/customer-workflow-screen.tsx", {
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
-  "./customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+  "../customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const technicianRouteScreens = loadModule("src/pages/technician/technician-route-screens.tsx", {
   "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
@@ -194,8 +194,10 @@ function loadRolePage(relativePath, shellModule, messagesModule, stylesModule, r
     },
     ...(relativePath.includes("dashboard")
       ? {
-          "./customer-read-screens": customerReadScreens,
-          "./customer-workflow-screens": customerWorkflowScreens,
+          "./read/customer-read-screen": customerReadScreens,
+          "./read/customer-read-descriptor": customerReadScreens,
+          "./workflows/customer-workflow-screen": customerWorkflowScreens,
+          "./workflows/customer-workflow-descriptor": customerWorkflowScreens,
         }
       : relativePath.includes("technician")
         ? { "./technician-route-screens": technicianRouteScreens }
