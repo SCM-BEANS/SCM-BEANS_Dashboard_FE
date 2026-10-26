@@ -1,5 +1,6 @@
 "use client";
 
+import { Play, Pause, RotateCcw, X, Film } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Component, useCallback, useState, type ReactNode } from "react";
 import type { TranslationKey } from "@/lib/i18n/translations";
@@ -27,6 +28,7 @@ export interface DigitalTwinClusterViewerProps {
   readyKey: TranslationKey;
   loadErrorKey: TranslationKey;
   showOcLeftCamControls?: boolean;
+  enableDemo?: boolean;
 }
 
 interface CanvasErrorBoundaryProps {
@@ -70,8 +72,15 @@ export function DigitalTwinClusterViewer({
   readyKey,
   loadErrorKey,
   showOcLeftCamControls = false,
+  enableDemo = false,
 }: DigitalTwinClusterViewerProps) {
   const t = useI18nStore((state) => state.t);
+  const language = useI18nStore((state) => state.language);
+  const vi = language === "vi";
+  const [demoActive, setDemoActive] = useState(false);
+  const [demoPlaying, setDemoPlaying] = useState(false);
+  const [demoVersion, setDemoVersion] = useState(0);
+  const pauseDemo = useCallback(() => setDemoPlaying(false), []);
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ViewerStatus>("loading");
   const [zoomLevel, setZoomLevel] = useState(0);
@@ -87,6 +96,8 @@ export function DigitalTwinClusterViewer({
   const handleError = useCallback(() => setStatus("error"), []);
   const handleRetry = useCallback(() => {
     setStatus("loading");
+    setDemoActive(false);
+    setDemoPlaying(false);
     setZoomLevel(0);
     setMainDriveProgress(0);
     setLowerDriveProgress(1);
@@ -95,6 +106,8 @@ export function DigitalTwinClusterViewer({
     setAttempt((current) => current + 1);
   }, []);
   const handleReset = useCallback(() => {
+    setDemoActive(false);
+    setDemoPlaying(false);
     setZoomLevel(0);
     setMainDriveProgress(0);
     setLowerDriveProgress(1);
@@ -114,7 +127,8 @@ export function DigitalTwinClusterViewer({
   }, []);
 
   return (
-    <div className="relative isolate h-[min(62vh,700px)] min-h-[320px] overflow-hidden bento-border bg-surface-container md:min-h-[380px]">
+    <div className={`relative isolate overflow-hidden bento-border bg-surface-container ${demoActive ? "h-[min(78vh,850px)] min-h-[540px]" : "h-[min(62vh,700px)] min-h-[320px] md:min-h-[380px]"}`}>
+      <div className={`absolute inset-x-0 top-0 ${demoActive ? "bottom-44" : "bottom-0"}`}>
       <CanvasErrorBoundary key={attempt} onError={handleError}>
         <DigitalTwinClusterCanvas
           modelUrls={modelUrls}
@@ -135,15 +149,21 @@ export function DigitalTwinClusterViewer({
           ocLeftCamVisible={ocLeftCamVisible}
           mainAutoMotion={mainAutoMotion}
           lowerAutoMotion={lowerAutoMotion}
+          zUp={enableDemo}
+          demoActive={demoActive}
+          demoPlaying={demoPlaying}
+          demoVersion={demoVersion}
+          onDemoPause={pauseDemo}
         />
       </CanvasErrorBoundary>
+      </div>
 
       <div className="absolute right-3 top-3 z-20 flex items-center gap-2 rounded-lg border border-outline-variant bg-surface/90 p-1.5 shadow-sm backdrop-blur-sm">
         <button
           type="button"
           aria-label={t("digital_twin_zoom_out")}
           title={t("digital_twin_zoom_out")}
-          disabled={status !== "ready" || zoomLevel <= -5}
+          disabled={status !== "ready" || zoomLevel <= -5 || demoPlaying}
           onClick={() => setZoomLevel((level) => Math.max(-5, level - 1))}
           className="min-h-11 min-w-11 rounded-md text-xl font-medium text-on-surface transition-colors hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
@@ -153,7 +173,7 @@ export function DigitalTwinClusterViewer({
           type="button"
           aria-label={t("digital_twin_zoom_in")}
           title={t("digital_twin_zoom_in")}
-          disabled={status !== "ready" || zoomLevel >= 6}
+          disabled={status !== "ready" || zoomLevel >= 6 || demoPlaying}
           onClick={() => setZoomLevel((level) => Math.min(6, level + 1))}
           className="min-h-11 min-w-11 rounded-md text-xl font-medium text-on-surface transition-colors hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
@@ -172,7 +192,7 @@ export function DigitalTwinClusterViewer({
         </button>
       </div>
 
-      {showOcLeftCamControls ? (
+      {showOcLeftCamControls && !demoActive ? (
         <div className="absolute bottom-3 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col gap-2 rounded-lg border border-outline-variant bg-surface/90 p-2 shadow-sm backdrop-blur-sm">
           <p className="text-xs font-semibold text-on-surface">
             {t("digital_twin_oc_left_cam")}
@@ -285,6 +305,42 @@ export function DigitalTwinClusterViewer({
           <p className="text-[11px] tabular-nums text-on-surface-variant">
             {t("digital_twin_lower_drive_progress")}: {Math.round(lowerDriveProgress * 100)}%
           </p>
+        </div>
+      ) : null}
+
+      {enableDemo && status === "ready" ? (
+        <div className={`absolute z-20 ${demoActive ? "inset-x-3 bottom-3" : "top-20 left-3"}`}>
+          {demoActive ? (
+            <div className="mx-auto max-w-xl rounded-2xl border border-outline-variant bg-surface/95 p-3 shadow-lg backdrop-blur-xl sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">Compressor / Showcase</p>
+                  <p className="mt-1 text-sm font-semibold text-on-surface">
+                    {vi ? "Camera 360°" : "Continuous 360° orbit"}
+                  </p>
+                </div>
+                <button type="button" onClick={handleReset} aria-label={vi ? "Thoát demo" : "Exit demo"} className="flex h-11 w-11 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><X size={18} /></button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => setDemoPlaying((value) => !value)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-on-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                  {demoPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  {demoPlaying ? (vi ? "Tạm dừng" : "Pause") : (vi ? "Tiếp tục" : "Resume")}
+                </button>
+                <button type="button" onClick={() => { setDemoVersion((version) => version + 1); setDemoPlaying(true); }} aria-label={vi ? "Phát lại" : "Replay"} title={vi ? "Phát lại" : "Replay"} className="flex h-11 w-11 items-center justify-center rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"><RotateCcw size={16} /></button>
+                <span className="text-xs text-on-surface-variant">{vi ? "40 giây / vòng · Kéo để tạm dừng" : "40s loop · Drag to pause"}</span>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => {
+              setMainAutoMotion(false);
+              setLowerAutoMotion(false);
+
+              setDemoActive(true);
+              setDemoPlaying(true);
+            }} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-primary/20 bg-primary px-5 text-sm font-semibold text-on-primary shadow-lg transition-transform hover:-translate-y-0.5 motion-reduce:transform-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+              <Film size={18} /> {vi ? "Trình diễn 360°" : "360° showcase"} <Play size={14} />
+            </button>
+          )}
         </div>
       ) : null}
 

@@ -8,6 +8,8 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
+import { CompressorDemoCamera } from "./CompressorDemoCamera";
+
 const DRACO_DECODER_PATH = "/draco-gltf/";
 // The exported CAD constraints carry a sub-0.05 mm endpoint mismatch around
 // the arm transition. Keeping this tolerance local to the kinematic solver
@@ -34,6 +36,11 @@ export interface DigitalTwinClusterCanvasProps {
   ocLeftCamVisible: boolean;
   mainAutoMotion: boolean;
   lowerAutoMotion: boolean;
+  demoActive?: boolean;
+  demoPlaying?: boolean;
+  demoVersion?: number;
+  zUp?: boolean;
+  onDemoPause?: () => void;
 }
 
 export interface ClusterAttachmentDefinition {
@@ -2912,7 +2919,9 @@ function fitCameraToCluster(
   const fitWidthDistance = fitHeightDistance / Math.max(camera.aspect, 0.01);
   const distance =
     1.4 * Math.max(fitHeightDistance, fitWidthDistance) * Math.pow(0.82, zoomLevel);
-  const direction = new THREE.Vector3(1, 0.72, 1).normalize();
+  const direction = new THREE.Vector3(1, 0.72, 1).normalize().applyQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), camera.up),
+  );
 
   camera.near = Math.max(maxSize / 1000, 0.001);
   camera.far = Math.max(maxSize * 100, 100);
@@ -3287,6 +3296,10 @@ function ClusterScene({
   ocLeftCamVisible,
   mainAutoMotion,
   lowerAutoMotion,
+  demoActive = false,
+  demoPlaying = false,
+  demoVersion = 0,
+  onDemoPause,
 }: Omit<DigitalTwinClusterCanvasProps, "canvasLabel">) {
   const { camera } = useThree();
   const [model, setModel] = useState<THREE.Group | null>(null);
@@ -3480,7 +3493,7 @@ function ClusterScene({
       runtime = createClusterMotionRuntime(model, motionDefinitions, {
         initialMainProgress: 0,
         initialLowerProgress: 1,
-        showGuides: true,
+        showGuides: false,
       });
       motionRuntimeRef.current = runtime;
     } catch (error) {
@@ -3505,19 +3518,21 @@ function ClusterScene({
       mainDriveProgress,
       lowerDriveProgress,
     );
-  }, [lowerDriveProgress, mainDriveProgress]);
+  }, [lowerDriveProgress, mainDriveProgress, cameraResetVersion, demoActive, demoVersion]);
 
   useEffect(() => {
-    motionRuntimeRef.current?.setGuidesVisible(ocLeftCamVisible);
-  }, [ocLeftCamVisible]);
+    motionRuntimeRef.current?.setGuidesVisible(ocLeftCamVisible && !demoActive);
+  }, [ocLeftCamVisible, demoActive, motionDefinitions, model]);
 
   useFrame((_, delta) => {
     const runtime = motionRuntimeRef.current;
-    if (!runtime || (!mainAutoMotion && !lowerAutoMotion)) {
+    const runMain = demoActive ? demoPlaying : mainAutoMotion;
+    const runLower = demoActive ? demoPlaying : lowerAutoMotion;
+    if (!runtime || (!runMain && !runLower)) {
       return;
     }
 
-    runtime.advance(delta, mainAutoMotion, lowerAutoMotion);
+    runtime.advance(Math.min(delta, 0.05), runMain, runLower);
   });
 
   return (
@@ -3526,10 +3541,19 @@ function ClusterScene({
       <ambientLight intensity={0.9} />
       <directionalLight position={[4, 8, 5]} intensity={1.35} />
       <directionalLight position={[-5, 3, -4]} intensity={0.55} />
+      {demoActive && bounds ? (
+        <CompressorDemoCamera
+          key={demoVersion}
+          bounds={bounds}
+          controls={controlsRef}
+          playing={demoPlaying}
+        />
+      ) : null}
       <OrbitControls
         ref={controlsRef}
         makeDefault
-        enableDamping
+        onStart={onDemoPause}
+        enableDamping={!demoPlaying}
         dampingFactor={0.08}
         enablePan={false}
         enableZoom
@@ -3560,12 +3584,17 @@ export default function DigitalTwinClusterCanvas({
   ocLeftCamVisible,
   mainAutoMotion,
   lowerAutoMotion,
+  demoActive = false,
+  demoPlaying = false,
+  demoVersion = 0,
+  zUp = false,
+  onDemoPause,
 }: DigitalTwinClusterCanvasProps) {
   return (
     <Canvas
       className="absolute inset-0 h-full w-full"
       aria-label={canvasLabel}
-      camera={{ position: [3, 2.4, 4.5], fov: 38, near: 0.001, far: 1000 }}
+      camera={{ position: [3, 2.4, 4.5], up: zUp ? [0, 0, 1] : [0, 1, 0], fov: 38, near: 0.001, far: 1000 }}
       dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
@@ -3587,6 +3616,10 @@ export default function DigitalTwinClusterCanvas({
         ocLeftCamVisible={ocLeftCamVisible}
         mainAutoMotion={mainAutoMotion}
         lowerAutoMotion={lowerAutoMotion}
+        demoActive={demoActive}
+        demoPlaying={demoPlaying}
+        demoVersion={demoVersion}
+        onDemoPause={onDemoPause}
       />
     </Canvas>
   );
