@@ -68,5 +68,45 @@
     "verification_command": "Manual all-role route matrix; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build.",
     "notes": "Covers stories: US-01, US-02, US-03, US-04. Admin create/detail route coverage completed, query fallbacks preserve parent list state, root lists stay free of back controls, and duplicate parent actions were removed. The user approved Phase 04 on 2026-10-27. Manual interactive browser validation remains unverified because the available Admin browser session lacks access.",
     "priority": "P1"
+  },
+  {
+    "id": "phase-01-shared-mobile-navigation-admin",
+    "title": "Shared mobile navigation and Admin integration",
+    "status": "passing",
+    "evidence": "Production build, lint, and TypeScript pass; focused navigation checks 13/13; Admin browser walkthrough passes at 360/390/768/1024 px; full suite 111/157 with 46 recorded baseline failures.",
+    "user_visible_behavior": "Admin opens the shared, accessible bottom-sheet navigation from a mobile header hamburger while preserving Admin routes, disabled items, and logout behavior.",
+    "verification_command": "node --test tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; Admin mobile keyboard and 360/390/768/1024 px browser walkthrough.",
+    "notes": "Covers stories: P1 shared drawer, P1 role-specific destinations and disabled states, P1 keyboard accessibility, P2 nested-route active state. Code review APPROVED (10/10), no findings. Full-suite failure count matches the recorded baseline; historical failure names are unavailable for exact name-by-name comparison.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-moderator-mobile-navigation",
+    "title": "Moderator mobile navigation",
+    "status": "passing",
+    "evidence": "Production build, lint, and TypeScript pass; focused tests 18/18; code review APPROVED 10/10; full suite 116/162 with the same recorded 46-failure baseline.",
+    "user_visible_behavior": "Moderator uses the shared mobile drawer with its complete role-specific route list and unchanged notifications, desktop sidebar, and logout behavior.",
+    "verification_command": "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
+    "notes": "Covers stories: P1 shared mobile opening/selection, role-specific destinations, accessible dismissal/focus behavior; P2 nested Moderator route selection. Moderator-specific live browser walkthrough was not completed because no logged-in Moderator session was available; accessing through the LAN host also blocked Next dev resources. Shared drawer visual and keyboard behavior was verified in the Admin Phase 01 walkthrough; Moderator route, notifications link, logout callback, and ActionBar offset are covered by focused tests.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-customer-technician-mobile-navigation",
+    "title": "Customer and Technician mobile navigation",
+    "status": "passing",
+    "evidence": "Production build, lint, and TypeScript pass; focused navigation tests 23/23; code review APPROVED 10/10; full suite 121/167 with the same recorded 46-failure baseline.",
+    "user_visible_behavior": "Customer and Technician open their own complete menus in the shared mobile drawer, replacing horizontal strips while preserving notifications, routes, and logout behavior.",
+    "verification_command": "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/customer-technician-mobile-navigation.test.cjs tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
+    "notes": "Covers stories: P1 shared role-specific menus/logout and keyboard navigation; P2 nested customer/technician routes. Role-specific live browser walkthroughs were not completed because no logged-in Moderator, Customer, or Technician sessions were available. Shared drawer visual/keyboard behavior was verified in Admin Phase 01; role menus, notifications, dynamic active parents, logout handlers, and mobile ActionBar offset/content clearance are covered by focused tests.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-04-shared-mobile-navigation-cross-role-validation-accessibility",
+    "title": "Cross-role validation and accessibility",
+    "status": "passing-unverified",
+    "evidence": "Automated Phase 04 verification: focused navigation suite 36/36, including all four route/label matrices, logout callbacks, mobile header breakpoint/touch-target contract, open/close, focus containment/restoration, Escape/backdrop, link selection, and breakpoint resize; build, lint, and TypeScript pass; full suite 134/180 pass with the same 46 baseline failures; code review APPROVED 9.7/10. User selected automated validation; live visual role walkthrough is deferred and unverified.",
+    "user_visible_behavior": "All four roles use the same accessible mobile drawer with correct role-specific active/disabled links, responsive layouts, logout callbacks, and the existing desktop Sidebar.",
+    "verification_command": "Focused navigation tests; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; four-role mobile/desktop walkthroughs at 360 px, 390 px, 768 px, 1023 px, and 1024 px, including logout callbacks and breakpoint-close behavior.",
+    "notes": "Covers stories: P1 shared drawer, P1 role-specific destinations and states, P1 keyboard accessibility, P2 nested-route active state. Component handlers/effects are exercised with a DOM-free React element harness, and stylesheet contracts verify the 1023px breakpoint and 44px notification targets. Automated testing was selected by the user for Phase 04. Actual browser focus, overflow/header collisions, and rendered 360/390/768/1023/1024 px role-shell layouts remain unverified because no authenticated Moderator, Customer, or Technician sessions are available.",
+    "priority": "P1"
   }
 ]

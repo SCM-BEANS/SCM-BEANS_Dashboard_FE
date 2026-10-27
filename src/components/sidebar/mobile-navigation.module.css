@@ -1,0 +1,140 @@
+.trigger {
+  display: none;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #706561;
+  cursor: pointer;
+}
+
+.trigger:hover {
+  background: #f7f5f3;
+  color: #b81724;
+}
+
+.trigger:focus-visible,
+.closeButton:focus-visible {
+  outline: 3px solid #b81724;
+  outline-offset: 3px;
+}
+
+.backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(48 41 39 / 42%);
+  animation: fade-in 160ms ease-out;
+}
+
+.sheet {
+  display: flex;
+  width: min(100%, 760px);
+  max-height: min(82vh, 760px);
+  max-height: min(82dvh, 760px);
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  background: #fff;
+  box-shadow: 0 -12px 40px rgb(48 41 39 / 12%);
+  animation: sheet-enter 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.sheetHeader {
+  display: flex;
+  min-height: 48px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 4px 12px;
+  color: #302927;
+  font-size: 16px;
+}
+
+.closeButton {
+  display: flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #302927;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: #f7f5f3;
+}
+
+.navigation {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 2px 8px;
+}
+
+.navigation a,
+.navigation span[aria-disabled="true"] {
+  min-height: 48px;
+  flex: 0 0 auto;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  flex: 0 0 auto;
+}
+
+.footer > :first-child {
+  margin-top: 8px;
+}
+
+.sheet :global(button[class*="logoutButton"]) {
+  flex: 0 0 auto;
+  min-height: 48px;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-enter {
+  from { transform: translateY(18px); opacity: .96; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 1023px) {
+  .trigger {
+    display: inline-flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .sheet {
+    animation: none;
+    scroll-behavior: auto;
+  }
+}

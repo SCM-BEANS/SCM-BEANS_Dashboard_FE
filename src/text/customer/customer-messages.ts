@@ -11,9 +11,11 @@ export const CUSTOMER_MESSAGES = {
     BUYBACK: "Thu mua máy cũ",
     NOTIFICATIONS: "Thông báo",
     NAVIGATION_LABEL: "Điều hướng Khách hàng",
+    ALL_PAGES_LABEL: "Tất cả trang Khách hàng",
+    OPEN_MENU: "Mở menu điều hướng",
+    CLOSE_MENU: "Đóng menu",
     LOGOUT: "Đăng xuất",
     LOGGING_OUT: "Đang đăng xuất…",
-    MORE: "Khác",
   },
   AUTH: {
     CHECKING: "Đang kiểm tra quyền truy cập…",

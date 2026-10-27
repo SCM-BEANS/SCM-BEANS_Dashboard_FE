@@ -73,8 +73,7 @@
 }
 
 .mobileHeader,
-.mobileBreadcrumb,
-.mobileNav {
+.mobileBreadcrumb {
   display: none;
 }
 
@@ -550,54 +549,13 @@
     font-size: 13px;
   }
 
-  .mobileNav {
-    display: flex;
-    min-height: 64px;
-    flex: 0 0 calc(64px + env(safe-area-inset-bottom));
-    align-items: center;
-    gap: 8px;
-    overflow: hidden;
-    padding: 6px 8px env(safe-area-inset-bottom);
-    border-top: 1px solid #e9e2dc;
-    background: #fff;
-  }
-
-  .mobileNavLinks {
-    display: flex;
-    min-width: 0;
-    flex: 1 1 auto;
-    gap: 4px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-  }
-
-  .mobileNavLinks :global(a) {
-    min-width: max-content;
-    min-height: 44px;
-    justify-content: center;
-    padding: 0 10px;
-    border-radius: 9px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .mobileNavLinks :global(a[aria-current="page"]) {
-    background: #f9e9ea;
-    color: #b81724 !important;
-  }
-
-  .mobileNav :global(button) {
-    width: auto;
-    min-width: max-content;
-    min-height: 44px;
-    margin: 0;
-    padding: 0 10px;
-    font-size: 12px;
+  .workspace :global(footer) {
+    bottom: 0;
   }
 
   .pageContent {
     gap: 16px;
-    padding: 20px 16px 104px;
+    padding: 20px 16px 80px;
   }
 
   .pageHeading h1 {
@@ -611,7 +569,7 @@
 
 @media (max-width: 600px) {
   .pageContent {
-    padding: 18px 14px 100px;
+    padding: 18px 14px 80px;
   }
 
   .pageHeading h1 {
