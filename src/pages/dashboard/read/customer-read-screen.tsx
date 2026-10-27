@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -18,6 +20,19 @@ export { getCustomerScreenDescriptor };
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
+function withCustomerActions(content: ReactNode, title: string, actions: readonly ActionBarAction[]) {
+  return (
+    <>
+      {content}
+      {actions.length > 0 ? (
+        <ActionBar label={`Thao tác ${title}`}>
+          <ActionBarActions actions={actions} />
+        </ActionBar>
+      ) : null}
+    </>
+  );
+}
+
 export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getCustomerScreenDescriptor(sectionPath);
   const contractCandidate = sectionPath.startsWith("contracts/")
@@ -33,15 +48,15 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     ? sectionPath.slice("invoices/".length)
     : "";
 
-  if (!sectionPath) return <OverviewScreen />;
+  if (!sectionPath) return withCustomerActions(<OverviewScreen />, screen.title, screen.actions);
   if (sectionPath === "contracts" || ContractIdSchema.safeParse(contractCandidate).success) {
-    return <ContractsScreen sectionPath={sectionPath} back={screen.back} />;
+    return withCustomerActions(<ContractsScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
   if (sectionPath === "machines" || MachineIdSchema.safeParse(machineCandidate).success) {
-    return <MachinesScreen sectionPath={sectionPath} back={screen.back} />;
+    return withCustomerActions(<MachinesScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
   if (sectionPath === "menu" || GlobalRecipeIdSchema.safeParse(recipeCandidate).success) {
-    return <MenuScreen sectionPath={sectionPath} back={screen.back} />;
+    return withCustomerActions(<MenuScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
   if (
     sectionPath === "invoices" ||
@@ -49,7 +64,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     /^invoices\/\d{4}-\d{2}$/.test(sectionPath) ||
     InvoiceIdSchema.safeParse(invoiceCandidate).success
   ) {
-    return <InvoicesScreen sectionPath={sectionPath} back={screen.back} />;
+    return withCustomerActions(<InvoicesScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
 
   return (

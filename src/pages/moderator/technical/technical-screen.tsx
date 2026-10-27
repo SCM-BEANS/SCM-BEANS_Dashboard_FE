@@ -6,15 +6,11 @@ import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
-import { tenantsApi } from "@/apis/tenants.api";
-
 import { PATH_MODERATOR } from "@/routes/path";
 
 import { MachineIdSchema, type MaintenanceTicket } from "@/schema/machines.schema";
 
-import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails, type InstallationWorkOrderSummary } from "@/schema/installation-work-orders.schema";
-
-import { type Tenant } from "@/schema/tenants.schema";
+import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
@@ -35,6 +31,22 @@ function formatDate(value: string | null | undefined): string {
   return Number.isNaN(timestamp)
     ? value
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
+}
+
+function ticketDate(ticket: MaintenanceTicket): string | null | undefined {
+  return ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline ?? ticket.startedAt ?? ticket.acknowledgedAt ?? ticket.completedAt;
+}
+
+function ticketNotes(ticket: MaintenanceTicket): string | null | undefined {
+  return ticket.notes ?? ticket.diagnosis ?? ticket.resolutionResult;
+}
+
+function ticketWork(ticket: MaintenanceTicket): string | null | undefined {
+  return ticket.notes ?? ticket.diagnosis ?? ticket.actionableInstructions ?? ticket.preventiveSubtype ?? ticket.source ?? ticket.resolutionResult;
+}
+
+function ticketAssignee(ticket: MaintenanceTicket): string | null | undefined {
+  return ticket.assignedTo ?? ticket.assignedTechnicianId;
 }
 
 function QueryFeedback({
@@ -91,98 +103,24 @@ function MaintenanceTicketTable({ tickets, machineId }: { tickets: MaintenanceTi
             ? <ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(ticket.machineId)}>{ticket.machineId}</ActionLink>
             : "—"}</td>
           <td>{ticket.status ?? "—"}</td>
-          <td>{formatDate(ticket.startedAt ?? ticket.acknowledgedAt ?? ticket.completedAt)}</td>
-          <td>{ticket.resolutionResult ?? ticket.notes ?? ticket.diagnosis ?? "—"}</td>
+          <td>{formatDate(ticketDate(ticket))}</td>
+          <td>{ticketNotes(ticket) ?? "—"}</td>
         </tr>
       ))}
     </DataTable>
   );
 }
 
-type TenantReadBatch<T> = {
-  records: Array<{ tenant: Tenant; record: T }>;
-  failedTenants: Array<{ tenant: Tenant; error: unknown }>;
-};
-
-async function readTenantRecords<T>(
-  tenants: Tenant[],
-  signal: AbortSignal,
-  read: (tenantId: string, signal: AbortSignal) => Promise<T[]>,
-): Promise<TenantReadBatch<T>> {
-  const results: Array<{ tenant: Tenant; records: T[] } | { tenant: Tenant; error: unknown } | undefined> = new Array(tenants.length);
-  let nextIndex = 0;
-  const workerCount = Math.min(5, tenants.length);
-  const worker = async () => {
-    while (!signal.aborted) {
-      const index = nextIndex++;
-      if (index >= tenants.length) return;
-      const tenant = tenants[index]!;
-      try {
-        results[index] = { tenant, records: await read(tenant.id, signal) };
-      } catch (error) {
-        if (signal.aborted) throw error;
-        results[index] = { tenant, error };
-      }
-    }
-  };
-
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  if (signal.aborted) throw new DOMException("The request was cancelled", "AbortError");
-  const records: TenantReadBatch<T>["records"] = [];
-  const failedTenants: TenantReadBatch<T>["failedTenants"] = [];
-  for (const result of results) {
-    if (!result) continue;
-    if ("error" in result) failedTenants.push(result);
-    else for (const record of result.records) records.push({ tenant: result.tenant, record });
-  }
-  return { records, failedTenants };
-}
-
-function TenantPartialFailure({
-  failedTenants,
-  retry,
-  subject,
-}: {
-  failedTenants: Array<{ tenant: Tenant; error: unknown }>;
-  retry: () => unknown;
-  subject: string;
-}) {
-  if (failedTenants.length === 0) return null;
-  return (
-    <div className={styles.partialNotice} role="alert">
-      <p>{messages.PARTIAL_TENANT_FAILURE}</p>
-      <ul>{failedTenants.map(({ tenant, error }) => <li key={tenant.id}>{tenant.name}: {subject} — {getApiErrorMessage(error)}</li>)}</ul>
-      <button className={styles.retryButton} type="button" onClick={() => void retry()}>{messages.RETRY}</button>
-    </div>
-  );
-}
-
-function WorkOrderRows({ records }: { records: Array<{ tenant: Tenant; record: InstallationWorkOrderSummary }> }) {
-  return <>
-    {records.map(({ tenant, record }) => <tr key={record.id}>
-      <td>{messages.TECHNICAL_WORK_ORDER}</td>
-      <td><ActionLink href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(record.id)}>{record.id}</ActionLink></td>
-      <td className={styles.codeValue}>{record.machineId}</td>
-      <td>{tenant.name}</td>
-      <td>{record.status}</td>
-      <td>{formatDate(record.scheduledFor)}</td>
-      <td>{record.failureReason ?? "—"}</td>
-    </tr>)}
-  </>;
-}
-
 function TicketRows({ tickets }: { tickets: MaintenanceTicket[] }) {
   return <>
     {tickets.map((ticket, index) => <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-      <td>{messages.TECHNICAL_TICKET}</td>
       <td className={styles.codeValue}>{ticket.id ?? "—"}</td>
       <td>{ticket.machineId
         ? <ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(ticket.machineId)}>{ticket.machineId}</ActionLink>
         : "—"}</td>
-      <td className={styles.codeValue}>{ticket.tenantId ?? "—"}</td>
+      <td>{ticketWork(ticket) ?? messages.TECHNICAL_TICKET}</td>
+      <td className={styles.codeValue}>{ticketAssignee(ticket) ?? "—"}</td>
       <td>{ticket.status ?? "—"}</td>
-      <td>{formatDate(ticket.startedAt ?? ticket.acknowledgedAt ?? ticket.completedAt)}</td>
-      <td>{ticket.resolutionResult ?? ticket.notes ?? ticket.diagnosis ?? "—"}</td>
     </tr>)}
   </>;
 }
@@ -235,19 +173,6 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
   const historyMachineId = path.startsWith("machine-history/") ? path.slice("machine-history/".length) : "";
   const validHistoryMachineId = MachineIdSchema.safeParse(historyMachineId).success;
   const shouldLoadHistory = isMachineHistory && (!historyMachineId || validHistoryMachineId);
-  const tenants = useQuery({
-    queryKey: ["dolores", "tenants"],
-    queryFn: ({ signal }) => tenantsApi.list(signal),
-    enabled: isWorkOrderList,
-    retry: false,
-  });
-  const tenantIds = tenants.data?.map((tenant) => tenant.id) ?? [];
-  const workOrders = useQuery({
-    queryKey: ["dolores", "moderator", "installation-work-orders-by-tenant", tenantIds],
-    queryFn: ({ signal }) => readTenantRecords(tenants.data ?? [], signal, (id, requestSignal) => installationWorkOrdersApi.listByTenant(id, requestSignal)),
-    enabled: isWorkOrderList && !tenants.isPending && !tenants.isError,
-    retry: false,
-  });
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets"],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTickets(signal),
@@ -277,24 +202,22 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
 
   if (!isWorkOrderList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
 
-  const combinedRows = (workOrders.data?.records.length ?? 0) + (tickets.data?.length ?? 0);
-  const partial = Boolean(tickets.isError || tenants.isError || workOrders.isError || workOrders.data?.failedTenants.length);
-  const listReady = !tenants.isPending && !tickets.isPending && (!tenants.data?.length || !workOrders.isPending);
+  const listReady = !tickets.isPending;
   return (
     <div className={styles.pageContent}>
       <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
       <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
       <p className={styles.formHint} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
       <QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />
-      <QueryFeedback query={tenants} loadingMessage={messages.LOADING_TENANTS} />
-      {tenants.data && !tenants.isError && <QueryFeedback query={workOrders} loadingMessage={messages.TECHNICAL_LOADING_WORK_ORDERS} />}
-      {workOrders.data && <TenantPartialFailure failedTenants={workOrders.data.failedTenants} retry={workOrders.refetch} subject={messages.TECHNICAL_WORK_ORDER} />}
-      {listReady && !partial && combinedRows === 0 && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-      {listReady && combinedRows > 0 && <DataTable variant="moderator" headers={[messages.TECHNICAL_TYPE, messages.TECHNICAL_ID, messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_TENANT, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]} minWidth={900}>
-        <WorkOrderRows records={workOrders.data?.records ?? []} />
-        <TicketRows tickets={tickets.data ?? []} />
-      </DataTable>}
-      {partial && <p className={styles.partialNotice} role="status">{messages.PARTIAL_TENANT_FAILURE}</p>}
+      {listReady && !tickets.isError && tickets.data?.length === 0 && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+      {listReady && !tickets.isError && tickets.data && tickets.data.length > 0 && (
+        <>
+          <h2 className={styles.sectionTitle}>{messages.TECHNICAL_LIST_TITLE}</h2>
+          <DataTable variant="moderator" headers={[messages.TECHNICAL_REQUEST, messages.TECHNICAL_MACHINE, messages.TECHNICAL_WORK, messages.TECHNICAL_ASSIGNEE, messages.TECHNICAL_STATUS]} minWidth={900}>
+            <TicketRows tickets={tickets.data ?? []} />
+          </DataTable>
+        </>
+      )}
     </div>
   );
 }

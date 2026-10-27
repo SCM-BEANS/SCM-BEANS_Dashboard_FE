@@ -239,7 +239,7 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     return [link("Về yêu cầu hỗ trợ", "/dashboard/support"), link("Xem lịch sử máy", "/dashboard/machines/history", "secondary")];
   }
   if (sectionPath === "buyback/documents/confirmed") {
-    return [];
+    return [link("Về thu mua máy cũ", "/dashboard/buyback")];
   }
 
   const navigationActions: Record<string, ActionBarAction[]> = {
