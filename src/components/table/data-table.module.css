@@ -32,6 +32,33 @@
   min-width: 680px;
 }
 
+.customer {
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0 14px;
+}
+
+.table.customer th {
+  padding: 14px 12px;
+}
+
+.table.customer td {
+  padding: 18px 12px;
+  border-top: 1px solid #eee8e3;
+  border-bottom: 1px solid #eee8e3;
+  background: #fff;
+}
+
+.table.customer td:first-child {
+  border-left: 1px solid #eee8e3;
+  border-radius: 8px 0 0 8px;
+}
+
+.table.customer td:last-child {
+  border-right: 1px solid #eee8e3;
+  border-radius: 0 8px 8px 0;
+}
+
 .table.moderator th,
 .table.moderator td {
   padding: 14px 16px;

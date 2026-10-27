@@ -9,7 +9,7 @@ export type DataTableColumn<Row> = {
 };
 
 type DataTableBaseProps = {
-  variant?: "operations" | "accounts" | "standard" | "moderator";
+  variant?: "operations" | "accounts" | "standard" | "moderator" | "customer";
   className?: string;
   style?: CSSProperties;
 };
@@ -48,6 +48,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
     accounts: styles.accounts,
     standard: styles.standard,
     moderator: styles.moderator,
+    customer: styles.customer,
   }[variant];
   const tableClassName = [styles.table, variantClassName].join(" ");
   const tableStyle = {

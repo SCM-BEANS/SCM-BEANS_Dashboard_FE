@@ -6,6 +6,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type CustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
 import { RepairIntakeForm } from "./repair-intake-screen";
+import { SupportRequestsListScreen } from "../support/support-requests-list-screen";
 import { LocalRecipeForm } from "./local-recipe-screen";
 import { NotificationInbox } from "./notification-inbox";
 import styles from "../customer-shell.module.css";
@@ -14,14 +15,24 @@ export { getCustomerWorkflowDescriptor };
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
-function withWorkflowActions(content: ReactNode, title: string, workflowActions: readonly ActionBarAction[]) {
+function withWorkflowActions(
+  content: ReactNode,
+  title: string,
+  workflowActions: readonly ActionBarAction[],
+  fallbackAction?: ActionBarAction,
+) {
   const navigationActions = workflowActions.filter((action) => !action.disabled);
+  const actions = navigationActions.length > 0
+    ? navigationActions
+    : fallbackAction
+      ? [fallbackAction]
+      : [];
   return (
     <>
       {content}
-      {navigationActions.length > 0 ? (
+      {actions.length > 0 ? (
         <ActionBar label={`Thao tác ${title}`}>
-          <ActionBarActions actions={navigationActions} />
+          <ActionBarActions actions={actions} />
         </ActionBar>
       ) : null}
     </>
@@ -47,19 +58,31 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
   const actions = getCustomerWorkflowActions(sectionPath, screen);
+  const fallbackAction = screen.back?.fallbackHref
+    ? { label: screen.back.label, href: screen.back.fallbackHref, variant: "secondary" as const }
+    : undefined;
 
-  if (sectionPath === "support" || sectionPath === "support/new") {
+  if (sectionPath === "support") {
+    return withWorkflowActions(
+      <SupportRequestsListScreen />,
+      screen.title,
+      actions,
+      fallbackAction,
+    );
+  }
+  if (sectionPath === "support/new") {
     return withWorkflowActions(
       <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />,
       screen.title,
       actions,
+      fallbackAction,
     );
   }
   if (sectionPath === "menu/add-dish") {
-    return withWorkflowActions(<LocalRecipeForm back={screen.back} />, screen.title, actions);
+    return withWorkflowActions(<LocalRecipeForm back={screen.back} />, screen.title, actions, fallbackAction);
   }
   if (sectionPath === "notifications") {
-    return withWorkflowActions(<NotificationInbox back={screen.back} />, screen.title, actions);
+    return withWorkflowActions(<NotificationInbox back={screen.back} />, screen.title, actions, fallbackAction);
   }
 
   return (

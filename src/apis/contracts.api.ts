@@ -4,6 +4,7 @@ import {
   CreateContractRequestSchema, CreateContractResponseSchema, type CreateContractRequest,
   ContractListSchema, ContractSchema, ModeratorContractListSchema, ModeratorContractSchema,
 } from "@/schema/contracts.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { TenantIdSchema } from "@/schema/tenants.schema";
 
 const contractPath = (id: string) => `/contracts/${encodeURIComponent(ContractIdSchema.parse(id))}`;
@@ -16,6 +17,14 @@ export const contractsApi = {
   },
   async list(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/contracts", { baseURL: DOLORES_API_BASE_URL, signal });
+    return ContractListSchema.parse(response.data);
+  },
+  async listByOwner(ownerId: string, signal?: AbortSignal) {
+    const validOwnerId = ProfileIdSchema.parse(ownerId);
+    const response = await axiosClient.get<unknown>(`/contracts/owner/${encodeURIComponent(validOwnerId)}`, {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
     return ContractListSchema.parse(response.data);
   },
   async listByTenant(tenantId: string, signal?: AbortSignal) {

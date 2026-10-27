@@ -361,6 +361,13 @@
   text-decoration: none;
 }
 
+.tableLink {
+  color: #302927 !important;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .secondaryButton,
 .primaryButton {
   cursor: pointer;

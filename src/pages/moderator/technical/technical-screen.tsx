@@ -6,9 +6,11 @@ import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
+import { repairCasesApi } from "@/apis/repair-cases.api";
+
 import { PATH_MODERATOR } from "@/routes/path";
 
-import { MachineIdSchema, type MaintenanceTicket } from "@/schema/machines.schema";
+import { MachineIdSchema, type MaintenanceTicket, type RepairCase } from "@/schema/machines.schema";
 
 import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 
@@ -41,13 +43,24 @@ function ticketNotes(ticket: MaintenanceTicket): string | null | undefined {
   return ticket.notes ?? ticket.diagnosis ?? ticket.resolutionResult;
 }
 
-function ticketWork(ticket: MaintenanceTicket): string | null | undefined {
-  return ticket.notes ?? ticket.diagnosis ?? ticket.actionableInstructions ?? ticket.preventiveSubtype ?? ticket.source ?? ticket.resolutionResult;
-}
-
-function ticketAssignee(ticket: MaintenanceTicket): string | null | undefined {
-  return ticket.assignedTo ?? ticket.assignedTechnicianId;
-}
+const repairCaseStatusLabels: Record<RepairCase["status"], string> = {
+  REPORTED: "Đã báo lỗi",
+  TRIAGE: "Đang phân loại",
+  WAITING_REPLACEMENT: "Chờ máy thay thế",
+  WAITING_OWNER_DECISION: "Chờ cửa hàng xác nhận",
+  REPLACEMENT_PLANNED: "Đã lên kế hoạch thay máy",
+  PRIMARY_COLLECTED: "Đã nhận máy cần sửa",
+  REPLACEMENT_DELIVERED: "Đã giao máy thay thế",
+  DIAGNOSIS: "Đang chẩn đoán",
+  REPAIR_IN_PROGRESS: "Đang sửa chữa",
+  REPAIR_COMPLETED: "Đã sửa xong",
+  REPLACEMENT_COLLECTED: "Đã thu hồi máy thay thế",
+  PRIMARY_RETURNED: "Đã trả máy chính",
+  OWNER_ACKNOWLEDGED: "Đã xác nhận bàn giao",
+  CLOSED: "Đã đóng",
+  REJECTED: "Đã từ chối",
+  CANCELLED: "Đã hủy",
+};
 
 function QueryFeedback({
   query,
@@ -111,17 +124,24 @@ function MaintenanceTicketTable({ tickets, machineId }: { tickets: MaintenanceTi
   );
 }
 
-function TicketRows({ tickets }: { tickets: MaintenanceTicket[] }) {
+function RepairCaseRows({ repairCases }: { repairCases: RepairCase[] }) {
   return <>
-    {tickets.map((ticket, index) => <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-      <td className={styles.codeValue}>{ticket.id ?? "—"}</td>
-      <td>{ticket.machineId
-        ? <ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(ticket.machineId)}>{ticket.machineId}</ActionLink>
-        : "—"}</td>
-      <td>{ticketWork(ticket) ?? messages.TECHNICAL_TICKET}</td>
-      <td className={styles.codeValue}>{ticketAssignee(ticket) ?? "—"}</td>
-      <td>{ticket.status ?? "—"}</td>
-    </tr>)}
+    {repairCases.map((repairCase) => {
+      const latestEvent = repairCase.timeline[repairCase.timeline.length - 1];
+      const workDescription = latestEvent?.reason ?? latestEvent?.details ?? latestEvent?.eventType ?? "—";
+      const lastActor = latestEvent
+        ? `${latestEvent.actorRole}${latestEvent.actorId ? ` · ${latestEvent.actorId}` : ""}`
+        : "—";
+      return (
+        <tr key={repairCase.id}>
+          <td className={styles.codeValue}>{repairCase.id}</td>
+          <td><ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(repairCase.primaryMachineId)}>{repairCase.primaryMachineId}</ActionLink></td>
+          <td>{workDescription}</td>
+          <td className={styles.codeValue}>{lastActor}</td>
+          <td>{repairCaseStatusLabels[repairCase.status]}</td>
+        </tr>
+      );
+    })}
   </>;
 }
 
@@ -165,7 +185,7 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
 
 export function ModeratorTechnicalScreen({ path }: { path: string }) {
   const isMachineHistory = path === "machine-history" || path.startsWith("machine-history/");
-  const isWorkOrderList = path === "technical-requests" || path === "technical-requests/list";
+  const isRepairCaseList = path === "technical-requests" || path === "technical-requests/list";
   const isUnsupportedWrite = path === "technical-requests/new" || path.startsWith("technical-requests/new/");
   const workOrderId = path.startsWith("technical-requests/") ? path.slice("technical-requests/".length) : "";
   const isDetail = Boolean(workOrderId) && !workOrderId.includes("/") && !["list", "new"].includes(workOrderId) && !isUnsupportedWrite;
@@ -176,7 +196,13 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets"],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTickets(signal),
-    enabled: isWorkOrderList || shouldLoadHistory,
+    enabled: shouldLoadHistory,
+    retry: false,
+  });
+  const repairCases = useQuery({
+    queryKey: ["dolores", "repair-cases"],
+    queryFn: ({ signal }) => repairCasesApi.list(signal),
+    enabled: isRepairCaseList,
     retry: false,
   });
   const detail = useQuery({
@@ -200,21 +226,21 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
     return <div className={styles.pageContent}><PageHeading title={historyMachineId ? "Lịch sử ticket của máy" : messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />{tickets.data && !tickets.isError && <MaintenanceTicketTable tickets={tickets.data} machineId={historyMachineId || undefined} />}</div>;
   }
 
-  if (!isWorkOrderList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
+  if (!isRepairCaseList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
 
-  const listReady = !tickets.isPending;
+  const listReady = !repairCases.isPending;
   return (
     <div className={styles.pageContent}>
       <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
       <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
       <p className={styles.formHint} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
-      <QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />
-      {listReady && !tickets.isError && tickets.data?.length === 0 && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-      {listReady && !tickets.isError && tickets.data && tickets.data.length > 0 && (
+      <QueryFeedback query={repairCases} loadingMessage={messages.LOADING_REPAIR_CASES} />
+      {listReady && !repairCases.isError && repairCases.data?.length === 0 && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+      {listReady && !repairCases.isError && repairCases.data && repairCases.data.length > 0 && (
         <>
           <h2 className={styles.sectionTitle}>{messages.TECHNICAL_LIST_TITLE}</h2>
-          <DataTable variant="moderator" headers={[messages.TECHNICAL_REQUEST, messages.TECHNICAL_MACHINE, messages.TECHNICAL_WORK, messages.TECHNICAL_ASSIGNEE, messages.TECHNICAL_STATUS]} minWidth={900}>
-            <TicketRows tickets={tickets.data ?? []} />
+          <DataTable variant="moderator" headers={[messages.TECHNICAL_REQUEST, messages.TECHNICAL_MACHINE, messages.TECHNICAL_WORK, messages.TECHNICAL_LAST_ACTOR, messages.TECHNICAL_STATUS]} minWidth={900}>
+            <RepairCaseRows repairCases={repairCases.data ?? []} />
           </DataTable>
         </>
       )}
