@@ -137,6 +137,7 @@ function renderRoleShell(relativePath, token, pathname) {
   const sidebar = loadModule("src/components/sidebar/sidebar.tsx", {
     "lucide-react": { LogOut: () => null },
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "./navigation-route": loadModule("src/components/sidebar/navigation-route.ts"),
     "./sidebar.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
   const isTechnician = relativePath.includes("technician");

@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
-import { Sidebar, SidebarLogoutButton, SidebarNavigation, type SidebarItem } from "@/components/sidebar/sidebar";
+import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
+import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessCustomerArea } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_CUSTOMER, PATH_HOME } from "@/routes/path";
 import { CUSTOMER_NAVIGATION_LINKS } from "@/routes/routes";
@@ -38,10 +40,14 @@ export function CustomerShell({
   const router = useRouter();
   const [access, setAccess] = useState<"checking" | "allowed" | "forbidden">("checking");
   const [loggingOut, setLoggingOut] = useState(false);
-  const pathname = router.asPath.split("?")[0].replace(/\/+$/, "") || "/";
+  const pathname = normalizeNavigationPath(router.asPath || router.pathname);
+  const activeNavigationItem = getActiveNavigationItem(
+    CUSTOMER_SIDEBAR_ITEMS,
+    pathname,
+    PATH_CUSTOMER.ROOT,
+  );
   const currentSection = CUSTOMER_NAVIGATION_LINKS.find(
-    (item) => item.HREF === pathname ||
-      (item.HREF !== PATH_CUSTOMER.ROOT && pathname.startsWith(item.HREF + "/")),
+    (item) => item.HREF === activeNavigationItem?.href,
   ) ?? CUSTOMER_NAVIGATION_LINKS[0];
 
   useEffect(() => {
@@ -125,26 +131,26 @@ export function CustomerShell({
             <Link className={styles.mobileHeaderLink} href={notificationsLink.HREF}>
               {notificationsLink.LABEL}
             </Link>
+            <MobileNavigation
+              items={CUSTOMER_SIDEBAR_ITEMS}
+              pathname={pathname}
+              rootHref={PATH_CUSTOMER.ROOT}
+              navigationLabel={CUSTOMER_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
+              drawerLabel={CUSTOMER_MESSAGES.NAVIGATION.ALL_PAGES_LABEL}
+              triggerLabel={CUSTOMER_MESSAGES.NAVIGATION.OPEN_MENU}
+              closeLabel={CUSTOMER_MESSAGES.NAVIGATION.CLOSE_MENU}
+              logout={{
+                label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT,
+                pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT,
+                pending: loggingOut,
+                onLogout: handleLogout,
+              }}
+            />
           </header>
           <div className={styles.mobileBreadcrumb}>
             {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
           </div>
           <main className={styles.main}>{children}</main>
-          <div className={styles.mobileNav}>
-            <SidebarNavigation
-              items={CUSTOMER_SIDEBAR_ITEMS}
-              pathname={pathname}
-              rootHref={PATH_CUSTOMER.ROOT}
-              navigationLabel={CUSTOMER_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
-              className={styles.mobileNavLinks}
-            />
-            <SidebarLogoutButton
-              label={CUSTOMER_MESSAGES.NAVIGATION.LOGOUT}
-              pendingLabel={CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT}
-              pending={loggingOut}
-              onLogout={handleLogout}
-            />
-          </div>
         </div>
       </div>
     </>

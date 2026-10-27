@@ -1,6 +1,7 @@
 import { LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { getActiveNavigationItem } from "./navigation-route";
 import styles from "./sidebar.module.css";
 
 export type SidebarItem = {
@@ -44,12 +45,13 @@ export function SidebarNavigation({
   className = styles.sidebarNav,
   onNavigate,
 }: SidebarNavigationProps) {
+  const activeItem = getActiveNavigationItem(items, pathname, rootHref);
+
   return (
     <nav className={className} aria-label={navigationLabel}>
       {items.map((item) => {
         const Icon = item.icon;
-        const active = pathname === item.href ||
-          (item.href !== rootHref && pathname.startsWith(item.href + "/"));
+        const active = activeItem === item;
         const className = styles.navItem +
           (item.enabled === false ? " " + styles.navItemDisabled : "") +
           (active && item.enabled !== false ? " " + styles.navItemActive : "");

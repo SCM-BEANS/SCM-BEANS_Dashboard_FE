@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
-import { Sidebar, SidebarLogoutButton, SidebarNavigation, type SidebarItem } from "@/components/sidebar/sidebar";
+import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
+import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessTechnicianArea } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_HOME, PATH_TECHNICIAN } from "@/routes/path";
 import { TECHNICIAN_NAVIGATION_LINKS } from "@/routes/routes";
@@ -34,9 +36,14 @@ export function TechnicianShell({
   const router = useRouter();
   const [access, setAccess] = useState<"checking" | "allowed" | "forbidden">("checking");
   const [loggingOut, setLoggingOut] = useState(false);
-  const pathname = router.asPath.split("?")[0].replace(/\/+$/, "") || "/";
+  const pathname = normalizeNavigationPath(router.asPath || router.pathname);
+  const activeNavigationItem = getActiveNavigationItem(
+    TECHNICIAN_SIDEBAR_ITEMS,
+    pathname,
+    PATH_TECHNICIAN.ROOT,
+  );
   const currentSection = TECHNICIAN_NAVIGATION_LINKS.find(
-    (item) => item.HREF === pathname || pathname.startsWith(item.HREF + "/"),
+    (item) => item.HREF === activeNavigationItem?.href,
   ) ?? TECHNICIAN_NAVIGATION_LINKS[0];
 
   useEffect(() => {
@@ -120,26 +127,26 @@ export function TechnicianShell({
             <Link className={styles.mobileHeaderLink} href={notificationsLink.HREF}>
               {notificationsLink.LABEL}
             </Link>
+            <MobileNavigation
+              items={TECHNICIAN_SIDEBAR_ITEMS}
+              pathname={pathname}
+              rootHref={PATH_TECHNICIAN.ROOT}
+              navigationLabel={TECHNICIAN_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
+              drawerLabel={TECHNICIAN_MESSAGES.NAVIGATION.ALL_PAGES_LABEL}
+              triggerLabel={TECHNICIAN_MESSAGES.NAVIGATION.OPEN_MENU}
+              closeLabel={TECHNICIAN_MESSAGES.NAVIGATION.CLOSE_MENU}
+              logout={{
+                label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT,
+                pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT,
+                pending: loggingOut,
+                onLogout: handleLogout,
+              }}
+            />
           </header>
           <div className={styles.mobileBreadcrumb}>
             {TECHNICIAN_MESSAGES.ROLE} / {currentSection.LABEL}
           </div>
           <main className={styles.main}>{children}</main>
-          <div className={styles.mobileNav}>
-            <SidebarNavigation
-              items={TECHNICIAN_SIDEBAR_ITEMS}
-              pathname={pathname}
-              rootHref={PATH_TECHNICIAN.ROOT}
-              navigationLabel={TECHNICIAN_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
-              className={styles.mobileNavLinks}
-            />
-            <SidebarLogoutButton
-              label={TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT}
-              pendingLabel={TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT}
-              pending={loggingOut}
-              onLogout={handleLogout}
-            />
-          </div>
         </div>
       </div>
     </>

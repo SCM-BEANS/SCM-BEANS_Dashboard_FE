@@ -5,11 +5,12 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { authApi } from "@/apis/auth.api";
 import { hasAdminRole } from "@/lib/auth-role";
 import { PATH_ADMIN, PATH_AUTH, PATH_HOME } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import { AdminMobileMenu, AdminSidebarMenu, getCurrentAdminSection } from "@/pages/admin/menu/admin-menu";
+import { ADMIN_SIDEBAR_ITEMS, AdminSidebarMenu, getCurrentAdminSection } from "@/pages/admin/menu/admin-menu";
 import styles from "./admin-shell.module.css";
 
 export { styles as adminStyles };
@@ -26,7 +27,7 @@ export function AdminShell({
     "checking",
   );
   const [loggingOut, setLoggingOut] = useState(false);
-  const currentSection = getCurrentAdminSection(router.pathname);
+  const currentSection = getCurrentAdminSection(router.asPath || router.pathname);
   const pageTitle = currentSection.HREF === PATH_ADMIN.ROOT
     ? ADMIN_MESSAGES.OVERVIEW.TITLE
     : currentSection.LABEL;
@@ -97,10 +98,25 @@ export function AdminShell({
             <span className={styles.mobileHeaderStatus}>
               {currentSection.LABEL}
             </span>
+            <MobileNavigation
+              items={ADMIN_SIDEBAR_ITEMS}
+              pathname={router.asPath || router.pathname}
+              rootHref={PATH_ADMIN.ROOT}
+              navigationLabel={"Điều hướng Admin"}
+              drawerLabel={"Tất cả trang Admin"}
+              triggerLabel={"Mở menu điều hướng"}
+              closeLabel={"Đóng menu"}
+              logout={{
+                label: ADMIN_MESSAGES.AUTH.LOGOUT,
+                pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT,
+                pending: loggingOut,
+                onLogout: handleLogout,
+              }}
+              footer={<p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>}
+            />
           </header>
           <main className={styles.main}>{children}</main>
           {actions && <ActionBar>{actions}</ActionBar>}
-          <AdminMobileMenu currentSection={currentSection} loggingOut={loggingOut} onLogout={handleLogout} />
         </div>
       </div>
     </>

@@ -25,13 +25,11 @@ export const MODERATOR_MESSAGES = {
     INVOICES: "Hóa đơn",
     MACHINES: "Máy & tồn kho",
     IOT: "Giám sát Smart IoT",
-    IOT_SHORT: "Giám sát",
     MENU: "Menu & công thức",
     TECHNICAL_REQUESTS: "Yêu cầu kỹ thuật",
     MACHINE_HISTORY: "Lịch sử máy",
     BUYBACK: "Thu mua máy cũ",
     NOTIFICATIONS: "Thông báo",
-    MORE: "Khác",
   },
   AUTH: {
     LOGOUT: "\u0110\u0103ng xu\u1ea5t",
@@ -47,6 +45,7 @@ export const MODERATOR_MESSAGES = {
     NAVIGATION_LABEL: "Điều hướng Moderator",
     ALL_PAGES_LABEL: "Tất cả trang Moderator",
     CLOSE_MENU: "Đóng menu",
+    OPEN_MENU: "Mở menu điều hướng",
   },
   READ_SCREENS: {
     OVERVIEW_TITLE: "Tổng quan vận hành",

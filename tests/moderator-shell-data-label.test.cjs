@@ -71,6 +71,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
   const sidebarModule = loadModule("src/components/sidebar/sidebar.tsx", {
     "lucide-react": { LogOut: () => null },
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "./navigation-route": loadModule("src/components/sidebar/navigation-route.ts"),
     "./sidebar.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
   const { AdminBreadcrumb } = loadModule("src/components/heading/admin-breadcrumb.tsx", {
@@ -92,6 +93,10 @@ function moderatorShellHarness({ pathname, hasRole }) {
     "@/lib/auth-role": { hasModeratorRole: hasRole },
     "@/routes/path": paths,
     "@/routes/routes": routeCatalog,
+    "@/components/sidebar/navigation-route": loadModule("src/components/sidebar/navigation-route.ts"),
+    "@/components/sidebar/mobile-navigation": {
+      MobileNavigation: ({ triggerLabel }) => React.createElement("button", { type: "button", "aria-label": triggerLabel }, triggerLabel),
+    },
     "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
     "@/components/action-bar/action-bar": {
       ActionBar: ({ children, label }) => React.createElement("footer", { "aria-label": label }, children),
