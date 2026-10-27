@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { notificationsApi } from "@/apis/notifications.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
-export function NotificationInbox() {
+export function NotificationInbox({ back }: { back?: BackButtonDestination | null }) {
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const list = useQuery({
@@ -34,10 +36,13 @@ export function NotificationInbox() {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-workflow-title">{messages.NOTIFICATIONS_TITLE}</h1>
-        <p>{messages.NOTIFICATIONS_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={messages.NOTIFICATIONS_TITLE}
+        titleId="customer-workflow-title"
+        description={messages.NOTIFICATIONS_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       <div className={styles.dataPanel}>
         <div className={styles.actionRow} role="group" aria-label={messages.NOTIFICATIONS_FILTER_LABEL}>
           <button className={styles.secondaryButton} aria-pressed={!unreadOnly} onClick={() => setUnreadOnly(false)} type="button">

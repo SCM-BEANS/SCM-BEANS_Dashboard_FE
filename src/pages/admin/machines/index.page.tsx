@@ -7,12 +7,14 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
 import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getMachinesBackDestination } from "../admin-back-destination";
 
 const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
@@ -66,7 +68,10 @@ function MachinesContent() {
   const queryClient = useQueryClient();
   const view = queryValue(router.query.view);
   const isCreateView = view === "create";
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const requestedStatus = queryValue(router.query.status);
+  const statusFilter: StatusFilter = requestedStatus === "ALL" || STATUSES.includes(requestedStatus as MachineStatus)
+    ? requestedStatus as StatusFilter
+    : "ALL";
   const [form, setForm] = useState<MachineCreateForm>(initialMachineForm);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
@@ -92,7 +97,7 @@ function MachinesContent() {
         queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
       ]);
-      void router.push(PATH_ADMIN.MACHINES, undefined, { shallow: true });
+      void router.push({ pathname: PATH_ADMIN.MACHINES, query: statusFilter === "ALL" ? {} : { status: statusFilter } }, undefined, { shallow: true });
     },
     onError: (error: unknown) => {
       if (isUncertainApiMutation(error)) {
@@ -106,13 +111,12 @@ function MachinesContent() {
     },
   });
 
-  const navigateToList = () => void router.push(PATH_ADMIN.MACHINES, undefined, { shallow: true });
   const navigateToCreate = () => {
     setRequestError("");
     setSuccessSerialNumber("");
     setBlockResubmit(false);
     setForm(initialMachineForm);
-    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create" } }, undefined, { shallow: true });
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create", ...(statusFilter === "ALL" ? {} : { status: statusFilter }) } }, undefined, { shallow: true });
   };
   const setField = <K extends keyof MachineCreateForm>(key: K, value: MachineCreateForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -146,10 +150,13 @@ function MachinesContent() {
   return (
     <AdminShell>
       <div className={styles.pageContent}>
-        <div className={styles.pageHeading}>
-          <h1>{isCreateView ? T.MACHINES.CREATE_TITLE : T.MACHINES.TITLE}</h1>
-          <p>{isCreateView ? T.MACHINES.CREATE_DESCRIPTION : T.MACHINES.DESCRIPTION}</p>
-        </div>
+        <BackButtonHeading
+          title={isCreateView ? T.MACHINES.CREATE_TITLE : T.MACHINES.TITLE}
+          titleId="admin-machines-title"
+          description={isCreateView ? T.MACHINES.CREATE_DESCRIPTION : T.MACHINES.DESCRIPTION}
+          className={styles.pageHeading}
+          back={getMachinesBackDestination(router.query)}
+        />
         {isCreateView ? (
           <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
             <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
@@ -160,7 +167,6 @@ function MachinesContent() {
               <div><span>{T.MACHINES.CREATE_INITIAL_CUPS}</span><strong>0</strong></div>
             </div>
             {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-            {blockResubmit && <div className={styles.operationsButtons}><ButtonBar type="button" onClick={navigateToList}>{T.MACHINES.CHECK_LIST}</ButtonBar></div>}
           </form>
         ) : (
           <>
@@ -186,7 +192,10 @@ function MachinesContent() {
                     className={styles.machineStatusSelect}
                     aria-label="Lọc máy theo trạng thái"
                     value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                    onChange={(event) => {
+                      const nextStatus = event.target.value as StatusFilter;
+                      void router.push({ pathname: PATH_ADMIN.MACHINES, query: nextStatus === "ALL" ? {} : { status: nextStatus } }, undefined, { shallow: true });
+                    }}
                   >
                     <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
                     {STATUSES.map((status) => (
@@ -202,7 +211,7 @@ function MachinesContent() {
                 rows={visibleMachines}
                 rowKey={(machine) => machine.id}
                 columns={[
-                  { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
+                  { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
                   { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
                   { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
                   { key: "owner", header: T.MACHINES.OWNER_ID, render: (machine) => machine.ownerId ?? "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
@@ -218,7 +227,6 @@ function MachinesContent() {
       {isCreateView ? (
         <ActionBar>
           <ButtonBar type="submit" form="machine-create-form" disabled={create.isPending || blockResubmit}>{create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}</ButtonBar>
-          <ButtonBar type="button" disabled={create.isPending} onClick={navigateToList}>{T.MACHINES.CANCEL}</ButtonBar>
         </ActionBar>
       ) : (
         <ActionBar>

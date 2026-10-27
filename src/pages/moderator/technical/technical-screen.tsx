@@ -23,6 +23,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 
 import { moderatorStyles as styles } from "../moderator-shell";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -58,7 +59,7 @@ function QueryFeedback({
 }
 
 function PageHeading({ title, description }: { title: string; description: string }) {
-  return <header className={styles.pageHeading}><h1>{title}</h1><p>{description}</p></header>;
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
 function ActionLink({ href, children }: { href: string; children: string }) {
@@ -265,8 +266,8 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
   }
 
   if (isDetail) {
-    if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p><ActionLink href={PATH_MODERATOR.TECHNICAL_REQUESTS}>Quay lại danh sách</ActionLink></div>;
-    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><ActionLink href={PATH_MODERATOR.TECHNICAL_REQUESTS}>Quay lại danh sách</ActionLink><QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />{detail.data && !detail.isError && <WorkOrderDetail details={detail.data} />}</div>;
+    if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
+    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />{detail.data && !detail.isError && <WorkOrderDetail details={detail.data} />}</div>;
   }
 
   if (isMachineHistory) {

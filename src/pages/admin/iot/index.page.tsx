@@ -8,12 +8,14 @@ import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getIotBackDestination } from "../admin-back-destination";
 
 const PAGE_SIZE = 20;
 
@@ -74,10 +76,15 @@ function IoTContent() {
 
   if (hasOwnerId && !validOwnerId && router.isReady) {
     return <AdminShell><div className={styles.pageContent}>
+      <BackButtonHeading
+        title={T.IOT.OWNER_DETAIL}
+        titleId="admin-iot-owner-title"
+        description={T.IOT.DESCRIPTION}
+        className={styles.pageHeading}
+        back={getIotBackDestination(router.query)}
+      />
       <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.COMMON.INVALID_OWNER_ID}</p></div>
-    </div><ActionBar>
-      <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
-    </ActionBar></AdminShell>;
+    </div></AdminShell>;
   }
 
   if (hasOwnerId) {
@@ -89,10 +96,13 @@ function IoTContent() {
 
     return <AdminShell>
       <div className={styles.pageContent}>
-        <div className={styles.pageHeading}>
-          <h1>{profile.data ? `${T.IOT.OWNER_DETAIL}: ${profile.data.fullName}` : T.IOT.OWNER_DETAIL}</h1>
-          <p>{T.IOT.DESCRIPTION}</p>
-        </div>
+        <BackButtonHeading
+          title={profile.data ? `${T.IOT.OWNER_DETAIL}: ${profile.data.fullName}` : T.IOT.OWNER_DETAIL}
+          titleId="admin-iot-owner-title"
+          description={T.IOT.DESCRIPTION}
+          className={styles.pageHeading}
+          back={getIotBackDestination(router.query)}
+        />
 
         {profile.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
         {profile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(profile.error)}</p><button type="button" onClick={() => void profile.refetch()}>{T.COMMON.RETRY}</button></div>}
@@ -144,7 +154,6 @@ function IoTContent() {
         </>}
       </div>
       <ActionBar>
-        <ButtonBar type="button" onClick={() => navigate({})}>{T.IOT.BACK}</ButtonBar>
         <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
         <ButtonBar type="button" disabled={profile.isFetching || machines.isFetching || contracts.isFetching || locations.isFetching} onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
       </ActionBar>
@@ -153,7 +162,7 @@ function IoTContent() {
 
   return <AdminShell>
     <div className={styles.pageContent}>
-      <div className={styles.pageHeading}><h1>{T.IOT.TITLE}</h1><p>{T.IOT.DESCRIPTION}</p></div>
+      <BackButtonHeading title={T.IOT.TITLE} titleId="admin-iot-title" description={T.IOT.DESCRIPTION} className={styles.pageHeading} back={null} />
       <div className={styles.metricsGrid}>
         <article className={styles.metricCard}><span>{T.IOT.OWNER}</span><strong>{owners.data ? count(owners.data.totalElements) : "—"}</strong></article>
         <article className={styles.metricCard}><span>{T.IOT.MACHINES}</span><strong>{machines.data ? count(machines.data.length) : "—"}</strong></article>
@@ -175,7 +184,7 @@ function IoTContent() {
             { key: "id", header: T.MACHINES.OWNER_ID, render: (owner) => owner.idaasUserId.slice(0, 8).toUpperCase(), cellProps: (owner) => ({ title: owner.idaasUserId }) },
             { key: "machines", header: T.IOT.MACHINES, render: (owner) => machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length) },
             { key: "contracts", header: T.IOT.SMART_CONTRACTS, render: (owner) => contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) },
-            { key: "actions", header: T.IOT.VIEW_OWNER, render: (owner) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId })}>{T.IOT.VIEW_OWNER}</button> },
+            { key: "actions", header: T.IOT.VIEW_OWNER, render: (owner) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId, page })}>{T.IOT.VIEW_OWNER}</button> },
           ]}
         />}
         <div className={styles.operationsPagination}>

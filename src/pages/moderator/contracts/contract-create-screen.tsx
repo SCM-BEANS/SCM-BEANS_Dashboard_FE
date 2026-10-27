@@ -11,6 +11,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { APP_MESSAGES } from "@/constants/messages";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 import { CreateContractRequestSchema } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { moderatorStyles as styles } from "../moderator-shell";
@@ -184,10 +185,7 @@ export function ContractCreateScreen() {
 
   return (
     <div className={styles.pageContent}>
-      <header className={styles.pageHeading}>
-        <h1>{T.CONTRACTS.CREATE_TITLE}</h1>
-        <p>{T.CONTRACTS.CREATE_DESCRIPTION}</p>
-      </header>
+      <ModeratorPageHeading title={T.CONTRACTS.CREATE_TITLE} description={T.CONTRACTS.CREATE_DESCRIPTION} />
 
       <section className={styles.formPanel}>
         <h2 className={styles.sectionTitle}>Thông tin hợp đồng</h2>

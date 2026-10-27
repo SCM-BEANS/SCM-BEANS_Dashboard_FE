@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { recipesApi } from "@/apis/recipes.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
-export function LocalRecipeForm() {
+export function LocalRecipeForm({ back }: { back?: BackButtonDestination | null }) {
   const queryClient = useQueryClient();
   const [globalRecipeId, setGlobalRecipeId] = useState("");
   const [overridesText, setOverridesText] = useState("");
@@ -41,10 +43,13 @@ export function LocalRecipeForm() {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-workflow-title">{messages.MENU_ADD_DISH_TITLE}</h1>
-        <p>{messages.MENU_ADD_DISH_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={messages.MENU_ADD_DISH_TITLE}
+        titleId="customer-workflow-title"
+        description={messages.MENU_ADD_DISH_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       <form className={styles.dataPanel} onSubmit={submit}>
         {globalRecipes.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
         {globalRecipes.isError ? <p className={styles.errorNotice} role="alert">{CUSTOMER_MESSAGES.READ_SCREENS.LOAD_ERROR}</p> : null}

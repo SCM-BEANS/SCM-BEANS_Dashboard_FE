@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -14,6 +15,7 @@ import { LocationIdSchema, type LocationCreate } from "@/schema/locations.schema
 import { ProfileIdSchema, type Profile } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getStoresBackDestination } from "../admin-back-destination";
 
 type OwnerLocations = { owners: Profile[]; locations: Array<{ owner: Profile; location: Awaited<ReturnType<typeof locationsApi.list>>[number] }>; failed: string[] };
 type StoreForm = LocationCreate & { ownerId: string };
@@ -135,7 +137,13 @@ function StoresContent() {
 
   return <>
   <div className={`${styles.pageContent} ${view === "list" ? styles.accountPageContent : ""}`}>
-    <div className={styles.pageHeading}><h1>{title}</h1><p>{T.STORES.DESCRIPTION}</p></div>
+    <BackButtonHeading
+      title={title}
+      titleId="admin-stores-title"
+      description={T.STORES.DESCRIPTION}
+      className={styles.pageHeading}
+      back={getStoresBackDestination(router.query)}
+    />
     {view === "list" && <div className={styles.pageActions}>
       <label>{T.STORES.OWNER}<select value={initialOwnerId} onChange={(event) => navigate(event.target.value ? { ownerId: event.target.value } : undefined)}>
         <option value="">{T.STORES.ALL_OWNERS}</option>{listing.data?.owners.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName}</option>)}
@@ -155,7 +163,6 @@ function StoresContent() {
       </div>
       {owners.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(owners.error)} Cần tải được Owner để tạo cửa hàng.</p>}
       {requestError && !confirmOpen && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      {blockResubmit && <div className={styles.operationsButtons}><button className={styles.accountSecondaryButton} type="button" onClick={() => navigate()}>{T.STORES.CHECK_LIST}</button></div>}
     </form>}
 
     {view === "detail" && <>
@@ -229,10 +236,8 @@ function StoresContent() {
   )}
   {view === "create" && <ActionBar>
     <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
-    <ButtonBar type="button" onClick={() => navigate()}>{T.STORES.CANCEL}</ButtonBar>
   </ActionBar>}
   {view === "detail" && <ActionBar>
-    <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
     <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>
   </ActionBar>}
   </>;

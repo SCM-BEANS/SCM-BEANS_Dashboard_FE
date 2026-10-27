@@ -12,6 +12,7 @@ export const ADMIN_OPERATIONS_MESSAGES = {
   },
   STORES: {
     TITLE: "Cửa hàng", DESCRIPTION: "Địa điểm thuộc các Owner trong phạm vi tài khoản.",
+    BACK_TO_LIST: "Về danh sách",
     CREATE: "Tạo cửa hàng", DETAIL: "Thông tin cửa hàng", OWNER: "Owner phụ trách", ALL_OWNERS: "Mọi Owner",
     NAME: "Tên cửa hàng", ADDRESS: "Địa chỉ", CITY: "Thành phố", CONTACT: "Người liên hệ",
     PHONE: "Số điện thoại", ACTIVE: "Hoạt động", INACTIVE: "Ngừng hoạt động",

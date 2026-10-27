@@ -28,5 +28,45 @@
     "verification_command": "node --test tests/login-success-splash.test.cjs; controlled success/challenge/failure walkthrough; assert no audio, max 1.5s, reduced-motion skips animation, and redirect survives animation failure; production build",
     "notes": "Covers stories: P2 success feedback",
     "priority": "P2"
+  },
+  {
+    "id": "phase-01-history-aware-back-control",
+    "title": "Shared history-aware back control",
+    "status": "passing-unverified",
+    "evidence": "TDD: node --test tests/shared-back-navigation.test.cjs (6/6); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false. Browser route walkthrough pending after phase integration.",
+    "user_visible_behavior": "A shared BackButton returns to the previous Dolores screen or uses an internal parent fallback for direct entry.",
+    "verification_command": "node --test tests/shared-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser walkthrough after route integration.",
+    "notes": "Covers stories: US-01, US-02, US-04. History helper/provider and accessible BackButton implemented; Phase 01 review pending. Full suite currently has 46 unrelated failures across existing dashboard/domain tests.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-customer-technician-integration",
+    "title": "Customer and technician integration",
+    "status": "passing-unverified",
+    "evidence": "TDD: node --test tests/customer-technician-back-navigation.test.cjs (6/6); combined Phase 01/02 tests (12/12); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke test for four customer/technician routes returned HTTP 200. Browser navigation walkthrough pending.",
+    "user_visible_behavior": "Customer and technician detail/workflow screens with a parent have one consistent back button and preserve prior list state.",
+    "verification_command": "node --test tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke for customer/technician detail routes; browser navigation walkthrough.",
+    "notes": "Covers stories: US-01, US-02, US-03, US-04. Shared headings integrated for customer read/workflow and technician detail/workflow screens; Phase 02 approved by the user on 2026-10-27. Full suite at Phase 02: 95/141 pass; the same 46 unrelated failures reported in Phase 01 remained.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-moderator-admin-integration",
+    "title": "Moderator and admin integration",
+    "status": "passing-unverified",
+    "evidence": "TDD: node --test tests/moderator-admin-back-navigation.test.cjs (5/5); combined Phase 01–03 tests (17/17); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; 5 local moderator/admin route smoke requests returned HTTP 200. Interactive browser detail walkthrough could not complete because the local session redirected to the forbidden screen; original tab URL was restored.",
+    "user_visible_behavior": "Moderator and admin detail/workflow screens return to the prior same-app view or the configured parent fallback.",
+    "verification_command": "node --test tests/moderator-admin-back-navigation.test.cjs tests/shared-back-navigation.test.cjs tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local moderator/admin route smoke; manual browser walkthrough for detail, direct-entry, and query preservation.",
+    "notes": "Covers stories: US-01, US-02, US-03, US-04. The user approved Phase 03 on 2026-10-27 and Phase 04 proceeded. Interactive browser walkthrough remains unverified because the local Admin session reached the forbidden screen. Full suite at Phase 03: 100/146 pass; the same 46 baseline failures remained.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-04-cross-role-validation-accessibility",
+    "title": "Cross-role coverage and accessibility validation",
+    "status": "passing-unverified",
+    "evidence": "TDD: tests/back-navigation-coverage.test.cjs (3/3); combined navigation tests (20/20); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; isolated production build passed. Full suite: 103/149 pass with the same 46 pre-existing failures. Manual role walkthrough remains unverified because the available Admin browser session lacks access.",
+    "user_visible_behavior": "All applicable routes expose one accessible back control with a safe internal fallback.",
+    "verification_command": "Manual all-role route matrix; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build.",
+    "notes": "Covers stories: US-01, US-02, US-03, US-04. Admin create/detail route coverage completed, query fallbacks preserve parent list state, root lists stay free of back controls, and duplicate parent actions were removed. The user approved Phase 04 on 2026-10-27. Manual interactive browser validation remains unverified because the available Admin browser session lacks access.",
+    "priority": "P1"
   }
 ]

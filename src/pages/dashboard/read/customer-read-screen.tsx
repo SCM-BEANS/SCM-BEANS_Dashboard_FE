@@ -5,6 +5,7 @@ import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getCustomerScreenDescriptor } from "./customer-read-descriptor";
 import { OverviewScreen } from "../overview/overview-screen";
 import { ContractsScreen } from "../contracts/contracts-screen";
@@ -34,13 +35,13 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
 
   if (!sectionPath) return <OverviewScreen />;
   if (sectionPath === "contracts" || ContractIdSchema.safeParse(contractCandidate).success) {
-    return <ContractsScreen sectionPath={sectionPath} />;
+    return <ContractsScreen sectionPath={sectionPath} back={screen.back} />;
   }
   if (sectionPath === "machines" || MachineIdSchema.safeParse(machineCandidate).success) {
-    return <MachinesScreen sectionPath={sectionPath} />;
+    return <MachinesScreen sectionPath={sectionPath} back={screen.back} />;
   }
   if (sectionPath === "menu" || GlobalRecipeIdSchema.safeParse(recipeCandidate).success) {
-    return <MenuScreen sectionPath={sectionPath} />;
+    return <MenuScreen sectionPath={sectionPath} back={screen.back} />;
   }
   if (
     sectionPath === "invoices" ||
@@ -48,15 +49,18 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     /^invoices\/\d{4}-\d{2}$/.test(sectionPath) ||
     InvoiceIdSchema.safeParse(invoiceCandidate).success
   ) {
-    return <InvoicesScreen sectionPath={sectionPath} />;
+    return <InvoicesScreen sectionPath={sectionPath} back={screen.back} />;
   }
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-screen-title">{screen.title}</h1>
-        <p>{screen.description}</p>
-      </header>
+      <BackButtonHeading
+        back={screen.back}
+        title={screen.title}
+        titleId="customer-screen-title"
+        description={screen.description}
+        className={styles.pageHeading}
+      />
       {screen.availability === "unavailable" ? (
         <div className={styles.pendingNotice} role="status">
           <h2>{messages.DATA_UNAVAILABLE_TITLE}</h2>

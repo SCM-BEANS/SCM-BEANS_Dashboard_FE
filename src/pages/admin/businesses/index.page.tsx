@@ -7,10 +7,12 @@ import { adminUsersApi } from "@/apis/admin-users.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { AdminUserIdSchema } from "@/schema/admin-users.schema";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getBusinessesBackDestination } from "../admin-back-destination";
 
 function queryValue(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
@@ -68,10 +70,13 @@ function BusinessesContent() {
   return (
     <>
     <div className={styles.pageContent}>
-      <div className={styles.pageHeading}>
-        <h1>{view === "detail" ? detail.data?.name ?? T.BUSINESSES.DETAIL : T.BUSINESSES.TITLE}</h1>
-        <p>{T.BUSINESSES.DESCRIPTION}</p>
-      </div>
+      <BackButtonHeading
+        title={view === "detail" ? detail.data?.name ?? T.BUSINESSES.DETAIL : T.BUSINESSES.TITLE}
+        titleId="admin-businesses-title"
+        description={T.BUSINESSES.DESCRIPTION}
+        className={styles.pageHeading}
+        back={getBusinessesBackDestination(router.query)}
+      />
       {view === "detail" ? (
         <>
           {!validOwnerId && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã tài khoản không hợp lệ.</div>}
@@ -147,12 +152,11 @@ function BusinessesContent() {
         </section>}
       </>}
     </div>
-    {view === "detail" ? (
+    {view === "detail" ? (detail.data ? (
       <ActionBar>
-        <ButtonBar type="button" onClick={() => navigate({ q: queryValue(router.query.q), status, page })}>{T.BUSINESSES.BACK_TO_LIST}</ButtonBar>
-        {detail.data && <ButtonBar type="button" onClick={() => void router.push({ pathname: PATH_ADMIN.STORES, query: { ownerId: detail.data!.id } })}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>}
+        <ButtonBar type="button" onClick={() => void router.push({ pathname: PATH_ADMIN.STORES, query: { ownerId: detail.data!.id } })}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>
       </ActionBar>
-    ) : (
+    ) : null) : (
       <ActionBar>
         <ButtonBar type="button" onClick={() => void router.push(PATH_ADMIN.STORES)}>{T.BUSINESSES.VIEW_STORES}</ButtonBar>
       </ActionBar>

@@ -8,6 +8,7 @@ import { billingApi } from "@/apis/billing.api";
 import { profilesApi } from "@/apis/profiles.api";
 
 import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { InvoiceIdSchema, type ModeratorInvoice, type PaymentProof } from "@/schema/billing.schema";
 
@@ -269,10 +270,7 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
 
   return (
     <div className={styles.pageContent}>
-      <header className={styles.pageHeading}>
-        <h1>{messages.INVOICES_TITLE}</h1>
-        <p>{messages.INVOICES_DESCRIPTION}</p>
-      </header>
+      <ModeratorPageHeading title={messages.INVOICES_TITLE} description={messages.INVOICES_DESCRIPTION} />
       {isList ? (
         <>
           <QueryFeedback query={invoices} loadingMessage={messages.LOADING_INVOICES} />
@@ -290,7 +288,6 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
               )}
             </>
           )}
-          <Link className={styles.tableLink} href={PATH_MODERATOR.INVOICES}>{messages.BACK_TO_INVOICES}</Link>
         </>
       ) : (
         <p className={styles.pendingNotice} role="status">{messages.INVALID_INVOICE_ID}</p>

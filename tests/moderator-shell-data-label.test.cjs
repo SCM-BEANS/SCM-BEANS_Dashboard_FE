@@ -171,6 +171,9 @@ test("Moderator Pages Router entry returns 404 for unsupported sections", async 
       ModeratorShell: ({ children }) => children,
       moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }),
     },
+    "./moderator-page-heading": {
+      ModeratorPageHeading: ({ title }) => React.createElement("header", null, React.createElement("h1", null, title)),
+    },
   });
 
   assert.deepEqual(
@@ -220,7 +223,7 @@ test("Moderator shell keeps other roles out of the Moderator navigation", () => 
   assert.doesNotMatch(html, /<footer/);
 });
 
-test("Moderator shell shows a contextual action bar on list and detail routes", () => {
+test("Moderator shell shows section actions only on root lists and overview", () => {
   const contracts = moderatorShellHarness({
     pathname: "/moderator/contracts",
     hasRole: () => true,
@@ -236,7 +239,7 @@ test("Moderator shell shows a contextual action bar on list and detail routes", 
   });
   detail.render();
   const detailHtml = detail.render();
-  assert.match(detailHtml, /<footer aria-label="Thao tác Moderator"><a href="\/moderator\/contracts">Về danh sách<\/a><\/footer>/);
+  assert.doesNotMatch(detailHtml, /<footer/);
 
   const overview = moderatorShellHarness({
     pathname: "/moderator",

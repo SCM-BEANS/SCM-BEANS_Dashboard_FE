@@ -340,6 +340,7 @@ test('route read allowlist includes only Phase 4 read paths and leaves write sec
       ModeratorShell: ({ children }) => React.createElement(React.Fragment, null, children),
       moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }),
     },
+    './moderator-page-heading': { ModeratorPageHeading: ({ title }) => React.createElement('h1', null, title) },
   });
 
   assert.equal(route.isModeratorReadRoute('invoices'), true);

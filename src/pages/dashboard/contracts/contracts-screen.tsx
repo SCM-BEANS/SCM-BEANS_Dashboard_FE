@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { contractsApi } from "@/apis/contracts.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema } from "@/schema/contracts.schema";
@@ -11,7 +13,7 @@ import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
-export function ContractsScreen({ sectionPath }: { sectionPath: string }) {
+export function ContractsScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const { ownerId, checked } = useOwnerSubject();
   const [page, setPage] = useState(0);
   const contractCandidate = sectionPath.startsWith("contracts/")
@@ -33,7 +35,7 @@ export function ContractsScreen({ sectionPath }: { sectionPath: string }) {
   if (!checked && isList) {
     return (
       <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-        <header className={styles.pageHeading}><h1 id="customer-screen-title">{messages.CONTRACTS_TITLE}</h1></header>
+        <BackButtonHeading title={messages.CONTRACTS_TITLE} titleId="customer-screen-title" className={styles.pageHeading} back={null} />
         <div className={styles.loadingNotice} role="status">{messages.LOADING}</div>
       </section>
     );
@@ -44,10 +46,13 @@ export function ContractsScreen({ sectionPath }: { sectionPath: string }) {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-screen-title">{contractId ? messages.CONTRACT_DETAIL_TITLE : messages.CONTRACTS_TITLE}</h1>
-        <p>{messages.CONTRACTS_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={contractId ? messages.CONTRACT_DETAIL_TITLE : messages.CONTRACTS_TITLE}
+        titleId="customer-screen-title"
+        description={messages.CONTRACTS_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       {contractId ? (
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_CONTRACTS} />
@@ -62,7 +67,6 @@ export function ContractsScreen({ sectionPath }: { sectionPath: string }) {
               <DetailItem label={messages.FIELD_DEPOSIT} value={formatMoney(detail.data.depositAmount)} />
             </dl>
           ) : null}
-          <Link className={styles.secondaryLink} href={PATH_CUSTOMER.CONTRACTS}>{messages.BACK_TO_LIST}</Link>
         </>
       ) : (
         <>

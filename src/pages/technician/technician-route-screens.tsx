@@ -1,6 +1,8 @@
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import styles from "./technician-shell.module.css";
 
 type TechnicianFieldType = "text" | "textarea" | "file";
@@ -19,6 +21,7 @@ export interface TechnicianScreenDescriptor {
   actions?: string[];
   filters?: string[];
   filterLabel?: string;
+  back?: BackButtonDestination | null;
 }
 
 const messages = TECHNICIAN_MESSAGES.WORKFLOWS;
@@ -44,6 +47,7 @@ const tasksScreen: TechnicianScreenDescriptor = {
   panelTitle: messages.TASKS_PANEL_TITLE,
   filters: [messages.FILTER_ALL, messages.FILTER_INSTALLATION, messages.FILTER_REPAIR, messages.FILTER_RETRIEVAL],
   filterLabel: messages.FILTER_LABEL_TASKS,
+  back: null,
 };
 
 const formScreens: Record<string, TechnicianScreenDescriptor> = {
@@ -176,6 +180,7 @@ const historyScreen: TechnicianScreenDescriptor = {
   panelTitle: messages.HISTORY_PANEL_TITLE,
   filters: [messages.FILTER_ALL, messages.FILTER_SMART, messages.FILTER_STANDARD],
   filterLabel: messages.FILTER_LABEL_HISTORY,
+  back: null,
 };
 
 const notificationsScreen: TechnicianScreenDescriptor = {
@@ -186,7 +191,26 @@ const notificationsScreen: TechnicianScreenDescriptor = {
   filters: [messages.FILTER_ALL, messages.FILTER_UNREAD],
   filterLabel: messages.FILTER_LABEL_NOTIFICATIONS,
   actions: [messages.ACTION_MARK_READ],
+  back: null,
 };
+
+export function getTechnicianBackNavigation(sectionPath: string): BackButtonDestination | null {
+  if (sectionPath === "tasks") return null;
+  if (sectionPath === "history" || sectionPath === "notifications") return null;
+  if (sectionPath === "tasks/substitute-return") {
+    return { label: "Máy thay thế", fallbackHref: "/technician/tasks/substitute" };
+  }
+  if (sectionPath === "tasks/maintenance-history") {
+    return { label: "Lịch sử máy", fallbackHref: "/technician/history" };
+  }
+  if (formScreens[sectionPath] || /^tasks\/[^/]+$/.test(sectionPath)) {
+    return { label: "Danh sách công việc", fallbackHref: "/technician/tasks" };
+  }
+  if (/^history\/[^/]+$/.test(sectionPath)) {
+    return { label: "Lịch sử máy", fallbackHref: "/technician/history" };
+  }
+  return null;
+}
 
 export function getTechnicianScreenDescriptor(sectionPath: string): TechnicianScreenDescriptor {
   if (!sectionPath || sectionPath === "tasks") return tasksScreen;
@@ -194,16 +218,19 @@ export function getTechnicianScreenDescriptor(sectionPath: string): TechnicianSc
   if (sectionPath === "notifications") return notificationsScreen;
 
   const configuredForm = formScreens[sectionPath];
-  if (configuredForm) return configuredForm;
+  if (configuredForm) return { ...configuredForm, back: getTechnicianBackNavigation(sectionPath) };
 
   const segments = sectionPath.split("/");
-  if (segments[0] === "tasks" && segments.length === 2) return detailScreen;
+  if (segments[0] === "tasks" && segments.length === 2) {
+    return { ...detailScreen, back: getTechnicianBackNavigation(sectionPath) };
+  }
   if (segments[0] === "history" && segments.length === 2) {
     return {
       ...historyScreen,
       title: messages.HISTORY_DETAIL_TITLE,
       filters: undefined,
       filterLabel: undefined,
+      back: getTechnicianBackNavigation(sectionPath),
     };
   }
 
@@ -211,6 +238,7 @@ export function getTechnicianScreenDescriptor(sectionPath: string): TechnicianSc
     title: TECHNICIAN_MESSAGES.ROUTES.PENDING_TITLE,
     description: TECHNICIAN_MESSAGES.ROUTES.PAGE_DESCRIPTION,
     reason: TECHNICIAN_MESSAGES.ROUTES.PENDING,
+    back: null,
   };
 }
 
@@ -229,7 +257,7 @@ function renderField(item: TechnicianField, index: number) {
   );
 }
 
-function getTechnicianActionItems(sectionPath: string, screen: TechnicianScreenDescriptor): ActionBarAction[] {
+function getTechnicianActionItemsWithoutBack(sectionPath: string, screen: TechnicianScreenDescriptor): ActionBarAction[] {
   const blocked = (label: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
     label,
     variant,
@@ -276,15 +304,25 @@ function getTechnicianActionItems(sectionPath: string, screen: TechnicianScreenD
   return [...blockedActions, ...(formNavigation[sectionPath] ?? [])];
 }
 
+function getTechnicianActionItems(sectionPath: string, screen: TechnicianScreenDescriptor): ActionBarAction[] {
+  const actions = getTechnicianActionItemsWithoutBack(sectionPath, screen);
+  return screen.back
+    ? actions.filter((action) => action.href !== screen.back?.fallbackHref)
+    : actions;
+}
+
 export function TechnicianRouteScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getTechnicianScreenDescriptor(sectionPath);
 
   return (
     <section className={styles.pageContent} aria-labelledby="technician-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="technician-screen-title">{screen.title}</h1>
-        <p>{screen.description}</p>
-      </header>
+      <BackButtonHeading
+        back={screen.back ?? null}
+        title={screen.title}
+        titleId="technician-screen-title"
+        description={screen.description}
+        className={styles.pageHeading}
+      />
       {screen.filters?.length ? (
         <div className={styles.workflowActions} role="group" aria-label={screen.filterLabel}>
           {screen.filters.map((filter) => (

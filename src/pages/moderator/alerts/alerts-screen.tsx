@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 
-import Link from "next/link";
 
 import { DataTable } from "@/components/table/data-table";
 
 import { notificationsApi } from "@/apis/notifications.api";
 
-import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -44,15 +43,6 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <header className={styles.pageHeading}>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </header>
-  );
-}
-
 export function AlertsScreen() {
   const alerts = useQuery({
     queryKey: ["dolores", "alerts"],
@@ -61,7 +51,7 @@ export function AlertsScreen() {
 
   return (
     <div className={styles.pageContent}>
-      <PageHeading
+      <ModeratorPageHeading
         title={MODERATOR_MESSAGES.READ_SCREENS.ALERTS_TITLE}
         description={MODERATOR_MESSAGES.READ_SCREENS.ALERTS_DESCRIPTION}
       />
@@ -70,9 +60,6 @@ export function AlertsScreen() {
       </p>
       <section className={styles.pendingNotice} aria-labelledby="moderator-alert-list">
         <h2 id="moderator-alert-list">{MODERATOR_MESSAGES.READ_SCREENS.ALERT_LIST}</h2>
-        <Link href={PATH_MODERATOR.NOTIFICATIONS}>
-          {MODERATOR_MESSAGES.READ_SCREENS.VIEW_NOTIFICATIONS}
-        </Link>
         <QueryFeedback
           query={alerts}
           loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_ALERTS}

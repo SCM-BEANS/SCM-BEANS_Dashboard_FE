@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
@@ -9,7 +11,7 @@ import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
-export function MachinesScreen({ sectionPath }: { sectionPath: string }) {
+export function MachinesScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const candidate = sectionPath.startsWith("machines/") ? sectionPath.slice("machines/".length) : "";
   const machineId = MachineIdSchema.safeParse(candidate).success ? candidate : null;
   const isList = sectionPath === "machines";
@@ -26,10 +28,13 @@ export function MachinesScreen({ sectionPath }: { sectionPath: string }) {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-screen-title">{machineId ? messages.MACHINE_DETAIL_TITLE : messages.MACHINES_TITLE}</h1>
-        <p>{messages.MACHINES_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={machineId ? messages.MACHINE_DETAIL_TITLE : messages.MACHINES_TITLE}
+        titleId="customer-screen-title"
+        description={messages.MACHINES_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       {machineId ? (
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
@@ -45,7 +50,6 @@ export function MachinesScreen({ sectionPath }: { sectionPath: string }) {
               <DetailItem label={messages.FIELD_NEXT_MAINTENANCE} value={formatDate(detail.data.nextPreventiveMaintenanceAt)} />
             </dl>
           ) : null}
-          <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MACHINES}>{messages.BACK_TO_LIST}</Link>
         </>
       ) : (
         <>

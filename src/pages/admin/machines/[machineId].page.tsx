@@ -5,12 +5,14 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getMachineDetailBackDestination } from "../admin-back-destination";
 
 type Range = { from: string; to: string };
 
@@ -102,9 +104,16 @@ function MachineDetailContent() {
   const actionBar = (showRefresh: boolean) => (
     <ActionBar>
       {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
-      <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.BACK}</ButtonBar>
       {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
     </ActionBar>
+  );
+  const renderHeading = () => (
+    <BackButtonHeading
+      title={T.MACHINES.DETAIL}
+      titleId="admin-machine-detail-title"
+      className={styles.pageHeading}
+      back={getMachineDetailBackDestination(router.query)}
+    />
   );
 
   const submitRange = (event: FormEvent<HTMLFormElement>) => {
@@ -128,15 +137,17 @@ function MachineDetailContent() {
     setRangeError("");
   };
 
-  if (!router.isReady) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(false)}</AdminShell>;
+  if (!router.isReady) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(false)}</AdminShell>;
   if (!validId) return <AdminShell><div className={styles.pageContent}>
+    {renderHeading()}
     <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p></div>
   </div>{actionBar(false)}</AdminShell>;
-  if (machine.isPending) return <AdminShell><div className={styles.pageContent}><section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
+  if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
+    {renderHeading()}
     <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p></div>
   </div>{actionBar(true)}</AdminShell>;
-  if (!machine.data) return <AdminShell><div className={styles.pageContent}><p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
+  if (!machine.data) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
 
   const device = machine.data;
   const health = heartbeat.data?.health;
@@ -144,10 +155,13 @@ function MachineDetailContent() {
 
   return <AdminShell>
     <div className={styles.pageContent}>
-      <div className={styles.pageHeading}>
-        <h1>{T.MACHINES.DETAIL} · {device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}</h1>
-        <p>{device.id}</p>
-      </div>
+      <BackButtonHeading
+        title={`${T.MACHINES.DETAIL} · ${device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}`}
+        titleId="admin-machine-detail-title"
+        description={device.id}
+        className={styles.pageHeading}
+        back={getMachineDetailBackDestination(router.query)}
+      />
       <div className={styles.metricsGrid}>
         <article className={styles.metricCard}><span>{T.MACHINES.STATUS}</span><strong>{device.status ? STATUS_LABELS[device.status] ?? device.status : "—"}</strong></article>
         <article className={styles.metricCard}><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineTypeLabel}</strong></article>

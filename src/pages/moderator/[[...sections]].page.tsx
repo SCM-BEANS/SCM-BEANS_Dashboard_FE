@@ -4,6 +4,7 @@ import { isSupportedModeratorSection, MODERATOR_NAVIGATION_LINKS } from "@/route
 import { PATH_MODERATOR } from "@/routes/path";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ModeratorShell, moderatorStyles } from "./moderator-shell";
+import { ModeratorPageHeading } from "./moderator-page-heading";
 
 const ModeratorReadScreen = lazy(() =>
   import("./moderator-read-screens").then((module) => ({
@@ -91,9 +92,7 @@ export default function ModeratorRoutePage({
         )
         : (
           <div className={moderatorStyles.pageContent}>
-            <header className={moderatorStyles.pageHeading}>
-              <h1>{pageTitle}</h1>
-            </header>
+            <ModeratorPageHeading title={pageTitle} />
             <section className={moderatorStyles.pendingNotice} aria-live="polite">
               {MODERATOR_MESSAGES.ROUTES.PENDING}
             </section>

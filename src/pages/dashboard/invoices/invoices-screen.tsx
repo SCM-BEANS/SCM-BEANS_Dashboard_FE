@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { billingApi } from "@/apis/billing.api";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
@@ -89,7 +91,7 @@ function PaymentProofForm({ invoiceId }: { invoiceId: string }) {
   );
 }
 
-export function InvoicesScreen({ sectionPath }: { sectionPath: string }) {
+export function InvoicesScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const parts = sectionPath.split("/");
   const invoiceCandidate = parts.length === 2 ? parts[1] : "";
   const invoiceId = InvoiceIdSchema.safeParse(invoiceCandidate).success ? invoiceCandidate : null;
@@ -119,10 +121,13 @@ export function InvoicesScreen({ sectionPath }: { sectionPath: string }) {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-screen-title">{invoiceId ? messages.INVOICE_DETAIL_TITLE : messages.INVOICES_TITLE}</h1>
-        <p>{messages.INVOICES_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={invoiceId ? messages.INVOICE_DETAIL_TITLE : messages.INVOICES_TITLE}
+        titleId="customer-screen-title"
+        description={messages.INVOICES_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       {invoiceId ? (
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_INVOICES} />
@@ -169,7 +174,6 @@ export function InvoicesScreen({ sectionPath }: { sectionPath: string }) {
               <PaymentProofForm invoiceId={invoiceId} />
             </>
           ) : null}
-          <Link className={styles.secondaryLink} href={PATH_CUSTOMER.INVOICES}>{messages.BACK_TO_LIST}</Link>
         </>
       ) : (
         <>

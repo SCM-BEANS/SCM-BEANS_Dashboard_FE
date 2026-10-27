@@ -9,10 +9,12 @@ import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema, CreateContractRequestSchema } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getContractsBackDestination } from "../admin-back-destination";
 
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 function date(value: string | null | undefined): string {
@@ -210,7 +212,13 @@ function ContractsContent() {
 
   return <>
   <div className={styles.pageContent}>
-    <div className={styles.pageHeading}><h1>{pageTitle}</h1><p>{view === "create" ? T.CONTRACTS.CREATE_DESCRIPTION : T.CONTRACTS.DESCRIPTION}</p></div>
+    <BackButtonHeading
+      title={pageTitle}
+      titleId="admin-contracts-title"
+      description={view === "create" ? T.CONTRACTS.CREATE_DESCRIPTION : T.CONTRACTS.DESCRIPTION}
+      className={styles.pageHeading}
+      back={getContractsBackDestination(router.query)}
+    />
     {(view === "" || view === "list") && <>
       {contracts.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -282,7 +290,6 @@ function ContractsContent() {
           {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
           {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
           {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-          {blockResubmit && <div className={styles.operationsButtons}><ButtonBar type="button" onClick={() => navigate()}>{T.CONTRACTS.CHECK_LIST}</ButtonBar></div>}
         </form>
       </section>
     </>}
@@ -340,25 +347,16 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  <ActionBar>
-    {view === "" || view === "list" ? (
-      <>
+  {(view === "" || view === "list") && <ActionBar>
         <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
         <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-      </>
-    ) : view === "create" ? (
-      <>
-        <ButtonBar type="submit" form="contract-create-form" disabled={create.isPending || blockResubmit || Boolean(createdContractId) || owners.isPending || owners.isError || owners.data?.length === 0 || machines.isPending || machines.isError || warehouseMachines.length === 0}>{create.isPending ? T.CONTRACTS.CREATING : createdContractId ? "Đã tạo" : T.CONTRACTS.CREATE_SUBMIT}</ButtonBar>
-        <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
-      </>
-    ) : (
-      <>
-        <ButtonBar type="button" onClick={() => navigate()}>Về danh sách</ButtonBar>
-        {view === "detail" && contract.data?.machineId && <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>}
-        {view === "history" && <ButtonBar type="button" onClick={() => navigate({ view: "detail", id: contractId })}>{T.CONTRACTS.DETAIL}</ButtonBar>}
-      </>
-    )}
-  </ActionBar>
+  </ActionBar>}
+  {view === "create" && <ActionBar>
+    <ButtonBar type="submit" form="contract-create-form" disabled={create.isPending || blockResubmit || Boolean(createdContractId) || owners.isPending || owners.isError || owners.data?.length === 0 || machines.isPending || machines.isError || warehouseMachines.length === 0}>{create.isPending ? T.CONTRACTS.CREATING : createdContractId ? "Đã tạo" : T.CONTRACTS.CREATE_SUBMIT}</ButtonBar>
+  </ActionBar>}
+  {view === "detail" && contract.data?.machineId && <ActionBar>
+    <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>
+  </ActionBar>}
   {(view === "" || view === "list") && createdContractId && (
     <NotificationDialog
       variant="success"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { recipesApi } from "@/apis/recipes.api";
 
 import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { GlobalRecipeIdSchema, type GlobalRecipe } from "@/schema/recipes.schema";
 
@@ -108,10 +109,7 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
 
   return (
     <div className={styles.pageContent}>
-      <header className={styles.pageHeading}>
-        <h1>{messages.RECIPES_TITLE}</h1>
-        <p>{messages.RECIPES_DESCRIPTION}</p>
-      </header>
+      <ModeratorPageHeading title={messages.RECIPES_TITLE} description={messages.RECIPES_DESCRIPTION} />
       <p className={styles.partialNotice} role="note">{messages.RECIPE_READ_ONLY}</p>
       {isList ? (
         <>
@@ -122,7 +120,6 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
         <>
           <QueryFeedback query={recipe} loadingMessage={messages.LOADING_RECIPE} />
           {recipe.data && !recipe.isError && <RecipeDetails recipe={recipe.data} />}
-          <Link className={styles.tableLink} href={PATH_MODERATOR.MENU}>{messages.BACK_TO_RECIPES}</Link>
         </>
       ) : (
         <p className={styles.pendingNotice} role="status">{messages.INVALID_RECIPE_ID}</p>

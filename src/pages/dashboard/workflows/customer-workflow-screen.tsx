@@ -1,5 +1,6 @@
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type CustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
 import { RepairIntakeForm } from "./repair-intake-screen";
@@ -29,19 +30,23 @@ function renderField(field: WorkflowField, index: number) {
 export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string }) {
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
+  const actions = getCustomerWorkflowActions(sectionPath, screen);
 
   if (sectionPath === "support" || sectionPath === "support/new") {
-    return <RepairIntakeForm title={screen.title} description={screen.description} />;
+    return <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />;
   }
-  if (sectionPath === "menu/add-dish") return <LocalRecipeForm />;
-  if (sectionPath === "notifications") return <NotificationInbox />;
+  if (sectionPath === "menu/add-dish") return <LocalRecipeForm back={screen.back} />;
+  if (sectionPath === "notifications") return <NotificationInbox back={screen.back} />;
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-workflow-title">{screen.title}</h1>
-        <p>{screen.description}</p>
-      </header>
+      <BackButtonHeading
+        back={screen.back ?? null}
+        title={screen.title}
+        titleId="customer-workflow-title"
+        description={screen.description}
+        className={styles.pageHeading}
+      />
       <div className={styles.workflowStatus} role="status" aria-describedby="customer-workflow-reason">
         <h2>{messages.UNAVAILABLE_TITLE}</h2>
         <p id="customer-workflow-reason">{screen.reason}</p>
@@ -70,9 +75,11 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
           ))}
         </div>
       ) : null}
-      <ActionBar label={`Thao tác ${screen.title}`}>
-        <ActionBarActions actions={getCustomerWorkflowActions(sectionPath, screen)} />
-      </ActionBar>
+      {actions.length ? (
+        <ActionBar label={`Thao tác ${screen.title}`}>
+          <ActionBarActions actions={actions} />
+        </ActionBar>
+      ) : null}
     </section>
   );
 }

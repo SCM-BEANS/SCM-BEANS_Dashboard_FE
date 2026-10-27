@@ -23,6 +23,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 
 import { moderatorStyles as styles } from "../moderator-shell";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -60,7 +61,7 @@ function QueryFeedback({
 }
 
 function PageHeading({ title, description }: { title: string; description: string }) {
-  return <header className={styles.pageHeading}><h1>{title}</h1><p>{description}</p></header>;
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
 function DetailValue({ label, value, code = false }: { label: string; value: string | number; code?: boolean }) {

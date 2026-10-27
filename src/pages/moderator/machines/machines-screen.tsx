@@ -19,6 +19,7 @@ import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 
 import { moderatorStyles as styles } from "../moderator-shell";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -54,7 +55,7 @@ function QueryFeedback({
 }
 
 function PageHeading({ title, description }: { title: string; description: string }) {
-  return <header className={styles.pageHeading}><h1>{title}</h1><p>{description}</p></header>;
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
 function ActionLink({ href, children }: { href: string; children: string }) {
@@ -208,12 +209,11 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
 
   if (isDetail) {
     if (!validMachineId) {
-      return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_DETAIL_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{machineId}: {messages.MACHINE_LEGACY_ID}</p><ActionLink href={PATH_MODERATOR.MACHINES}>Quay lại danh sách máy</ActionLink></div>;
+      return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_DETAIL_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{machineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
     }
     return (
       <div className={styles.pageContent}>
         <PageHeading title={messages.MACHINE_DETAIL_TITLE} description={messages.MACHINES_DESCRIPTION} />
-        <ActionLink href={PATH_MODERATOR.MACHINES}>Quay lại danh sách máy</ActionLink>
         <QueryFeedback query={machine} loadingMessage={messages.LOADING_MACHINE} />
         {machine.data && !machine.isError && (
           <>

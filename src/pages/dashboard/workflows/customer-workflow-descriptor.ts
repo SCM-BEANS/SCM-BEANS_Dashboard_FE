@@ -1,4 +1,5 @@
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 
 type WorkflowFieldType = "text" | "textarea" | "file";
@@ -15,6 +16,7 @@ export interface CustomerWorkflowDescriptor {
   fields?: WorkflowField[];
   actions?: string[];
   filters?: string[];
+  back?: BackButtonDestination | null;
 }
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
@@ -161,20 +163,46 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
 
 export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWorkflowDescriptor | null {
   const exactScreen = screens[sectionPath];
-  if (exactScreen) return exactScreen;
+  if (exactScreen) return { ...exactScreen, back: getCustomerWorkflowBack(sectionPath) };
 
   if (sectionPath.startsWith("support/") && sectionPath.split("/").length === 2) {
     return {
       title: messages.SUPPORT_PROGRESS_TITLE,
       description: messages.SUPPORT_PROGRESS_DESCRIPTION,
       reason: messages.SUPPORT_API_REASON,
+      back: getCustomerWorkflowBack(sectionPath),
     };
   }
 
   return null;
 }
 
-export function getCustomerWorkflowActions(sectionPath: string, screen: CustomerWorkflowDescriptor): ActionBarAction[] {
+export function getCustomerWorkflowBack(sectionPath: string): BackButtonDestination | null {
+  if (sectionPath === "support" || sectionPath === "buyback" || sectionPath === "notifications") {
+    return { label: "Tổng quan", fallbackHref: "/dashboard" };
+  }
+  if (sectionPath === "support/new" || sectionPath === "support/menu" || sectionPath.startsWith("support/")) {
+    return { label: "Yêu cầu hỗ trợ", fallbackHref: "/dashboard/support" };
+  }
+  if (sectionPath === "buyback/documents/confirmed") {
+    return { label: "Chứng từ thu mua", fallbackHref: "/dashboard/buyback/documents" };
+  }
+  if (sectionPath === "buyback/issue") {
+    return { label: "Chứng từ thu mua", fallbackHref: "/dashboard/buyback/documents" };
+  }
+  if (sectionPath.startsWith("buyback/")) {
+    return { label: "Thu mua máy cũ", fallbackHref: "/dashboard/buyback" };
+  }
+  if (sectionPath.startsWith("invoices/")) {
+    return { label: "Danh sách hóa đơn", fallbackHref: "/dashboard/invoices" };
+  }
+  if (sectionPath.startsWith("menu/")) {
+    return { label: "Menu của tôi", fallbackHref: "/dashboard/menu" };
+  }
+  return null;
+}
+
+function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: CustomerWorkflowDescriptor): ActionBarAction[] {
   const blocked = (label: string, variant: "primary" | "secondary" = "primary"): ActionBarAction => ({
     label,
     variant,
@@ -211,7 +239,7 @@ export function getCustomerWorkflowActions(sectionPath: string, screen: Customer
     return [link("Về yêu cầu hỗ trợ", "/dashboard/support"), link("Xem lịch sử máy", "/dashboard/machines/history", "secondary")];
   }
   if (sectionPath === "buyback/documents/confirmed") {
-    return [link("Về hồ sơ thu mua", "/dashboard/buyback"), link("Xem lại chứng từ", "/dashboard/buyback/documents", "secondary")];
+    return [];
   }
 
   const navigationActions: Record<string, ActionBarAction[]> = {
@@ -234,4 +262,10 @@ export function getCustomerWorkflowActions(sectionPath: string, screen: Customer
   };
 
   return [...blockedActions, ...(navigationActions[sectionPath] ?? [link("Về tổng quan", "/dashboard", "secondary")])];
+}
+
+export function getCustomerWorkflowActions(sectionPath: string, screen: CustomerWorkflowDescriptor): ActionBarAction[] {
+  const actions = getCustomerWorkflowActionsForScreen(sectionPath, screen);
+  const parentHref = getCustomerWorkflowBack(sectionPath)?.fallbackHref;
+  return parentHref ? actions.filter((action) => action.href !== parentHref) : actions;
 }

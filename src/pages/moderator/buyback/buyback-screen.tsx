@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
 import { moderatorStyles as styles } from "../moderator-shell";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -67,10 +68,7 @@ export function ModeratorBuybackScreen({ sectionPath }: { sectionPath: string })
 
   return (
     <div className={styles.pageContent}>
-      <header className={styles.pageHeading}>
-        <h1>{messages.BUYBACK_TITLE}</h1>
-        <p>{messages.BUYBACK_DESCRIPTION}</p>
-      </header>
+      <ModeratorPageHeading title={messages.BUYBACK_TITLE} description={messages.BUYBACK_DESCRIPTION} />
       {isList ? (
         <p className={styles.pendingNotice} role="status">{messages.BUYBACK_LIST_UNAVAILABLE}</p>
       ) : validId ? (

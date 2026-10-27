@@ -1,12 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
-import Link from "next/link";
-
 import { DataTable } from "@/components/table/data-table";
 
 import { contractsApi } from "@/apis/contracts.api";
 
-import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -47,12 +45,7 @@ function QueryFeedback({
 }
 
 function PageHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <header className={styles.pageHeading}>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </header>
-  );
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
 export function ContractDetailScreen({ id }: { id: string }) {
@@ -120,7 +113,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
               </DataTable>
             )}
           </section>
-          <Link className={styles.tableLink} href={PATH_MODERATOR.CONTRACTS}>Quay láº¡i danh sĂ¡ch há»£p Ä‘á»“ng</Link>
         </>
       )}
     </div>

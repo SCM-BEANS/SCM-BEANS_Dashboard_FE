@@ -1,5 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { createIdempotencyKey } from "../shared/idempotency-key";
@@ -7,7 +9,15 @@ import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
-export function RepairIntakeForm({ title, description }: { title: string; description: string }) {
+export function RepairIntakeForm({
+  title,
+  description,
+  back,
+}: {
+  title: string;
+  description: string;
+  back?: BackButtonDestination | null;
+}) {
   const [machineId, setMachineId] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
   const [validationError, setValidationError] = useState("");
@@ -43,10 +53,13 @@ export function RepairIntakeForm({ title, description }: { title: string; descri
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-workflow-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-workflow-title">{title}</h1>
-        <p>{description}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={title}
+        titleId="customer-workflow-title"
+        description={description}
+        className={styles.pageHeading}
+      />
       <form className={styles.dataPanel} onSubmit={submit}>
         <h2>{messages.REPAIR_INTAKE_SUBMIT}</h2>
         <p>{messages.SUPPORT_API_REASON}</p>

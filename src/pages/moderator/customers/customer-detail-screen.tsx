@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 
 import { profilesApi } from "@/apis/profiles.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
-import { PATH_MODERATOR } from "@/routes/path";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { moderatorStyles as styles } from "../moderator-shell";
 
@@ -38,12 +37,7 @@ function QueryFeedback({
 }
 
 function PageHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <header className={styles.pageHeading}>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </header>
-  );
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
 export function CustomerProfileDetailScreen({ id }: { id: string }) {
@@ -97,9 +91,6 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
               <dd>{profile.data.emailVerified ? "Có" : "Không"}</dd>
             </div>
           </dl>
-          <Link className={styles.tableLink} href={PATH_MODERATOR.CUSTOMERS}>
-            Quay lại danh sách khách hàng
-          </Link>
         </>
       )}
     </div>

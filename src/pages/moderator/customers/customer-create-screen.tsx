@@ -9,6 +9,7 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { AdminUserCreateSchema } from "@/schema/admin-users.schema";
 import { PATH_MODERATOR } from "@/routes/path";
+import { ModeratorPageHeading } from "../moderator-page-heading";
 import { ADMIN_USERS_MESSAGES as A } from "@/text/admin/admin-users-messages";
 import { moderatorStyles as styles } from "../moderator-shell";
 
@@ -85,10 +86,7 @@ export function ModeratorCustomerCreateScreen() {
 
   return (
     <div className={styles.pageContent}>
-      <header className={styles.pageHeading}>
-        <h1>{A.FORM.CREATE_TITLE}</h1>
-        <p>{A.FORM.CREATE_DESCRIPTION}</p>
-      </header>
+      <ModeratorPageHeading title={A.FORM.CREATE_TITLE} description={A.FORM.CREATE_DESCRIPTION} />
 
       {credential ? (
         <AccountSuccessDialog

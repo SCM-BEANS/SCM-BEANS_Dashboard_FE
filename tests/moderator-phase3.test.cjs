@@ -387,6 +387,7 @@ test('catch-all route sends machine, IoT, technical, and machine-history paths t
     '@/routes/path': { PATH_MODERATOR: { ROOT: '/moderator' } },
     '@/text/moderator/moderator-messages': { MODERATOR_MESSAGES: messages },
     './moderator-shell': { ModeratorShell: ({ children }) => React.createElement('main', null, children), moderatorStyles: styles },
+    './moderator-page-heading': { ModeratorPageHeading: ({ title }) => React.createElement('h1', null, title) },
     './moderator-read-screens': { ModeratorReadScreen: () => React.createElement('p', null, 'read') },
   });
   for (const section of ['machines', `machines/${machineId}`, 'iot/customer', 'technical-requests', `technical-requests/${workOrderId}`, 'machine-history', `machine-history/${machineId}`]) {

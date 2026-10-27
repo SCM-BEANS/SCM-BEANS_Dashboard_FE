@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import {
   RecipePublishRequestSchema,
@@ -14,6 +15,7 @@ import {
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
+import { getMenuBackDestination } from "../admin-back-destination";
 
 const RECIPE_QUERY_KEY = ["dolores", "recipes", "global"] as const;
 const EMPTY_DRAFT = { name: "", steps: "", dosageBounds: "" };
@@ -82,7 +84,6 @@ function MenuContent() {
     setPendingPublish(input.data);
   };
 
-  const navigateToList = () => void router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
   const navigateToCreate = () => {
     setDraft(EMPTY_DRAFT);
     setFormError("");
@@ -96,10 +97,13 @@ function MenuContent() {
   return (
     <>
     <div className={styles.pageContent}>
-      <div className={styles.pageHeading}>
-        <h1>{isCreateView ? ADMIN_MESSAGES.MENU.CREATE : ADMIN_MESSAGES.MENU.TITLE}</h1>
-        <p>{isCreateView ? ADMIN_MESSAGES.MENU.CREATE_DESCRIPTION : ADMIN_MESSAGES.MENU.DESCRIPTION}</p>
-      </div>
+      <BackButtonHeading
+        title={isCreateView ? ADMIN_MESSAGES.MENU.CREATE : ADMIN_MESSAGES.MENU.TITLE}
+        titleId="admin-menu-title"
+        description={isCreateView ? ADMIN_MESSAGES.MENU.CREATE_DESCRIPTION : ADMIN_MESSAGES.MENU.DESCRIPTION}
+        className={styles.pageHeading}
+        back={getMenuBackDestination(router.query)}
+      />
       {isCreateView ? (
         <form id="global-recipe-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submitDraft}>
           <h2>{ADMIN_MESSAGES.MENU.CREATE_FORM_TITLE}</h2>
@@ -233,9 +237,6 @@ function MenuContent() {
       <ActionBar>
         <ButtonBar type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
           {ADMIN_MESSAGES.MENU.PUBLISH}
-        </ButtonBar>
-        <ButtonBar type="button" disabled={publish.isPending} onClick={navigateToList}>
-          {ADMIN_MESSAGES.MENU.CANCEL}
         </ButtonBar>
       </ActionBar>
     ) : (

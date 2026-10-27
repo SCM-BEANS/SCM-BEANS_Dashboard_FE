@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { recipesApi } from "@/apis/recipes.api";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
@@ -9,7 +11,7 @@ import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
-export function MenuScreen({ sectionPath }: { sectionPath: string }) {
+export function MenuScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const candidate = sectionPath.startsWith("menu/") ? sectionPath.slice("menu/".length) : "";
   const recipeId = GlobalRecipeIdSchema.safeParse(candidate).success ? candidate : null;
   const isList = sectionPath === "menu";
@@ -31,10 +33,13 @@ export function MenuScreen({ sectionPath }: { sectionPath: string }) {
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-      <header className={styles.pageHeading}>
-        <h1 id="customer-screen-title">{recipeId ? messages.RECIPE_DETAIL_TITLE : messages.MENU_TITLE}</h1>
-        <p>{messages.MENU_DESCRIPTION}</p>
-      </header>
+      <BackButtonHeading
+        back={back ?? null}
+        title={recipeId ? messages.RECIPE_DETAIL_TITLE : messages.MENU_TITLE}
+        titleId="customer-screen-title"
+        description={messages.MENU_DESCRIPTION}
+        className={styles.pageHeading}
+      />
       {recipeId ? (
         <>
           <QueryFeedback loading={globalDetail.isPending || localList.isPending} failed={globalDetail.isError || localList.isError} empty={!globalDetail.data} emptyText={messages.NO_RECIPES} />
@@ -57,7 +62,6 @@ export function MenuScreen({ sectionPath }: { sectionPath: string }) {
               ) : <p>{messages.NO_LOCAL_CONFIGURATION}</p>}
             </div>
           ) : null}
-          <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MENU}>{messages.BACK_TO_LIST}</Link>
         </>
       ) : (
         <>

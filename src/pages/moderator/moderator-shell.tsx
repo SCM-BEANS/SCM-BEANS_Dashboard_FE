@@ -156,10 +156,6 @@ export function ModeratorShell({
     </>
   );
   const renderActions = () => {
-    if (!isSectionList) {
-      return <ButtonBar href={currentSection.HREF}>{actionMessages.BACK_TO_SECTION}</ButtonBar>;
-    }
-
     switch (currentSection.HREF) {
       case PATH_MODERATOR.ROOT:
         return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.PENDING_WORK}</ButtonBar>;
@@ -229,7 +225,7 @@ export function ModeratorShell({
             {renderBreadcrumb()}
           </div>
           <main className={styles.main}>{children}</main>
-          <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>
+          {isSectionList && <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>}
           <nav className={styles.mobileNav} aria-label={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}>
             {currentMobileItem
               ? (
