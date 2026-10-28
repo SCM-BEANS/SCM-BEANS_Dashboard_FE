@@ -85,7 +85,6 @@ export function OverviewScreen() {
     <div className={styles.pageContent}>
       <PageHeading
         title={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_TITLE}
-        description={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_DESCRIPTION}
       />
       <QueryFeedback
         query={overview}
@@ -98,12 +97,6 @@ export function OverviewScreen() {
       )}
       {metrics && (
         <>
-          <p className={styles.pendingNotice}>
-            {MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_SCOPE}: {overview.data?.scope ?? "â€”"}
-            {overview.data?.asOfDate
-              ? " Â· " + MODERATOR_MESSAGES.READ_SCREENS.AS_OF_DATE + ": " + overview.data.asOfDate
-              : ""}
-          </p>
           <section
             aria-label={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_TITLE}
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}

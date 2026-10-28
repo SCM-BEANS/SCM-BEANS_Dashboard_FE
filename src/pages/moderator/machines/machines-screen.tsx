@@ -111,12 +111,12 @@ function MachineList({
         : messages.MACHINE_EMPTY;
 
   return (
-    <DataTable variant="moderator" headers={[messages.MACHINE_SERIAL, messages.TECHNICAL_MACHINE_ID, messages.MACHINE_TENANT, messages.MACHINE_TYPE, messages.MACHINE_STATUS]} emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}>
+    <DataTable variant="moderator" headers={[messages.MACHINE_SERIAL, messages.TECHNICAL_MACHINE_ID, messages.MACHINE_OWNER, messages.MACHINE_TYPE, messages.MACHINE_STATUS]} emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}>
       {visibleMachines.map((machine) => (
         <tr key={machine.id}>
           <td><ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? machine.id}</ActionLink></td>
           <td className={styles.codeValue}>{machine.id}</td>
-          <td className={styles.codeValue}>{machine.tenantId ?? "—"}</td>
+          <td className={styles.codeValue}>{machine.ownerId ?? "—"}</td>
           <td>{machine.machineType ?? "—"}</td>
           <td>{machine.status ?? "—"}</td>
         </tr>
@@ -220,7 +220,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             <dl className={styles.detailGrid}>
               <DetailValue label={messages.MACHINE_SERIAL} value={machine.data.serialNumber ?? "—"} />
               <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={machine.data.id} code />
-              <DetailValue label={messages.MACHINE_TENANT} value={machine.data.tenantId ?? "—"} code />
+              <DetailValue label={messages.MACHINE_OWNER} value={machine.data.ownerId ?? "—"} code />
               <DetailValue label={messages.MACHINE_TYPE} value={machine.data.machineType ?? "—"} />
               <DetailValue label={messages.MACHINE_STATUS} value={machine.data.status ?? "—"} />
               <DetailValue label={messages.MACHINE_LOCATION} value={locationScopeMismatch ? machine.data.locationId ?? "—" : location.data?.name ?? machine.data.locationId ?? "—"} />

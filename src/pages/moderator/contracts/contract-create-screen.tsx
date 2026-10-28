@@ -22,7 +22,6 @@ export function ContractCreateScreen() {
     <div className={styles.pageContent}>
       <ModeratorPageHeading
         title={T.CONTRACTS.CREATE_TITLE}
-        description={T.CONTRACTS.CREATE_DESCRIPTION}
       />
       <ContractCreateForm
         ownerRole="owner"

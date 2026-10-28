@@ -49,9 +49,6 @@ export const MODERATOR_MESSAGES = {
   },
   READ_SCREENS: {
     OVERVIEW_TITLE: "Tổng quan vận hành",
-    OVERVIEW_DESCRIPTION: "Số liệu tổng hợp do Dolores trả về cho tài khoản Moderator.",
-    OVERVIEW_SCOPE: "Phạm vi dữ liệu",
-    AS_OF_DATE: "Cập nhật đến",
     TOTAL_OWNERS: "Tổng số Owner",
     CUPS_IN_PERIOD: "Ly đã ghi nhận",
     OPEN_MAINTENANCE: "Yêu cầu bảo trì đang mở",
@@ -166,7 +163,7 @@ export const MODERATOR_MESSAGES = {
     MACHINES_DESCRIPTION: "Danh sách và hồ sơ máy được đọc từ Dolores; liên kết hồ sơ luôn dùng UUID của máy.",
     MACHINE_DETAIL_TITLE: "Hồ sơ máy",
     MACHINE_SERIAL: "Serial",
-    MACHINE_TENANT: "Tenant ID",
+    MACHINE_OWNER: "Owner ID",
     MACHINE_TYPE: "Loại máy",
     MACHINE_STATUS: "Trạng thái",
     MACHINE_LOCATION: "Địa điểm",
