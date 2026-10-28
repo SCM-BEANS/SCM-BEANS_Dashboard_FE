@@ -3,9 +3,13 @@ import {
   InventorySummarySchema,
   MachineIdSchema,
   MachineInventorySchema,
+  RentalCandidatePageSchema,
   MachineSchema,
   CreateMachineRequestSchema,
+  CreateMachineResponseSchema,
+  MarkMachineReadyRequestSchema,
   type CreateMachineRequest,
+  type MarkMachineReadyRequest,
   MaintenanceTicketListSchema,
   MaintenanceScheduleSchema,
   RepairIntakeRequestSchema,
@@ -20,12 +24,23 @@ export class MachineIdentityMismatchError extends Error {
   }
 }
 
+export class MachineCreateUnexpectedStatusError extends Error {
+  constructor(readonly status: number) {
+    super(`Machine creation returned HTTP ${status}; model linking was skipped.`);
+    this.name = "MachineCreateUnexpectedStatusError";
+  }
+}
+
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
 export const machinesApi = {
   async create(input: CreateMachineRequest) {
     const request = CreateMachineRequestSchema.parse(input);
-    await axiosClient.post<unknown>("/machines", request, { baseURL: DOLORES_API_BASE_URL });
+    const response = await axiosClient.post<unknown>("/machines", request, { baseURL: DOLORES_API_BASE_URL });
+    if (response.status !== 200 && response.status !== 201) {
+      throw new MachineCreateUnexpectedStatusError(response.status);
+    }
+    return CreateMachineResponseSchema.parse(response.data);
   },
   async list(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/machines", {
@@ -33,6 +48,13 @@ export const machinesApi = {
       signal,
     });
     return MachineInventorySchema.parse(response.data);
+  },
+  async listRentalCandidates(signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>("/inventory/rental-candidates", {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
+    return RentalCandidatePageSchema.parse(response.data).content;
   },
   async getById(id: string, signal?: AbortSignal) {
     const validId = MachineIdSchema.parse(id);
@@ -43,6 +65,14 @@ export const machinesApi = {
     const machine = MachineSchema.parse(response.data);
     if (machine.id !== validId) throw new MachineIdentityMismatchError();
     return machine;
+  },
+  async markReady(id: string, input: MarkMachineReadyRequest) {
+    const machineId = encodeURIComponent(MachineIdSchema.parse(id));
+    const request = MarkMachineReadyRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`/inventory/machines/${machineId}/readiness`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return response.data;
   },
   async getInventorySummary(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/inventory/summary", {

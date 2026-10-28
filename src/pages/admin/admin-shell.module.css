@@ -88,6 +88,13 @@
 .operationsGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .operationsGrid > label, .operationsGrid > div { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
 .operationsGrid strong { color: #302927; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.machineModelSpecifications { grid-column: 1 / -1; }
+.machineModelSpecifications textarea { font-family: Consolas, Monaco, monospace; line-height: 1.5; }
+.machineModelSpecifications pre { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font: 13px/1.5 Consolas, Monaco, monospace; }
+.machineModelSpecificationsSample { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
+.machineModelSpecificationsSample p { margin: 0; }
+.machineModelSpecificationsSample pre { max-height: 220px; margin: 0; padding: 12px; overflow: auto; border: 1px solid #e9e2dc; border-radius: 8px; background: #faf8f6; color: #302927; font: 12px/1.5 Consolas, Monaco, monospace; }
+.machineModelSpecificationsSample button { align-self: flex-start; min-height: 36px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; cursor: pointer; }
 .contractForm { display: flex; flex-direction: column; gap: 20px; }
 .contractForm h3 { margin: 0; font-size: 16px; }
 .contractFormFields { display: contents; min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -100,6 +107,12 @@
 .operationsButtons { margin-top: 20px; }
 .machineInventoryHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .machineInventoryHeading h2 { margin: 0; }
+.machineInventoryGroup { display: flex; min-width: 0; flex-direction: column; }
+.machineViewTabs { position: relative; z-index: 1; display: inline-flex; max-width: calc(100% - 44px); align-self: flex-start; gap: 4px; margin: 0 0 -1px 22px; padding: 0; }
+.machineViewTab { min-height: 36px; padding: 0 14px; border: 1px solid #e9e2dc; border-bottom: 0; border-radius: 9px 9px 0 0; background: #f8f6f4; color: #706561; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.machineViewTab:hover { color: #302927; }
+.machineViewTabActive { position: relative; z-index: 1; background: white; color: #302927; }
+.machineViewTab:focus-visible { outline: 3px solid #b8172433; outline-offset: 2px; }
 .machineFilterCount { padding: 5px 10px; border: 1px solid #eee8e3; border-radius: 999px; background: #f8f6f4; color: #706561; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .machineFilterToolbar { display: flex; align-items: center; margin-bottom: 18px; }
 .machineFilterControl { display: inline-flex; align-items: center; gap: 12px; }

@@ -36,7 +36,14 @@ export function getStoresBackDestination(query: RouterQuery): BackButtonDestinat
 }
 
 export function getMachinesBackDestination(query: RouterQuery): BackButtonDestination | null {
-  if (firstString(query.view) !== "create") return null;
+  const view = firstString(query.view);
+  if (view === "model-detail") {
+    return { label: T.MACHINE_MODELS.BACK, fallbackHref: `${PATH_ADMIN.MACHINES}?view=types` };
+  }
+  if (view === "create-model") {
+    return { label: T.MACHINE_MODELS.BACK, fallbackHref: `${PATH_ADMIN.MACHINES}?view=types` };
+  }
+  if (view !== "create") return null;
   return { label: "Danh sách máy", fallbackHref: listHref(PATH_ADMIN.MACHINES, query, ["status"]) };
 }
 

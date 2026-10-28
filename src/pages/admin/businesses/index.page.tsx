@@ -135,13 +135,19 @@ function BusinessesContent() {
             rows={list.data.items}
             rowKey={(owner) => owner.id}
             columns={[
-              { key: "owner", header: T.COMMON.OWNER, render: (owner) => owner.name || "—" },
+              { key: "owner", header: T.COMMON.OWNER, render: (owner) => (
+                <button
+                  className={styles.accountTextButton}
+                  type="button"
+                  aria-label={`Mở hồ sơ ${owner.name || owner.id}`}
+                  onClick={() => navigate({ view: "detail", id: owner.id, q: queryValue(router.query.q), status, page })}
+                >
+                  {owner.name || "—"}
+                </button>
+              ) },
               { key: "email", header: "Email", render: (owner) => owner.email || "—" },
               { key: "status", header: "Trạng thái", render: (owner) => owner.status },
               { key: "created", header: "Ngày tạo", render: (owner) => formatDate(owner.created_at) },
-              { key: "actions", header: "", render: (owner) => (
-                <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: owner.id, q: queryValue(router.query.q), status, page })}>Chi tiết</button>
-              ) },
             ]}
           />}
           <div className={styles.operationsPagination}>

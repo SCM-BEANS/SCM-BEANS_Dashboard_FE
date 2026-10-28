@@ -116,6 +116,78 @@
   line-height: 1.6;
 }
 
+.machineCheckPanel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.machineCheckPanel h2 {
+  margin: 0 0 16px;
+  color: #302927;
+  font-size: 18px;
+}
+
+.machineCheckError {
+  padding: 16px;
+  border-radius: 10px;
+  background: #fff2e6;
+  color: #693c2c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.machineCheckError p {
+  margin: 0 0 12px;
+}
+
+.machineCheckRetry {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  cursor: pointer;
+}
+
+.machineCheckIdLink {
+  color: #b81724 !important;
+  font-weight: 600;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.machineDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 32px;
+}
+
+.machineDetailField {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.machineDetailField span {
+  color: #706561;
+  font-size: 14px;
+}
+
+.machineDetailField strong {
+  color: #302927;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .unavailableStatus {
   padding: 18px;
   border: 1px solid #e9e2dc;
@@ -303,6 +375,11 @@
 
   .pageHeading h1 {
     font-size: 24px;
+  }
+
+  .machineDetailGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
   }
 }
 

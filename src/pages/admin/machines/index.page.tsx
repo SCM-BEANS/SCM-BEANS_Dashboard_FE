@@ -1,27 +1,29 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
-import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
-import { CreateMachineRequestSchema, MachineStatusSchema, type CreateMachineRequest } from "@/schema/machines.schema";
+import { MachineStatusSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachinesBackDestination } from "../admin-back-destination";
+import { CreateMachineForm } from "./create-machine-form";
+import { CreateMachineModelForm } from "./create-machine-model-form";
+import { MachineModelDetail } from "./machine-model-detail";
+import { MachineInventorySummary } from "./machine-inventory-summary";
 
 const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
 type StatusFilter = "ALL" | MachineStatus;
-type MachineCreateForm = { serialNumber: string; region: string };
-
-const initialMachineForm: MachineCreateForm = { serialNumber: "", region: "" };
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 
 const STATUS_LABELS: Record<MachineStatus, string> = {
@@ -68,124 +70,123 @@ function MachinesContent() {
   const queryClient = useQueryClient();
   const view = queryValue(router.query.view);
   const isCreateView = view === "create";
+  const isCreateMachineModelView = view === "create-model";
+  const isMachineTypesView = view === "types";
+  const isMachineModelDetailView = view === "model-detail";
+  const machineModelId = queryValue(router.query.id);
   const requestedStatus = queryValue(router.query.status);
   const statusFilter: StatusFilter = requestedStatus === "ALL" || STATUSES.includes(requestedStatus as MachineStatus)
     ? requestedStatus as StatusFilter
     : "ALL";
-  const [form, setForm] = useState<MachineCreateForm>(initialMachineForm);
-  const [requestError, setRequestError] = useState("");
-  const [blockResubmit, setBlockResubmit] = useState(false);
   const [successSerialNumber, setSuccessSerialNumber] = useState("");
+  const [successMachineModelCode, setSuccessMachineModelCode] = useState("");
   const inventory = useQuery({
     queryKey: ["dolores", "machines", "inventory"],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isCreateView,
+    enabled: !isCreateView && !isCreateMachineModelView && !isMachineTypesView && !isMachineModelDetailView,
   });
-  const summary = useQuery({
-    queryKey: ["dolores", "machines", "inventory-summary"],
-    queryFn: ({ signal }) => machinesApi.getInventorySummary(signal),
-    enabled: !isCreateView,
+  const machineModels = useQuery({
+    queryKey: ["admin", "machine-models"],
+    queryFn: ({ signal }) => machineModelsApi.list(signal),
+    enabled: isMachineTypesView,
   });
-  const create = useMutation({
-    mutationFn: (request: CreateMachineRequest) => machinesApi.create(request),
-    onSuccess: (_machine, request) => {
-      setRequestError("");
-      setSuccessSerialNumber(request.serialNumber);
-      setBlockResubmit(false);
-      setForm(initialMachineForm);
-      void Promise.allSettled([
-        queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] }),
-        queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
-      ]);
-      void router.push({ pathname: PATH_ADMIN.MACHINES, query: statusFilter === "ALL" ? {} : { status: statusFilter } }, undefined, { shallow: true });
-    },
-    onError: (error: unknown) => {
-      if (isUncertainApiMutation(error)) {
-        setBlockResubmit(true);
-        setRequestError(getApiErrorMessage(error, "mutation"));
-        void queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory"] });
-        void queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] });
-        return;
-      }
-      setRequestError(getApiErrorMessage(error, "mutation"));
-    },
-  });
-
   const navigateToCreate = () => {
-    setRequestError("");
     setSuccessSerialNumber("");
-    setBlockResubmit(false);
-    setForm(initialMachineForm);
     void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create", ...(statusFilter === "ALL" ? {} : { status: statusFilter }) } }, undefined, { shallow: true });
   };
-  const setField = <K extends keyof MachineCreateForm>(key: K, value: MachineCreateForm[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
+  const navigateToMachineView = (nextView: "inventory" | "types") => {
+    void router.push({
+      pathname: PATH_ADMIN.MACHINES,
+      query: {
+        ...(nextView === "types" ? { view: "types" } : {}),
+        ...(statusFilter === "ALL" ? {} : { status: statusFilter }),
+      },
+    }, undefined, { shallow: true });
   };
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (create.isPending || blockResubmit) return;
-    setRequestError("");
-    const result = CreateMachineRequestSchema.safeParse({
-      serialNumber: form.serialNumber,
-      region: form.region.trim() || undefined,
-      status: "IN_WAREHOUSE",
-      cupsServedSinceLastDescale: 0,
-    });
-    if (!result.success) {
-      setRequestError(T.MACHINES.CREATE_INVALID);
-      return;
-    }
-    create.mutate(result.data);
+  const navigateToCreateMachineModel = () => {
+    setSuccessMachineModelCode("");
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "create-model" } }, undefined, { shallow: true });
+  };
+  const navigateToMachineTypes = () => {
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "types" } }, undefined, { shallow: true });
+  };
+  const navigateToMachineModelDetail = (id: string) => {
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "model-detail", id } }, undefined, { shallow: true });
+  };
+  const handleMachineModelCreated = (modelCode: string) => {
+    setSuccessMachineModelCode(modelCode);
+    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "types" } }, undefined, { shallow: true });
+  };
+  const handleMachineCreated = (serialNumber: string) => {
+    setSuccessSerialNumber(serialNumber);
+    void router.push({
+      pathname: PATH_ADMIN.MACHINES,
+      query: statusFilter === "ALL" ? {} : { status: statusFilter },
+    }, undefined, { shallow: true });
   };
 
   const visibleMachines = (inventory.data ?? []).filter(
     (machine) => statusFilter === "ALL" || machine.status === statusFilter,
   );
-  const countFor = (...statuses: MachineStatus[]) => {
-    const counts = summary.data?.statusCounts;
-    if (!counts) return "—";
-    return statuses.reduce((sum, status) => sum + (counts[status] ?? 0), 0).toLocaleString("vi-VN");
-  };
-
   return (
     <AdminShell>
       <div className={styles.pageContent}>
         <BackButtonHeading
-          title={isCreateView ? T.MACHINES.CREATE_TITLE : T.MACHINES.TITLE}
+          title={isCreateView
+            ? T.MACHINES.CREATE_TITLE
+            : isCreateMachineModelView
+              ? T.MACHINE_MODELS.CREATE_TITLE
+              : isMachineModelDetailView
+                ? T.MACHINE_MODELS.DETAIL
+                : T.MACHINES.TITLE}
           titleId="admin-machines-title"
-          description={isCreateView ? T.MACHINES.CREATE_DESCRIPTION : T.MACHINES.DESCRIPTION}
+          description={isCreateView ? T.MACHINES.CREATE_DESCRIPTION : undefined}
           className={styles.pageHeading}
-          back={getMachinesBackDestination(router.query)}
+          back={isMachineModelDetailView ? null : getMachinesBackDestination(router.query)}
         />
         {isCreateView ? (
-          <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
-            <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
-            <div className={styles.operationsGrid}>
-              <label>{T.MACHINES.CREATE_SERIAL} *<input required autoComplete="off" value={form.serialNumber} onChange={(event) => setField("serialNumber", event.target.value)} /></label>
-              <label>{T.MACHINES.CREATE_REGION}<input value={form.region} onChange={(event) => setField("region", event.target.value)} /></label>
-              <div><span>{T.MACHINES.CREATE_INITIAL_STATUS}</span><strong>{STATUS_LABELS.IN_WAREHOUSE} (IN_WAREHOUSE)</strong></div>
-              <div><span>{T.MACHINES.CREATE_INITIAL_CUPS}</span><strong>0</strong></div>
-            </div>
-            {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-          </form>
+          <CreateMachineForm onCancel={() => navigateToMachineView("inventory")} onCreated={handleMachineCreated} />
+        ) : isCreateMachineModelView ? (
+          <CreateMachineModelForm onCancel={navigateToMachineTypes} onCreated={handleMachineModelCreated} />
+        ) : isMachineModelDetailView ? (
+          <MachineModelDetail modelId={machineModelId} />
         ) : (
           <>
-            <div className={styles.metricsGrid}>
-              <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
-              <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
-              <article className={styles.metricCard}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
-              <article className={styles.metricCard}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
-            </div>
+            <MachineInventorySummary />
 
-            {summary.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-            {summary.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(summary.error)}</p><button type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</button></div>}
-
-            <section className={styles.panel}>
-              <div className={styles.machineInventoryHeading}>
-                <h2>{T.MACHINES.TITLE}</h2>
-                {inventory.data && <span className={styles.machineFilterCount} aria-live="polite">{visibleMachines.length} / {inventory.data.length} máy</span>}
+            <div className={styles.machineInventoryGroup}>
+              <div className={styles.machineViewTabs} role="group" aria-label="Chọn danh sách máy">
+                <button
+                  type="button"
+                  className={`${styles.machineViewTab} ${!isMachineTypesView ? styles.machineViewTabActive : ""}`}
+                  aria-pressed={!isMachineTypesView}
+                  onClick={() => navigateToMachineView("inventory")}
+                >
+                  {T.MACHINES.TITLE}
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.machineViewTab} ${isMachineTypesView ? styles.machineViewTabActive : ""}`}
+                  aria-pressed={isMachineTypesView}
+                  onClick={() => navigateToMachineView("types")}
+                >
+                  {T.MACHINE_MODELS.TITLE}
+                </button>
               </div>
-              <div className={styles.machineFilterToolbar}>
+              <section className={styles.panel}>
+              <div className={styles.machineInventoryHeading}>
+                <h2>{isMachineTypesView ? T.MACHINE_MODELS.TITLE : T.MACHINES.TITLE}</h2>
+                {isMachineTypesView ? machineModels.data && (
+                  <span className={styles.machineFilterCount} aria-live="polite">
+                    {machineModels.data.length} {T.MACHINE_MODELS.COUNT}
+                  </span>
+                ) : inventory.data && (
+                  <span className={styles.machineFilterCount} aria-live="polite">
+                    {visibleMachines.length} / {inventory.data.length} máy
+                  </span>
+                )}
+              </div>
+              {!isMachineTypesView && <div className={styles.machineFilterToolbar}>
                 <label className={styles.machineFilterControl}>
                   <span className={styles.machineFilterLabel}>Trạng thái</span>
                   <select
@@ -194,7 +195,10 @@ function MachinesContent() {
                     value={statusFilter}
                     onChange={(event) => {
                       const nextStatus = event.target.value as StatusFilter;
-                      void router.push({ pathname: PATH_ADMIN.MACHINES, query: nextStatus === "ALL" ? {} : { status: nextStatus } }, undefined, { shallow: true });
+                      void router.push({
+                        pathname: PATH_ADMIN.MACHINES,
+                        query: nextStatus === "ALL" ? {} : { status: nextStatus },
+                      }, undefined, { shallow: true });
                     }}
                   >
                     <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
@@ -203,11 +207,33 @@ function MachinesContent() {
                     ))}
                   </select>
                 </label>
-              </div>
-              {inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-              {inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
-              {inventory.data && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
-              {inventory.data && visibleMachines.length > 0 && <DataTable
+              </div>}
+              {!isMachineTypesView && inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
+              {!isMachineTypesView && inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {isMachineTypesView && machineModels.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
+              {isMachineTypesView && machineModels.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModels.error)}</p><button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {inventory.data && !isMachineTypesView && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
+              {isMachineTypesView && machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+              {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <DataTable
+                rows={machineModels.data}
+                rowKey={(machineModel) => machineModel.id}
+                columns={[
+                  { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, render: (machineModel) => (
+                    <button
+                      className={styles.accountTextButton}
+                      type="button"
+                      aria-label={`Xem chi tiết mẫu máy ${machineModel.modelCode}`}
+                      onClick={() => navigateToMachineModelDetail(machineModel.id)}
+                    >
+                      {machineModel.modelCode}
+                    </button>
+                  ) },
+                  { key: "manufacturer", header: T.MACHINE_MODELS.MANUFACTURER, render: (machineModel) => machineModel.manufacturer },
+                  { key: "display-name", header: T.MACHINE_MODELS.DISPLAY_NAME, render: (machineModel) => machineModel.displayName },
+                  { key: "machine-type", header: T.MACHINES.MACHINE_TYPE, render: (machineModel) => machineModel.machineType === "SMART_IOT" ? `${T.MACHINES.SMART} (SMART_IOT)` : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)` },
+                ]}
+              />}
+              {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <DataTable
                 rows={visibleMachines}
                 rowKey={(machine) => machine.id}
                 columns={[
@@ -220,19 +246,30 @@ function MachinesContent() {
                   { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, render: (machine) => formatDate(machine.deployedAt) },
                 ]}
               />}
-            </section>
+              </section>
+            </div>
           </>
         )}
       </div>
-      {isCreateView ? (
-        <ActionBar>
-          <ButtonBar type="submit" form="machine-create-form" disabled={create.isPending || blockResubmit}>{create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}</ButtonBar>
-        </ActionBar>
-      ) : (
+      {isCreateView || isCreateMachineModelView || isMachineModelDetailView ? null : (
         <ActionBar>
           <ButtonBar type="button" onClick={navigateToCreate}>{T.MACHINES.CREATE}</ButtonBar>
+          <ButtonBar type="button" onClick={navigateToCreateMachineModel}>{T.MACHINE_MODELS.CREATE}</ButtonBar>
           <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
-          <ButtonBar type="button" disabled={inventory.isFetching || summary.isFetching} onClick={() => { void Promise.all([inventory.refetch(), summary.refetch()]); }}>
+          <ButtonBar
+            type="button"
+            disabled={isMachineTypesView ? machineModels.isFetching : inventory.isFetching}
+            onClick={() => {
+              if (isMachineTypesView) {
+                void machineModels.refetch();
+              } else {
+                void Promise.all([
+                  inventory.refetch(),
+                  queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
+                ]);
+              }
+            }}
+          >
             {T.COMMON.RETRY}
           </ButtonBar>
         </ActionBar>
@@ -244,6 +281,15 @@ function MachinesContent() {
           description={`${T.MACHINES.SERIAL}: ${successSerialNumber}`}
           primaryAction={{ label: T.MACHINES.TITLE, onClick: () => setSuccessSerialNumber("") }}
           onClose={() => setSuccessSerialNumber("")}
+        />
+      )}
+      {successMachineModelCode && (
+        <NotificationDialog
+          variant="success"
+          title={T.MACHINE_MODELS.CREATE_SUCCESS}
+          description={`${T.MACHINE_MODELS.MODEL_CODE}: ${successMachineModelCode}`}
+          primaryAction={{ label: T.MACHINE_MODELS.TITLE, onClick: () => setSuccessMachineModelCode("") }}
+          onClose={() => setSuccessMachineModelCode("")}
         />
       )}
     </AdminShell>

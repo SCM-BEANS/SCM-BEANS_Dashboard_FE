@@ -22,12 +22,19 @@ export const MachineStatusSchema = z.enum([
 
 export const MachineTypeSchema = z.enum(["CONVENTIONAL", "SMART_IOT"]);
 
+export const MarkMachineReadyRequestSchema = z.object({
+  reason: z.string().trim().min(1),
+}).strict();
+
 export const CreateMachineRequestSchema = z.object({
   serialNumber: z.string().trim().min(1),
+  machineType: MachineTypeSchema,
   status: z.literal("IN_WAREHOUSE"),
   cupsServedSinceLastDescale: countSchema,
   region: z.string().trim().min(1).optional(),
 });
+
+export const CreateMachineResponseSchema = z.object({ id: MachineIdSchema }).passthrough();
 
 export const MachineInventoryItemSchema = z.object({
   id: MachineIdSchema,
@@ -46,6 +53,19 @@ export const MachineInventoryItemSchema = z.object({
 }).passthrough();
 
 export const MachineInventorySchema = z.array(MachineInventoryItemSchema);
+
+export const RentalCandidateSchema = z.object({
+  machineId: MachineIdSchema,
+  displayName: z.string().trim().min(1),
+}).strip();
+
+export const RentalCandidatePageSchema = z.object({
+  content: z.array(RentalCandidateSchema),
+  page: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  totalElements: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+}).passthrough();
 
 export const MachineSchema = z.object({
   id: MachineIdSchema,
@@ -66,6 +86,10 @@ export const MachineSchema = z.object({
   machineTypeMappedAt: dateTimeSchema.nullish(),
   machineTypeMappedBy: z.string().nullish(),
   machineTypeMappingReason: z.string().nullish(),
+  modelId: z.string().uuid().nullish(),
+  modelMappedAt: dateTimeSchema.nullish(),
+  modelMappedBy: z.string().nullish(),
+  modelMappingReason: z.string().nullish(),
 }).passthrough();
 
 export const InventorySummarySchema = z.object({
@@ -183,7 +207,9 @@ export type RepairCase = z.infer<typeof RepairCaseSchema>;
 export type RepairIntakeResponse = z.infer<typeof RepairIntakeResponseSchema>;
 
 export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
+export type RentalCandidate = z.infer<typeof RentalCandidateSchema>;
 export type Machine = z.infer<typeof MachineSchema>;
+export type MarkMachineReadyRequest = z.infer<typeof MarkMachineReadyRequestSchema>;
 export type CreateMachineRequest = z.infer<typeof CreateMachineRequestSchema>;
 export type InventorySummary = z.infer<typeof InventorySummarySchema>;
 export type MaintenanceSchedule = z.infer<typeof MaintenanceScheduleSchema>;

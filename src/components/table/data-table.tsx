@@ -18,9 +18,9 @@ type DataTableRowsProps<Row> = DataTableBaseProps & {
   columns: readonly DataTableColumn<Row>[];
   rows: readonly Row[];
   rowKey: (row: Row, index: number) => Key;
+  emptyMessage?: ReactNode;
   headers?: never;
   children?: never;
-  emptyMessage?: never;
   minWidth?: never;
 };
 
@@ -59,15 +59,19 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const headers = isRowsTable ? props.columns.map((column) => ({ key: column.key, content: column.header })) :
     props.headers.map((header, index) => ({ key: `column-${index}`, content: header }));
   const body = isRowsTable
-    ? props.rows.map((row, index) => (
-      <tr key={props.rowKey(row, index)}>
-        {props.columns.map((column) => (
-          <td key={column.key} {...column.cellProps?.(row, index)}>
-            {column.render(row, index)}
-          </td>
-        ))}
-      </tr>
-    ))
+    ? props.rows.length > 0
+      ? props.rows.map((row, index) => (
+        <tr key={props.rowKey(row, index)}>
+          {props.columns.map((column) => (
+            <td key={column.key} {...column.cellProps?.(row, index)}>
+              {column.render(row, index)}
+            </td>
+          ))}
+        </tr>
+      ))
+      : props.emptyMessage
+        ? <tr><td colSpan={props.columns.length}>{props.emptyMessage}</td></tr>
+        : null
     : Children.count(props.children) > 0
       ? props.children
       : props.emptyMessage

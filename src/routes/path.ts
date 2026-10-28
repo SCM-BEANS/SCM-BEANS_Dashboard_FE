@@ -174,6 +174,7 @@ export const PATH_TECHNICIAN = {
   TASK_BUYBACK_ASSESSMENT: `${TECHNICIAN_ROOT}/tasks/buyback-assessment`,
   TASK_MAINTENANCE_HISTORY: `${TECHNICIAN_ROOT}/tasks/maintenance-history`,
   MACHINE_CHECK: `${TECHNICIAN_ROOT}/machine-check`,
+  MACHINE_CHECK_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/machine-check/${encodeURIComponent(id)}`,
   HISTORY: `${TECHNICIAN_ROOT}/history`,
   MACHINE_HISTORY_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/history/${encodeURIComponent(id)}`,
   NOTIFICATIONS: `${TECHNICIAN_ROOT}/notifications`,
