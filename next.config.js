@@ -3,6 +3,7 @@ const doloresApiOrigin = process.env.DOLORES_API_URL?.replace(/\/+$/, '');
 
 const nextConfig = {
   pageExtensions: ["page.tsx", "page.ts", "page.jsx", "page.js"],
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 
   // Stricter React mode — catches double-invoke issues in dev
   reactStrictMode: true,

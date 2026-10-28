@@ -1,45 +1,27 @@
-import Image from "next/image";
-import { ArrowRight, Check } from "lucide-react";
-import { ActionButton } from "@/components/button/action-button";
+import { Check } from "lucide-react";
 import { SectionHeading } from "@/components/heading/section-heading";
-import { HOME_SECTION_IDS, PATH_HOME } from "@/routes/path";
+import { HOME_SECTION_IDS } from "@/routes/path";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
-import coffeeMachineImage from "@/assets/coffee-machine-float.png";
 
 export function ProductSection() {
   return (
     <section id={HOME_SECTION_IDS.SOLUTIONS} className="section product-section">
       <div className="wrap product-grid">
-        <div className="product-image">
-          <Image
-            src={coffeeMachineImage}
-            alt={HOME_MESSAGES.PRODUCT.IMAGE_ALT}
-            width={760}
-            height={760}
-          />
-          <span className="product-label">{HOME_MESSAGES.PRODUCT.IMAGE_LABEL}</span>
-        </div>
-
         <div id={HOME_SECTION_IDS.PRODUCTS} className="product-copy">
           <SectionHeading
-            eyebrow={HOME_MESSAGES.PRODUCT.EYEBROW}
             title={HOME_MESSAGES.PRODUCT.TITLE}
             description={HOME_MESSAGES.PRODUCT.DESCRIPTION}
           />
-          <h3>{HOME_MESSAGES.PRODUCT.SUBTITLE}</h3>
-          <p>{HOME_MESSAGES.PRODUCT.DETAIL}</p>
-          <ul className="benefit-list">
-            {HOME_MESSAGES.PRODUCT.BENEFITS.map((benefit) => (
-              <li key={benefit}>
-                <span className="check-mark"><Check size={13} /></span>
-                {benefit}
-              </li>
-            ))}
-          </ul>
-          <ActionButton href={PATH_HOME.SECTIONS.TECHNOLOGY} variant="text" icon={<ArrowRight size={15} />}>
-            {HOME_MESSAGES.PRODUCT.ACTION}
-          </ActionButton>
         </div>
+
+        <ul className="benefit-list">
+          {HOME_MESSAGES.PRODUCT.BENEFITS.map((benefit) => (
+            <li key={benefit}>
+              <span className="check-mark" aria-hidden="true"><Check size={16} /></span>
+              <span>{benefit}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

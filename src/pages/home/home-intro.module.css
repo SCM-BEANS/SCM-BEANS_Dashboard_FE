@@ -1,0 +1,112 @@
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  color: #302927;
+  background: #fff;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 260ms ease, visibility 0s linear 260ms;
+  animation: intro-fallback 1400ms linear forwards;
+}
+
+.splash[data-phase="exiting"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  animation: logo-enter 480ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.lockup :global(.brand-mark-frame) {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.lockup :global(.brand-mark) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 90px;
+  max-width: none;
+  height: 90px;
+  transform: translateX(-50%);
+  object-fit: contain;
+}
+
+.wordmark {
+  color: #b81724;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+@keyframes logo-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes intro-fallback {
+  0%, 81.4% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .lockup {
+    gap: 12px;
+  }
+
+  .lockup :global(.brand-mark-frame) {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+  }
+
+  .lockup :global(.brand-mark) {
+    width: 70px;
+    height: 70px;
+  }
+
+  .wordmark {
+    font-size: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    display: none;
+    animation: none;
+  }
+
+  .lockup {
+    animation: none;
+  }
+}
