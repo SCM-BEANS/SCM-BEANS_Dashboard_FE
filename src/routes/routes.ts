@@ -88,6 +88,7 @@ export const CUSTOMER_NAVIGATION_LINKS = [
 
 export const TECHNICIAN_NAVIGATION_LINKS = [
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.TASKS, HREF: PATH_TECHNICIAN.TASKS, ICON: "ClipboardCheck" },
+  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.MACHINE_CHECK, HREF: PATH_TECHNICIAN.MACHINE_CHECK, ICON: "Wrench" },
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.HISTORY, HREF: PATH_TECHNICIAN.HISTORY, ICON: "Coffee" },
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_TECHNICIAN.NOTIFICATIONS, ICON: "Bell" },
 ] as const;
@@ -137,6 +138,7 @@ const technicianStaticSections = [
   "tasks/refurbishment",
   "tasks/buyback-assessment",
   "tasks/maintenance-history",
+  "machine-check",
   "history",
   "notifications",
 ] as const;

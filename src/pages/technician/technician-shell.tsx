@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { Bell, ClipboardCheck, Coffee } from "lucide-react";
+import { Bell, ClipboardCheck, Coffee, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -18,6 +18,7 @@ const NAV_ICONS = {
   Bell,
   ClipboardCheck,
   Coffee,
+  Wrench,
 } as const;
 
 const TECHNICIAN_SIDEBAR_ITEMS: SidebarItem[] = TECHNICIAN_NAVIGATION_LINKS.map((item) => ({

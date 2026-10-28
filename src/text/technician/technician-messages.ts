@@ -3,6 +3,7 @@ export const TECHNICIAN_MESSAGES = {
   ROLE: "Technician",
   NAVIGATION: {
     TASKS: "Việc được giao",
+    MACHINE_CHECK: "Check máy",
     HISTORY: "Lịch sử máy",
     NOTIFICATIONS: "Thông báo",
     NAVIGATION_LABEL: "Điều hướng Technician",
@@ -22,6 +23,8 @@ export const TECHNICIAN_MESSAGES = {
     PENDING_TITLE: "Trang Technician",
     PENDING: "Nội dung của trang này chưa khả dụng.",
     PAGE_DESCRIPTION: "Theo dõi công việc và lịch sử máy được giao.",
+    MACHINE_CHECK_DESCRIPTION: "Kiểm tra tình trạng máy.",
+    MACHINE_CHECK_PENDING: "Màn hình Check máy chưa khả dụng.",
   },
   WORKFLOWS: {
     UNAVAILABLE_TITLE: "Chưa thể hiển thị dữ liệu",
