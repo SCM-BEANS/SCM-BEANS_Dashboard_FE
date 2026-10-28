@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 interface SectionHeadingProps {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description: string;
   align?: "left" | "center";
@@ -19,7 +19,7 @@ export function SectionHeading({
 
   return (
     <div className={className}>
-      <div className="eyebrow">{eyebrow}</div>
+      {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
       <h2>{title}</h2>
       <p>{description}</p>
       {children}

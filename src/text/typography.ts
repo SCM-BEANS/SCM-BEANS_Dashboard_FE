@@ -1,7 +1,7 @@
 export const TYPOGRAPHY = {
   FONT_FAMILY: {
     BODY: "Arial, Helvetica, sans-serif",
-    DISPLAY: "Georgia, 'Times New Roman', serif",
+    DISPLAY: "Arial, Helvetica, sans-serif",
   },
   FONT_SIZE: {
     BRAND: "15px",

@@ -108,5 +108,55 @@
     "verification_command": "Focused navigation tests; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; four-role mobile/desktop walkthroughs at 360 px, 390 px, 768 px, 1023 px, and 1024 px, including logout callbacks and breakpoint-close behavior.",
     "notes": "Covers stories: P1 shared drawer, P1 role-specific destinations and states, P1 keyboard accessibility, P2 nested-route active state. Component handlers/effects are exercised with a DOM-free React element harness, and stylesheet contracts verify the 1023px breakpoint and 44px notification targets. Automated testing was selected by the user for Phase 04. Actual browser focus, overflow/header collisions, and rendered 360/390/768/1023/1024 px role-shell layouts remain unverified because no authenticated Moderator, Customer, or Technician sessions are available.",
     "priority": "P1"
+  },
+  {
+    "id": "phase-01-landing-presentation-foundation",
+    "title": "Landing presentation foundation",
+    "status": "passing",
+    "evidence": "node --test tests/landing-page.test.cjs (3/3); npm.cmd run test:e2e -- --project=chromium (1/1; isolated Next dev on port 3100); npm.cmd run lint (pass); Chromium computed styles at 1440x900 and 390x844: Arial body/headings, primary and secondary links 48px, primary red fill, 10px radius, visible focus, reduced motion; npx.cmd tsc --noEmit --incremental false reports unrelated generated-route and Moderator message-key errors.",
+    "user_visible_behavior": "The public Home page uses the Dolores light palette and Arial typography, and its action links render as real, accessible buttons with working variants.",
+    "verification_command": "node --test tests/landing-page.test.cjs; npx.cmd playwright install chromium; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
+    "notes": "Covers stories: US-02, US-05; foundation for US-01. User confirmed the existing DOLORES COFFEE logo and requested Playwright E2E. Browser computed-style evidence verifies the Link receives CSS.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-public-header-navigation",
+    "title": "Public header and navigation",
+    "status": "passing",
+    "evidence": "TDD: Playwright Chromium E2E 4/4; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); browser inspection at 390px, 1023px, 1024px, and 1440px confirms sticky header, visible mobile login, 44x44 toggle, and correct breakpoint. TypeScript check reports 3 pre-existing errors outside changed landing files.",
+    "user_visible_behavior": "Landing navigation links only to visible sections, keeps Login visible on mobile, and provides a keyboard-operable sticky header with a dismissible mobile disclosure.",
+    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 390px, 1023/1024px, hash links, Escape/focus return, and /login navigation",
+    "notes": "Covers stories: US-03, US-04, US-05. User chose the compact modeless disclosure under the header. Playwright emitted existing Next Image width/height warnings from legacy content slated for Phase 03; E2E passed. TypeScript errors: stale .next/types/validator.ts technician route and missing LOADING_REPAIR_CASES / TECHNICAL_LAST_ACTOR keys in Moderator technical-screen.tsx; none point to changed landing files.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-landing-content-imagery",
+    "title": "Landing content and imagery",
+    "status": "passing",
+    "evidence": "TDD: expanded Playwright Chromium E2E 5/5; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Browser inspection: one H1 in 2 lines at 1440px and 390px, no horizontal overflow at 320/390/1440px, CTA visible and separated from hero image, one machine image optimized by Next in dev and no stock/background image requests. TypeScript reports 3 unrelated baseline errors outside changed landing files.",
+    "user_visible_behavior": "Home introduces the coffee machine and Dolores management platform, uses the selected product image once, and hides sample testimonials/news and their visible links.",
+    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 320px, 390px, 1440px; verify one H1, visible anchors, image usage, and no horizontal overflow",
+    "notes": "Covers stories: US-01, US-02, US-04. User confirmed the current email, phone, and address for publication; dashboard screenshot remains optional P2. Testimonials and news content are removed from the Home message payload and are not rendered; legacy card components remain available. Phase 03 was approved by the user on 2026-10-28.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-04-rendered-validation",
+    "title": "Rendered landing validation",
+    "status": "passing",
+    "evidence": "Playwright Chromium E2E 9/9 with workers=2; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Viewport matrix 320/390/768/1023/1024/1440/1920 confirmed no horizontal overflow, clipped CTA, or image overlap. Route checks cover /, /home, /login and browser back. Keyboard, hash offset, reduced motion, Arial, no external font, representative contrast, 44x44px targets, and focus ring passed. Isolated production runtime build succeeded with TypeScript validation skipped only in a disposable copy; production Chromium measured the hero AVIF at 30,063 bytes desktop and 13,121 bytes mobile, CLS 0.0424 / 0.0122. Normal workspace build/typecheck remains blocked by stale generated .next Technician route and two unrelated Moderator message-key errors.",
+    "user_visible_behavior": "The finished landing works at / and /home across target widths, with verified navigation, focus, reduced motion, typography, image delivery, and layout stability.",
+    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; browser: 320, 390, 768, 1023, 1024, 1440, 1920px; production image payload and CLS profile",
+    "notes": "Covers stories: US-01, US-02, US-03, US-04, US-05. User selected Chromium E2E and approved Phase 04 on 2026-10-28; the MVP is complete. Production runtime measurements came from an isolated copy where only the build typecheck was skipped; a separate TypeScript check in the clean copy confirmed the two existing Moderator message-key errors. Direct workspace `next build` also hits an old generated route reference in `.next/types/validator.ts`. These baseline TypeScript issues are not in landing files. Optional Phase 05 remains deferred pending an authentic, verified dashboard screenshot.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-05-optional-dashboard-screenshot",
+    "title": "Optional verified dashboard screenshot",
+    "status": "not_started",
+    "evidence": "",
+    "user_visible_behavior": "If an approved and sanitized runtime dashboard screenshot is supplied, the platform section can show it with accurate alt text and responsive sizing; otherwise the text-only MVP remains complete.",
+    "verification_command": "After approved asset is supplied: node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: inspect source/PII sanitization, alt text, responsive sizing, payload, and CLS",
+    "notes": "Covers stories: US-06. Deferred P2; requires an authentic, approved, sanitized screenshot source and is not an MVP blocker.",
+    "priority": "P2"
   }
 ]
