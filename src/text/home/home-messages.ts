@@ -16,6 +16,7 @@ export const HOME_MESSAGES = {
     ITEMS: [
       "Giải pháp",
       "Sản phẩm",
+      "Digital Twin",
       "Công nghệ",
     ],
   },
@@ -37,6 +38,20 @@ export const HOME_MESSAGES = {
       "Quản lý thông tin máy cùng nghiệp vụ liên quan.",
       "Tra cứu dữ liệu vận hành trên nền tảng Dolores.",
     ],
+  },
+  DIGITAL_TWIN: {
+    EYEBROW: "Digital Twin",
+    TITLE: "Khám phá máy pha ở mọi góc nhìn",
+    DESCRIPTION:
+      "Xoay và quan sát mô hình 3D của máy pha Dolores. Kéo để đổi góc nhìn; dùng con lăn hoặc thao tác chụm để phóng to và thu nhỏ.",
+    VIEWER_LABEL: "Mô hình 3D tương tác của máy pha cà phê Dolores",
+    CONTROL_GROUP_LABEL: "Điều khiển góc nhìn",
+    ROTATE_LEFT: "Xoay máy sang trái",
+    ROTATE_RIGHT: "Xoay máy sang phải",
+    LOADING: "Đang tải mô hình 3D...",
+    LOAD_PROGRESS: "Đang tải mô hình 3D",
+    INTERACTION_HINT: "Kéo để xoay · Cuộn hoặc chụm để thu phóng",
+    UNSUPPORTED: "Trình duyệt này chưa hỗ trợ mô hình 3D.",
   },
   TECHNOLOGY: {
     TITLE: "Nắm thông tin vận hành trong cùng một nền tảng",

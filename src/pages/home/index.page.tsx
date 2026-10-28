@@ -10,6 +10,7 @@ import {
   HOME_FOOTER_PRODUCT_LINKS,
 } from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
+import { DigitalTwinSection } from "./digital-twin-section";
 import { HeroSection } from "./hero-section";
 import { HomeHeader } from "./home-header";
 import { HomeIntro } from "./home-intro";
@@ -67,6 +68,7 @@ export default function HomePage() {
         <main id={HOME_SECTION_IDS.TOP}>
           <HeroSection />
           <ProductSection />
+          <DigitalTwinSection />
 
           <section id={HOME_SECTION_IDS.TECHNOLOGY} className="section technology-section">
             <div className="wrap technology-grid">
