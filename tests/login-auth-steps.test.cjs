@@ -61,7 +61,7 @@ function loadLoginPage(hooks) {
     "@/apis/auth.api": { authApi: {} },
     "@/lib/api-errors": { getApiErrorMessage: () => "Lỗi đăng nhập" },
     "@/lib/auth-role": { getPostLoginPath: () => "/dashboard" },
-    "@/pages/auth/login/liquid-success-splash": { LiquidSuccessSplash: () => null },
+    "@/components/feedback/liquid-success-splash": { LiquidSuccessSplash: () => null },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
     "@/schema/auth.schema": {
       FirstLoginPasswordChangeRequestSchema: {},

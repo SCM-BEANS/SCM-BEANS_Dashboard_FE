@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActionBar } from "@/components/action-bar/action-bar";
+import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { authApi } from "@/apis/auth.api";
@@ -27,6 +28,7 @@ export function AdminShell({
     "checking",
   );
   const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutSucceeded, setLogoutSucceeded] = useState(false);
   const currentSection = getCurrentAdminSection(router.asPath || router.pathname);
   const pageTitle = currentSection.HREF === PATH_ADMIN.ROOT
     ? ADMIN_MESSAGES.OVERVIEW.TITLE
@@ -41,17 +43,18 @@ export function AdminShell({
     setAccess(hasAdminRole(token) ? "allowed" : "forbidden");
   }, [router]);
 
-  const handleLogout = async () => {
+  useEffect(() => {
+    if (access === "allowed") void prepareLiquidSuccessAnimation();
+  }, [access]);
+
+  const handleLogout = () => {
     if (loggingOut) return;
     setLoggingOut(true);
-    try {
-      await authApi.logout();
-    } catch {
-      // Clear the browser access token even if the remote logout request fails.
-    } finally {
-      Cookies.remove("access_token", { path: "/" });
-      void router.replace(PATH_AUTH.LOGIN);
-    }
+    void authApi.logout().catch(() => {
+      // Local logout still completes when the remote session is already expired.
+    });
+    Cookies.remove("access_token", { path: "/" });
+    setLogoutSucceeded(true);
   };
 
   if (access !== "allowed") {
@@ -119,6 +122,12 @@ export function AdminShell({
           {actions && <ActionBar>{actions}</ActionBar>}
         </div>
       </div>
+      {logoutSucceeded && (
+        <LiquidSuccessSplash
+          message="Đăng xuất thành công"
+          onComplete={() => { void router.replace(PATH_AUTH.LOGIN); }}
+        />
+      )}
     </>
   );
 }

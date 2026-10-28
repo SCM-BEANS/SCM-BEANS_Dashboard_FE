@@ -137,7 +137,7 @@
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .pageActions { flex-wrap: nowrap; }
   .pageActions button { white-space: nowrap; }
-  .pageContent { gap: 16px; padding: 20px 16px 144px; }
+  .pageContent { gap: 16px; padding: 20px 16px 24px; }
   .pageHeading { flex-direction: column; }
   .pageHeading h1 { font-size: 24px; }
   .pageActions { justify-content: flex-start; }
@@ -146,7 +146,7 @@
   .operationsFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .operationsFilters input { grid-column: 1 / -1; }
   .accountActionsDock { bottom: 64px; left: 0; height: 64px; padding: 8px 16px; }
-  .accountPageContent { padding-bottom: 144px; }
+  .accountPageContent { padding-bottom: 24px; }
 }
 
 @media (max-width: 600px) {

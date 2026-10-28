@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
-import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/pages/auth/login/liquid-success-splash";
+import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { getPostLoginPath } from "@/lib/auth-role";
 import { PATH_HOME } from "@/routes/path";

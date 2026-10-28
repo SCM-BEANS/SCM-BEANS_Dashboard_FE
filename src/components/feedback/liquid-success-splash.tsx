@@ -127,9 +127,13 @@ export function startLiquidSuccessAnimation({
 
 interface LiquidSuccessSplashProps {
   onComplete: () => void;
+  message?: string;
 }
 
-export function LiquidSuccessSplash({ onComplete }: LiquidSuccessSplashProps) {
+export function LiquidSuccessSplash({
+  onComplete,
+  message = "Đăng nhập thành công",
+}: LiquidSuccessSplashProps) {
   const curtainRef = useRef<SVGSVGElement>(null);
   const curtainPathRef = useRef<SVGPathElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
@@ -166,7 +170,7 @@ export function LiquidSuccessSplash({ onComplete }: LiquidSuccessSplashProps) {
             <path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
-        <p>Đăng nhập thành công</p>
+        <p>{message}</p>
       </div>
     </div>
   );

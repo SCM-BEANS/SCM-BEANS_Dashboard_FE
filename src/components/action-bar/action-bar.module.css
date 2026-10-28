@@ -23,9 +23,12 @@
 
 @media (max-width: 1023px) {
   .dock {
-    bottom: 64px;
-    left: 0;
+    position: static;
+    inset: auto;
+    z-index: auto;
+    flex: 0 0 64px;
+    width: 100%;
     height: 64px;
-    padding: 8px 16px;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   }
 }
