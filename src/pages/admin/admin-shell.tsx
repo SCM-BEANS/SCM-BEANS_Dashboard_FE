@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { authApi } from "@/apis/auth.api";
 import { hasAdminRole } from "@/lib/auth-role";
@@ -90,9 +91,7 @@ export function AdminShell({
               rootLabel={ADMIN_MESSAGES.ROLE}
               currentLabel={currentSection.LABEL}
             />
-            <span className={styles.headerPending} title={ADMIN_MESSAGES.NAVIGATION.PENDING}>
-              {ADMIN_MESSAGES.NAVIGATION.NOTIFICATIONS}
-            </span>
+            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_ADMIN.ROOT}>
@@ -101,6 +100,7 @@ export function AdminShell({
             <span className={styles.mobileHeaderStatus}>
               {currentSection.LABEL}
             </span>
+            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
             <MobileNavigation
               items={ADMIN_SIDEBAR_ITEMS}
               pathname={router.asPath || router.pathname}

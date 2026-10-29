@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessCustomerArea } from "@/lib/auth-role";
@@ -24,11 +25,14 @@ const NAV_ICONS = {
   Wrench,
 } as const;
 
-const CUSTOMER_SIDEBAR_ITEMS: SidebarItem[] = CUSTOMER_NAVIGATION_LINKS.map((item) => ({
-  label: item.LABEL,
-  href: item.HREF,
-  icon: NAV_ICONS[item.ICON],
-}));
+const CUSTOMER_SIDEBAR_ITEMS: SidebarItem[] = CUSTOMER_NAVIGATION_LINKS
+  .filter((item) => item.HREF !== PATH_CUSTOMER.NOTIFICATIONS)
+  .map((item) => ({
+    label: item.LABEL,
+    href: item.HREF,
+    icon: NAV_ICONS[item.ICON],
+  }));
+const CUSTOMER_ROUTE_ITEMS = CUSTOMER_NAVIGATION_LINKS.map((item) => ({ href: item.HREF }));
 
 export function CustomerShell({
   children,
@@ -42,7 +46,7 @@ export function CustomerShell({
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = normalizeNavigationPath(router.asPath || router.pathname);
   const activeNavigationItem = getActiveNavigationItem(
-    CUSTOMER_SIDEBAR_ITEMS,
+    CUSTOMER_ROUTE_ITEMS,
     pathname,
     PATH_CUSTOMER.ROOT,
   );
@@ -91,10 +95,6 @@ export function CustomerShell({
     );
   }
 
-  const notificationsLink = CUSTOMER_NAVIGATION_LINKS.find(
-    (item) => item.HREF === PATH_CUSTOMER.NOTIFICATIONS,
-  )!;
-
   return (
     <>
       <Head>
@@ -120,17 +120,13 @@ export function CustomerShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
-            <Link className={styles.headerLink} href={notificationsLink.HREF}>
-              {notificationsLink.LABEL}
-            </Link>
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
             </Link>
-            <Link className={styles.mobileHeaderLink} href={notificationsLink.HREF}>
-              {notificationsLink.LABEL}
-            </Link>
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
             <MobileNavigation
               items={CUSTOMER_SIDEBAR_ITEMS}
               pathname={pathname}
