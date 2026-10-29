@@ -67,8 +67,8 @@ export default function HomePage() {
 
         <main id={HOME_SECTION_IDS.TOP}>
           <HeroSection />
-          <ProductSection />
           <DigitalTwinSection />
+          <ProductSection />
 
           <section id={HOME_SECTION_IDS.TECHNOLOGY} className="section technology-section">
             <div className="wrap technology-grid">

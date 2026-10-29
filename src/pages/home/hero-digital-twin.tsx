@@ -38,7 +38,7 @@ function CoffeeMachineModel({ onReady }: HeroDigitalTwinProps) {
 export default function HeroDigitalTwin({ onReady }: HeroDigitalTwinProps) {
   return (
     <Canvas
-      camera={{ position: [4, 3, 4], fov: 36, near: 0.01, far: 2000 }}
+      camera={{ position: [6, 2.5, -3], fov: 36, near: 0.01, far: 2000 }}
       dpr={[1, 1.5]}
       frameloop="demand"
       gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}

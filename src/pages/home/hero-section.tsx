@@ -10,8 +10,8 @@ const HeroDigitalTwin = dynamic(() => import("./hero-digital-twin"), { ssr: fals
 const IMAGE_CENTER_AT = 0.58;
 const MODEL_ENTER_AT = 0.56;
 const MODEL_FULL_AT = 0.68;
-const MODEL_EXIT_AT = 0.86;
-const MODEL_GONE_AT = 0.99;
+const MODEL_EXIT_AT = 0.92;
+const MODEL_GONE_AT = 1;
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);

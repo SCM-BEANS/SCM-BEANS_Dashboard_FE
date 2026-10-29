@@ -41,6 +41,35 @@ export const HOME_MESSAGES = {
   },
   DIGITAL_TWIN: {
     EYEBROW: "Digital Twin",
+    STORY_TITLE: "Khám phá từng cụm máy",
+    STORY_DESCRIPTION: "Cuộn để xem máy hoàn chỉnh, sau đó khám phá riêng từng cụm chức năng.",
+    SCROLL_HINT: "Cuộn tiếp để xem cụm máy tiếp theo",
+    PARTS: [
+      {
+        TITLE: "Hộp chứa cà phê",
+        DESCRIPTION: "Cụm chứa nguyên liệu ở phía trên máy, sẵn sàng cung cấp cà phê cho quá trình pha.",
+        LOCATION: "Phía trên thân máy",
+        ROLE: "Chứa cà phê và cấp nguyên liệu cho chu trình pha.",
+      },
+      {
+        TITLE: "Hệ đầu ra cà phê",
+        DESCRIPTION: "Cụm dẫn và đưa cà phê đã pha ra khu vực đặt ly phía trước máy.",
+        LOCATION: "Mặt trước, trên khay đặt ly",
+        ROLE: "Dẫn cà phê đã pha ra ly qua đầu ra của máy.",
+      },
+      {
+        TITLE: "Hệ nhiệt",
+        DESCRIPTION: "Cụm tạo và duy trì nhiệt cần thiết trong quá trình pha chế.",
+        LOCATION: "Bên trong thân máy",
+        ROLE: "Cung cấp nhiệt cho các công đoạn cần nước nóng.",
+      },
+      {
+        TITLE: "Bảng điện điều khiển",
+        DESCRIPTION: "Cụm điện hỗ trợ điều khiển và phối hợp hoạt động giữa các bộ phận của máy.",
+        LOCATION: "Khoang kỹ thuật bên trong máy",
+        ROLE: "Kết nối tín hiệu và phối hợp hoạt động giữa các cụm.",
+      },
+    ],
     TITLE: "Khám phá máy pha ở mọi góc nhìn",
     DESCRIPTION:
       "Xoay và quan sát mô hình 3D của máy pha Dolores. Kéo để đổi góc nhìn; dùng con lăn hoặc thao tác chụm để phóng to và thu nhỏ.",
