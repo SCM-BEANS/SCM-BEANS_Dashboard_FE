@@ -1,24 +1,19 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { HOME_SECTION_IDS } from "@/routes/path";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
-import { DIGITAL_TWIN_PART_SPAN, DIGITAL_TWIN_PART_START, getPartVisibility, getWholeVisibility } from "./digital-twin-story";
+import coffeeMachineImage from "@/assets/coffee-machine-float.png";
+import { DIGITAL_TWIN_PART_SPAN, DIGITAL_TWIN_PART_START, getPartEntrance, getPartVisibility, getWholeVisibility } from "./digital-twin-story";
 
-const DigitalTwinViewer = dynamic(() => import("./digital-twin-viewer"), {
-  ssr: false,
-  loading: () => (
-    <div className="digital-twin-loader" role="status">
-      <span className="digital-twin-spinner" aria-hidden="true" />
-      <span>{HOME_MESSAGES.DIGITAL_TWIN.LOADING}</span>
-    </div>
-  ),
-});
+const DigitalTwinViewer = dynamic(() => import("./digital-twin-viewer"), { ssr: false });
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
 export function DigitalTwinSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [viewerRequested, setViewerRequested] = useState(false);
+  const [viewerReady, setViewerReady] = useState(false);
   const [scrollEnabled, setScrollEnabled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [entryProgress, setEntryProgress] = useState(0);
@@ -44,7 +39,8 @@ export function DigitalTwinSection() {
       const headerHeight = document.querySelector(".topbar")?.getBoundingClientRect().height ?? 0;
       const sectionTop = section.getBoundingClientRect().top;
       const travel = Math.max(1, section.offsetHeight - stage.offsetHeight);
-      setEntryProgress(clamp((window.innerHeight - sectionTop) / Math.max(1, window.innerHeight - headerHeight)));
+      const handoffDistance = window.innerHeight * 0.2;
+      setEntryProgress(clamp((headerHeight + handoffDistance - sectionTop) / handoffDistance));
       const value = (headerHeight - sectionTop) / travel;
       setProgress(clamp(value));
     };
@@ -94,7 +90,7 @@ export function DigitalTwinSection() {
     >
       <div ref={stageRef} className="digital-twin-stage">
         <div className="digital-twin-grid">
-          <div className="digital-twin-copy">
+          <div className="digital-twin-copy" style={{ opacity: reveal }}>
             <div className="digital-twin-heading">
               <span className="eyebrow">{HOME_MESSAGES.DIGITAL_TWIN.EYEBROW}</span>
               <h2>{HOME_MESSAGES.DIGITAL_TWIN.STORY_TITLE}</h2>
@@ -108,6 +104,14 @@ export function DigitalTwinSection() {
             <div className="digital-twin-part-cards" aria-live="off">
               {HOME_MESSAGES.DIGITAL_TWIN.PARTS.map((part, index) => {
                 const opacity = cardOpacity(index);
+                const entrance = scrollEnabled ? getPartEntrance(progress, index) : 1;
+                const revealStyle = (delay: number, distance = 10) => {
+                  const amount = clamp((entrance - delay) / (1 - delay));
+                  return {
+                    opacity: amount,
+                    transform: scrollEnabled ? `translate3d(0, ${(1 - amount) * distance}px, 0)` : undefined,
+                  };
+                };
                 return (
                   <article
                     key={part.TITLE}
@@ -115,10 +119,11 @@ export function DigitalTwinSection() {
                     aria-hidden={scrollEnabled && activeIndex !== index}
                     style={{ opacity, transform: scrollEnabled ? `translate3d(0, ${(1 - opacity) * 14}px, 0)` : undefined }}
                   >
-                    <span className="digital-twin-part-number">CỤM 0{index + 1} / 0{HOME_MESSAGES.DIGITAL_TWIN.PARTS.length}</span>
-                    <h3>{part.TITLE}</h3>
-                    <p>{part.DESCRIPTION}</p>
-                    <dl>
+                    <span className="digital-twin-part-accent" aria-hidden="true" style={{ transform: `scaleY(${entrance})` }} />
+                    <span className="digital-twin-part-number" style={revealStyle(0.04, 8)}>CỤM 0{index + 1} / 0{HOME_MESSAGES.DIGITAL_TWIN.PARTS.length}</span>
+                    <h3 style={revealStyle(0.16, 12)}>{part.TITLE}</h3>
+                    <p style={revealStyle(0.32, 12)}>{part.DESCRIPTION}</p>
+                    <dl style={revealStyle(0.48, 10)}>
                       <div><dt>Vị trí</dt><dd>{part.LOCATION}</dd></div>
                       <div><dt>Vai trò</dt><dd>{part.ROLE}</dd></div>
                     </dl>
@@ -140,13 +145,11 @@ export function DigitalTwinSection() {
             aria-label={HOME_MESSAGES.DIGITAL_TWIN.VIEWER_LABEL}
             style={{ opacity: reveal, transform: `translate3d(0, ${(1 - reveal) * 20}px, 0) scale(${0.98 + reveal * 0.02})` }}
           >
-            {viewerRequested ? (
-              <DigitalTwinViewer progress={scrollEnabled ? progress : 0} />
-            ) : (
-              <div className="digital-twin-loader" role="status">
-                <span className="digital-twin-spinner" aria-hidden="true" />
-                <span>{HOME_MESSAGES.DIGITAL_TWIN.LOADING}</span>
-              </div>
+            <div className="digital-twin-poster" style={{ opacity: viewerReady ? 0 : 1 }} aria-hidden="true">
+              <Image src={coffeeMachineImage} alt="" width={760} height={760} sizes="(max-width: 1023px) 90vw, 58vw" />
+            </div>
+            {viewerRequested && (
+              <DigitalTwinViewer progress={scrollEnabled ? progress : 0} onReady={() => setViewerReady(true)} />
             )}
           </div>
         </div>

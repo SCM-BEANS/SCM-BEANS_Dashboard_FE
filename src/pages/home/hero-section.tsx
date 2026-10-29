@@ -10,8 +10,7 @@ const HeroDigitalTwin = dynamic(() => import("./hero-digital-twin"), { ssr: fals
 const IMAGE_CENTER_AT = 0.58;
 const MODEL_ENTER_AT = 0.56;
 const MODEL_FULL_AT = 0.68;
-const MODEL_EXIT_AT = 0.92;
-const MODEL_GONE_AT = 1;
+const HANDOFF_START_AT = 0.84;
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -20,12 +19,13 @@ export function HeroSection() {
   const imageRef = useRef<HTMLDivElement>(null);
   const posterRef = useRef<HTMLDivElement>(null);
   const modelLayerRef = useRef<HTMLDivElement>(null);
-  const modelReadyRef = useRef(false);
+  const modelReadyAtRef = useRef<number | null>(null);
   const requestUpdateRef = useRef<() => void>(() => {});
   const [showModelCanvas, setShowModelCanvas] = useState(false);
 
   const handleModelReady = useCallback(() => {
-    modelReadyRef.current = true;
+    if (modelReadyAtRef.current !== null) return;
+    modelReadyAtRef.current = performance.now();
     requestUpdateRef.current();
   }, []);
 
@@ -44,6 +44,8 @@ export function HeroSection() {
     let targetY = 0;
     let animationFrame = 0;
     const clamp = (value: number) => Math.min(1, Math.max(0, value));
+    const smoothstep = (value: number) => value * value * (3 - 2 * value);
+    const READY_FADE_MS = 360;
 
     const resetTransforms = () => {
       image.style.removeProperty("transform");
@@ -76,15 +78,19 @@ export function HeroSection() {
         1,
         Math.max(0, (window.scrollY - (sectionTop - headerHeight)) / scrollRange),
       );
-      const positionProgress = clamp(progress / IMAGE_CENTER_AT);
-      const modelEntrance = clamp((progress - MODEL_ENTER_AT) / (MODEL_FULL_AT - MODEL_ENTER_AT));
-      const sceneExit = 1 - clamp((progress - MODEL_EXIT_AT) / (MODEL_GONE_AT - MODEL_EXIT_AT));
+      const positionProgress = smoothstep(clamp(progress / IMAGE_CENTER_AT));
+      const modelEntrance = smoothstep(clamp((progress - MODEL_ENTER_AT) / (MODEL_FULL_AT - MODEL_ENTER_AT)));
+      const handoff = 1 - smoothstep(clamp((progress - HANDOFF_START_AT) / (1 - HANDOFF_START_AT)));
+      const readyTime = modelReadyAtRef.current;
+      const readyProgress = readyTime === null ? 0 : clamp((performance.now() - readyTime) / READY_FADE_MS);
+      const modelBlend = modelEntrance * smoothstep(readyProgress);
 
       image.style.transform = `translate3d(${targetX * positionProgress}px, ${targetY * positionProgress}px, 0) scale(${1 + positionProgress * 0.05})`;
       content.style.opacity = String(1 - positionProgress);
       content.style.transform = `translate3d(0, ${-28 * positionProgress}px, 0)`;
-      poster.style.opacity = String((modelReadyRef.current ? 1 - modelEntrance : 1) * sceneExit);
-      modelLayer.style.opacity = String(modelReadyRef.current ? modelEntrance * sceneExit : 0);
+      poster.style.opacity = String((1 - modelBlend) * handoff);
+      modelLayer.style.opacity = String(modelBlend * handoff);
+      if (readyTime !== null && readyProgress < 1) scheduleUpdate();
     };
 
     const scheduleUpdate = () => {
@@ -95,7 +101,7 @@ export function HeroSection() {
 
     const refresh = () => {
       if (smallScreen.matches || reducedMotion.matches) {
-        modelReadyRef.current = false;
+        modelReadyAtRef.current = null;
         setShowModelCanvas(false);
         resetTransforms();
         return;

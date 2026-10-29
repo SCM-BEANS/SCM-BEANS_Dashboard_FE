@@ -1,6 +1,6 @@
-import { Component, Suspense, useEffect, useMemo, type ReactNode } from "react";
+import { Component, Suspense, useMemo, useRef, type ReactNode } from "react";
 import { Bounds, useGLTF } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 
 const MODEL_URL = "/models/digital-twin/body/coffee_machine_03_v2.glb";
 
@@ -23,13 +23,30 @@ class ModelErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
 function CoffeeMachineModel({ onReady }: HeroDigitalTwinProps) {
   const { scene } = useGLTF(MODEL_URL);
   const heroScene = useMemo(() => scene.clone(true), [scene]);
+  const renderedFrames = useRef(0);
+  const readyRef = useRef(false);
+  const checkScheduledRef = useRef(false);
 
-  useEffect(() => {
-    onReady();
-  }, [onReady, scene]);
+  useFrame((state) => {
+    if (readyRef.current) return;
+    renderedFrames.current += 1;
+    if (renderedFrames.current < 3 || checkScheduledRef.current) return;
+
+    checkScheduledRef.current = true;
+    window.requestAnimationFrame(() => {
+      checkScheduledRef.current = false;
+      if (readyRef.current) return;
+      if (state.gl.info.render.calls > 0) {
+        readyRef.current = true;
+        onReady();
+      } else if (renderedFrames.current < 12) {
+        state.invalidate();
+      }
+    });
+  });
 
   return (
-    <Bounds fit clip margin={1.15}>
+    <Bounds fit clip margin={1.15} maxDuration={0.001}>
       <primitive object={heroScene} />
     </Bounds>
   );

@@ -1,6 +1,6 @@
-import { Suspense, useEffect, useLayoutEffect, useMemo } from "react";
-import { Bounds, useGLTF, useProgress } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { Bounds, useGLTF } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Box3, Group, Material, Mesh, Object3D, Vector3 } from "three";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { DIGITAL_TWIN_PART_NODES, getPartEntrance, getPartVisibility, getPartYaw, getWholeVisibility } from "./digital-twin-story";
@@ -47,9 +47,12 @@ function showAtOpacity(root: Object3D, materials: FadeMaterial[], weight: number
   });
 }
 
-function CoffeeMachineModel({ progress }: { progress: number }) {
+function CoffeeMachineModel({ progress, onReady }: { progress: number; onReady: () => void }) {
   const { scene } = useGLTF(MODEL_URL);
   const { invalidate } = useThree();
+  const renderedFrames = useRef(0);
+  const readyRef = useRef(false);
+  const checkScheduledRef = useRef(false);
   const visuals = useMemo(() => {
     const whole = scene.clone(true);
     const fullBox = new Box3().setFromObject(whole);
@@ -99,9 +102,26 @@ function CoffeeMachineModel({ progress }: { progress: number }) {
     visuals.parts.forEach((part) => part?.materials.forEach(({ material }) => material.dispose()));
   }, [visuals]);
 
+  useFrame((state) => {
+    if (readyRef.current) return;
+    renderedFrames.current += 1;
+    if (renderedFrames.current < 3 || checkScheduledRef.current) return;
+    checkScheduledRef.current = true;
+    window.requestAnimationFrame(() => {
+      checkScheduledRef.current = false;
+      if (readyRef.current) return;
+      if (state.gl.info.render.calls > 0) {
+        readyRef.current = true;
+        onReady();
+      } else if (renderedFrames.current < 12) {
+        state.invalidate();
+      }
+    });
+  });
+
   return (
     <>
-      <Bounds fit clip margin={1.2}>
+      <Bounds fit clip margin={1.2} maxDuration={0.001}>
         <primitive object={visuals.whole} dispose={null} />
       </Bounds>
       {visuals.parts.map((part, index) => part && (
@@ -111,33 +131,21 @@ function CoffeeMachineModel({ progress }: { progress: number }) {
   );
 }
 
-export default function DigitalTwinViewer({ progress }: { progress: number }) {
-  const { active, progress: loadProgress } = useProgress();
-
+export default function DigitalTwinViewer({ progress, onReady }: { progress: number; onReady: () => void }) {
   return (
-    <>
-      <Canvas
-        camera={{ position: [6, 2.5, -3], fov: 36, near: 0.01, far: 2000 }}
-        dpr={[1, 1.5]}
-        frameloop="demand"
-        gl={{ alpha: false, antialias: true, powerPreference: "low-power" }}
-        fallback={<div className="digital-twin-loader">{HOME_MESSAGES.DIGITAL_TWIN.UNSUPPORTED}</div>}
-      >
-        <color attach="background" args={["#f8f6f3"]} />
-        <ambientLight intensity={1.25} />
-        <directionalLight position={[-4, 7, 5]} intensity={2.1} />
-        <directionalLight position={[5, 2, -4]} intensity={1.1} />
-        <Suspense fallback={null}>
-          <CoffeeMachineModel progress={progress} />
-        </Suspense>
-      </Canvas>
-
-      {active && (
-        <div className="digital-twin-progress" role="status" aria-live="polite">
-          <span>{HOME_MESSAGES.DIGITAL_TWIN.LOAD_PROGRESS}</span>
-          <strong>{Math.round(loadProgress)}%</strong>
-        </div>
-      )}
-    </>
+    <Canvas
+      camera={{ position: [6, 2.5, -3], fov: 36, near: 0.01, far: 2000 }}
+      dpr={[1, 1.5]}
+      frameloop="demand"
+      gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}
+      fallback={<div className="digital-twin-loader">{HOME_MESSAGES.DIGITAL_TWIN.UNSUPPORTED}</div>}
+    >
+      <ambientLight intensity={1.25} />
+      <directionalLight position={[-4, 7, 5]} intensity={2.1} />
+      <directionalLight position={[5, 2, -4]} intensity={1.1} />
+      <Suspense fallback={null}>
+        <CoffeeMachineModel progress={progress} onReady={onReady} />
+      </Suspense>
+    </Canvas>
   );
 }
