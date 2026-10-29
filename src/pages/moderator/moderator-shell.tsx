@@ -20,6 +20,7 @@ import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { hasModeratorRole } from "@/lib/auth-role";
@@ -41,11 +42,14 @@ const NAV_ICONS = {
   Wrench,
 } as const;
 
-const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS.map((item) => ({
-  label: item.LABEL,
-  href: item.HREF,
-  icon: NAV_ICONS[item.ICON],
-}));
+const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS
+  .filter((item) => item.HREF !== PATH_MODERATOR.NOTIFICATIONS)
+  .map((item) => ({
+    label: item.LABEL,
+    href: item.HREF,
+    icon: NAV_ICONS[item.ICON],
+  }));
+const MODERATOR_ROUTE_ITEMS = MODERATOR_NAVIGATION_LINKS.map((item) => ({ href: item.HREF }));
 
 export function ModeratorShell({
   children,
@@ -59,7 +63,7 @@ export function ModeratorShell({
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = normalizeNavigationPath(router.asPath || router.pathname);
   const activeNavigationItem = getActiveNavigationItem(
-    MODERATOR_SIDEBAR_ITEMS,
+    MODERATOR_ROUTE_ITEMS,
     pathname,
     PATH_MODERATOR.ROOT,
   );
@@ -108,9 +112,6 @@ export function ModeratorShell({
     );
   }
 
-  const notificationsLink = MODERATOR_NAVIGATION_LINKS.find(
-    (item) => item.HREF === PATH_MODERATOR.NOTIFICATIONS,
-  )!;
   const renderBreadcrumb = () => (
     <AdminBreadcrumb
       rootLabel={MODERATOR_MESSAGES.ROLE}
@@ -181,17 +182,13 @@ export function ModeratorShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             {renderBreadcrumb()}
-            <Link className={styles.headerLink} href={notificationsLink.HREF}>
-              {MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS}
-            </Link>
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
             </Link>
-            <Link className={styles.mobileHeaderLink} href={notificationsLink.HREF}>
-              {MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS}
-            </Link>
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
             <MobileNavigation
               items={MODERATOR_SIDEBAR_ITEMS}
               pathname={pathname}

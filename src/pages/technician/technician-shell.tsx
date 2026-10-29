@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessTechnicianArea } from "@/lib/auth-role";
@@ -21,11 +22,14 @@ const NAV_ICONS = {
   Wrench,
 } as const;
 
-const TECHNICIAN_SIDEBAR_ITEMS: SidebarItem[] = TECHNICIAN_NAVIGATION_LINKS.map((item) => ({
-  label: item.LABEL,
-  href: item.HREF,
-  icon: NAV_ICONS[item.ICON],
-}));
+const TECHNICIAN_SIDEBAR_ITEMS: SidebarItem[] = TECHNICIAN_NAVIGATION_LINKS
+  .filter((item) => item.HREF !== PATH_TECHNICIAN.NOTIFICATIONS)
+  .map((item) => ({
+    label: item.LABEL,
+    href: item.HREF,
+    icon: NAV_ICONS[item.ICON],
+  }));
+const TECHNICIAN_ROUTE_ITEMS = TECHNICIAN_NAVIGATION_LINKS.map((item) => ({ href: item.HREF }));
 
 export function TechnicianShell({
   children,
@@ -39,7 +43,7 @@ export function TechnicianShell({
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = normalizeNavigationPath(router.asPath || router.pathname);
   const activeNavigationItem = getActiveNavigationItem(
-    TECHNICIAN_SIDEBAR_ITEMS,
+    TECHNICIAN_ROUTE_ITEMS,
     pathname,
     PATH_TECHNICIAN.ROOT,
   );
@@ -88,10 +92,6 @@ export function TechnicianShell({
     );
   }
 
-  const notificationsLink = TECHNICIAN_NAVIGATION_LINKS.find(
-    (item) => item.HREF === PATH_TECHNICIAN.NOTIFICATIONS,
-  )!;
-
   return (
     <>
       <Head>
@@ -117,17 +117,13 @@ export function TechnicianShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{TECHNICIAN_MESSAGES.ROLE} / {pageTitle}</p>
-            <Link className={styles.headerLink} href={notificationsLink.HREF}>
-              {notificationsLink.LABEL}
-            </Link>
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
             </Link>
-            <Link className={styles.mobileHeaderLink} href={notificationsLink.HREF}>
-              {notificationsLink.LABEL}
-            </Link>
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
             <MobileNavigation
               items={TECHNICIAN_SIDEBAR_ITEMS}
               pathname={pathname}

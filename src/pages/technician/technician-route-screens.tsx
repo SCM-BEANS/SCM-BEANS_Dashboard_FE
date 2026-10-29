@@ -1,7 +1,7 @@
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 import { getTechnicianHistoryBackNavigation, getTechnicianHistoryScreenDescriptor } from "./history/history-screen";
 import { technicianMachineCheckScreen } from "./machine-check/machine-check-screen";
-import { technicianNotificationsScreen } from "./notifications/notifications-screen";
+import { TechnicianNotificationsScreen } from "./notifications/notifications-screen";
 import { TechnicianScreen, type TechnicianScreenDescriptor } from "./technician-screen";
 import { getTechnicianTaskBackNavigation, getTechnicianTaskScreenDescriptor } from "./tasks/task-screens";
 
@@ -25,8 +25,6 @@ export function getTechnicianScreenDescriptor(sectionPath: string): TechnicianSc
     return getTechnicianHistoryScreenDescriptor(sectionPath);
   }
   if (sectionPath === "machine-check") return technicianMachineCheckScreen;
-  if (sectionPath === "notifications") return technicianNotificationsScreen;
-
   return {
     title: TECHNICIAN_MESSAGES.ROUTES.PENDING_TITLE,
     description: TECHNICIAN_MESSAGES.ROUTES.PAGE_DESCRIPTION,
@@ -36,5 +34,6 @@ export function getTechnicianScreenDescriptor(sectionPath: string): TechnicianSc
 }
 
 export function TechnicianRouteScreen({ sectionPath }: { sectionPath: string }) {
+  if (sectionPath === "notifications") return <TechnicianNotificationsScreen />;
   return <TechnicianScreen screen={getTechnicianScreenDescriptor(sectionPath)} />;
 }

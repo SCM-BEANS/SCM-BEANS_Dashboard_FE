@@ -32,17 +32,23 @@ const NAV_ICONS = {
 } as const;
 
 type NavigationItem = (typeof ADMIN_NAVIGATION_LINKS)[number];
-
-export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS.map((item) => ({
-  label: item.LABEL,
+const ADMIN_ROUTE_ITEMS = ADMIN_NAVIGATION_LINKS.map((item) => ({
   href: item.HREF,
-  icon: NAV_ICONS[item.ICON],
   enabled: ADMIN_ENABLED_PATHS.has(item.HREF),
-  title: ADMIN_ENABLED_PATHS.has(item.HREF) ? undefined : ADMIN_MESSAGES.NAVIGATION.PENDING,
 }));
 
+export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS
+  .filter((item) => item.HREF !== PATH_ADMIN.NOTIFICATIONS)
+  .map((item) => ({
+    label: item.LABEL,
+    href: item.HREF,
+    icon: NAV_ICONS[item.ICON],
+    enabled: ADMIN_ENABLED_PATHS.has(item.HREF),
+    title: ADMIN_ENABLED_PATHS.has(item.HREF) ? undefined : ADMIN_MESSAGES.NAVIGATION.PENDING,
+  }));
+
 export function getCurrentAdminSection(pathname: string): NavigationItem {
-  const activeItem = getActiveNavigationItem(ADMIN_SIDEBAR_ITEMS, pathname, PATH_ADMIN.ROOT);
+  const activeItem = getActiveNavigationItem(ADMIN_ROUTE_ITEMS, pathname, PATH_ADMIN.ROOT);
   return ADMIN_NAVIGATION_LINKS.find((item) => item.HREF === activeItem?.href) ?? ADMIN_NAVIGATION_LINKS[0];
 }
 
