@@ -11,6 +11,7 @@ const CustomerCreateScreen = lazy(() => import("./customers/customer-create-scre
 const ContractListScreen = lazy(() => import("./contracts/contract-list-screen").then((module) => ({ default: module.ContractListScreen })));
 const ContractCreateScreen = lazy(() => import("./contracts/contract-create-screen").then((module) => ({ default: module.ContractCreateScreen })));
 const ContractDetailScreen = lazy(() => import("./contracts/contract-detail-screen").then((module) => ({ default: module.ContractDetailScreen })));
+const ContractInstallationRequestScreen = lazy(() => import("./contracts/contract-installation-request-screen").then((module) => ({ default: module.ContractInstallationRequestScreen })));
 const ModeratorMachinesScreen = lazy(() => import("./machines/machines-screen").then((module) => ({ default: module.ModeratorMachinesScreen })));
 const ModeratorIoTScreen = lazy(() => import("./iot/iot-screen").then((module) => ({ default: module.ModeratorIoTScreen })));
 const ModeratorTechnicalScreen = lazy(() => import("./technical/technical-screen").then((module) => ({ default: module.ModeratorTechnicalScreen })));
@@ -41,6 +42,10 @@ function loadScreen(screen: ReactNode) {
 }
 
 export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
+  const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(sectionPath);
+  if (contractInstallationRequest) {
+    return loadScreen(<ContractInstallationRequestScreen contractId={contractInstallationRequest[1]} />);
+  }
   if (sectionPath === "machines" || sectionPath.startsWith("machines/")) {
     return loadScreen(<ModeratorMachinesScreen path={sectionPath} />);
   }

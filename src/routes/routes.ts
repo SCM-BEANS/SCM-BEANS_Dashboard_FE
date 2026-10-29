@@ -249,6 +249,10 @@ export function isSupportedModeratorSection(section: string): boolean {
   if (section && (section.startsWith("/") || section.endsWith("/") || section.includes("//"))) {
     return false;
   }
+  const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(section);
+  if (contractInstallationRequest) {
+    return ContractIdSchema.safeParse(contractInstallationRequest[1]).success;
+  }
   const pathname = section
     ? PATH_MODERATOR.ROOT + "/" + section
     : PATH_MODERATOR.ROOT;

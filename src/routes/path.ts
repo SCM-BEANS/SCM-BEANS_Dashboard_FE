@@ -51,6 +51,7 @@ export const PATH_MODERATOR = {
   CONTRACTS: MODERATOR_ROOT + "/contracts",
   CONTRACTS_LIST: MODERATOR_ROOT + "/contracts/list",
   CONTRACT_DETAIL: (id: string) => MODERATOR_ROOT + "/contracts/" + encodeURIComponent(id),
+  CONTRACT_INSTALLATION_REQUEST: (id: string) => MODERATOR_ROOT + "/contracts/" + encodeURIComponent(id) + "/installation-request",
   NEW_CONTRACT: MODERATOR_ROOT + "/contracts/new",
   CONTRACT_FIRST_INVOICE: MODERATOR_ROOT + "/contracts/first-invoice",
   CONTRACT_STANDARD_HANDOVER: MODERATOR_ROOT + "/contracts/handover/standard",
