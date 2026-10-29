@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const doloresApiOrigin = process.env.DOLORES_API_URL?.replace(/\/+$/, '');
-
 const nextConfig = {
   pageExtensions: ["page.tsx", "page.ts", "page.jsx", "page.js"],
   distDir: process.env.NEXT_DIST_DIR || ".next",
@@ -38,17 +36,6 @@ const nextConfig = {
     ],
   },
 
-  // Proxy the separate Dolores API to avoid browser CORS requests.
-  async rewrites() {
-    return [
-      ...(doloresApiOrigin
-        ? [{
-            source: '/api/dolores/v1/:path*',
-            destination: doloresApiOrigin + '/api/v1/:path*',
-          }]
-        : []),
-    ];
-  },
 };
 
 module.exports = nextConfig;

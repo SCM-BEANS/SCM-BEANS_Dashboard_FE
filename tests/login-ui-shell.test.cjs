@@ -47,7 +47,7 @@ function loadLoginPage() {
         `${brandName} ${brandTagline}`,
       ),
     },
-    "@/pages/auth/login/liquid-success-splash": { LiquidSuccessSplash: () => null },
+    "@/components/feedback/liquid-success-splash": { LiquidSuccessSplash: () => null },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
     "@/schema/auth.schema": {
       FirstLoginPasswordChangeRequestSchema: {},

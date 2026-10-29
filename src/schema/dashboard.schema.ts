@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const nonnegativeCount = z.number().int().nonnegative();
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const DASHBOARD_BUSINESS_TIME_ZONE = "Asia/Ho_Chi_Minh";
 const isCalendarDate = (value: string) => {
   const parsed = new Date(value + "T00:00:00Z");
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
@@ -18,16 +19,31 @@ const dateRangeInputSchema = z.object({
 .refine(({ fromDate, toDate }) => {
   const from = Date.parse(fromDate + "T00:00:00Z");
   const to = Date.parse(toDate + "T00:00:00Z");
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  const todayParts = new Intl.DateTimeFormat("en", {
+    timeZone: DASHBOARD_BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    todayParts.find((item) => item.type === type)?.value ?? "";
+  const today = Date.parse(`${part("year")}-${part("month")}-${part("day")}T00:00:00Z`);
   const day = 24 * 60 * 60 * 1000;
-  return to <= today.getTime() && (to - from) / day <= 90;
+  return to <= today && (to - from) / day < 90;
 }, { message: "The date range must end today or earlier and span no more than 90 days." });
 
 const DailyCupUsageSchema = z.object({
   date: isoDate.nullish(),
   cups: nonnegativeCount.nullish(),
 });
+
+export const DailyMachineCupUsageSchema = z.object({
+  machineId: z.string().uuid(),
+  serialNumber: z.string().nullish(),
+  region: z.string().nullish(),
+  cups: nonnegativeCount,
+});
+export const DailyMachineCupUsageListSchema = z.array(DailyMachineCupUsageSchema);
 
 const OperationalMetricsSchema = z.object({
   totalOwners: nonnegativeCount.nullish(),
@@ -67,3 +83,4 @@ export const DashboardOverviewSchema = z.object({
 export const DashboardDateRangeSchema = dateRangeInputSchema;
 
 export type TDashboardOverview = z.infer<typeof DashboardOverviewSchema>;
+export type TDailyMachineCupUsage = z.infer<typeof DailyMachineCupUsageSchema>;

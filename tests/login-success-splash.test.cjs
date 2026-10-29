@@ -89,7 +89,7 @@ function loadLoginPage({ hooks, loginResult, loginError, reducedMotion = false, 
     } },
     "@/lib/api-errors": { getApiErrorMessage: () => "Không thể đăng nhập." },
     "@/lib/auth-role": { getPostLoginPath: () => "/dashboard" },
-    "@/pages/auth/login/liquid-success-splash": { LiquidSuccessSplash: SplashMock },
+    "@/components/feedback/liquid-success-splash": { LiquidSuccessSplash: SplashMock },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
     "@/schema/auth.schema": {
       FirstLoginPasswordChangeRequestSchema: schema(),
@@ -210,7 +210,7 @@ test("reduced-motion preference skips the splash and routes immediately", async 
 });
 
 function loadSplashModule() {
-  const fileName = join(root, "src/pages/auth/login/liquid-success-splash.tsx");
+  const fileName = join(root, "src/components/feedback/liquid-success-splash.tsx");
   const source = readFileSync(fileName, "utf8");
   const { outputText } = ts.transpileModule(source, {
     fileName,
@@ -275,7 +275,7 @@ function createFakeGsap({ throwOnTween = false } = {}) {
 test("success splash announces success, uses Dolores colors, and contains no audio", () => {
   const { LiquidSuccessSplash } = loadSplashModule();
   const markup = renderToStaticMarkup(React.createElement(LiquidSuccessSplash, { onComplete() {} }));
-  const css = readFileSync(join(root, "src/pages/auth/login/liquid-success-splash.module.css"), "utf8");
+  const css = readFileSync(join(root, "src/components/feedback/liquid-success-splash.module.css"), "utf8");
 
   assert.match(markup, /role="status"/);
   assert.match(markup, /Đăng nhập thành công/);

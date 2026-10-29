@@ -18,6 +18,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
+import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -61,6 +62,7 @@ export function ModeratorShell({
   const router = useRouter();
   const [access, setAccess] = useState<"checking" | "allowed" | "forbidden">("checking");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutSucceeded, setLogoutSucceeded] = useState(false);
   const pathname = normalizeNavigationPath(router.asPath || router.pathname);
   const activeNavigationItem = getActiveNavigationItem(
     MODERATOR_ROUTE_ITEMS,
@@ -80,17 +82,18 @@ export function ModeratorShell({
     setAccess(hasModeratorRole(token) ? "allowed" : "forbidden");
   }, [router]);
 
-  const handleLogout = async () => {
+  useEffect(() => {
+    if (access === "allowed") void prepareLiquidSuccessAnimation();
+  }, [access]);
+
+  const handleLogout = () => {
     if (loggingOut) return;
     setLoggingOut(true);
-    try {
-      await authApi.logout();
-    } catch {
-      // Clear the browser access token even if the remote logout request fails.
-    } finally {
-      Cookies.remove("access_token", { path: "/" });
-      void router.replace(PATH_AUTH.LOGIN);
-    }
+    void authApi.logout().catch(() => {
+      // Local logout still completes when the remote session is already expired.
+    });
+    Cookies.remove("access_token", { path: "/" });
+    setLogoutSucceeded(true);
   };
 
   if (access !== "allowed") {
@@ -212,6 +215,12 @@ export function ModeratorShell({
           {isSectionList && <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>}
         </div>
       </div>
+      {logoutSucceeded && (
+        <LiquidSuccessSplash
+          message="Đăng xuất thành công"
+          onComplete={() => { void router.replace(PATH_AUTH.LOGIN); }}
+        />
+      )}
     </>
   );
 }

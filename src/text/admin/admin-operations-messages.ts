@@ -46,7 +46,7 @@ export const ADMIN_OPERATIONS_MESSAGES = {
     CHECK_LIST: "Kiểm tra danh sách", CANCEL: "Hủy",
     TOTAL: "Tổng số máy", WAREHOUSE: "Trong kho", DEPLOYED: "Đang triển khai", MAINTENANCE: "Đang bảo trì",
     FILTER_ALL: "Tất cả", MACHINE_ID: "UUID máy", SERIAL: "Serial", STATUS: "Trạng thái",
-    OWNER_ID: "Owner ID", REGION: "Khu vực", CONTRACT_PERIOD: "Thời hạn hợp đồng", DEPLOYED_AT: "Ngày triển khai",
+    OWNER_ID: "Mã chủ sở hữu", REGION: "Khu vực", CONTRACT_PERIOD: "Thời hạn hợp đồng", DEPLOYED_AT: "Ngày triển khai",
     OPEN_DETAIL: "Mở hồ sơ", NO_MATCH: "Không có máy phù hợp với trạng thái đã chọn.",
     INVALID_ID: "UUID máy không hợp lệ.", NOT_FOUND: "Không tìm thấy máy theo UUID này.",
     DETAIL: "Hồ sơ máy", PREVENTIVE: "Lịch bảo trì phòng ngừa", NEXT_MAINTENANCE: "Bảo trì tiếp theo",

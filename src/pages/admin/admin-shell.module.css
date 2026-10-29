@@ -32,7 +32,6 @@
 .pageActions button:disabled { color: #706561; opacity: .56; cursor: not-allowed; }
 .pageActions button:not(:disabled):hover { background: #f7f5f3; }
 .pageActions label { display: inline-flex; align-items: center; gap: 8px; color: #706561; font-size: 13px; }
-.pendingNotice { margin: -8px 0 0; color: #706561; font-size: 12px; }
 .notice { padding: 16px; border-radius: 10px; background: #f9e9ea; font-size: 14px; line-height: 1.5; }
 .notice p { margin: 0 0 12px; }
 .notice button { min-height: 40px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: white; color: #302927; cursor: pointer; }
@@ -42,12 +41,143 @@
 .metricCard { display: flex; min-height: 110px; flex-direction: column; gap: 14px; padding: 19px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .metricCard span, .financeGrid span { color: #706561; font-size: 13px; }
 .metricCard strong { overflow-wrap: anywhere; font-size: 24px; }
+.overviewMetricMeta { color: #706561; font-size: 12px; line-height: 1.4; }
 .panel { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .panel h2 { margin: 0 0 14px; font-size: 19px; }
 .panelSubtitle, .emptyText { margin: 0 0 14px; color: #706561; font-size: 14px; line-height: 1.5; }
+.adminTable { scrollbar-color: #b8aca5 #f7f5f3; scrollbar-width: thin; }
+.adminTable::-webkit-scrollbar { height: 8px; }
+.adminTable::-webkit-scrollbar-track { border-radius: 8px; background: #f7f5f3; }
+.adminTable::-webkit-scrollbar-thumb { border-radius: 8px; background: #b8aca5; }
+.adminTableHint { display: none; }
+.overviewDailyTable :global(table) { min-width: 0; table-layout: fixed; }
+.overviewDailyTable :global(thead th:first-child),
+.overviewDailyTable :global(tbody td:first-child) { width: 72px; }
+.overviewDailyTable :global(thead th:nth-child(2)),
+.overviewDailyTable :global(tbody td:nth-child(2)) { width: 44%; }
+.overviewDailyTable :global(thead th:nth-child(3)),
+.overviewDailyTable :global(tbody td:nth-child(3)) { text-align: center; }
+.overviewDailyTable :global(tbody tr:has(input:checked) td) { background: #fdf7f6; }
+.overviewDailyTable :global(tbody td:first-child) { width: 72px; text-align: center; }
+.overviewCupMetricFooter { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: auto; }
+.overviewCupMetricFooter small { display: flex; min-width: 0; flex-direction: column; gap: 3px; color: #706561; font-size: 12px; line-height: 1.4; }
+.overviewCupMetricFooter small strong { display: block; overflow-wrap: anywhere; color: #302927; font-size: 12px; font-weight: 600; }
+.overviewReportLink { display: inline-flex; align-items: center; gap: 5px; color: #b81724 !important; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.overviewReportLink:hover { text-decoration: underline !important; }
+.overviewRangeControls { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 16px; padding: 14px; border: 1px solid #eee8e3; border-radius: 12px; background: #fdfcfb; }
+.overviewRangeHeading { display: flex; flex-direction: column; gap: 4px; }
+.overviewRangeHeading strong { color: #302927; font-size: 14px; }
+.overviewRangeHeading p { margin: 0; color: #706561; font-size: 13px; line-height: 1.45; }
+.overviewQuickRanges { display: flex; flex-wrap: wrap; gap: 8px; }
+.overviewQuickRanges button { min-height: 44px; padding: 0 13px; border: 1px solid #e9e2dc; border-radius: 9px; background: white; color: #514843; font-size: 13px; font-weight: 600; cursor: pointer; }
+.overviewQuickRanges button[aria-pressed="true"] { border-color: #b81724; background: #f9e9ea; color: #a01520; }
+.overviewRangeForm { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.overviewRangeField { display: flex; min-width: 190px; flex-direction: column; gap: 6px; }
+.overviewRangeField > label { color: #706561; font-size: 13px; font-weight: 600; }
+.overviewRangeForm input { min-height: 44px; padding: 0 10px; border: 1px solid #e9e2dc; border-radius: 9px; background: white; color: #302927; font: inherit; font-size: 14px; }
+.overviewDateControl { display: flex; min-width: 0; }
+.overviewDateControl > input { width: 100%; min-width: 0; flex: 1; border-radius: 9px 0 0 9px; }
+.overviewCalendarPicker { position: relative; display: inline-flex; width: 44px; min-width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid #e9e2dc; border-left: 0; border-radius: 0 9px 9px 0; background: white; color: #706561; cursor: pointer; }
+.overviewCalendarPicker:focus-within { outline: 3px solid #b8172433; outline-offset: 2px; }
+.overviewCalendarPicker input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; opacity: 0; cursor: pointer; }
+.overviewRangeForm input:disabled { background: #f7f5f3; color: #706561; }
+.overviewApplyRange { min-height: 44px; padding: 0 14px; border: 1px solid #b81724; border-radius: 9px; background: #b81724; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.overviewApplyRange:hover { background: #a01520; }
+.overviewApplyRange:disabled { opacity: .5; cursor: not-allowed; }
+.overviewAppliedRange { margin: 0; color: #706561; font-size: 13px; line-height: 1.5; }
+.overviewAppliedRange strong { color: #302927; }
+.overviewRangeControls .accountInlineWarning { margin: 0; }
+.overviewDayCheckLabel { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; }
+.overviewDayCheckbox { width: 18px; height: 18px; margin: 0; accent-color: #b81724; vertical-align: middle; cursor: pointer; }
+.overviewBreakdownRow :global(td) { padding: 0 !important; text-align: left !important; }
+.overviewBreakdownRow:hover :global(td) { background: white !important; }
+.overviewMachineBreakdown { margin: 8px; padding: 16px; border: 1px solid #eee8e3; border-radius: 12px; background: white; }
+.overviewBreakdownHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.overviewBreakdownHeading h3 { margin: 0 0 6px; color: #302927; font-size: 16px; line-height: 1.4; }
+.overviewBreakdownHeading .panelSubtitle { margin-bottom: 0; }
+.overviewBreakdownHeading button { min-height: 44px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: white; color: #514843; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.overviewBreakdownHeading button:hover { background: #f7f5f3; }
+.overviewBreakdownTotal { margin: 14px 0 10px; color: #706561; font-size: 14px; }
+.overviewBreakdownTotal strong { color: #302927; font-size: 20px; }
+.overviewMachineRows { max-height: 360px; overflow: auto; border: 1px solid #eee8e3; border-radius: 8px; }
+.overviewMachineRows :global(table) { min-width: 0; table-layout: fixed; }
+.overviewMachineRows :global(th:nth-child(1)),
+.overviewMachineRows :global(td:nth-child(1)) { width: 30%; }
+.overviewMachineRows :global(th:nth-child(2)),
+.overviewMachineRows :global(td:nth-child(2)) { width: 42%; }
+.overviewMachineRows :global(thead th:nth-child(3)),
+.overviewMachineRows :global(tbody td:nth-child(3)) { width: 28%; text-align: center; }
+.overviewMachineCupCell { text-align: center !important; }
+@media (hover: hover) {
+  .adminTable :global(tbody tr:hover td) { background: #fdf9f8; }
+}
+.pageContent button:not(:disabled) {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 100ms ease;
+}
+.pageContent button:not(:disabled):active { transform: translateY(1px); }
+.pageContent a { transition: color 140ms ease; }
+.pageContent a:active { color: #a01520; }
+.pageContent input:not(:disabled), .pageContent select:not(:disabled), .pageContent textarea:not(:disabled) {
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.pageContent input:focus-visible, .pageContent select:focus-visible, .pageContent textarea:focus-visible {
+  border-color: #b81724;
+  box-shadow: 0 0 0 2px #b8172426;
+}
 .financeGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .financeGrid div { display: flex; flex-direction: column; gap: 6px; }
 .financeGrid strong { overflow-wrap: anywhere; font-size: 15px; }
+
+.reportFilterPanel { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
+.reportFilterHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.reportFilterHeader h2 { margin: 0 0 4px; font-size: 17px; }
+.reportFilterHeader p { margin: 0; color: #706561; font-size: 13px; line-height: 1.45; }
+.reportActivePeriod { display: flex; min-width: 240px; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid #eee8e3; border-radius: 10px; background: #fdfcfb; }
+.reportActivePeriod span { color: #706561; font-size: 12px; }
+.reportActivePeriod strong { color: #302927; font-size: 14px; }
+.reportQuickRanges { display: flex; flex-wrap: wrap; gap: 8px; }
+.reportQuickRanges button { min-height: 44px; padding: 0 13px; border: 1px solid #e9e2dc; border-radius: 9px; background: white; color: #514843; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 100ms ease; }
+.reportQuickRanges button[aria-pressed="true"] { border-color: #b81724; background: #f9e9ea; color: #a01520; }
+.reportQuickRanges button:not(:disabled):hover { background: #f7f5f3; }
+.reportQuickRanges button:disabled { opacity: .5; cursor: not-allowed; }
+.reportQuickRanges button:not(:disabled):active { transform: translateY(1px); }
+.reportRangeForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.reportRangeField { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.reportRangeField > label { color: #706561; font-size: 13px; font-weight: 600; }
+.reportDateControl { display: flex; min-width: 0; }
+.reportDateControl > input { width: 100%; min-width: 0; min-height: 44px; flex: 1; padding: 0 12px; border: 1px solid #e9e2dc; border-right: 0; border-radius: 9px 0 0 9px; background: white; color: #302927; font: inherit; font-size: 14px; }
+.reportDateControl > input[aria-invalid="true"] { border-color: #a9382a; }
+.reportCalendarPicker { position: relative; display: inline-flex; width: 44px; min-width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid #e9e2dc; border-radius: 0 9px 9px 0; background: white; color: #706561; cursor: pointer; }
+.reportCalendarPicker:focus-within { outline: 3px solid #b8172433; outline-offset: 2px; }
+.reportCalendarPicker input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; opacity: 0; cursor: pointer; }
+.reportRangeActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; grid-column: 1 / -1; }
+.reportApplyButton, .reportDefaultButton { min-height: 44px; padding: 0 15px; border: 1px solid #e9e2dc; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.reportApplyButton { border-color: #b81724; background: #b81724; color: white; }
+.reportApplyButton:not(:disabled):hover { background: #a01520; }
+.reportDefaultButton { background: white; color: #302927; }
+.reportDefaultButton:hover { background: #f7f5f3; }
+.reportApplyButton:disabled { opacity: .5; cursor: not-allowed; }
+.reportFilterScope { margin: 0; padding: 10px 12px; border-radius: 9px; background: #f8f6f3; color: #514843; font-size: 13px; line-height: 1.5; }
+.reportFilterPanel .accountInlineWarning { margin: 0; }
+.reportFinanceCurrencies { display: flex; flex-direction: column; gap: 18px; }
+.reportCurrency { display: flex; min-width: 0; flex-direction: column; gap: 10px; }
+.reportCurrency h3 { margin: 0; color: #302927; font-size: 14px; }
+.reportFinanceMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.reportFinanceMetric { display: flex; min-width: 0; min-height: 88px; flex-direction: column; justify-content: space-between; gap: 8px; padding: 14px; border: 1px solid #eee8e3; border-radius: 12px; background: #fdfcfb; }
+.reportFinanceMetric span { color: #706561; font-size: 13px; line-height: 1.4; }
+.reportFinanceMetric strong { overflow-wrap: anywhere; color: #302927; font-size: 20px; line-height: 1.3; }
+.reportFinanceMetricOverdue { border-color: #f0d2d0; background: #fff9f8; }
+.reportFinanceMetricOverdue span, .reportFinanceMetricOverdue strong { color: #a9382a; }
+.reportDailyTable :global(table) { width: 100%; min-width: 0 !important; table-layout: fixed; }
+.reportDailyTable :global(th:first-child), .reportDailyTable :global(td:first-child) { width: 44%; }
+.reportDailyTable :global(th:last-child), .reportDailyTable :global(td:last-child) { text-align: center; }
+.reportInvoiceTable :global(table) { min-width: 680px; }
+.reportInvoiceHint { display: none; margin: 0 0 8px; color: #706561; font-size: 12px; line-height: 1.4; }
+.reportStatus { display: inline-flex; min-height: 28px; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.reportStatusPaid { background: #e8f4ec; color: #246b3a; }
+.reportStatusOverdue { background: #fdebea; color: #a01520; }
+.reportStatusCancelled { background: #f0eeec; color: #706561; }
+.reportStatusPending { background: #fff2e6; color: #80512b; }
 
 .accountPageContent { padding-bottom: 116px; }
 .accountFilters { display: grid; grid-template-columns: minmax(180px, 1fr) 170px 170px auto; gap: 12px; margin-bottom: 20px; }
@@ -137,26 +267,64 @@
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .pageActions { flex-wrap: nowrap; }
   .pageActions button { white-space: nowrap; }
-  .pageContent { gap: 16px; padding: 20px 16px 144px; }
+  .pageContent { gap: 16px; padding: 20px 16px 24px; }
   .pageHeading { flex-direction: column; }
   .pageHeading h1 { font-size: 24px; }
   .pageActions { justify-content: flex-start; }
   .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .overviewRangeForm { align-items: stretch; }
+  .overviewRangeField { flex: 1 1 190px; }
+  .overviewApplyRange { align-self: flex-end; }
   .accountFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .operationsFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .operationsFilters input { grid-column: 1 / -1; }
   .accountActionsDock { bottom: 64px; left: 0; height: 64px; padding: 8px 16px; }
-  .accountPageContent { padding-bottom: 144px; }
+  .accountPageContent { padding-bottom: 24px; }
+  .reportFilterHeader { flex-direction: column; }
+  .reportActivePeriod { width: 100%; }
+  .reportFinanceMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reportInvoiceHint { display: block; }
 }
 
 @media (max-width: 600px) {
   .pageActions button { min-height: 42px; font-size: 12px; }
   .metricCard { min-height: 94px; gap: 10px; padding: 14px; }
   .metricCard strong { font-size: 19px; }
+  .overviewQuickRanges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .overviewQuickRanges button { padding: 0 8px; }
+  .overviewQuickRanges button:last-child { grid-column: 2; }
+  .overviewRangeForm { display: grid; grid-template-columns: 1fr 1fr; }
+  .overviewRangeField { min-width: 0; }
+  .overviewApplyRange { grid-column: 1 / -1; }
+  .overviewBreakdownHeading { align-items: stretch; flex-direction: column; }
   .panel { padding: 18px 16px; }
+  .reportFilterPanel { padding: 16px; }
+  .reportQuickRanges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .reportQuickRanges button { padding: 0 8px; }
+  .reportQuickRanges button:last-child { grid-column: 2; }
+  .reportRangeForm { grid-template-columns: minmax(0, 1fr); }
+  .reportRangeActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reportApplyButton, .reportDefaultButton { min-width: 0; padding: 0 8px; }
+  .reportFinanceMetrics { gap: 8px; }
+  .reportFinanceMetric { min-height: 84px; padding: 12px; }
+  .reportFinanceMetric strong { font-size: 18px; }
   .machineFilterControl { width: 100%; justify-content: space-between; gap: 10px; }
   .machineStatusSelect { min-width: 0; flex: 1; }
   .financeGrid { gap: 16px; }
   .accountFilters, .accountFormGrid { grid-template-columns: 1fr; }
   .operationsFilters, .operationsGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .adminTableHint { display: block; margin: 0 0 8px; color: #706561; font-size: 12px; line-height: 1.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageContent button:not(:disabled), .pageContent a,
+  .pageContent input:not(:disabled), .pageContent select:not(:disabled), .pageContent textarea:not(:disabled) {
+    transition: none;
+  }
+  .reportQuickRanges button { transition: none; }
+  .reportQuickRanges button:not(:disabled):active { transform: none; }
+  .pageContent button:not(:disabled):active { transform: none; }
 }

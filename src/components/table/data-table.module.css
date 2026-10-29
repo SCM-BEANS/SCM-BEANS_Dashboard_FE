@@ -77,6 +77,12 @@
   border-bottom: 0;
   color: #302927;
   font-size: 14px;
+  line-height: 1.5;
+  transition: background-color 140ms ease;
+}
+
+.table.moderator tbody tr:hover td {
+  background: #fdfbf9;
 }
 
 .table th {
@@ -112,6 +118,10 @@
   .moderator {
     min-width: 620px;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table.moderator td { transition: none; }
 }
 
 

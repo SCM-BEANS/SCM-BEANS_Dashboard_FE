@@ -65,6 +65,12 @@ function statusLabel(status: MachineStatus | null | undefined): string {
   return status ? STATUS_LABELS[status] : "Chưa có trạng thái";
 }
 
+function machineTypeLabel(machineType: string | null | undefined): string {
+  if (machineType === "SMART_IOT") return T.MACHINES.SMART;
+  if (machineType === "CONVENTIONAL") return T.MACHINES.CONVENTIONAL;
+  return T.MACHINES.UNCLASSIFIED;
+}
+
 function MachinesContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -214,38 +220,46 @@ function MachinesContent() {
               {isMachineTypesView && machineModels.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModels.error)}</p><button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button></div>}
               {inventory.data && !isMachineTypesView && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
               {isMachineTypesView && machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-              {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <DataTable
-                rows={machineModels.data}
-                rowKey={(machineModel) => machineModel.id}
-                columns={[
-                  { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, render: (machineModel) => (
-                    <button
-                      className={styles.accountTextButton}
-                      type="button"
-                      aria-label={`Xem chi tiết mẫu máy ${machineModel.modelCode}`}
-                      onClick={() => navigateToMachineModelDetail(machineModel.id)}
-                    >
-                      {machineModel.modelCode}
-                    </button>
-                  ) },
-                  { key: "manufacturer", header: T.MACHINE_MODELS.MANUFACTURER, render: (machineModel) => machineModel.manufacturer },
-                  { key: "display-name", header: T.MACHINE_MODELS.DISPLAY_NAME, render: (machineModel) => machineModel.displayName },
-                  { key: "machine-type", header: T.MACHINES.MACHINE_TYPE, render: (machineModel) => machineModel.machineType === "SMART_IOT" ? `${T.MACHINES.SMART} (SMART_IOT)` : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)` },
-                ]}
-              />}
-              {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <DataTable
-                rows={visibleMachines}
-                rowKey={(machine) => machine.id}
-                columns={[
-                  { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
-                  { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
-                  { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
-                  { key: "owner", header: T.MACHINES.OWNER_ID, render: (machine) => machine.ownerId ?? "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
-                  { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
-                  { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-                  { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, render: (machine) => formatDate(machine.deployedAt) },
-                ]}
-              />}
+              {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <>
+                <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
+                <DataTable
+                  className={styles.adminTable}
+                  rows={machineModels.data}
+                  rowKey={(machineModel) => machineModel.id}
+                  columns={[
+                    { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, render: (machineModel) => (
+                      <button
+                        className={styles.accountTextButton}
+                        type="button"
+                        aria-label={`Xem chi tiết mẫu máy ${machineModel.modelCode}`}
+                        onClick={() => navigateToMachineModelDetail(machineModel.id)}
+                      >
+                        {machineModel.modelCode}
+                      </button>
+                    ) },
+                    { key: "manufacturer", header: T.MACHINE_MODELS.MANUFACTURER, render: (machineModel) => machineModel.manufacturer },
+                    { key: "display-name", header: T.MACHINE_MODELS.DISPLAY_NAME, render: (machineModel) => machineModel.displayName },
+                    { key: "machine-type", header: T.MACHINES.MACHINE_TYPE, render: (machineModel) => machineTypeLabel(machineModel.machineType) },
+                  ]}
+                />
+              </>}
+              {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <>
+                <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
+                <DataTable
+                  className={styles.adminTable}
+                  rows={visibleMachines}
+                  rowKey={(machine) => machine.id}
+                  columns={[
+                    { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
+                    { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
+                    { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
+                    { key: "owner", header: T.MACHINES.OWNER_ID, render: (machine) => machine.ownerId ?? "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
+                    { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
+                    { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+                    { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, render: (machine) => formatDate(machine.deployedAt) },
+                  ]}
+                />
+              </>}
               </section>
             </div>
           </>

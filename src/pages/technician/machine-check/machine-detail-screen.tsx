@@ -126,7 +126,7 @@ export function TechnicianMachineDetailScreen() {
       )}
     </ActionBar>
   );
-  const heading = (title = T.MACHINE_CHECK.DETAIL_TITLE, description?: string) => (
+  const heading = (title: string = T.MACHINE_CHECK.DETAIL_TITLE, description?: string) => (
     <BackButtonHeading
       title={title}
       titleId="technician-machine-detail-title"
