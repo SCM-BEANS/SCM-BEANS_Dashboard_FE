@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { DataTable } from "@/components/table/data-table";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { contractsApi } from "@/apis/contracts.api";
 import { PATH_MODERATOR } from "@/routes/path";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -71,10 +71,16 @@ export function ContractListScreen() {
         ]}>
           {contracts.data.map((contract) => (
             <tr key={contract.id}>
-              <td><Link className={styles.tableLink} href={PATH_MODERATOR.CONTRACT_DETAIL(contract.id)}>{contract.id}</Link></td>
+              <td><TextLinkButton href={PATH_MODERATOR.CONTRACT_DETAIL(contract.id)}>{contract.id}</TextLinkButton></td>
               <td>{contract.ownerId}</td>
               <td>{contract.startDate ?? "—"} – {contract.endDate ?? "—"}</td>
-              <td>{contract.status}</td>
+              <td>
+                {contract.status === "DRAFT" ? (
+                  <TextLinkButton href={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST(contract.id)}>{contract.status}</TextLinkButton>
+                ) : (
+                  contract.status
+                )}
+              </td>
               <td>{contract.machineTypeSnapshot ?? "—"}</td>
             </tr>
           ))}

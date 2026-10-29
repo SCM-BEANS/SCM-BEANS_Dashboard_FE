@@ -1,9 +1,12 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  CreateInstallationWorkOrderRequestSchema,
+  CreateInstallationWorkOrderResponseSchema,
   InstallationWorkOrderDetailsSchema,
   InstallationWorkOrderIdSchema,
   InstallationWorkOrderListSchema,
   InstallationWorkOrderTenantIdSchema,
+  type CreateInstallationWorkOrderRequest,
 } from "@/schema/installation-work-orders.schema";
 
 export class InstallationWorkOrderIdentityMismatchError extends Error {
@@ -21,6 +24,14 @@ export class InstallationWorkOrderTenantMismatchError extends Error {
 }
 
 export const installationWorkOrdersApi = {
+  async create(input: CreateInstallationWorkOrderRequest) {
+    const request = CreateInstallationWorkOrderRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>("/installation-work-orders", request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return CreateInstallationWorkOrderResponseSchema.parse(response.data);
+  },
+
   async listByTenant(id: string, signal?: AbortSignal) {
     const tenantId = InstallationWorkOrderTenantIdSchema.parse(id);
     const response = await axiosClient.get<unknown>("/installation-work-orders", {

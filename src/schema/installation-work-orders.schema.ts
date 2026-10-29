@@ -6,6 +6,22 @@ const dateTimeSchema = z.string().datetime({ offset: true });
 export const InstallationWorkOrderIdSchema = uuidSchema;
 export const InstallationWorkOrderTenantIdSchema = uuidSchema;
 
+export const CreateInstallationWorkOrderRequestSchema = z.object({
+  ownerId: uuidSchema,
+  contractId: uuidSchema,
+  machineId: uuidSchema,
+  scheduledFor: dateTimeSchema.optional(),
+  installationNotes: z.string().max(4000).optional(),
+});
+
+export const CreateInstallationWorkOrderResponseSchema = z.object({
+  id: InstallationWorkOrderIdSchema,
+  status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]),
+}).passthrough();
+
+export type CreateInstallationWorkOrderRequest = z.infer<typeof CreateInstallationWorkOrderRequestSchema>;
+export type CreateInstallationWorkOrderResponse = z.infer<typeof CreateInstallationWorkOrderResponseSchema>;
+
 export const InstallationWorkOrderSummarySchema = z.object({
   id: InstallationWorkOrderIdSchema,
   tenantId: InstallationWorkOrderTenantIdSchema,
