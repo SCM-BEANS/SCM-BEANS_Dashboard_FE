@@ -54,20 +54,20 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
+function PageHeading({ title, description }: { title: string; description?: string }) {
   return (
     <header className={styles.pageHeading}>
       <h1>{title}</h1>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
     </header>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <article className={styles.pendingNotice}>
-      <p style={{ margin: 0, color: "#706561", fontSize: 14 }}>{label}</p>
-      <strong style={{ display: "block", marginTop: 8, fontSize: 24 }}>{value}</strong>
+    <article className={styles.metricCard}>
+      <p className={styles.metricLabel}>{label}</p>
+      <strong className={styles.metricValue}>{value}</strong>
     </article>
   );
 }
@@ -98,16 +98,16 @@ export function OverviewScreen() {
       {metrics && (
         <>
           <section
+            className={styles.metricGrid}
             aria-label={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_TITLE}
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}
           >
             <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.TOTAL_OWNERS} value={countFormat(metrics.totalOwners)} />
             <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.CUPS_IN_PERIOD} value={countFormat(metrics.cupsInSelectedPeriod)} />
             <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_MAINTENANCE} value={countFormat(metrics.openMaintenanceTickets)} />
             <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_INSTALLATIONS} value={countFormat(metrics.openInstallationWorkOrders)} />
           </section>
-          <section className={styles.pendingNotice} aria-labelledby="moderator-daily-usage">
-            <h2 id="moderator-daily-usage">{MODERATOR_MESSAGES.READ_SCREENS.DAILY_USAGE}</h2>
+          <section className={styles.overviewPanel} aria-labelledby="moderator-daily-usage">
+            <h2 className={styles.panelHeading} id="moderator-daily-usage">{MODERATOR_MESSAGES.READ_SCREENS.DAILY_USAGE}</h2>
             {dailyUsage.length === 0 ? (
               <p>{MODERATOR_MESSAGES.READ_SCREENS.NO_DAILY_USAGE}</p>
             ) : (
@@ -124,14 +124,14 @@ export function OverviewScreen() {
               </DataTable>
             )}
           </section>
-          <section className={styles.pendingNotice} aria-labelledby="moderator-financial-overview">
-            <h2 id="moderator-financial-overview">{MODERATOR_MESSAGES.READ_SCREENS.FINANCIAL}</h2>
+          <section className={styles.overviewPanel} aria-labelledby="moderator-financial-overview">
+            <h2 className={styles.panelHeading} id="moderator-financial-overview">{MODERATOR_MESSAGES.READ_SCREENS.FINANCIAL}</h2>
             {financialMetrics.length === 0 ? (
               <p>{MODERATOR_MESSAGES.READ_SCREENS.NO_FINANCIAL}</p>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+              <div className={styles.financialGrid}>
                 {financialMetrics.map((item, index) => (
-                  <div key={(item.currency ?? "currency") + "-" + index}>
+                  <div className={styles.financialCard} key={(item.currency ?? "currency") + "-" + index}>
                     <strong>{item.currency ?? "â€”"}</strong>
                     <p>{MODERATOR_MESSAGES.READ_SCREENS.FINANCIAL_ISSUED}: {moneyFormat(item.currency ?? "VND", item.amountIssued)}</p>
                     <p>{MODERATOR_MESSAGES.READ_SCREENS.FINANCIAL_COLLECTED}: {moneyFormat(item.currency ?? "VND", item.amountCollected)}</p>
