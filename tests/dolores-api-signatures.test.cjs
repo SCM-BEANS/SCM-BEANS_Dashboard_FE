@@ -7,7 +7,7 @@ const ts = require('typescript');
 const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
   'locations.api.ts': { locationsApi: ['list', 'listByTenant', 'getById', 'create'] },
-  'contracts.api.ts': { contractsApi: ['list', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'getMachineHistory', 'downloadDocument'] },
+  'contracts.api.ts': { contractsApi: ['list', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
   'machines.api.ts': { machinesApi: ['list', 'getById', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
   'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'markAsRead'] },
@@ -15,7 +15,7 @@ const contracts = {
   'billing.api.ts': { billingApi: ['listInvoices', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'downloadPaymentProofContent'] },
   'buybacks.api.ts': { buybacksApi: ['getById'] },
   'tenants.api.ts': { tenantsApi: ['list', 'getById'] },
-  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['listByTenant', 'getById'] },
+  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['listByTenant', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
   'dashboard.api.ts': { dashboardApi: ['getOverview'] },
 };
 
@@ -60,9 +60,10 @@ function assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName
   assert.equal(requests.length, 1, `${apiName}.${methodName} must make exactly one HTTP request`);
   const bodyText = fn.body.getText(sourceFile);
   const isBlob = bodyText.includes('responseType: "blob"');
+  const isCommandWithoutConsumedResponse = apiName === 'contractsApi' && methodName === 'activate';
   if (isBlob) {
     assert.ok(bodyText.includes('return response.data'), `${apiName}.${methodName} should return the requested file data`);
-  } else {
+  } else if (!isCommandWithoutConsumedResponse) {
     assert.match(bodyText, /Schema\.parse\(response\.data\)/, `${apiName}.${methodName} must validate its response schema`);
   }
 }

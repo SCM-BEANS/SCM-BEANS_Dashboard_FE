@@ -10,10 +10,18 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { ContractTable } from "@/components/table/contract-table";
+import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
 import { ActionBar } from "@/components/action-bar/action-bar";
+import { PATH_ADMIN } from "@/routes/path";
+import { ContractInstallationRequestScreen } from "@/pages/moderator/contracts/contract-installation-request-screen";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getContractsBackDestination } from "../admin-back-destination";
+import {
+  ADMIN_CONTRACT_LIST_DESCRIPTION,
+  ADMIN_CONTRACT_LIST_TITLE,
+} from "@/components/table/constants/contract-table.constants";
 
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
 function date(value: string | null | undefined): string {
@@ -39,6 +47,8 @@ function ContractsContent() {
   const router = useRouter();
   const [createdContractId, setCreatedContractId] = useState("");
   const view = queryValue(router.query.view);
+  const isContractList = view === "" || view === "list";
+  const isInstallationRequest = view === "installation-request";
   const contractId = queryValue(router.query.id);
   const machineId = queryValue(router.query.machineId);
   const contracts = useQuery({ queryKey: ["dolores", "contracts"], queryFn: ({ signal }) => contractsApi.list(signal), enabled: view === "" || view === "list" });
@@ -55,7 +65,7 @@ function ContractsContent() {
       return pages.flatMap((page) => page.items);
     },
   });
-  const contract = useQuery({ queryKey: ["dolores", "contract", contractId], queryFn: ({ signal }) => contractsApi.getById(contractId, signal), enabled: view !== "list" && ContractIdSchema.safeParse(contractId).success });
+  const contract = useQuery({ queryKey: ["dolores", "contract", contractId], queryFn: ({ signal }) => contractsApi.getById(contractId, signal), enabled: view === "detail" && ContractIdSchema.safeParse(contractId).success });
   const expiry = useQuery({ queryKey: ["dolores", "contract-expiry", contractId], queryFn: ({ signal }) => contractsApi.getExpiry(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const documents = useQuery({ queryKey: ["dolores", "contract-documents", contractId], queryFn: ({ signal }) => contractsApi.getDocuments(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const history = useQuery({ queryKey: ["dolores", "machine-contract-history", machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal), enabled: view === "history" && ContractIdSchema.safeParse(machineId).success });
@@ -71,34 +81,49 @@ function ContractsContent() {
     void router.push({ pathname: "/admin/contracts", query }, undefined, { shallow: true });
   };
   const ownerName = (id: string) => owners.data?.find((item) => item.idaasUserId === id)?.fullName ?? `${T.COMMON.OWNER} ${id.slice(0, 8)}`;
-  const pageTitle = view === "create" ? T.CONTRACTS.CREATE_TITLE : view === "history" ? T.CONTRACTS.HISTORY : view === "detail" ? `${T.CONTRACTS.DETAIL} · ${contractId.slice(0, 8).toUpperCase()}` : T.CONTRACTS.TITLE;
+  const pageTitle = view === "create"
+    ? T.CONTRACTS.CREATE_TITLE
+    : isInstallationRequest
+      ? "Tạo yêu cầu lắp đặt"
+    : view === "history"
+      ? T.CONTRACTS.HISTORY
+      : view === "detail"
+        ? `${T.CONTRACTS.DETAIL} · ${contractId.slice(0, 8).toUpperCase()}`
+        : isContractList
+          ? ADMIN_CONTRACT_LIST_TITLE
+          : T.CONTRACTS.TITLE;
+
+  if (isInstallationRequest) {
+    return (
+      <ContractInstallationRequestScreen
+        contractId={contractId}
+        backHref={PATH_ADMIN.CONTRACTS}
+      />
+    );
+  }
 
   return <>
   <div className={styles.pageContent}>
     <BackButtonHeading
       title={pageTitle}
       titleId="admin-contracts-title"
-      description={view === "create" ? T.CONTRACTS.CREATE_DESCRIPTION : T.CONTRACTS.DESCRIPTION}
+      description={view === "create"
+        ? T.CONTRACTS.CREATE_DESCRIPTION
+        : isContractList
+          ? ADMIN_CONTRACT_LIST_DESCRIPTION
+          : T.CONTRACTS.DESCRIPTION}
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
     />
-    {(view === "" || view === "list") && <>
+    {isContractList && <>
       {contracts.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-      {contracts.data && <section className={styles.panel}><h2>{contracts.data.length} hợp đồng</h2>
-        {owners.isError && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)}</p>}
-        {contracts.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
-          rows={contracts.data}
-          rowKey={(item) => item.id}
-          columns={[
-            { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button> },
-            { key: "owner", header: T.COMMON.OWNER, render: (item) => ownerName(item.ownerId), cellProps: (item) => ({ title: item.ownerId }) },
-            { key: "machine", header: "Máy", render: (item) => item.machineId?.slice(0, 8).toUpperCase() ?? T.CONTRACTS.NO_MACHINE },
-            { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
-            { key: "status", header: "Trạng thái", render: (item) => status(item.status) },
-          ]}
-        />}
-      </section>}
+      {contracts.data?.length === 0 && !contracts.isError && <p className={styles.pendingNotice} role="status">{T.COMMON.EMPTY}</p>}
+      {contracts.data && contracts.data.length > 0 && <ContractTable
+        contracts={contracts.data}
+        contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
+        draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
+      />}
     </>}
     {view === "create" && <ContractCreateForm
       onCreated={(id) => {
@@ -144,6 +169,7 @@ function ContractsContent() {
         </section>
       </>}
     </>}
+    {view === "detail" && contract.data && <ContractActivationPanel contract={contract.data} />}
     {view === "history" && <>
       {!ContractIdSchema.safeParse(machineId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã máy không hợp lệ.</div>}
       {history.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
@@ -160,14 +186,14 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  {(view === "" || view === "list") && <ActionBar>
+  {isContractList && <ActionBar>
         <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
         <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
   </ActionBar>}
   {view === "detail" && contract.data?.machineId && <ActionBar>
     <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>
   </ActionBar>}
-  {(view === "" || view === "list") && createdContractId && (
+  {isContractList && createdContractId && (
     <NotificationDialog
       variant="success"
       title={T.CONTRACTS.CREATED}

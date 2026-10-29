@@ -32,6 +32,7 @@ const ADMIN_ROOT = "/admin";
 
 export const PATH_ADMIN = {
   ROOT: ADMIN_ROOT,
+  USERS: `${ADMIN_ROOT}/users`,
   BUSINESSES: `${ADMIN_ROOT}/businesses`,
   STORES: `${ADMIN_ROOT}/stores`,
   CONTRACTS: `${ADMIN_ROOT}/contracts`,

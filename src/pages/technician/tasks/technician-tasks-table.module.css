@@ -1,0 +1,26 @@
+.panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.panel h2 {
+  margin: 0 0 16px;
+  color: #302927;
+  font-size: 18px;
+}
+
+.error {
+  padding: 16px;
+  border-radius: 10px;
+  background: #fff2e6;
+  color: #693c2c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.error p {
+  margin: 0;
+}

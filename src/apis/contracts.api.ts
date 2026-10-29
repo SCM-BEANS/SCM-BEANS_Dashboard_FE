@@ -67,6 +67,12 @@ export const contractsApi = {
     });
     return ContractDocumentsSchema.parse(response.data);
   },
+  async activate(id: string) {
+    const contractId = ContractIdSchema.parse(id);
+    await axiosClient.post<unknown>(`${contractPath(contractId)}/activate`, undefined, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+  },
   async getMachineHistory(machineId: string, signal?: AbortSignal) {
     const validId = ContractIdSchema.parse(machineId);
     const response = await axiosClient.get<unknown>(`/contracts/machine/${encodeURIComponent(validId)}/history`, {

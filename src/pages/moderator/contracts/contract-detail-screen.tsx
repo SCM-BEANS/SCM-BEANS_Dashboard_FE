@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { DataTable } from "@/components/table/data-table";
+import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 
 import { contractsApi } from "@/apis/contracts.api";
 
@@ -113,6 +114,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
               </DataTable>
             )}
           </section>
+          <ContractActivationPanel contract={contract.data} />
         </>
       )}
     </div>

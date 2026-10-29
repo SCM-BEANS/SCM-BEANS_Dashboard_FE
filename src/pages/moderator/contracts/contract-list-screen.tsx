@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DataTable } from "@/components/table/data-table";
-import { TextLinkButton } from "@/components/button/text-link-button";
+import { ContractTable } from "@/components/table/contract-table";
 import { contractsApi } from "@/apis/contracts.api";
 import { PATH_MODERATOR } from "@/routes/path";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -62,29 +61,11 @@ export function ContractListScreen() {
         <p className={styles.pendingNotice} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_CONTRACTS}</p>
       )}
       {contracts.data && contracts.data.length > 0 && (
-        <DataTable variant="moderator" headers={[
-          MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID,
-          MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID,
-          MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_PERIOD,
-          MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_STATUS,
-          MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_TYPE,
-        ]}>
-          {contracts.data.map((contract) => (
-            <tr key={contract.id}>
-              <td><TextLinkButton href={PATH_MODERATOR.CONTRACT_DETAIL(contract.id)}>{contract.id}</TextLinkButton></td>
-              <td>{contract.ownerId}</td>
-              <td>{contract.startDate ?? "—"} – {contract.endDate ?? "—"}</td>
-              <td>
-                {contract.status === "DRAFT" ? (
-                  <TextLinkButton href={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST(contract.id)}>{contract.status}</TextLinkButton>
-                ) : (
-                  contract.status
-                )}
-              </td>
-              <td>{contract.machineTypeSnapshot ?? "—"}</td>
-            </tr>
-          ))}
-        </DataTable>
+        <ContractTable
+          contracts={contracts.data}
+          contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
+          draftStatusHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
+        />
       )}
     </div>
   );

@@ -56,7 +56,7 @@ export function getMachineDetailBackDestination(query: RouterQuery): BackButtonD
 
 export function getContractsBackDestination(query: RouterQuery): BackButtonDestination | null {
   const view = firstString(query.view);
-  if (view === "create" || view === "detail") {
+  if (view === "create" || view === "detail" || view === "installation-request") {
     return { label: "Danh sách hợp đồng", fallbackHref: PATH_ADMIN.CONTRACTS };
   }
   if (view === "history") {

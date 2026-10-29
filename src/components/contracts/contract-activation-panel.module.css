@@ -1,0 +1,56 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.panel h2 {
+  margin: 0;
+  color: #302927;
+  font-size: 18px;
+}
+
+.description,
+.hint,
+.confirmation p {
+  margin: 0;
+  color: #706561;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff2e6;
+  color: #693c2c;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.error p {
+  margin: 0 0 10px;
+}
+
+.confirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #f8f6f3;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

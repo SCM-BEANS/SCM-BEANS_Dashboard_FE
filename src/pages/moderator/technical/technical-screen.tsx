@@ -151,7 +151,7 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
     <dl className={styles.detailGrid}>
       <DetailValue label={messages.TECHNICAL_ID} value={workOrder.id} code />
       <DetailValue label={messages.TECHNICAL_STATUS} value={workOrder.status} />
-      <DetailValue label={messages.TECHNICAL_TENANT} value={workOrder.tenantId} code />
+      <DetailValue label={messages.TECHNICAL_TENANT} value={workOrder.ownerId} code />
       <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={workOrder.contractId} code />
       <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={workOrder.machineId} code />
       <DetailValue label={messages.MACHINE_TYPE} value={workOrder.machineType} />

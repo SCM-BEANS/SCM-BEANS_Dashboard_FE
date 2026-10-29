@@ -10,6 +10,7 @@ export const CreateInstallationWorkOrderRequestSchema = z.object({
   ownerId: uuidSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
+  technicianId: uuidSchema.optional(),
   scheduledFor: dateTimeSchema.optional(),
   installationNotes: z.string().max(4000).optional(),
 });
@@ -40,6 +41,58 @@ export const InstallationWorkOrderSummarySchema = z.object({
 });
 
 export const InstallationWorkOrderListSchema = z.array(InstallationWorkOrderSummarySchema);
+
+export const AssignedInstallationWorkOrderSummarySchema = z.object({
+  id: InstallationWorkOrderIdSchema,
+  ownerId: InstallationWorkOrderTenantIdSchema,
+  contractId: uuidSchema,
+  machineId: uuidSchema,
+  machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
+  status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]),
+  assignedTechnicianId: uuidSchema.nullish(),
+  scheduledFor: dateTimeSchema.nullish(),
+  startedAt: dateTimeSchema.nullish(),
+  completedAt: dateTimeSchema.nullish(),
+  handoverRecipient: z.string().nullish(),
+  failureReason: z.string().nullish(),
+  createdAt: dateTimeSchema,
+  updatedAt: dateTimeSchema,
+  createdBy: uuidSchema,
+});
+
+export const AssignedInstallationWorkOrderListSchema = z.array(AssignedInstallationWorkOrderSummarySchema);
+
+export const InstallationWorkOrderRecordSchema = z.object({
+  id: InstallationWorkOrderIdSchema,
+  ownerId: InstallationWorkOrderTenantIdSchema,
+  contractId: uuidSchema,
+  machineId: uuidSchema,
+  machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
+  status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]),
+  assignedTechnicianId: uuidSchema.nullish(),
+  scheduledFor: dateTimeSchema.nullish(),
+  startedAt: dateTimeSchema.nullish(),
+  completedAt: dateTimeSchema.nullish(),
+  handoverRecipient: z.string().nullish(),
+  failureReason: z.string().nullish(),
+  createdAt: dateTimeSchema,
+  updatedAt: dateTimeSchema,
+  createdBy: uuidSchema,
+}).passthrough();
+
+export const InstallationWorkOrderEvidenceUploadResponseSchema = z.object({
+  id: uuidSchema,
+  originalFilename: z.string(),
+  contentType: z.string(),
+  sizeBytes: z.number().int().nonnegative(),
+  sha256: z.string(),
+  uploadedBy: uuidSchema,
+  uploadedAt: dateTimeSchema,
+}).passthrough();
+
+export const CompleteInstallationWorkOrderRequestSchema = z.object({
+  handoverRecipient: z.string().trim().min(1),
+});
 
 export const InstallationWorkOrderChecklistItemSchema = z.object({
   id: uuidSchema,
@@ -74,11 +127,17 @@ export const InstallationWorkOrderEvidenceMetadataSchema = z.object({
 });
 
 export const InstallationWorkOrderDetailsSchema = z.object({
-  workOrder: InstallationWorkOrderSummarySchema,
+  workOrder: InstallationWorkOrderRecordSchema,
   checklistItems: z.array(InstallationWorkOrderChecklistItemSchema),
   accessories: z.array(InstallationWorkOrderAccessorySchema),
   evidence: z.array(InstallationWorkOrderEvidenceMetadataSchema),
-});
+  installationNotes: z.string().nullish(),
+  checklistItemCount: z.number().int().nonnegative().optional(),
+  accessoryCount: z.number().int().nonnegative().optional(),
+  evidenceCount: z.number().int().nonnegative().optional(),
+}).passthrough();
 
 export type InstallationWorkOrderSummary = z.infer<typeof InstallationWorkOrderSummarySchema>;
+export type AssignedInstallationWorkOrderSummary = z.infer<typeof AssignedInstallationWorkOrderSummarySchema>;
+export type InstallationWorkOrderRecord = z.infer<typeof InstallationWorkOrderRecordSchema>;
 export type InstallationWorkOrderDetails = z.infer<typeof InstallationWorkOrderDetailsSchema>;

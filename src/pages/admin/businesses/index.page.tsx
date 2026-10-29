@@ -38,7 +38,6 @@ function BusinessesContent() {
   const list = useQuery({
     queryKey: ["idaas", "admin-users", "businesses", queryValue(router.query.q), status, page],
     queryFn: ({ signal }) => adminUsersApi.list({
-      role: "owner",
       q: queryValue(router.query.q).trim().slice(0, 100) || undefined,
       status: status || undefined,
       page,
