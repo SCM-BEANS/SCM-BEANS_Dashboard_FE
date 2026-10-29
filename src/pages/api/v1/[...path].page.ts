@@ -1,10 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import {
+  getBackendApiSelection,
+  preferLocalBackendApis,
+} from "@/lib/server/backend-api-selection";
 
 export const config = {
   api: { bodyParser: false },
 };
 
-const DEFAULT_IDAAS_URL = "http://localhost:4000/api/v1";
 const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -23,48 +26,6 @@ const responseHeadersToSkip = new Set([
   "transfer-encoding",
   "set-cookie",
 ]);
-
-function normalizeApiUrl(value: string): string {
-  const url = new URL(value);
-
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error("Invalid IDaaS API URL");
-  }
-
-  return url.toString().replace(/\/+$/, "");
-}
-
-async function getIdaasApiBaseUrl(): Promise<string> {
-  const localUrl = normalizeApiUrl(
-    process.env.IDAAS_API_LOCAL_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      DEFAULT_IDAAS_URL,
-  );
-  const configuredIp = process.env.IDAAS_API_IP_URL?.trim();
-
-  if (!configuredIp) return localUrl;
-
-  const ipUrl = normalizeApiUrl(configuredIp);
-  if (ipUrl === localUrl) return ipUrl;
-
-  try {
-    const health = await fetch(new URL("/health", ipUrl), {
-      cache: "no-store",
-      signal: AbortSignal.timeout(1_500),
-    });
-    if (health.status < 500) return ipUrl;
-  } catch {
-    // Use the local service when the configured IP is unavailable.
-  }
-
-  return localUrl;
-}
 
 function getPath(req: NextApiRequest): string[] | null {
   const segments = req.query.path;
@@ -105,15 +66,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  let baseUrl: string;
+  let selection: Awaited<ReturnType<typeof getBackendApiSelection>>;
   try {
-    baseUrl = await getIdaasApiBaseUrl();
+    selection = await getBackendApiSelection();
   } catch {
     res.status(500).json({ error: "Invalid IDaaS API configuration" });
     return;
   }
 
-  const target = new URL(`${baseUrl}/${segments.map(encodeURIComponent).join("/")}`);
+  const target = new URL(
+    `${selection.idaasBaseUrl}/${segments.map(encodeURIComponent).join("/")}`,
+  );
   target.search = new URL(req.url || "/", "http://localhost").search;
 
   const headers = new Headers();
@@ -185,6 +148,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Cache-Control", "no-store");
     res.end(responseBody);
   } catch {
+    if (selection.mode === "remote") preferLocalBackendApis();
     res.status(502).json({ error: "IDaaS API is unavailable" });
   }
 }

@@ -158,5 +158,35 @@
     "verification_command": "After approved asset is supplied: node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: inspect source/PII sanitization, alt text, responsive sizing, payload, and CLS",
     "notes": "Covers stories: US-06. Deferred P2; requires an authentic, approved, sanitized screenshot source and is not an MVP blocker.",
     "priority": "P2"
+  },
+  {
+    "id": "phase-01-data-clarity",
+    "title": "Admin overview data clarity",
+    "status": "passing-unverified",
+    "evidence": "fast mode — no test evidence",
+    "user_visible_behavior": "Admin can interpret dashboard values with period and unit context and distinguish zero from unavailable, loading, empty, and error states.",
+    "verification_command": "Visual acceptance: /admin desktop and 375px; verify KPI meanings, cup-period context, zero/missing/loading/empty/error distinction, VND formatting, and unchanged API/query behavior.",
+    "notes": "Covers stories: US-01, US-02",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-table-readability",
+    "title": "Admin table readability",
+    "status": "passing-unverified",
+    "evidence": "Targeted Playwright alignment check passed at 375px and 1440px on isolated and local :3000 app; broader phase acceptance remains unverified",
+    "user_visible_behavior": "Admin sees readable Vietnamese customer status, machine owner identifier and machine-type labels, clear table scroll cues, and pagination range where the response provides totals.",
+    "verification_command": "Visual acceptance: /admin/businesses list/detail and /admin/machines desktop and 375px; verify labels, filters/URL, available pagination range, table reachability, and unchanged shared-role table styles.",
+    "notes": "Covers stories: US-03, US-04",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-interaction-feedback",
+    "title": "Admin interaction feedback",
+    "status": "passing-unverified",
+    "evidence": "fast mode — no test evidence",
+    "user_visible_behavior": "Admin controls provide brief hover, pressed, and focus feedback while respecting reduced-motion preferences and preserving existing actions.",
+    "verification_command": "Visual acceptance: Admin overview and targeted lists; confirm visible keyboard focus, transitions no longer than 180ms, reduced-motion suppression, unchanged handlers, and unchanged Customer/Technician/Moderator defaults.",
+    "notes": "Covers stories: US-05",
+    "priority": "P2"
   }
 ]

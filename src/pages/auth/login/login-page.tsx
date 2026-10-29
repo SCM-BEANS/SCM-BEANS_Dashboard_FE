@@ -622,7 +622,6 @@ export default function LoginPage() {
         .input-wrap:has(input:disabled) { background: #f8f6f3; border-color: #d8cfca; }
         input { min-width: 0; width: 100%; min-height: 50px; padding: 0; border: 0; border-radius: 8px; outline: 0; color: #302927; background: transparent; font: inherit; font-size: 1rem; }
         input::placeholder { color: #766a65; opacity: 1; }
-        input:focus-visible { outline: 2px solid #b81724; outline-offset: -3px; }
         .code-input { text-align: center; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
         .code-input::placeholder { letter-spacing: normal; }
         .field-hint { margin: -12px 0 0; color: #675b57; font-size: .875rem; line-height: 1.5; }
