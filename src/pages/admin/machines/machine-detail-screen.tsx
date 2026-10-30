@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useMemo, useState, type FormEvent } from "react";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
@@ -11,6 +11,7 @@ import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachineDetailBackDestination } from "../admin-back-destination";
 
@@ -57,6 +58,7 @@ function formatTelemetryValue(value: unknown): string {
 
 function MachineDetailContent() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
   const [fromInput, setFromInput] = useState("");
@@ -64,6 +66,11 @@ function MachineDetailContent() {
   const [range, setRange] = useState<Range | null>(null);
   const [rangeError, setRangeError] = useState("");
   const [detailTab, setDetailTab] = useState<"profile" | "machine-type">("profile");
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [serialDraft, setSerialDraft] = useState("");
+  const [regionDraft, setRegionDraft] = useState("");
+  const [machineActionError, setMachineActionError] = useState("");
 
   const machine = useQuery({
     queryKey: ["dolores", "machines", "detail", machineId],
@@ -74,6 +81,35 @@ function MachineDetailContent() {
     queryKey: ["dolores", "machines", "maintenance-schedule", machineId],
     queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId, signal),
     enabled: validId && Boolean(machine.data),
+  });
+  const maintenanceTickets = useQuery({
+    queryKey: ["dolores", "maintenance-tickets", { machineId }],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId, page: 0, size: 100 }, signal),
+    enabled: validId && Boolean(machine.data),
+  });
+  useEffect(() => {
+    if (!machine.data) return;
+    setSerialDraft(machine.data.serialNumber ?? "");
+    setRegionDraft(machine.data.region ?? "");
+  }, [machine.data]);
+  const updateMachine = useMutation({
+    mutationFn: (input: Parameters<typeof machinesApi.update>[1]) => machinesApi.update(machineId, input),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(["dolores", "machines", "detail", machineId], updated);
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] });
+      setEditing(false);
+      setMachineActionError("");
+    },
+    onError: (error: unknown) => setMachineActionError(getApiErrorMessage(error, "mutation")),
+  });
+  const deleteMachine = useMutation({
+    mutationFn: () => machinesApi.delete(machineId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] });
+      setConfirmDelete(false);
+      await router.push(PATH_ADMIN.MACHINES);
+    },
+    onError: (error: unknown) => setMachineActionError(getApiErrorMessage(error, "mutation")),
   });
   const isSmartIot = machine.data?.machineType === "SMART_IOT";
   const heartbeat = useQuery({
@@ -99,13 +135,21 @@ function MachineDetailContent() {
     void Promise.all([
       machine.refetch(),
       schedule.refetch(),
+      maintenanceTickets.refetch(),
       isSmartIot ? heartbeat.refetch() : Promise.resolve(),
     ]);
   };
   const actionBar = (showRefresh: boolean) => (
     <ActionBar>
       {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
-      {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
+      {showRefresh && machine.data && (editing ? <>
+        <ButtonBar type="submit" form="machine-edit-form" disabled={updateMachine.isPending}>{updateMachine.isPending ? "Đang lưu…" : "Lưu thay đổi"}</ButtonBar>
+        <ButtonBar type="button" disabled={updateMachine.isPending} onClick={() => { setEditing(false); setMachineActionError(""); }}>Hủy sửa</ButtonBar>
+      </> : <>
+        <ButtonBar type="button" onClick={() => { setEditing(true); setMachineActionError(""); }}>Chỉnh sửa máy</ButtonBar>
+        <ButtonBar type="button" onClick={() => { setMachineActionError(""); setConfirmDelete(true); }}>Xóa máy</ButtonBar>
+      </>)}
+      {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching || maintenanceTickets.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
     </ActionBar>
   );
   const renderHeading = () => (
@@ -127,6 +171,25 @@ function MachineDetailContent() {
     }
     setRangeError("");
     setRange({ from, to });
+  };
+
+  const submitMachineEdit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const current = machine.data;
+    if (!current?.status) {
+      setMachineActionError("Không thể cập nhật máy vì API không trả về trạng thái hiện tại.");
+      return;
+    }
+    updateMachine.mutate({
+      serialNumber: serialDraft.trim(),
+      status: current.status,
+      ...(current.ownerId ? { ownerId: current.ownerId } : {}),
+      ...(current.deployedAt ? { deployedAt: current.deployedAt } : {}),
+      ...(current.nextPreventiveMaintenanceAt ? { nextPreventiveMaintenanceAt: current.nextPreventiveMaintenanceAt } : {}),
+      ...(current.cupsServedSinceLastDescale != null ? { cupsServedSinceLastDescale: current.cupsServedSinceLastDescale } : {}),
+      ...(regionDraft.trim() ? { region: regionDraft.trim() } : {}),
+      ...(current.locationId ? { locationId: current.locationId } : {}),
+    });
   };
 
   const loadLastDay = () => {
@@ -206,6 +269,12 @@ function MachineDetailContent() {
               <div><span>{T.MACHINES.LOCATION_ID}</span><strong>{device.locationId ?? "—"}</strong></div>
               <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
             </div>
+            {editing && <form id="machine-edit-form" className={styles.operationsGrid} onSubmit={submitMachineEdit}>
+              <label>Serial máy *<input required maxLength={160} value={serialDraft} onChange={(event) => setSerialDraft(event.target.value)} /></label>
+              <label>{T.MACHINES.REGION}<input maxLength={160} value={regionDraft} onChange={(event) => setRegionDraft(event.target.value)} /></label>
+              <p className={styles.panelSubtitle}>Trạng thái, Owner và lịch bảo trì do vòng đời hợp đồng quản lý.</p>
+            </form>}
+            {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
           </section>
         ) : (
           <section id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
@@ -226,10 +295,20 @@ function MachineDetailContent() {
 
       <section className={styles.panel}>
         <h2>{T.MACHINES.TICKET_HISTORY}</h2>
-        <div className={styles.operationsNotice} role="note">
-          <p>{T.MACHINES.TICKET_UNAVAILABLE}</p>
-          <button type="button" disabled aria-disabled="true" title={T.MACHINES.TICKET_UNAVAILABLE}>Tải lịch sử</button>
-        </div>
+        {maintenanceTickets.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
+        {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {maintenanceTickets.data && maintenanceTickets.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+        {maintenanceTickets.data && maintenanceTickets.data.length > 0 && <DataTable
+          rows={maintenanceTickets.data}
+          rowKey={(ticket, index) => ticket.id ?? `${ticket.machineId}-${index}`}
+          columns={[
+            { key: "status", header: "Trạng thái", render: (ticket) => ticket.status ?? "—" },
+            { key: "scheduled", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline, true) },
+            { key: "technician", header: "Technician", render: (ticket) => ticket.assignedTechnicianId ?? ticket.assignedTo ?? "—" },
+            { key: "result", header: "Chẩn đoán / kết quả", render: (ticket) => ticket.resolutionResult ?? ticket.diagnosis ?? ticket.notes ?? "—" },
+            { key: "completed", header: "Hoàn tất", render: (ticket) => formatDate(ticket.completedAt, true) },
+          ]}
+        />}
       </section>
 
       {isSmartIot ? <>
@@ -286,6 +365,17 @@ function MachineDetailContent() {
         <p className={styles.emptyText}>{device.machineType === "CONVENTIONAL" ? "Máy thường không có heartbeat hoặc telemetry IoT." : "Chưa truy vấn heartbeat vì backend chưa xác nhận loại máy là Smart IoT."}</p>
       </section>}
     </div>
+    {confirmDelete && <NotificationDialog
+      variant="confirm"
+      title="Xóa máy khỏi hệ thống?"
+      description="Chỉ máy chưa có lịch sử hợp đồng mới có thể xóa. Thao tác này xóa bản ghi máy khỏi hệ thống."
+      primaryAction={{ label: "Xóa máy", pending: deleteMachine.isPending, pendingLabel: "Đang xóa…", onClick: () => deleteMachine.mutate() }}
+      secondaryAction={{ label: "Hủy", disabled: deleteMachine.isPending, onClick: () => setConfirmDelete(false) }}
+      onClose={() => { if (!deleteMachine.isPending) setConfirmDelete(false); }}
+      closeOnEscape={!deleteMachine.isPending}
+    >
+      {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
+    </NotificationDialog>}
     {actionBar(true)}
   </AdminShell>;
 }

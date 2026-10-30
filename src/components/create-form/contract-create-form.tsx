@@ -35,10 +35,10 @@ type ContractFormState = {
     repairCostResponsibility: "TENANT" | "COMPANY" | "UNKNOWN";
     paymentDueEligibleDays: string;
     paymentDestinationReference: string;
-    offlineViolationAction: string;
+    offlineViolationAction: "WARN_ONLY" | "MANUAL_REVIEW";
     buybackEnabled: boolean;
     buybackMinimumMonths: string;
-    buybackValuationMethod: string;
+    buybackValuationMethod: "MANUAL_APPRAISAL";
   };
 };
 
@@ -259,8 +259,19 @@ export function ContractCreateForm({
                 </select>
               </label>
               <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
-              <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
-              <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
+              <label htmlFor="contract-offline-action">
+                <span>Hành động khi máy offline vượt giới hạn *</span>
+                <select id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value as "WARN_ONLY" | "MANUAL_REVIEW")}>
+                  <option value="WARN_ONLY">Cảnh báo</option>
+                  <option value="MANUAL_REVIEW">Kiểm tra thủ công</option>
+                </select>
+              </label>
+              <label htmlFor="contract-buyback-valuation">
+                <span>Phương pháp định giá mua lại *</span>
+                <select id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value as "MANUAL_APPRAISAL")}>
+                  <option value="MANUAL_APPRAISAL">Định giá thủ công</option>
+                </select>
+              </label>
               <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>
               <div>
                 <span>Loại máy thay thế được phép</span>

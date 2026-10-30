@@ -1,4 +1,6 @@
+import axios from "axios";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import { MachineIdSchema } from "@/schema/machines.schema";
 import {
   GlobalRecipeIdSchema,
   GlobalRecipesSchema,
@@ -8,6 +10,9 @@ import {
   LocalRecipesSchema,
   LocalRecipeSchema,
   LocalRecipeUpsertRequestSchema,
+  RecipeSyncRequestSchema,
+  RecipeSyncStatusSchema,
+  RecipeSyncStatusesSchema,
   type RecipePublishRequest,
   type LocalRecipeUpsertRequest,
 } from "@/schema/recipes.schema";
@@ -42,6 +47,24 @@ export const recipesApi = {
       { baseURL: DOLORES_API_BASE_URL },
     );
     return GlobalRecipeSchema.parse(response.data);
+  },
+
+  async updateGlobal(id: string, input: RecipePublishRequest) {
+    const validId = GlobalRecipeIdSchema.parse(id);
+    const request = RecipePublishRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(
+      recipePath(validId),
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const recipe = GlobalRecipeSchema.parse(response.data);
+    if (recipe.id !== validId) throw new Error("Dolores returned a different global recipe.");
+    return recipe;
+  },
+
+  async deleteGlobal(id: string) {
+    const validId = GlobalRecipeIdSchema.parse(id);
+    await axiosClient.delete(recipePath(validId), { baseURL: DOLORES_API_BASE_URL });
   },
 
   async listLocal(signal?: AbortSignal) {
@@ -79,4 +102,37 @@ export const recipesApi = {
       baseURL: DOLORES_API_BASE_URL,
     });
   },
+
+  async requestSync(machineIds: string[]) {
+    const request = RecipeSyncRequestSchema.parse({ machineIds });
+    const response = await axiosClient.post<unknown>("/recipes/sync", request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return RecipeSyncStatusesSchema.parse(response.data);
+  },
+
+  async getSyncStatus(machineId: string, signal?: AbortSignal) {
+    const validMachineId = MachineIdSchema.parse(machineId);
+    try {
+      const response = await axiosClient.get<unknown>(`/recipes/sync/${encodeURIComponent(validMachineId)}`, {
+        baseURL: DOLORES_API_BASE_URL,
+        signal,
+      });
+      return RecipeSyncStatusSchema.parse(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) return null;
+      throw error;
+    }
+  },
+
+  async getSyncHistory(machineId: string, signal?: AbortSignal) {
+    const validMachineId = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.get<unknown>(`/recipes/sync/${encodeURIComponent(validMachineId)}/history`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { page: 0, size: 50 },
+      signal,
+    });
+    return RecipeSyncStatusesSchema.parse(response.data);
+  },
+
 };

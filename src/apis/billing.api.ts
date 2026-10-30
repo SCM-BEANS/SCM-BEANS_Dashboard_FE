@@ -9,6 +9,10 @@ import {
   InvoiceLineItemsSchema,
   InvoiceSchema,
   PaymentProofSubmitResponseSchema,
+  PaymentProofReviewRequestSchema,
+  InvoiceStatusChangeRequestSchema,
+  type PaymentProofReviewRequest,
+  type InvoiceStatusChangeRequest,
 } from "@/schema/billing.schema";
 
 const invoicePath = (id: string) =>
@@ -127,5 +131,25 @@ export const billingApi = {
       signal,
     });
     return response.data;
+  },
+
+  async reviewPaymentProof(proofId: string, input: PaymentProofReviewRequest) {
+    const validProofId = PaymentProofIdSchema.parse(proofId);
+    const request = PaymentProofReviewRequestSchema.parse(input);
+    await axiosClient.post<unknown>(
+      `/billing/payment-proofs/${encodeURIComponent(validProofId)}/review`,
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  },
+
+  async changeInvoiceStatus(invoiceId: string, input: InvoiceStatusChangeRequest) {
+    const validInvoiceId = InvoiceIdSchema.parse(invoiceId);
+    const request = InvoiceStatusChangeRequestSchema.parse(input);
+    await axiosClient.post<unknown>(
+      invoicePath(validInvoiceId) + "/status",
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
   },
 };

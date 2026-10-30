@@ -49,10 +49,10 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     : "";
 
   if (!sectionPath) return withCustomerActions(<OverviewScreen />, screen.title, screen.actions);
-  if (sectionPath === "contracts" || ContractIdSchema.safeParse(contractCandidate).success) {
+  if (sectionPath === "contracts" || sectionPath === "contracts/expiry" || ContractIdSchema.safeParse(contractCandidate).success) {
     return withCustomerActions(<ContractsScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
-  if (sectionPath === "machines" || MachineIdSchema.safeParse(machineCandidate).success) {
+  if (sectionPath === "machines" || sectionPath === "machines/history" || MachineIdSchema.safeParse(machineCandidate).success) {
     return withCustomerActions(<MachinesScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }
   if (sectionPath === "menu" || GlobalRecipeIdSchema.safeParse(recipeCandidate).success) {

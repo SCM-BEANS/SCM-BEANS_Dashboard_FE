@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notificationsApi } from "@/apis/notifications.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -12,9 +12,16 @@ import { AdminShell, adminStyles as styles } from "../admin-shell";
 const ALERTS_QUERY_KEY = ["dolores", "alerts"] as const;
 
 function NotificationContent() {
+  const queryClient = useQueryClient();
   const alerts = useQuery({
     queryKey: ALERTS_QUERY_KEY,
     queryFn: ({ signal }) => notificationsApi.listAlerts(signal),
+  });
+  const acknowledge = useMutation({
+    mutationFn: (id: string) => notificationsApi.acknowledgeAlert(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ALERTS_QUERY_KEY });
+    },
   });
 
   return (
@@ -28,7 +35,7 @@ function NotificationContent() {
       >
         <section className={styles.panel} aria-labelledby="alerts-list-title">
           <h2 id="alerts-list-title">{ADMIN_MESSAGES.NOTIFICATIONS.ALERTS}</h2>
-          <p className={styles.panelSubtitle}>{ADMIN_MESSAGES.NOTIFICATIONS.ALERT_READ_ONLY}</p>
+          <p className={styles.panelSubtitle}>Xác nhận sẽ đóng sự cố cảnh báo CRITICAL/HIGH tương ứng.</p>
           {alerts.isPending && <p role="status">{ADMIN_MESSAGES.NOTIFICATIONS.LOADING}</p>}
           {alerts.isError && (
             <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
@@ -49,9 +56,20 @@ function NotificationContent() {
                 { key: "time", header: ADMIN_MESSAGES.NOTIFICATIONS.TIME, render: (alert) => alert.ts },
                 { key: "content", header: ADMIN_MESSAGES.NOTIFICATIONS.CONTENT, render: (alert) => alert.message },
                 { key: "status", header: ADMIN_MESSAGES.NOTIFICATIONS.STATUS, render: (alert) => alert.acknowledged ? ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACKNOWLEDGED : ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACTIVE },
+                { key: "actions", header: "Thao tác", render: (alert) => alert.acknowledged ? "—" : (
+                  <button
+                    type="button"
+                    className={styles.accountTextButton}
+                    disabled={acknowledge.isPending}
+                    onClick={() => acknowledge.mutate(alert.id)}
+                  >
+                    {acknowledge.isPending && acknowledge.variables === alert.id ? "Đang xác nhận…" : "Xác nhận cảnh báo"}
+                  </button>
+                ) },
               ]}
             />
           )}
+          {acknowledge.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(acknowledge.error, "mutation")}</p>}
         </section>
       </NotificationInbox>
       <ActionBar>

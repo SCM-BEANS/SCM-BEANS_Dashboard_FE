@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { useState, type FormEvent } from "react";
 
 import Link from "next/link";
 
@@ -6,11 +8,13 @@ import { locationsApi } from "@/apis/locations.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
+import { profilesApi } from "@/apis/profiles.api";
+
 import { PATH_MODERATOR } from "@/routes/path";
 
 import { LocationIdSchema } from "@/schema/locations.schema";
 
-import { MachineIdSchema, type MachineInventoryItem, type MaintenanceTicket } from "@/schema/machines.schema";
+import { MachineIdSchema, MachineTypeSchema, type Machine, type MachineInventoryItem, type MaintenanceTicket } from "@/schema/machines.schema";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
@@ -24,6 +28,18 @@ import { ModeratorPageHeading } from "../moderator-page-heading";
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
+
+async function listVerifiedActiveTechnicians(signal: AbortSignal) {
+  const firstPage = await profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: 0, size: 100 }, signal);
+  const pages = [firstPage];
+  for (let page = 1; page < firstPage.totalPages; page += 5) {
+    const pageNumbers = Array.from({ length: Math.min(5, firstPage.totalPages - page) }, (_, offset) => page + offset);
+    pages.push(...await Promise.all(pageNumbers.map((pageNumber) =>
+      profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: pageNumber, size: 100 }, signal),
+    )));
+  }
+  return pages.flatMap((page) => page.items).filter((profile) => profile.emailVerified);
+}
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -71,6 +87,132 @@ function DetailValue({ label, value, code = false }: { label: string; value: str
   );
 }
 
+function MachineManagementPanel({ machine }: { machine: Machine }) {
+  const queryClient = useQueryClient();
+  const [technicianId, setTechnicianId] = useState("");
+  const [machineType, setMachineType] = useState<"CONVENTIONAL" | "SMART_IOT">(machine.machineType ?? "CONVENTIONAL");
+  const [typeReason, setTypeReason] = useState("");
+  const [region, setRegion] = useState(machine.region ?? "");
+  const [locationId, setLocationId] = useState(machine.locationId ?? "");
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const technicians = useQuery({
+    queryKey: ["dolores", "profiles", "technicians", "verified-active"],
+    queryFn: ({ signal }) => listVerifiedActiveTechnicians(signal),
+    enabled: Boolean(machine.ownerId),
+    retry: false,
+  });
+  const locations = useQuery({
+    queryKey: ["dolores", "locations", "owner", machine.ownerId, "active"],
+    queryFn: ({ signal }) => locationsApi.list({ ownerId: machine.ownerId!, activeOnly: true }, signal),
+    enabled: Boolean(machine.ownerId),
+    retry: false,
+  });
+  const refresh = async () => {
+    setActionSuccess(messages.MACHINE_ACTION_SUCCESS);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "inventory-summary"] }),
+    ]);
+  };
+  const onError = (error: unknown) => setActionError(getApiErrorMessage(error));
+  const assign = useMutation({
+    mutationFn: () => machinesApi.assignTechnician(technicianId, machine.id),
+    onMutate: () => { setActionError(null); setActionSuccess(null); },
+    onSuccess: refresh,
+    onError,
+  });
+  const unassign = useMutation({
+    mutationFn: () => machinesApi.unassignTechnician(technicianId, machine.id),
+    onMutate: () => { setActionError(null); setActionSuccess(null); },
+    onSuccess: refresh,
+    onError,
+  });
+  const updateType = useMutation({
+    mutationFn: () => machinesApi.setType(machine.id, { machineType, reason: typeReason }),
+    onMutate: () => { setActionError(null); setActionSuccess(null); },
+    onSuccess: refresh,
+    onError,
+  });
+  const updateMachine = useMutation({
+    mutationFn: () => {
+      if (!machine.serialNumber || !machine.status) throw new Error("Không thể cập nhật máy khi API thiếu serial hoặc trạng thái hiện tại.");
+      return machinesApi.update(machine.id, {
+        serialNumber: machine.serialNumber,
+        status: machine.status,
+        region,
+        ...(locationId ? { locationId } : {}),
+      });
+    },
+    onMutate: () => { setActionError(null); setActionSuccess(null); },
+    onSuccess: refresh,
+    onError,
+  });
+  const actionsPending = assign.isPending || unassign.isPending || updateType.isPending || updateMachine.isPending;
+  const locationOptions = locations.data ?? [];
+
+  function submitMachine(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    updateMachine.mutate();
+  }
+
+  function submitType(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    updateType.mutate();
+  }
+
+  return (
+    <section className={styles.pendingNotice} aria-labelledby="moderator-machine-management">
+      <h2 id="moderator-machine-management" className={styles.sectionTitle}>{messages.MACHINE_MANAGEMENT_ACTIONS}</h2>
+      {machine.ownerId ? (
+        <>
+          <QueryFeedback query={locations} loadingMessage={messages.MACHINE_LOADING_LOCATIONS} />
+          <form onSubmit={submitMachine} style={{ display: "grid", gap: 8, marginBottom: 20 }}>
+            <label htmlFor="moderator-machine-region">{messages.MACHINE_REGION_UPDATE}</label>
+            <input id="moderator-machine-region" value={region} disabled={actionsPending} onChange={(event) => setRegion(event.target.value)} />
+            <label htmlFor="moderator-machine-location">{messages.MACHINE_LOCATION_UPDATE}</label>
+            <select id="moderator-machine-location" value={locationId} disabled={actionsPending || locations.isPending} onChange={(event) => setLocationId(event.target.value)}>
+              <option value="">{messages.MACHINE_SELECT_LOCATION}</option>
+              {locationOptions.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+            </select>
+            <button className={styles.retryButton} type="submit" disabled={actionsPending || !machine.serialNumber || !machine.status}>
+              {updateMachine.isPending ? messages.MACHINE_SAVING : messages.MACHINE_SAVE_CHANGES}
+            </button>
+          </form>
+          <form onSubmit={submitType} style={{ display: "grid", gap: 8, marginBottom: 20 }}>
+            <label htmlFor="moderator-machine-type">{messages.MACHINE_TYPE_UPDATE}</label>
+            <select id="moderator-machine-type" value={machineType} disabled={actionsPending} onChange={(event) => setMachineType(MachineTypeSchema.parse(event.target.value))}>
+              <option value="CONVENTIONAL">CONVENTIONAL</option>
+              <option value="SMART_IOT">SMART_IOT</option>
+            </select>
+            <label htmlFor="moderator-machine-type-reason">{messages.MACHINE_TYPE_REASON}</label>
+            <textarea id="moderator-machine-type-reason" value={typeReason} maxLength={1000} required rows={2} disabled={actionsPending} onChange={(event) => setTypeReason(event.target.value)} />
+            <button className={styles.retryButton} type="submit" disabled={actionsPending || !typeReason.trim()}>
+              {updateType.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TYPE_UPDATE}
+            </button>
+          </form>
+          <QueryFeedback query={technicians} loadingMessage={messages.MACHINE_LOADING_TECHNICIANS} />
+          <div style={{ display: "grid", gap: 8 }}>
+            <label htmlFor="moderator-machine-technician">{messages.MACHINE_SELECT_TECHNICIAN}</label>
+            <select id="moderator-machine-technician" value={technicianId} disabled={actionsPending || technicians.isPending} onChange={(event) => setTechnicianId(event.target.value)}>
+              <option value="">{messages.MACHINE_SELECT_TECHNICIAN}</option>
+              {technicians.data?.map((technician) => <option key={technician.idaasUserId} value={technician.idaasUserId}>{technician.fullName || technician.email || technician.idaasUserId}</option>)}
+            </select>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <button className={styles.retryButton} type="button" disabled={!technicianId || actionsPending} onClick={() => assign.mutate()}>{assign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_ASSIGN}</button>
+              <button className={styles.retryButton} type="button" disabled={!technicianId || actionsPending} onClick={() => unassign.mutate()}>{unassign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_UNASSIGN}</button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <p className={styles.formHint}>{messages.MACHINE_OWNER_ASSIGNMENT_REQUIRED}</p>
+      )}
+      {actionError && <p role="alert">{actionError}</p>}
+      {actionSuccess && <p role="status">{actionSuccess}</p>}
+    </section>
+  );
+}
+
 const machineListPaths = new Set(["machines", "machines/list", "machines/stock", "machines/customer"]);
 
 const machineHistoryPath = "machines/repair-history";
@@ -99,7 +241,7 @@ function MachineList({
 }) {
   const visibleMachines = machines.filter((machine) => {
     if (isStock) return ["IN_WAREHOUSE", "PENDING_ACTIVATION", "AVAILABLE_FOR_RENT"].includes(machine.status ?? "");
-    if (isCustomer) return Boolean(machine.tenantId);
+    if (isCustomer) return Boolean(machine.ownerId);
     return true;
   });
   const emptyMessage = failed
@@ -107,7 +249,7 @@ function MachineList({
     : isStock
       ? messages.MACHINE_STOCK_EMPTY
       : isCustomer
-        ? messages.MACHINE_CUSTOMER_EMPTY
+        ? messages.MACHINE_OWNER_EMPTY
         : messages.MACHINE_EMPTY;
 
   return (
@@ -184,7 +326,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const shouldReadTickets = isHistory || (isDetail && validMachineId);
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets"],
-    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets(signal),
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({}, signal),
     enabled: shouldReadTickets,
     retry: false,
   });
@@ -198,8 +340,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   });
   const locationScopeMismatch = Boolean(
     machine.data && location.data && (
-      (machine.data.tenantId && location.data.tenantId && machine.data.tenantId !== location.data.tenantId) ||
-      (machine.data.ownerId && location.data.ownerId && machine.data.ownerId !== location.data.ownerId)
+      machine.data.ownerId && location.data.ownerId !== machine.data.ownerId
     ),
   );
 
@@ -227,6 +368,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
               <DetailValue label={messages.MACHINE_DEPLOYED} value={formatDate(machine.data.deployedAt)} />
               <DetailValue label={messages.MACHINE_REGION} value={machine.data.region ?? "—"} />
             </dl>
+            <MachineManagementPanel machine={machine.data} />
             {locationId && (
               !validLocationId
                 ? <p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p>
@@ -271,7 +413,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     );
   }
 
-  const title = isStock ? "Máy trong kho" : isCustomer ? "Máy gắn với tenant" : messages.MACHINES_TITLE;
+  const title = isStock ? "Máy trong kho" : isCustomer ? messages.MACHINE_OWNER_TITLE : messages.MACHINES_TITLE;
   return (
     <div className={styles.pageContent}>
       <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />

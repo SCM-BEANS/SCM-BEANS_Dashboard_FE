@@ -65,7 +65,8 @@
 }
 
 .fileField,
-.recipientField {
+.recipientField,
+.formField {
   display: flex;
   min-width: min(100%, 320px);
   flex: 1;
@@ -74,7 +75,11 @@
 }
 
 .fileField input,
-.recipientField input {
+.recipientField input,
+.formField input,
+.formField textarea,
+.formField select,
+.tableControl {
   width: 100%;
   min-height: 44px;
   padding: 9px 10px;
@@ -83,6 +88,51 @@
   background: #fff;
   color: #302927;
   font: inherit;
+}
+
+.formField span {
+  color: #706561;
+  font-size: 13px;
+}
+
+.eventList {
+  display: grid;
+  gap: 12px;
+  padding-left: 24px;
+  margin: 0;
+  color: #504845;
+  line-height: 1.55;
+}
+
+.eventList li + li {
+  padding-top: 10px;
+  border-top: 1px solid #eee8e2;
+}
+
+.eventList p {
+  margin: 4px 0 0;
+  color: #706561;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tableControl {
+  min-width: 130px;
+  min-height: 38px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.tableControl:disabled,
+.formField input:disabled,
+.formField textarea:disabled {
+  cursor: not-allowed;
+  background: #f7f5f3;
+  color: #706561;
 }
 
 .fileName {
@@ -130,7 +180,12 @@
   }
 
   .fileField,
-  .recipientField {
+  .recipientField,
+  .formField {
     min-width: 0;
+  }
+
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

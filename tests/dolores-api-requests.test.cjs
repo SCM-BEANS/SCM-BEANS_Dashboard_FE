@@ -68,12 +68,21 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
       calls.push({ method: 'POST', url, data, config });
       return { data: responseData };
     },
+    put: async (url, data, config = {}) => {
+      calls.push({ method: 'PUT', url, data, config });
+      return { data: responseData };
+    },
+    delete: async (url, config = {}) => {
+      calls.push({ method: 'DELETE', url, config });
+      return { data: responseData };
+    },
   };
   const apis = {
     profiles: loadApi('src/apis/profiles.api.ts', axiosClient).profilesApi,
     locations: loadApi('src/apis/locations.api.ts', axiosClient).locationsApi,
     contracts: loadApi('src/apis/contracts.api.ts', axiosClient).contractsApi,
     machines: loadApi('src/apis/machines.api.ts', axiosClient).machinesApi,
+    machineModels: loadApi('src/apis/machine-models.api.ts', axiosClient).machineModelsApi,
     telemetry: loadApi('src/apis/telemetry.api.ts', axiosClient).telemetryApi,
     notifications: loadApi('src/apis/notifications.api.ts', axiosClient).notificationsApi,
     recipes: loadApi('src/apis/recipes.api.ts', axiosClient).recipesApi,
@@ -94,28 +103,44 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['locations', 'listByTenant', [ids.tenant, signal], [{ id: ids.location, tenantId: ids.tenant }], 'GET', '/locations', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant, activeOnly: false }, signal }],
     ['locations', 'getById', [ids.location, signal], location, 'GET', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1', signal }],
     ['locations', 'create', [ids.profile, { name: 'Test store', city: 'Test City' }], location, 'POST', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile } }, { name: 'Test store', city: 'Test City' }],
+    ['locations', 'update', [ids.location, { name: 'Updated store' }], location, 'PUT', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1' }, { name: 'Updated store' }],
+    ['locations', 'deactivate', [ids.location], undefined, 'DELETE', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1' }],
     ['contracts', 'list', [signal], [], 'GET', '/contracts', { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'listByTenant', [ids.tenant, signal], [contract], 'GET', `/contracts/tenant/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getModeratorById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getExpiry', [ids.contract, signal], {}, 'GET', `/contracts/${ids.contract}/expiry-status`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getDocuments', [ids.contract, signal], [], 'GET', `/contracts/${ids.contract}/documents`, { baseURL: '/api/dolores/v1', signal }],
+    ['contracts', 'amendPolicy', [ids.contract, { snapshot: { policyVersion: 1 }, reason: 'Updated terms', effectiveDate: '2026-11-01' }], contract, 'POST', `/contracts/${ids.contract}/policy-amendments`, { baseURL: '/api/dolores/v1' }, { snapshot: { policyVersion: 1 }, reason: 'Updated terms', effectiveDate: '2026-11-01' }],
+    ['contracts', 'getPolicyHistory', [ids.contract, signal], [], 'GET', `/contracts/${ids.contract}/policy-history`, { baseURL: '/api/dolores/v1', params: { page: 0, size: 100 }, signal }],
+    ['contracts', 'continueContract', [ids.contract, { startDate: '2026-11-01', endDate: '2027-11-01', terms: 'Continued', monthlyRentalFee: 100 }], { id: ids.contract }, 'POST', `/contracts/${ids.contract}/continuations`, { baseURL: '/api/dolores/v1' }, { startDate: '2026-11-01', endDate: '2027-11-01', terms: 'Continued', monthlyRentalFee: 100 }],
+    ['contracts', 'requestTermination', [ids.contract, { type: 'NORMAL', reason: 'Term ended', idempotencyKey: 'ik-1', correlationId: 'corr-1' }], { id: ids.contract, contractId: ids.contract, ownerId: ids.profile, type: 'NORMAL', status: 'REQUESTED', reason: 'Term ended' }, 'POST', `/contracts/${ids.contract}/termination-cases`, { baseURL: '/api/dolores/v1' }, { type: 'NORMAL', reason: 'Term ended', idempotencyKey: 'ik-1', correlationId: 'corr-1' }],
     ['contracts', 'getMachineHistory', [ids.machine, signal], [contract], 'GET', `/contracts/machine/${ids.machine}/history`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'downloadDocument', [ids.contract, ids.document, signal], blob, 'GET', `/contracts/${ids.contract}/documents/${ids.document}`, { baseURL: '/api/dolores/v1', responseType: 'blob', signal }],
     ['machines', 'list', [signal], [machine], 'GET', '/machines', { baseURL: '/api/dolores/v1', signal }],
     ['machines', 'getById', [ids.machine, signal], machine, 'GET', `/machines/${ids.machine}`, { baseURL: '/api/dolores/v1', signal }],
     ['machines', 'getInventorySummary', [signal], {}, 'GET', '/inventory/summary', { baseURL: '/api/dolores/v1', signal }],
     ['machines', 'getMaintenanceSchedule', [ids.machine, signal], {}, 'GET', `/machines/${ids.machine}/maintenance-schedule`, { baseURL: '/api/dolores/v1', signal }],
-    ['machines', 'listMaintenanceTickets', [signal], [], 'GET', '/maintenance-tickets', { baseURL: '/api/dolores/v1', signal }],
+    ['machines', 'listMaintenanceTickets', [{ machineId: ids.machine, page: 0, size: 100 }, signal], [], 'GET', '/maintenance-tickets', { baseURL: '/api/dolores/v1', params: { machineId: ids.machine, page: 0, size: 100 }, signal }],
+    ['machines', 'update', [ids.machine, { serialNumber: 'S-01', status: 'IN_WAREHOUSE', region: 'HCMC' }], machine, 'PUT', `/machines/${ids.machine}`, { baseURL: '/api/dolores/v1' }, { serialNumber: 'S-01', status: 'IN_WAREHOUSE', region: 'HCMC' }],
+    ['machines', 'delete', [ids.machine], undefined, 'DELETE', `/machines/${ids.machine}`, { baseURL: '/api/dolores/v1' }],
+    ['machineModels', 'create', [{ modelCode: 'M-1', manufacturer: 'Maker', displayName: 'Model 1', machineType: 'CONVENTIONAL', specifications: {} }], { id: ids.machine }, 'POST', '/machine-models', { baseURL: '/api/dolores/v1' }, { modelCode: 'M-1', manufacturer: 'Maker', displayName: 'Model 1', machineType: 'CONVENTIONAL', specifications: {} }],
+    ['machineModels', 'assignMachineToModel', [ids.machine, ids.machine, { reason: 'Test assignment' }], { machineId: ids.machine, modelId: ids.machine, machineType: 'CONVENTIONAL', mappedAt: '2026-10-29T10:00:00' }, 'POST', `/machine-models/${ids.machine}/machines/${ids.machine}`, { baseURL: '/api/dolores/v1' }, { reason: 'Test assignment' }],
+    ['machineModels', 'getById', [ids.machine, signal], { id: ids.machine }, 'GET', `/machine-models/${ids.machine}`, { baseURL: '/api/dolores/v1', signal }],
+    ['machineModels', 'update', [ids.machine, { modelCode: 'M-1', manufacturer: 'Maker', displayName: 'Model 1', machineType: 'CONVENTIONAL', specifications: {} }], { id: ids.machine }, 'PUT', `/machine-models/${ids.machine}`, { baseURL: '/api/dolores/v1' }, { modelCode: 'M-1', manufacturer: 'Maker', displayName: 'Model 1', machineType: 'CONVENTIONAL', specifications: {} }],
+    ['machineModels', 'deactivate', [ids.machine], { id: ids.machine }, 'POST', `/machine-models/${ids.machine}/deactivate`, { baseURL: '/api/dolores/v1' }, undefined],
     ['telemetry', 'getLatestHeartbeat', [ids.machine, signal], { machineId: ids.machine }, 'GET', `/telemetry-query/machines/${ids.machine}/heartbeats/latest`, { baseURL: '/api/dolores/v1', signal }],
     ['telemetry', 'listMachinePoints', [ids.machine, { from: '2026-10-01T00:00:00Z', to: '2026-10-02T00:00:00Z' }, 25, signal], [{ machineId: ids.machine }], 'GET', `/telemetry-query/machines/${ids.machine}/points`, { baseURL: '/api/dolores/v1', params: { from: '2026-10-01T00:00:00Z', to: '2026-10-02T00:00:00Z', limit: 100, offset: 25 }, signal }],
     ['notifications', 'list', [signal], [], 'GET', '/notifications', { baseURL: '/api/dolores/v1', signal }],
     ['notifications', 'unreadCount', [signal], { unreadCount: 0 }, 'GET', '/notifications/unread-count', { baseURL: '/api/dolores/v1', signal }],
     ['notifications', 'listAlerts', [signal], [], 'GET', '/alerts', { baseURL: '/api/dolores/v1', signal }],
+    ['notifications', 'acknowledgeAlert', [ids.notification], undefined, 'POST', `/alerts/${ids.notification}/ack`, { baseURL: '/api/dolores/v1' }, undefined],
     ['notifications', 'markAsRead', [ids.notification], notification, 'POST', `/notifications/${ids.notification}/read`, { baseURL: '/api/dolores/v1' }, undefined],
     ['recipes', 'listGlobal', [signal], [recipe], 'GET', '/recipes/global', { baseURL: '/api/dolores/v1', signal }],
     ['recipes', 'getGlobalById', [ids.recipe, signal], recipe, 'GET', `/recipes/global/${ids.recipe}`, { baseURL: '/api/dolores/v1', signal }],
     ['recipes', 'publishGlobal', [recipeInput], recipe, 'POST', '/recipes/global', { baseURL: '/api/dolores/v1' }, recipeInput],
+    ['recipes', 'updateGlobal', [ids.recipe, recipeInput], recipe, 'PUT', `/recipes/global/${ids.recipe}`, { baseURL: '/api/dolores/v1' }, recipeInput],
+    ['recipes', 'deleteGlobal', [ids.recipe], undefined, 'DELETE', `/recipes/global/${ids.recipe}`, { baseURL: '/api/dolores/v1' }],
     ['billing', 'listInvoices', [signal], [], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
     ['billing', 'listModeratorInvoices', [signal], [invoice], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
     ['billing', 'getModeratorInvoice', [ids.invoice, signal], invoice, 'GET', `/billing/invoices/${ids.invoice}`, { baseURL: '/api/dolores/v1', signal }],
@@ -127,6 +152,7 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['workOrders', 'listByTenant', [ids.tenant, signal], [workOrder], 'GET', '/installation-work-orders', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant }, signal }],
     ['workOrders', 'getById', [ids.workOrder, signal], workOrderDetails, 'GET', `/installation-work-orders/${ids.workOrder}`, { baseURL: '/api/dolores/v1', signal }],
     ['dashboard', 'getOverview', [signal, '2026-10-01', '2026-10-07'], {}, 'GET', '/dashboard/overview', { baseURL: '/api/dolores/v1', signal, params: { fromDate: '2026-10-01', toDate: '2026-10-07' } }],
+    ['dashboard', 'getDailyMachineCupUsage', ['2026-10-29', signal], [], 'GET', '/dashboard/daily-cups/machines', { baseURL: '/api/dolores/v1', signal, params: { date: '2026-10-29' } }],
   ];
 
   for (const [apiName, methodName, args, expectedResponse, method, url, config, data] of operations) {
@@ -137,7 +163,7 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     assert.equal(actual.method, method, `${apiName}.${methodName} uses the expected HTTP method`);
     assert.equal(actual.url, url, `${apiName}.${methodName} uses the expected relative route`);
     assert.deepEqual(actual.config, config, `${apiName}.${methodName} preserves query, signal, and response config`);
-    if (method === 'POST') assert.deepEqual(actual.data, data, `${apiName}.${methodName} preserves its body`);
+    if (method === 'POST' || method === 'PUT') assert.deepEqual(actual.data, data, `${apiName}.${methodName} preserves its body`);
   }
 
   assert.equal(calls.length, operations.length);

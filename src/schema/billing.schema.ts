@@ -58,7 +58,7 @@ export const ModeratorInvoiceSchema = z.object({
   repairCostDecisionId: z.string().uuid().nullish(),
   amount: z.number().finite(),
   period: z.string(),
-  type: z.enum(["SUPPLY", "RENTAL"]),
+  type: z.enum(["SUPPLY", "RENTAL", "REPAIR"]),
   status: z.enum(["DRAFT", "PENDING", "UNPAID", "PAID", "OVERDUE", "CANCELLED"]),
   currency: z.string(),
   billingPeriodStart: optionalText,
@@ -97,7 +97,16 @@ export const PaymentProofSchema = z.object({
 
 export const PaymentProofsSchema = z.array(PaymentProofSchema);
 export const PaymentProofSubmitResponseSchema = z.object({}).passthrough();
+export const PaymentProofReviewRequestSchema = z.object({
+  approve: z.boolean(),
+  reason: z.string().trim().min(1).max(1000),
+});
+export const InvoiceStatusChangeRequestSchema = z.object({
+  status: z.enum(["DRAFT", "PENDING", "UNPAID", "PAID", "OVERDUE", "CANCELLED"]),
+});
 
 export type ModeratorInvoice = z.infer<typeof ModeratorInvoiceSchema>;
 export type PaymentProof = z.infer<typeof PaymentProofSchema>;
 export type InvoiceLineItem = z.infer<typeof InvoiceLineItemSchema>;
+export type PaymentProofReviewRequest = z.infer<typeof PaymentProofReviewRequestSchema>;
+export type InvoiceStatusChangeRequest = z.infer<typeof InvoiceStatusChangeRequestSchema>;

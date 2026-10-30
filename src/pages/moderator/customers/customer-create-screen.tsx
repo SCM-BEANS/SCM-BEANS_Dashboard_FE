@@ -75,7 +75,7 @@ export function ModeratorCustomerCreateScreen() {
       setConfirmOpen(false);
       await Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] }),
-        queryClient.invalidateQueries({ queryKey: ["dolores", "tenants"] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "profiles"] }),
       ]);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "mutation"));

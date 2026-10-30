@@ -11,11 +11,19 @@ import {
   type CreateMachineRequest,
   type MarkMachineReadyRequest,
   MaintenanceTicketListSchema,
+  MaintenanceTicketDetailsSchema,
+  MaintenanceTicketListParamsSchema,
+  type MaintenanceTicketListParams,
   MaintenanceScheduleSchema,
   RepairIntakeRequestSchema,
   RepairIntakeResponseSchema,
   type RepairIntakeRequest,
+  UpdateMachineRequestSchema,
+  MachineTypeMappingRequestSchema,
+  type UpdateMachineRequest,
+  type MachineTypeMappingRequest,
 } from "@/schema/machines.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
 
 export class MachineIdentityMismatchError extends Error {
   constructor() {
@@ -66,6 +74,45 @@ export const machinesApi = {
     if (machine.id !== validId) throw new MachineIdentityMismatchError();
     return machine;
   },
+  async update(id: string, input: UpdateMachineRequest) {
+    const validId = MachineIdSchema.parse(id);
+    const request = UpdateMachineRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(machinePath(validId), request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const machine = MachineSchema.parse(response.data);
+    if (machine.id !== validId) throw new MachineIdentityMismatchError();
+    return machine;
+  },
+  async delete(id: string) {
+    const validId = MachineIdSchema.parse(id);
+    await axiosClient.delete(machinePath(validId), { baseURL: DOLORES_API_BASE_URL });
+  },
+  async setType(id: string, input: MachineTypeMappingRequest) {
+    const validId = MachineIdSchema.parse(id);
+    const request = MachineTypeMappingRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(`${machinePath(validId)}/type`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return response.data;
+  },
+  async assignTechnician(technicianId: string, machineId: string) {
+    const validTechnicianId = ProfileIdSchema.parse(technicianId);
+    const validMachineId = MachineIdSchema.parse(machineId);
+    await axiosClient.post<unknown>(
+      `/technician-assignments/${encodeURIComponent(validTechnicianId)}/machines/${encodeURIComponent(validMachineId)}`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  },
+  async unassignTechnician(technicianId: string, machineId: string) {
+    const validTechnicianId = ProfileIdSchema.parse(technicianId);
+    const validMachineId = MachineIdSchema.parse(machineId);
+    await axiosClient.delete(
+      `/technician-assignments/${encodeURIComponent(validTechnicianId)}/machines/${encodeURIComponent(validMachineId)}`,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  },
   async markReady(id: string, input: MarkMachineReadyRequest) {
     const machineId = encodeURIComponent(MachineIdSchema.parse(id));
     const request = MarkMachineReadyRequestSchema.parse(input);
@@ -88,12 +135,28 @@ export const machinesApi = {
     });
     return MaintenanceScheduleSchema.parse(response.data);
   },
-  async listMaintenanceTickets(signal?: AbortSignal) {
+  async listMaintenanceTickets(paramsOrSignal: MaintenanceTicketListParams | AbortSignal = {}, signal?: AbortSignal) {
+    const isSignal = (value: MaintenanceTicketListParams | AbortSignal): value is AbortSignal =>
+      "aborted" in value && typeof value.addEventListener === "function";
+    const params = isSignal(paramsOrSignal) ? {} : paramsOrSignal;
+    const requestSignal = isSignal(paramsOrSignal) ? paramsOrSignal : signal;
+    const query = MaintenanceTicketListParamsSchema.parse(params);
     const response = await axiosClient.get<unknown>("/maintenance-tickets", {
+      baseURL: DOLORES_API_BASE_URL,
+      ...(Object.keys(query).length ? { params: query } : {}),
+      signal: requestSignal,
+    });
+    return MaintenanceTicketListSchema.parse(response.data);
+  },
+  async getMaintenanceTicketById(id: string, signal?: AbortSignal) {
+    const ticketId = MachineIdSchema.parse(id);
+    const response = await axiosClient.get<unknown>(`/maintenance-tickets/${encodeURIComponent(ticketId)}`, {
       baseURL: DOLORES_API_BASE_URL,
       signal,
     });
-    return MaintenanceTicketListSchema.parse(response.data);
+    const ticket = MaintenanceTicketDetailsSchema.parse(response.data);
+    if (ticket.id !== ticketId) throw new Error("Dolores returned a different maintenance ticket.");
+    return ticket;
   },
   async createRepairIntake(input: RepairIntakeRequest) {
     const request = RepairIntakeRequestSchema.parse(input);

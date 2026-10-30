@@ -1,7 +1,6 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { isSupportedTechnicianSection } from "@/routes/routes";
-import { TechnicianRoutePage } from "../technician-route-page";
-import { getTechnicianHistoryScreenDescriptor } from "./history-screen";
+import { TechnicianMachineHistoryScreen } from "./history-screen";
 
 interface TechnicianMachineHistoryPageProps {
   sectionPath: string;
@@ -20,5 +19,5 @@ export const getServerSideProps: GetServerSideProps<TechnicianMachineHistoryPage
 export default function TechnicianMachineHistoryPage({
   sectionPath,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  return <TechnicianRoutePage screen={getTechnicianHistoryScreenDescriptor(sectionPath)} />;
+  return <TechnicianMachineHistoryScreen sectionPath={sectionPath} />;
 }

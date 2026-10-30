@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -75,6 +75,8 @@ function StoresContent() {
   const initialOwnerId = queryValue(router.query.ownerId);
   const [form, setForm] = useState<StoreForm>({ ...emptyForm, ownerId: initialOwnerId });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [createdStore, setCreatedStore] = useState<{ name: string; ownerName: string } | null>(null);
@@ -84,14 +86,25 @@ function StoresContent() {
   const detail = useQuery({
     queryKey: ["dolores", "location", locationId],
     queryFn: ({ signal }) => locationsApi.getById(locationId, signal),
-    enabled: view === "detail" && LocationIdSchema.safeParse(locationId).success,
+    enabled: (view === "detail" || view === "edit") && LocationIdSchema.safeParse(locationId).success,
   });
   const detailOwnerId = detail.data?.ownerId ?? initialOwnerId;
   const detailOwner = useQuery({
     queryKey: ["dolores", "profile", detailOwnerId],
     queryFn: ({ signal }) => profilesApi.getById(detailOwnerId, signal),
-    enabled: view === "detail" && ProfileIdSchema.safeParse(detailOwnerId).success,
+    enabled: (view === "detail" || view === "edit") && ProfileIdSchema.safeParse(detailOwnerId).success,
   });
+  useEffect(() => {
+    if (!detail.data) return;
+    setForm({
+      ownerId: detail.data.ownerId ?? "",
+      name: detail.data.name,
+      address: detail.data.address ?? "",
+      city: detail.data.city ?? "",
+      contactPerson: detail.data.contactPerson ?? "",
+      phoneNumber: detail.data.phoneNumber ?? "",
+    });
+  }, [detail.data]);
   const create = useMutation({
     mutationFn: () => locationsApi.create(form.ownerId, {
       name: form.name, address: form.address || undefined, city: form.city || undefined,
@@ -123,6 +136,31 @@ function StoresContent() {
       setRequestError(getApiErrorMessage(error, "mutation"));
     },
   });
+  const update = useMutation({
+    mutationFn: () => locationsApi.update(locationId, {
+      name: form.name,
+      address: form.address || undefined,
+      city: form.city || undefined,
+      contactPerson: form.contactPerson || undefined,
+      phoneNumber: form.phoneNumber || undefined,
+    }),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(["dolores", "location", locationId], updated);
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] });
+      setEditConfirmOpen(false);
+      navigate({ view: "detail", id: locationId, ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) });
+    },
+    onError: (error: unknown) => setRequestError(getApiErrorMessage(error, "mutation")),
+  });
+  const deactivate = useMutation({
+    mutationFn: () => locationsApi.deactivate(locationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] });
+      setDeactivateConfirmOpen(false);
+      navigate(initialOwnerId ? { ownerId: initialOwnerId } : undefined);
+    },
+    onError: (error: unknown) => setRequestError(getApiErrorMessage(error, "mutation")),
+  });
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/stores", query }, undefined, { shallow: true });
   const submit = (event: FormEvent) => { event.preventDefault(); setRequestError(""); setConfirmOpen(true); };
   const setField = <K extends keyof StoreForm>(key: K, value: StoreForm[K]) => setForm((current) => ({ ...current, [key]: value }));
@@ -133,7 +171,7 @@ function StoresContent() {
   const selectedOwner = detailOwner.data;
   const responseOwnerId = detail.data?.ownerId;
   const ownerMismatch = Boolean(initialOwnerId && responseOwnerId && initialOwnerId !== responseOwnerId);
-  const title = view === "create" ? "Tạo cửa hàng" : view === "detail" ? detail.data?.name ?? T.STORES.DETAIL : T.STORES.TITLE;
+  const title = view === "create" ? "Tạo cửa hàng" : view === "edit" ? "Chỉnh sửa cửa hàng" : view === "detail" ? detail.data?.name ?? T.STORES.DETAIL : T.STORES.TITLE;
 
   return <>
   <div className={`${styles.pageContent} ${view === "list" ? styles.accountPageContent : ""}`}>
@@ -165,6 +203,23 @@ function StoresContent() {
       {requestError && !confirmOpen && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
     </form>}
 
+    {view === "edit" && <>
+      {detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+      {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {detail.data && <form id="store-edit-form" className={styles.panel} onSubmit={(event) => { event.preventDefault(); setRequestError(""); setEditConfirmOpen(true); }}>
+        <h2>Thông tin cửa hàng</h2>
+        <div className={styles.operationsGrid}>
+          <label>{T.STORES.NAME} *<input required maxLength={160} value={form.name} onChange={(event) => setField("name", event.target.value)} /></label>
+          <label>{T.STORES.ADDRESS}<input maxLength={500} value={form.address} onChange={(event) => setField("address", event.target.value)} /></label>
+          <label>{T.STORES.CITY}<input maxLength={120} value={form.city} onChange={(event) => setField("city", event.target.value)} /></label>
+          <label>{T.STORES.CONTACT}<input maxLength={160} value={form.contactPerson} onChange={(event) => setField("contactPerson", event.target.value)} /></label>
+          <label>{T.STORES.PHONE}<input maxLength={40} value={form.phoneNumber} onChange={(event) => setField("phoneNumber", event.target.value)} /></label>
+        </div>
+        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+        {update.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(update.error, "mutation")}</p>}
+      </form>}
+    </>}
+
     {view === "detail" && <>
       {!LocationIdSchema.safeParse(locationId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã cửa hàng không hợp lệ.</div>}
       {detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
@@ -182,7 +237,7 @@ function StoresContent() {
       </div></section>}
     </>}
 
-    {view !== "detail" && view !== "create" && <>
+    {view === "list" && <>
       {listing.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(listing.error)}</p><button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
       {listing.data && <>
@@ -221,6 +276,24 @@ function StoresContent() {
     >
       {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
     </NotificationDialog>}
+    {editConfirmOpen && <NotificationDialog
+      variant="confirm"
+      title="Xác nhận cập nhật cửa hàng"
+      description={form.name.trim()}
+      primaryAction={{ label: "Lưu thay đổi", pending: update.isPending, pendingLabel: "Đang lưu…", onClick: () => update.mutate() }}
+      secondaryAction={{ label: T.STORES.CANCEL, disabled: update.isPending, onClick: () => setEditConfirmOpen(false) }}
+      onClose={() => { if (!update.isPending) setEditConfirmOpen(false); }}
+      closeOnEscape={!update.isPending}
+    />}
+    {deactivateConfirmOpen && <NotificationDialog
+      variant="confirm"
+      title="Ngừng hoạt động cửa hàng?"
+      description="Thao tác này sẽ thu hồi máy đang gán tại cửa hàng."
+      primaryAction={{ label: "Ngừng hoạt động", pending: deactivate.isPending, pendingLabel: "Đang cập nhật…", onClick: () => deactivate.mutate() }}
+      secondaryAction={{ label: T.STORES.CANCEL, disabled: deactivate.isPending, onClick: () => setDeactivateConfirmOpen(false) }}
+      onClose={() => { if (!deactivate.isPending) setDeactivateConfirmOpen(false); }}
+      closeOnEscape={!deactivate.isPending}
+    />}
     {createdStore && <NotificationDialog
       variant="success"
       title={T.STORES.CREATED}
@@ -238,7 +311,12 @@ function StoresContent() {
     <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
   </ActionBar>}
   {view === "detail" && <ActionBar>
-    <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>
+    <ButtonBar type="button" disabled={!detail.data || !detail.data.active} onClick={() => navigate({ view: "edit", id: locationId, ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) })}>Chỉnh sửa</ButtonBar>
+    <ButtonBar type="button" disabled={!detail.data || detail.data.active === false || deactivate.isPending} onClick={() => setDeactivateConfirmOpen(true)}>Ngừng hoạt động</ButtonBar>
+  </ActionBar>}
+  {view === "edit" && <ActionBar>
+    <ButtonBar type="submit" form="store-edit-form" disabled={!detail.data || update.isPending}>Lưu thay đổi</ButtonBar>
+    <ButtonBar type="button" onClick={() => navigate({ view: "detail", id: locationId, ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) })}>Hủy</ButtonBar>
   </ActionBar>}
   </>;
 }

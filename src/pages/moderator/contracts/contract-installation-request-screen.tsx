@@ -3,10 +3,10 @@ import { useState, type FormEvent } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
-import { adminUsersApi } from "@/apis/admin-users.api";
+import { profilesApi } from "@/apis/profiles.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ContractIdSchema } from "@/schema/contracts.schema";
-import { AdminUserIdSchema } from "@/schema/admin-users.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { PATH_MODERATOR } from "@/routes/path";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ModeratorPageHeading } from "../moderator-page-heading";
@@ -55,11 +55,18 @@ export function ContractInstallationRequestScreen({
     retry: false,
   });
   const technicians = useQuery({
-    queryKey: ["idaas", "admin-users", "technician", "ACTIVE", 1, 100],
-    queryFn: ({ signal }) => adminUsersApi.list(
-      { role: "technician", status: "ACTIVE", page: 1, page_size: 100 },
-      signal,
-    ),
+    queryKey: ["dolores", "profiles", "technician", "ACTIVE"],
+    queryFn: async ({ signal }) => {
+      const firstPage = await profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: 0, size: 100 }, signal);
+      const pages = [firstPage];
+      for (let page = 1; page < firstPage.totalPages; page += 5) {
+        const pageNumbers = Array.from({ length: Math.min(5, firstPage.totalPages - page) }, (_, offset) => page + offset);
+        pages.push(...await Promise.all(pageNumbers.map((pageNumber) =>
+          profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: pageNumber, size: 100 }, signal),
+        )));
+      }
+      return pages.flatMap((page) => page.items).filter((technician) => technician.emailVerified);
+    },
     enabled: validId && contract.data?.status === "DRAFT" && Boolean(contract.data.machineId),
     retry: false,
   });
@@ -67,7 +74,7 @@ export function ContractInstallationRequestScreen({
     mutationFn: installationWorkOrdersApi.create,
   });
 
-  const selectedTechnician = technicians.data?.items.find((user) => user.id === technicianId);
+  const selectedTechnician = technicians.data?.find((user) => user.idaasUserId === technicianId);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -87,7 +94,7 @@ export function ContractInstallationRequestScreen({
       ownerId: contract.data.ownerId,
       contractId: contract.data.id,
       machineId: contract.data.machineId,
-      ...(technicianId ? { technicianId: AdminUserIdSchema.parse(technicianId) } : {}),
+      ...(technicianId ? { technicianId: ProfileIdSchema.parse(technicianId) } : {}),
       ...(scheduledForIso ? { scheduledFor: scheduledForIso } : {}),
       ...(notes ? { installationNotes: notes } : {}),
     });
@@ -143,7 +150,7 @@ export function ContractInstallationRequestScreen({
               onRetry={() => void technicians.refetch()}
             />
           )}
-          {technicians.data?.items.length === 0 && (
+          {technicians.data?.length === 0 && (
             <RetryableNotice message="Không tìm thấy kỹ thuật viên đang hoạt động; có thể tạo lệnh chờ phân công." />
           )}
 
@@ -173,11 +180,11 @@ export function ContractInstallationRequestScreen({
                   <option value="">
                     {technicians.isPending ? "Đang tải danh sách kỹ thuật viên…" : "Để chờ phân công"}
                   </option>
-                  {technicians.data?.items.map((technician) => (
-                    <option key={technician.id} value={technician.id}>
-                      {technician.name || technician.email || technician.id}
+                  {technicians.data?.map((technician) => (
+                    <option key={technician.idaasUserId} value={technician.idaasUserId}>
+                      {technician.fullName || technician.email || technician.idaasUserId}
                       {` — ${technician.roles.map((role) => role.toUpperCase()).join(", ")}`}
-                      {technician.name && technician.email ? ` — ${technician.email}` : ""}
+                      {technician.fullName && technician.email ? ` — ${technician.email}` : ""}
                     </option>
                   ))}
                 </select>

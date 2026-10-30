@@ -6,17 +6,18 @@ const ts = require('typescript');
 
 const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
-  'locations.api.ts': { locationsApi: ['list', 'listByTenant', 'getById', 'create'] },
-  'contracts.api.ts': { contractsApi: ['list', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
-  'machines.api.ts': { machinesApi: ['list', 'getById', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets'] },
+  'locations.api.ts': { locationsApi: ['list', 'listByTenant', 'getById', 'create', 'update', 'deactivate'] },
+  'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'amendPolicy', 'getPolicyHistory', 'continueContract', 'requestTermination', 'getMachineHistory', 'downloadDocument'] },
+  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'update', 'delete', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'createRepairIntake'] },
+  'machine-models.api.ts': { machineModelsApi: ['create', 'assignMachineToModel', 'list', 'getById', 'update', 'deactivate'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
-  'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'markAsRead'] },
-  'recipes.api.ts': { recipesApi: ['listGlobal', 'getGlobalById', 'publishGlobal'] },
-  'billing.api.ts': { billingApi: ['listInvoices', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'downloadPaymentProofContent'] },
+  'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'acknowledgeAlert', 'markAsRead', 'markAllAsRead'] },
+  'recipes.api.ts': { recipesApi: ['listGlobal', 'getGlobalById', 'publishGlobal', 'updateGlobal', 'deleteGlobal', 'listLocal', 'getLocalById', 'upsertLocal', 'deleteLocal'] },
+  'billing.api.ts': { billingApi: ['listInvoices', 'getInvoice', 'listInvoiceLineItems', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'submitPaymentProof', 'downloadPaymentProofContent'] },
   'buybacks.api.ts': { buybacksApi: ['getById'] },
   'tenants.api.ts': { tenantsApi: ['list', 'getById'] },
-  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['listByTenant', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
-  'dashboard.api.ts': { dashboardApi: ['getOverview'] },
+  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['create', 'listByTenant', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
+  'dashboard.api.ts': { dashboardApi: ['getOverview', 'getDailyMachineCupUsage'] },
 };
 
 function apiObject(sourceFile, apiName) {
@@ -60,13 +61,48 @@ function assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName
   assert.equal(requests.length, 1, `${apiName}.${methodName} must make exactly one HTTP request`);
   const bodyText = fn.body.getText(sourceFile);
   const isBlob = bodyText.includes('responseType: "blob"');
-  const isCommandWithoutConsumedResponse = apiName === 'contractsApi' && methodName === 'activate';
+  const isCommandWithoutConsumedResponse = (
+    (apiName === 'contractsApi' && methodName === 'activate') ||
+    (apiName === 'locationsApi' && methodName === 'deactivate') ||
+    (apiName === 'machinesApi' && methodName === 'delete') ||
+    (apiName === 'notificationsApi' && methodName === 'acknowledgeAlert') ||
+    (apiName === 'notificationsApi' && methodName === 'markAllAsRead') ||
+    (apiName === 'machinesApi' && methodName === 'markReady') ||
+    (apiName === 'machineModelsApi' && methodName === 'assignMachineToModel') ||
+    (apiName === 'recipesApi' && ['deleteGlobal', 'deleteLocal'].includes(methodName))
+  );
   if (isBlob) {
     assert.ok(bodyText.includes('return response.data'), `${apiName}.${methodName} should return the requested file data`);
   } else if (!isCommandWithoutConsumedResponse) {
     assert.match(bodyText, /Schema\.parse\(response\.data\)/, `${apiName}.${methodName} must validate its response schema`);
   }
 }
+
+function loadSchema(relativePath, mocks = {}) {
+  const filePath = join(__dirname, '..', relativePath);
+  const source = readFileSync(filePath, 'utf8');
+  const { outputText } = ts.transpileModule(source, {
+    fileName: filePath,
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+  });
+  const module = { exports: {} };
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
+  return module.exports;
+}
+
+test('machine model list validates the summary contract while detail validates full fields', () => {
+  const { z } = require('zod');
+  const machineTypes = { MachineTypeSchema: z.enum(['CONVENTIONAL', 'SMART_IOT']) };
+  const schemas = loadSchema('src/schema/machine-models.schema.ts', { './machines.schema': machineTypes });
+  const modelId = '00000000-0000-4000-8000-000000000001';
+  const summary = {
+    id: modelId, modelCode: 'M-01', manufacturer: 'Dolores', displayName: 'Model 1',
+    machineType: 'CONVENTIONAL', active: true,
+  };
+  assert.deepEqual(schemas.MachineModelListSchema.parse([summary]), [summary]);
+  assert.equal(schemas.MachineModelSchema.safeParse(summary).success, false);
+});
 
 test('domain API modules expose typed methods over the shared client with parsed responses', () => {
   const apiDirectory = join(__dirname, '..', 'src', 'apis');

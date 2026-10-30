@@ -1,10 +1,18 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { contractsApi } from "@/apis/contracts.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema } from "@/schema/contracts.schema";
+import {
+  ContractContinuationRequestSchema,
+  ContractPolicyAmendmentRequestSchema,
+  TerminationCaseRequestSchema,
+  type ContractContinuationRequest,
+  type ContractPolicyAmendmentRequest,
+  type TerminationCaseRequest,
+} from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ButtonBar } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
@@ -45,7 +53,27 @@ function status(value: string): string {
 
 function ContractsContent() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [createdContractId, setCreatedContractId] = useState("");
+  const [lifecycleView, setLifecycleView] = useState<"amend" | "terminate" | "continue" | null>(null);
+  const [policySnapshotText, setPolicySnapshotText] = useState("");
+  const [policyReason, setPolicyReason] = useState("");
+  const [policyEffectiveDate, setPolicyEffectiveDate] = useState("");
+  const [terminationType, setTerminationType] = useState<TerminationCaseRequest["type"]>("NORMAL");
+  const [terminationReason, setTerminationReason] = useState("");
+  const [terminationEffectiveDate, setTerminationEffectiveDate] = useState("");
+  const [continuationStartDate, setContinuationStartDate] = useState("");
+  const [continuationEndDate, setContinuationEndDate] = useState("");
+  const [continuationTerms, setContinuationTerms] = useState("");
+  const [continuationMonthlyFee, setContinuationMonthlyFee] = useState("");
+  const [continuationDeposit, setContinuationDeposit] = useState("");
+  const [continuationInstallationFee, setContinuationInstallationFee] = useState("");
+  const [continuationPaygPrice, setContinuationPaygPrice] = useState("");
+  const [lifecycleError, setLifecycleError] = useState("");
+  const [pendingPolicy, setPendingPolicy] = useState<ContractPolicyAmendmentRequest | null>(null);
+  const [pendingTermination, setPendingTermination] = useState<TerminationCaseRequest | null>(null);
+  const [pendingContinuation, setPendingContinuation] = useState<ContractContinuationRequest | null>(null);
+  const [terminationCaseId, setTerminationCaseId] = useState("");
   const view = queryValue(router.query.view);
   const isContractList = view === "" || view === "list";
   const isInstallationRequest = view === "installation-request";
@@ -66,6 +94,7 @@ function ContractsContent() {
     },
   });
   const contract = useQuery({ queryKey: ["dolores", "contract", contractId], queryFn: ({ signal }) => contractsApi.getById(contractId, signal), enabled: view === "detail" && ContractIdSchema.safeParse(contractId).success });
+  const policyHistory = useQuery({ queryKey: ["dolores", "contract-policy-history", contractId], queryFn: ({ signal }) => contractsApi.getPolicyHistory(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const expiry = useQuery({ queryKey: ["dolores", "contract-expiry", contractId], queryFn: ({ signal }) => contractsApi.getExpiry(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const documents = useQuery({ queryKey: ["dolores", "contract-documents", contractId], queryFn: ({ signal }) => contractsApi.getDocuments(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const history = useQuery({ queryKey: ["dolores", "machine-contract-history", machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal), enabled: view === "history" && ContractIdSchema.safeParse(machineId).success });
@@ -74,6 +103,97 @@ function ContractsContent() {
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = safeFilename; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   } });
+  useEffect(() => {
+    if (!contract.data) return;
+    setPolicySnapshotText(contract.data.contractTermsSnapshot ? JSON.stringify(contract.data.contractTermsSnapshot, null, 2) : "");
+    setPolicyReason("");
+    setPolicyEffectiveDate(contract.data.endDate ?? new Date().toISOString().slice(0, 10));
+    setContinuationTerms(contract.data.terms ?? "");
+    setContinuationMonthlyFee(contract.data.monthlyRentalFee == null ? "" : String(contract.data.monthlyRentalFee));
+    setContinuationDeposit(contract.data.depositAmount == null ? "" : String(contract.data.depositAmount));
+    setContinuationInstallationFee(contract.data.installationFee == null ? "" : String(contract.data.installationFee));
+    setContinuationPaygPrice(contract.data.paygUnitPrice == null ? "" : String(contract.data.paygUnitPrice));
+    setContinuationStartDate(contract.data.endDate ?? "");
+    setContinuationEndDate("");
+  }, [contract.data]);
+  const amendPolicy = useMutation({
+    mutationFn: (input: ContractPolicyAmendmentRequest) => contractsApi.amendPolicy(contractId, input),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(["dolores", "contract", contractId], updated);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "contract-policy-history", contractId] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "contracts"] }),
+      ]);
+      setPendingPolicy(null);
+      setLifecycleView(null);
+    },
+    onError: (error: unknown) => setLifecycleError(getApiErrorMessage(error, "mutation")),
+  });
+  const requestTermination = useMutation({
+    mutationFn: (input: TerminationCaseRequest) => contractsApi.requestTermination(contractId, input),
+    onSuccess: (created) => {
+      setPendingTermination(null);
+      setLifecycleView(null);
+      setTerminationCaseId(created.id);
+    },
+    onError: (error: unknown) => setLifecycleError(getApiErrorMessage(error, "mutation")),
+  });
+  const continueContract = useMutation({
+    mutationFn: (input: ContractContinuationRequest) => contractsApi.continueContract(contractId, input),
+    onSuccess: async (created) => {
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "contracts"] });
+      setPendingContinuation(null);
+      setLifecycleView(null);
+      setCreatedContractId(created.id);
+      await router.push({ pathname: "/admin/contracts" }, undefined, { shallow: true });
+    },
+    onError: (error: unknown) => setLifecycleError(getApiErrorMessage(error, "mutation")),
+  });
+  const submitPolicyAmendment = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    let snapshot: unknown;
+    try { snapshot = JSON.parse(policySnapshotText); }
+    catch { setLifecycleError("Snapshot chính sách phải là JSON hợp lệ."); return; }
+    const parsed = ContractPolicyAmendmentRequestSchema.safeParse({
+      snapshot,
+      reason: policyReason,
+      effectiveDate: policyEffectiveDate,
+    });
+    if (!parsed.success) { setLifecycleError("Kiểm tra snapshot, lý do và ngày hiệu lực của chính sách."); return; }
+    setLifecycleError("");
+    setPendingPolicy(parsed.data);
+  };
+  const submitTerminationRequest = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const parsed = TerminationCaseRequestSchema.safeParse({
+      type: terminationType,
+      reason: terminationReason,
+      ...(terminationEffectiveDate ? { effectiveDate: terminationEffectiveDate } : {}),
+      idempotencyKey: crypto.randomUUID(),
+      correlationId: crypto.randomUUID(),
+    });
+    if (!parsed.success) { setLifecycleError("Chọn loại yêu cầu và nhập lý do hợp lệ."); return; }
+    setLifecycleError("");
+    setPendingTermination(parsed.data);
+  };
+  const submitContinuation = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const toOptionalAmount = (value: string) => value.trim() ? Number(value) : undefined;
+    const parsed = ContractContinuationRequestSchema.safeParse({
+      startDate: continuationStartDate,
+      endDate: continuationEndDate,
+      terms: continuationTerms,
+      monthlyRentalFee: Number(continuationMonthlyFee),
+      ...(toOptionalAmount(continuationDeposit) === undefined ? {} : { depositAmount: toOptionalAmount(continuationDeposit) }),
+      ...(toOptionalAmount(continuationInstallationFee) === undefined ? {} : { installationFee: toOptionalAmount(continuationInstallationFee) }),
+      ...(toOptionalAmount(continuationPaygPrice) === undefined ? {} : { paygUnitPrice: toOptionalAmount(continuationPaygPrice) }),
+      ...(contract.data?.offlineLimitMinutes ? { offlineLimitMinutes: contract.data.offlineLimitMinutes } : {}),
+      ...(contract.data?.contractTermsSnapshot ? { contractTermsSnapshot: contract.data.contractTermsSnapshot } : {}),
+    });
+    if (!parsed.success) { setLifecycleError("Kiểm tra thời hạn, điều khoản và các khoản phí của hợp đồng tiếp nối."); return; }
+    setLifecycleError("");
+    setPendingContinuation(parsed.data);
+  };
   const navigate = (query?: Record<string, string>) => {
     if (query?.view === "create") {
       setCreatedContractId("");
@@ -150,6 +270,62 @@ function ContractsContent() {
           {expiry.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(expiry.error)} <ButtonBar type="button" onClick={() => void expiry.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {expiry.data && <div className={styles.operationsGrid}><div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div><div><span>Ngày nhắc</span><strong>{date(expiry.data.reminderDate)}</strong></div><div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div><div><span>Quyết định</span><strong>{expiry.data.decision ?? "Chưa có"}</strong></div><div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div></div>}
         </section>
+        <section className={styles.panel}>
+          <h2>Lịch sử chính sách</h2>
+          {policyHistory.isPending && <p role="status">{T.COMMON.LOADING}</p>}
+          {policyHistory.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(policyHistory.error)} <ButtonBar type="button" onClick={() => void policyHistory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
+          {policyHistory.data && policyHistory.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+          {policyHistory.data && policyHistory.data.length > 0 && <DataTable
+            rows={policyHistory.data}
+            rowKey={(item) => item.id}
+            columns={[
+              { key: "version", header: "Phiên bản", render: (item) => item.version },
+              { key: "effective", header: "Hiệu lực từ", render: (item) => date(item.effectiveDate) },
+              { key: "reason", header: "Lý do", render: (item) => item.reason },
+              { key: "actor", header: "Vai trò cập nhật", render: (item) => item.actorRole },
+            ]}
+          />}
+        </section>
+        {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={styles.panel} onSubmit={submitPolicyAmendment}>
+          <h2>Điều chỉnh chính sách</h2>
+          {contract.data.contractTermsSnapshot ? <>
+            <label>Snapshot chính sách (JSON)<textarea required rows={12} value={policySnapshotText} onChange={(event) => setPolicySnapshotText(event.target.value)} /></label>
+            <div className={styles.operationsGrid}>
+              <label>Lý do *<input required maxLength={1000} value={policyReason} onChange={(event) => setPolicyReason(event.target.value)} /></label>
+              <label>Ngày hiệu lực *<input type="date" required value={policyEffectiveDate} onChange={(event) => setPolicyEffectiveDate(event.target.value)} /></label>
+            </div>
+          </> : <p className={styles.operationsNotice}>Hợp đồng này chưa có snapshot chính sách có cấu trúc nên chưa thể tạo bản sửa đổi.</p>}
+          {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
+          {amendPolicy.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
+        </form>}
+        {lifecycleView === "terminate" && <form id="contract-termination-form" className={styles.panel} onSubmit={submitTerminationRequest}>
+          <h2>Yêu cầu chấm dứt hợp đồng</h2>
+          <p className={styles.panelSubtitle}>Tạo hồ sơ kiểm toán; thao tác này chưa chấm dứt hợp đồng hoặc giải phóng máy.</p>
+          <div className={styles.operationsGrid}>
+            <label>Loại yêu cầu<select value={terminationType} onChange={(event) => setTerminationType(event.target.value as TerminationCaseRequest["type"])}>
+              <option value="NORMAL">Theo kỳ hạn</option><option value="EARLY">Trước hạn</option><option value="VIOLATION">Do vi phạm</option>
+            </select></label>
+            <label>Ngày hiệu lực<input type="date" value={terminationEffectiveDate} onChange={(event) => setTerminationEffectiveDate(event.target.value)} /></label>
+            <label>Lý do *<textarea required maxLength={2000} value={terminationReason} onChange={(event) => setTerminationReason(event.target.value)} /></label>
+          </div>
+          {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
+          {requestTermination.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(requestTermination.error, "mutation")}</p>}
+        </form>}
+        {lifecycleView === "continue" && <form id="contract-continuation-form" className={styles.panel} onSubmit={submitContinuation}>
+          <h2>Tạo hợp đồng tiếp nối</h2>
+          <p className={styles.panelSubtitle}>Owner và máy sẽ được kế thừa từ hợp đồng cũ. Chỉ tiếp tục sau khi quy trình chấm dứt đã hoàn tất.</p>
+          <div className={styles.operationsGrid}>
+            <label>Ngày bắt đầu *<input type="date" required value={continuationStartDate} onChange={(event) => setContinuationStartDate(event.target.value)} /></label>
+            <label>Ngày kết thúc *<input type="date" required value={continuationEndDate} onChange={(event) => setContinuationEndDate(event.target.value)} /></label>
+            <label>Phí thuê hàng tháng (VND) *<input type="number" min="0" step="any" required value={continuationMonthlyFee} onChange={(event) => setContinuationMonthlyFee(event.target.value)} /></label>
+            <label>Tiền cọc (VND)<input type="number" min="0" step="any" value={continuationDeposit} onChange={(event) => setContinuationDeposit(event.target.value)} /></label>
+            <label>Phí lắp đặt (VND)<input type="number" min="0" step="any" value={continuationInstallationFee} onChange={(event) => setContinuationInstallationFee(event.target.value)} /></label>
+            <label>Giá PAYG (VND)<input type="number" min="0" step="any" value={continuationPaygPrice} onChange={(event) => setContinuationPaygPrice(event.target.value)} /></label>
+            <label>Điều khoản *<textarea required maxLength={4000} value={continuationTerms} onChange={(event) => setContinuationTerms(event.target.value)} /></label>
+          </div>
+          {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
+          {continueContract.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
+        </form>}
         <section className={styles.panel}><h2>{T.CONTRACTS.DOCUMENTS}</h2>
           {documents.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -190,8 +366,20 @@ function ContractsContent() {
         <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
         <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
   </ActionBar>}
-  {view === "detail" && contract.data?.machineId && <ActionBar>
-    <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>
+  {view === "detail" && contract.data && <ActionBar>
+    {contract.data.machineId && <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>}
+    {contract.data.status === "ACTIVE" && (lifecycleView ? <>
+      {lifecycleView === "amend" && <ButtonBar type="submit" form="contract-policy-amend-form" disabled={amendPolicy.isPending || !contract.data.contractTermsSnapshot}>Xác nhận nội dung sửa đổi</ButtonBar>}
+      {lifecycleView === "terminate" && <ButtonBar type="submit" form="contract-termination-form" disabled={requestTermination.isPending}>Gửi yêu cầu chấm dứt</ButtonBar>}
+      <ButtonBar type="button" onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
+    </> : <>
+      <ButtonBar type="button" disabled={!contract.data.contractTermsSnapshot} title={!contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined} onClick={() => { setLifecycleError(""); setLifecycleView("amend"); }}>Sửa chính sách</ButtonBar>
+      <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("terminate"); }}>Yêu cầu chấm dứt</ButtonBar>
+    </>)}
+    {contract.data.status === "TERMINATED" && (lifecycleView === "continue" ? <>
+      <ButtonBar type="submit" form="contract-continuation-form" disabled={continueContract.isPending}>Tạo bản nháp tiếp nối</ButtonBar>
+      <ButtonBar type="button" onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
+    </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
   </ActionBar>}
   {isContractList && createdContractId && (
     <NotificationDialog
@@ -209,6 +397,37 @@ function ContractsContent() {
       onClose={() => setCreatedContractId("")}
     />
   )}
+  {(pendingPolicy || pendingTermination || pendingContinuation) && <NotificationDialog
+    variant="confirm"
+    title={pendingPolicy ? "Ghi nhận sửa đổi chính sách?" : pendingTermination ? "Tạo yêu cầu chấm dứt?" : "Tạo hợp đồng tiếp nối dạng nháp?"}
+    description={pendingPolicy
+      ? `Snapshot mới có hiệu lực từ ${date(pendingPolicy.effectiveDate)}. Lịch sử chính sách chỉ được bổ sung, không thể sửa hoặc xóa.`
+      : pendingTermination
+        ? "Hồ sơ chấm dứt được tạo để theo dõi kiểm toán. Hợp đồng và máy chưa bị thay đổi ở bước này."
+        : "Hợp đồng tiếp nối kế thừa Owner và máy từ hợp đồng cũ; chỉ tạo bản nháp nếu quy trình chấm dứt đã hoàn tất."}
+    primaryAction={{
+      label: "Tiếp tục",
+      pending: amendPolicy.isPending || requestTermination.isPending || continueContract.isPending,
+      pendingLabel: "Đang gửi…",
+      onClick: () => {
+        if (pendingPolicy) amendPolicy.mutate(pendingPolicy);
+        else if (pendingTermination) requestTermination.mutate(pendingTermination);
+        else if (pendingContinuation) continueContract.mutate(pendingContinuation);
+      },
+    }}
+    secondaryAction={{ label: "Quay lại", disabled: amendPolicy.isPending || requestTermination.isPending || continueContract.isPending, onClick: () => { setPendingPolicy(null); setPendingTermination(null); setPendingContinuation(null); } }}
+    onClose={() => { if (!amendPolicy.isPending && !requestTermination.isPending && !continueContract.isPending) { setPendingPolicy(null); setPendingTermination(null); setPendingContinuation(null); } }}
+    closeOnEscape={!amendPolicy.isPending && !requestTermination.isPending && !continueContract.isPending}
+  >
+    {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
+  </NotificationDialog>}
+  {terminationCaseId && <NotificationDialog
+    variant="success"
+    title="Đã tạo hồ sơ chấm dứt"
+    description={`Mã hồ sơ: ${terminationCaseId}. Hợp đồng vẫn còn nguyên trạng ở bước này.`}
+    primaryAction={{ label: "Đóng", onClick: () => setTerminationCaseId("") }}
+    onClose={() => setTerminationCaseId("")}
+  />}
   </>;
 }
 

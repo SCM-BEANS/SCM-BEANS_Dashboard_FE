@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
@@ -30,6 +30,14 @@ function formatContractPeriod(startDate?: string | null, endDate?: string | null
     : `${start.dayMonth}/${start.year}–${end.dayMonth}/${end.year}`;
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
 function contractStatusLabel(contract: Contract) {
   if (contract.status === "DRAFT") return "Chờ hiệu lực";
   if (contract.status === "TERMINATED") return "Đã kết thúc";
@@ -44,13 +52,15 @@ function contractStatusLabel(contract: Contract) {
 }
 
 export function ContractsScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
+  const queryClient = useQueryClient();
   const { ownerId, checked } = useOwnerSubject();
   const [page, setPage] = useState(0);
   const contractCandidate = sectionPath.startsWith("contracts/")
     ? sectionPath.slice("contracts/".length)
     : "";
   const contractId = ContractIdSchema.safeParse(contractCandidate).success ? contractCandidate : null;
-  const isList = sectionPath === "contracts";
+  const isExpiryList = sectionPath === "contracts/expiry";
+  const isList = sectionPath === "contracts" || isExpiryList;
   const list = useQuery({
     queryKey: ["owner-contracts", ownerId],
     queryFn: ({ signal }) => contractsApi.listByOwner(ownerId!, signal),
@@ -65,6 +75,19 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     queryKey: ["owner-contract", contractId],
     queryFn: ({ signal }) => contractsApi.getById(contractId!, signal),
     enabled: Boolean(contractId),
+  });
+  const expiry = useQuery({
+    queryKey: ["owner-contract-expiry", contractId],
+    queryFn: ({ signal }) => contractsApi.getExpiry(contractId!, signal),
+    enabled: Boolean(contractId),
+  });
+  const recordExpiryDecision = useMutation({
+    mutationFn: (decision: "CONTINUE" | "DO_NOT_CONTINUE") =>
+      contractsApi.recordExpiryDecision(contractId!, { decision }),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(["owner-contract-expiry", contractId], result);
+      await queryClient.invalidateQueries({ queryKey: ["owner-contract", contractId] });
+    },
   });
 
   if (!checked && isList) {
@@ -84,10 +107,24 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
   const visibleContracts = contracts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(contracts.length / PAGE_SIZE));
   const machineById = new Map((machines.data ?? []).map((machine) => [machine.id, machine] as const));
+  const expiryDate = expiry.data?.expiryDate ?? detail.data?.endDate ?? null;
+  const businessToday = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
+  const canRecordExpiryDecision = detail.data?.status === "ACTIVE"
+    && !detail.data.legacyUnmapped
+    && expiry.isSuccess
+    && Boolean(expiryDate && expiryDate >= businessToday)
+    && !expiry.data?.decision;
+  const expiryDecisionLabel = expiry.data?.decision === "CONTINUE"
+    ? "Muốn tiếp tục thuê (chưa gia hạn)"
+    : expiry.data?.decision === "DO_NOT_CONTINUE"
+      ? "Không tiếp tục thuê"
+      : expiry.data?.decision === "NO_RESPONSE"
+        ? "Chưa phản hồi đúng hạn"
+        : null;
   const columns: readonly DataTableColumn<Contract>[] = [
     {
       key: "contract-id",
-      header: messages.FIELD_CONTRACT_ID,
+      header: isExpiryList ? "Hợp đồng cần xem hạn" : messages.FIELD_CONTRACT_ID,
       render: (contract) => (
         <Link className={styles.tableLink} href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)}>
           {contract.id} ›
@@ -137,7 +174,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
       <BackButtonHeading
         back={back ?? null}
-        title={contractId ? messages.CONTRACT_DETAIL_TITLE : messages.CONTRACTS_TITLE}
+        title={contractId ? messages.CONTRACT_DETAIL_TITLE : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : messages.CONTRACTS_TITLE}
         titleId="customer-screen-title"
         description={messages.CONTRACTS_DESCRIPTION}
         className={styles.pageHeading}
@@ -146,15 +183,64 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_CONTRACTS} />
           {detail.data ? (
-            <dl className={styles.detailGrid}>
-              <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id} />
-              <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.machineId} />
-              <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
-              <DetailItem label={messages.FIELD_START_DATE} value={formatDate(detail.data.startDate)} />
-              <DetailItem label={messages.FIELD_END_DATE} value={formatDate(detail.data.endDate)} />
-              <DetailItem label={messages.FIELD_MONTHLY_FEE} value={formatMoney(detail.data.monthlyRentalFee)} />
-              <DetailItem label={messages.FIELD_DEPOSIT} value={formatMoney(detail.data.depositAmount)} />
-            </dl>
+            <>
+              <dl className={styles.detailGrid}>
+                <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id} />
+                <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.machineId} />
+                <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
+                <DetailItem label={messages.FIELD_START_DATE} value={formatDate(detail.data.startDate)} />
+                <DetailItem label={messages.FIELD_END_DATE} value={formatDate(detail.data.endDate)} />
+                <DetailItem label={messages.FIELD_MONTHLY_FEE} value={formatMoney(detail.data.monthlyRentalFee)} />
+                <DetailItem label={messages.FIELD_DEPOSIT} value={formatMoney(detail.data.depositAmount)} />
+              </dl>
+              <section className={styles.dataPanel} aria-labelledby="contract-expiry-title">
+                <h2 id="contract-expiry-title">Hạn hợp đồng và ý định tiếp tục</h2>
+                {expiry.isPending ? <p className={styles.loadingNotice} role="status">Đang tải thông tin hết hạn…</p> : null}
+                {expiry.isError ? <p className={styles.errorNotice} role="alert">Không tải được thông tin hết hạn của hợp đồng.</p> : null}
+                {expiry.data ? (
+                  <>
+                    <dl className={styles.detailGrid}>
+                      <DetailItem label="Ngày hết hạn" value={formatDate(expiry.data.expiryDate ?? detail.data.endDate)} />
+                      <DetailItem label="Ngày nhắc dự kiến" value={formatDate(expiry.data.reminderDate)} />
+                      <DetailItem label="Thời điểm đã ghi nhận" value={expiry.data.decidedAt ? formatDateTime(expiry.data.decidedAt) : "Chưa có"} />
+                    </dl>
+                    {expiryDecisionLabel ? (
+                      <p className={styles.successNotice} role="status">
+                        {expiryDecisionLabel}. Quyết định đầu tiên được lưu cố định.
+                      </p>
+                    ) : null}
+                    {canRecordExpiryDecision ? (
+                      <>
+                        <p>Hãy chọn ý định trước ngày hết hạn. Lựa chọn đầu tiên không thể đổi; “tiếp tục thuê” chưa tự gia hạn hợp đồng.</p>
+                        {recordExpiryDecision.isError ? (
+                          <p className={styles.errorNotice} role="alert">
+                            Không ghi nhận được lựa chọn. Hợp đồng có thể đã hết hạn hoặc đã có quyết định khác; hãy tải lại trạng thái.
+                          </p>
+                        ) : null}
+                        <div className={styles.workflowActions}>
+                          <button
+                            className={styles.primaryButton}
+                            type="button"
+                            disabled={recordExpiryDecision.isPending}
+                            onClick={() => recordExpiryDecision.mutate("CONTINUE")}
+                          >
+                            {recordExpiryDecision.isPending ? "Đang ghi nhận…" : "Ghi nhận muốn tiếp tục"}
+                          </button>
+                          <button
+                            className={styles.secondaryButton}
+                            type="button"
+                            disabled={recordExpiryDecision.isPending}
+                            onClick={() => recordExpiryDecision.mutate("DO_NOT_CONTINUE")}
+                          >
+                            Không tiếp tục thuê
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
+              </section>
+            </>
           ) : null}
         </>
       ) : (

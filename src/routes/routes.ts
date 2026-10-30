@@ -7,7 +7,7 @@ import {
 } from "./path";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
-import { MachineIdSchema } from "@/schema/machines.schema";
+import { MachineIdSchema, RepairCaseSchema } from "@/schema/machines.schema";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
@@ -254,6 +254,10 @@ export function isSupportedModeratorSection(section: string): boolean {
   const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(section);
   if (contractInstallationRequest) {
     return ContractIdSchema.safeParse(contractInstallationRequest[1]).success;
+  }
+  const repairCaseDetail = /^technical-requests\/repair\/([^/]+)$/.exec(section);
+  if (repairCaseDetail) {
+    return RepairCaseSchema.shape.id.safeParse(repairCaseDetail[1]).success;
   }
   const pathname = section
     ? PATH_MODERATOR.ROOT + "/" + section

@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
-import { tenantsApi } from "@/apis/tenants.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -12,8 +11,10 @@ import {
   AdminUserIdSchema,
   AdminUserRoleSchema,
   AdminUserStatusSchema,
+  AdminUserCreateSchema,
   AdminUserUpdateSchema,
   type AdminUser,
+  type AdminUserCreate,
   type AdminUserRole,
   type AdminUserUpdate,
 } from "@/schema/admin-users.schema";
@@ -25,8 +26,15 @@ type UserForm = {
   name: string;
   email: string;
   role: AdminUserRole | "";
-  tenantId: string;
 };
+
+type CreateUserForm = {
+  name: string;
+  email: string;
+  role: AdminUserRole | "";
+};
+
+type UserDialog = "confirm-create" | "confirm-update" | "confirm-disable" | "confirm-reactivate" | "confirm-reissue" | "result" | "error" | null;
 
 const roleLabels: Record<AdminUserRole, string> = {
   owner: T.COMMON.OWNER,
@@ -59,7 +67,8 @@ function formatDate(value: string): string {
 function AdminUsersContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const view = queryValue(router.query.view) === "detail" ? "detail" : "list";
+  const viewQuery = queryValue(router.query.view);
+  const view = viewQuery === "detail" ? "detail" : viewQuery === "create" ? "create" : "list";
   const userId = queryValue(router.query.id);
   const validUserId = AdminUserIdSchema.safeParse(userId).success;
   const page = positiveNumber(queryValue(router.query.page), 1);
@@ -68,10 +77,17 @@ function AdminUsersContent() {
   const roleFilter = AdminUserRoleSchema.safeParse(queryValue(router.query.role));
   const statusFilter = AdminUserStatusSchema.safeParse(queryValue(router.query.status));
   const [searchDraft, setSearchDraft] = useState(search);
-  const [form, setForm] = useState<UserForm>({ name: "", email: "", role: "", tenantId: "" });
+  const [form, setForm] = useState<UserForm>({ name: "", email: "", role: "" });
+  const [createForm, setCreateForm] = useState<CreateUserForm>({ name: "", email: "", role: "" });
   const [requestError, setRequestError] = useState("");
   const [pendingUpdate, setPendingUpdate] = useState<AdminUserUpdate | null>(null);
-  const [dialog, setDialog] = useState<"confirm" | "success" | "error" | null>(null);
+  const [pendingCreate, setPendingCreate] = useState<AdminUserCreate | null>(null);
+  const [dialog, setDialog] = useState<UserDialog>(null);
+  const [dialogError, setDialogError] = useState("");
+  const [resultTitle, setResultTitle] = useState("");
+  const [resultDescription, setResultDescription] = useState("");
+  const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [returnToListAfterResult, setReturnToListAfterResult] = useState(false);
 
   useEffect(() => setSearchDraft(search), [search]);
 
@@ -94,24 +110,12 @@ function AdminUsersContent() {
   });
   const user = detail.data;
   const currentRole = user ? userRole(user) : null;
-  const tenants = useQuery({
-    queryKey: ["dolores", "tenants"],
-    queryFn: ({ signal }) => tenantsApi.list(signal),
-    enabled: router.isReady && (view === "list" || (view === "detail" && form.role === "owner")),
-    staleTime: 60_000,
-  });
-  const tenantNames = useMemo(
-    () => new Map((tenants.data ?? []).map((tenant) => [tenant.id, tenant.name] as const)),
-    [tenants.data],
-  );
-
   useEffect(() => {
     if (!user) return;
     setForm({
       name: user.name,
       email: user.email,
       role: userRole(user) ?? "",
-      tenantId: user.tenant_id ?? "",
     });
     setRequestError("");
   }, [user]);
@@ -137,9 +141,75 @@ function AdminUsersContent() {
         queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] }),
       ]);
       setPendingUpdate(null);
-      setDialog("success");
+      setResultTitle(T.DIALOG.SUCCESS);
+      setResultDescription(result.email_verification_started ? T.DIALOG.VERIFICATION_STARTED : T.DIALOG.UPDATE);
+      setDialog("result");
     },
-    onError: () => setDialog("error"),
+    onError: (error) => {
+      setDialogError(getApiErrorMessage(error, "mutation"));
+      setDialog("error");
+    },
+  });
+
+  const createUser = useMutation({
+    mutationFn: (input: AdminUserCreate) => adminUsersApi.create(input),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      setTemporaryPassword(result.temporary_password);
+      setResultTitle(T.DIALOG.SUCCESS);
+      setResultDescription(result.email_verification_started ? T.DIALOG.VERIFICATION_STARTED : result.onboarding_email_sent ? T.DIALOG.ONBOARDING_EMAIL_SENT : T.DIALOG.ONBOARDING_EMAIL_NOT_SENT);
+      setDialog("result");
+      setReturnToListAfterResult(true);
+    },
+    onError: (error) => {
+      setDialogError(getApiErrorMessage(error, "mutation"));
+      setDialog("error");
+    },
+  });
+
+  const disableUser = useMutation({
+    mutationFn: (id: string) => adminUsersApi.disable(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      setResultTitle(T.DIALOG.SUCCESS);
+      setResultDescription(T.DIALOG.DISABLE);
+      setDialog("result");
+      setReturnToListAfterResult(true);
+    },
+    onError: (error) => {
+      setDialogError(getApiErrorMessage(error, "mutation"));
+      setDialog("error");
+    },
+  });
+
+  const reactivateUser = useMutation({
+    mutationFn: (id: string) => adminUsersApi.update(id, { status: "ACTIVE" }),
+    onSuccess: async (result, id) => {
+      queryClient.setQueryData(["idaas", "admin-users", "detail", id], result.user);
+      await queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      setResultTitle(T.DIALOG.SUCCESS);
+      setResultDescription(T.DIALOG.REACTIVATE);
+      setDialog("result");
+    },
+    onError: (error) => {
+      setDialogError(getApiErrorMessage(error, "mutation"));
+      setDialog("error");
+    },
+  });
+
+  const reissuePassword = useMutation({
+    mutationFn: (id: string) => adminUsersApi.reissueTemporaryPassword(id),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      setTemporaryPassword(result.temporary_password);
+      setResultTitle(T.DIALOG.SUCCESS);
+      setResultDescription(T.DIALOG.PASSWORD_EXPIRY + ": " + formatDate(result.temporary_password_expires_at));
+      setDialog("result");
+    },
+    onError: (error) => {
+      setDialogError(getApiErrorMessage(error, "mutation"));
+      setDialog("error");
+    },
   });
 
   function updateField(field: keyof UserForm, value: string) {
@@ -151,16 +221,11 @@ function AdminUsersContent() {
     event.preventDefault();
     if (!user || !currentRole) return;
 
-    if (form.role === "owner" && currentRole !== "owner" && !form.tenantId) {
-      setRequestError(T.FORM.TENANT_REQUIRED);
-      return;
-    }
-
     const input: AdminUserUpdate = {};
     if (form.name.trim() !== user.name) input.name = form.name;
     if (form.email.trim() !== user.email) input.email = form.email;
     if (form.role && form.role !== currentRole) input.role = form.role;
-    const nextTenantId = form.role === "owner" ? form.tenantId || null : null;
+    const nextTenantId = form.role === "owner" ? user.tenant_id ?? null : null;
     if (nextTenantId !== (user.tenant_id ?? null)) input.tenant_id = nextTenantId;
 
     const parsed = AdminUserUpdateSchema.safeParse(input);
@@ -171,13 +236,35 @@ function AdminUsersContent() {
     setRequestError("");
     updateUser.reset();
     setPendingUpdate(parsed.data);
-    setDialog("confirm");
+    setDialog("confirm-update");
+  }
+
+  function prepareCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = AdminUserCreateSchema.safeParse({
+      name: createForm.name,
+      email: createForm.email,
+      role: createForm.role,
+    });
+    if (!parsed.success) {
+      setRequestError(T.FORM.INVALID);
+      return;
+    }
+    setRequestError("");
+    createUser.reset();
+    setPendingCreate(parsed.data);
+    setDialog("confirm-create");
   }
 
   function closeDialog() {
-    if (updateUser.isPending) return;
+    if (createUser.isPending || updateUser.isPending || disableUser.isPending || reactivateUser.isPending || reissuePassword.isPending) return;
+    const shouldReturn = returnToListAfterResult;
+    setReturnToListAfterResult(false);
     setDialog(null);
     setPendingUpdate(null);
+    setPendingCreate(null);
+    setTemporaryPassword("");
+    if (shouldReturn) navigate({ view: null, id: null });
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -188,29 +275,26 @@ function AdminUsersContent() {
   const total = users.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canEdit = Boolean(user && currentRole);
+  const isMutationPending = createUser.isPending || updateUser.isPending || disableUser.isPending || reactivateUser.isPending || reissuePassword.isPending;
 
   const roleOptions = (Object.keys(roleLabels) as AdminUserRole[]).map((role) => (
     <option key={role} value={role}>{roleLabels[role]}</option>
   ));
 
-  const tenantOptions = (
-    <>
-      <option value="">{T.FORM.TENANT_PLACEHOLDER}</option>
-      {form.tenantId && !tenantNames.has(form.tenantId) && (
-        <option value={form.tenantId}>{form.tenantId}</option>
-      )}
-      {(tenants.data ?? []).map((tenant) => (
-        <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-      ))}
-    </>
-  );
+  function runConfirmedAction() {
+    if (dialog === "confirm-create" && pendingCreate) createUser.mutate(pendingCreate);
+    if (dialog === "confirm-update" && pendingUpdate && user) updateUser.mutate({ id: user.id, input: pendingUpdate });
+    if (dialog === "confirm-disable" && user) disableUser.mutate(user.id);
+    if (dialog === "confirm-reactivate" && user) reactivateUser.mutate(user.id);
+    if (dialog === "confirm-reissue" && user) reissuePassword.mutate(user.id);
+  }
 
   return (
     <>
       <div className={`${styles.pageContent} ${styles.accountPageContent}`}>
         <div className={styles.pageHeading}>
-          <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : T.LIST.TITLE}</h1>
-          <p>{view === "detail" ? T.FORM.DETAIL_DESCRIPTION : T.LIST.DESCRIPTION}</p>
+          <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : view === "create" ? T.FORM.CREATE_TITLE : T.LIST.TITLE}</h1>
+          <p>{view === "detail" ? T.FORM.DETAIL_DESCRIPTION : view === "create" ? T.FORM.CREATE_DESCRIPTION : T.LIST.DESCRIPTION}</p>
         </div>
 
         {view === "list" ? (
@@ -243,7 +327,6 @@ function AdminUsersContent() {
               </select>
               <button type="submit" className={styles.accountSecondaryButton}>{T.LIST.SEARCH_BUTTON}</button>
             </form>
-            {tenants.isError && <p className={styles.accountInlineWarning}>{T.LIST.TENANT_ERROR} {getApiErrorMessage(tenants.error)}</p>}
             {users.isPending ? (
               <p role="status">{T.LIST.LOADING}</p>
             ) : users.isError ? (
@@ -269,7 +352,7 @@ function AdminUsersContent() {
                     { key: "tenant", header: T.FORM.TENANT, render: (entry) => {
                       const role = userRole(entry);
                       return entry.tenant_id
-                        ? tenantNames.get(entry.tenant_id) ?? entry.tenant_id
+                        ? entry.tenant_id
                         : role === "owner" ? T.FORM.TENANT_UNASSIGNED : T.FORM.GLOBAL_SCOPE;
                     } },
                     { key: "status", header: T.FORM.STATUS, render: (entry) => entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED },
@@ -291,6 +374,28 @@ function AdminUsersContent() {
               </>
             )}
           </section>
+        ) : view === "create" ? (
+          <form id="admin-user-create-form" className={styles.panel} onSubmit={prepareCreate}>
+            <h2>{T.FORM.CREATE_TITLE}</h2>
+            <div className={styles.accountFormGrid}>
+              <label>
+                {T.FORM.NAME}
+                <input value={createForm.name} maxLength={50} required onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))} />
+              </label>
+              <label>
+                {T.FORM.EMAIL}
+                <input type="email" value={createForm.email} maxLength={255} required onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))} />
+              </label>
+              <label>
+                {T.FORM.ROLE}
+                <select required value={createForm.role} onChange={(event) => setCreateForm((current) => ({ ...current, role: event.target.value as AdminUserRole | "" }))}>
+                  <option value="">{T.FORM.SELECT_ROLE}</option>
+                  {roleOptions}
+                </select>
+              </label>
+            </div>
+            {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
+          </form>
         ) : !validUserId ? (
           <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.INVALID_ID}</div>
         ) : detail.isPending ? (
@@ -319,24 +424,11 @@ function AdminUsersContent() {
                   {roleOptions}
                 </select>
               </label>
-              {form.role === "owner" && (
-                <label>
-                  {T.FORM.TENANT}
-                  <select
-                    value={form.tenantId}
-                    disabled={!canEdit || tenants.isPending || tenants.isError || !tenants.data?.length}
-                    onChange={(event) => updateField("tenantId", event.target.value)}
-                  >
-                    {tenantOptions}
-                  </select>
-                </label>
-              )}
               <div><span>{T.FORM.STATUS}</span><strong>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</strong></div>
               <div><span>{T.FORM.VERIFIED}</span><strong>{user.email_verified ? T.FORM.YES : T.FORM.NO}</strong></div>
               <div><span>{T.FORM.CREATED}</span><strong>{formatDate(user.created_at)}</strong></div>
               <div><span>{T.FORM.UPDATED}</span><strong>{formatDate(user.updated_at)}</strong></div>
             </div>
-            {tenants.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {getApiErrorMessage(tenants.error)}</p>}
             {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
             {updateUser.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(updateUser.error, "mutation")}</p>}
           </form>
@@ -347,50 +439,66 @@ function AdminUsersContent() {
         {view === "detail" ? (
           <>
             <ButtonBar type="submit" form="admin-user-edit-form" disabled={!canEdit || detail.isPending || updateUser.isPending}>{T.FORM.SAVE}</ButtonBar>
+            {user?.status === "ACTIVE" ? (
+              <ButtonBar type="button" disabled={!user || isMutationPending} onClick={() => { setDialogError(""); setDialog("confirm-disable"); }}>{T.FORM.DISABLE}</ButtonBar>
+            ) : (
+              <ButtonBar type="button" disabled={!user || isMutationPending} onClick={() => { setDialogError(""); setDialog("confirm-reactivate"); }}>{T.FORM.REACTIVATE}</ButtonBar>
+            )}
+            <ButtonBar type="button" disabled={!user || user.status !== "ACTIVE" || isMutationPending} onClick={() => { setDialogError(""); setDialog("confirm-reissue"); }}>{T.FORM.REISSUE}</ButtonBar>
             <ButtonBar type="button" onClick={() => navigate({ view: null, id: null })}>{T.FORM.BACK}</ButtonBar>
           </>
+        ) : view === "create" ? (
+          <>
+            <ButtonBar type="submit" form="admin-user-create-form" disabled={createUser.isPending}>{T.LIST.CREATE}</ButtonBar>
+            <ButtonBar type="button" disabled={createUser.isPending} onClick={() => navigate({ view: null, id: null })}>{T.FORM.BACK}</ButtonBar>
+          </>
         ) : (
-          <ButtonBar type="button" disabled={users.isFetching} onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
+          <>
+            <ButtonBar type="button" onClick={() => { setRequestError(""); setCreateForm({ name: "", email: "", role: "" }); navigate({ view: "create", id: null }); }}>{T.LIST.CREATE}</ButtonBar>
+            <ButtonBar type="button" disabled={users.isFetching} onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
+          </>
         )}
       </ActionBar>
 
-      {dialog === "confirm" && pendingUpdate && (
+      {dialog?.startsWith("confirm-") && (
         <NotificationDialog
           variant="confirm"
           title={T.DIALOG.CONFIRM}
-          description={T.DIALOG.UPDATE}
+          description={dialog === "confirm-create" ? T.DIALOG.CREATE : dialog === "confirm-update" ? T.DIALOG.UPDATE : dialog === "confirm-disable" ? T.DIALOG.DISABLE : dialog === "confirm-reactivate" ? T.DIALOG.REACTIVATE : T.DIALOG.REISSUE}
           primaryAction={{
             label: T.DIALOG.PROCEED,
-            pending: updateUser.isPending,
+            pending: isMutationPending,
             pendingLabel: "Đang lưu…",
-            onClick: () => user && updateUser.mutate({ id: user.id, input: pendingUpdate }),
+            onClick: runConfirmedAction,
           }}
-          secondaryAction={{ label: T.DIALOG.RETURN, disabled: updateUser.isPending, onClick: closeDialog }}
+          secondaryAction={{ label: T.DIALOG.RETURN, disabled: isMutationPending, onClick: closeDialog }}
           onClose={closeDialog}
-          closeOnEscape={!updateUser.isPending}
+          closeOnEscape={!isMutationPending}
         >
           <p>
-            {pendingUpdate.name ? `${T.FORM.NAME}: ${pendingUpdate.name}. ` : ""}
-            {pendingUpdate.email ? `${T.FORM.EMAIL}: ${pendingUpdate.email}. ` : ""}
-            {pendingUpdate.role ? `${T.FORM.ROLE}: ${roleLabels[pendingUpdate.role]}. ` : ""}
-            {pendingUpdate.tenant_id !== undefined ? `${T.FORM.TENANT}: ${pendingUpdate.tenant_id ? tenantNames.get(pendingUpdate.tenant_id) ?? pendingUpdate.tenant_id : T.FORM.TENANT_UNASSIGNED}.` : ""}
+            {pendingUpdate?.name ? `${T.FORM.NAME}: ${pendingUpdate.name}. ` : ""}
+            {pendingUpdate?.email ? `${T.FORM.EMAIL}: ${pendingUpdate.email}. ` : ""}
+            {pendingUpdate?.role ? `${T.FORM.ROLE}: ${roleLabels[pendingUpdate.role]}. ` : ""}
           </p>
+          {dialog === "confirm-create" && pendingCreate && <p>{pendingCreate.name} / {pendingCreate.email} / {roleLabels[pendingCreate.role]}</p>}
         </NotificationDialog>
       )}
-      {dialog === "success" && (
+      {dialog === "result" && (
         <NotificationDialog
           variant="success"
-          title={T.DIALOG.SUCCESS}
-          description={updateUser.data?.email_verification_started ? T.DIALOG.VERIFICATION_STARTED : T.DIALOG.UPDATE}
+          title={resultTitle}
+          description={resultDescription}
           primaryAction={{ label: T.DIALOG.CLOSE, onClick: closeDialog }}
           onClose={closeDialog}
-        />
+        >
+          {temporaryPassword && <p><strong>{T.DIALOG.PASSWORD_ONCE}</strong><br /><code>{temporaryPassword}</code></p>}
+        </NotificationDialog>
       )}
       {dialog === "error" && (
         <NotificationDialog
           variant="error"
           title="Không lưu được thay đổi"
-          description={updateUser.error ? getApiErrorMessage(updateUser.error, "mutation") : T.DIALOG.UPDATE}
+          description={dialogError}
           primaryAction={{ label: T.DIALOG.CLOSE, onClick: closeDialog }}
           onClose={closeDialog}
         />

@@ -4,7 +4,8 @@ const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
 
 export const InstallationWorkOrderIdSchema = uuidSchema;
-export const InstallationWorkOrderTenantIdSchema = uuidSchema;
+export const InstallationWorkOrderOwnerIdSchema = uuidSchema;
+export const InstallationWorkOrderTenantIdSchema = InstallationWorkOrderOwnerIdSchema;
 
 export const CreateInstallationWorkOrderRequestSchema = z.object({
   ownerId: uuidSchema,
@@ -20,12 +21,25 @@ export const CreateInstallationWorkOrderResponseSchema = z.object({
   status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]),
 }).passthrough();
 
+export const AssignInstallationWorkOrderRequestSchema = z.object({
+  technicianId: uuidSchema,
+});
+export const RescheduleInstallationWorkOrderRequestSchema = z.object({
+  scheduledFor: dateTimeSchema,
+});
+export const CancelInstallationWorkOrderRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(4000),
+});
+
 export type CreateInstallationWorkOrderRequest = z.infer<typeof CreateInstallationWorkOrderRequestSchema>;
 export type CreateInstallationWorkOrderResponse = z.infer<typeof CreateInstallationWorkOrderResponseSchema>;
+export type AssignInstallationWorkOrderRequest = z.infer<typeof AssignInstallationWorkOrderRequestSchema>;
+export type RescheduleInstallationWorkOrderRequest = z.infer<typeof RescheduleInstallationWorkOrderRequestSchema>;
+export type CancelInstallationWorkOrderRequest = z.infer<typeof CancelInstallationWorkOrderRequestSchema>;
 
 export const InstallationWorkOrderSummarySchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  tenantId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
@@ -44,7 +58,7 @@ export const InstallationWorkOrderListSchema = z.array(InstallationWorkOrderSumm
 
 export const AssignedInstallationWorkOrderSummarySchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  ownerId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
@@ -64,7 +78,7 @@ export const AssignedInstallationWorkOrderListSchema = z.array(AssignedInstallat
 
 export const InstallationWorkOrderRecordSchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  ownerId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
@@ -93,6 +107,28 @@ export const InstallationWorkOrderEvidenceUploadResponseSchema = z.object({
 export const CompleteInstallationWorkOrderRequestSchema = z.object({
   handoverRecipient: z.string().trim().min(1),
 });
+
+export const InstallationChecklistResultRequestSchema = z.object({
+  result: z.enum(["PASSED", "FAILED", "NOT_APPLICABLE"]),
+  notes: z.string().max(4000).optional(),
+}).strict();
+
+export const InstallationChecklistResultResponseSchema = z.object({
+  workOrderId: InstallationWorkOrderIdSchema,
+  checklistItemId: uuidSchema,
+  result: z.enum(["PENDING", "PASSED", "FAILED", "NOT_APPLICABLE"]),
+}).passthrough();
+
+export const InstallationAccessoryRequestSchema = z.object({
+  accessoryName: z.string().trim().min(1).max(160),
+  quantity: z.number().int().positive().optional(),
+  serialNumber: z.string().max(128).optional(),
+  notes: z.string().max(4000).optional(),
+}).strict();
+
+export const FailInstallationWorkOrderRequestSchema = z.object({
+  failureReason: z.string().trim().min(1).max(4000),
+}).strict();
 
 export const InstallationWorkOrderChecklistItemSchema = z.object({
   id: uuidSchema,
@@ -141,3 +177,6 @@ export type InstallationWorkOrderSummary = z.infer<typeof InstallationWorkOrderS
 export type AssignedInstallationWorkOrderSummary = z.infer<typeof AssignedInstallationWorkOrderSummarySchema>;
 export type InstallationWorkOrderRecord = z.infer<typeof InstallationWorkOrderRecordSchema>;
 export type InstallationWorkOrderDetails = z.infer<typeof InstallationWorkOrderDetailsSchema>;
+export type InstallationChecklistResultRequest = z.infer<typeof InstallationChecklistResultRequestSchema>;
+export type InstallationAccessoryRequest = z.infer<typeof InstallationAccessoryRequestSchema>;
+export type FailInstallationWorkOrderRequest = z.infer<typeof FailInstallationWorkOrderRequestSchema>;

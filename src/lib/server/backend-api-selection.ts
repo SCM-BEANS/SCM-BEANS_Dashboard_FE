@@ -92,6 +92,13 @@ function createSelection(
 export async function getBackendApiSelection(): Promise<BackendApiSelection> {
   const urls = getConfiguredUrls();
 
+  // Local development can force both services onto the Docker pair even while
+  // the remote servers are healthy. This keeps authentication and API data in
+  // the same local environment for end-to-end testing.
+  if (process.env.BACKEND_API_MODE?.trim().toLowerCase() === "local") {
+    return createSelection("local", urls);
+  }
+
   // Keep the two APIs on the same environment so their JWT keys stay paired.
   if (!urls.remoteIdaasBaseUrl || !urls.remoteDoloresBaseUrl) {
     return createSelection("local", urls);

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
+import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
+import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
@@ -11,10 +13,30 @@ import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
+const maintenanceTicketStatusLabels: Record<string, string> = {
+  PENDING: "Đang chờ",
+  ASSIGNED: "Đã phân công",
+  IN_PROGRESS: "Đang xử lý",
+  RESOLVED: "Đã xử lý",
+};
+
+const maintenanceRequestStatusLabels: Record<string, string> = {
+  REQUESTED: "Đã gửi",
+  TRIAGED: "Đang xem xét",
+  RESCHEDULE_REQUESTED: "Đề nghị đổi lịch",
+  CONFIRMED: "Đã xác nhận",
+  IN_PROGRESS: "Đang xử lý",
+  COMPLETED: "Đã hoàn tất",
+  CLOSED: "Đã đóng",
+  OVERDUE_REVIEW: "Chờ xem xét quá hạn",
+  CANCELLED: "Đã hủy",
+};
+
 export function MachinesScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const candidate = sectionPath.startsWith("machines/") ? sectionPath.slice("machines/".length) : "";
   const machineId = MachineIdSchema.safeParse(candidate).success ? candidate : null;
-  const isList = sectionPath === "machines";
+  const isHistory = sectionPath === "machines/history";
+  const isList = sectionPath === "machines" || isHistory;
   const list = useQuery({
     queryKey: ["owner-machines"],
     queryFn: ({ signal }) => machinesApi.list(signal),
@@ -25,30 +47,101 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
     queryFn: ({ signal }) => machinesApi.getById(machineId!, signal),
     enabled: Boolean(machineId),
   });
+  const schedule = useQuery({
+    queryKey: ["owner-machine-maintenance-schedule", machineId],
+    queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId!, signal),
+    enabled: Boolean(machineId),
+  });
+  const contractHistory = useQuery({
+    queryKey: ["owner-machine-contract-history", machineId],
+    queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId!, signal),
+    enabled: Boolean(machineId),
+  });
+  const maintenanceRequests = useQuery({
+    queryKey: ["owner-machine-maintenance-requests", machineId],
+    queryFn: ({ signal }) => maintenanceRequestsApi.listByMachine(machineId!, signal),
+    enabled: Boolean(machineId),
+  });
+  const maintenanceTickets = useQuery({
+    queryKey: ["owner-machine-maintenance-tickets", machineId],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId: machineId!, page: 0, size: 100 }, signal),
+    enabled: Boolean(machineId),
+  });
 
   return (
     <section className={styles.pageContent} aria-labelledby="customer-screen-title">
       <BackButtonHeading
         back={back ?? null}
-        title={machineId ? messages.MACHINE_DETAIL_TITLE : messages.MACHINES_TITLE}
+        title={machineId ? messages.MACHINE_DETAIL_TITLE : isHistory ? messages.MACHINE_HISTORY_TITLE : messages.MACHINES_TITLE}
         titleId="customer-screen-title"
-        description={messages.MACHINES_DESCRIPTION}
+        description={isHistory ? "Chọn máy để xem lịch sử hợp đồng, bảo trì và yêu cầu hỗ trợ." : messages.MACHINES_DESCRIPTION}
         className={styles.pageHeading}
       />
       {machineId ? (
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
           {detail.data ? (
-            <dl className={styles.detailGrid}>
-              <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.id} />
-              <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
-              <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
-              <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType} />
-              <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
-              <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
-              <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
-              <DetailItem label={messages.FIELD_NEXT_MAINTENANCE} value={formatDate(detail.data.nextPreventiveMaintenanceAt)} />
-            </dl>
+            <>
+              <dl className={styles.detailGrid}>
+                <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.id} />
+                <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
+                <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
+                <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType} />
+                <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
+                <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
+                <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
+                <DetailItem label={messages.FIELD_NEXT_MAINTENANCE} value={formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)} />
+              </dl>
+              <section className={styles.dataPanel} aria-labelledby="owner-machine-history-contracts">
+                <h2 id="owner-machine-history-contracts">Lịch sử hợp đồng</h2>
+                {contractHistory.isPending ? <p className={styles.loadingNotice} role="status">Đang tải lịch sử hợp đồng…</p> : null}
+                {contractHistory.isError ? <p className={styles.errorNotice} role="alert">Không tải được lịch sử hợp đồng của máy.</p> : null}
+                {contractHistory.data?.length ? contractHistory.data.map((contract) => (
+                  <article className={styles.recordCard} key={contract.id}>
+                    <div>
+                      <h3>{statusLabel(contract.status)}</h3>
+                      <p>{formatDate(contract.startDate)} – {formatDate(contract.endDate)}</p>
+                    </div>
+                    <Link className={styles.secondaryLink} href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)}>Xem hợp đồng</Link>
+                  </article>
+                )) : contractHistory.isSuccess ? <p className={styles.emptyNotice}>Chưa có lịch sử hợp đồng.</p> : null}
+              </section>
+              <section className={styles.dataPanel} aria-labelledby="owner-machine-history-maintenance">
+                <h2 id="owner-machine-history-maintenance">Bảo trì và hỗ trợ</h2>
+                {schedule.isError || maintenanceTickets.isError || maintenanceRequests.isError ? (
+                  <p className={styles.errorNotice} role="alert">Không tải được một phần lịch sử bảo trì hoặc hỗ trợ.</p>
+                ) : null}
+                {schedule.isPending || maintenanceTickets.isPending || maintenanceRequests.isPending ? (
+                  <p className={styles.loadingNotice} role="status">Đang tải lịch sử bảo trì…</p>
+                ) : null}
+                <p>Lịch bảo trì tiếp theo: {formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)}</p>
+                {typeof schedule.data?.cupsServedSinceLastDescale === "number" ? (
+                  <p>Số ly từ lần vệ sinh gần nhất: {schedule.data.cupsServedSinceLastDescale.toLocaleString("vi-VN")}</p>
+                ) : null}
+                {maintenanceTickets.data?.map((ticket) => (
+                  <article className={styles.recordCard} key={ticket.id ?? `${ticket.status}-${ticket.scheduledDueAt}`}>
+                    <div>
+                      <h3>Phiếu bảo trì · {maintenanceTicketStatusLabels[ticket.status ?? ""] ?? statusLabel(ticket.status)}</h3>
+                      <p>{formatDate(ticket.scheduledDueAt ?? ticket.completedAt)}</p>
+                      {ticket.preventiveSubtype || ticket.source ? <p>{ticket.preventiveSubtype ?? ticket.source}</p> : null}
+                    </div>
+                  </article>
+                ))}
+                {maintenanceRequests.data?.map((request) => (
+                  <article className={styles.recordCard} key={request.id}>
+                    <div>
+                      <h3>{request.requestType === "REPAIR" ? "Yêu cầu sửa chữa" : "Yêu cầu bảo trì"} · {maintenanceRequestStatusLabels[request.status] ?? statusLabel(request.status)}</h3>
+                      <p>{request.issueDescription?.trim() || "Không có mô tả"}</p>
+                    </div>
+                    <Link className={styles.secondaryLink} href={`${PATH_CUSTOMER.SUPPORT}/${request.id}`}>Xem yêu cầu</Link>
+                  </article>
+                ))}
+                {maintenanceTickets.isSuccess && maintenanceRequests.isSuccess
+                  && maintenanceTickets.data.length === 0 && maintenanceRequests.data.length === 0 ? (
+                  <p className={styles.emptyNotice}>Chưa có phiếu bảo trì hoặc yêu cầu hỗ trợ.</p>
+                ) : null}
+              </section>
+            </>
           ) : null}
         </>
       ) : (
@@ -63,7 +156,9 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                     <p>{messages.FIELD_STATUS}: {statusLabel(machine.status)}</p>
                     <p>{messages.FIELD_MACHINE_TYPE}: {machine.machineType ?? "—"}</p>
                   </div>
-                  <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>{messages.VIEW_DETAILS}</Link>
+                  <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>
+                    {isHistory ? "Xem lịch sử máy" : messages.VIEW_DETAILS}
+                  </Link>
                 </article>
               ))}
             </div>

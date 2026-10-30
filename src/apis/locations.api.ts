@@ -1,12 +1,14 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   LocationCreateSchema, LocationIdSchema, LocationListParamsSchema,
-  LocationListSchema, LocationSchema, TenantLocationListParamsSchema, unwrapLocations,
+  LocationListSchema, LocationSchema, unwrapLocations,
+  LocationUpdateSchema,
+  type LocationUpdate,
 } from "@/schema/locations.schema";
 
 export class LocationOwnerMismatchError extends Error {
   constructor() {
-    super("Dolores accepted the location request but returned a different Owner.");
+    super("Dolores returned a location outside the requested Owner scope.");
     this.name = "LocationOwnerMismatchError";
   }
 }
@@ -15,13 +17,6 @@ export class LocationIdentityMismatchError extends Error {
   constructor() {
     super("Dolores returned a different location than the requested UUID.");
     this.name = "LocationIdentityMismatchError";
-  }
-}
-
-export class LocationTenantMismatchError extends Error {
-  constructor() {
-    super("Dolores returned a location outside the requested tenant scope.");
-    this.name = "LocationTenantMismatchError";
   }
 }
 
@@ -34,13 +29,18 @@ export const locationsApi = {
     return unwrapLocations(LocationListSchema.parse(response.data));
   },
   async listByTenant(tenantId: string, signal?: AbortSignal) {
-    const params = TenantLocationListParamsSchema.parse({ tenantId, activeOnly: false });
+    return locationsApi.listByOwner(tenantId, signal);
+  },
+  async listByOwner(ownerId: string, signal?: AbortSignal) {
+    const validOwnerId = LocationListParamsSchema.shape.ownerId.parse(ownerId);
     const response = await axiosClient.get<unknown>("/locations", {
-      baseURL: DOLORES_API_BASE_URL, params, signal,
+      baseURL: DOLORES_API_BASE_URL,
+      params: { ownerId: validOwnerId, activeOnly: false },
+      signal,
     });
     const locations = unwrapLocations(LocationListSchema.parse(response.data));
-    if (locations.some((location) => location.tenantId && location.tenantId !== params.tenantId)) {
-      throw new LocationTenantMismatchError();
+    if (locations.some((location) => location.ownerId !== validOwnerId)) {
+      throw new LocationOwnerMismatchError();
     }
     return locations;
   },
@@ -65,5 +65,21 @@ export const locationsApi = {
       throw new LocationOwnerMismatchError();
     }
     return created;
+  },
+  async update(id: string, input: LocationUpdate) {
+    const validId = LocationIdSchema.parse(id);
+    const body = LocationUpdateSchema.parse(input);
+    const response = await axiosClient.put<unknown>(`/locations/${encodeURIComponent(validId)}`, body, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const updated = LocationSchema.parse(response.data);
+    if (updated.id !== validId) throw new LocationIdentityMismatchError();
+    return updated;
+  },
+  async deactivate(id: string) {
+    const validId = LocationIdSchema.parse(id);
+    await axiosClient.delete(`/locations/${encodeURIComponent(validId)}`, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
   },
 };

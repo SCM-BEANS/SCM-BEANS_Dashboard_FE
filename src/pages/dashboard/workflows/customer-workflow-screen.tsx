@@ -8,6 +8,7 @@ import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type Custome
 import { RepairIntakeForm } from "./repair-intake-screen";
 import { SupportRequestsListScreen } from "../support/support-requests-list-screen";
 import { LocalRecipeForm } from "./local-recipe-screen";
+import { OwnerMenuDeviceScreen } from "../menu/menu-screen";
 import { NotificationInbox } from "./notification-inbox";
 import styles from "../customer-shell.module.css";
 
@@ -70,6 +71,18 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
       fallbackAction,
     );
   }
+  if (
+    sectionPath.startsWith("support/") &&
+    sectionPath.split("/").length === 2 &&
+    !["support/new", "support/menu"].includes(sectionPath)
+  ) {
+    return withWorkflowActions(
+      <SupportRequestsListScreen key={sectionPath} requestId={sectionPath.slice("support/".length)} />,
+      screen.title,
+      actions,
+      fallbackAction,
+    );
+  }
   if (sectionPath === "support/new") {
     return withWorkflowActions(
       <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />,
@@ -80,6 +93,14 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   }
   if (sectionPath === "menu/add-dish") {
     return withWorkflowActions(<LocalRecipeForm back={screen.back} />, screen.title, actions, fallbackAction);
+  }
+  if (sectionPath === "menu/sent" || sectionPath === "menu/applied") {
+    return withWorkflowActions(
+      <OwnerMenuDeviceScreen sectionPath={sectionPath} />,
+      screen.title,
+      actions,
+      fallbackAction,
+    );
   }
   if (sectionPath === "notifications") {
     return withWorkflowActions(<NotificationInbox back={screen.back} />, screen.title, actions, fallbackAction);

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Link from "next/link";
 
@@ -10,7 +10,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { PATH_MODERATOR } from "@/routes/path";
 import { ModeratorPageHeading } from "../moderator-page-heading";
 
-import { InvoiceIdSchema, type ModeratorInvoice, type PaymentProof } from "@/schema/billing.schema";
+import { InvoiceIdSchema, type InvoiceLineItem, type ModeratorInvoice, type PaymentProof } from "@/schema/billing.schema";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -38,7 +38,10 @@ type InvoiceListRow = {
 
 async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
   const invoices = await billingApi.listModeratorInvoices(signal);
-  const ownerIds = [...new Set(invoices.flatMap((invoice) => invoice.ownerId ? [invoice.ownerId] : []))];
+  const ownerIds = [...new Set(invoices.flatMap((invoice) => {
+    const ownerId = invoice.ownerId ?? invoice.tenantId;
+    return ownerId ? [ownerId] : [];
+  }))];
 
   const [profiles, proofLookups] = await Promise.all([
     Promise.all(ownerIds.map(async (ownerId) => {
@@ -62,6 +65,7 @@ async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
 
   const customerNames = new Map(profiles);
   return invoices.map((invoice, index) => {
+    const ownerId = invoice.ownerId ?? invoice.tenantId;
     const proofs = proofLookups[index];
     const proofSummary = proofs === null
       ? messages.INVOICE_PROOF_UNAVAILABLE
@@ -77,7 +81,7 @@ async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
 
     return {
       invoice,
-      customerName: (invoice.ownerId && customerNames.get(invoice.ownerId)) || invoice.ownerId || "—",
+      customerName: (ownerId && customerNames.get(ownerId)) || ownerId || "—",
       proofSummary,
     };
   });
@@ -171,17 +175,82 @@ function InvoiceDetails({ invoice }: { invoice: ModeratorInvoice }) {
         <DetailField label={messages.INVOICE_DUE_DATE} value={invoice.dueDate} />
         <DetailField label={messages.INVOICE_PAID_AT} value={invoice.paidAt} />
       </dl>
-      {invoice.lineItems != null && (
-        <section className={styles.pendingNotice} aria-label={messages.INVOICE_LINE_ITEMS}>
-          <h2 className={styles.sectionTitle}>{messages.INVOICE_LINE_ITEMS}</h2>
-          <pre style={{ overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-            {typeof invoice.lineItems === "string"
-              ? invoice.lineItems
-              : JSON.stringify(invoice.lineItems, null, 2)}
-          </pre>
-        </section>
-      )}
     </>
+  );
+}
+
+function InvoiceStatusActions({ invoice }: { invoice: ModeratorInvoice }) {
+  const queryClient = useQueryClient();
+  const isPastDue = Boolean(invoice.dueDate && Date.parse(invoice.dueDate) < Date.now());
+  const targets: ModeratorInvoice["status"][] = invoice.status === "DRAFT"
+    ? ["PENDING", "CANCELLED"]
+    : invoice.status === "PENDING" || invoice.status === "UNPAID"
+      ? [...(isPastDue ? ["OVERDUE" as const] : []), "CANCELLED"]
+      : invoice.status === "OVERDUE"
+        ? ["CANCELLED"]
+        : [];
+  const changeStatus = useMutation({
+    mutationFn: (status: ModeratorInvoice["status"]) => billingApi.changeInvoiceStatus(invoice.id, { status }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoice", invoice.id] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoices"] }),
+      ]);
+    },
+  });
+
+  if (targets.length === 0) return null;
+  return (
+    <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-status-actions">
+      <h2 id="moderator-invoice-status-actions" className={styles.sectionTitle}>{messages.INVOICE_STATUS_ACTION}</h2>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {targets.map((status) => (
+          <button
+            key={status}
+            className={styles.retryButton}
+            type="button"
+            disabled={changeStatus.isPending}
+            onClick={() => {
+              if (status === "CANCELLED" && !window.confirm("Bạn có chắc muốn hủy hóa đơn này?")) return;
+              changeStatus.mutate(status);
+            }}
+          >
+            {changeStatus.isPending && changeStatus.variables === status
+              ? messages.INVOICE_STATUS_UPDATING
+              : messages.INVOICE_STATUS_LABELS[status]}
+          </button>
+        ))}
+      </div>
+      {changeStatus.isError && <p role="alert">{getApiErrorMessage(changeStatus.error)}</p>}
+      {changeStatus.isSuccess && <p role="status">{messages.INVOICE_STATUS_UPDATED}</p>}
+    </section>
+  );
+}
+
+function InvoiceLineItems({ items, invoice }: { items: InvoiceLineItem[]; invoice: ModeratorInvoice }) {
+  return (
+    <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-line-items">
+      <h2 id="moderator-invoice-line-items" className={styles.sectionTitle}>{messages.INVOICE_LINE_ITEMS}</h2>
+      {items.length === 0 ? (
+        <p role="status">{messages.INVOICE_LINE_ITEMS_EMPTY}</p>
+      ) : (
+        <DataTable variant="moderator" headers={[
+          messages.INVOICE_LINE_ITEM_DESCRIPTION,
+          messages.INVOICE_LINE_ITEM_QUANTITY,
+          messages.INVOICE_LINE_ITEM_UNIT_PRICE,
+          messages.INVOICE_LINE_ITEM_AMOUNT,
+        ]}>
+          {items.map((item, index) => (
+            <tr key={item.id ?? `${item.serviceCode ?? "line"}-${index}`}>
+              <td>{item.description ?? item.serviceCode ?? "—"}</td>
+              <td>{item.quantity ?? "—"}</td>
+              <td>{item.unitPrice == null ? "—" : amountText(item.unitPrice, invoice.currency)}</td>
+              <td>{item.amount == null ? "—" : amountText(item.amount, invoice.currency)}</td>
+            </tr>
+          ))}
+        </DataTable>
+      )}
+    </section>
   );
 }
 
@@ -192,8 +261,26 @@ function PaymentProofList({
   proofs: PaymentProof[];
   invoiceId: string;
 }) {
+  const queryClient = useQueryClient();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [reviewSelection, setReviewSelection] = useState<{ proofId: string; approve: boolean } | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const review = useMutation({
+    mutationFn: (input: { proofId: string; approve: boolean; reason: string }) =>
+      billingApi.reviewPaymentProof(input.proofId, { approve: input.approve, reason: input.reason }),
+    onMutate: () => setReviewError(null),
+    onSuccess: async () => {
+      setReviewSelection(null);
+      setReviewReason("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoice", invoiceId] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoices"] }),
+      ]);
+    },
+    onError: (error) => setReviewError(getApiErrorMessage(error)),
+  });
 
   async function download(proof: PaymentProof) {
     setDownloadingId(proof.id);
@@ -237,12 +324,71 @@ function PaymentProofList({
                 >
                   {downloadingId === proof.id ? messages.DOWNLOADING_PROOF : messages.DOWNLOAD_PROOF}
                 </button>
+                {proof.status === "SUBMITTED" && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    <button
+                      className={styles.retryButton}
+                      type="button"
+                      disabled={review.isPending}
+                      onClick={() => { setReviewSelection({ proofId: proof.id, approve: true }); setReviewReason(""); setReviewError(null); }}
+                    >
+                      {messages.APPROVE_PROOF}
+                    </button>
+                    <button
+                      className={styles.retryButton}
+                      type="button"
+                      disabled={review.isPending}
+                      onClick={() => { setReviewSelection({ proofId: proof.id, approve: false }); setReviewReason(""); setReviewError(null); }}
+                    >
+                      {messages.REJECT_PROOF}
+                    </button>
+                  </div>
+                )}
+                {reviewSelection?.proofId === proof.id && (
+                  <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                    <label htmlFor={`payment-proof-reason-${proof.id}`}>{messages.PROOF_REVIEW_REASON}</label>
+                    <textarea
+                      id={`payment-proof-reason-${proof.id}`}
+                      value={reviewReason}
+                      maxLength={1000}
+                      required
+                      rows={2}
+                      disabled={review.isPending}
+                      onChange={(event) => setReviewReason(event.target.value)}
+                    />
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <button
+                        className={styles.retryButton}
+                        type="button"
+                        disabled={!reviewReason.trim() || review.isPending}
+                        onClick={() => review.mutate({
+                          proofId: proof.id,
+                          approve: reviewSelection.approve,
+                          reason: reviewReason.trim(),
+                        })}
+                      >
+                        {review.isPending && review.variables?.proofId === proof.id
+                          ? messages.PROOF_REVIEWING
+                          : messages.SUBMIT_PROOF_REVIEW}
+                      </button>
+                      <button
+                        className={styles.retryButton}
+                        type="button"
+                        disabled={review.isPending}
+                        onClick={() => { setReviewSelection(null); setReviewReason(""); }}
+                      >
+                        {messages.CANCEL}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </td>
             </tr>
           ))}
         </DataTable>
       )}
       {downloadError && <p role="alert">{downloadError}</p>}
+      {reviewError && <p role="alert">{reviewError}</p>}
       <p className={styles.formHint}>{messages.INVOICE_PROOF_SCOPE} {invoiceId}</p>
     </section>
   );
@@ -267,6 +413,12 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
     queryFn: ({ signal }) => billingApi.listPaymentProofs(validId, signal),
     enabled: Boolean(validId && invoice.data),
   });
+  const lineItems = useQuery({
+    queryKey: ["dolores", "moderator", "billing", "invoice", validId, "line-items"],
+    queryFn: ({ signal }) => billingApi.listInvoiceLineItems(validId, signal),
+    enabled: Boolean(validId && invoice.data),
+    retry: false,
+  });
 
   return (
     <div className={styles.pageContent}>
@@ -279,7 +431,12 @@ export function ModeratorInvoicesScreen({ sectionPath }: { sectionPath: string }
       ) : validId ? (
         <>
           <QueryFeedback query={invoice} loadingMessage={messages.LOADING_INVOICE} />
-          {invoice.data && !invoice.isError && <InvoiceDetails invoice={invoice.data} />}
+          {invoice.data && !invoice.isError && <>
+            <InvoiceDetails invoice={invoice.data} />
+            <InvoiceStatusActions invoice={invoice.data} />
+            <QueryFeedback query={lineItems} loadingMessage={messages.LOADING_INVOICE_LINE_ITEMS} />
+            {lineItems.data && !lineItems.isError && <InvoiceLineItems items={lineItems.data} invoice={invoice.data} />}
+          </>}
           {invoice.data && (
             <>
               <QueryFeedback query={proofs} loadingMessage={messages.LOADING_PAYMENT_PROOFS} />

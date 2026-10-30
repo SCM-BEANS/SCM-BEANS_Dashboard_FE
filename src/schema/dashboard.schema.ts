@@ -45,6 +45,60 @@ export const DailyMachineCupUsageSchema = z.object({
 });
 export const DailyMachineCupUsageListSchema = z.array(DailyMachineCupUsageSchema);
 
+const DashboardAvailableActionSchema = z.object({
+  code: z.string().nullish(),
+  method: z.string().nullish(),
+  path: z.string().nullish(),
+}).passthrough();
+
+export const DashboardActionItemSchema = z.object({
+  actionKey: z.string().nullish(),
+  resourceType: z.string().nullish(),
+  resourceId: z.string().uuid(),
+  actionType: z.string().nullish(),
+  status: z.string().nullish(),
+  title: z.string().nullish(),
+  ownerId: z.string().uuid().nullish(),
+  ownerName: z.string().nullish(),
+  contractId: z.string().uuid().nullish(),
+  machineId: z.string().uuid().nullish(),
+  machineSerialNumber: z.string().nullish(),
+  technicianId: z.string().uuid().nullish(),
+  technicianName: z.string().nullish(),
+  createdAt: z.string().nullish(),
+  scheduledAt: z.string().nullish(),
+  dueAt: z.string().nullish(),
+  overdue: z.boolean().nullish(),
+  priority: z.string().nullish(),
+  priorityReason: z.string().nullish(),
+  detailPath: z.string().nullish(),
+  workType: z.string().nullish(),
+  availableActions: z.array(DashboardAvailableActionSchema).nullish(),
+  nextAction: DashboardAvailableActionSchema.nullish(),
+}).passthrough();
+
+export const DashboardActionItemsPageSchema = z.object({
+  items: z.array(DashboardActionItemSchema),
+  page: z.number().int().nonnegative().optional(),
+  size: z.number().int().positive().optional(),
+  hasMore: z.boolean().optional(),
+  generatedAt: z.string().nullish(),
+  businessTimezone: z.string().nullish(),
+  workflowAvailability: z.array(z.unknown()).optional(),
+}).passthrough();
+
+export const DashboardActionItemsQuerySchema = z.object({
+  actionType: z.string().optional(),
+  resourceType: z.string().optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  machineId: z.string().uuid().optional(),
+  technicianId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+});
+export type TDashboardActionItemsQuery = z.input<typeof DashboardActionItemsQuerySchema>;
+
 const OperationalMetricsSchema = z.object({
   totalOwners: nonnegativeCount.nullish(),
   legacyUnmappedContracts: nonnegativeCount.nullish(),
@@ -84,3 +138,4 @@ export const DashboardDateRangeSchema = dateRangeInputSchema;
 
 export type TDashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 export type TDailyMachineCupUsage = z.infer<typeof DailyMachineCupUsageSchema>;
+export type TDashboardActionItem = z.infer<typeof DashboardActionItemSchema>;

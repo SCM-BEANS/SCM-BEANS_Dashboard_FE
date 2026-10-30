@@ -35,9 +35,11 @@ export const LocationCreateSchema = z.object({
   city: z.string().trim().optional(), contactPerson: z.string().trim().optional(),
   phoneNumber: z.string().trim().optional(),
 });
+export const LocationUpdateSchema = LocationCreateSchema;
 export type Location = z.infer<typeof LocationSchema>;
 export type LocationListResponse = z.infer<typeof LocationListSchema>;
 export type LocationCreate = z.infer<typeof LocationCreateSchema>;
+export type LocationUpdate = z.infer<typeof LocationUpdateSchema>;
 
 export function unwrapLocations(response: LocationListResponse): Location[] {
   if (Array.isArray(response)) return response;

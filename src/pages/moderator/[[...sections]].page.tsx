@@ -34,9 +34,11 @@ export function isModeratorReadRoute(sectionPath: string): boolean {
     sectionPath === "invoices/list" ||
     /^invoices\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath) ||
     sectionPath === "menu" ||
+    sectionPath === "menu/new" ||
     /^menu\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath) ||
     sectionPath === "buyback" ||
     sectionPath === "buyback/list" ||
+    sectionPath === "buyback/new" ||
     /^buyback\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|MB-[A-Z0-9-]+)$/i.test(sectionPath);
 }
 

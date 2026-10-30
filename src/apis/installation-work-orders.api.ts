@@ -2,15 +2,29 @@ import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   CreateInstallationWorkOrderRequestSchema,
   CreateInstallationWorkOrderResponseSchema,
+  FailInstallationWorkOrderRequestSchema,
+  InstallationAccessoryRequestSchema,
+  InstallationChecklistResultRequestSchema,
+  InstallationChecklistResultResponseSchema,
+  AssignInstallationWorkOrderRequestSchema,
+  RescheduleInstallationWorkOrderRequestSchema,
+  CancelInstallationWorkOrderRequestSchema,
   AssignedInstallationWorkOrderListSchema,
   CompleteInstallationWorkOrderRequestSchema,
   InstallationWorkOrderEvidenceUploadResponseSchema,
+  InstallationWorkOrderAccessorySchema,
   InstallationWorkOrderDetailsSchema,
   InstallationWorkOrderIdSchema,
   InstallationWorkOrderListSchema,
   InstallationWorkOrderRecordSchema,
-  InstallationWorkOrderTenantIdSchema,
+  InstallationWorkOrderOwnerIdSchema,
   type CreateInstallationWorkOrderRequest,
+  type FailInstallationWorkOrderRequest,
+  type InstallationAccessoryRequest,
+  type InstallationChecklistResultRequest,
+  type AssignInstallationWorkOrderRequest,
+  type RescheduleInstallationWorkOrderRequest,
+  type CancelInstallationWorkOrderRequest,
 } from "@/schema/installation-work-orders.schema";
 
 export class InstallationWorkOrderIdentityMismatchError extends Error {
@@ -20,10 +34,10 @@ export class InstallationWorkOrderIdentityMismatchError extends Error {
   }
 }
 
-export class InstallationWorkOrderTenantMismatchError extends Error {
+export class InstallationWorkOrderOwnerMismatchError extends Error {
   constructor() {
-    super("Dolores returned a work order outside the requested tenant scope.");
-    this.name = "InstallationWorkOrderTenantMismatchError";
+    super("Dolores returned a work order outside the requested Owner scope.");
+    this.name = "InstallationWorkOrderOwnerMismatchError";
   }
 }
 
@@ -39,16 +53,16 @@ export const installationWorkOrdersApi = {
     return CreateInstallationWorkOrderResponseSchema.parse(response.data);
   },
 
-  async listByTenant(id: string, signal?: AbortSignal) {
-    const tenantId = InstallationWorkOrderTenantIdSchema.parse(id);
+  async listByOwner(id: string, signal?: AbortSignal) {
+    const ownerId = InstallationWorkOrderOwnerIdSchema.parse(id);
     const response = await axiosClient.get<unknown>("/installation-work-orders", {
       baseURL: DOLORES_API_BASE_URL,
-      params: { tenantId },
+      params: { ownerId },
       signal,
     });
     const workOrders = InstallationWorkOrderListSchema.parse(response.data);
-    if (workOrders.some((workOrder) => workOrder.tenantId !== tenantId)) {
-      throw new InstallationWorkOrderTenantMismatchError();
+    if (workOrders.some((workOrder) => workOrder.ownerId !== ownerId)) {
+      throw new InstallationWorkOrderOwnerMismatchError();
     }
     return workOrders;
   },
@@ -74,11 +88,88 @@ export const installationWorkOrdersApi = {
     return details;
   },
 
+  async assign(id: string, input: AssignInstallationWorkOrderRequest) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const request = AssignInstallationWorkOrderRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${workOrderPath(workOrderId)}/assign`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const workOrder = InstallationWorkOrderRecordSchema.parse(response.data);
+    if (workOrder.id !== workOrderId) throw new InstallationWorkOrderIdentityMismatchError();
+    return workOrder;
+  },
+
+  async reschedule(id: string, input: RescheduleInstallationWorkOrderRequest) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const request = RescheduleInstallationWorkOrderRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${workOrderPath(workOrderId)}/reschedule`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const workOrder = InstallationWorkOrderRecordSchema.parse(response.data);
+    if (workOrder.id !== workOrderId) throw new InstallationWorkOrderIdentityMismatchError();
+    return workOrder;
+  },
+
+  async cancel(id: string, input: CancelInstallationWorkOrderRequest) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const request = CancelInstallationWorkOrderRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${workOrderPath(workOrderId)}/cancel`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const workOrder = InstallationWorkOrderRecordSchema.parse(response.data);
+    if (workOrder.id !== workOrderId) throw new InstallationWorkOrderIdentityMismatchError();
+    return workOrder;
+  },
+
   async start(id: string) {
     const workOrderId = InstallationWorkOrderIdSchema.parse(id);
     const response = await axiosClient.post<unknown>(`${workOrderPath(workOrderId)}/start`, undefined, {
       baseURL: DOLORES_API_BASE_URL,
     });
+    const workOrder = InstallationWorkOrderRecordSchema.parse(response.data);
+    if (workOrder.id !== workOrderId) throw new InstallationWorkOrderIdentityMismatchError();
+    return workOrder;
+  },
+
+  async updateChecklist(
+    id: string,
+    checklistItemId: string,
+    input: InstallationChecklistResultRequest,
+  ) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const itemId = InstallationWorkOrderIdSchema.parse(checklistItemId);
+    const request = InstallationChecklistResultRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(
+      `${workOrderPath(workOrderId)}/checklist/${encodeURIComponent(itemId)}`,
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const result = InstallationChecklistResultResponseSchema.parse(response.data);
+    if (result.workOrderId !== workOrderId || result.checklistItemId !== itemId) {
+      throw new InstallationWorkOrderIdentityMismatchError();
+    }
+    return result;
+  },
+
+  async addAccessory(id: string, input: InstallationAccessoryRequest) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const request = InstallationAccessoryRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${workOrderPath(workOrderId)}/accessories`,
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return InstallationWorkOrderAccessorySchema.parse(response.data);
+  },
+
+  async fail(id: string, input: FailInstallationWorkOrderRequest) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const request = FailInstallationWorkOrderRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${workOrderPath(workOrderId)}/fail`,
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
     const workOrder = InstallationWorkOrderRecordSchema.parse(response.data);
     if (workOrder.id !== workOrderId) throw new InstallationWorkOrderIdentityMismatchError();
     return workOrder;

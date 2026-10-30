@@ -251,7 +251,10 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     "menu/fresh-milk": [link("Về menu của tôi", "/dashboard/menu", "secondary")],
     "menu/add-dish": [link("Hủy", "/dashboard/menu", "secondary")],
     "support/new": [link("Về yêu cầu hỗ trợ", "/dashboard/support", "secondary")],
-    "support/menu": [link("Xem máy của tôi", "/dashboard/machines", "secondary")],
+    "support/menu": [
+      link("Gửi menu đến máy", "/dashboard/menu/sent"),
+      link("Xem máy của tôi", "/dashboard/machines", "secondary"),
+    ],
     "buyback/new": [link("Về thu mua máy cũ", "/dashboard/buyback", "secondary")],
     "buyback/documents": [link("Có vấn đề cần trao đổi", "/dashboard/buyback/issue", "secondary")],
     "buyback/issue": [link("Về chứng từ thu mua", "/dashboard/buyback/documents", "secondary")],

@@ -35,6 +35,8 @@ function MenuContent() {
   const router = useRouter();
   const view = typeof router.query.view === "string" ? router.query.view : "list";
   const isCreateView = view === "create";
+  const [editingRecipe, setEditingRecipe] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const queryClient = useQueryClient();
   const recipes = useQuery({
     queryKey: RECIPE_QUERY_KEY,
@@ -64,6 +66,26 @@ function MenuContent() {
       setFormError("");
       setPublishedRecipeName(publishedRecipe.name);
       void router.push(PATH_ADMIN.MENU, undefined, { shallow: true });
+    },
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: RecipePublishRequest }) => recipesApi.updateGlobal(id, input),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: RECIPE_QUERY_KEY });
+      setSelectedRecipeId(updated.id);
+      setPendingPublish(null);
+      setEditingRecipe(false);
+      setFormError("");
+      setPublishedRecipeName(updated.name);
+    },
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => recipesApi.deleteGlobal(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: RECIPE_QUERY_KEY });
+      setConfirmDelete(false);
+      setSelectedRecipeId("");
+      setEditingRecipe(false);
     },
   });
 
@@ -176,7 +198,7 @@ function MenuContent() {
             <section className={styles.panel} aria-labelledby="global-recipe-detail-title">
               <div className={styles.pageHeading}>
                 <h2 id="global-recipe-detail-title">{ADMIN_MESSAGES.MENU.DETAIL}</h2>
-                <p>{ADMIN_MESSAGES.MENU.EDIT_UNAVAILABLE}</p>
+                {editingRecipe ? <p>Chỉnh sửa phiên bản công thức dùng chung.</p> : null}
               </div>
               {recipe.isPending && <p role="status">{ADMIN_MESSAGES.MENU.LOADING}</p>}
               {recipe.isError && (
@@ -185,13 +207,20 @@ function MenuContent() {
                   <button type="button" onClick={() => void recipe.refetch()}>{ADMIN_MESSAGES.MENU.RETRY}</button>
                 </div>
               )}
-              {recipe.data && (
+              {recipe.data && !editingRecipe && (
                 <div className={styles.operationsGrid}>
                   <div><span>{ADMIN_MESSAGES.MENU.NAME}</span><strong>{recipe.data.name}</strong></div>
                   <div><span>{ADMIN_MESSAGES.MENU.STEPS}</span><strong>{recipe.data.steps.join(" · ")}</strong></div>
                   <div><span>{ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS}</span><strong>{recipe.data.dosageBounds.join(" · ")}</strong></div>
                 </div>
               )}
+              {recipe.data && editingRecipe && <form id="global-recipe-edit-form" className={styles.operationsGrid} onSubmit={submitDraft}>
+                <label>{ADMIN_MESSAGES.MENU.NAME} *<input required maxLength={160} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+                <label>{ADMIN_MESSAGES.MENU.STEPS} *<textarea required style={textareaStyle} value={draft.steps} onChange={(event) => setDraft({ ...draft, steps: event.target.value })} /></label>
+                <label>{ADMIN_MESSAGES.MENU.DOSAGE_BOUNDS} *<textarea required style={textareaStyle} value={draft.dosageBounds} onChange={(event) => setDraft({ ...draft, dosageBounds: event.target.value })} /></label>
+                {formError && <p className={styles.accountInlineWarning} role="alert">{formError}</p>}
+                {update.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(update.error, "mutation")}</p>}
+              </form>}
             </section>
           )}
         </>
@@ -200,20 +229,24 @@ function MenuContent() {
       {pendingPublish && (
         <NotificationDialog
           variant="confirm"
-          title={ADMIN_MESSAGES.MENU.CONFIRM_TITLE}
-          description={ADMIN_MESSAGES.MENU.PUBLISH_WARNING}
+          title={editingRecipe ? "Xác nhận cập nhật công thức" : ADMIN_MESSAGES.MENU.CONFIRM_TITLE}
+          description={editingRecipe
+            ? "Nội dung công thức dùng chung sẽ được biên dịch lại và đồng bộ tới các máy có liên quan."
+            : ADMIN_MESSAGES.MENU.PUBLISH_WARNING}
           primaryAction={{
-            label: publish.isPending ? ADMIN_MESSAGES.MENU.PUBLISHING : ADMIN_MESSAGES.MENU.CONFIRM,
-            pending: publish.isPending,
-            onClick: () => publish.mutate(pendingPublish),
+            label: publish.isPending || update.isPending ? "Đang lưu…" : editingRecipe ? "Cập nhật công thức" : ADMIN_MESSAGES.MENU.CONFIRM,
+            pending: publish.isPending || update.isPending,
+            onClick: () => editingRecipe && selectedRecipeIdValue
+              ? update.mutate({ id: selectedRecipeIdValue, input: pendingPublish })
+              : publish.mutate(pendingPublish),
           }}
           secondaryAction={{
             label: ADMIN_MESSAGES.MENU.CANCEL,
-            disabled: publish.isPending,
+            disabled: publish.isPending || update.isPending,
             onClick: () => setPendingPublish(null),
           }}
           onClose={() => setPendingPublish(null)}
-          closeOnEscape={!publish.isPending}
+          closeOnEscape={!publish.isPending && !update.isPending}
         >
           <p><strong>{pendingPublish.name}</strong></p>
           {publish.isError && (
@@ -232,6 +265,17 @@ function MenuContent() {
           onClose={() => setPublishedRecipeName("")}
         />
       )}
+      {confirmDelete && recipe.data && <NotificationDialog
+        variant="confirm"
+        title="Xóa công thức dùng chung?"
+        description="Công thức đang được bản ghi cục bộ tham chiếu sẽ không thể xóa. Sau khi xóa, thiết bị liên quan sẽ được biên dịch lại."
+        primaryAction={{ label: "Xóa công thức", pending: remove.isPending, pendingLabel: "Đang xóa…", onClick: () => remove.mutate(recipe.data!.id) }}
+        secondaryAction={{ label: ADMIN_MESSAGES.MENU.CANCEL, disabled: remove.isPending, onClick: () => setConfirmDelete(false) }}
+        onClose={() => { if (!remove.isPending) setConfirmDelete(false); }}
+        closeOnEscape={!remove.isPending}
+      >
+        {remove.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(remove.error, "mutation")}</p>}
+      </NotificationDialog>}
     </div>
     {isCreateView ? (
       <ActionBar>
@@ -241,6 +285,15 @@ function MenuContent() {
       </ActionBar>
     ) : (
       <ActionBar>
+        {selectedRecipeIdValue && recipe.data && <>
+          {editingRecipe ? <>
+            <ButtonBar type="submit" form="global-recipe-edit-form" disabled={update.isPending || Boolean(pendingPublish)}>Lưu công thức</ButtonBar>
+            <ButtonBar type="button" disabled={update.isPending} onClick={() => { setEditingRecipe(false); setFormError(""); }}>Hủy sửa</ButtonBar>
+          </> : <>
+            <ButtonBar type="button" onClick={() => { setDraft({ name: recipe.data!.name, steps: recipe.data!.steps.join("\n"), dosageBounds: recipe.data!.dosageBounds.join("\n") }); setFormError(""); setEditingRecipe(true); }}>Chỉnh sửa</ButtonBar>
+            <ButtonBar type="button" onClick={() => setConfirmDelete(true)}>Xóa công thức</ButtonBar>
+          </>}
+        </>}
         <ButtonBar type="button" onClick={navigateToCreate}>
           {ADMIN_MESSAGES.MENU.CREATE}
         </ButtonBar>

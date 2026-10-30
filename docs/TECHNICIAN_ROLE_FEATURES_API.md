@@ -1,146 +1,65 @@
 # Rà soát tính năng và API của Technician
 
-Ngày rà soát: 29/10/2026. Tài liệu dựa trên code Technician trong workspace, Swagger Dolores local Docker tại http://localhost:8082/v3/api-docs, Swagger Dolores server tại http://100.75.202.72:8082/v3/api-docs và Swagger IDaaS local/server.
+Ngày rà soát: 29/10/2026. Đây là lượt đối chiếu lại code hiện tại với OpenAPI Dolores local và server. Tài liệu này thay thế các kết luận cũ bên dưới về danh sách việc được giao, xử lý lệnh lắp đặt và thông báo.
 
-## 1. Tình trạng code và Swagger
+## 1. Nguồn và tình trạng Swagger
 
-- Workspace đang ở branch ref, ahead 2 commit và không behind origin/ref. Worktree có thay đổi chưa commit từ công việc trước; các file đó được giữ nguyên.
-- Swagger Dolores local và server đều công bố các endpoint máy, đánh dấu máy sẵn sàng, lệnh lắp đặt được giao, và các thao tác Technician trên RepairCase được nêu trong tài liệu này.
-- Swagger Dolores local có 276 operation/237 path; server có 274 operation/235 path. Ba operation chỉ có local là POST /dev/v1/brew-records, POST /api/v1/notifications/installations và DELETE /api/v1/notifications/installations/{installationId}; một operation chỉ có server là POST /api/v1/installation-checklist-templates. Không có khác biệt cho các endpoint Technician được đối chiếu.
-- Swagger IDaaS local và server đều có 23 operation/20 path. Cả hai đều không công bố POST /auth/logout, dù TechnicianShell đang gọi route đó.
+- OpenAPI local: http://localhost:8082/v3/api-docs — 275 operation / 236 path.
+- OpenAPI server truy cập được: http://100.75.202.72:8082/v3/api-docs — 274 operation / 235 path.
+- So sánh toàn bộ operation cho thấy chỉ có POST /dev/v1/brew-records ở local mà server không có; đây là API dev, không ảnh hưởng các nhóm Technician/Owner đã rà soát. Các endpoint liên quan hai role khớp giữa local và server.
+- Địa chỉ http://192.168.1.125:8082/v3/api-docs bị timeout trong lượt này. Vì vậy đối chiếu server dùng địa chỉ 100.75.202.72.
+- API Dolores dùng prefix Swagger /api/v1. Tài khoản cần token hợp lệ; việc route hiện trong frontend không thay thế phân quyền ở backend.
 
-## 2. Phân quyền và cấu trúc route
+## 2. Mục Technician và trạng thái nối API
 
-Frontend chỉ mở khu vực Technician khi token có role TECHNICIAN và không đồng thời có OWNER. Token không có, giải mã không được hoặc role không phù hợp sẽ bị đưa về login hoặc hiện màn hình không đủ quyền. Đây chỉ là guard giao diện; API Dolores phải xác thực token và quyền trên từng thao tác.
-
-Sidebar gồm bốn mục:
-
-| Mục | Route | Tình trạng |
+| Mục / route | Tình trạng trong code hiện tại | Endpoint chính |
 | --- | --- | --- |
-| Việc được giao | /technician/tasks | Giao diện danh sách có sẵn, chưa tải dữ liệu |
-| Check máy | /technician/machine-check | Đã nối API đọc danh sách và chi tiết máy, có thao tác đánh dấu sẵn sàng cho thuê |
-| Lịch sử máy | /technician/history | Placeholder, chưa gọi API |
-| Thông báo | /technician/notifications | Placeholder, chưa gọi API |
+| Việc được giao — /technician/tasks | Đã tải lệnh lắp đặt được giao và hồ sơ RepairCase trong phạm vi Technician | GET /installation-work-orders/assigned; GET /repair-cases |
+| Chi tiết lệnh lắp đặt — /technician/tasks/{workOrderId} | Đọc chi tiết; bắt đầu, lưu checklist, ghi phụ kiện, tải minh chứng, hoàn tất và báo thất bại đã nối | GET /installation-work-orders/{workOrderId}; POST .../{workOrderId}/start; PUT .../{workOrderId}/checklist/{checklistItemId}; POST .../{workOrderId}/accessories; POST .../{workOrderId}/evidence; POST .../{workOrderId}/complete; POST .../{workOrderId}/fail |
+| Chi tiết sửa chữa — /technician/tasks/{caseId} | Đọc tiến độ, lịch sử và bàn giao; ghi chẩn đoán, bắt đầu/hoàn tất sửa chữa và ghi sự kiện bàn giao | GET /repair-cases/{caseId}; GET .../{caseId}/timeline; GET/POST .../{caseId}/custody-events; GET /maintenance-tickets/{ticketId}; POST .../{caseId}/diagnosis; POST .../{caseId}/work/start; POST .../{caseId}/work/complete |
+| Check máy — /technician/machine-check và /{machineId} | Đọc danh sách/chi tiết máy; xác nhận sẵn sàng chỉ khi máy IN_WAREHOUSE, chưa gán Owner và đủ điều kiện model | GET /machines; GET /machines/{id}; POST /inventory/machines/{machineId}/readiness |
+| Lịch sử máy — /technician/history và /history/{machineId} | Đã đọc phiếu bảo trì/yêu cầu trong phạm vi được giao; trang chi tiết máy đọc lịch bảo trì và lọc lịch sử theo máy | GET /maintenance-tickets; GET /maintenance-requests; GET /machines/{id}; GET /machines/{id}/maintenance-schedule |
+| Thông báo — /technician/notifications | Đã nối inbox, số chưa đọc, đánh dấu một hoặc tất cả đã đọc | GET /notifications; GET /notifications/unread-count; POST /notifications/{id}/read; POST /notifications/read-all |
 
-Các route công việc được router chấp nhận:
+### Điều kiện và giới hạn của luồng lắp đặt đang có
 
-| Route | Mục đích hiển thị | Tình trạng thực tế |
+- Danh sách hiện gọi GET /installation-work-orders/assigned mà không gửi status, machineType, page hoặc size; các bộ lọc/phân trang Swagger hỗ trợ chưa được UI sử dụng.
+- Lệnh lắp đặt chỉ cho bắt đầu ở trạng thái ASSIGNED; lưu checklist, ghi phụ kiện, tải minh chứng, hoàn tất và báo thất bại chỉ khả dụng khi IN_PROGRESS. Báo thất bại cần failureReason.
+- Hoàn tất lắp đặt yêu cầu ít nhất một minh chứng và người nhận bàn giao không rỗng. Checklist được lưu riêng; API complete hiện vẫn chỉ gửi handoverRecipient.
+- Tệp minh chứng ở frontend giới hạn 20 MiB và chỉ nhận PDF, JPEG hoặc PNG. Swagger cũng có thể trả 413, 415 hoặc 503 cho thao tác upload.
+- Màn Check máy gọi GET /machines không truyền bộ lọc. Nút sẵn sàng chỉ mở khi máy IN_WAREHOUSE và có serial; backend còn yêu cầu máy chưa gán Owner, đã gắn model đang hoạt động và không bị chặn bởi nghiệp vụ vòng đời. Swagger ghi quyền ADMIN/MODERATOR/TECHNICIAN.
+
+## 3. Tính năng chưa nối hoặc mới nối một phần
+
+| Màn hình / thao tác | API có trong Swagger | Phần frontend còn thiếu |
 | --- | --- | --- |
-| /technician và /technician/tasks | Danh sách công việc được giao | Bộ lọc và nút xem chi tiết bị khóa; màn hình không gọi API |
-| /technician/tasks/{workOrderId} | Chi tiết công việc | Màn hình chung, các trường/nút thao tác bị khóa; không gọi API |
-| /technician/tasks/standard-handover | Bàn giao máy thường | Form mô tả nhưng disable |
-| /technician/tasks/smart-activation | Lắp đặt và kích hoạt Smart IoT | Form mô tả nhưng disable |
-| /technician/tasks/repair | Sửa chữa và thay linh kiện | Form mô tả nhưng disable |
-| /technician/tasks/retrieval | Thu hồi máy | Form mô tả nhưng disable |
-| /technician/tasks/substitute và /substitute-return | Bàn giao và thu hồi máy thay thế | Form mô tả nhưng disable |
-| /technician/tasks/refurbishment | Tân trang và kiểm thử | Form mô tả nhưng disable |
-| /technician/tasks/buyback-assessment | Đánh giá máy thu mua | Form mô tả nhưng disable |
-| /technician/tasks/maintenance-history | Ghi lịch sử bảo trì | Form mô tả nhưng disable |
-| /technician/history và /history/{machineId} | Lịch sử máy | Placeholder; không tải lịch sử |
-| /technician/machine-check | Kiểm tra máy | Có API đọc |
-| /technician/machine-check/{machineId} | Chi tiết máy | Có API đọc và mutation đánh dấu sẵn sàng |
-| /technician/notifications | Thông báo công việc | Bộ lọc/nút đánh dấu đã đọc bị khóa; không gọi API |
+| Tập con checklist/phụ kiện vượt giới hạn chi tiết | GET /installation-work-orders/{workOrderId}/checklist-items; GET /installation-work-orders/{workOrderId}/accessories | Giao diện dùng tối đa 20 mục/phụ kiện được nhúng trong chi tiết; chưa gọi các endpoint collection phân trang riêng. |
+| Thu hồi và máy thay thế | GET/POST các repair-case custody-events; API replacement-assignment và sự kiện bàn giao | Các route retrieval, substitute, substitute-return đang là placeholder; chưa ghi nhận từng sự kiện bàn giao. Một số bước phân máy thay thế thuộc Moderator/Admin, không phải thao tác Technician. |
+| Bảo trì | GET /maintenance-requests, GET /maintenance-requests/{requestId}, GET/POST /maintenance-requests/{requestId}/custody-events; GET /maintenance-tickets và GET /maintenance-tickets/{ticketId} | Lịch sử máy hiện đọc phiếu và yêu cầu được backend scope cho Technician. Các thao tác assign/status/resolve trên maintenance-ticket vẫn không mở cho Technician theo phạm vi hiện tại. |
+| Tân trang / thu mua / kiểm định | GET /buybacks; GET các inspection/refurbishment/QA records; POST bắt đầu/hoàn tất refurbishment, inspection và QA | Các thao tác POST inspection và refurbishment có kiểm tra quyền TECHNICIAN theo case, nhưng GET /buybacks hiện chỉ cho ADMIN/MODERATOR/OWNER; Technician không có API danh sách để tìm case được giao. Các trang UI vẫn để chờ thay vì gọi danh sách sẽ trả 403. |
+| Kích hoạt Smart IoT | Swagger có các API danh tính thiết bị/chứng chỉ máy | Route smart-activation chưa gọi API. Mô tả Swagger chưa đủ để kết luận Technician có quyền trên các thao tác này. |
+| Lịch sử tổng hợp | GET /machines/{id}/maintenance-schedule; GET /maintenance-tickets; GET /repair-cases/{caseId}/timeline | Chưa có màn hợp nhất lịch sử máy giữa bảo trì, sửa chữa và lắp đặt; không thấy một endpoint lịch sử tổng hợp duy nhất cho Technician. |
 
-Các field trong task forms bị disabled ở TechnicianScreen. Các filters cũng disabled; action submit được khai báo disabled. Do đó các route dạng form hiện chỉ diễn tả ý định nghiệp vụ, chưa nhận hoặc gửi dữ liệu.
+## 4. Điều kiện API và các điểm cần xác nhận
 
-## 3. API Technician đang gọi
+- GET /installation-work-orders/assigned được Swagger mô tả dành cho TECHNICIAN; list và detail có thể trả 401/403/404 tùy token, quyền và ID.
+- Start chỉ có ý nghĩa với lệnh được giao; complete cần handoverRecipient. Swagger yêu cầu xử lý các trạng thái xung đột 409.
+- RepairCase work/start chỉ được thực hiện sau khi Owner xác nhận đã nhận máy thay thế. Diagnosis cần diagnosis và evidenceReference; hoàn tất cần diagnosis, resolutionResult, workScope, evidenceReferences; custody event cần đúng eventType, machineId, conditionNotes và evidenceReference.
+- GET /notifications không gửi ownerId hay technicianId từ client; frontend dựa vào backend để scope theo người gọi. Không được xem tham số ownerId tùy chọn trong Swagger là quyền đọc chéo tenant.
+- Machine readiness cần xác nhận lại quyền TECHNICIAN và trạng thái máy hợp lệ ở backend; mô tả API chỉ nói máy trong kho sẵn sàng cho thuê.
 
-Các endpoint Dolores dưới đây tính từ /api/v1.
+## 5. Tệp code đã đối chiếu
 
-| Tính năng | Endpoint | Cách dùng và điều kiện trong code |
-| --- | --- | --- |
-| Danh sách để kiểm tra máy | GET /machines | Gọi khi vào /technician/machine-check. Không gửi status, machineType, ownerId, locationId, region, serialNumber, page hoặc size dù Swagger hỗ trợ các query này. Response được kiểm tra bằng MachineInventorySchema rồi hiển thị id, owner, serial, trạng thái và loại máy. Backend cần tự giới hạn tập máy mà Technician hiện tại được phép xem. |
-| Chi tiết máy | GET /machines/{id} | Gọi ở /technician/machine-check/{machineId}. ID phải là UUID; wrapper kiểm tra response id trùng với id yêu cầu. Hiển thị serial, status, owner, location, vùng, lịch bảo trì kế tiếp, số ly từ lần tẩy cặn, loại/model và thông tin mapping nếu có. |
-| Đánh dấu máy sẵn sàng cho thuê | POST /inventory/machines/{machineId}/readiness | Gọi từ nút cập nhật trạng thái ở màn chi tiết máy. Body gồm reason; UI gửi câu cố định “Máy đã được kiểm tra và đủ điều kiện cho thuê.” Wrapper kiểm tra machineId là UUID và reason không rỗng. Thành công thì invalidate cache chi tiết và danh sách máy. |
-| Đăng xuất | POST /auth/logout trên IDaaS | TechnicianShell gọi route này, sau đó xóa cookie access_token và điều hướng về login kể cả khi request lỗi. Route chưa được công bố trong Swagger IDaaS local/server. |
-
-### Điều kiện nút đánh dấu sẵn sàng
-
-Nút bị disable nếu chưa có máy tải được, thiếu serialNumber, máy đã có status AVAILABLE_FOR_RENT, đang tải/lỗi hoặc mutation đang chạy. Khi lỗi, giao diện hiển thị lỗi API và có thể thử lại.
-
-Swagger mô tả POST /inventory/machines/{machineId}/readiness là xác nhận **máy trong kho** đã sẵn sàng cho thuê. Điều kiện ở client hiện không bắt buộc status phải là IN_WAREHOUSE; vì vậy nút có thể được bật cho máy đang triển khai/bảo trì hoặc trạng thái khác. Backend có thể từ chối các chuyển trạng thái đó; UI nên đối chiếu trạng thái hợp lệ trước khi hiển thị thao tác. Swagger chỉ định nghĩa field reason dạng string nhưng không đánh dấu bắt buộc; frontend lại yêu cầu reason không rỗng. Swagger của operation này cũng không nêu rõ role Technician hoặc response 401/403, nên quyền thực tế của Technician cần được xác nhận với backend.
-
-## 4. Endpoint Swagger phù hợp với task flow nhưng Technician chưa gọi
-
-### 4.1 Lệnh lắp đặt được giao
-
-Swagger có endpoint riêng cho Technician:
-
-- GET /installation-work-orders/assigned — lấy lệnh lắp đặt được giao cho Technician đăng nhập. Có bộ lọc status, machineType và phân trang page/size; response là danh sách InstallationWorkOrderSummaryResponse. Swagger liệt kê các lỗi 400/401/403.
-- GET /installation-work-orders/{workOrderId} — xem chi tiết, checklist, phụ kiện và evidence; ID lệnh là UUID.
-- POST /installation-work-orders/{workOrderId}/start — bắt đầu lệnh; không có body; Swagger liệt kê 400/401/403/404/409.
-- PUT /installation-work-orders/{workOrderId}/checklist/{checklistItemId} — ghi result bắt buộc thuộc PENDING/PASSED/FAILED/NOT_APPLICABLE; notes tùy chọn. Mô tả Swagger nói không được gửi PENDING làm kết quả.
-- POST /installation-work-orders/{workOrderId}/accessories — ghi phụ kiện bàn giao; accessoryName bắt buộc, quantity, serialNumber và notes tùy chọn.
-- POST /installation-work-orders/{workOrderId}/evidence — tải evidence multipart; API có thể trả lỗi 400/401/403/404/409/413/415/503.
-- POST /installation-work-orders/{workOrderId}/fail — failureReason bắt buộc.
-- POST /installation-work-orders/{workOrderId}/complete — handoverRecipient bắt buộc.
-
-Đây là API có thể dùng để hiện thực danh sách giao máy, mở chi tiết, checklist và kết quả bàn giao. Hiện tại không trang Technician nào gọi các endpoint này và chưa có API client cho route /assigned.
-
-Thông báo trong code tại src/text/technician/technician-messages.ts hiện ghi rằng API chỉ liệt kê công việc theo tenant và chưa có endpoint xác nhận công việc được giao cho Technician. Nội dung đó không còn đúng với Swagger hiện tại vì GET /installation-work-orders/assigned đã được công bố trên cả local lẫn server. Nút và danh sách vẫn đang khóa, nên đây là khoảng cách giữa code thông báo và hợp đồng API.
-
-### 4.2 Sửa chữa và bàn giao RepairCase
-
-Swagger cũng có các endpoint ghi nhận công việc sửa chữa theo RepairCase:
-
-- GET /repair-cases và GET /repair-cases/{caseId} — danh sách theo phạm vi role và chi tiết; detail trả lịch sử sự kiện. Có thêm GET /repair-cases/{caseId}/timeline để lấy timeline theo page/size.
-- POST /repair-cases/{caseId}/diagnosis — diagnosis và evidenceReference bắt buộc.
-- POST /repair-cases/{caseId}/work/start — workScope bắt buộc; emergencyAuthorizationId tùy chọn. Mô tả yêu cầu Owner đã xác nhận nhận máy thay thế.
-- POST /repair-cases/{caseId}/work/complete — diagnosis, resolutionResult, workScope và evidenceReferences bắt buộc; notes và emergencyAuthorizationId tùy chọn. Mô tả endpoint nêu việc hoàn tất kèm chẩn đoán và evidence riêng tư.
-- GET/POST /repair-cases/{caseId}/custody-events — đọc/ghi sự kiện bàn giao máy. Khi ghi, eventType, machineId, conditionNotes và evidenceReference đều bắt buộc; eventType thuộc PRIMARY_COLLECTED, REPLACEMENT_DELIVERED, REPLACEMENT_COLLECTED hoặc PRIMARY_RETURNED.
-
-Các thao tác này chưa được nối vào route /technician/tasks/repair, /substitute hoặc /substitute-return. UI hiện không đọc RepairCase và không cho nhập/chụp evidence. Trước khi bật các nút, cần khớp trạng thái RepairCase, quyền Technician, thứ tự bàn giao và dạng lưu evidence theo API.
-
-### 4.3 Lịch sử và thông báo
-
-- Swagger có GET /maintenance-tickets với các bộ lọc source, status, machineId, ownerId, contractId, page và size; GET /maintenance-tickets/{ticketId}; và GET /machines/{id}/maintenance-tickets. Có thể dùng để xây lịch sử ticket theo máy, nhưng không có trang Technician nào gọi chúng.
-- Swagger có GET /repair-cases/{caseId}/timeline và các API chi tiết installation work order; hiện chưa có trang lịch sử kết hợp các loại sự kiện.
-- Swagger có GET /notifications, GET /notifications/unread-count, POST /notifications/{id}/read và POST /notifications/read-all. Generic list hỗ trợ ownerId/unreadOnly/page/size nhưng không nhận technicianId query. Màn hình Technician đang chờ xác nhận việc backend tự scope thông báo theo người nhận; hiện không gọi bất kỳ endpoint thông báo nào.
-
-### 4.4 Tân trang và thu mua máy cũ
-
-Swagger công bố một số thao tác Buyback & Refurbishment như đọc hồ sơ, bắt đầu/hoàn tất refurbishment, gửi inspection/QA. Tuy nhiên task pages của Technician chỉ là form disabled, không gọi buybacksApi hay endpoint nào trong nhóm này. Swagger của các thao tác này không đủ để kết luận tất cả đều cho phép TECHNICIAN; cần kiểm tra role policy và quy trình QA trước khi nối.
-
-## 5. API client/schema có trong code nhưng không được Technician dùng
-
-- src/apis/installation-work-orders.api.ts có create, listByTenant và getById; Technician pages không import module này. Không có method listAssigned/start/complete/checklist/evidence.
-- src/apis/machines.api.ts chứa nhiều API khác như inventory summary, maintenance schedule, maintenance tickets và repair intake; ngoài list/getById/markReady nêu trên, Technician screens không gọi các method đó.
-- src/apis/telemetry.api.ts tồn tại nhưng Technician không dùng telemetry.
-- Technician không gọi notificationsApi, maintenanceRequestsApi, repairCasesApi, profilesApi hoặc buybacksApi.
-
-Schema InstallationWorkOrderSummarySchema hiện yêu cầu tenantId. Swagger response của GET /installation-work-orders/assigned là InstallationWorkOrderSummaryResponse với ownerId và không liệt kê tenantId. Vì vậy không nên tái sử dụng schema list hiện có cho endpoint assigned nếu DTO response giữ nguyên như Swagger; cần tạo schema phù hợp với response Technician và xác nhận DTO thực tế.
-
-## 6. Cấu hình và luồng xác thực
-
-Frontend dùng cùng cấu hình API như các role khác:
-
-- Dolores phía browser: /api/dolores/v1; Next proxy chuyển tiếp tới {DOLORES_API_LOCAL_URL hoặc DOLORES_API_IP_URL}/api/v1.
-- IDaaS phía browser: /api/v1; proxy dùng IDAAS_API_LOCAL_URL hoặc IDAAS_API_IP_URL.
-- Mẫu local là http://localhost:8082 cho Dolores và http://localhost:4000/api/v1 cho IDaaS. Remote cần cấu hình cả hai URL để health check và chọn cùng một môi trường JWT.
-- Axios gắn Bearer access_token vào API đã xác thực, timeout 10 giây và tự refresh một lần khi gặp 401. Proxy server timeout 15 giây, giới hạn body 10 MiB.
-- Nếu Flutter native gọi trực tiếp, dùng host/IP mà thiết bị truy cập được, gửi Authorization Bearer token và quản lý refresh token theo hợp đồng IDaaS. Cấu hình proxy Next và cookie trình duyệt không tự áp dụng cho Flutter.
-- Mark-ready là POST nên khi remote API rớt, proxy không tự replay request sang local. Người dùng có thể thấy lỗi 502 và cần kiểm tra trạng thái máy trước khi thử gửi lại để tránh thao tác trùng.
-
-## 7. Kết luận cho việc dùng chung logic trong Flutter
-
-Đã có thể hiện thực API cho màn Check máy theo ba endpoint đang hoạt động. Các màn Task, lịch sử và thông báo hiện chủ yếu là thiết kế/placeholder.
-
-Backend đã có endpoint assigned work order nhưng UI hiện vẫn báo là chưa có endpoint và chưa gọi nó. Trước khi triển khai task list trong Flutter, cần sửa hợp đồng giao diện theo GET /installation-work-orders/assigned, xác nhận scope chỉ trả task của Technician đăng nhập, và dùng DTO response riêng khớp Swagger. Các task sửa chữa cần dùng RepairCase API theo đúng điều kiện Owner xác nhận bàn giao; task bảo trì cần chốt API/status và phạm vi người được giao. Thông báo cần xác nhận scope theo recipient.
-
-## 8. File code đã rà soát
-
-- src/pages/technician/technician-shell.tsx
-- src/pages/technician/technician-screen.tsx
-- src/pages/technician/technician-route-screens.tsx
-- src/pages/technician/technician-route-page.tsx
+- src/pages/technician/tasks/technician-tasks-table.tsx
+- src/pages/technician/tasks/work-order-detail-screen.tsx
 - src/pages/technician/tasks/task-screens.tsx và các route tasks
 - src/pages/technician/machine-check/machine-check-table.tsx
 - src/pages/technician/machine-check/machine-detail-screen.tsx
 - src/pages/technician/history/history-screen.tsx
-- src/pages/technician/notifications/notifications-screen.ts
-- src/routes/routes.ts và src/routes/path.ts
-- src/apis/machines.api.ts, src/apis/auth.api.ts, src/apis/installation-work-orders.api.ts, src/apis/telemetry.api.ts
-- src/schema/machines.schema.ts và src/schema/installation-work-orders.schema.ts
-- src/lib/http.ts, src/lib/auth-role.ts, src/lib/server/backend-api-selection.ts và các route proxy API.
+- src/pages/technician/notifications/notifications-screen.tsx
+- src/components/notifications/notification-inbox.tsx
+- src/apis/installation-work-orders.api.ts, machines.api.ts, notifications.api.ts, repair-cases.api.ts, maintenance-requests.api.ts, buybacks.api.ts
+- src/schema/installation-work-orders.schema.ts, machines.schema.ts, notifications.schema.ts
+- src/routes/routes.ts và src/lib/auth-role.ts
 
-Đây là kiểm kê tĩnh code và hợp đồng OpenAPI. Chưa gọi API nghiệp vụ bằng tài khoản Technician, chưa xác minh phân quyền runtime và chưa chạy test trong lượt rà soát này.
+Các mục lắp đặt, RepairCase, lịch sử bảo trì trong phạm vi Technician và Owner bàn giao đã được nối trong lượt triển khai sau rà soát. Chưa gửi request nghiệp vụ bằng tài khoản Technician và chưa chạy test/build trong lượt này; các luồng còn ghi ở bảng trên vẫn cần được nối hoặc cần API danh sách/quyền backend rõ hơn.

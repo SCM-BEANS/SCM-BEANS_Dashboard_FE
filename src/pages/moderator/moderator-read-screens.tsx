@@ -60,11 +60,11 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
       /^invoices\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {
     return loadScreen(<ModeratorInvoicesScreen sectionPath={sectionPath} />);
   }
-  if (sectionPath === "menu" ||
+  if (sectionPath === "menu" || sectionPath === "menu/new" ||
       /^menu\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {
     return loadScreen(<ModeratorRecipesScreen sectionPath={sectionPath} />);
   }
-  if (sectionPath === "buyback" || sectionPath === "buyback/list" ||
+  if (sectionPath === "buyback" || sectionPath === "buyback/list" || sectionPath === "buyback/new" ||
       /^buyback\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|MB-[A-Z0-9-]+)$/i.test(sectionPath)) {
     return loadScreen(<ModeratorBuybackScreen sectionPath={sectionPath} />);
   }

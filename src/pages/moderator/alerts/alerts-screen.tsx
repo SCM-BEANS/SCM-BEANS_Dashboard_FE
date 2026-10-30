@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { useState } from "react";
 
 
 import { DataTable } from "@/components/table/data-table";
@@ -44,9 +46,17 @@ function QueryFeedback({
 }
 
 export function AlertsScreen() {
+  const queryClient = useQueryClient();
+  const [ackError, setAckError] = useState<string | null>(null);
   const alerts = useQuery({
     queryKey: ["dolores", "alerts"],
     queryFn: ({ signal }) => notificationsApi.listAlerts(signal),
+  });
+  const acknowledge = useMutation({
+    mutationFn: notificationsApi.acknowledgeAlert,
+    onMutate: () => setAckError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dolores", "alerts"] }),
+    onError: (error) => setAckError(getApiErrorMessage(error)),
   });
 
   return (
@@ -74,6 +84,7 @@ export function AlertsScreen() {
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_TIME,
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_CONTENT,
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_STATUS,
+            MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACTION,
           ]}>
             {alerts.data.map((alert) => (
               <tr key={alert.id}>
@@ -84,11 +95,26 @@ export function AlertsScreen() {
                 <td>{alert.acknowledged
                   ? MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACKNOWLEDGED
                   : MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACTIVE}</td>
+                <td>
+                  {!alert.acknowledged && (
+                    <button
+                      className={styles.retryButton}
+                      type="button"
+                      disabled={acknowledge.isPending}
+                      onClick={() => acknowledge.mutate(alert.id)}
+                    >
+                      {acknowledge.isPending && acknowledge.variables === alert.id
+                        ? MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACKNOWLEDGING
+                        : MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACKNOWLEDGE}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </DataTable>
         )}
       </section>
+      {ackError && <p className={styles.pendingNotice} role="alert">{ackError}</p>}
     </div>
   );
 }

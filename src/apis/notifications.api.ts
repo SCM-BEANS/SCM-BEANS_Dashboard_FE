@@ -1,6 +1,7 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   AlertSchema,
+  AlertIdSchema,
   AlertsSchema,
   NotificationIdSchema,
   NotificationSchema,
@@ -32,6 +33,15 @@ export const notificationsApi = {
       signal,
     });
     return AlertsSchema.parse(response.data);
+  },
+
+  async acknowledgeAlert(id: string) {
+    const validId = AlertIdSchema.parse(id);
+    await axiosClient.post<unknown>(
+      "/alerts/" + encodeURIComponent(validId) + "/ack",
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
   },
 
   async markAsRead(id: string) {

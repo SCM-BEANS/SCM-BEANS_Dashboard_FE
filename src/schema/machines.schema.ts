@@ -21,6 +21,11 @@ export const MachineStatusSchema = z.enum([
 ]);
 
 export const MachineTypeSchema = z.enum(["CONVENTIONAL", "SMART_IOT"]);
+export const MachineTypeMappingRequestSchema = z.object({
+  machineType: MachineTypeSchema,
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+export type MachineTypeMappingRequest = z.infer<typeof MachineTypeMappingRequestSchema>;
 
 export const MarkMachineReadyRequestSchema = z.object({
   reason: z.string().trim().min(1),
@@ -35,6 +40,18 @@ export const CreateMachineRequestSchema = z.object({
 });
 
 export const CreateMachineResponseSchema = z.object({ id: MachineIdSchema }).passthrough();
+
+export const UpdateMachineRequestSchema = z.object({
+  serialNumber: z.string().trim().min(1),
+  status: MachineStatusSchema,
+  ownerId: z.string().uuid().optional(),
+  deployedAt: dateTimeSchema.optional(),
+  nextPreventiveMaintenanceAt: dateTimeSchema.optional(),
+  cupsServedSinceLastDescale: countSchema.optional(),
+  region: z.string().optional(),
+  locationId: z.string().uuid().optional(),
+}).strict();
+export type UpdateMachineRequest = z.infer<typeof UpdateMachineRequestSchema>;
 
 export const MachineInventoryItemSchema = z.object({
   id: MachineIdSchema,
@@ -121,7 +138,43 @@ export const MaintenanceTicketSchema = z.object({
   actionableInstructions: z.string().nullish(),
 }).strip();
 
+export const MaintenanceTicketDetailsSchema = MaintenanceTicketSchema.extend({
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  terminationCaseId: z.string().uuid().nullish(),
+  alertLevel: z.string().nullish(),
+  createdFromAlertId: z.string().uuid().nullish(),
+  policyVersionId: z.string().uuid().nullish(),
+  maintenanceRequestId: z.string().uuid().nullish(),
+  repairCaseId: z.string().uuid().nullish(),
+  overdueReviewRequired: z.boolean().optional(),
+  overdueReviewAt: dateTimeSchema.nullish(),
+  overdueReviewReason: z.string().nullish(),
+  overdueReviewedAt: dateTimeSchema.nullish(),
+  overdueReviewedBy: z.string().uuid().nullish(),
+  completionEvidenceReferences: z.string().nullish(),
+  completedBy: z.string().nullish(),
+  createdBy: z.string().nullish(),
+  resolvedAt: dateTimeSchema.nullish(),
+  partsCost: z.number().nullish(),
+  partsReplaced: z.string().nullish(),
+  resolutionDurationMinutes: z.number().int().nonnegative().nullish(),
+  responsibility: z.string().nullish(),
+  estimatedCost: z.number().nullish(),
+  actualCost: z.number().nullish(),
+  evidenceReference: z.string().nullish(),
+  version: z.number().int().nonnegative().optional(),
+}).passthrough();
+
 export const MaintenanceTicketListSchema = z.array(MaintenanceTicketSchema);
+export const MaintenanceTicketListParamsSchema = z.object({
+  machineId: MachineIdSchema.optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().optional(),
+  size: z.number().int().positive().max(100).optional(),
+}).strict();
+export type MaintenanceTicketListParams = z.infer<typeof MaintenanceTicketListParamsSchema>;
 
 export const RepairIntakeRequestSchema = z.object({
   machineId: MachineIdSchema,
@@ -149,6 +202,67 @@ export const MaintenanceRequestSchema = z.object({
 }).strip();
 
 export const MaintenanceRequestListSchema = z.array(MaintenanceRequestSchema);
+
+export const MaintenanceRequestDetailsSchema = MaintenanceRequestSchema.extend({
+  reportedAt: dateTimeSchema.nullish(),
+  evidenceReference: z.string().nullish(),
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  policyVersionId: z.string().uuid().nullish(),
+  scheduledDueAt: dateTimeSchema.nullish(),
+  windowStart: dateSchema.nullish(),
+  windowEnd: dateSchema.nullish(),
+  requestedAppointmentAt: dateTimeSchema.nullish(),
+  confirmedAppointmentAt: dateTimeSchema.nullish(),
+  requestedBy: z.string().uuid().nullish(),
+  confirmedBy: z.string().uuid().nullish(),
+  confirmedByRole: z.string().nullish(),
+  exceptionReason: z.string().nullish(),
+  overdueReviewedAt: dateTimeSchema.nullish(),
+  overdueReviewedBy: z.string().uuid().nullish(),
+  overdueReviewedByRole: z.string().nullish(),
+  overdueReviewReason: z.string().nullish(),
+  maintenanceTicketId: z.string().uuid().nullish(),
+  replacementAssignmentId: z.string().uuid().nullish(),
+  serviceStartedAt: dateTimeSchema.nullish(),
+  completedAt: dateTimeSchema.nullish(),
+  closedAt: dateTimeSchema.nullish(),
+  closureExceptionReason: z.string().nullish(),
+  closedBy: z.string().uuid().nullish(),
+  closedByRole: z.string().nullish(),
+  createdAt: dateTimeSchema.nullish(),
+  updatedAt: dateTimeSchema.nullish(),
+}).strip();
+
+export const MaintenanceCustodyEventSchema = z.object({
+  id: z.string().uuid(),
+  maintenanceRequestId: z.string().uuid(),
+  repairCaseId: z.string().uuid().nullish(),
+  eventType: z.enum([
+    "PRIMARY_COLLECTED",
+    "REPLACEMENT_DELIVERED",
+    "REPLACEMENT_COLLECTED",
+    "PRIMARY_RETURNED",
+  ]),
+  machineId: MachineIdSchema,
+  actorId: z.string().uuid(),
+  actorRole: z.string(),
+  occurredAt: dateTimeSchema,
+  conditionNotes: z.string().nullish(),
+  evidenceReference: z.string().nullish(),
+  ownerAcknowledgedAt: dateTimeSchema.nullish(),
+  ownerAcknowledgedBy: z.string().uuid().nullish(),
+  ownerAcknowledgement: z.string().nullish(),
+  acknowledgementUnavailableReason: z.string().nullish(),
+}).strip();
+
+export const MaintenanceCustodyEventListSchema = z.array(MaintenanceCustodyEventSchema);
+export const MaintenanceAppointmentRequestSchema = z.object({
+  appointmentAt: dateTimeSchema,
+}).strict();
+export const MaintenanceCustodyAcknowledgementRequestSchema = z.object({
+  acknowledgement: z.string().trim().min(1).max(1000),
+}).strict();
 
 export const RepairCaseTimelineEventSchema = z.object({
   id: z.string().uuid(),
@@ -196,15 +310,95 @@ export const RepairCaseSchema = z.object({
   updatedAt: dateTimeSchema,
   closedAt: dateTimeSchema.nullish(),
   timeline: z.array(RepairCaseTimelineEventSchema),
+  timelineCount: z.number().int().nonnegative().optional(),
+  timelineHasNext: z.boolean().optional(),
+  timelinePath: z.string().optional(),
 }).strip();
 
-export const RepairCaseListSchema = z.array(RepairCaseSchema);
+export const RepairCaseSummarySchema = z.object({
+  id: z.string().uuid(),
+  maintenanceRequestId: z.string().uuid(),
+  ownerId: z.string().uuid(),
+  contractId: z.string().uuid(),
+  primaryMachineId: MachineIdSchema,
+  status: RepairCaseSchema.shape.status,
+  createdAt: dateTimeSchema,
+  updatedAt: dateTimeSchema,
+  closedAt: dateTimeSchema.nullish(),
+}).passthrough();
+export const RepairCaseListSchema = z.array(RepairCaseSummarySchema);
+export const RepairCaseTimelinePageSchema = z.object({
+  content: z.array(RepairCaseTimelineEventSchema),
+  totalPages: z.number().int().nonnegative(),
+  totalElements: z.number().int().nonnegative(),
+  number: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  first: z.boolean().optional(),
+  last: z.boolean().optional(),
+  empty: z.boolean().optional(),
+}).passthrough();
+
+export const RepairDiagnosisRequestSchema = z.object({
+  diagnosis: z.string().trim().min(1).max(4000),
+  evidenceReference: z.string().trim().min(1).max(512),
+}).strict();
+export const RepairWorkStartRequestSchema = z.object({
+  workScope: z.string().trim().min(1).max(2000),
+  emergencyAuthorizationId: z.string().uuid().optional(),
+}).strict();
+export const RepairWorkCompletionRequestSchema = z.object({
+  diagnosis: z.string().trim().min(1).max(4000),
+  resolutionResult: z.string().trim().min(1).max(4000),
+  workScope: z.string().trim().min(1).max(2000),
+  evidenceReferences: z.array(z.string().trim().min(1).max(512)).min(1),
+  notes: z.string().max(4000).optional(),
+  emergencyAuthorizationId: z.string().uuid().optional(),
+}).strict();
+export const RepairFallbackDecisionRequestSchema = z.object({
+  replacementMachineId: MachineIdSchema,
+  accepted: z.boolean(),
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+export const RepairCustodyEventRequestSchema = z.object({
+  eventType: z.enum([
+    "PRIMARY_COLLECTED",
+    "REPLACEMENT_DELIVERED",
+    "REPLACEMENT_COLLECTED",
+    "PRIMARY_RETURNED",
+  ]),
+  machineId: MachineIdSchema,
+  conditionNotes: z.string().trim().min(1).max(2000),
+  evidenceReference: z.string().trim().min(1).max(512),
+}).strict();
+
+export const RepairTriageRequestSchema = z.object({
+  accepted: z.boolean(),
+  reason: z.string().max(1000),
+});
+export const RepairTriageResponseSchema = z.object({
+  requestId: z.string().uuid(),
+  accepted: z.boolean(),
+  requestStatus: z.string(),
+  repairCase: RepairCaseSchema.nullish(),
+}).passthrough();
 export const RepairIntakeResponseSchema = z.record(z.string(), z.unknown());
 
 export type RepairIntakeRequest = z.infer<typeof RepairIntakeRequestSchema>;
 export type MaintenanceRequest = z.infer<typeof MaintenanceRequestSchema>;
+export type MaintenanceRequestDetails = z.infer<typeof MaintenanceRequestDetailsSchema>;
+export type MaintenanceCustodyEvent = z.infer<typeof MaintenanceCustodyEventSchema>;
+export type MaintenanceAppointmentRequest = z.infer<typeof MaintenanceAppointmentRequestSchema>;
+export type MaintenanceCustodyAcknowledgementRequest = z.infer<typeof MaintenanceCustodyAcknowledgementRequestSchema>;
 export type RepairCase = z.infer<typeof RepairCaseSchema>;
+export type RepairCaseSummary = z.infer<typeof RepairCaseSummarySchema>;
+export type RepairTriageRequest = z.infer<typeof RepairTriageRequestSchema>;
+export type RepairTriageResponse = z.infer<typeof RepairTriageResponseSchema>;
 export type RepairIntakeResponse = z.infer<typeof RepairIntakeResponseSchema>;
+export type RepairDiagnosisRequest = z.infer<typeof RepairDiagnosisRequestSchema>;
+export type RepairWorkStartRequest = z.infer<typeof RepairWorkStartRequestSchema>;
+export type RepairWorkCompletionRequest = z.infer<typeof RepairWorkCompletionRequestSchema>;
+export type RepairFallbackDecisionRequest = z.infer<typeof RepairFallbackDecisionRequestSchema>;
+export type RepairCustodyEventRequest = z.infer<typeof RepairCustodyEventRequestSchema>;
 
 export type MachineInventoryItem = z.infer<typeof MachineInventoryItemSchema>;
 export type RentalCandidate = z.infer<typeof RentalCandidateSchema>;

@@ -92,7 +92,12 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
     ];
   }
 
-  if (sectionPath === "contracts") return [link("Trao đổi hợp đồng mới", "/dashboard/contracts/new")];
+  if (sectionPath === "contracts") {
+    return [
+      link("Xem hạn hợp đồng", "/dashboard/contracts/expiry"),
+      link("Trao đổi hợp đồng mới", "/dashboard/contracts/new", "secondary"),
+    ];
+  }
   if (sectionPath === "contracts/expiry") {
     return [link("Trao đổi hợp đồng mới", "/dashboard/contracts/new"), blocked("Không tiếp tục thuê", "secondary")];
   }

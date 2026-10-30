@@ -123,14 +123,6 @@ export function ModeratorShell({
   );
   const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;
   const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
-  const disabledAction = (label: string) => (
-    <>
-      <ButtonBar disabled aria-describedby="moderator-action-unavailable">{label}</ButtonBar>
-      <span className={styles.actionHint} id="moderator-action-unavailable" role="note">
-        {actionMessages.WRITE_UNAVAILABLE}
-      </span>
-    </>
-  );
   const renderActions = () => {
     switch (currentSection.HREF) {
       case PATH_MODERATOR.ROOT:
@@ -140,19 +132,19 @@ export function ModeratorShell({
       case PATH_MODERATOR.CUSTOMERS:
         return <ButtonBar href={PATH_MODERATOR.NEW_CUSTOMER}>{actionMessages.CREATE_CUSTOMER}</ButtonBar>;
       case PATH_MODERATOR.INVOICES:
-        return disabledAction(actionMessages.RECONCILE_INVOICE);
+        return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.RECONCILE_INVOICE}</ButtonBar>;
       case PATH_MODERATOR.MACHINES:
         return <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>;
       case PATH_MODERATOR.IOT:
         return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
       case PATH_MODERATOR.MENU:
-        return disabledAction(actionMessages.ADD_RECIPE);
+        return <ButtonBar href={PATH_MODERATOR.MENU_NEW}>{actionMessages.ADD_RECIPE}</ButtonBar>;
       case PATH_MODERATOR.TECHNICAL_REQUESTS:
-        return disabledAction(actionMessages.CREATE_TECHNICAL_REQUEST);
+        return <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUESTS}>{actionMessages.TECHNICAL_REQUESTS}</ButtonBar>;
       case PATH_MODERATOR.MACHINE_HISTORY:
         return <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUESTS}>{actionMessages.TECHNICAL_REQUESTS}</ButtonBar>;
       case PATH_MODERATOR.BUYBACK:
-        return disabledAction(actionMessages.CREATE_BUYBACK_REQUEST);
+        return <ButtonBar href={PATH_MODERATOR.BUYBACK_NEW}>{actionMessages.CREATE_BUYBACK_REQUEST}</ButtonBar>;
       case PATH_MODERATOR.NOTIFICATIONS:
         return <ButtonBar href={PATH_MODERATOR.NOTIFICATION_ALERTS}>{actionMessages.ALERTS}</ButtonBar>;
       default:

@@ -31,7 +31,7 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
     enabled: canCheckPrerequisites,
     retry: false,
     queryFn: async ({ signal }) => {
-      const workOrders = await installationWorkOrdersApi.listByTenant(contract.ownerId, signal);
+      const workOrders = await installationWorkOrdersApi.listByOwner(contract.ownerId, signal);
       const candidates = workOrders.filter((workOrder) =>
         workOrder.status === "COMPLETED" &&
         workOrder.contractId === contract.id &&

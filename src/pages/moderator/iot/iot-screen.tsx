@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useState, type FormEvent } from "react";
 
@@ -8,11 +8,12 @@ import { machinesApi } from "@/apis/machines.api";
 
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 
-import { tenantsApi } from "@/apis/tenants.api";
+import { profilesApi } from "@/apis/profiles.api";
 
 import { MachineIdSchema } from "@/schema/machines.schema";
 
-import { type Tenant } from "@/schema/tenants.schema";
+import { type Profile } from "@/schema/profiles.schema";
+import { type Location } from "@/schema/locations.schema";
 
 import { TelemetryPointsParamsSchema, type MachineHeartbeat, type TelemetryPoint } from "@/schema/telemetry.schema";
 
@@ -73,99 +74,163 @@ function DetailValue({ label, value, code = false }: { label: string; value: str
   );
 }
 
-type TenantReadBatch<T> = {
-  records: Array<{ tenant: Tenant; record: T }>;
-  failedTenants: Array<{ tenant: Tenant; error: unknown }>;
+type OwnerReadBatch<T> = {
+  records: Array<{ owner: Profile; record: T }>;
+  failedOwners: Array<{ owner: Profile; error: unknown }>;
 };
 
-async function readTenantRecords<T>(
-  tenants: Tenant[],
+async function listModeratorOwners(signal: AbortSignal): Promise<Profile[]> {
+  const firstPage = await profilesApi.list({ role: "OWNER", page: 0, size: 100 }, signal);
+  const pages = [firstPage];
+  for (let page = 1; page < firstPage.totalPages; page += 5) {
+    const pageNumbers = Array.from(
+      { length: Math.min(5, firstPage.totalPages - page) },
+      (_, offset) => page + offset,
+    );
+    pages.push(...await Promise.all(pageNumbers.map((pageNumber) =>
+      profilesApi.list({ role: "OWNER", page: pageNumber, size: 100 }, signal),
+    )));
+  }
+  return pages.flatMap((page) => page.items);
+}
+
+async function readOwnerRecords<T>(
+  owners: Profile[],
   signal: AbortSignal,
-  read: (tenantId: string, signal: AbortSignal) => Promise<T[]>,
-): Promise<TenantReadBatch<T>> {
-  const results: Array<{ tenant: Tenant; records: T[] } | { tenant: Tenant; error: unknown } | undefined> = new Array(tenants.length);
+  read: (ownerId: string, signal: AbortSignal) => Promise<T[]>,
+): Promise<OwnerReadBatch<T>> {
+  const results: Array<{ owner: Profile; records: T[] } | { owner: Profile; error: unknown } | undefined> = new Array(owners.length);
   let nextIndex = 0;
-  const workerCount = Math.min(5, tenants.length);
+  const workerCount = Math.min(5, owners.length);
   const worker = async () => {
     while (!signal.aborted) {
       const index = nextIndex++;
-      if (index >= tenants.length) return;
-      const tenant = tenants[index]!;
+      if (index >= owners.length) return;
+      const owner = owners[index]!;
       try {
-        results[index] = { tenant, records: await read(tenant.id, signal) };
+        results[index] = { owner, records: await read(owner.idaasUserId, signal) };
       } catch (error) {
         if (signal.aborted) throw error;
-        results[index] = { tenant, error };
+        results[index] = { owner, error };
       }
     }
   };
 
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
   if (signal.aborted) throw new DOMException("The request was cancelled", "AbortError");
-  const records: TenantReadBatch<T>["records"] = [];
-  const failedTenants: TenantReadBatch<T>["failedTenants"] = [];
+  const records: OwnerReadBatch<T>["records"] = [];
+  const failedOwners: OwnerReadBatch<T>["failedOwners"] = [];
   for (const result of results) {
     if (!result) continue;
-    if ("error" in result) failedTenants.push(result);
-    else for (const record of result.records) records.push({ tenant: result.tenant, record });
+    if ("error" in result) failedOwners.push(result);
+    else for (const record of result.records) records.push({ owner: result.owner, record });
   }
-  return { records, failedTenants };
+  return { records, failedOwners };
 }
 
-function TenantPartialFailure({
-  failedTenants,
+function OwnerPartialFailure({
+  failedOwners,
   retry,
   subject,
 }: {
-  failedTenants: Array<{ tenant: Tenant; error: unknown }>;
+  failedOwners: Array<{ owner: Profile; error: unknown }>;
   retry: () => unknown;
   subject: string;
 }) {
-  if (failedTenants.length === 0) return null;
+  if (failedOwners.length === 0) return null;
   return (
     <div className={styles.partialNotice} role="alert">
-      <p>{messages.PARTIAL_TENANT_FAILURE}</p>
-      <ul>{failedTenants.map(({ tenant, error }) => <li key={tenant.id}>{tenant.name}: {subject} — {getApiErrorMessage(error)}</li>)}</ul>
+      <p>{messages.PARTIAL_OWNER_FAILURE}</p>
+      <ul>{failedOwners.map(({ owner, error }) => <li key={owner.idaasUserId}>{owner.fullName || owner.email || owner.idaasUserId}: {subject} — {getApiErrorMessage(error)}</li>)}</ul>
       <button className={styles.retryButton} type="button" onClick={() => void retry()}>{messages.RETRY}</button>
     </div>
   );
 }
 
-function LocationTable({ records, failed }: { records: TenantReadBatch<Awaited<ReturnType<typeof locationsApi.listByTenant>>[number]>["records"]; failed: boolean }) {
+function LocationTable({ records, failed }: { records: OwnerReadBatch<Awaited<ReturnType<typeof locationsApi.listByOwner>>[number]>["records"]; failed: boolean }) {
   return (
     <DataTable
       variant="moderator"
-      headers={[messages.LOCATION_TENANT, messages.LOCATION_NAME, messages.LOCATION_ADDRESS, messages.LOCATION_CITY, messages.LOCATION_STATUS, messages.LOCATION_MACHINE_COUNT]}
-      emptyMessage={failed ? undefined : messages.LOCATION_EMPTY}
+      headers={[messages.LOCATION_OWNER, messages.LOCATION_NAME, messages.LOCATION_ADDRESS, messages.LOCATION_CITY, messages.LOCATION_STATUS, messages.LOCATION_MACHINE_COUNT, messages.LOCATION_ACTION]}
+      emptyMessage={failed ? undefined : messages.OWNER_LOCATION_EMPTY}
       minWidth={780}
     >
-      {records.map(({ tenant, record }) => (
-        <tr key={`${tenant.id}-${record.id}`}>
-          <td>{tenant.name}</td>
-          <td>{record.name}</td>
-          <td>{record.address ?? "—"}</td>
-          <td>{record.city ?? "—"}</td>
-          <td>{record.active == null ? messages.LOCATION_UNKNOWN_STATUS : record.active ? messages.LOCATION_ACTIVE : messages.LOCATION_INACTIVE}</td>
-          <td>{record.machineCount == null ? "—" : numberFormat.format(record.machineCount)}</td>
-        </tr>
-      ))}
+      {records.map(({ owner, record }) => <LocationRow key={`${owner.idaasUserId}-${record.id}`} owner={owner} location={record} />)}
     </DataTable>
   );
 }
 
+function LocationRow({ owner, location }: { owner: Profile; location: Location }) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(location.name);
+  const [address, setAddress] = useState(location.address ?? "");
+  const [city, setCity] = useState(location.city ?? "");
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const update = useMutation({
+    mutationFn: () => locationsApi.update(location.id, { name, address, city }),
+    onMutate: () => { setError(null); setSuccess(false); },
+    onSuccess: async () => {
+      setEditing(false);
+      setSuccess(true);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "locations-by-owner"] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "locations"] }),
+      ]);
+    },
+    onError: (requestError) => setError(getApiErrorMessage(requestError)),
+  });
+
+  return <>
+    <tr>
+      <td>{owner.fullName || owner.email || owner.idaasUserId}</td>
+      <td>{location.name}</td>
+      <td>{location.address ?? "—"}</td>
+      <td>{location.city ?? "—"}</td>
+      <td>{location.active == null ? messages.LOCATION_UNKNOWN_STATUS : location.active ? messages.LOCATION_ACTIVE : messages.LOCATION_INACTIVE}</td>
+      <td>{location.machineCount == null ? "—" : numberFormat.format(location.machineCount)}</td>
+      <td>
+        <button className={styles.retryButton} type="button" onClick={() => setEditing((current) => !current)}>
+          {editing ? messages.LOCATION_CANCEL : messages.LOCATION_EDIT}
+        </button>
+        {success && <p role="status">{messages.LOCATION_UPDATE_SUCCESS}</p>}
+      </td>
+    </tr>
+    {editing && (
+      <tr>
+        <td colSpan={7}>
+          <form onSubmit={(event) => { event.preventDefault(); update.mutate(); }} style={{ display: "grid", gap: 8, padding: 12 }}>
+            <label htmlFor={`moderator-location-name-${location.id}`}>{messages.LOCATION_NAME}</label>
+            <input id={`moderator-location-name-${location.id}`} value={name} required maxLength={160} disabled={update.isPending} onChange={(event) => setName(event.target.value)} />
+            <label htmlFor={`moderator-location-address-${location.id}`}>{messages.LOCATION_ADDRESS}</label>
+            <input id={`moderator-location-address-${location.id}`} value={address} disabled={update.isPending} onChange={(event) => setAddress(event.target.value)} />
+            <label htmlFor={`moderator-location-city-${location.id}`}>{messages.LOCATION_CITY}</label>
+            <input id={`moderator-location-city-${location.id}`} value={city} disabled={update.isPending} onChange={(event) => setCity(event.target.value)} />
+            <button className={styles.retryButton} type="submit" disabled={update.isPending || !name.trim()}>
+              {update.isPending ? messages.LOCATION_UPDATING : messages.LOCATION_SAVE}
+            </button>
+            {error && <p role="alert">{error}</p>}
+          </form>
+        </td>
+      </tr>
+    )}
+  </>;
+}
+
 export function ModeratorIoTScreen({ path }: { path: string }) {
   const isLocationsView = path === "iot/customer";
-  const tenants = useQuery({
-    queryKey: ["dolores", "tenants"],
-    queryFn: ({ signal }) => tenantsApi.list(signal),
+  const owners = useQuery({
+    queryKey: ["dolores", "moderator", "owner-profiles"],
+    queryFn: ({ signal }) => listModeratorOwners(signal),
     enabled: isLocationsView,
     retry: false,
   });
-  const tenantIds = tenants.data?.map((tenant) => tenant.id) ?? [];
+  const ownerIds = owners.data?.map((owner) => owner.idaasUserId) ?? [];
   const locationBatch = useQuery({
-    queryKey: ["dolores", "moderator", "locations-by-tenant", tenantIds],
-    queryFn: ({ signal }) => readTenantRecords(tenants.data ?? [], signal, (id, requestSignal) => locationsApi.listByTenant(id, requestSignal)),
-    enabled: isLocationsView && !tenants.isPending && !tenants.isError,
+    queryKey: ["dolores", "moderator", "locations-by-owner", ownerIds],
+    queryFn: ({ signal }) => readOwnerRecords(owners.data ?? [], signal, (id, requestSignal) => locationsApi.listByOwner(id, requestSignal)),
+    enabled: isLocationsView && !owners.isPending && !owners.isError,
     retry: false,
   });
   const inventory = useQuery({
@@ -230,13 +295,13 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   if (isLocationsView) {
     return (
       <div className={styles.pageContent}>
-        <PageHeading title={messages.LOCATIONS_TITLE} description={messages.LOCATIONS_DESCRIPTION} />
-        <QueryFeedback query={tenants} loadingMessage={messages.LOADING_TENANTS} />
-        {tenants.data && !tenants.isError && <>
-          <QueryFeedback query={locationBatch} loadingMessage={messages.LOCATION_LOADING} />
+        <PageHeading title={messages.LOCATIONS_TITLE} description={messages.OWNER_LOCATIONS_DESCRIPTION} />
+        <QueryFeedback query={owners} loadingMessage={messages.LOADING_OWNERS} />
+        {owners.data && !owners.isError && <>
+          <QueryFeedback query={locationBatch} loadingMessage={messages.OWNER_LOCATION_LOADING} />
           {locationBatch.data && <>
-            <TenantPartialFailure failedTenants={locationBatch.data.failedTenants} retry={locationBatch.refetch} subject={messages.TENANT_LOCATION_FAILURE} />
-            {!locationBatch.isError && <LocationTable records={locationBatch.data.records} failed={locationBatch.data.failedTenants.length > 0} />}
+            <OwnerPartialFailure failedOwners={locationBatch.data.failedOwners} retry={locationBatch.refetch} subject={messages.OWNER_LOCATION_FAILURE} />
+            {!locationBatch.isError && <LocationTable records={locationBatch.data.records} failed={locationBatch.data.failedOwners.length > 0} />}
           </>}
         </>}
       </div>

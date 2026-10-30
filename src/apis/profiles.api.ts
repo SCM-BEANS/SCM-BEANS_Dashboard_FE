@@ -2,6 +2,8 @@ import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   ProfileContractPageSchema, ProfileHistoryPageSchema, ProfileIdSchema,
   ProfileListParamsSchema, ProfilePageSchema, ProfileSchema,
+  UpdateProfileContactRequestSchema,
+  type UpdateProfileContactRequest,
 } from "@/schema/profiles.schema";
 
 const profilePath = (id: string) => `/profiles/${encodeURIComponent(ProfileIdSchema.parse(id))}`;
@@ -16,6 +18,18 @@ export const profilesApi = {
   async getById(id: string, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>(profilePath(id), { baseURL: DOLORES_API_BASE_URL, signal });
     return ProfileSchema.parse(response.data);
+  },
+  async updateContactInfo(id: string, input: UpdateProfileContactRequest) {
+    const validId = ProfileIdSchema.parse(id);
+    const request = UpdateProfileContactRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(`${profilePath(validId)}/contact-info`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const profile = ProfileSchema.parse(response.data);
+    if (profile.idaasUserId !== validId) {
+      throw new Error("Dolores returned a profile that does not match the requested ID.");
+    }
+    return profile;
   },
   async getHistory(id: string, page = 0, size = 20, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>(`${profilePath(id)}/history`, {

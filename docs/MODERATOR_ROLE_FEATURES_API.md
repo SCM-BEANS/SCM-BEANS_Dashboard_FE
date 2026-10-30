@@ -17,26 +17,26 @@ Menu có 11 mục. Tình trạng tính năng hiện tại:
 | Route | Tính năng đang có trong code | Mức triển khai |
 | --- | --- | --- |
 | `/moderator` | Tổng quan Owner, lượng ly, yêu cầu bảo trì và lắp đặt đang mở, usage theo ngày | Có API đọc |
-| `/moderator/customers` | Tìm kiếm, lọc trạng thái, phân trang Owner; xem chi tiết hồ sơ | Có API đọc |
+| `/moderator/customers` | Tìm kiếm, lọc trạng thái, phân trang Owner; xem chi tiết, lịch sử và hợp đồng của Owner | Có API đọc/ghi thông tin liên hệ |
 | `/moderator/customers/new` | Tạo tài khoản Owner, xác nhận trước khi gửi, hiển thị mật khẩu tạm sau khi tạo | Có API ghi IDaaS |
-| `/moderator/contracts` | Danh sách và chi tiết hợp đồng, xem metadata tài liệu | Có API đọc |
+| `/moderator/contracts` | Danh sách và chi tiết hợp đồng, xem/tải tài liệu; tải bản scan hợp đồng chính cho hợp đồng nháp | Có API đọc/ghi tài liệu |
 | `/moderator/contracts/new` | Tạo hợp đồng; chọn Owner và máy đủ điều kiện cho thuê | Có API ghi |
 | `/moderator/contracts/{id}/installation-request` | Tạo work order lắp đặt từ hợp đồng nháp đủ điều kiện | Có API ghi, có điều kiện chặn |
-| `/moderator/invoices` | Danh sách, chi tiết hóa đơn, trạng thái chứng từ thanh toán và tải file chứng từ | Có API đọc/tải file |
-| `/moderator/machines` | Danh sách máy và thống kê kho; lọc một số nhóm ở frontend | Có API đọc |
-| `/moderator/machines/{id}` | Chi tiết máy, địa điểm, lịch bảo trì và ticket | Có API đọc |
-| `/moderator/iot` | Chọn máy Smart IoT, heartbeat và biểu đồ telemetry | Có API đọc; response telemetry chưa khớp spec |
-| `/moderator/iot/customer` | Tổng hợp địa điểm theo tenant | Code gọi API chưa có hợp đồng phù hợp trong Swagger |
-| `/moderator/menu` | Danh sách và chi tiết công thức toàn cục | Có API đọc; schema danh sách chưa khớp spec |
-| `/moderator/technical-requests` | Danh sách repair case; xem chi tiết installation work order | Có API đọc; schema danh sách repair case chưa khớp spec |
+| `/moderator/invoices` | Danh sách, chi tiết/dòng hóa đơn, xem/tải chứng từ, review chứng từ và cập nhật trạng thái hợp lệ | Có API đọc/ghi |
+| `/moderator/machines` | Danh sách máy, thống kê kho; lọc một số nhóm ở frontend; cập nhật máy, đổi loại và gán Technician | Có API đọc/ghi |
+| `/moderator/machines/{id}` | Chi tiết máy, địa điểm, lịch bảo trì và ticket | Có API đọc và cập nhật máy |
+| `/moderator/iot` | Chọn máy Smart IoT, heartbeat, biểu đồ telemetry; xem/sửa địa điểm theo Owner | Có API đọc/ghi; telemetry response cần xác nhận runtime |
+| `/moderator/iot/customer` | Tổng hợp địa điểm theo Owner; chỉnh sửa địa điểm | Có API đọc/ghi theo Owner |
+| `/moderator/menu` | Danh sách, xem chi tiết, tạo và cập nhật công thức toàn cục | Có API đọc/ghi; danh sách dùng DTO summary riêng |
+| `/moderator/technical-requests` | Triage repair request, xem timeline repair case; xem, phân công, đổi lịch hoặc hủy lệnh lắp đặt | Có API đọc/ghi theo trạng thái |
 | `/moderator/machine-history` | Danh sách maintenance ticket; lọc ticket theo máy | Có API đọc |
-| `/moderator/buyback` | Mở chi tiết buyback theo UUID | Chi tiết có API; danh sách chưa nối và response schema không khớp |
+| `/moderator/buyback` | Danh sách/chi tiết, tạo hồ sơ, inspection, định giá, tạo nghĩa vụ thanh toán, thu hồi, tân trang, QA; xem lịch sử | Có API đọc/ghi theo trạng thái; lookup proof còn thiếu endpoint danh sách |
 | `/moderator/notifications` | Danh sách, số chưa đọc, đánh dấu từng thông báo đã đọc | Có API đọc/ghi |
-| `/moderator/notifications/alerts` | Danh sách cảnh báo | Có API đọc |
+| `/moderator/notifications/alerts` | Danh sách và acknowledge cảnh báo | Có API đọc/ghi |
 
-Ngoài các luồng trên, nhiều đường dẫn có trong `PATH_MODERATOR` nhưng vẫn render thông báo trang chờ hoặc trạng thái chưa khả dụng. Các thao tác đang bị khóa gồm đối soát hóa đơn, thêm công thức, tạo technical request và tạo buyback. Máy cho vay/thay thế, các bước hết hạn/chấm dứt hợp đồng và các luồng invoice phụ cũng chưa thành tính năng API trong giao diện hiện tại.
+Ngoài các luồng trên, một số đường dẫn legacy trong `PATH_MODERATOR` vẫn render thông báo trang chờ hoặc chưa khả dụng, gồm các trang invoice phụ, cho vay/thay thế máy và quy trình hết hạn/chấm dứt hợp đồng. Chúng không nằm trong menu chính hiện tại.
 
-Các thao tác ghi thực sự đang gọi là: tạo Owner, tạo hợp đồng, tạo installation work order, và đánh dấu một thông báo đã đọc. Các màn còn lại chủ yếu đọc dữ liệu.
+Các thao tác ghi đang gọi gồm: tạo/cập nhật thông tin Owner; tạo, phân công, đổi lịch hoặc hủy work order; tải tài liệu hợp đồng; cập nhật trạng thái invoice và duyệt chứng từ; tạo/cập nhật recipe; triage repair request; sửa địa điểm; điều phối hồ sơ buyback; acknowledge alert; và đánh dấu thông báo đã đọc.
 
 ## 3. Cấu hình kết nối API
 
@@ -89,6 +89,9 @@ Trong bảng dưới, đường dẫn Dolores tính từ `/api/v1`; IDaaS tính 
 | --- | --- | --- |
 | GET | Dolores `/profiles?role=OWNER&page={0-based}&size=20` | Tải danh sách Owner. Có thể thêm `status` và `q`; đổi tìm kiếm/trạng thái đưa trang về 0. Swagger trả page có `items/page/size/totalElements/totalPages`. |
 | GET | Dolores `/profiles/{idaasUserId}` | Chi tiết Owner; chỉ gọi với UUID hợp lệ. |
+| GET | Dolores `/profiles/{ownerId}/history?page={page}&size=20` | Lịch sử thay đổi hồ sơ Owner theo trang. |
+| GET | Dolores `/profiles/{ownerId}/contracts?page={page}&size=20` | Hợp đồng thuộc Owner; phân trang. |
+| PUT | Dolores `/profiles/{ownerId}/contact-info` | Cập nhật thông tin liên hệ theo body và UUID hợp lệ. |
 | POST | IDaaS `/admin/users` | Tạo tài khoản khách hàng với `role=owner`; body gồm `name`, `email`, `role`. Frontend yêu cầu tên 2–50 ký tự, email hợp lệ tối đa 255 ký tự và xác nhận trước khi gửi. Thành công trả mật khẩu tạm để hiện dialog. |
 
 Tài khoản tạo ở màn này là Owner, không phải thao tác tạo tenant Dolores riêng. Luồng hiện không gửi `tenant_id`. Swagger IDaaS cũng chỉ khai báo `email`, `name`, `role` cho request này.
@@ -97,30 +100,36 @@ Tài khoản tạo ở màn này là Owner, không phải thao tác tạo tenant
 
 | Method | Dịch vụ / endpoint | Cách dùng và điều kiện |
 | --- | --- | --- |
-| GET | Dolores `/contracts` | Tải danh sách hợp đồng; hiện không gửi query filter hoặc page/size. |
+| GET | Dolores `/contracts` | Tải danh sách summary trong phạm vi Moderator (hợp đồng do tài khoản Moderator đó tạo); hiện không gửi query filter hoặc page/size. |
 | GET | Dolores `/profiles?role=owner&page={0-based}&size=100` | Form lấy Owner theo trang; tải tiếp đến hết `totalPages`, tối đa 5 trang đồng thời mỗi lô. |
 | GET | Dolores `/inventory/rental-candidates` | Moderator truyền `ownerRole="owner"` cho form nên máy chọn từ endpoint rental candidates, không lọc máy kho bằng `/machines`. Frontend đọc `content` từ page response. Swagger hỗ trợ filter `machineType`, `modelId`, `region`, `locationId`, `page`, `size`; form hiện không truyền filter. |
 | POST | Dolores `/contracts` | Tạo hợp đồng; body bắt buộc `ownerId`, `machineId`, `startDate`, `endDate`, `terms`, `monthlyRentalFee`; các phí cọc/lắp đặt/PAYG và snapshot điều khoản được gửi nếu có. `endDate` phải sau `startDate`; phí không âm; ID là UUID; `offlineLimitMinutes` nếu có phải là số nguyên dương. |
 | GET | Dolores `/contracts/{id}` | Tải chi tiết hợp đồng theo UUID. |
-| GET | Dolores `/contracts/{contractId}/documents` | Tải metadata tài liệu sau khi hợp đồng hợp lệ đã tải. Màn chi tiết liệt kê tài liệu, không tải nội dung file. |
+| GET | Dolores `/contracts/{contractId}/documents` | Tải metadata tài liệu sau khi hợp đồng hợp lệ đã tải. |
+| GET | Dolores `/contracts/{contractId}/documents/{documentId}` | Tải nội dung tài liệu dạng file khi người dùng yêu cầu. |
+| POST | Dolores `/contracts/{id}/documents?documentType=MAIN_CONTRACT` | Tải bản scan cho hợp đồng `DRAFT`; chấp nhận PDF/JPEG/PNG tối đa 20 MB. Upload thành công làm mới điều kiện kích hoạt hợp đồng. |
 | POST | Dolores `/installation-work-orders` | Tạo yêu cầu lắp đặt từ hợp đồng. Body bắt buộc `ownerId`, `contractId`, `machineId`; `scheduledFor` và `installationNotes` tùy chọn, ghi chú tối đa 4.000 ký tự. |
 
 Trước khi mở form tạo hợp đồng, frontend cần danh sách Owner và rental candidates. Trước khi cho tạo work order, hợp đồng phải là `DRAFT`, không bị đánh dấu `legacyUnmapped`, có `ownerId`/`machineId` và có tài liệu `MAIN_CONTRACT` chưa lưu trữ. Thời gian lắp đặt không bắt buộc; nếu có thì được gửi dạng ISO datetime.
 
-Snapshot điều khoản của form yêu cầu chu kỳ bảo trì 1–24 tháng, cửa sổ bảo trì 0–30 ngày, số ngày thanh toán 1–60, ít nhất một loại máy thay thế và số tháng tối thiểu mua lại 0–120. Trách nhiệm sửa chữa là `TENANT|COMPANY|UNKNOWN`. Swagger còn giới hạn `offlineViolationAction` thành `WARN_ONLY|MANUAL_REVIEW` và `buybackValuationMethod` thành `MANUAL_APPRAISAL`; form hiện dùng text input cho hai giá trị này.
+Snapshot điều khoản của form yêu cầu chu kỳ bảo trì 1–24 tháng, cửa sổ bảo trì 0–30 ngày, số ngày thanh toán 1–60, ít nhất một loại máy thay thế và số tháng tối thiểu mua lại 0–120. Trách nhiệm sửa chữa là `TENANT|COMPANY|UNKNOWN`. `offlineViolationAction` dùng `WARN_ONLY|MANUAL_REVIEW`, `buybackValuationMethod` dùng `MANUAL_APPRAISAL`; cả hai được chọn từ control giới hạn theo enum Swagger.
 
 ### 4.4 Máy, bảo trì và lịch sử
 
 | Method | Dịch vụ / endpoint | Cách dùng và điều kiện |
 | --- | --- | --- |
-| GET | Dolores `/machines` | Tải danh sách máy một lần; màn Moderator lọc một số nhóm ở client. “Máy trong kho” giữ status `IN_WAREHOUSE`, `PENDING_ACTIVATION`, `AVAILABLE_FOR_RENT`; “máy theo tenant” lọc theo `tenantId`. |
+| GET | Dolores `/machines` | Tải danh sách máy một lần; màn Moderator lọc một số nhóm ở client. “Máy trong kho” giữ status `IN_WAREHOUSE`, `PENDING_ACTIVATION`, `AVAILABLE_FOR_RENT`; máy thuộc Owner được xét theo `ownerId`. |
 | GET | Dolores `/inventory/summary` | Số liệu tổng quan kho hiển thị cạnh danh sách. |
 | GET | Dolores `/machines/{id}` | Chi tiết máy; ID phải là UUID. |
 | GET | Dolores `/machines/{id}/maintenance-schedule` | Đọc lịch bảo trì sau khi ID máy hợp lệ. |
 | GET | Dolores `/maintenance-tickets` | Dùng ở lịch sử và chi tiết máy; UI lọc theo `machineId` ở client. |
-| GET | Dolores `/locations/{id}` | Chỉ gọi ở chi tiết máy nếu máy có `locationId` hợp lệ; UI so sánh Owner/tenant giữa máy và location trước khi hiển thị tên địa điểm. |
+| GET | Dolores `/locations?ownerId={ownerId}&activeOnly={true|false}` | Tải địa điểm của Owner; màn máy lấy địa điểm đang hoạt động, màn tổng hợp Owner gồm cả trạng thái không hoạt động. |
+| GET | Dolores `/locations/{id}` | Chỉ gọi ở chi tiết máy nếu máy có `locationId` hợp lệ; UI so sánh Owner giữa máy và địa điểm trước khi hiển thị tên. |
+| PUT | Dolores `/locations/{id}` | Cập nhật tên/địa chỉ/thành phố ở màn địa điểm của Owner. |
+| PUT | Dolores `/machines/{id}` và `/machines/{id}/type` | Cập nhật thông tin máy và loại máy từ form Moderator. |
+| POST/DELETE | Dolores `/technician-assignments/{technicianId}/machines/{machineId}` | Gán hoặc thu hồi Technician; form lấy profile Technician đang hoạt động và xác thực UUID. |
 
-Các trang này hiện không gọi API sửa/xóa máy, gán máy hoặc cập nhật lịch bảo trì.
+Các trang này không tự đổi lịch maintenance ticket; API quản lý ticket vẫn tách khỏi thao tác cập nhật thông tin máy.
 
 ### 4.5 IoT
 
@@ -131,17 +140,24 @@ Các trang này hiện không gọi API sửa/xóa máy, gán máy hoặc cập 
 | GET | Dolores `/telemetry-query/machines/{machineId}/heartbeats/latest` | Chỉ gọi sau khi xác minh máy là Smart IoT. |
 | GET | Dolores `/telemetry-query/machines/{machineId}/points?from={ISO}&to={ISO}&limit=100&offset={n}` | Chỉ gọi sau khi người dùng gửi form ngày hợp lệ; `from < to`. Tải từng trang 100 điểm, offset tối đa 100.000. Ngày UI chuyển thành khoảng `00:00:00`–`23:59:59` theo `+07:00`. |
 
-Trang “địa điểm theo tenant” hiện gọi `GET /tenants`, rồi gọi `GET /locations?tenantId={id}&activeOnly=false` theo lô. Hai request này có vấn đề đối chiếu Swagger, xem mục 5.
+Trang “địa điểm theo Owner” lấy Owner qua `/profiles?role=OWNER`, rồi gọi `/locations?ownerId={ownerId}` theo lô. Theo cách dùng hiện tại của Dolores, Owner là định danh phạm vi cho các dữ liệu trước đây được gọi là tenant; Moderator không cần endpoint `/tenants` cho luồng này.
 
 ### 4.6 Technical request và machine history
 
 | Method | Dịch vụ / endpoint | Cách dùng và điều kiện |
 | --- | --- | --- |
-| GET | Dolores `/repair-cases` | Danh sách repair case ở `/moderator/technical-requests`; hiện không truyền filter/page. UI đọc event cuối trong `timeline` để hiện công việc mới nhất. |
+| GET | Dolores `/dashboard/action-items?actionType=REPAIR_TRIAGE` | Lấy các repair request đang chờ triage; `resourceId` của item là maintenance request ID. |
+| POST | Dolores `/repair-cases/intakes/{requestId}/triage` | Chấp nhận/từ chối request với `accepted` và `reason`; chỉ gọi từ action item phù hợp. |
+| GET | Dolores `/repair-cases` | Danh sách repair case dạng summary; UI không giả định response có timeline. |
+| GET | Dolores `/repair-cases/{caseId}` | Chi tiết repair case theo UUID hợp lệ. |
+| GET | Dolores `/repair-cases/{caseId}/timeline?page={0-based}&size=20` | Lịch sử xử lý theo trang trong màn chi tiết. |
 | GET | Dolores `/maintenance-tickets` | Danh sách ticket ở machine history; nếu mở theo máy thì lọc `machineId` ở client. |
 | GET | Dolores `/installation-work-orders/{workOrderId}` | Chi tiết work order theo UUID; hiển thị trạng thái, checklist, phụ kiện và evidence. |
+| POST | Dolores `/installation-work-orders/{id}/assign` | Gán Technician đang hoạt động. |
+| POST | Dolores `/installation-work-orders/{id}/reschedule` | Đổi lịch, yêu cầu thời điểm tương lai. |
+| POST | Dolores `/installation-work-orders/{id}/cancel` | Hủy work order đang chờ/phân công, bắt buộc nêu lý do. |
 
-Tạo technical request hiện bị khóa; Moderator không gọi API tạo repair case từ màn này.
+Moderator triage repair intake do Owner tạo; `POST /repair-cases/intakes` vẫn thuộc luồng Owner. Các thao tác work order sửa chữa/thay thế khác không được giả lập bằng work order lắp đặt.
 
 ### 4.7 Hóa đơn và chứng từ thanh toán
 
@@ -151,9 +167,12 @@ Tạo technical request hiện bị khóa; Moderator không gọi API tạo repa
 | GET | Dolores `/profiles/{idaasUserId}` | Khi dựng danh sách, lấy tên cho mỗi Owner duy nhất có trong invoice. |
 | GET | Dolores `/billing/invoices/{invoiceId}` | Chi tiết invoice khi route chứa UUID hợp lệ. |
 | GET | Dolores `/billing/invoices/{invoiceId}/payment-proofs` | Tải chứng từ sau khi invoice detail có dữ liệu; ở danh sách, hiện gọi song song cho từng invoice để tính trạng thái chứng từ. |
+| GET | Dolores `/billing/invoices/{invoiceId}/line-items` | Tải dòng chi tiết của hóa đơn. |
 | GET | Dolores `/billing/payment-proofs/{proofId}/content` | Tải file chứng từ dạng blob khi người dùng yêu cầu mở/tải file. |
+| POST | Dolores `/billing/invoices/{invoiceId}/status` | Chuyển trạng thái theo transition hợp lệ; UI không dùng để xác nhận hóa đơn đã thanh toán. |
+| POST | Dolores `/billing/payment-proofs/{proofId}/review` | Duyệt/từ chối chứng từ với lý do. |
 
-Danh sách hóa đơn hiện ghép dữ liệu Owner và chứng từ bằng nhiều request đồng thời; dữ liệu lớn có thể tạo nhiều request. Không có thao tác duyệt/từ chối chứng từ hoặc đối soát hóa đơn trên màn Moderator hiện tại.
+Danh sách hóa đơn ghép dữ liệu Owner và chứng từ bằng nhiều request đồng thời; dữ liệu lớn có thể tạo nhiều request. Schema Moderator chấp nhận cả `SUPPLY`, `RENTAL` và `REPAIR`. Màn không cung cấp đối soát thủ công hay chuyển thẳng invoice sang `PAID`.
 
 ### 4.8 Menu
 
@@ -161,16 +180,31 @@ Danh sách hóa đơn hiện ghép dữ liệu Owner và chứng từ bằng nhi
 | --- | --- | --- |
 | GET | Dolores `/recipes/global` | Danh sách công thức toàn cục. |
 | GET | Dolores `/recipes/global/{id}` | Chi tiết công thức đã chọn; ID phải là UUID. |
+| POST | Dolores `/recipes/global` | Tạo công thức: tên, ít nhất một bước pha và một mục giới hạn định lượng. |
+| PUT | Dolores `/recipes/global/{id}` | Cập nhật công thức bằng schema publish. |
 
-Màn menu hiện chỉ đọc. Nút thêm/cập nhật công thức đang bị khóa.
+Danh sách dùng DTO summary (`id`, `name`, `revision`, `menuId`); chi tiết lấy riêng theo UUID. Xóa chưa được đưa vào giao diện do backend còn kiểm tra điều kiện tham chiếu.
 
 ### 4.9 Buyback
 
 | Method | Dịch vụ / endpoint | Cách dùng và điều kiện |
 | --- | --- | --- |
-| GET | Dolores `/buybacks/{caseId}` | Chỉ gọi cho màn chi tiết với UUID hợp lệ. |
+| GET | Dolores `/buybacks` | Liệt kê hồ sơ Moderator được phép xem; dùng `page`/`size` và đọc `X-Page`, `X-Page-Size`, `X-Has-Next`. |
+| GET | Dolores `/buybacks/{caseId}` | Chi tiết theo UUID hợp lệ. |
+| GET | Dolores `/buybacks/{caseId}/inspections`, `/refurbishments`, `/qa-decisions` | Đọc lịch sử từng bước, mỗi request giới hạn 50 bản ghi. |
+| POST | Dolores `/buybacks` | Tạo hồ sơ cho hợp đồng `ACTIVE`, đúng Owner/máy, bật điều khoản buyback và đạt số tháng tối thiểu. Frontend lọc bước đầu; server xác minh điều kiện đầy đủ. |
+| POST | Dolores `/buybacks/{caseId}/inspection/start` và `/inspection` | Bắt đầu kiểm tra trong `REQUESTED`; gửi tình trạng, định giá, ghi chú/chứng cứ trong `INSPECTION_PENDING`. |
+| POST | Dolores `/buybacks/{caseId}/valuation` | Moderator duyệt/từ chối trong `VALUATION_PENDING`; khi duyệt cần giá dương và lý do. |
+| POST | Dolores `/buybacks/{caseId}/payments` | Tạo nghĩa vụ thanh toán ngoài hệ thống khi `APPROVED`; body có `paymentMethod`, `externalReference`, `idempotencyKey`, `correlationId`. Phản hồi chứa mã thanh toán; thao tác không xác nhận Owner đã trả tiền. |
+| POST | Dolores `/buybacks/{caseId}/collection/request` và `/collection/confirm` | Yêu cầu thu hồi sau khi thanh toán đã ghi nhận; xác nhận thu hồi kèm mã chứng cứ. |
+| POST | Dolores `/buybacks/{caseId}/refurbishment/start` và `/refurbishment/complete` | Ghi kế hoạch, chi phí và kết quả tân trang theo trạng thái hồ sơ. |
+| POST | Dolores `/buybacks/{caseId}/qa` | QA độc lập; chỉ hồ sơ QA đạt mới chuyển máy sang `AVAILABLE_FOR_RENT`. |
+| POST | Dolores `/buybacks/{caseId}/cancel` | Hủy khi transition cho phép; bắt buộc có lý do. |
+| POST | Dolores `/buybacks/{caseId}/payments` | Tạo nghĩa vụ thanh toán ngoài hệ thống khi định giá được duyệt; Moderator được cấp quyền operator và phản hồi trả về `paymentId`. |
+| POST | Dolores `/buybacks/{caseId}/payment-proofs` | Tải chứng từ multipart với `paymentId`, `idempotencyKey`, `correlationId`; chưa nối trong Moderator UI. |
+| POST | Dolores `/buybacks/payment-proofs/{proofId}/review`; GET `/buybacks/payment-proofs/{proofId}/content` | Operator duyệt/từ chối hoặc đọc chứng từ theo UUID; chưa có danh sách payment/proof để UI tìm các ID cần xử lý. |
 
-API `GET /buybacks` có trong Swagger nhưng danh sách buyback hiện báo chưa khả dụng và chưa có wrapper list. Các thao tác định giá, thanh toán, thu hồi, refurbishment và QA chưa được nối từ Moderator.
+Ở bước `APPROVED`, Moderator có thể tạo nghĩa vụ thanh toán; khi `PAYMENT_PENDING`, giao diện báo chờ Owner trả tiền và backend xác nhận. Controller cho phép Moderator gọi API proof theo quyền operator, nhưng Swagger không có API liệt kê payment/proof theo hồ sơ; UI chưa thể tra cứu `paymentId`/`proofId` để tải chứng từ hoặc review sau khi tải lại màn.
 
 ### 4.10 Notifications và alerts
 
@@ -179,24 +213,18 @@ API `GET /buybacks` có trong Swagger nhưng danh sách buyback hiện báo chư
 | GET | Dolores `/notifications` | Danh sách thông báo. |
 | GET | Dolores `/notifications/unread-count` | Số thông báo chưa đọc. |
 | POST | Dolores `/notifications/{id}/read` | Đánh dấu một thông báo; ID phải là UUID, chỉ hiển thị nút cho mục chưa đọc. Response phải xác nhận đúng ID và `read=true`; thành công thì invalidate danh sách. |
-| GET | Dolores `/alerts` | Danh sách cảnh báo, chỉ đọc. |
+| GET | Dolores `/alerts` | Danh sách cảnh báo. |
+| POST | Dolores `/alerts/{id}/ack` | Acknowledge cảnh báo chưa được xác nhận theo UUID. |
 
-`POST /notifications/read-all` có wrapper nhưng màn Moderator không gọi. `POST /alerts/{id}/ack` có trong Swagger nhưng chưa có thao tác acknowledge trên màn.
+`POST /notifications/read-all` có wrapper nhưng màn Moderator chưa gọi.
 
-## 5. Lệch Swagger/OpenAPI cần xử lý trước khi chuyển sang Flutter
+## 5. Điểm còn cần xác nhận với Swagger/runtime
 
-1. **Tenant API chưa được công bố và query location không khớp.** Cả Swagger local/server đều không có `GET /tenants` hoặc `GET /tenants/{id}`. Swagger `GET /locations` yêu cầu `ownerId`; không khai báo `tenantId`. Màn IoT Moderator lại gọi `/tenants` và gửi `tenantId` để đọc locations, nên không thể triển khai DTO/luồng Flutter theo contract hiện công bố nếu backend chưa bổ sung spec hoặc chỉ rõ API thay thế.
-2. **Buyback detail không khớp DTO frontend.** Swagger `BuybackCaseDetailsResponse` trả `ownerId`, `collectionEvidenceRecorded` và các dữ liệu inspection/refurbishment; Zod `BuybackCaseSchema` bắt buộc `tenantId`, `requestedBy`, `collectionEvidence` và `version`. Nếu backend trả đúng schema Swagger, `buybacksApi.getById` sẽ lỗi parse.
-3. **Repair case list là summary nhưng frontend đòi timeline đầy đủ.** Swagger `GET /repair-cases` trả `RepairCaseSummaryResponse` không có `timeline`; frontend `RepairCaseSchema` bắt buộc `timeline` rồi đọc event cuối. Spec còn có API detail/timeline riêng nhưng Moderator hiện không gọi chúng.
-4. **Work order detail dùng Owner ID trong Swagger, tenant ID trong frontend.** Swagger `InstallationWorkOrderSummaryResponse` có `ownerId` và không khai báo `tenantId`; `InstallationWorkOrderSummarySchema` frontend yêu cầu `tenantId`. Vì summary là một phần của `GET /installation-work-orders/{workOrderId}`, response theo Swagger có thể bị Zod từ chối.
-5. **Invoice type `REPAIR` chưa được frontend Moderator cho phép.** Swagger enum invoice có `SUPPLY`, `RENTAL`, `REPAIR`; `ModeratorInvoiceSchema` chỉ nhận `SUPPLY` hoặc `RENTAL`. Hóa đơn repair sẽ lỗi parse nếu xuất hiện trong response.
-6. **Recipe list chỉ trả summary.** Swagger `GET /recipes/global` trả `id/name/revision/menuId`, còn frontend `GlobalRecipeSchema` yêu cầu cả `steps` và `dosageBounds`. Route chi tiết trả schema đầy đủ; nên tách DTO list/detail hoặc xác nhận backend list trả thêm field.
-7. **Telemetry points response chưa có shape dùng được.** Swagger khai báo response là generic `object`, còn frontend yêu cầu array và kiểm tra `machineId` trên từng điểm. Backend cần chốt array trực tiếp hay object bọc dữ liệu.
-8. **Auth MFA login và logout không có trong IDaaS spec.** Frontend gọi `POST /auth/login/mfa` và `POST /auth/logout`, nhưng hai route vắng mặt. `POST /auth/mfa/confirm` trong Swagger nhận `secret`/`token` và yêu cầu BearerAuth, nên không phải contract thay cho login OTP bằng `temp_token`/`code`.
-9. **Wrapper tenant-scoped chưa dùng không khớp spec.** `contractsApi.listByTenant` gọi `/contracts/tenant/{tenantId}` nhưng route này không có trong Swagger và hiện không có call site Moderator. `installationWorkOrdersApi.listByTenant` gọi `GET /installation-work-orders?tenantId=...`; Swagger endpoint list yêu cầu `ownerId`, không khai báo `tenantId`. Các wrapper này chưa tạo nên tính năng đang chạy trên màn Moderator.
-10. **Form hợp đồng có thể gửi enum snapshot không được Swagger chấp nhận.** Zod frontend cho phép chuỗi tự do không rỗng ở `offlineViolationAction` và `buybackValuationMethod`, trong khi Swagger chỉ chấp nhận `WARN_ONLY|MANUAL_REVIEW` và `MANUAL_APPRAISAL`. Giá trị khởi tạo hiện khớp spec, nhưng Moderator có thể sửa text thành giá trị khác rồi vẫn qua frontend validation.
+1. **Telemetry points:** Swagger mô tả response generic `object`, trong khi màn IoT đang parse danh sách điểm có `machineId`. Cần chốt payload thực tế là array trực tiếp hay object bọc dữ liệu trước khi Flutter dùng chung DTO. Chưa gọi endpoint có token trong lần rà soát này.
+2. **IDaaS MFA/logout:** Swagger IDaaS được đối chiếu không khai báo `POST /auth/login/mfa` và `POST /auth/logout`. `POST /auth/mfa/confirm` là thao tác bật MFA sau xác thực, không thay cho OTP đăng nhập bằng `temp_token`/`code`.
+3. **Chứng từ thanh toán buyback:** Moderator UI đã tạo payment khi `APPROVED`; API có tải chứng từ, review và tải nội dung theo ID, nhưng chưa có endpoint liệt kê payment/proof theo hồ sơ. Do đó UI chưa tra cứu được ID cần tải/review sau khi reload.
 
-Các giới hạn form như min/max số tháng, tiền, ký tự và kiểm tra UUID chủ yếu nằm ở Zod/UI. Không nên coi chúng là validation backend nếu Swagger không mô tả tương ứng.
+Các lệch DTO đã được xử lý trong code hiện tại: `Owner` là phạm vi dữ liệu thay cho nhãn tenant; repair-case list dùng summary và tải timeline riêng; buyback dùng `ownerId`; invoice chấp nhận `REPAIR`; recipe list dùng summary riêng; và enum snapshot hợp đồng được giới hạn theo Swagger. Giới hạn form phía frontend không thay thế validation hoặc phân quyền backend.
 
 ## 6. File và wrapper đã rà soát
 

@@ -15,10 +15,10 @@ export const ContractTermsSnapshotSchema = z.object({
   repairCostResponsibility: z.enum(["TENANT", "COMPANY", "UNKNOWN"]),
   paymentDueEligibleDays: z.number().int().min(1).max(60),
   paymentDestinationReference: z.string().max(128).optional(),
-  offlineViolationAction: z.string().min(1).max(64),
+  offlineViolationAction: z.enum(["WARN_ONLY", "MANUAL_REVIEW"]),
   buybackEnabled: z.boolean(),
   buybackMinimumMonths: z.number().int().min(0).max(120),
-  buybackValuationMethod: z.string().min(1).max(64),
+  buybackValuationMethod: z.enum(["MANUAL_APPRAISAL"]),
   offlineLimitMinutes: z.number().int().positive().optional(),
 }).passthrough();
 
@@ -53,15 +53,17 @@ export const ContractSchema = z.object({
   machineTypeSnapshot: z.string().nullish(), monthlyRentalFee: z.number().nullish(),
   depositAmount: z.number().nullish(), installationFee: z.number().nullish(),
   paygUnitPrice: z.number().nullish(), offlineLimitMinutes: z.number().int().nullish(),
+  contractTermsSnapshot: ContractTermsSnapshotSchema.nullish(),
+  currentPolicyVersion: z.number().int().nonnegative().nullish(),
+  policyReadiness: z.string().nullish(),
   legacyUnmapped: z.boolean().optional(), terminatedAt: z.string().nullish(),
 }).passthrough();
 export const ContractListSchema = z.array(ContractSchema);
 
-// The Moderator tenant-scoped endpoints still return tenantId-based records.
-// Keep this DTO separate so Admin's ownerId contract remains unchanged.
+// Kept separate from the Admin DTO while the role-specific screen migrates.
 export const ModeratorContractSchema = z.object({
   id: ContractIdSchema,
-  tenantId: z.string().uuid(),
+  ownerId: z.string().uuid(),
   machineId: z.string().uuid().nullish(),
   startDate: z.string().nullish(),
   endDate: z.string().nullish(),
@@ -69,6 +71,7 @@ export const ModeratorContractSchema = z.object({
   termsSnapshot: z.string().nullish(),
   status: z.string().min(1),
   machineTypeSnapshot: z.string().nullish(),
+  contractTermsSnapshot: ContractTermsSnapshotSchema.nullish(),
   monthlyRentalFee: z.number().nullish(),
   depositAmount: z.union([z.number(), z.string()]).nullish(),
   installationFee: z.union([z.number(), z.string()]).nullish(),
@@ -79,9 +82,15 @@ export const ModeratorContractSchema = z.object({
 export const ModeratorContractListSchema = z.array(ModeratorContractSchema);
 
 export const ContractExpirySchema = z.object({
+  contractId: ContractIdSchema.nullish(),
   expiryDate: z.string().nullish(), reminderDate: z.string().nullish(), reminderSentAt: z.string().nullish(),
-  decision: z.string().nullish(), decidedAt: z.string().nullish(), expiryProcessedAt: z.string().nullish(),
+  decision: z.enum(["CONTINUE", "DO_NOT_CONTINUE", "NO_RESPONSE"]).nullish(),
+  decidedBy: z.string().nullish(), decidedAt: z.string().nullish(), expiryProcessedAt: z.string().nullish(),
+  terminationCaseId: ContractIdSchema.nullish(),
 }).passthrough();
+export const ContractExpiryDecisionRequestSchema = z.object({
+  decision: z.enum(["CONTINUE", "DO_NOT_CONTINUE"]),
+}).strict();
 export const ContractDocumentSchema = z.object({
   id: z.string().uuid(), contractId: z.string().uuid(), documentType: z.string(),
   originalFilename: z.string(), contentType: z.string().nullish(), sizeBytes: z.number().nonnegative(),
@@ -89,8 +98,52 @@ export const ContractDocumentSchema = z.object({
   archivedAt: z.string().nullish(),
 }).passthrough();
 export const ContractDocumentsSchema = z.array(ContractDocumentSchema);
+export const ContractPolicyVersionSchema = z.object({
+  id: z.string().uuid(), contractId: ContractIdSchema, version: z.number().int().positive(),
+  snapshot: ContractTermsSnapshotSchema, supersedesVersionId: z.string().uuid().nullish(),
+  actorId: z.string().uuid().nullish(), actorRole: z.string(), reason: z.string(),
+  effectiveDate: contractDateSchema, effectiveAt: z.string().nullish(), createdAt: z.string().nullish(),
+}).passthrough();
+export const ContractPolicyHistorySchema = z.array(ContractPolicyVersionSchema);
+export const ContractPolicyAmendmentRequestSchema = z.object({
+  snapshot: ContractTermsSnapshotSchema,
+  reason: z.string().trim().min(1),
+  effectiveDate: contractDateSchema,
+}).strict();
+export const ContractContinuationRequestSchema = z.object({
+  startDate: contractDateSchema,
+  endDate: contractDateSchema,
+  terms: z.string().trim().min(1),
+  monthlyRentalFee: z.number().finite().nonnegative(),
+  depositAmount: z.number().finite().nonnegative().optional(),
+  installationFee: z.number().finite().nonnegative().optional(),
+  paygUnitPrice: z.number().finite().nonnegative().optional(),
+  offlineLimitMinutes: z.number().int().positive().optional(),
+  contractTermsSnapshot: ContractTermsSnapshotSchema.optional(),
+}).strict().superRefine((value, context) => {
+  if (value.startDate >= value.endDate) context.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "End date must be after start date." });
+});
+export const TerminationCaseRequestSchema = z.object({
+  type: z.enum(["NORMAL", "EARLY", "VIOLATION"]),
+  reason: z.string().trim().min(1),
+  effectiveDate: contractDateSchema.optional(),
+  idempotencyKey: z.string().trim().min(1),
+  correlationId: z.string().trim().min(1),
+}).strict();
+export const TerminationCaseResponseSchema = z.object({
+  id: z.string().uuid(), ownerId: z.string().uuid(), contractId: ContractIdSchema,
+  machineId: z.string().uuid().nullish(), type: z.enum(["NORMAL", "EARLY", "VIOLATION"]),
+  status: z.string(), requestedBy: z.string().nullish(), reason: z.string(),
+  effectiveDate: contractDateSchema.nullish(), createdAt: z.string().nullish(), updatedAt: z.string().nullish(),
+}).passthrough();
 export type Contract = z.infer<typeof ContractSchema>;
 export type CreateContractRequest = z.infer<typeof CreateContractRequestSchema>;
 export type ContractTermsSnapshot = z.infer<typeof ContractTermsSnapshotSchema>;
+export type ContractPolicyAmendmentRequest = z.infer<typeof ContractPolicyAmendmentRequestSchema>;
+export type ContractContinuationRequest = z.infer<typeof ContractContinuationRequestSchema>;
+export type TerminationCaseRequest = z.infer<typeof TerminationCaseRequestSchema>;
+export type TerminationCaseResponse = z.infer<typeof TerminationCaseResponseSchema>;
+export type ContractExpiry = z.infer<typeof ContractExpirySchema>;
+export type ContractExpiryDecisionRequest = z.infer<typeof ContractExpiryDecisionRequestSchema>;
 export type ModeratorContract = z.infer<typeof ModeratorContractSchema>;
 export type ContractDocument = z.infer<typeof ContractDocumentSchema>;
