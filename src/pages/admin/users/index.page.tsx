@@ -339,6 +339,7 @@ function AdminUsersContent() {
             ) : (
               <>
                 <DataTable
+                  headerVariant="admin"
                   variant="accounts"
                   rows={users.data.items}
                   rowKey={(entry) => entry.id}

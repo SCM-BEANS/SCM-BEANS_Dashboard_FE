@@ -175,6 +175,7 @@ function MenuContent() {
             <section className={styles.panel} aria-labelledby="global-recipes-title">
               <h2 id="global-recipes-title">{ADMIN_MESSAGES.MENU.RECIPES}</h2>
               <DataTable
+                headerVariant="admin"
                 rows={recipes.data}
                 rowKey={(item) => item.id}
                 columns={[

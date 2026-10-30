@@ -241,6 +241,7 @@ function ContractsContent() {
       {contracts.data?.length === 0 && !contracts.isError && <p className={styles.pendingNotice} role="status">{T.COMMON.EMPTY}</p>}
       {contracts.data && contracts.data.length > 0 && <ContractTable
         contracts={contracts.data}
+        headerVariant="admin"
         contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
         draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
       />}
@@ -276,6 +277,7 @@ function ContractsContent() {
           {policyHistory.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(policyHistory.error)} <ButtonBar type="button" onClick={() => void policyHistory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {policyHistory.data && policyHistory.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
           {policyHistory.data && policyHistory.data.length > 0 && <DataTable
+            headerVariant="admin"
             rows={policyHistory.data}
             rowKey={(item) => item.id}
             columns={[
@@ -331,6 +333,7 @@ function ContractsContent() {
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {documents.data && documents.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
           {documents.data && documents.data.length > 0 && <DataTable
+            headerVariant="admin"
             rows={documents.data}
             rowKey={(doc) => doc.id}
             columns={[
@@ -351,6 +354,7 @@ function ContractsContent() {
       {history.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {history.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(history.error)}</p><ButtonBar type="button" onClick={() => void history.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {history.data && <section className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+        headerVariant="admin"
         rows={history.data}
         rowKey={(item) => item.id}
         columns={[

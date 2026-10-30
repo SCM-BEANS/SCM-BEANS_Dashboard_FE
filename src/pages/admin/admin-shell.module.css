@@ -41,6 +41,7 @@
 .metricCard { display: flex; min-height: 110px; flex-direction: column; gap: 14px; padding: 19px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .metricCard span, .financeGrid span { color: #706561; font-size: 13px; }
 .metricCard strong { overflow-wrap: anywhere; font-size: 24px; }
+.metricCardCentered { align-items: center; text-align: center; }
 .overviewMetricMeta { color: #706561; font-size: 12px; line-height: 1.4; }
 .panel { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .panel h2 { margin: 0 0 14px; font-size: 19px; }
@@ -50,6 +51,21 @@
 .adminTable::-webkit-scrollbar-track { border-radius: 8px; background: #f7f5f3; }
 .adminTable::-webkit-scrollbar-thumb { border-radius: 8px; background: #b8aca5; }
 .adminTableHint { display: none; }
+.machineInventoryTable :global(table) { min-width: 1120px; table-layout: fixed; }
+.machineInventoryTable :global(th:nth-child(1)),
+.machineInventoryTable :global(td:nth-child(1)) { width: 10%; }
+.machineInventoryTable :global(th:nth-child(2)),
+.machineInventoryTable :global(td:nth-child(2)) { width: 17%; }
+.machineInventoryTable :global(th:nth-child(3)),
+.machineInventoryTable :global(td:nth-child(3)) { width: 18%; }
+.machineInventoryTable :global(th:nth-child(4)),
+.machineInventoryTable :global(td:nth-child(4)) { width: 14%; }
+.machineInventoryTable :global(th:nth-child(5)),
+.machineInventoryTable :global(td:nth-child(5)) { width: 13%; }
+.machineInventoryTable :global(th:nth-child(6)),
+.machineInventoryTable :global(td:nth-child(6)) { width: 17%; }
+.machineInventoryTable :global(th:nth-child(7)),
+.machineInventoryTable :global(td:nth-child(7)) { width: 11%; }
 .overviewDailyTable :global(table) { min-width: 0; table-layout: fixed; }
 .overviewDailyTable :global(thead th:first-child),
 .overviewDailyTable :global(tbody td:first-child) { width: 72px; }

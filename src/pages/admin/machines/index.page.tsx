@@ -223,11 +223,12 @@ function MachinesContent() {
               {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
                 <DataTable
+                  headerVariant="admin"
                   className={styles.adminTable}
                   rows={machineModels.data}
                   rowKey={(machineModel) => machineModel.id}
                   columns={[
-                    { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, render: (machineModel) => (
+                    { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, align: "center", render: (machineModel) => (
                       <button
                         className={styles.accountTextButton}
                         type="button"
@@ -246,17 +247,18 @@ function MachinesContent() {
               {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
                 <DataTable
-                  className={styles.adminTable}
+                  headerVariant="admin"
+                  className={`${styles.adminTable} ${styles.machineInventoryTable}`}
                   rows={visibleMachines}
                   rowKey={(machine) => machine.id}
                   columns={[
-                    { key: "id", header: T.MACHINES.MACHINE_ID, render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
-                    { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
+                    { key: "id", header: T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
+                    { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
                     { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
-                    { key: "owner", header: T.MACHINES.OWNER_ID, render: (machine) => machine.ownerId ?? "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
+                    { key: "owner", header: T.MACHINES.OWNER_ID, align: "center", render: (machine) => machine.ownerId ? machine.ownerId.slice(0, 8).toUpperCase() : "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
                     { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
-                    { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-                    { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, render: (machine) => formatDate(machine.deployedAt) },
+                    { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+                    { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDate(machine.deployedAt) },
                   ]}
                 />
               </>}

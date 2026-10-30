@@ -1,11 +1,13 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { Bell, X } from "lucide-react";
+import { ArrowLeft, Bell, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { notificationsApi } from "@/apis/notifications.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import type { Notification } from "@/schema/notifications.schema";
 import { NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
 import styles from "./notification-inbox.module.css";
 
@@ -42,9 +44,11 @@ export function NotificationInbox({
   onRefreshExtra,
   children,
 }: NotificationInboxProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
+  const [openedNotification, setOpenedNotification] = useState<Notification | null>(null);
   const queryKey = ["notifications", scope] as const;
   const list = useQuery({
     queryKey: [...queryKey, unreadOnly],
@@ -64,13 +68,43 @@ export function NotificationInbox({
   const markOne = useMutation({
     mutationFn: (id: string) => notificationsApi.markAsRead(id),
     retry: false,
-    onSuccess: refresh,
+    onSuccess: async (notification) => {
+      setOpenedNotification(notification);
+      await refresh();
+    },
   });
   const markAll = useMutation({
     mutationFn: () => notificationsApi.markAllAsRead(),
     retry: false,
     onSuccess: refresh,
   });
+
+  const selectedNotificationId = router.isReady && typeof router.query.notificationId === "string"
+    ? router.query.notificationId
+    : undefined;
+  const selectedNotification = list.data?.find((notification) => notification.id === selectedNotificationId)
+    ?? (openedNotification?.id === selectedNotificationId ? openedNotification : undefined);
+
+  function openNotification(notification: Notification) {
+    setOpenedNotification(notification);
+    setBellOpen(false);
+    if (variant === "bell" && viewAllHref) {
+      void router.push({ pathname: viewAllHref, query: { notificationId: notification.id } });
+      return;
+    }
+
+    void router.push(
+      { pathname: router.pathname, query: { ...router.query, notificationId: notification.id } },
+      undefined,
+      { shallow: true, scroll: false },
+    );
+  }
+
+  function closeNotificationDetail() {
+    const query = { ...router.query };
+    delete query.notificationId;
+    void router.push({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
+  }
 
   if (variant === "bell") {
     const unreadTotal = unreadCount.data?.unreadCount ?? 0;
@@ -132,15 +166,21 @@ export function NotificationInbox({
               <div className={styles.notificationList}>
                 {list.data.slice(0, 5).map((notification) => (
                   <article className={styles.notificationCard} key={notification.id}>
-                    <div className={styles.notificationMeta}>
-                      <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
-                        {notification.read ? messages.READ : messages.UNREAD}
-                      </span>
-                      <span className={styles.notificationType}>{notification.type}</span>
-                      <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
-                    </div>
-                    <h3>{notification.title}</h3>
-                    <p>{notification.message}</p>
+                    <button
+                      className={styles.notificationOpenButton}
+                      type="button"
+                      onClick={() => openNotification(notification)}
+                    >
+                      <div className={styles.notificationMeta}>
+                        <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
+                          {notification.read ? messages.READ : messages.UNREAD}
+                        </span>
+                        <span className={styles.notificationType}>{notification.type}</span>
+                        <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
+                      </div>
+                      <h3>{notification.title}</h3>
+                      <p>{notification.message}</p>
+                    </button>
                     {!notification.read && (
                       <button
                         className={styles.button}
@@ -162,6 +202,70 @@ export function NotificationInbox({
             )}
           </section>
         )}
+      </div>
+    );
+  }
+
+  if (selectedNotificationId) {
+    return (
+      <div className={styles.pageContent}>
+        <section className={styles.detailPanel} aria-labelledby="notification-detail-title">
+          <button className={styles.backToListButton} type="button" onClick={closeNotificationDetail}>
+            <ArrowLeft size={18} aria-hidden="true" />
+            <span>{messages.BACK_TO_LIST}</span>
+          </button>
+
+          {list.isPending && (
+            <p className={[styles.notice, styles.loadingNotice].join(" ")} role="status">{messages.LOADING}</p>
+          )}
+          {list.isError && (
+            <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+              <p>{messages.LOAD_ERROR} {getApiErrorMessage(list.error)}</p>
+              <button className={styles.retryButton} type="button" onClick={() => void list.refetch()}>
+                {messages.RETRY}
+              </button>
+            </div>
+          )}
+          {!list.isPending && !list.isError && !selectedNotification && (
+            <p className={[styles.notice, styles.emptyNotice].join(" ")} role="status">{messages.DETAIL_NOT_FOUND}</p>
+          )}
+
+          {selectedNotification && (
+            <article className={styles.notificationDetail}>
+              <div className={styles.notificationMeta}>
+                <span className={selectedNotification.read ? styles.readBadge : styles.unreadBadge}>
+                  {selectedNotification.read ? messages.READ : messages.UNREAD}
+                </span>
+                <span className={styles.notificationType}>{selectedNotification.type}</span>
+                {showOwnerId && selectedNotification.ownerId && (
+                  <span className={styles.ownerId}>{messages.OWNER_ID}: {selectedNotification.ownerId}</span>
+                )}
+                <time dateTime={selectedNotification.createdAt ?? undefined}>
+                  {formatDate(selectedNotification.createdAt)}
+                </time>
+              </div>
+              <h1 id="notification-detail-title">{selectedNotification.title}</h1>
+              <p className={styles.detailMessage}>{selectedNotification.message}</p>
+              {markOne.isError && (
+                <p className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+                  {messages.MARK_ERROR} {getApiErrorMessage(markOne.error, "mutation")}
+                </p>
+              )}
+              {!selectedNotification.read && (
+                <button
+                  className={styles.primaryButton}
+                  disabled={markOne.isPending}
+                  onClick={() => markOne.mutate(selectedNotification.id)}
+                  type="button"
+                >
+                  {markOne.isPending && markOne.variables === selectedNotification.id
+                    ? messages.MARKING
+                    : messages.MARK_ONE}
+                </button>
+              )}
+            </article>
+          )}
+        </section>
       </div>
     );
   }
@@ -255,18 +359,24 @@ export function NotificationInbox({
           <div className={styles.notificationList}>
             {list.data.map((notification) => (
               <article className={styles.notificationCard} key={notification.id}>
-                <div className={styles.notificationMeta}>
-                  <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
-                    {notification.read ? messages.READ : messages.UNREAD}
-                  </span>
-                  <span className={styles.notificationType}>{notification.type}</span>
-                  {showOwnerId && notification.ownerId && (
-                    <span className={styles.ownerId}>{messages.OWNER_ID}: {notification.ownerId}</span>
-                  )}
-                  <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
-                </div>
-                <h3>{notification.title}</h3>
-                <p>{notification.message}</p>
+                <button
+                  className={styles.notificationOpenButton}
+                  type="button"
+                  onClick={() => openNotification(notification)}
+                >
+                  <div className={styles.notificationMeta}>
+                    <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
+                      {notification.read ? messages.READ : messages.UNREAD}
+                    </span>
+                    <span className={styles.notificationType}>{notification.type}</span>
+                    {showOwnerId && notification.ownerId && (
+                      <span className={styles.ownerId}>{messages.OWNER_ID}: {notification.ownerId}</span>
+                    )}
+                    <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
+                  </div>
+                  <h3>{notification.title}</h3>
+                  <p>{notification.message}</p>
+                </button>
                 {!notification.read && (
                   <button
                     className={styles.button}

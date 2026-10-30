@@ -299,6 +299,7 @@ function MachineDetailContent() {
         {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}
         {maintenanceTickets.data && maintenanceTickets.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {maintenanceTickets.data && maintenanceTickets.data.length > 0 && <DataTable
+          headerVariant="admin"
           rows={maintenanceTickets.data}
           rowKey={(ticket, index) => ticket.id ?? `${ticket.machineId}-${index}`}
           columns={[
@@ -348,6 +349,7 @@ function MachineDetailContent() {
           {telemetryPoints.length > 0 && <>
             <p className={styles.panelSubtitle}>{formatNumber(telemetryPoints.length)} điểm đã tải.</p>
             <DataTable
+              headerVariant="admin"
               rows={telemetryPoints}
               rowKey={(point, index) => `${point.timestamp}-${point.field}-${index}`}
               columns={[

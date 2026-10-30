@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { notificationsApi } from "@/apis/notifications.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -12,7 +13,9 @@ import { AdminShell, adminStyles as styles } from "../admin-shell";
 const ALERTS_QUERY_KEY = ["dolores", "alerts"] as const;
 
 function NotificationContent() {
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const notificationDetailOpen = Boolean(router.query.notificationId);
   const alerts = useQuery({
     queryKey: ALERTS_QUERY_KEY,
     queryFn: ({ signal }) => notificationsApi.listAlerts(signal),
@@ -48,6 +51,7 @@ function NotificationContent() {
           )}
           {alerts.data && alerts.data.length > 0 && (
             <DataTable
+              headerVariant="admin"
               rows={alerts.data}
               rowKey={(alert) => alert.id}
               columns={[
@@ -72,9 +76,11 @@ function NotificationContent() {
           {acknowledge.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(acknowledge.error, "mutation")}</p>}
         </section>
       </NotificationInbox>
-      <ActionBar>
-        <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.REPORTS.TITLE}</ButtonBar>
-      </ActionBar>
+      {!notificationDetailOpen && (
+        <ActionBar>
+          <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.REPORTS.TITLE}</ButtonBar>
+        </ActionBar>
+      )}
     </>
   );
 }

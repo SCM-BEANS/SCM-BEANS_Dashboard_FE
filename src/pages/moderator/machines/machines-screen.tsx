@@ -78,11 +78,11 @@ function ActionLink({ href, children }: { href: string; children: string }) {
   return <Link className={styles.tableLink} href={href}>{children}</Link>;
 }
 
-function DetailValue({ label, value, code = false }: { label: string; value: string | number; code?: boolean }) {
+function DetailValue({ label, value, code = false, centered = false }: { label: string; value: string | number; code?: boolean; centered?: boolean }) {
   return (
     <div className={styles.detailItem}>
       <dt>{label}</dt>
-      <dd className={code ? styles.codeValue : undefined}>{value}</dd>
+      <dd className={[code ? styles.codeValue : "", centered ? styles.numericCenter : ""].filter(Boolean).join(" ") || undefined}>{value}</dd>
     </div>
   );
 }
@@ -382,7 +382,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
               {schedule.data && !schedule.isError && (
                 <dl className={styles.detailGrid}>
                   <DetailValue label={messages.MACHINE_NEXT_MAINTENANCE} value={formatDate(schedule.data.nextPreventiveMaintenanceAt)} />
-                  <DetailValue label={messages.MACHINE_CUPS_SINCE_DESCALE} value={schedule.data.cupsServedSinceLastDescale == null ? "—" : numberFormat.format(schedule.data.cupsServedSinceLastDescale)} />
+                  <DetailValue label={messages.MACHINE_CUPS_SINCE_DESCALE} value={schedule.data.cupsServedSinceLastDescale == null ? "—" : numberFormat.format(schedule.data.cupsServedSinceLastDescale)} centered />
                 </dl>
               )}
             </section>
@@ -392,7 +392,10 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
               {tickets.data && !tickets.isError && (
                 <>
                   <p className={styles.formHint}>{messages.MACHINE_HISTORY_SCOPE}</p>
-                  <p>{tickets.data.filter((ticket) => ticket.machineId === machineId).length} {messages.MACHINE_TICKETS_FOR_ID}</p>
+                  <p className={styles.numericCount}>
+                    <strong>{numberFormat.format(tickets.data.filter((ticket) => ticket.machineId === machineId).length)}</strong>
+                    <span>{messages.MACHINE_TICKETS_FOR_ID}</span>
+                  </p>
                   <MaintenanceTicketTable tickets={tickets.data} machineId={machineId} />
                 </>
               )}
@@ -420,7 +423,10 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       <div className={styles.detailGrid}>
         <section className={styles.detailItem}>
           <h2 className={styles.sectionTitle}>{messages.MACHINE_INVENTORY_SUMMARY}</h2>
-          <p>{messages.MACHINE_TOTAL}: {inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</p>
+          <p className={styles.numericSummary}>
+            <span>{messages.MACHINE_TOTAL}</span>
+            <strong>{inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</strong>
+          </p>
           <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
         </section>
       </div>

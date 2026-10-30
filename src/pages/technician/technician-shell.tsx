@@ -24,7 +24,6 @@ const NAV_ICONS = {
 } as const;
 
 const TECHNICIAN_SIDEBAR_ITEMS: SidebarItem[] = TECHNICIAN_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_TECHNICIAN.NOTIFICATIONS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,

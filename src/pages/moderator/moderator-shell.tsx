@@ -44,7 +44,6 @@ const NAV_ICONS = {
 } as const;
 
 const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_MODERATOR.NOTIFICATIONS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,
@@ -122,7 +121,8 @@ export function ModeratorShell({
     />
   );
   const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;
-  const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
+  const isNotificationDetail = pathname === PATH_MODERATOR.NOTIFICATIONS && Boolean(router.query.notificationId);
+  const isSectionList = !isNotificationDetail && (pathname === currentSection.HREF || pathname === currentSection.HREF + "/list");
   const renderActions = () => {
     switch (currentSection.HREF) {
       case PATH_MODERATOR.ROOT:

@@ -443,6 +443,7 @@ function ReportContent() {
         )}
         {overview.data && dailyUsage.length > 0 && (
           <DataTable
+            headerVariant="admin"
             variant="standard"
             className={styles.reportDailyTable}
             rows={dailyUsage}
@@ -471,6 +472,7 @@ function ReportContent() {
           <>
             <p className={styles.reportInvoiceHint}>Cuộn ngang để xem đầy đủ thông tin hóa đơn.</p>
             <DataTable
+              headerVariant="admin"
               className={styles.reportInvoiceTable}
               rows={rentalInvoices}
               rowKey={(invoice) => invoice.id}

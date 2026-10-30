@@ -280,13 +280,13 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
     </section>
     <section>
       <h2 className={styles.sectionTitle}>{messages.TECHNICAL_ACCESSORIES} ({details.accessories.length})</h2>
-      <DataTable variant="moderator" headers={[messages.TECHNICAL_ACCESSORY_NAME, messages.TECHNICAL_QUANTITY, messages.TECHNICAL_SERIAL, messages.TECHNICAL_NOTES_LABEL]} emptyMessage={details.accessories.length === 0 ? messages.TECHNICAL_ACCESSORIES_EMPTY : undefined}>
+      <DataTable variant="moderator" className={styles.centerSecondColumn} headers={[messages.TECHNICAL_ACCESSORY_NAME, messages.TECHNICAL_QUANTITY, messages.TECHNICAL_SERIAL, messages.TECHNICAL_NOTES_LABEL]} emptyMessage={details.accessories.length === 0 ? messages.TECHNICAL_ACCESSORIES_EMPTY : undefined}>
         {details.accessories.map((item) => <tr key={item.id}><td>{item.accessoryName}</td><td>{item.quantity}</td><td>{item.serialNumber ?? "—"}</td><td>{item.notes ?? "—"}</td></tr>)}
       </DataTable>
     </section>
     <section>
       <h2 className={styles.sectionTitle}>{messages.TECHNICAL_EVIDENCE} ({details.evidence.length})</h2>
-      <DataTable variant="moderator" headers={[messages.TECHNICAL_FILENAME, messages.TECHNICAL_CONTENT_TYPE, messages.TECHNICAL_SIZE, messages.TECHNICAL_SHA256, messages.TECHNICAL_UPLOADED_AT]} emptyMessage={details.evidence.length === 0 ? messages.TECHNICAL_EVIDENCE_EMPTY : undefined} minWidth={760}>
+      <DataTable variant="moderator" className={styles.centerThirdColumn} headers={[messages.TECHNICAL_FILENAME, messages.TECHNICAL_CONTENT_TYPE, messages.TECHNICAL_SIZE, messages.TECHNICAL_SHA256, messages.TECHNICAL_UPLOADED_AT]} emptyMessage={details.evidence.length === 0 ? messages.TECHNICAL_EVIDENCE_EMPTY : undefined} minWidth={760}>
         {details.evidence.map((item) => <tr key={item.id}><td>{item.originalFilename}</td><td>{item.contentType ?? "—"}</td><td>{numberFormat.format(item.sizeBytes)} bytes</td><td className={styles.codeValue}>{item.sha256 ?? "—"}</td><td>{formatDate(item.uploadedAt)}</td></tr>)}
       </DataTable>
     </section>
@@ -397,7 +397,7 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
                   </tr>
                 ))}
               </DataTable>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+              <div className={styles.profilePagination} style={{ marginTop: 12 }}>
                 <button className={styles.retryButton} type="button" disabled={repairTimelinePage <= 0} onClick={() => setRepairTimelinePage((page) => page - 1)}>Trang trước</button>
                 <span className={styles.formHint}>Trang {repairTimelinePage + 1}/{Math.max(1, repairTimeline.data.totalPages)}</span>
                 <button className={styles.retryButton} type="button" disabled={repairTimelinePage + 1 >= repairTimeline.data.totalPages} onClick={() => setRepairTimelinePage((page) => page + 1)}>Trang sau</button>
@@ -449,20 +449,19 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
                   <td>{item.machineSerialNumber ?? item.machineId ?? "—"}</td>
                   <td>{formatDate(item.createdAt)}</td>
                   <td>{item.status ?? "—"}</td>
-                  <td>
-                    <label className={styles.formHint} htmlFor={`repair-triage-reason-${item.resourceId}`}>
-                      {messages.TECHNICAL_TRIAGE_REASON}
-                    </label>
+                  <td className={styles.triageReasonCell}>
                     <textarea
                       id={`repair-triage-reason-${item.resourceId}`}
+                      className={styles.triageReasonInput}
+                      aria-label={messages.TECHNICAL_TRIAGE_REASON + ": " + (item.ownerName ?? item.ownerId ?? item.resourceId)}
                       maxLength={1000}
                       required
-                      rows={2}
+                      rows={3}
                       value={reason}
                       disabled={triage.isPending}
                       onChange={(event) => setTriageReasons((current) => ({ ...current, [item.resourceId]: event.target.value }))}
                     />
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div className={styles.triageReasonActions}>
                       <button
                         className={styles.retryButton}
                         type="button"
@@ -488,7 +487,7 @@ export function ModeratorTechnicalScreen({ path }: { path: string }) {
           </DataTable>
         )}
         {repairIntakes.data && repairIntakes.data.items.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+          <div className={styles.profilePagination} style={{ marginTop: 8 }}>
             <button className={styles.retryButton} type="button" disabled={repairIntakePage <= 0} onClick={() => setRepairIntakePage((page) => page - 1)}>{messages.PROFILE_PREVIOUS}</button>
             <span className={styles.formHint}>Trang {repairIntakePage + 1}</span>
             <button className={styles.retryButton} type="button" disabled={!repairIntakes.data.hasMore} onClick={() => setRepairIntakePage((page) => page + 1)}>{messages.PROFILE_NEXT}</button>

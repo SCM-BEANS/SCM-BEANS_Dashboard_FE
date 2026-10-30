@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useRouter } from "next/router";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
@@ -21,13 +22,16 @@ function withWorkflowActions(
   title: string,
   workflowActions: readonly ActionBarAction[],
   fallbackAction?: ActionBarAction,
+  showActions = true,
 ) {
-  const navigationActions = workflowActions.filter((action) => !action.disabled);
-  const actions = navigationActions.length > 0
-    ? navigationActions
-    : fallbackAction
-      ? [fallbackAction]
-      : [];
+  const navigationActions = showActions ? workflowActions.filter((action) => !action.disabled) : [];
+  const actions = showActions
+    ? navigationActions.length > 0
+      ? navigationActions
+      : fallbackAction
+        ? [fallbackAction]
+        : []
+    : [];
   return (
     <>
       {content}
@@ -56,6 +60,8 @@ function renderField(field: WorkflowField, index: number) {
 }
 
 export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string }) {
+  const router = useRouter();
+  const notificationDetailOpen = sectionPath === "notifications" && Boolean(router.query.notificationId);
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
   const actions = getCustomerWorkflowActions(sectionPath, screen);
@@ -103,7 +109,13 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
     );
   }
   if (sectionPath === "notifications") {
-    return withWorkflowActions(<NotificationInbox back={screen.back} />, screen.title, actions, fallbackAction);
+    return withWorkflowActions(
+      <NotificationInbox back={screen.back} />,
+      screen.title,
+      actions,
+      fallbackAction,
+      !notificationDetailOpen,
+    );
   }
 
   return (

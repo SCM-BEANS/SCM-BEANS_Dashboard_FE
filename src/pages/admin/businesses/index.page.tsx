@@ -116,6 +116,7 @@ function BusinessesContent() {
               {ownerContracts.data && ownerContracts.data.items.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
                 <DataTable
+                  headerVariant="admin"
                   className={styles.adminTable}
                   rows={ownerContracts.data.items}
                   rowKey={(contract, index) => contract.id ?? contract.contractId ?? index}
@@ -151,6 +152,7 @@ function BusinessesContent() {
           {list.data.items.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <>
             <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
             <DataTable
+              headerVariant="admin"
               className={styles.adminTable}
               rows={list.data.items}
               rowKey={(owner) => owner.id}

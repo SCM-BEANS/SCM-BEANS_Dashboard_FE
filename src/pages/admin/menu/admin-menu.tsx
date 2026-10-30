@@ -38,7 +38,6 @@ const ADMIN_ROUTE_ITEMS = ADMIN_NAVIGATION_LINKS.map((item) => ({
 }));
 
 export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_ADMIN.NOTIFICATIONS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,

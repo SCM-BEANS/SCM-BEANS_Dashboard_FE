@@ -21,10 +21,10 @@ export function MachineInventorySummary() {
   return (
     <>
       <div className={styles.metricsGrid}>
-        <article className={styles.metricCard}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
-        <article className={styles.metricCard}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
-        <article className={styles.metricCard}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
-        <article className={styles.metricCard}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.TOTAL}</span><strong>{summary.data?.totalMachines?.toLocaleString("vi-VN") ?? "—"}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
       </div>
       {summary.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {summary.isError && (

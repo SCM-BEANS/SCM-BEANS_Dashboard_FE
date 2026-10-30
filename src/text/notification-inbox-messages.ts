@@ -21,4 +21,6 @@
   RETRY: "Thử lại",
   CLOSE: "Đóng thông báo",
   VIEW_ALL: "Xem tất cả thông báo",
+  BACK_TO_LIST: "Quay lại danh sách",
+  DETAIL_NOT_FOUND: "Không tìm thấy thông báo này trong danh sách hiện tại.",
 } as const;

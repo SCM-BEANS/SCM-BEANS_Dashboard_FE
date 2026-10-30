@@ -36,6 +36,20 @@
 .detailItem { min-width: 0; padding: 16px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .detailItem dt { color: #706561; font-size: 13px; }
 .detailItem dd { overflow-wrap: anywhere; margin: 6px 0 0; color: #302927; font-size: 15px; font-weight: 600; }
+.numericCenter { text-align: center; font-variant-numeric: tabular-nums; }
+.numericSummary { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 16px 0 0; color: #706561; font-size: 14px; text-align: center; }
+.numericSummary strong { color: #302927; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.numericCount { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 14px 0; color: #706561; font-size: 14px; text-align: center; }
+.numericCount strong { color: #302927; font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.centerSecondColumn :global(th:nth-child(2)),
+.centerSecondColumn :global(td:nth-child(2)),
+.centerThirdColumn :global(th:nth-child(3)),
+.centerThirdColumn :global(td:nth-child(3)) { text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.triageReasonCell { min-width: 330px; vertical-align: middle !important; }
+.triageReasonInput { display: block; width: 100%; min-height: 76px; padding: 10px 12px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; line-height: 1.45; resize: vertical; }
+.triageReasonInput:focus-visible { border-color: #b81724; outline: 3px solid rgb(184 23 36 / 16%); outline-offset: 1px; }
+.triageReasonActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.triageReasonActions button { flex: 1 1 130px; min-width: 130px; white-space: normal; }
 .partialNotice { padding: 14px 16px; border: 1px solid #f1d2a8; border-radius: 10px; background: #fff9ef; color: #8a4b12; font-size: 14px; line-height: 1.5; }
 .retryButton { min-height: 44px; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; cursor: pointer; }
 .retryButton:hover:not(:disabled) { border-color: #b81724; background: #fdf8f7; }

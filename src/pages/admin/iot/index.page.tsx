@@ -108,10 +108,10 @@ function IoTContent() {
         {profile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(profile.error)}</p><button type="button" onClick={() => void profile.refetch()}>{T.COMMON.RETRY}</button></div>}
         {profile.data && <>
           <div className={styles.metricsGrid}>
-            <article className={styles.metricCard}><span>{T.IOT.STORES}</span><strong>{locations.isError ? "—" : locations.isPending ? "…" : count(ownerLocations.length)}</strong></article>
-            <article className={styles.metricCard}><span>{T.IOT.MACHINES}</span><strong>{machines.isError ? "—" : machines.isPending ? "…" : count(ownerMachines.length)}</strong></article>
-            <article className={styles.metricCard}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.isError ? "—" : contracts.isPending ? "…" : count(activeSmartContracts.length)}</strong></article>
-            <article className={styles.metricCard}><span>{T.IOT.OWNER}</span><strong>{profile.data.idaasUserId.slice(0, 8).toUpperCase()}</strong></article>
+            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.STORES}</span><strong>{locations.isError ? "—" : locations.isPending ? "…" : count(ownerLocations.length)}</strong></article>
+            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.MACHINES}</span><strong>{machines.isError ? "—" : machines.isPending ? "…" : count(ownerMachines.length)}</strong></article>
+            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.isError ? "—" : contracts.isPending ? "…" : count(activeSmartContracts.length)}</strong></article>
+            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.OWNER}</span><strong>{profile.data.idaasUserId.slice(0, 8).toUpperCase()}</strong></article>
           </div>
           {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
           {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
@@ -122,6 +122,7 @@ function IoTContent() {
             {locations.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
             {locations.data && ownerLocations.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
             {ownerLocations.length > 0 && <DataTable
+              headerVariant="admin"
               rows={ownerLocations}
               rowKey={(location) => location.id}
               columns={[
@@ -138,14 +139,15 @@ function IoTContent() {
             {machines.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
             {machines.data && ownerMachines.length === 0 && <p className={styles.emptyText}>{T.IOT.NO_SMART_MACHINES}</p>}
             {ownerMachines.length > 0 && <DataTable
+              headerVariant="admin"
               rows={ownerMachines}
               rowKey={(machine) => machine.id}
               columns={[
-                { key: "serial", header: T.MACHINES.SERIAL, render: (machine) => machine.serialNumber ?? machine.id },
+                { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? machine.id },
                 { key: "type", header: T.IOT.MACHINE_TYPE_CONTRACT, render: (machine) => machineTypeFor(machine.id, ownerContracts) },
                 { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ?? "—" },
                 { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
-                { key: "deployed", header: T.MACHINES.DEPLOYED_AT, render: (machine) => machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—" },
+                { key: "deployed", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—" },
                 { key: "actions", header: T.MACHINES.OPEN_DETAIL, render: (machine) => <Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{T.MACHINES.OPEN_DETAIL}</Link> },
               ]}
             />}
@@ -164,9 +166,9 @@ function IoTContent() {
     <div className={styles.pageContent}>
       <BackButtonHeading title={T.IOT.TITLE} titleId="admin-iot-title" description={T.IOT.DESCRIPTION} className={styles.pageHeading} back={null} />
       <div className={styles.metricsGrid}>
-        <article className={styles.metricCard}><span>{T.IOT.OWNER}</span><strong>{owners.data ? count(owners.data.totalElements) : "—"}</strong></article>
-        <article className={styles.metricCard}><span>{T.IOT.MACHINES}</span><strong>{machines.data ? count(machines.data.length) : "—"}</strong></article>
-        <article className={styles.metricCard}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.data ? count(allContracts.filter((contract) => contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) : "—"}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.OWNER}</span><strong>{owners.data ? count(owners.data.totalElements) : "—"}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.MACHINES}</span><strong>{machines.data ? count(machines.data.length) : "—"}</strong></article>
+        <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.data ? count(allContracts.filter((contract) => contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) : "—"}</strong></article>
       </div>
       {owners.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {owners.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(owners.error)}</p><button type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</button></div>}
@@ -176,14 +178,15 @@ function IoTContent() {
         <h2>{T.IOT.OWNER}</h2>
         {ownerRows.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {ownerRows.length > 0 && <DataTable
+          headerVariant="admin"
           rows={ownerRows}
           rowKey={(owner) => owner.idaasUserId}
           columns={[
             { key: "name", header: T.COMMON.NAME, render: (owner) => owner.fullName || "—" },
             { key: "email", header: T.COMMON.EMAIL, render: (owner) => owner.email || "—" },
-            { key: "id", header: T.MACHINES.OWNER_ID, render: (owner) => owner.idaasUserId.slice(0, 8).toUpperCase(), cellProps: (owner) => ({ title: owner.idaasUserId }) },
-            { key: "machines", header: T.IOT.MACHINES, render: (owner) => machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length) },
-            { key: "contracts", header: T.IOT.SMART_CONTRACTS, render: (owner) => contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) },
+            { key: "id", header: T.MACHINES.OWNER_ID, align: "center", render: (owner) => owner.idaasUserId.slice(0, 8).toUpperCase(), cellProps: (owner) => ({ title: owner.idaasUserId }) },
+            { key: "machines", header: T.IOT.MACHINES, align: "center", render: (owner) => machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length) },
+            { key: "contracts", header: T.IOT.SMART_CONTRACTS, align: "center", render: (owner) => contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) },
             { key: "actions", header: T.IOT.VIEW_OWNER, render: (owner) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId, page })}>{T.IOT.VIEW_OWNER}</button> },
           ]}
         />}

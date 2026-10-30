@@ -244,6 +244,7 @@ function StoresContent() {
         {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
         <section className={styles.panel}><h2>{listing.data.locations.length} cửa hàng</h2>
           {listing.data.locations.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+            headerVariant="admin"
             rows={listing.data.locations}
             rowKey={({ location }) => location.id}
             columns={[

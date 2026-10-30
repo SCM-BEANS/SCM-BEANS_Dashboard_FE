@@ -27,7 +27,6 @@ const NAV_ICONS = {
 } as const;
 
 const CUSTOMER_SIDEBAR_ITEMS: SidebarItem[] = CUSTOMER_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_CUSTOMER.NOTIFICATIONS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,

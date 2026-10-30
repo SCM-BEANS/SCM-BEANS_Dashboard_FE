@@ -4,12 +4,14 @@ import styles from "./data-table.module.css";
 export type DataTableColumn<Row> = {
   key: string;
   header: ReactNode;
+  align?: "left" | "center" | "right";
   render: (row: Row, index: number) => ReactNode;
   cellProps?: (row: Row, index: number) => TdHTMLAttributes<HTMLTableCellElement>;
 };
 
 type DataTableBaseProps = {
   variant?: "operations" | "accounts" | "standard" | "moderator" | "customer";
+  headerVariant?: "admin";
   className?: string;
   style?: CSSProperties;
 };
@@ -50,23 +52,34 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
     moderator: styles.moderator,
     customer: styles.customer,
   }[variant];
-  const tableClassName = [styles.table, variantClassName].join(" ");
+  const tableClassName = [
+    styles.table,
+    variantClassName,
+    props.headerVariant === "admin" ? styles.adminHeader : undefined,
+  ].filter(Boolean).join(" ");
   const tableStyle = {
     ...props.style,
     ...(props.minWidth ? { minWidth: props.minWidth } : {}),
   };
   const isRowsTable = "rows" in props && props.rows !== undefined;
-  const headers = isRowsTable ? props.columns.map((column) => ({ key: column.key, content: column.header })) :
-    props.headers.map((header, index) => ({ key: `column-${index}`, content: header }));
+  const headers: Array<{ key: string; content: ReactNode; align?: "left" | "center" | "right" }> = isRowsTable
+    ? props.columns.map((column) => ({ key: column.key, content: column.header, align: column.align }))
+    : props.headers.map((header, index) => ({ key: `column-${index}`, content: header }));
   const body = isRowsTable
     ? props.rows.length > 0
       ? props.rows.map((row, index) => (
         <tr key={props.rowKey(row, index)}>
-          {props.columns.map((column) => (
-            <td key={column.key} {...column.cellProps?.(row, index)}>
-              {column.render(row, index)}
-            </td>
-          ))}
+          {props.columns.map((column) => {
+            const cellProps = column.cellProps?.(row, index);
+            const cellStyle = column.align
+              ? { ...cellProps?.style, textAlign: column.align }
+              : cellProps?.style;
+            return (
+              <td key={column.key} {...cellProps} style={cellStyle}>
+                {column.render(row, index)}
+              </td>
+            );
+          })}
         </tr>
       ))
       : props.emptyMessage
@@ -84,7 +97,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         <thead>
           <tr>
             {headers.map((header) => (
-              <th key={header.key} scope="col">{header.content}</th>
+              <th key={header.key} scope="col" style={header.align ? { textAlign: header.align } : undefined}>{header.content}</th>
             ))}
           </tr>
         </thead>

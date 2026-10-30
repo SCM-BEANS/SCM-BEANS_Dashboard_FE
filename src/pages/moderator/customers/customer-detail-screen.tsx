@@ -179,7 +179,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                     );
                   })}
                 </DataTable>
-                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <div className={styles.profilePagination}>
                   <button className={styles.retryButton} type="button" disabled={contractsPage <= 0} onClick={() => setContractsPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
                   <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(contracts.data.page + 1, Math.max(1, contracts.data.totalPages), contracts.data.totalElements)}</span>
                   <button className={styles.retryButton} type="button" disabled={contractsPage + 1 >= contracts.data.totalPages} onClick={() => setContractsPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
@@ -213,7 +213,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                   </tr>
                 ))}
               </DataTable>
-              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <div className={styles.profilePagination}>
                 <button className={styles.retryButton} type="button" disabled={historyPage <= 0} onClick={() => setHistoryPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
                 <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(history.data.page + 1, Math.max(1, history.data.totalPages), history.data.totalElements)}</span>
                 <button className={styles.retryButton} type="button" disabled={historyPage + 1 >= history.data.totalPages} onClick={() => setHistoryPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
