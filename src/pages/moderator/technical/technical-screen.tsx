@@ -118,6 +118,20 @@ function DetailValue({ label, value, code = false }: { label: string; value: str
   );
 }
 
+function evidenceMediaType(filename: string, metadataType: string | null | undefined, blob: Blob): string {
+  const declaredType = metadataType?.split(";")[0].trim().toLowerCase();
+  if (declaredType && declaredType !== "application/octet-stream") return declaredType;
+  const extension = filename.toLowerCase().split(".").pop();
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+  if (extension === "png") return "image/png";
+  return declaredType || blob.type || "application/octet-stream";
+}
+
+function safeEvidenceFilename(filename: string, evidenceId: string): string {
+  return filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").trim().slice(0, 180) || `evidence-${evidenceId}`;
+}
+
 function MaintenanceTicketTable({ tickets, machineId }: { tickets: MaintenanceTicket[]; machineId?: string }) {
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
@@ -166,6 +180,8 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
   const [scheduledFor, setScheduledFor] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [evidenceAction, setEvidenceAction] = useState<{ id: string; action: "view" | "download" } | null>(null);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
   const technicians = useQuery({
     queryKey: ["dolores", "profiles", "technicians", "ACTIVE"],
     queryFn: ({ signal }) => listActiveTechnicians(signal),
@@ -201,6 +217,53 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
     onSuccess: refresh,
     onError: (error) => setActionError(getApiErrorMessage(error)),
   });
+  async function viewEvidence(item: InstallationWorkOrderDetails["evidence"][number]) {
+    const previewWindow = window.open("about:blank", "_blank");
+    if (!previewWindow) {
+      setEvidenceError("Trình duyệt đã chặn cửa sổ xem minh chứng. Hãy cho phép cửa sổ bật lên hoặc chọn tải xuống.");
+      return;
+    }
+    previewWindow.opener = null;
+    setEvidenceAction({ id: item.id, action: "view" });
+    setEvidenceError(null);
+    try {
+      const downloadedBlob = await installationWorkOrdersApi.downloadEvidence(workOrder.id, item.id);
+      const type = evidenceMediaType(item.originalFilename, item.contentType, downloadedBlob);
+      if (!(type === "application/pdf" || type === "image/jpeg" || type === "image/png")) {
+        previewWindow.close();
+        setEvidenceError("Định dạng này chưa hỗ trợ xem trước. Bạn có thể tải tệp xuống.");
+        return;
+      }
+      const objectUrl = URL.createObjectURL(new Blob([downloadedBlob], { type }));
+      previewWindow.location.replace(objectUrl);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
+    } catch (error) {
+      previewWindow.close();
+      setEvidenceError(getApiErrorMessage(error));
+    } finally {
+      setEvidenceAction(null);
+    }
+  }
+  async function downloadEvidence(item: InstallationWorkOrderDetails["evidence"][number]) {
+    setEvidenceAction({ id: item.id, action: "download" });
+    setEvidenceError(null);
+    try {
+      const downloadedBlob = await installationWorkOrdersApi.downloadEvidence(workOrder.id, item.id);
+      const type = evidenceMediaType(item.originalFilename, item.contentType, downloadedBlob);
+      const objectUrl = URL.createObjectURL(new Blob([downloadedBlob], { type }));
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = safeEvidenceFilename(item.originalFilename, item.id);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+      setEvidenceError(getApiErrorMessage(error));
+    } finally {
+      setEvidenceAction(null);
+    }
+  }
   const actionsPending = assign.isPending || reschedule.isPending || cancel.isPending;
   return <>
     <dl className={styles.detailGrid}>
@@ -218,58 +281,64 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
       <DetailValue label={messages.TECHNICAL_FAILURE_REASON} value={workOrder.failureReason ?? "—"} />
     </dl>
     {canModerate && (
-      <section className={styles.pendingNotice} aria-labelledby="moderator-installation-work-order-actions">
+      <section className={styles.installationDispatchPanel} aria-labelledby="moderator-installation-work-order-actions">
         <h2 id="moderator-installation-work-order-actions" className={styles.sectionTitle}>{messages.WORK_ORDER_ACTIONS}</h2>
         <QueryFeedback query={technicians} loadingMessage={messages.WORK_ORDER_LOADING_TECHNICIANS} />
         {technicians.data?.length === 0 && !technicians.isError && <p role="status">{messages.WORK_ORDER_NO_TECHNICIANS}</p>}
-        <form onSubmit={(event) => { event.preventDefault(); assign.mutate(); }} style={{ display: "grid", gap: 8, marginBottom: 16 }}>
-          <label htmlFor="moderator-installation-technician">{messages.WORK_ORDER_TECHNICIAN}</label>
-          <select
-            id="moderator-installation-technician"
-            value={technicianId}
-            disabled={actionsPending || technicians.isPending}
-            onChange={(event) => setTechnicianId(event.target.value)}
-          >
-            <option value="">Chọn kỹ thuật viên</option>
-            {technicians.data?.map((technician) => (
-              <option key={technician.idaasUserId} value={technician.idaasUserId}>
-                {technician.fullName || technician.email || technician.idaasUserId}
-              </option>
-            ))}
-          </select>
+        <form className={styles.installationDispatchForm} onSubmit={(event) => { event.preventDefault(); assign.mutate(); }}>
+          <label className={styles.formField} htmlFor="moderator-installation-technician">
+            <span>{messages.WORK_ORDER_TECHNICIAN}</span>
+            <select
+              id="moderator-installation-technician"
+              value={technicianId}
+              disabled={actionsPending || technicians.isPending}
+              onChange={(event) => setTechnicianId(event.target.value)}
+            >
+              <option value="">Chọn kỹ thuật viên</option>
+              {technicians.data?.map((technician) => (
+                <option key={technician.idaasUserId} value={technician.idaasUserId}>
+                  {technician.fullName || technician.email || technician.idaasUserId}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className={styles.retryButton} type="submit" disabled={!technicianId || actionsPending}>
             {assign.isPending ? messages.TECHNICAL_TRIAGE_PENDING : messages.WORK_ORDER_ASSIGN}
           </button>
         </form>
-        <form onSubmit={(event) => { event.preventDefault(); reschedule.mutate(); }} style={{ display: "grid", gap: 8, marginBottom: 16 }}>
-          <label htmlFor="moderator-installation-schedule">{messages.WORK_ORDER_SCHEDULED_FOR}</label>
-          <input
-            id="moderator-installation-schedule"
-            type="datetime-local"
-            value={scheduledFor}
-            disabled={actionsPending}
-            onChange={(event) => setScheduledFor(event.target.value)}
-          />
+        <form className={styles.installationDispatchForm} onSubmit={(event) => { event.preventDefault(); reschedule.mutate(); }}>
+          <label className={styles.formField} htmlFor="moderator-installation-schedule">
+            <span>{messages.WORK_ORDER_SCHEDULED_FOR}</span>
+            <input
+              id="moderator-installation-schedule"
+              type="datetime-local"
+              value={scheduledFor}
+              disabled={actionsPending}
+              onChange={(event) => setScheduledFor(event.target.value)}
+            />
+          </label>
           <button className={styles.retryButton} type="submit" disabled={!scheduledFor || actionsPending}>
             {reschedule.isPending ? messages.TECHNICAL_TRIAGE_PENDING : messages.WORK_ORDER_RESCHEDULE}
           </button>
         </form>
-        <form onSubmit={(event) => { event.preventDefault(); cancel.mutate(); }} style={{ display: "grid", gap: 8 }}>
-          <label htmlFor="moderator-installation-cancel-reason">{messages.WORK_ORDER_CANCEL_REASON}</label>
-          <textarea
-            id="moderator-installation-cancel-reason"
-            value={cancelReason}
-            maxLength={4000}
-            required
-            rows={2}
-            disabled={actionsPending}
-            onChange={(event) => setCancelReason(event.target.value)}
-          />
+        <form className={styles.installationDispatchForm} onSubmit={(event) => { event.preventDefault(); cancel.mutate(); }}>
+          <label className={`${styles.formField} ${styles.dispatchFormWide}`} htmlFor="moderator-installation-cancel-reason">
+            <span>{messages.WORK_ORDER_CANCEL_REASON}</span>
+            <textarea
+              id="moderator-installation-cancel-reason"
+              value={cancelReason}
+              maxLength={4000}
+              required
+              rows={2}
+              disabled={actionsPending}
+              onChange={(event) => setCancelReason(event.target.value)}
+            />
+          </label>
           <button className={styles.retryButton} type="submit" disabled={!cancelReason.trim() || actionsPending}>
             {cancel.isPending ? messages.TECHNICAL_TRIAGE_PENDING : messages.WORK_ORDER_CANCEL}
           </button>
         </form>
-        {actionError && <p role="alert">{actionError}</p>}
+        {actionError && <p className={`${styles.contractNotice} ${styles.contractError}`} role="alert">{actionError}</p>}
       </section>
     )}
     <section>
@@ -286,9 +355,24 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
     </section>
     <section>
       <h2 className={styles.sectionTitle}>{messages.TECHNICAL_EVIDENCE} ({details.evidence.length})</h2>
-      <DataTable variant="moderator" className={styles.centerThirdColumn} headers={[messages.TECHNICAL_FILENAME, messages.TECHNICAL_CONTENT_TYPE, messages.TECHNICAL_SIZE, messages.TECHNICAL_SHA256, messages.TECHNICAL_UPLOADED_AT]} emptyMessage={details.evidence.length === 0 ? messages.TECHNICAL_EVIDENCE_EMPTY : undefined} minWidth={760}>
-        {details.evidence.map((item) => <tr key={item.id}><td>{item.originalFilename}</td><td>{item.contentType ?? "—"}</td><td>{numberFormat.format(item.sizeBytes)} bytes</td><td className={styles.codeValue}>{item.sha256 ?? "—"}</td><td>{formatDate(item.uploadedAt)}</td></tr>)}
+      <DataTable variant="moderator" className={`${styles.centerThirdColumn} ${styles.evidenceTable}`} headers={[messages.TECHNICAL_FILENAME, messages.TECHNICAL_CONTENT_TYPE, messages.TECHNICAL_SIZE, messages.TECHNICAL_SHA256, messages.TECHNICAL_UPLOADED_AT, "Thao tác"]} emptyMessage={details.evidence.length === 0 ? messages.TECHNICAL_EVIDENCE_EMPTY : undefined} minWidth={1080}>
+        {details.evidence.map((item) => <tr key={item.id}>
+          <td>{item.originalFilename}</td>
+          <td>{item.contentType ?? "—"}</td>
+          <td>{numberFormat.format(item.sizeBytes)} bytes</td>
+          <td className={styles.codeValue}>{item.sha256 ?? "—"}</td>
+          <td>{formatDate(item.uploadedAt)}</td>
+          <td><div className={styles.evidenceActions}>
+            <button className={`${styles.retryButton} ${styles.evidenceActionButton}`} type="button" disabled={Boolean(evidenceAction)} onClick={() => void viewEvidence(item)}>
+              {evidenceAction?.id === item.id && evidenceAction.action === "view" ? "Đang mở…" : "Xem"}
+            </button>
+            <button className={`${styles.retryButton} ${styles.evidenceActionButton}`} type="button" disabled={Boolean(evidenceAction)} onClick={() => void downloadEvidence(item)}>
+              {evidenceAction?.id === item.id && evidenceAction.action === "download" ? "Đang tải…" : "Tải xuống"}
+            </button>
+          </div></td>
+        </tr>)}
       </DataTable>
+      {evidenceError && <p className={styles.contractNotice} role="alert">{evidenceError}</p>}
     </section>
   </>;
 }

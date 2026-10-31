@@ -44,6 +44,20 @@ function formatFileSize(value: number) {
   return `${(value / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function evidenceMediaType(filename: string, metadataType: string | null | undefined, blob: Blob): string {
+  const declaredType = metadataType?.split(";")[0].trim().toLowerCase();
+  if (declaredType && declaredType !== "application/octet-stream") return declaredType;
+  const extension = filename.toLowerCase().split(".").pop();
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+  if (extension === "png") return "image/png";
+  return declaredType || blob.type || "application/octet-stream";
+}
+
+function safeEvidenceFilename(filename: string, evidenceId: string): string {
+  return filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").trim().slice(0, 180) || `evidence-${evidenceId}`;
+}
+
 function DetailValue({ label, value, code = false }: { label: string; value: string; code?: boolean }) {
   return (
     <div className={styles.detailItem}>
@@ -367,6 +381,8 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [handoverRecipient, setHandoverRecipient] = useState("");
   const [evidenceError, setEvidenceError] = useState("");
+  const [evidenceAction, setEvidenceAction] = useState<{ id: string; action: "view" | "download" } | null>(null);
+  const [evidenceActionError, setEvidenceActionError] = useState("");
   const [checklistEdits, setChecklistEdits] = useState<Record<string, ChecklistEdit>>({});
   const [accessoryName, setAccessoryName] = useState("");
   const [accessoryQuantity, setAccessoryQuantity] = useState("1");
@@ -479,6 +495,55 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     }
   };
 
+  async function viewEvidence(item: InstallationWorkOrderDetails["evidence"][number]) {
+    const previewWindow = window.open("about:blank", "_blank");
+    if (!previewWindow) {
+      setEvidenceActionError("Trình duyệt đã chặn cửa sổ xem minh chứng. Hãy cho phép cửa sổ bật lên hoặc chọn tải xuống.");
+      return;
+    }
+    previewWindow.opener = null;
+    setEvidenceAction({ id: item.id, action: "view" });
+    setEvidenceActionError("");
+    try {
+      const downloadedBlob = await installationWorkOrdersApi.downloadEvidence(workOrderId, item.id);
+      const type = evidenceMediaType(item.originalFilename, item.contentType, downloadedBlob);
+      if (!(type === "application/pdf" || type === "image/jpeg" || type === "image/png")) {
+        previewWindow.close();
+        setEvidenceActionError("Định dạng này chưa hỗ trợ xem trước. Bạn có thể tải tệp xuống.");
+        return;
+      }
+      const objectUrl = URL.createObjectURL(new Blob([downloadedBlob], { type }));
+      previewWindow.location.replace(objectUrl);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
+    } catch (error) {
+      previewWindow.close();
+      setEvidenceActionError(getApiErrorMessage(error));
+    } finally {
+      setEvidenceAction(null);
+    }
+  }
+
+  async function downloadEvidence(item: InstallationWorkOrderDetails["evidence"][number]) {
+    setEvidenceAction({ id: item.id, action: "download" });
+    setEvidenceActionError("");
+    try {
+      const downloadedBlob = await installationWorkOrdersApi.downloadEvidence(workOrderId, item.id);
+      const type = evidenceMediaType(item.originalFilename, item.contentType, downloadedBlob);
+      const objectUrl = URL.createObjectURL(new Blob([downloadedBlob], { type }));
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = safeEvidenceFilename(item.originalFilename, item.id);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+      setEvidenceActionError(getApiErrorMessage(error));
+    } finally {
+      setEvidenceAction(null);
+    }
+  }
+
   return (
     <TechnicianShell pageTitle={messages.TASK_DETAIL_TITLE}>
       <section className={shellStyles.pageContent} aria-labelledby="technician-work-order-title">
@@ -568,6 +633,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                   {detailData.evidence.length > 0 && (
                     <DataTable
                       variant="moderator"
+                      className={styles.evidenceTable}
                       rows={detailData.evidence}
                       rowKey={(item) => item.id}
                       columns={[
@@ -575,9 +641,18 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                         { key: "type", header: "Định dạng", render: (item) => item.contentType ?? "—" },
                         { key: "size", header: "Dung lượng", render: (item) => formatFileSize(item.sizeBytes) },
                         { key: "uploaded", header: "Ngày tải", render: (item) => formatDateTime(item.uploadedAt) },
+                        { key: "actions", header: "Thao tác", cellProps: () => ({ style: { width: 188, minWidth: 188, whiteSpace: "nowrap" } }), render: (item) => <div className={styles.evidenceActions}>
+                          <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void viewEvidence(item)}>
+                            {evidenceAction?.id === item.id && evidenceAction.action === "view" ? "Đang mở…" : "Xem"}
+                          </ButtonBar>
+                          <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void downloadEvidence(item)}>
+                            {evidenceAction?.id === item.id && evidenceAction.action === "download" ? "Đang tải…" : "Tải xuống"}
+                          </ButtonBar>
+                        </div> },
                       ]}
                     />
                   )}
+                  {evidenceActionError && <p className={styles.error} role="alert">{evidenceActionError}</p>}
                   <div className={styles.uploadRow}>
                     <label className={styles.fileField} htmlFor="work-order-evidence-file">
                       <span>Chọn minh chứng</span>

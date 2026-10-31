@@ -18,6 +18,7 @@ import {
   InstallationWorkOrderListSchema,
   InstallationWorkOrderRecordSchema,
   InstallationWorkOrderOwnerIdSchema,
+  type InstallationWorkOrderSummary,
   type CreateInstallationWorkOrderRequest,
   type FailInstallationWorkOrderRequest,
   type InstallationAccessoryRequest,
@@ -55,12 +56,20 @@ export const installationWorkOrdersApi = {
 
   async listByOwner(id: string, signal?: AbortSignal) {
     const ownerId = InstallationWorkOrderOwnerIdSchema.parse(id);
-    const response = await axiosClient.get<unknown>("/installation-work-orders", {
-      baseURL: DOLORES_API_BASE_URL,
-      params: { ownerId },
-      signal,
-    });
-    const workOrders = InstallationWorkOrderListSchema.parse(response.data);
+    const workOrders: InstallationWorkOrderSummary[] = [];
+    let page = 0;
+    let hasNext = true;
+    while (hasNext) {
+      const response = await axiosClient.get<unknown>("/installation-work-orders", {
+        baseURL: DOLORES_API_BASE_URL,
+        params: { ownerId, page, size: 100 },
+        signal,
+      });
+      workOrders.push(...InstallationWorkOrderListSchema.parse(response.data));
+      hasNext = String(response.headers?.["x-has-next"]).toLowerCase() === "true";
+      page += 1;
+      if (page > 1000) throw new Error("Installation work order pagination exceeded the supported limit.");
+    }
     if (workOrders.some((workOrder) => workOrder.ownerId !== ownerId)) {
       throw new InstallationWorkOrderOwnerMismatchError();
     }
@@ -190,6 +199,20 @@ export const installationWorkOrdersApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return InstallationWorkOrderEvidenceUploadResponseSchema.parse(response.data);
+  },
+
+  async downloadEvidence(workOrderId: string, evidenceId: string, signal?: AbortSignal) {
+    const validatedWorkOrderId = InstallationWorkOrderIdSchema.parse(workOrderId);
+    const validatedEvidenceId = InstallationWorkOrderIdSchema.parse(evidenceId);
+    const response = await axiosClient.get<Blob>(
+      `${workOrderPath(validatedWorkOrderId)}/evidence/${encodeURIComponent(validatedEvidenceId)}`,
+      {
+        baseURL: DOLORES_API_BASE_URL,
+        responseType: "blob",
+        signal,
+      },
+    );
+    return response.data;
   },
 
   async complete(id: string, input: { handoverRecipient: string }) {
