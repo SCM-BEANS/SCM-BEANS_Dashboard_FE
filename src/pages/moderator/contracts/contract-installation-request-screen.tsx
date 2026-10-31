@@ -1,12 +1,13 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { TextLinkButton } from "@/components/button/text-link-button";
+import { ButtonBar } from "@/components/button/button-bar";
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
+import type { InstallationWorkOrderSummary } from "@/schema/installation-work-orders.schema";
 import { PATH_MODERATOR } from "@/routes/path";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ModeratorPageHeading } from "../moderator-page-heading";
@@ -15,6 +16,21 @@ import { moderatorStyles as styles } from "../moderator-shell";
 function localDateTimeValue(date: Date) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return localDate.toISOString().slice(0, 16);
+}
+
+function workOrderStatusLabel(status: InstallationWorkOrderSummary["status"]) {
+  switch (status) {
+    case "PENDING": return "Chờ phân công";
+    case "ASSIGNED": return "Đã giao kỹ thuật viên";
+    case "IN_PROGRESS": return "Đang lắp đặt";
+    case "COMPLETED": return "Đã hoàn tất bàn giao";
+    case "FAILED": return "Không hoàn tất";
+    case "CANCELLED": return "Đã hủy";
+  }
+}
+
+function blocksNewInstallationOrder(status: InstallationWorkOrderSummary["status"]) {
+  return status === "PENDING" || status === "ASSIGNED" || status === "IN_PROGRESS" || status === "COMPLETED";
 }
 
 function RetryableNotice({
@@ -28,9 +44,9 @@ function RetryableNotice({
     <div className={styles.pendingNotice} role={onRetry ? "alert" : "status"}>
       <p>{message}</p>
       {onRetry && (
-        <button className={styles.retryButton} type="button" onClick={onRetry}>
+        <ButtonBar type="button" onClick={onRetry}>
           {MODERATOR_MESSAGES.READ_SCREENS.RETRY}
-        </button>
+        </ButtonBar>
       )}
     </div>
   );
@@ -38,11 +54,12 @@ function RetryableNotice({
 
 export function ContractInstallationRequestScreen({
   contractId,
-  backHref = PATH_MODERATOR.CONTRACTS,
+  backHref,
 }: {
   contractId: string;
   backHref?: string;
 }) {
+  const queryClient = useQueryClient();
   const validId = ContractIdSchema.safeParse(contractId).success;
   const [scheduledFor, setScheduledFor] = useState("");
   const [installationNotes, setInstallationNotes] = useState("");
@@ -52,6 +69,18 @@ export function ContractInstallationRequestScreen({
     queryKey: ["dolores", "contracts", "id", contractId],
     queryFn: ({ signal }) => contractsApi.getById(contractId, signal),
     enabled: validId,
+    retry: false,
+  });
+  const documents = useQuery({
+    queryKey: ["dolores", "contract-documents", contractId],
+    queryFn: ({ signal }) => contractsApi.getDocuments(contractId, signal),
+    enabled: validId && contract.data?.status === "DRAFT",
+    retry: false,
+  });
+  const workOrders = useQuery({
+    queryKey: ["dolores", "installation-work-orders-by-owner", contract.data?.ownerId],
+    queryFn: ({ signal }) => installationWorkOrdersApi.listByOwner(contract.data!.ownerId, signal),
+    enabled: validId && contract.data?.status === "DRAFT" && Boolean(contract.data.ownerId && contract.data.machineId),
     retry: false,
   });
   const technicians = useQuery({
@@ -72,9 +101,26 @@ export function ContractInstallationRequestScreen({
   });
   const createWorkOrder = useMutation({
     mutationFn: installationWorkOrdersApi.create,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "installation-work-orders-by-owner", contract.data?.ownerId] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "contract-activation-work-order", contractId] }),
+      ]);
+    },
   });
 
   const selectedTechnician = technicians.data?.find((user) => user.idaasUserId === technicianId);
+  const hasMainContract = documents.data?.some((document) =>
+    document.documentType === "MAIN_CONTRACT" && !document.archivedAt,
+  ) ?? false;
+  const matchingWorkOrders = workOrders.data?.filter((workOrder) =>
+    workOrder.ownerId === contract.data?.ownerId &&
+    workOrder.contractId === contract.data?.id &&
+    workOrder.machineId === contract.data?.machineId,
+  ) ?? [];
+  const currentWorkOrder = [...matchingWorkOrders]
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    .find((workOrder) => blocksNewInstallationOrder(workOrder.status));
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -83,7 +129,14 @@ export function ContractInstallationRequestScreen({
       contract.data.status !== "DRAFT" ||
       !contract.data.ownerId ||
       !contract.data.machineId ||
-      (technicianId !== "" && !selectedTechnician)
+      !hasMainContract ||
+      !technicianId ||
+      !selectedTechnician ||
+      workOrders.isError ||
+      workOrders.isPending ||
+      currentWorkOrder ||
+      documents.isError ||
+      documents.isPending
     ) {
       return;
     }
@@ -94,7 +147,7 @@ export function ContractInstallationRequestScreen({
       ownerId: contract.data.ownerId,
       contractId: contract.data.id,
       machineId: contract.data.machineId,
-      ...(technicianId ? { technicianId: ProfileIdSchema.parse(technicianId) } : {}),
+      technicianId: ProfileIdSchema.parse(technicianId),
       ...(scheduledForIso ? { scheduledFor: scheduledForIso } : {}),
       ...(notes ? { installationNotes: notes } : {}),
     });
@@ -103,10 +156,10 @@ export function ContractInstallationRequestScreen({
   return (
     <div className={styles.pageContent}>
       <ModeratorPageHeading
-        title="Tạo yêu cầu lắp đặt"
-        description="Tạo phiếu từ hợp đồng nháp, có thể giao ngay cho một kỹ thuật viên đang hoạt động."
+        title="Tạo lệnh lắp đặt"
+        description="Tạo lệnh lắp đặt từ hợp đồng nháp và giao trực tiếp cho kỹ thuật viên phụ trách."
       />
-      <TextLinkButton href={backHref}>Quay lại danh sách hợp đồng</TextLinkButton>
+      {backHref && <ButtonBar href={backHref}>Về hợp đồng</ButtonBar>}
 
       {!validId && (
         <RetryableNotice message="Mã hợp đồng không hợp lệ; không gửi yêu cầu tới API." />
@@ -126,23 +179,88 @@ export function ContractInstallationRequestScreen({
       {contract.data?.status === "DRAFT" && !contract.data.machineId && (
         <RetryableNotice message="Hợp đồng chưa có mã máy; chưa thể tạo yêu cầu lắp đặt." />
       )}
+      {contract.data?.status === "DRAFT" && !contract.data.ownerId && (
+        <RetryableNotice message="Hợp đồng chưa có chủ sở hữu hợp lệ; không thể tạo yêu cầu lắp đặt." />
+      )}
 
-      {contract.data?.status === "DRAFT" && !contract.data.legacyUnmapped && contract.data.machineId && (
+      {contract.data?.status === "DRAFT" && !contract.data.legacyUnmapped && contract.data.ownerId && contract.data.machineId && (
         <>
-          <dl className={styles.detailGrid}>
-            <div className={styles.detailItem}>
-              <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID}</dt>
-              <dd>{contract.data.id}</dd>
+          <section className={`${styles.overviewPanel} ${styles.installationPanel}`} aria-labelledby="installation-contract-summary">
+            <h2 id="installation-contract-summary" className={styles.panelHeading}>Hợp đồng cần lắp đặt</h2>
+            <p className={styles.formHint}>Kiểm tra đúng hồ sơ trước khi giao việc cho kỹ thuật viên.</p>
+            <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
+              <div className={styles.detailItem}>
+                <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID}</dt>
+                <dd><code className={styles.codeValue}>{contract.data.id}</code></dd>
+              </div>
+              <div className={styles.detailItem}>
+                <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID}</dt>
+                <dd><code className={styles.codeValue}>{contract.data.ownerId}</code></dd>
+              </div>
+              <div className={styles.detailItem}>
+                <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_MACHINE_ID}</dt>
+                <dd><code className={styles.codeValue}>{contract.data.machineId}</code></dd>
+              </div>
+            </dl>
+          </section>
+
+          {documents.isPending && <RetryableNotice message="Đang kiểm tra tài liệu hợp đồng…" />}
+          {documents.isError && (
+            <RetryableNotice
+              message={`Không kiểm tra được tài liệu hợp đồng. ${getApiErrorMessage(documents.error)}`}
+              onRetry={() => void documents.refetch()}
+            />
+          )}
+          {documents.isSuccess && !hasMainContract && (
+            <div className={`${styles.contractNotice} ${styles.installationPrerequisite}`} role="note">
+              <p>Cần tải lên tài liệu MAIN_CONTRACT chưa lưu trữ trước khi tạo lệnh.</p>
+              <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Mở chi tiết hợp đồng</ButtonBar>
             </div>
-            <div className={styles.detailItem}>
-              <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID}</dt>
-              <dd>{contract.data.ownerId}</dd>
-            </div>
-            <div className={styles.detailItem}>
-              <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_MACHINE_ID}</dt>
-              <dd>{contract.data.machineId}</dd>
-            </div>
-          </dl>
+          )}
+
+          {workOrders.isPending && <RetryableNotice message="Đang kiểm tra các lệnh lắp đặt hiện có của Owner…" />}
+          {workOrders.isError && (
+            <RetryableNotice
+              message={`Không kiểm tra được lệnh lắp đặt hiện có; chưa thể tạo lệnh mới an toàn. ${getApiErrorMessage(workOrders.error)}`}
+              onRetry={() => void workOrders.refetch()}
+            />
+          )}
+          {currentWorkOrder && (
+            <section className={`${styles.overviewPanel} ${styles.installationPanel}`} role="status" aria-labelledby="current-installation-order">
+              <h2 id="current-installation-order" className={styles.panelHeading}>Lệnh lắp đặt hiện tại</h2>
+              <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
+                <div className={styles.detailItem}>
+                  <dt>Mã lệnh</dt>
+                  <dd><code className={styles.codeValue}>{currentWorkOrder.id}</code></dd>
+                </div>
+                <div className={styles.detailItem}>
+                  <dt>Trạng thái</dt>
+                  <dd><span className={styles.installationStatus}>{workOrderStatusLabel(currentWorkOrder.status)}</span></dd>
+                </div>
+                {currentWorkOrder.assignedTechnicianId && <div className={styles.detailItem}>
+                  <dt>Kỹ thuật viên</dt>
+                  <dd><code className={styles.codeValue}>{currentWorkOrder.assignedTechnicianId}</code></dd>
+                </div>}
+                {currentWorkOrder.scheduledFor && <div className={styles.detailItem}>
+                  <dt>Lịch dự kiến</dt>
+                  <dd>{new Date(currentWorkOrder.scheduledFor).toLocaleString("vi-VN")}</dd>
+                </div>}
+              </dl>
+              {currentWorkOrder.status === "COMPLETED"
+                ? <p>Kỹ thuật viên đã hoàn tất bàn giao. Mở lại hợp đồng để tiếp tục kích hoạt.</p>
+                : <p>Hợp đồng này đã có lệnh đang mở nên không thể tạo lệnh trùng.</p>}
+              <div className={styles.installationActions}>
+                <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(currentWorkOrder.id)}>Mở chi tiết lệnh</ButtonBar>
+                <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
+              </div>
+            </section>
+          )}
+
+          {documents.isSuccess && hasMainContract && workOrders.isSuccess && !currentWorkOrder && (
+            <p className={styles.contractNotice} role="note">
+              Máy cần sẵn sàng trong kho và checklist lắp đặt phải đang hiệu lực, đã được duyệt. API sẽ kiểm tra các điều kiện này khi tạo lệnh.
+            </p>
+          )}
 
           {technicians.isError && (
             <RetryableNotice
@@ -151,54 +269,77 @@ export function ContractInstallationRequestScreen({
             />
           )}
           {technicians.data?.length === 0 && (
-            <RetryableNotice message="Không tìm thấy kỹ thuật viên đang hoạt động; có thể tạo lệnh chờ phân công." />
+            <RetryableNotice message="Không tìm thấy kỹ thuật viên đang hoạt động đã xác minh; chưa thể giao lệnh lắp đặt." />
           )}
 
           {createWorkOrder.isError && (
             <RetryableNotice message={getApiErrorMessage(createWorkOrder.error)} />
           )}
           {createWorkOrder.data && (
-            <section className={styles.pendingNotice} role="status">
-              <h2>Đã tạo yêu cầu lắp đặt</h2>
-              <p>Mã yêu cầu: {createWorkOrder.data.id}</p>
+            <section className={`${styles.overviewPanel} ${styles.installationPanel}`} role="status" aria-labelledby="installation-order-created">
+              <h2 id="installation-order-created" className={styles.panelHeading}>Đã tạo lệnh lắp đặt</h2>
+              <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
+                <div className={styles.detailItem}>
+                  <dt>Mã lệnh</dt>
+                  <dd><code className={styles.codeValue}>{createWorkOrder.data.id}</code></dd>
+                </div>
+                <div className={styles.detailItem}>
+                  <dt>Trạng thái</dt>
+                  <dd><span className={styles.installationStatus}>{workOrderStatusLabel(createWorkOrder.data.status)}</span></dd>
+                </div>
+                <div className={styles.detailItem}>
+                  <dt>Kỹ thuật viên</dt>
+                  <dd>{selectedTechnician?.fullName || selectedTechnician?.email || technicianId}</dd>
+                </div>
+              </dl>
               {createWorkOrder.data.status === "ASSIGNED"
-                ? <p>Trạng thái: Đã giao cho {selectedTechnician?.name || selectedTechnician?.email || technicianId}.</p>
-                : <p>Trạng thái: {createWorkOrder.data.status}. Yêu cầu đang chờ phân công kỹ thuật viên.</p>}
+                ? <p>Kỹ thuật viên sẽ hoàn thành checklist và bàn giao trên tài khoản của họ. Hợp đồng chỉ được kích hoạt sau khi lệnh chuyển sang COMPLETED.</p>
+                : <p>API đã tạo lệnh nhưng trạng thái trả về chưa phải ASSIGNED. Hãy kiểm tra lại lệnh trước khi tiếp tục.</p>}
+              <div className={styles.installationActions}>
+                <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(createWorkOrder.data.id)}>Mở chi tiết lệnh</ButtonBar>
+                <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
+              </div>
             </section>
           )}
 
-          {!createWorkOrder.data && (
+          {!createWorkOrder.data && !currentWorkOrder && documents.isSuccess && hasMainContract && workOrders.isSuccess && (
             <form className={styles.formPanel} onSubmit={handleSubmit}>
-              <label className={styles.formField} htmlFor="installation-technician-id">
-                <span>Giao kỹ thuật viên ngay (không bắt buộc)</span>
-                <select
-                  id="installation-technician-id"
-                  value={technicianId}
-                  disabled={technicians.isPending || technicians.isError}
-                  onChange={(event) => setTechnicianId(event.target.value)}
-                >
-                  <option value="">
-                    {technicians.isPending ? "Đang tải danh sách kỹ thuật viên…" : "Để chờ phân công"}
-                  </option>
-                  {technicians.data?.map((technician) => (
-                    <option key={technician.idaasUserId} value={technician.idaasUserId}>
-                      {technician.fullName || technician.email || technician.idaasUserId}
-                      {` — ${technician.roles.map((role) => role.toUpperCase()).join(", ")}`}
-                      {technician.fullName && technician.email ? ` — ${technician.email}` : ""}
+              <div>
+                <h2 className={styles.panelHeading}>Giao lệnh cho kỹ thuật viên</h2>
+                <p className={styles.formHint}>Chọn người phụ trách và thời gian dự kiến. Lệnh sẽ được giao ngay sau khi tạo.</p>
+              </div>
+              <div className={styles.formRow}>
+                <label className={styles.formField} htmlFor="installation-technician-id">
+                  <span>Kỹ thuật viên phụ trách *</span>
+                  <select
+                    id="installation-technician-id"
+                    required
+                    value={technicianId}
+                    disabled={technicians.isPending || technicians.isError || technicians.data?.length === 0}
+                    onChange={(event) => setTechnicianId(event.target.value)}
+                  >
+                    <option value="">
+                      {technicians.isPending ? "Đang tải danh sách…" : "Chọn kỹ thuật viên"}
                     </option>
-                  ))}
-                </select>
-              </label>
-              <label className={styles.formField} htmlFor="installation-scheduled-for">
-                <span>Thời gian lắp đặt dự kiến (không bắt buộc)</span>
-                <input
-                  id="installation-scheduled-for"
-                  type="datetime-local"
-                  min={localDateTimeValue(new Date())}
-                  value={scheduledFor}
-                  onChange={(event) => setScheduledFor(event.target.value)}
-                />
-              </label>
+                    {technicians.data?.map((technician) => (
+                      <option key={technician.idaasUserId} value={technician.idaasUserId}>
+                        {technician.fullName || technician.email || technician.idaasUserId}
+                        {technician.fullName && technician.email ? ` — ${technician.email}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.formField} htmlFor="installation-scheduled-for">
+                  <span>Thời gian lắp đặt (không bắt buộc)</span>
+                  <input
+                    id="installation-scheduled-for"
+                    type="datetime-local"
+                    min={localDateTimeValue(new Date())}
+                    value={scheduledFor}
+                    onChange={(event) => setScheduledFor(event.target.value)}
+                  />
+                </label>
+              </div>
               <label className={styles.formField} htmlFor="installation-notes">
                 <span>Ghi chú cho kỹ thuật viên (không bắt buộc)</span>
                 <textarea
@@ -208,16 +349,19 @@ export function ContractInstallationRequestScreen({
                   onChange={(event) => setInstallationNotes(event.target.value)}
                 />
               </label>
-              <button
-                className={styles.retryButton}
-                type="submit"
-                disabled={
-                  createWorkOrder.isPending ||
-                  (technicianId !== "" && (!selectedTechnician || technicians.isError))
-                }
-              >
-                {createWorkOrder.isPending ? "Đang tạo yêu cầu…" : "Tạo yêu cầu lắp đặt"}
-              </button>
+              <div className={styles.installationActions}>
+                <ButtonBar
+                  type="submit"
+                  disabled={
+                    createWorkOrder.isPending ||
+                    !selectedTechnician ||
+                    technicians.isPending ||
+                    technicians.isError
+                  }
+                >
+                  {createWorkOrder.isPending ? "Đang tạo lệnh…" : "Tạo và giao lệnh"}
+                </ButtonBar>
+              </div>
             </form>
           )}
         </>

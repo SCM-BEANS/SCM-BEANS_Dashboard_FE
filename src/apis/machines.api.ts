@@ -58,11 +58,28 @@ export const machinesApi = {
     return MachineInventorySchema.parse(response.data);
   },
   async listRentalCandidates(signal?: AbortSignal) {
-    const response = await axiosClient.get<unknown>("/inventory/rental-candidates", {
-      baseURL: DOLORES_API_BASE_URL,
-      signal,
-    });
-    return RentalCandidatePageSchema.parse(response.data).content;
+    const pageSize = 100;
+    const fetchPage = async (page: number) => {
+      const response = await axiosClient.get<unknown>("/inventory/rental-candidates", {
+        baseURL: DOLORES_API_BASE_URL,
+        params: { page, size: pageSize },
+        signal,
+      });
+      return RentalCandidatePageSchema.parse(response.data);
+    };
+
+    const firstPage = await fetchPage(0);
+    const candidates = [...firstPage.content];
+    for (let start = 1; start < firstPage.totalPages; start += 5) {
+      const pageNumbers = Array.from(
+        { length: Math.min(5, firstPage.totalPages - start) },
+        (_, offset) => start + offset,
+      );
+      const pages = await Promise.all(pageNumbers.map(fetchPage));
+      candidates.push(...pages.flatMap((page) => page.content));
+      if (signal?.aborted) break;
+    }
+    return candidates;
   },
   async getById(id: string, signal?: AbortSignal) {
     const validId = MachineIdSchema.parse(id);

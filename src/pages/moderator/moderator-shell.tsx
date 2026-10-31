@@ -122,7 +122,11 @@ export function ModeratorShell({
   );
   const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;
   const isNotificationDetail = pathname === PATH_MODERATOR.NOTIFICATIONS && Boolean(router.query.notificationId);
-  const isSectionList = !isNotificationDetail && (pathname === currentSection.HREF || pathname === currentSection.HREF + "/list");
+  const isSectionList = !isNotificationDetail && (
+    pathname === currentSection.HREF ||
+    pathname === currentSection.HREF + "/list" ||
+    pathname === PATH_MODERATOR.MACHINE_MODELS
+  );
   const renderActions = () => {
     switch (currentSection.HREF) {
       case PATH_MODERATOR.ROOT:
@@ -134,7 +138,11 @@ export function ModeratorShell({
       case PATH_MODERATOR.INVOICES:
         return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.RECONCILE_INVOICE}</ButtonBar>;
       case PATH_MODERATOR.MACHINES:
-        return <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>;
+        return <>
+          <ButtonBar href={PATH_MODERATOR.NEW_MACHINE}>{actionMessages.CREATE_MACHINE}</ButtonBar>
+          <ButtonBar href={PATH_MODERATOR.NEW_MACHINE_MODEL}>{actionMessages.CREATE_MACHINE_MODEL}</ButtonBar>
+          <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>
+        </>;
       case PATH_MODERATOR.IOT:
         return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
       case PATH_MODERATOR.MENU:
@@ -183,6 +191,9 @@ export function ModeratorShell({
             <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
             </Link>
+            <span className={styles.mobileHeaderStatus}>
+              {currentSection.LABEL}
+            </span>
             <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
             <MobileNavigation
               items={MODERATOR_SIDEBAR_ITEMS}
@@ -200,9 +211,6 @@ export function ModeratorShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {renderBreadcrumb()}
-          </div>
           <main className={styles.main}>{children}</main>
           {isSectionList && <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>}
         </div>

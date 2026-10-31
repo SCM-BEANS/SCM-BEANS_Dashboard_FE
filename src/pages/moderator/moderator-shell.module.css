@@ -19,7 +19,7 @@
 .desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: #fff; color: #706561; font-size: 14px; }
 .headerLink { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; }
 .main { min-height: 0; flex: 1; overflow: auto; }
-.mobileHeader, .mobileBreadcrumb { display: none; }
+.mobileHeader { display: none; }
 
 .pageContent { display: flex; width: min(100%, 1440px); min-height: 100%; flex-direction: column; gap: 22px; padding: 28px 32px 120px; margin: 0 auto; }
 .actionHint { min-width: 0; color: #706561; font-size: 13px; line-height: 1.4; }
@@ -120,8 +120,8 @@
   .desktopHeader { display: none; }
   .shell { flex-direction: column; }
   .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: #fff; }
-  .mobileBreadcrumb { display: flex; min-height: 36px; align-items: center; padding: 0 16px 10px; border-bottom: 1px solid #e9e2dc; background: #fff; }
   .mobileBrand { color: #b81724 !important; font-size: 23px; font-weight: 700; }
+  .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .mobileHeaderLink { display: inline-flex; min-height: 44px; align-items: center; color: #706561 !important; font-size: 14px; }
   .workspace :global(footer) { bottom: 0; }
   .pageContent { gap: 16px; padding: 20px 16px 104px; }

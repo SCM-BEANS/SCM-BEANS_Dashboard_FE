@@ -15,6 +15,8 @@ type MachineType = "CONVENTIONAL" | "SMART_IOT";
 type MachineChoice = {
   machineId: string;
   displayName: string;
+  serialNumber?: string | null;
+  machineType?: MachineType | null;
   optionLabel: string;
 };
 type ContractFormState = {
@@ -72,16 +74,18 @@ const FORM_ID = "contract-create-form";
 export function ContractCreateForm({
   onCreated,
   ownerRole = "OWNER",
+  machineSource = "rental-candidates",
 }: {
   onCreated: (contractId: string) => void;
   ownerRole?: string;
+  machineSource?: "inventory" | "rental-candidates";
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ContractFormState>(initialForm);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [createdContractId, setCreatedContractId] = useState("");
-  const useRentalCandidates = ownerRole === "owner";
+  const useRentalCandidates = machineSource === "rental-candidates";
   const ownerQueryKey = ownerRole === "OWNER"
     ? ["dolores", "profiles", "owner-directory"]
     : ["dolores", "profiles", "owner-directory", ownerRole];
@@ -106,11 +110,20 @@ export function ContractCreateForm({
     queryFn: async ({ signal }): Promise<MachineChoice[]> => {
       if (useRentalCandidates) {
         const candidates = await machinesApi.listRentalCandidates(signal);
-        return candidates.map(({ machineId, displayName }) => ({
-          machineId,
-          displayName,
-          optionLabel: displayName,
-        }));
+        return candidates.map(({ machineId, displayName, serialNumber, machineType }) => {
+          const typeLabel = machineType === "SMART_IOT"
+            ? T.MACHINES.SMART
+            : machineType === "CONVENTIONAL"
+              ? T.MACHINES.CONVENTIONAL
+              : "";
+          const optionLabel = [
+            displayName,
+            serialNumber,
+            typeLabel,
+            machineId.slice(0, 8).toUpperCase(),
+          ].filter(Boolean).join(" · ");
+          return { machineId, displayName, serialNumber, machineType, optionLabel };
+        });
       }
 
       const inventory = await machinesApi.list(signal);
@@ -131,7 +144,7 @@ export function ContractCreateForm({
         });
     },
   });
-  const warehouseMachines = machines.data ?? [];
+  const eligibleMachines = machines.data ?? [];
 
   const create = useMutation({
     mutationFn: (request: z.infer<typeof CreateContractRequestSchema>) => contractsApi.create(request),
@@ -213,7 +226,7 @@ export function ContractCreateForm({
 
   const locked = create.isPending || blockResubmit || Boolean(createdContractId);
   const submitDisabled = locked || owners.isPending || owners.isError || owners.data?.length === 0 ||
-    machines.isPending || machines.isError || warehouseMachines.length === 0;
+    machines.isPending || machines.isError || eligibleMachines.length === 0;
 
   return (
     <>
@@ -230,10 +243,10 @@ export function ContractCreateForm({
                 </select>
               </label>
               <label htmlFor="contract-machine">
-                <span>Máy đang ở kho *</span>
-                <select id="contract-machine" name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
-                  <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy" : warehouseMachines.length ? "Chọn máy trong kho" : T.CONTRACTS.NO_WAREHOUSE_MACHINES}</option>
-                  {warehouseMachines.map((machine) => <option key={machine.machineId} value={machine.machineId}>{machine.optionLabel}</option>)}
+                <span>Máy đủ điều kiện cho hợp đồng thuê *</span>
+                <select id="contract-machine" name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || eligibleMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
+                  <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy đủ điều kiện" : eligibleMachines.length ? "Chọn máy đủ điều kiện" : T.CONTRACTS.NO_RENTAL_CANDIDATES}</option>
+                  {eligibleMachines.map((machine) => <option key={machine.machineId} value={machine.machineId}>{machine.optionLabel}</option>)}
                 </select>
               </label>
               <label htmlFor="contract-start-date"><span>Ngày bắt đầu *</span><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></label>
@@ -287,7 +300,7 @@ export function ContractCreateForm({
           {owners.data?.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_OWNERS}</p>}
           {owners.isError && <p className={styles.operationsNotice} role="alert">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)} <ButtonBar type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
           {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
-          {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
+          {machines.data && eligibleMachines.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_RENTAL_CANDIDATES}</p>}
           {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
           {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
         </form>

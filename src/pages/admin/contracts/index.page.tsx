@@ -51,12 +51,28 @@ function status(value: string): string {
   return T.CONTRACTS.TERMINATED;
 }
 
+type ContractPolicyDraft = {
+  policyVersion: number;
+  maintenanceIntervalMonths: string;
+  maintenanceWindowDays: string;
+  allowedReplacementMachineTypes: Array<"CONVENTIONAL" | "SMART_IOT">;
+  repairCostResponsibility: "TENANT" | "COMPANY" | "UNKNOWN";
+  paymentDueEligibleDays: string;
+  paymentDestinationReference?: string;
+  offlineViolationAction: "WARN_ONLY" | "MANUAL_REVIEW";
+  buybackEnabled: boolean;
+  offlineLimitMinutes: string;
+  buybackMinimumMonths: string;
+  buybackValuationMethod: "MANUAL_APPRAISAL";
+  [key: string]: unknown;
+};
+
 function ContractsContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createdContractId, setCreatedContractId] = useState("");
   const [lifecycleView, setLifecycleView] = useState<"amend" | "terminate" | "continue" | null>(null);
-  const [policySnapshotText, setPolicySnapshotText] = useState("");
+  const [policySnapshot, setPolicySnapshot] = useState<ContractPolicyDraft | null>(null);
   const [policyReason, setPolicyReason] = useState("");
   const [policyEffectiveDate, setPolicyEffectiveDate] = useState("");
   const [terminationType, setTerminationType] = useState<TerminationCaseRequest["type"]>("NORMAL");
@@ -105,7 +121,15 @@ function ContractsContent() {
   } });
   useEffect(() => {
     if (!contract.data) return;
-    setPolicySnapshotText(contract.data.contractTermsSnapshot ? JSON.stringify(contract.data.contractTermsSnapshot, null, 2) : "");
+    const snapshot = contract.data.contractTermsSnapshot;
+    setPolicySnapshot(snapshot ? {
+      ...snapshot,
+      maintenanceIntervalMonths: String(snapshot.maintenanceIntervalMonths),
+      maintenanceWindowDays: String(snapshot.maintenanceWindowDays),
+      paymentDueEligibleDays: String(snapshot.paymentDueEligibleDays),
+      offlineLimitMinutes: snapshot.offlineLimitMinutes == null ? "" : String(snapshot.offlineLimitMinutes),
+      buybackMinimumMonths: String(snapshot.buybackMinimumMonths),
+    } : null);
     setPolicyReason("");
     setPolicyEffectiveDate(contract.data.endDate ?? new Date().toISOString().slice(0, 10));
     setContinuationTerms(contract.data.terms ?? "");
@@ -151,9 +175,24 @@ function ContractsContent() {
   });
   const submitPolicyAmendment = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    let snapshot: unknown;
-    try { snapshot = JSON.parse(policySnapshotText); }
-    catch { setLifecycleError("Snapshot chính sách phải là JSON hợp lệ."); return; }
+    const snapshot = policySnapshot ? (() => {
+      const {
+        maintenanceIntervalMonths,
+        maintenanceWindowDays,
+        paymentDueEligibleDays,
+        offlineLimitMinutes,
+        buybackMinimumMonths,
+        ...rest
+      } = policySnapshot;
+      return {
+        ...rest,
+        maintenanceIntervalMonths: Number(maintenanceIntervalMonths),
+        maintenanceWindowDays: Number(maintenanceWindowDays),
+        paymentDueEligibleDays: Number(paymentDueEligibleDays),
+        ...(offlineLimitMinutes.trim() ? { offlineLimitMinutes: Number(offlineLimitMinutes) } : {}),
+        buybackMinimumMonths: Number(buybackMinimumMonths),
+      };
+    })() : null;
     const parsed = ContractPolicyAmendmentRequestSchema.safeParse({
       snapshot,
       reason: policyReason,
@@ -290,8 +329,47 @@ function ContractsContent() {
         </section>
         {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={styles.panel} onSubmit={submitPolicyAmendment}>
           <h2>Điều chỉnh chính sách</h2>
-          {contract.data.contractTermsSnapshot ? <>
-            <label>Snapshot chính sách (JSON)<textarea required rows={12} value={policySnapshotText} onChange={(event) => setPolicySnapshotText(event.target.value)} /></label>
+          {policySnapshot ? <>
+            <p className={styles.panelSubtitle}>Chỉnh các điều khoản bằng trường nhập rõ ràng. Phiên bản hiện tại được giữ nguyên; máy chủ sẽ ghi nhận bản sửa đổi sau khi bạn xác nhận.</p>
+            <div className={styles.operationsGrid}>
+              <label>Phiên bản chính sách<input type="text" value={policySnapshot.policyVersion} readOnly /></label>
+              <label>Chu kỳ bảo trì (tháng) *<input type="number" min={1} max={24} step={1} required value={policySnapshot.maintenanceIntervalMonths} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, maintenanceIntervalMonths: event.target.value } : current)} /></label>
+              <label>Cửa sổ bảo trì (ngày) *<input type="number" min={0} max={30} step={1} required value={policySnapshot.maintenanceWindowDays} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, maintenanceWindowDays: event.target.value } : current)} /></label>
+              <label>Trách nhiệm chi phí sửa chữa *<select required value={policySnapshot.repairCostResponsibility} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, repairCostResponsibility: event.target.value as ContractPolicyDraft["repairCostResponsibility"] } : current)}>
+                <option value="TENANT">Khách thuê / Owner</option><option value="COMPANY">Công ty Dolores</option><option value="UNKNOWN">Chưa xác định</option>
+              </select></label>
+              <label>Số ngày đến hạn thanh toán *<input type="number" min={1} max={60} step={1} required value={policySnapshot.paymentDueEligibleDays} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, paymentDueEligibleDays: event.target.value } : current)} /></label>
+              <label>Mã tham chiếu thanh toán<input maxLength={128} value={policySnapshot.paymentDestinationReference ?? ""} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, paymentDestinationReference: event.target.value } : current)} /></label>
+              <label>Hành động khi vi phạm offline *<select required value={policySnapshot.offlineViolationAction} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, offlineViolationAction: event.target.value as ContractPolicyDraft["offlineViolationAction"] } : current)}>
+                <option value="WARN_ONLY">Chỉ cảnh báo</option><option value="MANUAL_REVIEW">Duyệt thủ công</option>
+              </select></label>
+              <label>Giới hạn offline (phút)<input type="number" min={1} step={1} value={policySnapshot.offlineLimitMinutes} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, offlineLimitMinutes: event.target.value } : current)} /></label>
+              <label className={styles.contractCheckbox}><input type="checkbox" checked={policySnapshot.buybackEnabled} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, buybackEnabled: event.target.checked } : current)} /> Cho phép thu mua máy cũ</label>
+              <label>Số tháng tối thiểu để thu mua *<input type="number" min={0} max={120} step={1} required disabled={!policySnapshot.buybackEnabled} value={policySnapshot.buybackMinimumMonths} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, buybackMinimumMonths: event.target.value } : current)} /></label>
+              <label>Phương pháp định giá<input type="text" value={policySnapshot.buybackValuationMethod === "MANUAL_APPRAISAL" ? "Thẩm định thủ công" : policySnapshot.buybackValuationMethod} readOnly /></label>
+            </div>
+            <div className={styles.operationsGrid}>
+              <div className={styles.contractCheckboxGroup} role="group" aria-labelledby="replacement-machine-types-label">
+                <strong id="replacement-machine-types-label">Loại máy thay thế được phép *</strong>
+                {(["CONVENTIONAL", "SMART_IOT"] as const).map((machineType) => (
+                  <label className={styles.contractCheckbox} key={machineType}>
+                    <input
+                      type="checkbox"
+                      checked={policySnapshot.allowedReplacementMachineTypes.includes(machineType)}
+                      onChange={(event) => setPolicySnapshot((current) => {
+                        if (!current) return current;
+                        const selectedTypes = current.allowedReplacementMachineTypes;
+                        const nextTypes = event.target.checked
+                          ? [...new Set([...selectedTypes, machineType])]
+                          : selectedTypes.filter((selected) => selected !== machineType);
+                        return nextTypes.length ? { ...current, allowedReplacementMachineTypes: nextTypes } : current;
+                      })}
+                    />
+                    {machineType === "SMART_IOT" ? "Máy Smart IoT" : "Máy thường"}
+                  </label>
+                ))}
+              </div>
+            </div>
             <div className={styles.operationsGrid}>
               <label>Lý do *<input required maxLength={1000} value={policyReason} onChange={(event) => setPolicyReason(event.target.value)} /></label>
               <label>Ngày hiệu lực *<input type="date" required value={policyEffectiveDate} onChange={(event) => setPolicyEffectiveDate(event.target.value)} /></label>

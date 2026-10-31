@@ -50,6 +50,10 @@ function getCustomerReadBack(sectionPath: string): BackButtonDestination | null 
   if (sectionPath === "machines/history" || sectionPath === "machines/substitute") {
     return backTo("Danh sách máy của tôi", "/dashboard/machines");
   }
+  const machineOperationsMatch = sectionPath.match(/^machines\/([^/]+)\/operations$/);
+  if (machineOperationsMatch) {
+    return backTo("Chi tiết máy", `/dashboard/machines/${encodeURIComponent(machineOperationsMatch[1])}`);
+  }
   const machineModelMatch = sectionPath.match(/^machines\/([^/]+)\/model$/);
   if (machineModelMatch) {
     return backTo("Chi tiết máy", `/dashboard/machines/${encodeURIComponent(machineModelMatch[1])}`);
@@ -91,6 +95,8 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
       link("Xem hóa đơn", "/dashboard/invoices", "secondary"),
     ];
   }
+
+  if (/^machines\/[^/]+\/operations$/.test(sectionPath)) return [];
 
   if (sectionPath === "contracts") {
     return [
@@ -193,6 +199,9 @@ export function getCustomerScreenDescriptor(sectionPath: string): CustomerScreen
 
   if (sectionPath === "machines") {
     return descriptor(sectionPath, messages.MACHINES_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));
+  }
+  if (/^machines\/[^/]+\/operations$/.test(sectionPath)) {
+    return descriptor(sectionPath, "Tổng quan dữ liệu vận hành", "Số liệu tổng hợp trong phạm vi tài khoản của bạn.");
   }
   if (sectionPath === "machines/history") {
     return descriptor(sectionPath, messages.MACHINE_HISTORY_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));

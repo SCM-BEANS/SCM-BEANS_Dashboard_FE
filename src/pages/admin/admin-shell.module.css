@@ -234,6 +234,31 @@
 .operationsGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .operationsGrid > label, .operationsGrid > div { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
 .operationsGrid strong { color: #302927; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.machineProfileGroups { display: grid; gap: 20px; }
+.machineProfileGroup { display: grid; min-width: 0; gap: 12px; }
+.machineProfileGroup + .machineProfileGroup { padding-top: 20px; border-top: 1px solid #eee8e3; }
+.machineProfileGroup h3 { margin: 0; color: #514843; font-size: 15px; }
+.machineProfileFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 22px; }
+.machineProfileFields > div { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #706561; font-size: 13px; }
+.machineProfileFields strong { color: #302927; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.machineEditForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 22px; margin-top: 24px; border-top: 1px solid #eee8e3; }
+.machineEditForm h3 { grid-column: 1 / -1; margin: 0; font-size: 16px; }
+.machineEditForm > label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
+.machineEditFields { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.machineEditFields > label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
+.machineEditFields > label:last-child { grid-column: 1 / -1; }
+.machineEditForm input, .machineEditForm select { width: 100%; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; font-size: 14px; }
+.machineEditForm > p, .machineEditForm > .notice, .machineEditForm > .operationsButtons { grid-column: 1 / -1; }
+.machineEditForm .operationsButtons { margin-top: 0; }
+.machineManagementGroups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; margin-top: 18px; }
+.machineManagementGroup { display: flex; min-width: 0; flex-direction: column; align-items: stretch; gap: 14px; padding: 20px; border: 1px solid #eee8e3; border-radius: 12px; background: #fdfbf9; }
+.machineManagementGroup h3 { margin: 0; color: #302927; font-size: 16px; }
+.machineManagementGroup label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
+.machineManagementGroup select, .machineManagementGroup textarea { width: 100%; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; font-size: 14px; }
+.machineManagementGroup textarea { min-height: 96px; padding: 10px 12px; resize: vertical; }
+.machineInventoryLink { display: inline-flex; min-height: 0; align-items: center; color: #302927 !important; font: inherit; font-weight: 500; text-decoration: none !important; }
+.machineInventoryLink:hover { color: #b81724 !important; text-decoration: none !important; }
+.machineInventoryLink:focus-visible { border-radius: 3px; outline: 2px solid #b81724; outline-offset: 3px; }
 .machineModelSpecifications { grid-column: 1 / -1; }
 .machineModelSpecifications textarea { font-family: Consolas, Monaco, monospace; line-height: 1.5; }
 .machineModelSpecifications pre { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font: 13px/1.5 Consolas, Monaco, monospace; }
@@ -300,6 +325,7 @@
   .reportActivePeriod { width: 100%; }
   .reportFinanceMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reportInvoiceHint { display: block; }
+  .machineManagementGroups { grid-template-columns: 1fr; gap: 20px; }
 }
 
 @media (max-width: 600px) {
@@ -329,6 +355,9 @@
   .financeGrid { gap: 16px; }
   .accountFilters, .accountFormGrid { grid-template-columns: 1fr; }
   .operationsFilters, .operationsGrid { grid-template-columns: 1fr; }
+  .machineEditForm, .machineEditFields, .machineProfileFields { grid-template-columns: 1fr; }
+  .machineEditFields > label:last-child { grid-column: auto; }
+  .machineEditForm h3, .machineEditForm > p, .machineEditForm > .notice, .machineEditForm > .operationsButtons { grid-column: auto; }
 }
 
 @media (max-width: 700px) {

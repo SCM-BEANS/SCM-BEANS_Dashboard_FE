@@ -21,7 +21,7 @@ Tài liệu này kiểm kê code hiện có trên nhánh ref tại commit cbdce2
 | Xác thực | Đăng nhập, MFA, xác minh email, đổi mật khẩu lần đầu, đăng xuất | Đã nối IDaaS; refresh chạy tự động trong HTTP interceptor |
 | Admin | Tổng quan, doanh nghiệp/tài khoản Owner, cửa hàng, hợp đồng, máy/kho, IoT, menu, báo cáo, thông báo/cảnh báo | Đã nối API đọc/ghi theo các mục bên dưới |
 | Moderator | Tổng quan, khách hàng, hợp đồng, máy/kho, IoT, xử lý kỹ thuật, hóa đơn/chứng từ, menu, cảnh báo, xem chi tiết thu mua | Đã nối một phần theo từng màn hình; tạo work order và danh sách buyback hiện chưa được nối |
-| Customer / Owner | Tổng quan, hợp đồng, máy, menu, hóa đơn/chứng từ, hỗ trợ, thông báo | Đã nối các API đọc, gửi yêu cầu sửa chữa, lưu menu cục bộ và nộp chứng từ thanh toán. Một số luồng buyback/refund/reminder chỉ là giao diện chưa hoạt động |
+| Customer / Owner | Tổng quan, hợp đồng, máy/Smart IoT, menu, hóa đơn/chứng từ, hỗ trợ, thông báo | Đã nối các API đọc, heartbeat và telemetry points cho máy Smart IoT trong scope Owner, gửi yêu cầu sửa chữa, lưu menu cục bộ và nộp chứng từ thanh toán. Một số luồng buyback/refund/reminder chỉ là giao diện chưa hoạt động |
 | Technician | Danh sách công việc, lịch sử và các biểu mẫu thao tác | Màn hình/route có code nhưng dữ liệu và thao tác đang disabled/chưa khả dụng; ngoài đăng xuất chưa thấy API nghiệp vụ được gọi |
 
 ## Tính năng theo vai trò
@@ -32,7 +32,7 @@ Tài liệu này kiểm kê code hiện có trên nhánh ref tại commit cbdce2
 - **Doanh nghiệp / Owner:** đọc danh sách user theo role, mở thông tin tài khoản và tải hợp đồng của Owner theo trang.
 - **Cửa hàng:** tổng hợp Owner và các địa điểm; xem địa điểm, xem hồ sơ Owner và tạo địa điểm mới.
 - **Hợp đồng:** đọc danh sách, tạo hợp đồng, xem chi tiết/trạng thái hết hạn/tài liệu, tải tài liệu và xem lịch sử hợp đồng theo máy.
-- **Máy và kho:** đọc máy/kho và tổng hợp tồn kho, tạo máy, xem chi tiết/lịch bảo trì, đọc telemetry.
+- **Máy và kho:** đọc máy/kho và tổng hợp tồn kho, tạo máy, xem chi tiết/lịch bảo trì, heartbeat và telemetry points cho Smart IoT; hồ sơ máy có liên kết tới aggregate operational overview theo khoảng ngày.
 - **IoT:** chọn Owner rồi đọc profile, máy, hợp đồng và địa điểm liên quan.
 - **Menu:** xem công thức toàn cục và phát hành công thức toàn cục.
 - **Thông báo:** đọc thông báo/cảnh báo và đánh dấu thông báo đã đọc.
@@ -42,7 +42,7 @@ Tài liệu này kiểm kê code hiện có trên nhánh ref tại commit cbdce2
 - **Tổng quan:** dùng API overview chung.
 - **Khách hàng:** đọc/tìm trang danh sách profile, xem profile và tạo tài khoản Owner; màn tạo tài khoản hiển thị mật khẩu tạm thời và trạng thái gửi email từ phản hồi API.
 - **Hợp đồng:** đọc danh sách/chi tiết/tài liệu và tạo hợp đồng bằng form dùng chung với Admin.
-- **Máy và IoT:** đọc kho, máy, lịch bảo trì, ticket, địa điểm, tenant và dữ liệu telemetry.
+- **Máy và IoT:** đọc kho, máy, lịch bảo trì, ticket, địa điểm và heartbeat. Moderator không gọi telemetry-points vì Swagger không cấp quyền role này; trang chi tiết giữ vùng trạng thái quyền.
 - **Kỹ thuật:** xem danh sách repair case, lịch sử maintenance ticket theo máy và chi tiết installation work order khi có ID. Nút tạo work order hiện bị disabled.
 - **Hóa đơn:** đọc hóa đơn, bổ sung tên Owner và trạng thái chứng từ thanh toán, mở chi tiết, tải nội dung chứng từ.
 - **Menu/cảnh báo:** đọc công thức toàn cục và cảnh báo; notification inbox riêng đọc/đếm chưa đọc/đánh dấu đã đọc.
@@ -50,7 +50,8 @@ Tài liệu này kiểm kê code hiện có trên nhánh ref tại commit cbdce2
 
 ### Customer / Owner
 
-- **Tổng quan, hợp đồng, máy:** đọc overview, hợp đồng theo Owner, máy và chi tiết hợp đồng/máy.
+- **Tổng quan, hợp đồng, máy:** đọc overview, hợp đồng theo Owner, máy và chi tiết hợp đồng/máy. Từ hồ sơ máy, Owner mở operational overview theo khoảng ngày; dữ liệu là aggregate theo JWT scope.
+- **Máy của tôi:** hiển thị heartbeat trên danh sách/chi tiết; Owner có telemetry history cho máy Smart IoT trong phạm vi backend trả về.
 - **Menu:** đọc công thức toàn cục và menu cục bộ; có luồng POST để lưu/cập nhật menu cục bộ.
 - **Hóa đơn:** đọc danh sách/chi tiết, khoản mục, chứng từ thanh toán; tải lên chứng từ gồm file, số tiền và idempotency key.
 - **Hỗ trợ sửa chữa:** đọc máy để người dùng chọn máy; gửi intake sửa chữa qua API. Màn danh sách hỗ trợ đọc maintenance request và repair case.
@@ -96,7 +97,7 @@ Các trang nhiệm vụ, lịch sử, notification và form được dựng dư�
 
 | Method | Endpoint | Cách frontend sử dụng |
 | --- | --- | --- |
-| GET | /dashboard/overview | Dùng cho tổng quan Admin, Moderator, Customer và báo cáo Admin. Có thể không truyền ngày; khi lọc ngày phải truyền đủ cả fromDate và toDate. |
+| GET | /dashboard/overview | Dùng cho tổng quan Admin, Moderator, Owner và báo cáo Admin. Operational overview truyền `fromDate`/`toDate`; dữ liệu vẫn là aggregate theo JWT scope. Không gửi `ownerId`; Moderator không hiển thị financial metrics. |
 | POST | /contracts | Tạo hợp đồng từ form dùng chung Admin/Moderator. Form tải Owner và máy trước khi gửi payload. |
 | GET | /contracts | Tải danh sách hợp đồng cho Admin, Moderator và dữ liệu liên quan ở màn IoT Admin. |
 | GET | /contracts/owner/{ownerId} | Tải hợp đồng của Owner đăng nhập ở Customer dashboard. |
@@ -119,15 +120,15 @@ Các trang nhiệm vụ, lịch sử, notification và form được dựng dư�
 | POST | /machines | Admin tạo máy mới. |
 | GET | /machines/{machineId} | Xem chi tiết máy ở Customer, Admin, Moderator và IoT Moderator. |
 | GET | /inventory/summary | Đọc số liệu tổng hợp kho ở Admin và Moderator. |
-| GET | /machines/{machineId}/maintenance-schedule | Đọc lịch bảo trì trong chi tiết máy Admin/Moderator. |
+| GET | /machines/{machineId}/maintenance-schedule | Đọc lịch bảo trì trong hồ sơ máy theo role. |
 | GET | /maintenance-tickets | Moderator xem ticket bảo trì; có thể lọc theo máy ở màn lịch sử ticket. |
 | GET | /maintenance-requests | Customer đọc danh sách yêu cầu bảo trì tại màn hỗ trợ. |
 | GET | /repair-cases | Customer xem tình trạng repair case; Moderator xem danh sách case kỹ thuật. |
 | POST | /repair-cases/intakes | Customer gửi yêu cầu sửa chữa: chọn máy, nhập mô tả lỗi tối đa 4.000 ký tự. Gửi machineId, issueDescription và idempotency key do frontend tạo để hạn chế gửi trùng. |
 | GET | /installation-work-orders?tenantId={tenantId} | Có wrapper đọc danh sách work order theo tenant nhưng hiện chưa thấy UI gọi. |
 | GET | /installation-work-orders/{workOrderId} | Moderator tải chi tiết work order khi mở route có ID hợp lệ. |
-| GET | /telemetry-query/machines/{machineId}/heartbeats/latest | Lấy heartbeat mới nhất ở chi tiết máy Admin và IoT Moderator. |
-| GET | /telemetry-query/machines/{machineId}/points | Đọc telemetry theo khoảng thời gian, phân trang bằng limit=100 và offset; dùng trong chart chi tiết máy Admin và màn IoT Moderator. |
+| GET | /telemetry-query/machines/{machineId}/heartbeats/latest | Lấy heartbeat mới nhất cho máy Smart IoT trên danh sách/chi tiết của Owner, Admin và Moderator. |
+| GET | /telemetry-query/machines/{machineId}/points | Owner/Admin đọc telemetry theo range, phân trang limit=100 và offset. Moderator không gửi request này theo quyền Swagger hiện tại. |
 
 ### Công thức menu
 

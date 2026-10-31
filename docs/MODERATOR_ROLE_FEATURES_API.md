@@ -24,8 +24,9 @@ Menu có 11 mục. Tình trạng tính năng hiện tại:
 | `/moderator/contracts/{id}/installation-request` | Tạo work order lắp đặt từ hợp đồng nháp đủ điều kiện | Có API ghi, có điều kiện chặn |
 | `/moderator/invoices` | Danh sách, chi tiết/dòng hóa đơn, xem/tải chứng từ, review chứng từ và cập nhật trạng thái hợp lệ | Có API đọc/ghi |
 | `/moderator/machines` | Danh sách máy, thống kê kho; lọc một số nhóm ở frontend; cập nhật máy, đổi loại và gán Technician | Có API đọc/ghi |
-| `/moderator/machines/{id}` | Chi tiết máy, địa điểm, lịch bảo trì và ticket | Có API đọc và cập nhật máy |
-| `/moderator/iot` | Chọn máy Smart IoT, heartbeat, biểu đồ telemetry; xem/sửa địa điểm theo Owner | Có API đọc/ghi; telemetry response cần xác nhận runtime |
+| `/moderator/machines/{id}` | Chi tiết máy, heartbeat, địa điểm, lịch bảo trì, ticket và liên kết operational overview | Có API đọc và cập nhật máy; points hiển thị theo quyền Swagger |
+| `/moderator/machines/{id}/operations` | Operational overview theo scope vận hành Moderator | Có API đọc aggregate; ẩn financial metrics |
+| `/moderator/iot` | Chọn máy Smart IoT, xem heartbeat; xem/sửa địa điểm theo Owner | Có API đọc/ghi; telemetry points không được gọi bởi Moderator theo quyền Swagger hiện tại |
 | `/moderator/iot/customer` | Tổng hợp địa điểm theo Owner; chỉnh sửa địa điểm | Có API đọc/ghi theo Owner |
 | `/moderator/menu` | Danh sách, xem chi tiết, tạo và cập nhật công thức toàn cục | Có API đọc/ghi; danh sách dùng DTO summary riêng |
 | `/moderator/technical-requests` | Triage repair request, xem timeline repair case; xem, phân công, đổi lịch hoặc hủy lệnh lắp đặt | Có API đọc/ghi theo trạng thái |
@@ -137,8 +138,9 @@ Các trang này không tự đổi lịch maintenance ticket; API quản lý tic
 | --- | --- | --- |
 | GET | Dolores `/machines` | Nạp danh sách và chọn máy có `machineType=SMART_IOT`. |
 | GET | Dolores `/machines/{id}` | Xác minh lại máy đã chọn là UUID hợp lệ và có `machineType=SMART_IOT`. |
-| GET | Dolores `/telemetry-query/machines/{machineId}/heartbeats/latest` | Chỉ gọi sau khi xác minh máy là Smart IoT. |
-| GET | Dolores `/telemetry-query/machines/{machineId}/points?from={ISO}&to={ISO}&limit=100&offset={n}` | Chỉ gọi sau khi người dùng gửi form ngày hợp lệ; `from < to`. Tải từng trang 100 điểm, offset tối đa 100.000. Ngày UI chuyển thành khoảng `00:00:00`–`23:59:59` theo `+07:00`. |
+| GET | Dolores `/telemetry-query/machines/{machineId}/heartbeats/latest` | Gọi sau khi xác minh máy là Smart IoT; dùng ở màn IoT và hồ sơ máy. |
+| GET | Dolores `/telemetry-query/machines/{machineId}/points` | Không gọi bởi Moderator: role này không được Swagger cấp quyền points. Shared detail giữ cùng vị trí nội dung và hiển thị trạng thái quyền. |
+| GET | Dolores `/dashboard/overview?fromDate={date}&toDate={date}` | Route `/moderator/machines/{machineId}/operations` đọc aggregate theo scope vận hành; không gửi `ownerId` và không hiển thị financial metrics. |
 
 Trang “địa điểm theo Owner” lấy Owner qua `/profiles?role=OWNER`, rồi gọi `/locations?ownerId={ownerId}` theo lô. Theo cách dùng hiện tại của Dolores, Owner là định danh phạm vi cho các dữ liệu trước đây được gọi là tenant; Moderator không cần endpoint `/tenants` cho luồng này.
 
@@ -220,7 +222,7 @@ Danh sách dùng DTO summary (`id`, `name`, `revision`, `menuId`); chi tiết l�
 
 ## 5. Điểm còn cần xác nhận với Swagger/runtime
 
-1. **Telemetry points:** Swagger mô tả response generic `object`, trong khi màn IoT đang parse danh sách điểm có `machineId`. Cần chốt payload thực tế là array trực tiếp hay object bọc dữ liệu trước khi Flutter dùng chung DTO. Chưa gọi endpoint có token trong lần rà soát này.
+1. **Telemetry points:** Swagger mô tả response generic `object`, trong khi Owner/Admin client parse danh sách point có `machineId`. Moderator hiện không gọi endpoint points do Swagger không cấp quyền role này. Cần xác nhận response thực tế trước khi Flutter dùng chung DTO. Chưa gọi endpoint có token trong lần rà soát tài liệu này.
 2. **IDaaS MFA/logout:** Swagger IDaaS được đối chiếu không khai báo `POST /auth/login/mfa` và `POST /auth/logout`. `POST /auth/mfa/confirm` là thao tác bật MFA sau xác thực, không thay cho OTP đăng nhập bằng `temp_token`/`code`.
 3. **Chứng từ thanh toán buyback:** Moderator UI đã tạo payment khi `APPROVED`; API có tải chứng từ, review và tải nội dung theo ID, nhưng chưa có endpoint liệt kê payment/proof theo hồ sơ. Do đó UI chưa tra cứu được ID cần tải/review sau khi reload.
 

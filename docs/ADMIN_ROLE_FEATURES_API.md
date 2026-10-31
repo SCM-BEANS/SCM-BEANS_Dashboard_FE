@@ -22,6 +22,7 @@ Tài liệu này kiểm kê phần Admin trong frontend hiện tại để làm 
 | Hợp đồng | `/admin/contracts` |
 | Danh sách máy, mẫu máy, tạo mới | `/admin/machines` |
 | Chi tiết máy | `/admin/machines/{machineId}` |
+| Tổng quan vận hành theo ngữ cảnh máy | `/admin/machines/{machineId}/operations` |
 | IoT theo Owner | `/admin/iot` |
 | Menu toàn cục | `/admin/menu` |
 | Báo cáo | `/admin/reports` |
@@ -145,10 +146,11 @@ Nếu tạo máy thành công nhưng gắn mẫu thất bại, máy đã tồn t
 
 | Method | Base | Endpoint | Cách dùng / điều kiện |
 | --- | --- | --- | --- |
-| GET | Dolores | `/telemetry-query/machines/{machineId}/heartbeats/latest` | Chỉ gọi nếu `machineType=SMART_IOT`. |
-| GET | Dolores | `/telemetry-query/machines/{machineId}/points?from={ISO}&to={ISO}&limit=100&offset={n}` | Chỉ tải sau khi chọn khoảng thời gian hợp lệ; `from < to`; phân trang 100 điểm, offset tối đa 100.000. |
+| GET | Dolores | `/telemetry-query/machines/{machineId}/heartbeats/latest` | Gọi cho máy `SMART_IOT` trong danh sách/chi tiết; trạng thái kết nối tách khỏi lifecycle status. |
+| GET | Dolores | `/telemetry-query/machines/{machineId}/points?from={ISO}&to={ISO}&limit=100&offset={n}` | Chi tiết máy Admin tải sau khi chọn khoảng thời gian hợp lệ; `from < to`; phân trang 100 điểm, offset tối đa 100.000. |
+| GET | Dolores | `/dashboard/overview?fromDate={date}&toDate={date}` | Route `/admin/machines/{machineId}/operations` tải aggregate theo scope toàn hệ thống; máy đang chọn chỉ là ngữ cảnh, không lọc metric theo máy. |
 
-Trang IoT tổng hợp theo Owner; phần heartbeat/chart thực tế nằm trong chi tiết máy Smart IoT. Admin chưa có thao tác cập nhật status máy từ màn danh sách.
+Trang IoT tổng hợp theo Owner; heartbeat/chart telemetry nằm trong hồ sơ máy Smart IoT. Operational overview dùng chung trình bày và calendar range, nhưng metric giữ scope toàn hệ thống Admin. Admin chưa có thao tác cập nhật status máy từ màn danh sách.
 
 ### 4.6 IoT theo Owner
 

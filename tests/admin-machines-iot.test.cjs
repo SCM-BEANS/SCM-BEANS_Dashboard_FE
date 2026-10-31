@@ -50,6 +50,22 @@ const messages = messageModule.ADMIN_OPERATIONS_MESSAGES;
 const pathModule = loadModule("src/routes/path.ts");
 const axiosMock = (client) => ({ axiosClient: client, DOLORES_API_BASE_URL: "/api/dolores/v1" });
 
+function TestMachineListView({ children }) {
+  return React.createElement("section", { "data-shared-machine-list": "true" }, children);
+}
+
+function TestMachineDetailView({ children }) {
+  return React.createElement("div", { "data-shared-machine-detail": "true" }, children);
+}
+
+function TestSmartIotPanel({ title, state, stateMessage, children }) {
+  return React.createElement("section", {
+    "data-shared-smart-iot-panel": title,
+    "data-state": state,
+    "data-state-message": stateMessage,
+  }, children);
+}
+
 function clientFor(handler) {
   const calls = [];
   const client = {
@@ -137,10 +153,20 @@ function pageMocks(apiMocks, router = { isReady: true, query: {} }) {
   const ButtonBar = React.forwardRef(({ href, children, ...props }, ref) => href
     ? React.createElement("a", { href, ref, ...props }, children)
     : React.createElement("button", { ref, ...props }, children));
+  ButtonBar.displayName = "TestButtonBar";
   return {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "next/router": { useRouter: () => router },
     "@/components/button/button-bar": { ButtonBar },
+    "@/components/machines/machine-list-view": {
+      MachineListView: TestMachineListView,
+    },
+    "@/components/machines/machine-detail-view": {
+      MachineDetailView: TestMachineDetailView,
+    },
+    "@/components/machines/smart-iot-panel": {
+      SmartIotPanel: TestSmartIotPanel,
+    },
     "@/components/action-bar/action-bar": {
       ActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
     },
@@ -212,4 +238,220 @@ test("IoT Owner detail joins only matching machines, contracts and locations", (
   assert.match(markup, /TEST_DATA-MACHINE-01/);
   assert.match(markup, /Smart IoT/);
   assert.match(markup, new RegExp(`href="/admin/machines/${machineId}"`));
+});
+
+function readSource(relativePath) {
+  return readFileSync(join(root, relativePath), "utf8");
+}
+
+function assertSharedImport(relativePath, componentName, moduleName) {
+  const source = readSource(relativePath);
+  const importPattern = new RegExp(
+    `import\\s*\\{[^}]*\\b${componentName}\\b[^}]*\\}\\s*from\\s*["']@/components/machines/${moduleName}["']`,
+    "s",
+  );
+  assert.match(source, importPattern, `${relativePath} should use shared ${componentName}`);
+}
+
+test("Owner, Admin, and Moderator machine list/detail routes use shared presentation", () => {
+  const listScreens = [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/index.page.tsx",
+    "src/pages/moderator/machines/machines-screen.tsx",
+  ];
+  const detailScreens = [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/machine-detail-screen.tsx",
+    "src/pages/moderator/machines/machine-detail-screen.tsx",
+  ];
+
+  for (const screen of listScreens) {
+    assertSharedImport(screen, "MachineListView", "machine-list-view");
+  }
+  for (const screen of detailScreens) {
+    assertSharedImport(screen, "MachineDetailView", "machine-detail-view");
+  }
+});
+
+test("shared list and detail components enforce summary-before-content hierarchy", () => {
+  const listView = readSource("src/components/machines/machine-list-view.tsx");
+  const detailView = readSource("src/components/machines/machine-detail-view.tsx");
+
+  assert.match(listView, /machineListSummary/);
+  assert.match(listView, /machineListControls/);
+  assert.match(listView, /machineListResults/);
+  assert.match(detailView, /machineDetailSummary/);
+  assert.match(detailView, /machineDetailSections/);
+  for (const screen of [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/index.page.tsx",
+    "src/pages/moderator/machines/machines-screen.tsx",
+  ]) {
+    assert.match(readSource(screen), /<MachineListView[\s\S]*?(?:summary=|labelledBy=|label=)/);
+    assert.match(readSource(screen), /controls=/, `${screen} should use the shared list controls region`);
+  }
+
+  assert.match(readSource("src/components/machines/machine-detail-view.tsx"), /summary\.map/);
+  assert.match(readSource("src/components/machines/machines.module.css"), /machineDetailMetric/);
+});
+
+test("standalone Admin and Moderator IoT routes use the shared Smart IoT panel", () => {
+  assertSharedImport("src/pages/admin/iot/index.page.tsx", "SmartIotPanel", "smart-iot-panel");
+  assertSharedImport("src/pages/moderator/iot/iot-screen.tsx", "SmartIotPanel", "smart-iot-panel");
+});
+
+test("Smart IoT queries stay in role pages rather than the shared presentation", () => {
+  for (const screen of [
+    "src/pages/admin/iot/index.page.tsx",
+    "src/pages/moderator/iot/iot-screen.tsx",
+  ]) {
+    assert.match(readSource(screen), /useQuery/);
+  }
+
+  assert.doesNotMatch(readSource("src/components/machines/smart-iot-panel.tsx"), /useQuery/);
+});
+
+test("shared Smart IoT panel distinguishes loading, empty, error and permission states", () => {
+  const { SmartIotPanel } = loadModule("src/components/machines/smart-iot-panel.tsx", {
+    "./machines.module.css": styleMap,
+  });
+  const states = [
+    ["loading", "Loading", "status"],
+    ["empty", "No data", "status"],
+    ["error", "Request failed", "alert"],
+    ["permission-denied", "Not allowed", "status"],
+  ];
+
+  for (const [state, stateMessage, role] of states) {
+    const markup = renderToStaticMarkup(React.createElement(SmartIotPanel, {
+      title: "TEST_DATA Smart IoT",
+      state,
+      stateMessage,
+      retryLabel: "Retry",
+      onRetry: () => {},
+    }));
+    assert.match(markup, new RegExp(`data-state="${state}"`));
+    assert.match(markup, new RegExp(`role="${role}"`));
+    assert.match(markup, new RegExp(stateMessage));
+  }
+});
+
+test("shared machine connection badge keeps ONLINE, OFFLINE, UNKNOWN and request error distinct", () => {
+  const { MachineConnectionBadge } = loadModule("src/components/machines/machine-connection-badge.tsx", {
+    "./machines.module.css": styleMap,
+  });
+  for (const state of ["ONLINE", "OFFLINE", "UNKNOWN", "error"]) {
+    const markup = renderToStaticMarkup(React.createElement(MachineConnectionBadge, { state }));
+    assert.match(markup, new RegExp(`data-state="${state}"`));
+    assert.match(markup, new RegExp(state === "error" ? `role="alert"` : `role="status"`));
+  }
+  assert.notEqual(
+    renderToStaticMarkup(React.createElement(MachineConnectionBadge, { state: "OFFLINE" })),
+    renderToStaticMarkup(React.createElement(MachineConnectionBadge, { state: "error" })),
+    "a failed heartbeat request must not render as an offline machine",
+  );
+});
+
+test("shared heartbeat panel displays API-provided health only and keeps unavailable distinct from offline", () => {
+  const { MachineHeartbeatPanel } = loadModule("src/components/machines/machine-heartbeat-panel.tsx", {
+    "@/schema/telemetry.schema": telemetrySchemas,
+    "./machines.module.css": styleMap,
+    "./smart-iot-panel": { SmartIotPanel: TestSmartIotPanel },
+    "./machine-connection-badge": {
+      MachineConnectionBadge: ({ state }) => React.createElement("span", { "data-connection-state": state }, state),
+    },
+  });
+  const markup = renderToStaticMarkup(React.createElement(MachineHeartbeatPanel, {
+    title: "Heartbeat",
+    heartbeat: {
+      ...heartbeat,
+      livenessStreamEntryId: "internal-liveness-id",
+      healthStreamEntryId: "internal-health-id",
+      health: { ...heartbeat.health, ramUsedMb: 100, ramTotalMb: 256, wifiRssiDbm: -58, netbirdWireguardLatencyMs: 12 },
+    },
+  }));
+
+  assert.match(markup, /data-connection-state="ONLINE"/);
+  assert.match(markup, /RAM/);
+  assert.match(markup, /100 \/ 256 MB/);
+  assert.match(markup, /Wi-Fi RSSI/);
+  assert.match(markup, /Độ trễ/);
+  assert.doesNotMatch(markup, /internal-liveness-id|internal-health-id/);
+
+  const unavailable = renderToStaticMarkup(React.createElement(MachineHeartbeatPanel, {
+    title: "Heartbeat",
+    loading: false,
+    error: "Heartbeat request failed",
+  }));
+  assert.match(unavailable, /data-state="error"/);
+  assert.doesNotMatch(unavailable, /data-connection-state="OFFLINE"/);
+});
+
+test("all role machine lists query heartbeats only for visible Smart IoT rows and pause polling when hidden", () => {
+  const listScreens = [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/index.page.tsx",
+    "src/pages/moderator/machines/machines-screen.tsx",
+  ];
+  for (const screen of listScreens) {
+    const source = readSource(screen);
+    assert.ok(/telemetryApi\.getLatestHeartbeat/.test(source), `${screen} should request latest heartbeat`);
+    assert.ok(/machineType\s*===\s*["']SMART_IOT["']/.test(source), `${screen} should skip conventional machines`);
+    assert.ok(/refetchInterval\s*:[\s\S]{0,160}(?:5_000|5000)/.test(source), `${screen} should poll every five seconds`);
+    assert.ok(/visibilityState|usePageVisibility|isPageVisible/i.test(source), `${screen} should pause polling while hidden`);
+    assert.ok(/visibleMachines|visibleMachineIds|isVisible/i.test(source), `${screen} should gate requests to visible rows`);
+    assert.ok(/stagger|delay|index\s*\*|setTimeout/i.test(source), `${screen} should stagger list heartbeat requests`);
+    assert.ok(/MachineConnectionBadge/.test(source), `${screen} should render the shared connection badge`);
+  }
+});
+
+test("all role machine details poll the current Smart IoT heartbeat and show the shared connection state", () => {
+  const detailScreens = [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/machine-detail-screen.tsx",
+    "src/pages/moderator/machines/machine-detail-screen.tsx",
+  ];
+  for (const screen of detailScreens) {
+    const source = readSource(screen);
+    assert.ok(/telemetryApi\.getLatestHeartbeat/.test(source), `${screen} should query the selected machine heartbeat`);
+    assert.ok(/refetchInterval\s*:[\s\S]{0,160}(?:5_000|5000)/.test(source), `${screen} should refresh every five seconds`);
+    assert.ok(/visibilityState|usePageVisibility|isPageVisible/i.test(source), `${screen} should pause polling while hidden`);
+  }
+  for (const screen of [
+    "src/pages/dashboard/machines/machines-screen.tsx",
+    "src/pages/admin/machines/machine-detail-screen.tsx",
+    "src/pages/moderator/machines/machine-detail-screen.tsx",
+  ]) {
+    assertSharedImport(screen, "MachineHeartbeatPanel", "machine-heartbeat-panel");
+  }
+});
+
+test("Moderator machine detail and standalone IoT route never request telemetry points", () => {
+  for (const screen of [
+    "src/pages/moderator/machines/machine-detail-screen.tsx",
+    "src/pages/moderator/iot/iot-screen.tsx",
+  ]) {
+    assert.ok(!/listMachinePoints/.test(readSource(screen)), `${screen} must respect the current Swagger permission boundary`);
+  }
+  assert.ok(/permission-denied/.test(readSource("src/pages/moderator/machines/machine-detail-screen.tsx")));
+});
+
+test("Moderator IoT heartbeat polling stops on the locations route and does not share Admin cache keys", () => {
+  const source = readSource("src/pages/moderator/iot/iot-screen.tsx");
+  assert.match(source, /enabled:\s*!isLocationsView\s*&&\s*smartIotVerified\s*&&\s*isPageVisible/);
+  assert.match(source, /queryKey:\s*\["dolores",\s*"moderator",\s*"telemetry",\s*"heartbeat"/);
+  assert.match(readSource("src/pages/admin/machines/machine-detail-screen.tsx"), /queryKey:\s*\["dolores",\s*"admin",\s*"telemetry",\s*"heartbeat"/);
+});
+
+test("heartbeat visibility fallback tracks scrolling inside nested main containers", () => {
+  const source = readSource("src/components/machines/machine-heartbeat-visibility.ts");
+  assert.match(source, /document\.addEventListener\("scroll",\s*updateVisibleRows,\s*\{\s*capture:\s*true/);
+  assert.match(source, /getComputedStyle\(ancestor\)\.overflowY/);
+});
+
+test("machine operational overview path helpers preserve the originating machine ID", () => {
+  const selectedMachineId = "f1000000-0000-4000-8000-000000000004";
+  assert.equal(pathModule.PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(selectedMachineId), `/dashboard/machines/${selectedMachineId}/operations`);
+  assert.equal(pathModule.PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(selectedMachineId), `/admin/machines/${selectedMachineId}/operations`);
+  assert.equal(pathModule.PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(selectedMachineId), `/moderator/machines/${selectedMachineId}/operations`);
 });

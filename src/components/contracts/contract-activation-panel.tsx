@@ -10,7 +10,13 @@ import { hasAdminRole } from "@/lib/auth-role";
 import type { Contract } from "@/schema/contracts.schema";
 import styles from "./contract-activation-panel.module.css";
 
-export function ContractActivationPanel({ contract }: { contract: Contract }) {
+export function ContractActivationPanel({
+  contract,
+  installationRequestHref,
+}: {
+  contract: Contract;
+  installationRequestHref?: string;
+}) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -93,7 +99,14 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
         <p className={styles.error} role="status">Cần tải lên ít nhất một tài liệu loại MAIN_CONTRACT chưa lưu trữ.</p>
       )}
       {!completedWorkOrder.isPending && !completedWorkOrder.isError && !completedWorkOrder.data && (
-        <p className={styles.error} role="status">Chưa có lệnh COMPLETED khớp mã hợp đồng, máy và chủ sở hữu.</p>
+        <>
+          <p className={styles.error} role="status">Chưa có lệnh COMPLETED khớp mã hợp đồng, máy và chủ sở hữu.</p>
+          {installationRequestHref && contract.machineId && (
+            <ButtonBar href={installationRequestHref}>
+              Tạo hoặc theo dõi lệnh lắp đặt
+            </ButtonBar>
+          )}
+        </>
       )}
       {activate.isError && <p className={styles.error} role="alert">{getApiErrorMessage(activate.error, "mutation")}</p>}
       {ready && !confirming && (

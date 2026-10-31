@@ -10,6 +10,7 @@ import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
+import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
@@ -114,7 +115,6 @@ function IoTContent() {
             <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.OWNER}</span><strong>{profile.data.idaasUserId.slice(0, 8).toUpperCase()}</strong></article>
           </div>
           {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
-          {machines.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machines.error)}</p><button type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</button></div>}
           {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
 
           <section className={styles.panel}>
@@ -134,10 +134,14 @@ function IoTContent() {
             />}
           </section>
 
-          <section className={styles.panel}>
-            <h2>{T.IOT.OWNER_DETAIL}</h2>
-            {machines.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-            {machines.data && ownerMachines.length === 0 && <p className={styles.emptyText}>{T.IOT.NO_SMART_MACHINES}</p>}
+          <SmartIotPanel
+            title={T.IOT.MACHINES}
+            description={T.IOT.DESCRIPTION}
+            state={machines.isPending ? "loading" : machines.isError ? "error" : ownerMachines.length === 0 ? "empty" : undefined}
+            stateMessage={machines.isPending ? T.COMMON.LOADING : machines.isError ? getApiErrorMessage(machines.error) : ownerMachines.length === 0 ? T.COMMON.EMPTY : undefined}
+            retryLabel={T.COMMON.RETRY}
+            onRetry={() => void machines.refetch()}
+          >
             {ownerMachines.length > 0 && <DataTable
               headerVariant="admin"
               rows={ownerMachines}
@@ -152,7 +156,7 @@ function IoTContent() {
               ]}
             />}
             {smartMachineIds.size === 0 && ownerMachines.length > 0 && <p className={styles.panelSubtitle}>{T.IOT.NO_SMART_MACHINES}</p>}
-          </section>
+          </SmartIotPanel>
         </>}
       </div>
       <ActionBar>

@@ -25,6 +25,7 @@ export function ContractCreateScreen() {
       />
       <ContractCreateForm
         ownerRole="owner"
+        machineSource="rental-candidates"
         onCreated={(id) => {
           setCreatedContractId(id);
           setSuccessDialogOpen(true);

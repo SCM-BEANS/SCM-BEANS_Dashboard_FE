@@ -1,0 +1,702 @@
+.machineListView,
+.machineDetailView {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.machineListSummary,
+.machineListControls,
+.machineListResults,
+.machineDetailSummary,
+.machineDetailSections {
+  min-width: 0;
+}
+
+.machineListResults,
+.machineDetailSections {
+  display: grid;
+  gap: 16px;
+}
+
+.machineDetailSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.machineDetailMetric {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 88px;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.machineDetailMetric span {
+  color: #786e69;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.machineDetailMetric strong {
+  color: #302b29;
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.machineListSummary > :first-child {
+  margin: 0;
+}
+
+.machineListCount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #786e69;
+}
+
+.machineListCount strong {
+  color: #302b29;
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.machineListFilterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.machineListFilterButton {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #5e5551;
+  cursor: pointer;
+  font: inherit;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.machineListFilterButton[aria-pressed="true"] {
+  border-color: #d9a6aa;
+  background: #fae9eb;
+  color: #b91222;
+  font-weight: 600;
+}
+
+.machineListFilterButton:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.operationalOverview {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  color: #302b29;
+}
+
+.operationalOverviewBack a {
+  color: #786e69;
+  text-decoration: none;
+}
+
+.operationalOverviewBack a:hover {
+  color: #b91222;
+}
+
+.operationalOverviewHeading {
+  display: grid;
+  gap: 6px;
+}
+
+.operationalOverviewHeading h1,
+.operationalOverviewHeading p,
+.operationalOverviewPanelHeading h2,
+.operationalOverviewPanelHeading p {
+  margin: 0;
+}
+
+.operationalOverviewHeading h1 {
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  line-height: 1.25;
+}
+
+.operationalOverviewHeading p,
+.operationalOverviewPanelHeading p {
+  color: #786e69;
+  line-height: 1.5;
+}
+
+.operationalOverviewPanel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.operationalOverviewPanelHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.operationalOverviewPanelHeading h2 {
+  margin-bottom: 5px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.operationalQuickRanges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.operationalQuickRanges button,
+.operationalDateForm button,
+.operationalOverviewError button {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #5e5551;
+  cursor: pointer;
+  font: inherit;
+}
+
+.operationalQuickRanges button[aria-pressed="true"] {
+  border-color: #d9a6aa;
+  background: #fae9eb;
+  color: #b91222;
+  font-weight: 600;
+}
+
+.operationalQuickRanges button:focus-visible,
+.operationalDateForm button:focus-visible,
+.operationalOverviewError button:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.operationalDateForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.operationalDateForm label {
+  display: grid;
+  gap: 6px;
+  color: #665e59;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.operationalDateForm input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302b29;
+  font: inherit;
+}
+
+.operationalDateForm input:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 24%);
+  outline-offset: 1px;
+}
+
+.operationalOverviewErrorText {
+  margin: 0;
+  color: #a61924;
+}
+
+.operationalOverviewState,
+.operationalOverviewError {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #faf8f6;
+  color: #5e5551;
+  line-height: 1.5;
+}
+
+.operationalOverviewError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-color: #efc7c8;
+  background: #fff7f7;
+  color: #a61924;
+}
+
+.operationalOverviewError p {
+  margin: 0;
+}
+
+.operationalOverviewError a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.operationalMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
+  gap: 12px;
+}
+
+.operationalMetricCard {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.operationalMetricCard span,
+.operationalMetricCard small {
+  color: #786e69;
+  line-height: 1.4;
+}
+
+.operationalMetricCard strong {
+  overflow-wrap: anywhere;
+  color: #302b29;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.operationalMetricCard small {
+  font-size: 0.8125rem;
+}
+
+.operationalDailyChart {
+  display: grid;
+  grid-auto-columns: minmax(44px, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 8px 2px 4px;
+}
+
+.operationalDailyChartColumn {
+  display: grid;
+  grid-template-rows: auto 116px auto;
+  align-items: end;
+  gap: 7px;
+  min-width: 44px;
+  color: #786e69;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.operationalDailyChartColumn strong {
+  color: #302b29;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.operationalDailyChartColumn time {
+  white-space: nowrap;
+}
+
+.operationalDailyChartTrack {
+  display: flex;
+  align-items: flex-end;
+  height: 116px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #faf8f6;
+}
+
+.operationalDailyChartBar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: #c21b2b;
+}
+
+@media (max-width: 680px) {
+  .operationalDateForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operationalDateForm button {
+    width: 100%;
+  }
+}
+
+.smartIotPanel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.smartIotPanelHeader {
+  display: grid;
+  gap: 5px;
+}
+
+.smartIotPanelHeader h2 {
+  margin: 0;
+  color: #302b29;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.smartIotPanelHeader p {
+  margin: 0;
+  color: #786e69;
+  line-height: 1.5;
+}
+
+.smartIotPanelContent {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.smartIotPanelState {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #faf8f6;
+  color: #5e5551;
+}
+
+.smartIotPanelState[data-state="error"] {
+  border-color: #efc7c8;
+  background: #fff7f7;
+  color: #a61924;
+}
+
+.smartIotPanelState[data-state="permission-denied"] {
+  border-color: #eadfd7;
+  background: #f8f5f2;
+}
+
+.smartIotPanelState p {
+  margin: 0;
+}
+
+.smartIotRetryButton {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.smartIotRetryButton:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.machineConnectionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid #e9e2dc;
+  border-radius: 999px;
+  background: #f8f5f2;
+  color: #5e5551;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.machineConnectionBadge::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.machineConnectionBadge[data-state="ONLINE"] {
+  border-color: #b9d9c1;
+  background: #f1f8f3;
+  color: #28643a;
+}
+
+.machineConnectionBadge[data-state="OFFLINE"],
+.machineConnectionBadge[data-state="error"] {
+  border-color: #efc7c8;
+  background: #fff7f7;
+  color: #a61924;
+}
+
+.machineConnectionBadge[data-state="UNKNOWN"],
+.machineConnectionBadge[data-state="not-requested"] {
+  border-color: #e2ddd8;
+  background: #f8f5f2;
+  color: #665e59;
+}
+
+.machineConnectionBadge[data-state="loading"] {
+  color: #786e69;
+}
+
+.machineConnectionRetry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.machineConnectionRetry:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.machineHeartbeatFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+
+.machineHeartbeatFields > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.machineHeartbeatFields dt {
+  color: #786e69;
+  font-size: 0.875rem;
+}
+
+.machineHeartbeatFields dd {
+  margin: 0;
+  color: #302b29;
+  overflow-wrap: anywhere;
+}
+
+.telemetryHistory {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.telemetryRangePresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.telemetryRangePresets button,
+.telemetryRangeForm button,
+.telemetryError button,
+.telemetryLoadMore {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302b29;
+  cursor: pointer;
+  font: inherit;
+}
+
+.telemetryRangePresets button[aria-pressed="true"] {
+  border-color: #d9a6aa;
+  background: #fae9eb;
+  color: #b91222;
+  font-weight: 650;
+}
+
+.telemetryRangePresets button:focus-visible,
+.telemetryRangeForm button:focus-visible,
+.telemetryError button:focus-visible,
+.telemetryLoadMore:focus-visible,
+.telemetryFieldSelector select:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.telemetryRangeForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.telemetryRangeForm label,
+.telemetryFieldSelector {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #786e69;
+  font-size: 0.875rem;
+}
+
+.telemetryRangeForm input,
+.telemetryFieldSelector select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #e3d9d2;
+  border-radius: 8px;
+  background: #fff;
+  color: #302b29;
+  font: inherit;
+}
+
+.telemetryRangeCaption,
+.telemetryRecordsLabel {
+  margin: 0;
+  color: #786e69;
+}
+
+.telemetryRangeError,
+.telemetryError {
+  margin: 0;
+  color: #a61924;
+}
+
+.telemetryError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 12px;
+  border: 1px solid #efc7c8;
+  border-radius: 8px;
+  background: #fff7f7;
+}
+
+.telemetryError p {
+  margin: 0;
+}
+
+.telemetryChart {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #eee6e0;
+  border-radius: 8px;
+  background: #fcfaf8;
+  color: #5e5551;
+}
+
+.telemetryChart figcaption {
+  color: #302b29;
+  font-weight: 600;
+}
+
+.telemetryChart svg {
+  display: block;
+  width: 100%;
+  height: 180px;
+  overflow: visible;
+}
+
+.telemetryChart svg line {
+  stroke: #d9d0c9;
+  stroke-width: 2;
+}
+
+.telemetryChart svg polyline {
+  fill: none;
+  stroke: #b91222;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.telemetryChart svg circle {
+  fill: #b91222;
+}
+
+.telemetryChart > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #786e69;
+  font-size: 0.8125rem;
+}
+
+.telemetryLoadMore {
+  justify-self: start;
+}
+
+@media (max-width: 640px) {
+  .machineDetailSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .smartIotPanel {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .telemetryRangeForm {
+    grid-template-columns: 1fr;
+  }
+
+  .machineHeartbeatFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .machineDetailSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .machineHeartbeatFields {
+    grid-template-columns: 1fr;
+  }
+}

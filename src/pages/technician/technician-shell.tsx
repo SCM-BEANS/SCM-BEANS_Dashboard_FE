@@ -125,6 +125,9 @@ export function TechnicianShell({
             <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
             </Link>
+            <span className={styles.mobileHeaderStatus}>
+              {currentSection.LABEL}
+            </span>
             <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
             <MobileNavigation
               items={TECHNICIAN_SIDEBAR_ITEMS}
@@ -142,9 +145,6 @@ export function TechnicianShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {TECHNICIAN_MESSAGES.ROLE} / {currentSection.LABEL}
-          </div>
           <main className={styles.main}>{children}</main>
         </div>
       </div>

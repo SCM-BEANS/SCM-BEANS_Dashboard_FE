@@ -188,5 +188,45 @@
     "verification_command": "Visual acceptance: Admin overview and targeted lists; confirm visible keyboard focus, transitions no longer than 180ms, reduced-motion suppression, unchanged handlers, and unchanged Customer/Technician/Moderator defaults.",
     "notes": "Covers stories: US-05",
     "priority": "P2"
+  },
+  {
+    "id": "phase-01-shared-machine-presentation",
+    "title": "Shared machine presentation across roles",
+    "status": "passing-unverified",
+    "evidence": "TDD: targeted Phase 01 tests 6/6; ESLint on all changed Phase 01 files passes; git diff --check passes (CRLF normalization warnings only); code review no findings. The full focused suite still has unrelated failures from existing test/code path drift and Moderator dashboard async-harness behavior. Repo-wide lint and tsc remain blocked by pre-existing errors in dashboard/menu, moderator/buyback, moderator/technical, and technician/work-order-detail.",
+    "user_visible_behavior": "Owner, Admin, and Moderator see the same machine list/detail hierarchy and Smart IoT panel placement while retaining role-specific routes, filters, permissions, and actions.",
+    "verification_command": "node --test tests/admin-machines-iot.test.cjs tests/moderator-dashboard.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser: Owner/Admin/Moderator machine lists and details plus /admin/iot and /moderator/iot at desktop and mobile widths",
+    "notes": "Covers stories: P1 story 2. Owner/Admin/Moderator now use shared list summary-controls-results regions and common machine-detail metric cards; Owner uses the shared DataTable; role queries, filters and actions remain role-owned. Admin/Moderator IoT routes share SmartIotPanel. Phase 01 defines role-specific machine operational-overview path helpers; the visible action and destination page are deferred to Phase 03 so no dead link is exposed. Browser validation is deferred to Phase 04. Phase 01 awaits user review before Phase 02. See plans/owner-iot-status-telemetry/phase-01-shared-machine-presentation.md.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-02-heartbeat-and-telemetry",
+    "title": "Role-scoped heartbeat and telemetry",
+    "status": "passing",
+    "evidence": "Phase 02 focused TDD checks: 10 passed; ESLint on touched files: pass; TypeScript reports no errors in Phase 02 files, with existing errors remaining in dashboard/menu, moderator/buyback, and moderator/technical. Legacy tests in admin-machines-iot and moderator-dashboard still fail on stale route/query fixtures.",
+    "user_visible_behavior": "All three roles see permitted heartbeat state on Smart IoT machine lists/details; Owner and Admin can review telemetry history, while Moderator sees an explicit permission state without a points request.",
+    "verification_command": "node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx.cmd eslint <touched Phase 02 source files>; npx.cmd tsc --noEmit --incremental false",
+    "notes": "Covers stories: P1 stories 1, 3, 4; P2 story 1. See plans/owner-iot-status-telemetry/phase-02-heartbeat-and-telemetry.md.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-03-operational-overview",
+    "title": "Role-scoped machine operational overview",
+    "status": "passing",
+    "evidence": "TDD: focused Phase 03 tests 5/5 pass; touched-file ESLint passes; git diff --check passes; code review APPROVED after fixing a nested main landmark. npx tsc --noEmit still reports pre-existing unrelated errors in dashboard/menu, moderator/buyback, and moderator/technical. Broader legacy tests still have existing path/alias harness failures (admin overview ./overview/overview-content and owner routing @/schema/billing.schema).",
+    "user_visible_behavior": "Owner, Admin, and Moderator can open the same operational-overview layout from machine detail using confirmed aggregate data; the page labels role scope and shows only authorized financial metrics.",
+    "verification_command": "node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npx eslint [changed Phase 03 TypeScript files]; npx tsc --noEmit; git diff --check",
+    "notes": "Covers story: P1 story 5. Calendar presets are separate from telemetry rolling date-time controls. Per-machine cup/PAYG values and 3D stay deferred. Phase 03 code review and user review are approved. See plans/owner-iot-status-telemetry/phase-03-operational-overview.md.",
+    "priority": "P1"
+  },
+  {
+    "id": "phase-04-cross-role-validation",
+    "title": "Cross-role IoT flow validation",
+    "status": "passing-unverified",
+    "evidence": "Phase 04 targeted Playwright: 3/3 passed at 390/768/1023/1024/1440px for Owner/Admin/Moderator (mock APIs/role claims). Targeted heartbeat/telemetry checks: 10/10; operational overview checks: 5/5. Manual authenticated API/browser validation remains unverified. Full Playwright: 11 passed, 3 unrelated failures in Admin overview date-range and landing keyboard-focus/touch-target checks; focused legacy Node suite: 20 passed, 11 harness/route drift failures. Repo-wide lint/tsc have unrelated errors; changed Phase 04 files pass ESLint and diff check.",
+    "user_visible_behavior": "Machine list → detail → operational overview works consistently across Owner, Admin, and Moderator without changing role permissions, maintenance behavior, or management actions.",
+    "verification_command": "npm.cmd run test:e2e -- --project=chromium tests/e2e/machine-operational-overview.spec.ts; node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
+    "notes": "Covers all P1 stories and functional requirements. Unavailable authenticated role sessions must be reported as unverified. See plans/owner-iot-status-telemetry/phase-04-cross-role-validation.md.",
+    "priority": "P1"
   }
 ]

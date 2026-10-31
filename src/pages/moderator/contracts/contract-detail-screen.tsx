@@ -9,6 +9,7 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 
 import { contractsApi } from "@/apis/contracts.api";
+import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { profilesApi } from "@/apis/profiles.api";
 
 import { ModeratorPageHeading } from "../moderator-page-heading";
@@ -24,6 +25,7 @@ import {
   type ContractPolicyAmendmentRequest,
   type TerminationCaseRequest,
 } from "@/schema/contracts.schema";
+import type { InstallationWorkOrderSummary } from "@/schema/installation-work-orders.schema";
 
 import { moderatorStyles as styles } from "../moderator-shell";
 
@@ -71,6 +73,18 @@ function contractStatus(value: string): string {
   if (value === "DRAFT") return T.CONTRACTS.DRAFT;
   if (value === "TERMINATED") return T.CONTRACTS.TERMINATED;
   return value;
+}
+
+function installationWorkOrderStatus(value: InstallationWorkOrderSummary["status"]): string {
+  const labels: Record<InstallationWorkOrderSummary["status"], string> = {
+    PENDING: "Chờ phân công",
+    ASSIGNED: "Đã giao kỹ thuật viên",
+    IN_PROGRESS: "Đang lắp đặt",
+    COMPLETED: "Đã hoàn tất bàn giao",
+    FAILED: "Lắp đặt thất bại",
+    CANCELLED: "Đã hủy lệnh",
+  };
+  return labels[value];
 }
 
 function QueryFeedback({
@@ -139,6 +153,12 @@ export function ContractDetailScreen({ id }: { id: string }) {
     queryKey: ["dolores", "contracts", "id", id],
     queryFn: ({ signal }) => contractsApi.getById(id, signal),
     enabled: validId,
+    retry: false,
+  });
+  const installationWorkOrders = useQuery({
+    queryKey: ["dolores", "installation-work-orders-by-owner", contract.data?.ownerId],
+    queryFn: ({ signal }) => installationWorkOrdersApi.listByOwner(contract.data!.ownerId, signal),
+    enabled: Boolean(contract.data?.ownerId) && contract.data?.status === "ACTIVE",
     retry: false,
   });
   const documents = useQuery({
@@ -331,6 +351,15 @@ export function ContractDetailScreen({ id }: { id: string }) {
 
   const busy = amendPolicy.isPending || requestTermination.isPending || continueContract.isPending;
   const ownerName = owner.data?.fullName ?? `${T.COMMON.OWNER} ${contract.data?.ownerId.slice(0, 8) ?? ""}`;
+  const matchingInstallationOrders = contract.data
+    ? (installationWorkOrders.data ?? [])
+      .filter((workOrder) =>
+        workOrder.ownerId === contract.data!.ownerId &&
+        workOrder.contractId === contract.data!.id &&
+        workOrder.machineId === contract.data!.machineId,
+      )
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    : [];
 
   return (
     <>
@@ -512,7 +541,31 @@ export function ContractDetailScreen({ id }: { id: string }) {
               ]}
             />}
           </section>}
-          <ContractActivationPanel contract={contract.data} />
+          <ContractActivationPanel
+            contract={contract.data}
+            installationRequestHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST(contract.data.id)}
+          />
+          {contract.data.status === "ACTIVE" && <section className={adminStyles.panel} aria-labelledby="moderator-contract-installation-history">
+            <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
+            <p className={adminStyles.panelSubtitle}>Các lệnh lắp đặt khớp với hợp đồng, máy và chủ sở hữu này. Mở chi tiết để xem checklist, bàn giao và chứng cứ.</p>
+            <QueryFeedback query={installationWorkOrders} loadingMessage="Đang tải lệnh lắp đặt…" />
+            {installationWorkOrders.data && matchingInstallationOrders.length === 0 && !installationWorkOrders.isError && (
+              <p className={adminStyles.emptyText} role="status">Chưa tìm thấy lệnh lắp đặt thuộc hợp đồng này.</p>
+            )}
+            {matchingInstallationOrders.length > 0 && <DataTable
+              headerVariant="admin"
+              rows={matchingInstallationOrders}
+              rowKey={(item) => item.id}
+              columns={[
+                { key: "work-order", header: "Mã lệnh", render: (item) => <code title={item.id}>{item.id.slice(0, 8).toUpperCase()}</code> },
+                { key: "status", header: "Trạng thái", render: (item) => installationWorkOrderStatus(item.status) },
+                { key: "technician", header: "Kỹ thuật viên", render: (item) => item.assignedTechnicianId ? <code title={item.assignedTechnicianId}>{item.assignedTechnicianId.slice(0, 8).toUpperCase()}</code> : "Chưa phân công" },
+                { key: "scheduled", header: "Lịch hẹn", render: (item) => dateTime(item.scheduledFor) },
+                { key: "completed", header: "Hoàn tất", render: (item) => dateTime(item.completedAt) },
+                { key: "action", header: "", render: (item) => <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(item.id)}>Mở chi tiết lệnh</ButtonBar> },
+              ]}
+            />}
+          </section>}
         </>}
       </div>
       {contract.data && <ActionBar label="Thao tác hợp đồng">
@@ -529,7 +582,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
           <ButtonBar type="button" disabled={busy} onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
         </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
         {contract.data.machineId && <ButtonBar type="button" disabled={machineHistory.isFetching} onClick={() => setShowMachineHistory((current) => !current)}>{showMachineHistory ? "Ẩn lịch sử máy" : "Lịch sử theo máy"}</ButtonBar>}
-        <ButtonBar type="button" disabled={contract.isFetching || expiry.isFetching || policyHistory.isFetching || documents.isFetching || machineHistory.isFetching} onClick={() => { void Promise.all([contract.refetch(), expiry.refetch(), policyHistory.refetch(), documents.refetch(), ...(showMachineHistory ? [machineHistory.refetch()] : [])]); }}>Làm mới dữ liệu</ButtonBar>
+        <ButtonBar type="button" disabled={contract.isFetching || expiry.isFetching || policyHistory.isFetching || documents.isFetching || machineHistory.isFetching || installationWorkOrders.isFetching} onClick={() => { void Promise.all([contract.refetch(), expiry.refetch(), policyHistory.refetch(), documents.refetch(), ...(showMachineHistory ? [machineHistory.refetch()] : []), ...(contract.data?.status === "ACTIVE" ? [installationWorkOrders.refetch()] : [])]); }}>Làm mới dữ liệu</ButtonBar>
       </ActionBar>}
       {(pendingPolicy || pendingTermination || pendingContinuation) && <NotificationDialog
         variant="confirm"

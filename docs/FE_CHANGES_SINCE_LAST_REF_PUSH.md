@@ -16,7 +16,7 @@ Nhánh: `ref`
 ### Thay đổi chính
 
 - **Hợp đồng:** bổ sung các thao tác về trạng thái hết hạn, quyết định gia hạn, tài liệu hợp đồng, kích hoạt, điều chỉnh/lịch sử chính sách, tiếp tục và yêu cầu chấm dứt hợp đồng.
-- **Máy:** bổ sung chỉnh sửa/xóa máy; tại chi tiết máy có thể đọc heartbeat và telemetry theo khoảng ngày cho máy `SMART_IOT`.
+- **Máy:** bổ sung chỉnh sửa/xóa máy; các role dùng chung phần trình bày danh sách/hồ sơ và heartbeat. Owner/Admin đọc telemetry points; hồ sơ máy liên kết tới operational overview aggregate theo scope role.
 - **Model máy:** thêm xem, tạo/cập nhật, gán máy vào model và vô hiệu hóa model.
 - **Menu:** mở rộng quản lý công thức và đồng bộ công thức tới máy.
 - **Cửa hàng/địa điểm:** bổ sung thao tác tạo, sửa và vô hiệu hóa địa điểm.
@@ -38,7 +38,7 @@ Nhánh: `ref`
 ### Thay đổi chính
 
 - **Hợp đồng:** mở rộng thông tin chi tiết hợp đồng và tài liệu.
-- **Máy:** mở rộng dữ liệu máy được Owner quản lý.
+- **Máy:** mở rộng dữ liệu máy được Owner quản lý; hiển thị heartbeat và telemetry history Smart IoT, thêm đường dẫn tới operational overview aggregate theo Owner scope.
 - **Menu:** thêm dữ liệu và thao tác liên quan công thức.
 - **Yêu cầu hỗ trợ/bảo trì:** mở rộng danh sách và luồng làm việc, gồm lịch hẹn, thông tin sửa chữa/custody và các trạng thái xử lý liên quan.
 - Cập nhật descriptor và workflow để mô tả/điều hướng các thao tác mới.
@@ -63,7 +63,7 @@ Nhánh: `ref`
 - **Hợp đồng/lắp đặt:** bổ sung thông tin hợp đồng và yêu cầu lắp đặt.
 - **Khách hàng:** mở rộng xem và cập nhật chi tiết hồ sơ khách hàng.
 - **Hóa đơn:** bổ sung xem hóa đơn và duyệt chứng từ thanh toán.
-- **IoT:** chọn máy Smart IoT, đọc heartbeat và tải telemetry theo khoảng ngày.
+- **IoT:** chọn máy Smart IoT và đọc heartbeat. Moderator giữ cùng vị trí telemetry nhưng không gửi points request theo quyền Swagger; operational overview không hiển thị financial metrics.
 - **Máy, công thức và kỹ thuật:** mở rộng thao tác quản lý máy/công thức và xử lý công việc kỹ thuật.
 - Cập nhật shell, trang đọc và nội dung thông báo Moderator.
 

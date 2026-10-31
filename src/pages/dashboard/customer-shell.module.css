@@ -72,8 +72,7 @@
   overflow: auto;
 }
 
-.mobileHeader,
-.mobileBreadcrumb {
+.mobileHeader {
   display: none;
 }
 
@@ -529,24 +528,23 @@
     font-weight: 700;
   }
 
+  .mobileHeaderStatus {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: #706561;
+    font-size: 14px;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .mobileHeaderLink {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     color: #706561 !important;
     font-size: 14px;
-  }
-
-  .mobileBreadcrumb {
-    display: flex;
-    min-height: 36px;
-    flex: 0 0 36px;
-    align-items: center;
-    padding: 0 16px 10px;
-    border-bottom: 1px solid #e9e2dc;
-    background: #fff;
-    color: #706561;
-    font-size: 13px;
   }
 
   .workspace :global(footer) {

@@ -5,7 +5,7 @@ import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { PATH_ADMIN } from "@/routes/path";
+import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { CreateMachineModelRequestSchema, type CreateMachineModelRequest } from "@/schema/machine-models.schema";
 import { adminStyles as styles } from "../admin-shell";
@@ -16,8 +16,20 @@ function formatDateTime(value: string | null | undefined): string {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("vi-VN");
 }
 
-export function MachineModelDetail({ modelId }: { modelId: string }) {
+export function MachineModelDetail({
+  modelId,
+  role = "admin",
+}: {
+  modelId: string;
+  role?: "admin" | "moderator";
+}) {
   const queryClient = useQueryClient();
+  const modelDetailQueryKey = role === "admin"
+    ? ["admin", "machine-models", "detail", modelId]
+    : ["dolores", "machine-models", "detail", modelId];
+  const modelListQueryKey = role === "admin"
+    ? ["admin", "machine-models"]
+    : ["dolores", "machine-models"];
   const [editing, setEditing] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [form, setForm] = useState<CreateMachineModelRequest>({
@@ -26,7 +38,7 @@ export function MachineModelDetail({ modelId }: { modelId: string }) {
   const [specificationsText, setSpecificationsText] = useState("{}");
   const [formError, setFormError] = useState("");
   const machineModels = useQuery({
-    queryKey: ["admin", "machine-models", "detail", modelId],
+    queryKey: modelDetailQueryKey,
     queryFn: ({ signal }) => machineModelsApi.getById(modelId, signal),
     enabled: Boolean(modelId),
   });
@@ -45,8 +57,8 @@ export function MachineModelDetail({ modelId }: { modelId: string }) {
   const update = useMutation({
     mutationFn: (input: CreateMachineModelRequest) => machineModelsApi.update(modelId, input),
     onSuccess: async (updated) => {
-      queryClient.setQueryData(["admin", "machine-models", "detail", modelId], updated);
-      await queryClient.invalidateQueries({ queryKey: ["admin", "machine-models"] });
+      queryClient.setQueryData(modelDetailQueryKey, updated);
+      await queryClient.invalidateQueries({ queryKey: modelListQueryKey });
       setEditing(false);
       setFormError("");
     },
@@ -55,8 +67,8 @@ export function MachineModelDetail({ modelId }: { modelId: string }) {
   const deactivate = useMutation({
     mutationFn: () => machineModelsApi.deactivate(modelId),
     onSuccess: async (updated) => {
-      queryClient.setQueryData(["admin", "machine-models", "detail", modelId], updated);
-      await queryClient.invalidateQueries({ queryKey: ["admin", "machine-models"] });
+      queryClient.setQueryData(modelDetailQueryKey, updated);
+      await queryClient.invalidateQueries({ queryKey: modelListQueryKey });
       setConfirmDeactivate(false);
     },
     onError: (error: unknown) => setFormError(getApiErrorMessage(error, "mutation")),
@@ -130,7 +142,7 @@ export function MachineModelDetail({ modelId }: { modelId: string }) {
           {machineModel.active && <ButtonBar type="button" onClick={() => setEditing(true)}>Chỉnh sửa</ButtonBar>}
           {machineModel.active && <ButtonBar type="button" onClick={() => setConfirmDeactivate(true)}>Ngừng kích hoạt</ButtonBar>}
         </>}
-        <ButtonBar href={`${PATH_ADMIN.MACHINES}?view=types`}>{T.MACHINE_MODELS.BACK}</ButtonBar>
+        <ButtonBar href={role === "admin" ? `${PATH_ADMIN.MACHINES}?view=types` : PATH_MODERATOR.MACHINE_MODELS}>{T.MACHINE_MODELS.BACK}</ButtonBar>
       </ActionBar>
       {confirmDeactivate && <NotificationDialog
         variant="confirm"

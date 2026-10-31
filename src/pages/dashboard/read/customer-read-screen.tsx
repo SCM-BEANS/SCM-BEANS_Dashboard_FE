@@ -12,6 +12,7 @@ import { getCustomerScreenDescriptor } from "./customer-read-descriptor";
 import { OverviewScreen } from "../overview/overview-screen";
 import { ContractsScreen } from "../contracts/contracts-screen";
 import { MachinesScreen } from "../machines/machines-screen";
+import { CustomerMachineOperationalOverviewScreen } from "../machines/machine-operational-overview-screen";
 import { MenuScreen } from "../menu/menu-screen";
 import { InvoicesScreen } from "../invoices/invoices-screen";
 import styles from "../customer-shell.module.css";
@@ -49,6 +50,14 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     : "";
 
   if (!sectionPath) return withCustomerActions(<OverviewScreen />, screen.title, screen.actions);
+  const machineOperationsMatch = /^machines\/([^/]+)\/operations$/.exec(sectionPath);
+  if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {
+    return withCustomerActions(
+      <CustomerMachineOperationalOverviewScreen machineId={machineOperationsMatch[1]} />,
+      screen.title,
+      screen.actions,
+    );
+  }
   if (sectionPath === "contracts" || sectionPath === "contracts/expiry" || ContractIdSchema.safeParse(contractCandidate).success) {
     return withCustomerActions(<ContractsScreen sectionPath={sectionPath} back={screen.back} />, screen.title, screen.actions);
   }

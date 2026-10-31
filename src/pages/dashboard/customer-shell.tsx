@@ -128,6 +128,9 @@ export function CustomerShell({
             <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
             </Link>
+            <span className={styles.mobileHeaderStatus}>
+              {currentSection.LABEL}
+            </span>
             <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
             <MobileNavigation
               items={CUSTOMER_SIDEBAR_ITEMS}
@@ -145,9 +148,6 @@ export function CustomerShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
-          </div>
           <main className={styles.main}>{children}</main>
         </div>
       </div>

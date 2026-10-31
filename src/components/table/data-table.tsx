@@ -1,4 +1,4 @@
-import { Children, type CSSProperties, type Key, type ReactNode, type TdHTMLAttributes } from "react";
+import { Children, type CSSProperties, type HTMLAttributes, type Key, type ReactNode, type TdHTMLAttributes } from "react";
 import styles from "./data-table.module.css";
 
 export type DataTableColumn<Row> = {
@@ -7,6 +7,10 @@ export type DataTableColumn<Row> = {
   align?: "left" | "center" | "right";
   render: (row: Row, index: number) => ReactNode;
   cellProps?: (row: Row, index: number) => TdHTMLAttributes<HTMLTableCellElement>;
+};
+
+type DataTableRowProps = HTMLAttributes<HTMLTableRowElement> & {
+  [attribute: `data-${string}`]: string | undefined;
 };
 
 type DataTableBaseProps = {
@@ -20,6 +24,7 @@ type DataTableRowsProps<Row> = DataTableBaseProps & {
   columns: readonly DataTableColumn<Row>[];
   rows: readonly Row[];
   rowKey: (row: Row, index: number) => Key;
+  rowProps?: (row: Row, index: number) => DataTableRowProps;
   emptyMessage?: ReactNode;
   headers?: never;
   children?: never;
@@ -68,7 +73,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const body = isRowsTable
     ? props.rows.length > 0
       ? props.rows.map((row, index) => (
-        <tr key={props.rowKey(row, index)}>
+        <tr key={props.rowKey(row, index)} {...props.rowProps?.(row, index)}>
           {props.columns.map((column) => {
             const cellProps = column.cellProps?.(row, index);
             const cellStyle = column.align

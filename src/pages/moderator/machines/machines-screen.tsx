@@ -1,26 +1,37 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type RefObject } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/router";
 
-import { locationsApi } from "@/apis/locations.api";
+import { machineModelsApi } from "@/apis/machine-models.api";
 
 import { machinesApi } from "@/apis/machines.api";
-
-import { profilesApi } from "@/apis/profiles.api";
+import { telemetryApi } from "@/apis/telemetry.api";
 
 import { PATH_MODERATOR } from "@/routes/path";
 
-import { LocationIdSchema } from "@/schema/locations.schema";
+import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 
-import { MachineIdSchema, MachineTypeSchema, type Machine, type MachineInventoryItem, type MaintenanceTicket } from "@/schema/machines.schema";
+import { MachineStatusSchema, type MachineInventoryItem } from "@/schema/machines.schema";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 
 import { DataTable } from "@/components/table/data-table";
+import { MachineListView } from "@/components/machines/machine-list-view";
+import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
+import { staggerHeartbeatRequest, usePageVisibility, useVisibleMachineIds } from "@/components/machines/machine-heartbeat-visibility";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
+import { CreateMachineModelForm } from "@/pages/admin/machines/create-machine-model-form";
+import { MachineModelDetail } from "@/pages/admin/machines/machine-model-detail";
+import { ADMIN_OPERATIONS_MESSAGES as ADMIN_T } from "@/text/admin/admin-operations-messages";
+import { adminStyles } from "@/pages/admin/admin-shell";
+import { ModeratorMachineDetailScreen } from "./machine-detail-screen";
+import { MachineMaintenanceTicketTable } from "./machine-maintenance-ticket-table";
 
 import { moderatorStyles as styles } from "../moderator-shell";
 import { ModeratorPageHeading } from "../moderator-page-heading";
@@ -29,17 +40,9 @@ const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
 
-async function listVerifiedActiveTechnicians(signal: AbortSignal) {
-  const firstPage = await profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: 0, size: 100 }, signal);
-  const pages = [firstPage];
-  for (let page = 1; page < firstPage.totalPages; page += 5) {
-    const pageNumbers = Array.from({ length: Math.min(5, firstPage.totalPages - page) }, (_, offset) => page + offset);
-    pages.push(...await Promise.all(pageNumbers.map((pageNumber) =>
-      profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: pageNumber, size: 100 }, signal),
-    )));
-  }
-  return pages.flatMap((page) => page.items).filter((profile) => profile.emailVerified);
-}
+const MACHINE_STATUSES = MachineStatusSchema.options;
+type MachineStatus = typeof MACHINE_STATUSES[number];
+type StatusFilter = "ALL" | MachineStatus;
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -47,6 +50,37 @@ function formatDate(value: string | null | undefined): string {
   return Number.isNaN(timestamp)
     ? value
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
+}
+
+function formatDateOnly(value: string | null | undefined): string {
+  if (!value) return "—";
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? "—" : new Date(timestamp).toLocaleDateString("vi-VN");
+}
+
+function formatNumber(value: number | null | undefined): string {
+  return value == null ? "—" : numberFormat.format(value);
+}
+
+function formatPeriod(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start && !end) return "—";
+  return `${formatDateOnly(start)} – ${formatDateOnly(end)}`;
+}
+
+function machineStatusLabel(status: MachineInventoryItem["status"]): string {
+  if (!status) return "—";
+  const labels: Record<string, string> = {
+    IN_WAREHOUSE: "Trong kho",
+    PENDING_ACTIVATION: "Chờ kích hoạt",
+    DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
+    DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
+    UNDER_MAINTENANCE: "Đang bảo trì",
+    REFURBISHING: "Đang tân trang",
+    PENDING_QA: "Chờ kiểm định",
+    AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
+    RETIRED: "Đã ngừng sử dụng",
+  };
+  return labels[status] ?? status;
 }
 
 function QueryFeedback({
@@ -70,152 +104,41 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
-  return <ModeratorPageHeading title={title} description={description} />;
-}
-
-function ActionLink({ href, children }: { href: string; children: string }) {
-  return <Link className={styles.tableLink} href={href}>{children}</Link>;
-}
-
-function DetailValue({ label, value, code = false, centered = false }: { label: string; value: string | number; code?: boolean; centered?: boolean }) {
+function MachineStatusFilter({ statusFilter, onChange }: { statusFilter: StatusFilter; onChange: (status: string) => void }) {
   return (
-    <div className={styles.detailItem}>
-      <dt>{label}</dt>
-      <dd className={[code ? styles.codeValue : "", centered ? styles.numericCenter : ""].filter(Boolean).join(" ") || undefined}>{value}</dd>
+    <div className={adminStyles.machineFilterToolbar}>
+      <label className={adminStyles.machineFilterControl}>
+        <span className={adminStyles.machineFilterLabel}>{ADMIN_T.MACHINES.STATUS}</span>
+        <select className={adminStyles.machineStatusSelect} aria-label="Lọc máy theo trạng thái" value={statusFilter} onChange={(event) => onChange(event.target.value)}>
+          <option value="ALL">{ADMIN_T.MACHINES.FILTER_ALL} {ADMIN_T.MACHINES.STATUS.toLowerCase()}</option>
+          {MACHINE_STATUSES.map((status) => <option value={status} key={status}>{machineStatusLabel(status)}</option>)}
+        </select>
+      </label>
     </div>
   );
 }
 
-function MachineManagementPanel({ machine }: { machine: Machine }) {
-  const queryClient = useQueryClient();
-  const [technicianId, setTechnicianId] = useState("");
-  const [machineType, setMachineType] = useState<"CONVENTIONAL" | "SMART_IOT">(machine.machineType ?? "CONVENTIONAL");
-  const [typeReason, setTypeReason] = useState("");
-  const [region, setRegion] = useState(machine.region ?? "");
-  const [locationId, setLocationId] = useState(machine.locationId ?? "");
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-  const technicians = useQuery({
-    queryKey: ["dolores", "profiles", "technicians", "verified-active"],
-    queryFn: ({ signal }) => listVerifiedActiveTechnicians(signal),
-    enabled: Boolean(machine.ownerId),
-    retry: false,
-  });
-  const locations = useQuery({
-    queryKey: ["dolores", "locations", "owner", machine.ownerId, "active"],
-    queryFn: ({ signal }) => locationsApi.list({ ownerId: machine.ownerId!, activeOnly: true }, signal),
-    enabled: Boolean(machine.ownerId),
-    retry: false,
-  });
-  const refresh = async () => {
-    setActionSuccess(messages.MACHINE_ACTION_SUCCESS);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] }),
-      queryClient.invalidateQueries({ queryKey: ["dolores", "inventory-summary"] }),
-    ]);
-  };
-  const onError = (error: unknown) => setActionError(getApiErrorMessage(error));
-  const assign = useMutation({
-    mutationFn: () => machinesApi.assignTechnician(technicianId, machine.id),
-    onMutate: () => { setActionError(null); setActionSuccess(null); },
-    onSuccess: refresh,
-    onError,
-  });
-  const unassign = useMutation({
-    mutationFn: () => machinesApi.unassignTechnician(technicianId, machine.id),
-    onMutate: () => { setActionError(null); setActionSuccess(null); },
-    onSuccess: refresh,
-    onError,
-  });
-  const updateType = useMutation({
-    mutationFn: () => machinesApi.setType(machine.id, { machineType, reason: typeReason }),
-    onMutate: () => { setActionError(null); setActionSuccess(null); },
-    onSuccess: refresh,
-    onError,
-  });
-  const updateMachine = useMutation({
-    mutationFn: () => {
-      if (!machine.serialNumber || !machine.status) throw new Error("Không thể cập nhật máy khi API thiếu serial hoặc trạng thái hiện tại.");
-      return machinesApi.update(machine.id, {
-        serialNumber: machine.serialNumber,
-        status: machine.status,
-        region,
-        ...(locationId ? { locationId } : {}),
-      });
-    },
-    onMutate: () => { setActionError(null); setActionSuccess(null); },
-    onSuccess: refresh,
-    onError,
-  });
-  const actionsPending = assign.isPending || unassign.isPending || updateType.isPending || updateMachine.isPending;
-  const locationOptions = locations.data ?? [];
-
-  function submitMachine(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    updateMachine.mutate();
-  }
-
-  function submitType(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    updateType.mutate();
-  }
-
-  return (
-    <section className={styles.pendingNotice} aria-labelledby="moderator-machine-management">
-      <h2 id="moderator-machine-management" className={styles.sectionTitle}>{messages.MACHINE_MANAGEMENT_ACTIONS}</h2>
-      {machine.ownerId ? (
-        <>
-          <QueryFeedback query={locations} loadingMessage={messages.MACHINE_LOADING_LOCATIONS} />
-          <form onSubmit={submitMachine} style={{ display: "grid", gap: 8, marginBottom: 20 }}>
-            <label htmlFor="moderator-machine-region">{messages.MACHINE_REGION_UPDATE}</label>
-            <input id="moderator-machine-region" value={region} disabled={actionsPending} onChange={(event) => setRegion(event.target.value)} />
-            <label htmlFor="moderator-machine-location">{messages.MACHINE_LOCATION_UPDATE}</label>
-            <select id="moderator-machine-location" value={locationId} disabled={actionsPending || locations.isPending} onChange={(event) => setLocationId(event.target.value)}>
-              <option value="">{messages.MACHINE_SELECT_LOCATION}</option>
-              {locationOptions.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-            </select>
-            <button className={styles.retryButton} type="submit" disabled={actionsPending || !machine.serialNumber || !machine.status}>
-              {updateMachine.isPending ? messages.MACHINE_SAVING : messages.MACHINE_SAVE_CHANGES}
-            </button>
-          </form>
-          <form onSubmit={submitType} style={{ display: "grid", gap: 8, marginBottom: 20 }}>
-            <label htmlFor="moderator-machine-type">{messages.MACHINE_TYPE_UPDATE}</label>
-            <select id="moderator-machine-type" value={machineType} disabled={actionsPending} onChange={(event) => setMachineType(MachineTypeSchema.parse(event.target.value))}>
-              <option value="CONVENTIONAL">CONVENTIONAL</option>
-              <option value="SMART_IOT">SMART_IOT</option>
-            </select>
-            <label htmlFor="moderator-machine-type-reason">{messages.MACHINE_TYPE_REASON}</label>
-            <textarea id="moderator-machine-type-reason" value={typeReason} maxLength={1000} required rows={2} disabled={actionsPending} onChange={(event) => setTypeReason(event.target.value)} />
-            <button className={styles.retryButton} type="submit" disabled={actionsPending || !typeReason.trim()}>
-              {updateType.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TYPE_UPDATE}
-            </button>
-          </form>
-          <QueryFeedback query={technicians} loadingMessage={messages.MACHINE_LOADING_TECHNICIANS} />
-          <div style={{ display: "grid", gap: 8 }}>
-            <label htmlFor="moderator-machine-technician">{messages.MACHINE_SELECT_TECHNICIAN}</label>
-            <select id="moderator-machine-technician" value={technicianId} disabled={actionsPending || technicians.isPending} onChange={(event) => setTechnicianId(event.target.value)}>
-              <option value="">{messages.MACHINE_SELECT_TECHNICIAN}</option>
-              {technicians.data?.map((technician) => <option key={technician.idaasUserId} value={technician.idaasUserId}>{technician.fullName || technician.email || technician.idaasUserId}</option>)}
-            </select>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <button className={styles.retryButton} type="button" disabled={!technicianId || actionsPending} onClick={() => assign.mutate()}>{assign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_ASSIGN}</button>
-              <button className={styles.retryButton} type="button" disabled={!technicianId || actionsPending} onClick={() => unassign.mutate()}>{unassign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_UNASSIGN}</button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <p className={styles.formHint}>{messages.MACHINE_OWNER_ASSIGNMENT_REQUIRED}</p>
-      )}
-      {actionError && <p role="alert">{actionError}</p>}
-      {actionSuccess && <p role="status">{actionSuccess}</p>}
-    </section>
-  );
+function PageHeading({ title, description }: { title: string; description: string }) {
+  return <ModeratorPageHeading title={title} description={description} />;
 }
 
-const machineListPaths = new Set(["machines", "machines/list", "machines/stock", "machines/customer"]);
+const machineListPaths = new Set([
+  "machines",
+  "machines/list",
+  "machines/stock",
+  "machines/customer",
+  "machines/models",
+  "machines/new",
+]);
 
 const machineHistoryPath = "machines/repair-history";
+
+function getMachineModelDetailId(path: string): string {
+  const prefix = "machines/models/";
+  if (!path.startsWith(prefix)) return "";
+  const candidate = path.slice(prefix.length);
+  return candidate && !candidate.includes("/") ? candidate : "";
+}
 
 const unavailableMachinePaths = new Set(["machines/loans", "machines/substitute", "machines/substitute/return"]);
 
@@ -228,24 +151,42 @@ function getMachineDetailId(path: string): string {
   return candidate;
 }
 
-function MachineList({
-  machines,
-  isStock,
-  isCustomer,
-  failed,
-}: {
-  machines: MachineInventoryItem[];
-  isStock: boolean;
-  isCustomer: boolean;
-  failed: boolean;
-}) {
-  const visibleMachines = machines.filter((machine) => {
+function getVisibleMachines(
+  machines: MachineInventoryItem[],
+  isStock: boolean,
+  isCustomer: boolean,
+  statusFilter: StatusFilter,
+) {
+  return machines.filter((machine) => {
+    if (statusFilter !== "ALL" && machine.status !== statusFilter) return false;
     if (isStock) return ["IN_WAREHOUSE", "PENDING_ACTIVATION", "AVAILABLE_FOR_RENT"].includes(machine.status ?? "");
     if (isCustomer) return Boolean(machine.ownerId);
     return true;
   });
+}
+
+function MachineList({
+  machines,
+  isStock,
+  isCustomer,
+  statusFilter,
+  failed,
+  heartbeatByMachineId,
+  tableRef,
+}: {
+  machines: MachineInventoryItem[];
+  isStock: boolean;
+  isCustomer: boolean;
+  statusFilter: StatusFilter;
+  failed: boolean;
+  heartbeatByMachineId: Map<string, { isError: boolean; isPending: boolean; data?: { status: "ONLINE" | "OFFLINE" | "UNKNOWN" }; refetch: () => unknown }>;
+  tableRef: RefObject<HTMLDivElement>;
+}) {
+  const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter);
   const emptyMessage = failed
     ? undefined
+    : statusFilter !== "ALL"
+      ? ADMIN_T.MACHINES.NO_MATCH
     : isStock
       ? messages.MACHINE_STOCK_EMPTY
       : isCustomer
@@ -253,187 +194,259 @@ function MachineList({
         : messages.MACHINE_EMPTY;
 
   return (
-    <DataTable variant="moderator" headers={[messages.MACHINE_SERIAL, messages.TECHNICAL_MACHINE_ID, messages.MACHINE_OWNER, messages.MACHINE_TYPE, messages.MACHINE_STATUS]} emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}>
-      {visibleMachines.map((machine) => (
-        <tr key={machine.id}>
-          <td><ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? machine.id}</ActionLink></td>
-          <td className={styles.codeValue}>{machine.id}</td>
-          <td className={styles.codeValue}>{machine.ownerId ?? "—"}</td>
-          <td>{machine.machineType ?? "—"}</td>
-          <td>{machine.status ?? "—"}</td>
-        </tr>
-      ))}
-    </DataTable>
-  );
-}
-
-function MaintenanceTicketTable({ tickets, machineId }: { tickets: MaintenanceTicket[]; machineId?: string }) {
-  const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
-  return (
-    <DataTable
-      variant="moderator"
-      headers={[messages.TECHNICAL_ID, messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]}
-      emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
-      minWidth={760}
-    >
-      {visibleTickets.map((ticket, index) => (
-        <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-          <td className={styles.codeValue}>{ticket.id ?? "—"}</td>
-          <td>{ticket.machineId
-            ? <ActionLink href={PATH_MODERATOR.MACHINE_DETAIL(ticket.machineId)}>{ticket.machineId}</ActionLink>
-            : "—"}</td>
-          <td>{ticket.status ?? "—"}</td>
-          <td>{formatDate(ticket.startedAt ?? ticket.acknowledgedAt ?? ticket.completedAt)}</td>
-          <td>{ticket.resolutionResult ?? ticket.notes ?? ticket.diagnosis ?? "—"}</td>
-        </tr>
-      ))}
-    </DataTable>
+    <div ref={tableRef}>
+      <DataTable
+        headerVariant="admin"
+        className={`${adminStyles.adminTable} ${adminStyles.machineInventoryTable}`}
+        rows={visibleMachines}
+        rowKey={(machine) => machine.id}
+        rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
+        emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
+        columns={[
+          { key: "id", header: ADMIN_T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={adminStyles.machineInventoryLink} href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.id.slice(0, 8).toUpperCase()}</Link>, cellProps: (machine) => ({ title: machine.id }) },
+          { key: "serial", header: ADMIN_T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
+          { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machineStatusLabel(machine.status) },
+          { key: "connection", header: "Kết nối", render: (machine) => {
+            if (machine.machineType !== "SMART_IOT") return "—";
+            const query = heartbeatByMachineId.get(machine.id);
+            const state: MachineConnectionState = query?.isError ? "error" : query?.isPending ? "loading" : query?.data?.status ?? "not-requested";
+            return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
+          } },
+          { key: "owner", header: ADMIN_T.MACHINES.OWNER_ID, align: "center", render: (machine) => machine.ownerId ? machine.ownerId.slice(0, 8).toUpperCase() : "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
+          { key: "region", header: ADMIN_T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
+          { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+          { key: "deployed-at", header: ADMIN_T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDateOnly(machine.deployedAt) },
+        ]}
+      />
+    </div>
   );
 }
 
 export function ModeratorMachinesScreen({ path }: { path: string }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [creationSuccess, setCreationSuccess] = useState<{ title: string; description: string } | null>(null);
   const machineId = getMachineDetailId(path);
-  const validMachineId = MachineIdSchema.safeParse(machineId).success;
   const isDetail = Boolean(machineId);
+  const isPageVisible = usePageVisibility();
+  const heartbeatTableRef = useRef<HTMLDivElement>(null);
+  const machineModelDetailId = getMachineModelDetailId(path);
+  const isMachineModelDetail = Boolean(machineModelDetailId);
+  const validMachineModelDetailId = MachineModelIdSchema.safeParse(machineModelDetailId).success;
+  const isCreateMachine = path === "machines/new";
+  const isCreateMachineModel = path === "machines/models/new";
+  const isCreateView = isCreateMachine || isCreateMachineModel;
   const isHistory = path === machineHistoryPath;
   const isUnsupported = unavailableMachinePaths.has(path);
+  const isMachineModelsView = path === "machines/models";
   const isStock = path === "machines/stock";
   const isCustomer = path === "machines/customer";
+  const isInventoryView = !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView && !isMachineModelDetail;
+  const requestedStatus = typeof router.query.status === "string" ? router.query.status : "";
+  const statusFilter: StatusFilter = MACHINE_STATUSES.includes(requestedStatus as MachineStatus)
+    ? requestedStatus as StatusFilter
+    : "ALL";
+  const machineListPath = isStock
+    ? `${PATH_MODERATOR.MACHINES}/stock`
+    : isCustomer ? `${PATH_MODERATOR.MACHINES}/customer` : PATH_MODERATOR.MACHINES;
+  const selectStatus = (status: string) => {
+    void router.push({
+      pathname: machineListPath,
+      query: status === "ALL" ? {} : { status },
+    }, undefined, { shallow: true });
+  };
   const inventory = useQuery({
     queryKey: ["dolores", "machines"],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isDetail && !isHistory && !isUnsupported,
+    enabled: !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView,
     retry: false,
   });
   const inventorySummary = useQuery({
     queryKey: ["dolores", "inventory-summary"],
     queryFn: ({ signal }) => machinesApi.getInventorySummary(signal),
-    enabled: !isDetail && !isHistory && !isUnsupported,
+    enabled: !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView,
     retry: false,
   });
-  const machine = useQuery({
-    queryKey: ["dolores", "machines", "id", machineId],
-    queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    enabled: isDetail && validMachineId,
+  const machineModels = useQuery({
+    queryKey: ["dolores", "machine-models"],
+    queryFn: ({ signal }) => machineModelsApi.list(signal),
+    enabled: isMachineModelsView,
     retry: false,
   });
-  const schedule = useQuery({
-    queryKey: ["dolores", "machines", "maintenance-schedule", machineId],
-    queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId, signal),
-    enabled: isDetail && validMachineId,
-    retry: false,
-  });
-  const shouldReadTickets = isHistory || (isDetail && validMachineId);
+  const shouldReadTickets = isHistory;
+  const ticketParams = {};
   const tickets = useQuery({
-    queryKey: ["dolores", "maintenance-tickets"],
-    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({}, signal),
+    queryKey: ["dolores", "maintenance-tickets", ticketParams],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets(ticketParams, signal),
     enabled: shouldReadTickets,
     retry: false,
   });
-  const locationId = machine.data?.locationId ?? "";
-  const validLocationId = LocationIdSchema.safeParse(locationId).success;
-  const location = useQuery({
-    queryKey: ["dolores", "locations", "id", locationId],
-    queryFn: ({ signal }) => locationsApi.getById(locationId, signal),
-    enabled: Boolean(locationId) && validLocationId,
-    retry: false,
+  const visibleMachines = getVisibleMachines(inventory.data ?? [], isStock, isCustomer, statusFilter);
+  const smartIotMachines = isInventoryView ? visibleMachines.filter((machine) => machine.machineType === "SMART_IOT") : [];
+  const visibleMachineIds = useVisibleMachineIds(heartbeatTableRef, smartIotMachines.map((machine) => machine.id));
+  const visibleHeartbeatMachines = smartIotMachines.filter((machine) => visibleMachineIds.has(machine.id));
+  const listHeartbeats = useQueries({
+    queries: visibleHeartbeatMachines.map((machine, index) => ({
+      queryKey: ["dolores", "moderator", "telemetry", "heartbeat", machine.id],
+      queryFn: async ({ signal }) => {
+        await staggerHeartbeatRequest(index, signal);
+        return telemetryApi.getLatestHeartbeat(machine.id, signal);
+      },
+      enabled: isPageVisible,
+      retry: false,
+      staleTime: 3_000,
+      refetchInterval: isPageVisible ? 5_000 : false,
+      refetchIntervalInBackground: false,
+    })),
   });
-  const locationScopeMismatch = Boolean(
-    machine.data && location.data && (
-      machine.data.ownerId && location.data.ownerId !== machine.data.ownerId
-    ),
-  );
-
+  const heartbeatByMachineId = new Map<string, (typeof listHeartbeats)[number]>();
+  visibleHeartbeatMachines.forEach((machine, index) => heartbeatByMachineId.set(machine.id, listHeartbeats[index]!));
   if (isUnsupported) {
     return <div className={styles.pageContent}><PageHeading title={messages.MACHINES_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.MACHINE_UNAVAILABLE_ACTION}</p></div>;
   }
 
-  if (isDetail) {
-    if (!validMachineId) {
-      return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_DETAIL_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{machineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
-    }
+  if (isCreateView) {
+    const returnToMachineList = () => {
+      setCreationSuccess(null);
+      void router.push(isCreateMachineModel ? PATH_MODERATOR.MACHINE_MODELS : PATH_MODERATOR.MACHINES);
+    };
+
     return (
       <div className={styles.pageContent}>
-        <PageHeading title={messages.MACHINE_DETAIL_TITLE} description={messages.MACHINES_DESCRIPTION} />
-        <QueryFeedback query={machine} loadingMessage={messages.LOADING_MACHINE} />
-        {machine.data && !machine.isError && (
-          <>
-            <dl className={styles.detailGrid}>
-              <DetailValue label={messages.MACHINE_SERIAL} value={machine.data.serialNumber ?? "—"} />
-              <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={machine.data.id} code />
-              <DetailValue label={messages.MACHINE_OWNER} value={machine.data.ownerId ?? "—"} code />
-              <DetailValue label={messages.MACHINE_TYPE} value={machine.data.machineType ?? "—"} />
-              <DetailValue label={messages.MACHINE_STATUS} value={machine.data.status ?? "—"} />
-              <DetailValue label={messages.MACHINE_LOCATION} value={locationScopeMismatch ? machine.data.locationId ?? "—" : location.data?.name ?? machine.data.locationId ?? "—"} />
-              <DetailValue label={messages.MACHINE_DEPLOYED} value={formatDate(machine.data.deployedAt)} />
-              <DetailValue label={messages.MACHINE_REGION} value={machine.data.region ?? "—"} />
-            </dl>
-            <MachineManagementPanel machine={machine.data} />
-            {locationId && (
-              !validLocationId
-                ? <p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p>
-                : locationScopeMismatch
-                  ? <p className={styles.partialNotice} role="alert">{messages.LOCATION_MACHINE_SCOPE_MISMATCH}</p>
-                  : <QueryFeedback query={location} loadingMessage={messages.LOCATION_LOADING} />
-            )}
-            <section className={styles.pendingNotice}>
-              <h2 className={styles.sectionTitle}>{messages.MACHINE_NEXT_MAINTENANCE}</h2>
-              <QueryFeedback query={schedule} loadingMessage={messages.LOADING_MACHINE_SCHEDULE} />
-              {schedule.data && !schedule.isError && (
-                <dl className={styles.detailGrid}>
-                  <DetailValue label={messages.MACHINE_NEXT_MAINTENANCE} value={formatDate(schedule.data.nextPreventiveMaintenanceAt)} />
-                  <DetailValue label={messages.MACHINE_CUPS_SINCE_DESCALE} value={schedule.data.cupsServedSinceLastDescale == null ? "—" : numberFormat.format(schedule.data.cupsServedSinceLastDescale)} centered />
-                </dl>
-              )}
-            </section>
-            <section className={styles.pendingNotice}>
-              <h2 className={styles.sectionTitle}>{messages.MACHINE_TICKETS}</h2>
-              <QueryFeedback query={tickets} loadingMessage={messages.LOADING_MACHINE_TICKETS} />
-              {tickets.data && !tickets.isError && (
-                <>
-                  <p className={styles.formHint}>{messages.MACHINE_HISTORY_SCOPE}</p>
-                  <p className={styles.numericCount}>
-                    <strong>{numberFormat.format(tickets.data.filter((ticket) => ticket.machineId === machineId).length)}</strong>
-                    <span>{messages.MACHINE_TICKETS_FOR_ID}</span>
-                  </p>
-                  <MaintenanceTicketTable tickets={tickets.data} machineId={machineId} />
-                </>
-              )}
-            </section>
-          </>
+        <PageHeading
+          title={isCreateMachine ? ADMIN_T.MACHINES.CREATE_TITLE : ADMIN_T.MACHINE_MODELS.CREATE_TITLE}
+          description={messages.MACHINES_DESCRIPTION}
+        />
+        {isCreateMachine ? (
+          <CreateMachineForm
+            onCancel={returnToMachineList}
+            onCreated={(serialNumber) => {
+              void queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] });
+              void queryClient.invalidateQueries({ queryKey: ["dolores", "inventory-summary"] });
+              setCreationSuccess({
+                title: ADMIN_T.MACHINES.CREATE_SUCCESS,
+                description: `${ADMIN_T.MACHINES.SERIAL}: ${serialNumber}`,
+              });
+            }}
+          />
+        ) : (
+          <CreateMachineModelForm
+            onCancel={returnToMachineList}
+            onCreated={(modelCode) => {
+              void queryClient.invalidateQueries({ queryKey: ["dolores", "machine-models"] });
+              setCreationSuccess({
+                title: ADMIN_T.MACHINE_MODELS.CREATE_SUCCESS,
+                description: `${ADMIN_T.MACHINE_MODELS.MODEL_CODE}: ${modelCode}`,
+              });
+            }}
+          />
+        )}
+        {creationSuccess && (
+          <NotificationDialog
+            variant="success"
+            title={creationSuccess.title}
+            description={creationSuccess.description}
+            primaryAction={{ label: isCreateMachineModel ? ADMIN_T.MACHINE_MODELS.TITLE : messages.MACHINES_TITLE, onClick: returnToMachineList }}
+            onClose={returnToMachineList}
+          />
         )}
       </div>
     );
   }
 
+  if (isMachineModelDetail) {
+    if (!validMachineModelDetailId) {
+      return <div className={styles.pageContent}><PageHeading title={ADMIN_T.MACHINE_MODELS.DETAIL} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p></div>;
+    }
+    return (
+      <div className={styles.pageContent}>
+        <PageHeading title={ADMIN_T.MACHINE_MODELS.DETAIL} description={machineModelDetailId} />
+        <MachineModelDetail modelId={machineModelDetailId} role="moderator" />
+      </div>
+    );
+  }
+
+  if (isDetail) {
+    return <ModeratorMachineDetailScreen machineId={machineId} />;
+  }
   if (isHistory) {
     return (
       <div className={styles.pageContent}>
         <PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} />
         <QueryFeedback query={tickets} loadingMessage={messages.LOADING_MACHINE_TICKETS} />
-        {tickets.data && !tickets.isError && <MaintenanceTicketTable tickets={tickets.data} />}
+        {tickets.data && !tickets.isError && <MachineMaintenanceTicketTable tickets={tickets.data} />}
       </div>
     );
   }
 
-  const title = isStock ? "Máy trong kho" : isCustomer ? messages.MACHINE_OWNER_TITLE : messages.MACHINES_TITLE;
+  const title = isMachineModelsView
+    ? ADMIN_T.MACHINE_MODELS.TITLE
+    : isStock ? "Máy trong kho" : isCustomer ? messages.MACHINE_OWNER_TITLE : messages.MACHINES_TITLE;
+  const inventoryCount = visibleMachines.length;
+  const countFor = (...statuses: string[]) => {
+    const counts = inventorySummary.data?.statusCounts;
+    if (!counts) return "—";
+    return numberFormat.format(statuses.reduce((sum, status) => sum + (counts[status] ?? 0), 0));
+  };
   return (
     <div className={styles.pageContent}>
       <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />
-      <div className={styles.detailGrid}>
-        <section className={styles.detailItem}>
-          <h2 className={styles.sectionTitle}>{messages.MACHINE_INVENTORY_SUMMARY}</h2>
-          <p className={styles.numericSummary}>
-            <span>{messages.MACHINE_TOTAL}</span>
-            <strong>{inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</strong>
-          </p>
-          <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
+      <MachineListView label={title} summary={!isMachineModelsView ? <>
+        <div className={adminStyles.metricsGrid}>
+          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.TOTAL}</span><strong>{inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</strong></article>
+          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
+          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
+          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
+        </div>
+        <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
+      </> : null} controls={!isMachineModelsView ? <MachineStatusFilter statusFilter={statusFilter} onChange={selectStatus} /> : null}>
+      <div className={adminStyles.machineInventoryGroup}>
+        <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Danh sách máy và loại máy">
+          <button type="button" role="tab" aria-selected={!isMachineModelsView} className={`${adminStyles.machineViewTab} ${!isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINES)}>{ADMIN_T.MACHINES.TITLE}</button>
+          <button type="button" role="tab" aria-selected={isMachineModelsView} className={`${adminStyles.machineViewTab} ${isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODELS)}>{ADMIN_T.MACHINE_MODELS.TITLE}</button>
+        </div>
+        <section className={adminStyles.panel}>
+          <div className={adminStyles.machineInventoryHeading}>
+            <h2>{isMachineModelsView ? ADMIN_T.MACHINE_MODELS.TITLE : title}</h2>
+            {isMachineModelsView
+              ? machineModels.data && <span>{machineModels.data.length} {ADMIN_T.MACHINE_MODELS.COUNT}</span>
+              : inventory.data && <span className={adminStyles.machineFilterCount} aria-live="polite">{numberFormat.format(inventoryCount)} / {numberFormat.format(inventory.data.length)} máy</span>}
+          </div>
+          {isMachineModelsView ? <>
+            <QueryFeedback query={machineModels} loadingMessage={messages.LOADING_MACHINES} />
+            {machineModels.data?.length === 0 && <p className={styles.formHint}>{ADMIN_T.COMMON.EMPTY}</p>}
+            {machineModels.data && machineModels.data.length > 0 && <>
+              <p className={adminStyles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
+              <DataTable
+                headerVariant="admin"
+                className={adminStyles.adminTable}
+                rows={machineModels.data}
+                rowKey={(model) => model.id}
+                columns={[
+                  { key: "model-code", header: ADMIN_T.MACHINE_MODELS.MODEL_CODE, align: "center", render: (model) => (
+                    <button
+                      className={adminStyles.accountTextButton}
+                      type="button"
+                      aria-label={`Xem chi tiết mẫu máy ${model.modelCode}`}
+                      onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id))}
+                    >
+                      {model.modelCode}
+                    </button>
+                  ) },
+                  { key: "manufacturer", header: ADMIN_T.MACHINE_MODELS.MANUFACTURER, render: (model) => model.manufacturer },
+                  { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => model.displayName },
+                  { key: "machine-type", header: ADMIN_T.MACHINES.MACHINE_TYPE, render: (model) => model.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL },
+                ]}
+              />
+            </>}
+          </> : <>
+            <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
+            {inventory.data && inventory.data.length > 0 && <p className={adminStyles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>}
+            {inventory.data && !inventory.isError && <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} statusFilter={statusFilter} failed={inventory.isError} heartbeatByMachineId={heartbeatByMachineId} tableRef={heartbeatTableRef} />}
+          </>}
         </section>
       </div>
-      <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
-      {inventory.data && !inventory.isError && (
-        <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} failed={inventory.isError} />
-      )}
+      </MachineListView>
     </div>
   );
 }

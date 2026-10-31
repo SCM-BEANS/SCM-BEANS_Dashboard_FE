@@ -124,6 +124,26 @@ const FinancialMetricSchema = z.object({
   overdueBalance: z.number().nullish(),
 }).passthrough();
 
+const PeriodFinancialQualitySchema = z.object({
+  status: z.enum(["COMPLETE", "PARTIAL", "UNAVAILABLE"]).optional(),
+  eligibleCount: nonnegativeCount.optional(),
+  evidencedCount: nonnegativeCount.optional(),
+  missingCount: nonnegativeCount.optional(),
+  ambiguousCount: nonnegativeCount.optional(),
+  excludedClassificationCount: nonnegativeCount.optional(),
+  exclusionReasons: z.record(nonnegativeCount).optional(),
+}).strict();
+
+const PeriodFinancialMetricSchema = z.object({
+  currency: z.string().optional(),
+  amountIssuedInPeriod: z.number().finite().optional(),
+  amountCollectedInPeriod: z.number().finite().optional(),
+  issuanceQuality: PeriodFinancialQualitySchema.optional(),
+  collectionQuality: PeriodFinancialQualitySchema.optional(),
+  issuanceBasis: z.string().optional(),
+  collectionBasis: z.string().optional(),
+}).strict();
+
 export const DashboardOverviewSchema = z.object({
   scope: z.string().nullish(),
   ownerId: z.string().uuid().nullish(),
@@ -132,6 +152,7 @@ export const DashboardOverviewSchema = z.object({
   usagePeriodEnd: isoDate.nullish(),
   operationalMetrics: OperationalMetricsSchema.nullish(),
   financialMetrics: z.array(FinancialMetricSchema).nullish(),
+  periodFinancialMetrics: z.array(PeriodFinancialMetricSchema).optional(),
 }).passthrough();
 
 export const DashboardDateRangeSchema = dateRangeInputSchema;

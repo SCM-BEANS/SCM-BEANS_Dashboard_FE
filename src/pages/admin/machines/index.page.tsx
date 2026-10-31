@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
+import { telemetryApi } from "@/apis/telemetry.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
+import { MachineListView } from "@/components/machines/machine-list-view";
+import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
+import { staggerHeartbeatRequest, usePageVisibility, useVisibleMachineIds } from "@/components/machines/machine-heartbeat-visibility";
 import { MachineStatusSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ActionBar } from "@/components/action-bar/action-bar";
@@ -71,6 +75,20 @@ function machineTypeLabel(machineType: string | null | undefined): string {
   return T.MACHINES.UNCLASSIFIED;
 }
 
+function MachineStatusFilter({ statusFilter, onChange }: { statusFilter: StatusFilter; onChange: (status: string) => void }) {
+  return (
+    <div className={styles.machineFilterToolbar}>
+      <label className={styles.machineFilterControl}>
+        <span className={styles.machineFilterLabel}>{T.MACHINES.STATUS}</span>
+        <select className={styles.machineStatusSelect} aria-label="Lọc máy theo trạng thái" value={statusFilter} onChange={(event) => onChange(event.target.value)}>
+          <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
+          {STATUSES.map((status) => <option value={status} key={status}>{STATUS_FILTER_LABELS[status]}</option>)}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function MachinesContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -79,6 +97,9 @@ function MachinesContent() {
   const isCreateMachineModelView = view === "create-model";
   const isMachineTypesView = view === "types";
   const isMachineModelDetailView = view === "model-detail";
+  const isInventoryView = !isCreateView && !isCreateMachineModelView && !isMachineTypesView && !isMachineModelDetailView;
+  const isPageVisible = usePageVisibility();
+  const heartbeatTableRef = useRef<HTMLDivElement>(null);
   const machineModelId = queryValue(router.query.id);
   const requestedStatus = queryValue(router.query.status);
   const statusFilter: StatusFilter = requestedStatus === "ALL" || STATUSES.includes(requestedStatus as MachineStatus)
@@ -89,7 +110,7 @@ function MachinesContent() {
   const inventory = useQuery({
     queryKey: ["dolores", "machines", "inventory"],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isCreateView && !isCreateMachineModelView && !isMachineTypesView && !isMachineModelDetailView,
+    enabled: isInventoryView,
   });
   const machineModels = useQuery({
     queryKey: ["admin", "machine-models"],
@@ -134,6 +155,25 @@ function MachinesContent() {
   const visibleMachines = (inventory.data ?? []).filter(
     (machine) => statusFilter === "ALL" || machine.status === statusFilter,
   );
+  const smartIotMachines = isInventoryView ? visibleMachines.filter((machine) => machine.machineType === "SMART_IOT") : [];
+  const visibleMachineIds = useVisibleMachineIds(heartbeatTableRef, smartIotMachines.map((machine) => machine.id));
+  const visibleHeartbeatMachines = smartIotMachines.filter((machine) => visibleMachineIds.has(machine.id));
+  const listHeartbeats = useQueries({
+    queries: visibleHeartbeatMachines.map((machine, index) => ({
+      queryKey: ["dolores", "admin", "telemetry", "heartbeat", machine.id],
+      queryFn: async ({ signal }) => {
+        await staggerHeartbeatRequest(index, signal);
+        return telemetryApi.getLatestHeartbeat(machine.id, signal);
+      },
+      enabled: isPageVisible,
+      retry: false,
+      staleTime: 3_000,
+      refetchInterval: isPageVisible ? 5_000 : false,
+      refetchIntervalInBackground: false,
+    })),
+  });
+  const heartbeatByMachineId = new Map<string, (typeof listHeartbeats)[number]>();
+  visibleHeartbeatMachines.forEach((machine, index) => heartbeatByMachineId.set(machine.id, listHeartbeats[index]!));
   return (
     <AdminShell>
       <div className={styles.pageContent}>
@@ -157,8 +197,20 @@ function MachinesContent() {
         ) : isMachineModelDetailView ? (
           <MachineModelDetail modelId={machineModelId} />
         ) : (
-          <>
-            <MachineInventorySummary />
+          <MachineListView
+            label={isMachineTypesView ? T.MACHINE_MODELS.TITLE : T.MACHINES.TITLE}
+            summary={<MachineInventorySummary />}
+            controls={!isMachineTypesView ? <MachineStatusFilter
+              statusFilter={statusFilter}
+              onChange={(status) => {
+                const nextStatus = status as StatusFilter;
+                void router.push({
+                  pathname: PATH_ADMIN.MACHINES,
+                  query: nextStatus === "ALL" ? {} : { status: nextStatus },
+                }, undefined, { shallow: true });
+              }}
+            /> : null}
+          >
 
             <div className={styles.machineInventoryGroup}>
               <div className={styles.machineViewTabs} role="group" aria-label="Chọn danh sách máy">
@@ -192,28 +244,6 @@ function MachinesContent() {
                   </span>
                 )}
               </div>
-              {!isMachineTypesView && <div className={styles.machineFilterToolbar}>
-                <label className={styles.machineFilterControl}>
-                  <span className={styles.machineFilterLabel}>Trạng thái</span>
-                  <select
-                    className={styles.machineStatusSelect}
-                    aria-label="Lọc máy theo trạng thái"
-                    value={statusFilter}
-                    onChange={(event) => {
-                      const nextStatus = event.target.value as StatusFilter;
-                      void router.push({
-                        pathname: PATH_ADMIN.MACHINES,
-                        query: nextStatus === "ALL" ? {} : { status: nextStatus },
-                      }, undefined, { shallow: true });
-                    }}
-                  >
-                    <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
-                    {STATUSES.map((status) => (
-                      <option value={status} key={status}>{STATUS_FILTER_LABELS[status]}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>}
               {!isMachineTypesView && inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
               {!isMachineTypesView && inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
               {isMachineTypesView && machineModels.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
@@ -246,25 +276,34 @@ function MachinesContent() {
               </>}
               {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
-                <DataTable
-                  headerVariant="admin"
-                  className={`${styles.adminTable} ${styles.machineInventoryTable}`}
-                  rows={visibleMachines}
-                  rowKey={(machine) => machine.id}
-                  columns={[
-                    { key: "id", header: T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={styles.accountTextButton} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
-                    { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
-                    { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
-                    { key: "owner", header: T.MACHINES.OWNER_ID, align: "center", render: (machine) => machine.ownerId ? machine.ownerId.slice(0, 8).toUpperCase() : "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
-                    { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
-                    { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-                    { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDate(machine.deployedAt) },
-                  ]}
-                />
+                <div ref={heartbeatTableRef}>
+                  <DataTable
+                    headerVariant="admin"
+                    className={`${styles.adminTable} ${styles.machineInventoryTable}`}
+                    rows={visibleMachines}
+                    rowKey={(machine) => machine.id}
+                    rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
+                    columns={[
+                      { key: "id", header: T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={styles.machineInventoryLink} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}>{machine.id.slice(0, 8).toUpperCase()}</Link> },
+                      { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
+                      { key: "status", header: T.MACHINES.STATUS, render: (machine) => statusLabel(machine.status) },
+                      { key: "connection", header: "Kết nối", render: (machine) => {
+                        if (machine.machineType !== "SMART_IOT") return "—";
+                        const query = heartbeatByMachineId.get(machine.id);
+                        const state: MachineConnectionState = query?.isError ? "error" : query?.isPending ? "loading" : query?.data?.status ?? "not-requested";
+                        return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
+                      } },
+                      { key: "owner", header: T.MACHINES.OWNER_ID, align: "center", render: (machine) => machine.ownerId ? machine.ownerId.slice(0, 8).toUpperCase() : "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
+                      { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
+                      { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+                      { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDate(machine.deployedAt) },
+                    ]}
+                  />
+                </div>
               </>}
               </section>
             </div>
-          </>
+          </MachineListView>
         )}
       </div>
       {isCreateView || isCreateMachineModelView || isMachineModelDetailView ? null : (

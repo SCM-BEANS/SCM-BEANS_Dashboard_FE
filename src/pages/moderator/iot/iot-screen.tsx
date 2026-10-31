@@ -1,12 +1,15 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
 import { locationsApi } from "@/apis/locations.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
-import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
+import { telemetryApi } from "@/apis/telemetry.api";
+import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
+import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 
 import { profilesApi } from "@/apis/profiles.api";
 
@@ -15,7 +18,6 @@ import { MachineIdSchema } from "@/schema/machines.schema";
 import { type Profile } from "@/schema/profiles.schema";
 import { type Location } from "@/schema/locations.schema";
 
-import { TelemetryPointsParamsSchema, type MachineHeartbeat, type TelemetryPoint } from "@/schema/telemetry.schema";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
@@ -29,16 +31,6 @@ import { ModeratorPageHeading } from "../moderator-page-heading";
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
 const numberFormat = new Intl.NumberFormat("vi-VN");
-
-const telemetryMaxOffset = 100_000;
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
-  const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp)
-    ? value
-    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
-}
 
 function QueryFeedback({
   query,
@@ -63,15 +55,6 @@ function QueryFeedback({
 
 function PageHeading({ title, description }: { title: string; description: string }) {
   return <ModeratorPageHeading title={title} description={description} />;
-}
-
-function DetailValue({ label, value, code = false }: { label: string; value: string | number; code?: boolean }) {
-  return (
-    <div className={styles.detailItem}>
-      <dt>{label}</dt>
-      <dd className={code ? styles.codeValue : undefined}>{value}</dd>
-    </div>
-  );
 }
 
 type OwnerReadBatch<T> = {
@@ -219,6 +202,7 @@ function LocationRow({ owner, location }: { owner: Profile; location: Location }
 }
 
 export function ModeratorIoTScreen({ path }: { path: string }) {
+  const isPageVisible = usePageVisibility();
   const isLocationsView = path === "iot/customer";
   const owners = useQuery({
     queryKey: ["dolores", "moderator", "owner-profiles"],
@@ -240,8 +224,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     retry: false,
   });
   const [selectedMachineId, setSelectedMachineId] = useState("");
-  const [submittedRange, setSubmittedRange] = useState<{ from: string; to: string } | null>(null);
-  const [rangeError, setRangeError] = useState("");
   const validSelectedId = MachineIdSchema.safeParse(selectedMachineId).success;
   const selectedMachine = useQuery({
     queryKey: ["dolores", "machines", "id", selectedMachineId],
@@ -251,46 +233,13 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   });
   const smartIotVerified = selectedMachine.data?.machineType === "SMART_IOT";
   const heartbeat = useQuery({
-    queryKey: ["dolores", "telemetry", "heartbeat", selectedMachineId],
+    queryKey: ["dolores", "moderator", "telemetry", "heartbeat", selectedMachineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(selectedMachineId, signal),
-    enabled: smartIotVerified,
+    enabled: !isLocationsView && smartIotVerified && isPageVisible,
     retry: false,
+    refetchInterval: isPageVisible ? 5_000 : false,
+    refetchIntervalInBackground: false,
   });
-  const telemetry = useInfiniteQuery({
-    queryKey: ["dolores", "telemetry", "points", selectedMachineId, submittedRange],
-    queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(selectedMachineId, submittedRange!, pageParam, signal),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, _pages, lastPageParam) =>
-      lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && lastPageParam < telemetryMaxOffset
-        ? lastPageParam + TELEMETRY_POINTS_PAGE_SIZE
-        : undefined,
-    enabled: smartIotVerified && submittedRange !== null,
-    retry: false,
-  });
-
-  const submitRange = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const fromDate = String(form.get("from") ?? "");
-    const toDate = String(form.get("to") ?? "");
-    if (!fromDate || !toDate || Number.isNaN(Date.parse(fromDate)) || Number.isNaN(Date.parse(toDate)) || fromDate > toDate) {
-      setRangeError(messages.IOT_RANGE_INVALID);
-      setSubmittedRange(null);
-      return;
-    }
-    const range = {
-      from: `${fromDate}T00:00:00+07:00`,
-      to: `${toDate}T23:59:59+07:00`,
-    };
-    const parsed = TelemetryPointsParamsSchema.safeParse({ ...range, limit: TELEMETRY_POINTS_PAGE_SIZE, offset: 0 });
-    if (!parsed.success) {
-      setRangeError(messages.IOT_RANGE_INVALID);
-      setSubmittedRange(null);
-      return;
-    }
-    setRangeError("");
-    setSubmittedRange(range);
-  };
 
   if (isLocationsView) {
     return (
@@ -309,7 +258,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   }
 
   const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
-  const points = telemetry.data?.pages.flat() ?? [];
   return (
     <div className={styles.pageContent}>
       <PageHeading title={messages.IOT_TITLE} description={messages.IOT_DESCRIPTION} />
@@ -323,8 +271,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
               value={selectedMachineId}
               onChange={(event) => {
                 setSelectedMachineId(event.target.value);
-                setSubmittedRange(null);
-                setRangeError("");
               }}
             >
               <option value="">{messages.IOT_SELECT_MACHINE_HINT}</option>
@@ -335,56 +281,22 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
           {selectedMachineId && <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} />}
           {selectedMachine.data && !selectedMachine.isError && !smartIotVerified && <p className={styles.partialNotice} role="status">{messages.IOT_NOT_SMART}</p>}
           {smartIotVerified && <>
-            <section>
-              <h2 className={styles.sectionTitle}>{messages.IOT_HEARTBEAT}</h2>
-              <QueryFeedback query={heartbeat} loadingMessage={messages.LOADING_MACHINE} />
-              {heartbeat.data && !heartbeat.isError && <HeartbeatDetails heartbeat={heartbeat.data} />}
-            </section>
-            <form className={styles.formPanel} onSubmit={submitRange}>
-              <p className={styles.formHint}>{messages.IOT_RANGE_HINT}</p>
-              <div className={styles.formRow}>
-                <label className={styles.formField}>{messages.IOT_FROM_DATE}<input name="from" type="date" required /></label>
-                <label className={styles.formField}>{messages.IOT_TO_DATE}<input name="to" type="date" required /></label>
-              </div>
-              {rangeError && <p role="alert" className={styles.partialNotice}>{rangeError}</p>}
-              <button type="submit" className={styles.retryButton}>{messages.IOT_LOAD_TELEMETRY}</button>
-            </form>
-            {submittedRange && <section>
-              <h2 className={styles.sectionTitle}>{messages.IOT_TELEMETRY}</h2>
-              <p className={styles.formHint}>{formatDate(submittedRange.from)} – {formatDate(submittedRange.to)}</p>
-              <QueryFeedback query={telemetry} loadingMessage={messages.LOADING_MACHINE} />
-              {telemetry.data && !telemetry.isError && <>
-                {points.length === 0
-                  ? <p className={styles.pendingNotice} role="status">{messages.IOT_TELEMETRY_EMPTY}</p>
-                  : <DataTable variant="moderator" headers={[messages.ALERT_TIME, "Field", "Value", messages.TECHNICAL_MACHINE_ID]} minWidth={680}>
-                    {points.map((point, index) => <TelemetryRow key={`${point.timestamp}-${point.field}-${index}`} point={point} />)}
-                  </DataTable>}
-                {telemetry.hasNextPage && <button type="button" className={styles.retryButton} disabled={telemetry.isFetchingNextPage} onClick={() => void telemetry.fetchNextPage()}>{telemetry.isFetchingNextPage ? messages.IOT_LOADING_MORE : messages.IOT_LOAD_MORE}</button>}
-              </>}
-            </section>}
+            <MachineHeartbeatPanel
+              title={messages.IOT_HEARTBEAT}
+              heartbeat={heartbeat.data}
+              loading={heartbeat.isPending}
+              error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined}
+              onRetry={() => void heartbeat.refetch()}
+              retryLabel={messages.RETRY}
+            />
+            <SmartIotPanel
+              title={messages.IOT_TELEMETRY}
+              state="permission-denied"
+              stateMessage="Swagger hiện chưa cấp quyền tra cứu Telemetry points cho Moderator."
+            />
           </>}
         </section>
       </>}
     </div>
   );
-}
-
-function HeartbeatDetails({ heartbeat }: { heartbeat: MachineHeartbeat }) {
-  return (
-    <dl className={styles.detailGrid}>
-      <DetailValue label={messages.IOT_HEARTBEAT_STATUS} value={heartbeat.status} />
-      <DetailValue label={messages.IOT_LAST_SEEN} value={formatDate(heartbeat.lastSeenAt ?? heartbeat.evaluatedAt)} />
-      <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={heartbeat.machineId} code />
-    </dl>
-  );
-}
-
-function TelemetryRow({ point }: { point: TelemetryPoint }) {
-  let value: string;
-  try {
-    value = typeof point.value === "string" ? point.value : JSON.stringify(point.value);
-  } catch {
-    value = String(point.value);
-  }
-  return <tr><td>{formatDate(point.timestamp)}</td><td>{point.field}</td><td>{value}</td><td className={styles.codeValue}>{point.machineId}</td></tr>;
 }

@@ -14,9 +14,9 @@ Ngày rà soát: 29/10/2026. Trong tài liệu này, Owner là vai trò nghiệp
 
 | Mục / route | Endpoint đang gọi | Mức độ |
 | --- | --- | --- |
-| Tổng quan — /dashboard | GET /dashboard/overview | Có dữ liệu API. UI hiện gọi không truyền fromDate/toDate nên dùng kỳ mặc định từ backend. |
+| Tổng quan — /dashboard | GET /dashboard/overview | Dashboard chính dùng kỳ mặc định. Operational overview mở từ hồ sơ máy gửi `fromDate`/`toDate`; số liệu vẫn là aggregate theo Owner scope, máy đang xem chỉ là ngữ cảnh điều hướng. |
 | Hợp đồng — /dashboard/contracts và /contracts/{id} | GET /contracts/owner/{ownerId}; GET /contracts/{id}; GET /machines để hiển thị máy gắn với hợp đồng | Danh sách và chi tiết đã nối. Owner ID lấy từ sub của access token, xác thực định dạng UUID trước khi gọi. API chi tiết theo ID vẫn cần backend giới hạn quyền theo Owner. |
-| Máy của tôi — /dashboard/machines và /machines/{id} | GET /machines; GET /machines/{id} | Danh sách và chi tiết đã nối; request không gửi ownerId, dựa vào backend scope theo người gọi. |
+| Máy của tôi — /dashboard/machines, /machines/{id}, /machines/{id}/operations | GET /machines; GET /machines/{id}; GET /machines/{id}/maintenance-schedule; GET /telemetry-query/machines/{id}/heartbeats/latest; GET /telemetry-query/machines/{id}/points; GET /dashboard/overview | Danh sách, hồ sơ và operational overview dùng chung phần trình bày với Admin/Moderator. Owner thấy heartbeat trên danh sách/chi tiết, telemetry points theo 24h/7 ngày/30 ngày/khoảng tùy chọn, cùng aggregate overview theo JWT. Không gửi `ownerId`; backend phải scope theo người gọi. |
 | Menu — /dashboard/menu và /menu/{recipeId} | GET /recipes/global; GET /recipes/local; GET /recipes/global/{id} | Đã nối danh sách công thức dùng chung/cục bộ và chi tiết công thức dùng chung. |
 | Thêm món riêng — /dashboard/menu/add-dish | GET /recipes/global; POST /recipes/local | Đã nối form tạo/cập nhật cấu hình cục bộ. Request gửi globalRecipeId và dosageOverrides; không tự gửi ownerId. |
 | Hóa đơn — /dashboard/invoices, kỳ và chi tiết | GET /billing/invoices; GET /billing/invoices/{invoiceId}; GET /billing/invoices/{invoiceId}/line-items; GET /billing/invoices/{invoiceId}/payment-proofs | Đã nối đọc danh sách, chi tiết, dòng hóa đơn và chứng từ. |
@@ -54,7 +54,7 @@ Ngày rà soát: 29/10/2026. Trong tài liệu này, Owner là vai trò nghiệp
 - src/pages/dashboard/[[...sections]].page.tsx và src/routes/routes.ts
 - src/pages/dashboard/overview/overview-screen.tsx
 - src/pages/dashboard/contracts/contracts-screen.tsx
-- src/pages/dashboard/machines/machines-screen.tsx
+- src/pages/dashboard/machines/machines-screen.tsx; `src/components/machines` (shared list/detail/IoT/overview presentation)
 - src/pages/dashboard/menu/menu-screen.tsx
 - src/pages/dashboard/invoices/invoices-screen.tsx
 - src/pages/dashboard/support/support-requests-list-screen.tsx
@@ -65,4 +65,4 @@ Ngày rà soát: 29/10/2026. Trong tài liệu này, Owner là vai trò nghiệp
 - src/apis/dashboard.api.ts, contracts.api.ts, machines.api.ts, recipes.api.ts, billing.api.ts, maintenance-requests.api.ts, repair-cases.api.ts, notifications.api.ts, buybacks.api.ts
 - src/schema/dashboard.schema.ts, contracts.schema.ts, machines.schema.ts, recipes.schema.ts, billing.schema.ts, notifications.schema.ts
 
-Các mục hỗ trợ, lịch bảo trì và xác nhận bàn giao đã được nối sau lượt rà soát. Chưa gửi request nghiệp vụ bằng tài khoản Owner và chưa chạy test/build trong lượt này; các workflow khác ở bảng trên vẫn chưa được nối hoặc cần xác nhận điều kiện nghiệp vụ trước khi bật.
+Các mục hỗ trợ, lịch bảo trì và xác nhận bàn giao đã được nối sau lượt rà soát. Phase 04 kiểm tra UI Owner bằng API giả lập; chưa xác minh quyền/data API thật bằng phiên Owner. Các workflow khác ở bảng trên vẫn chưa được nối hoặc cần xác nhận điều kiện nghiệp vụ trước khi bật.

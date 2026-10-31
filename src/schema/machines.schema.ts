@@ -74,7 +74,15 @@ export const MachineInventorySchema = z.array(MachineInventoryItemSchema);
 export const RentalCandidateSchema = z.object({
   machineId: MachineIdSchema,
   displayName: z.string().trim().min(1),
-}).strip();
+  serialNumber: z.string().nullish(),
+  modelId: z.string().uuid().nullish(),
+  modelCode: z.string().nullish(),
+  manufacturer: z.string().nullish(),
+  machineType: MachineTypeSchema.nullish(),
+  status: MachineStatusSchema.nullish(),
+  region: z.string().nullish(),
+  locationId: z.string().uuid().nullish(),
+}).strict();
 
 export const RentalCandidatePageSchema = z.object({
   content: z.array(RentalCandidateSchema),
@@ -82,7 +90,7 @@ export const RentalCandidatePageSchema = z.object({
   size: z.number().int().positive(),
   totalElements: z.number().int().nonnegative(),
   totalPages: z.number().int().nonnegative(),
-}).passthrough();
+}).strict();
 
 export const MachineSchema = z.object({
   id: MachineIdSchema,

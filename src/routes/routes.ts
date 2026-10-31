@@ -8,6 +8,7 @@ import {
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { MachineIdSchema, RepairCaseSchema } from "@/schema/machines.schema";
+import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
@@ -201,6 +202,13 @@ export function isSupportedCustomerSection(section: string): boolean {
   ) {
     return MachineIdSchema.safeParse(segments[1]).success;
   }
+  if (
+    segments.length === 3 &&
+    segments[0] === "machines" &&
+    segments[2] === "operations"
+  ) {
+    return MachineIdSchema.safeParse(segments[1]).success;
+  }
   return false;
 }
 
@@ -258,6 +266,14 @@ export function isSupportedModeratorSection(section: string): boolean {
   const repairCaseDetail = /^technical-requests\/repair\/([^/]+)$/.exec(section);
   if (repairCaseDetail) {
     return RepairCaseSchema.shape.id.safeParse(repairCaseDetail[1]).success;
+  }
+  const machineModelDetail = /^machines\/models\/([^/]+)$/.exec(section);
+  if (machineModelDetail) {
+    return MachineModelIdSchema.safeParse(machineModelDetail[1]).success;
+  }
+  const machineOperations = /^machines\/([^/]+)\/operations$/.exec(section);
+  if (machineOperations) {
+    return MachineIdSchema.safeParse(machineOperations[1]).success;
   }
   const pathname = section
     ? PATH_MODERATOR.ROOT + "/" + section
