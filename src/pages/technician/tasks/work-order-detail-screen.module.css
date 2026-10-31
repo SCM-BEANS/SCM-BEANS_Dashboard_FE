@@ -5,7 +5,7 @@
   gap: 16px;
   padding: 20px;
   border: 1px solid #e9e2dc;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -84,7 +84,7 @@
   min-height: 44px;
   padding: 9px 10px;
   border: 1px solid #ded6d0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   color: #302927;
   font: inherit;
@@ -142,12 +142,36 @@
   overflow-wrap: anywhere;
 }
 
+.backLink {
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.backLink :global(a:link),
+.backLink :global(a:visited),
+.backLink :global(a:hover) {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid #e2dad4;
+  border-radius: 6px;
+  background: #fff;
+  color: #514843;
+  text-decoration: none;
+}
+
+.backLink :global(a:hover) {
+  border-color: #c9bcb4;
+  background: #fdfbf9;
+}
+
 .error,
 .notice,
 .success {
   margin: 0;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   line-height: 1.5;
 }

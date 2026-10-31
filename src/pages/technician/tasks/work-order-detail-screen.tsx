@@ -195,7 +195,9 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
         <header className={shellStyles.pageHeading}>
           <h1 id="technician-repair-case-title">Chi tiết sửa chữa</h1>
           <p>Theo dõi bàn giao, chẩn đoán và xử lý hồ sơ được giao.</p>
-          <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+          <div className={styles.backLink}>
+            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+          </div>
         </header>
         {repairCase.isPending && <p className={shellStyles.pendingNotice} role="status">Đang tải hồ sơ sửa chữa…</p>}
         {repairCase.isError && <p className={shellStyles.errorNotice} role="alert">{getApiErrorMessage(repairCase.error)}</p>}
@@ -483,7 +485,9 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
         <header className={shellStyles.pageHeading}>
           <h1 id="technician-work-order-title">{messages.TASK_DETAIL_TITLE}</h1>
           <p>Thực hiện lắp đặt, tải minh chứng bàn giao và xác nhận người nhận theo trạng thái của lệnh.</p>
-          <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+          <div className={styles.backLink}>
+            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+          </div>
         </header>
 
         {(details.isPending || (details.isError && repairCaseDetails.isPending)) && <p className={shellStyles.pendingNotice} role="status">Đang tải chi tiết công việc…</p>}
