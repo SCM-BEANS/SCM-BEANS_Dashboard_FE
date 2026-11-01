@@ -9,13 +9,30 @@ import { moderatorStyles as styles } from "../moderator-shell";
 import { amountText } from "./invoice-shared";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
-const numberFormat = new Intl.NumberFormat("vi-VN");
+
+function formatProofSubmittedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 function proofStatusText(status: PaymentProof["status"]): string {
-  if (status === "SUBMITTED") return "Chờ đối soát";
-  if (status === "APPROVED") return "Đã duyệt";
-  if (status === "REJECTED") return "Đã từ chối";
+  if (status === "SUBMITTED") return messages.PROOF_STATUS_SUBMITTED;
+  if (status === "APPROVED") return messages.PROOF_STATUS_APPROVED;
+  if (status === "REJECTED") return messages.PROOF_STATUS_REJECTED;
   return status;
+}
+
+function proofStatusClassName(status: PaymentProof["status"]) {
+  if (status === "APPROVED") return styles.paymentProofStatusAPPROVED;
+  if (status === "REJECTED") return styles.paymentProofStatusREJECTED;
+  return styles.paymentProofStatusSUBMITTED;
 }
 
 export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: PaymentProof[]; invoiceId: string; currency: string }) {
@@ -69,17 +86,27 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
         <DataTable
           variant="moderator"
           className={styles.paymentProofTable}
-          minWidth={1120}
-          headers={[messages.PROOF_FILENAME, messages.PROOF_STATUS, "Số tiền khách khai báo", messages.PROOF_SUBMITTED_AT, messages.PROOF_SIZE, messages.PROOF_ACTION]}
+          minWidth={1240}
+          headers={[messages.PROOF_FILENAME, messages.PROOF_STATUS, messages.PROOF_AMOUNT, messages.PROOF_SUBMITTED_AT, messages.PROOF_CONTENT, messages.PROOF_ACTION]}
         >
           {proofs.map((proof) => (
             <Fragment key={proof.id}>
               <tr>
                 <td className={styles.proofFilenameCell}>{proof.originalFilename}</td>
-                <td>{proofStatusText(proof.status)}</td>
-                <td>{proof.amount == null ? "Chưa ghi nhận" : amountText(proof.amount, proof.currency ?? currency)}</td>
-                <td>{proof.submittedAt ?? "—"}</td>
-                <td>{proof.sizeBytes == null ? "—" : `${numberFormat.format(proof.sizeBytes)} bytes`}</td>
+                <td>
+                  <span className={`${styles.paymentProofStatus} ${proofStatusClassName(proof.status)}`}>
+                    {proofStatusText(proof.status)}
+                  </span>
+                </td>
+                <td>{proof.amount == null ? messages.PROOF_AMOUNT_UNAVAILABLE : amountText(proof.amount, proof.currency ?? currency)}</td>
+                <td><time dateTime={proof.submittedAt}>{formatProofSubmittedAt(proof.submittedAt)}</time></td>
+                <td className={styles.proofContentCell}>
+                  {proof.reviewedAt && proof.reviewReason?.trim()
+                    ? proof.reviewReason
+                    : proof.status === "SUBMITTED"
+                      ? messages.PROOF_AWAITING_REVIEW
+                      : messages.PROOF_NO_REVIEW_NOTE}
+                </td>
                 <td>
                   <div className={styles.proofActionCell}>
                     <button className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={downloadingId === proof.id} onClick={() => void download(proof)}>

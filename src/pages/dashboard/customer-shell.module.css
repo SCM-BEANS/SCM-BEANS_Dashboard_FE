@@ -403,6 +403,77 @@
   line-height: 1.55;
 }
 
+.paymentProofTable :global(table) {
+  min-width: 960px;
+  table-layout: fixed;
+}
+
+.paymentProofTable :global(th:nth-child(1)),
+.paymentProofTable :global(td:nth-child(1)) { width: 26%; }
+.paymentProofTable :global(th:nth-child(2)),
+.paymentProofTable :global(td:nth-child(2)) { width: 12%; }
+.paymentProofTable :global(th:nth-child(3)),
+.paymentProofTable :global(td:nth-child(3)) { width: 16%; }
+.paymentProofTable :global(th:nth-child(4)),
+.paymentProofTable :global(td:nth-child(4)) { width: 19%; }
+.paymentProofTable :global(th:nth-child(5)),
+.paymentProofTable :global(td:nth-child(5)) { width: 27%; }
+.paymentProofTable :global(td) {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.paymentProofTable :global(td:nth-child(2)),
+.paymentProofTable :global(td:nth-child(3)),
+.paymentProofTable :global(td:nth-child(4)) { font-variant-numeric: tabular-nums; }
+.paymentProofTable :global(th:nth-child(2)),
+.paymentProofTable :global(td:nth-child(2)),
+.paymentProofTable :global(th:nth-child(3)),
+.paymentProofTable :global(td:nth-child(3)),
+.paymentProofTable :global(th:nth-child(4)),
+.paymentProofTable :global(td:nth-child(4)) { text-align: center; }
+.paymentProofTable :global(td:nth-child(4)) { white-space: nowrap; }
+
+.paymentProofFilename {
+  display: block;
+  min-width: 0;
+  color: #302927;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.paymentProofStatus {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.paymentProofStatusAPPROVED {
+  border-color: #c8dfcf;
+  background: #edf6ef;
+  color: #23613b;
+}
+
+.paymentProofStatusREJECTED {
+  border-color: #f0c9c5;
+  background: #fff3f1;
+  color: #a52a1f;
+}
+
+.paymentProofStatusSUBMITTED {
+  border-color: #edd8b5;
+  background: #fff8e9;
+  color: #805c18;
+}
+
 .formField {
   display: grid;
   gap: 7px;

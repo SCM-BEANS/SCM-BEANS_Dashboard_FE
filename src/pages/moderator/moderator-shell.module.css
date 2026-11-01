@@ -59,16 +59,26 @@
 .evidenceTable :global(td:last-child) { white-space: nowrap; }
 .evidenceActions { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
 .retryButton.evidenceActionButton { min-height: 36px; padding: 0 11px; font-size: 13px; white-space: nowrap; }
-.paymentProofTable :global(table) { min-width: 1120px; table-layout: fixed; }
-.paymentProofTable :global(th:nth-child(1)), .paymentProofTable :global(td:nth-child(1)) { width: 27%; }
-.paymentProofTable :global(th:nth-child(2)), .paymentProofTable :global(td:nth-child(2)) { width: 11%; }
-.paymentProofTable :global(th:nth-child(3)), .paymentProofTable :global(td:nth-child(3)) { width: 14%; }
-.paymentProofTable :global(th:nth-child(4)), .paymentProofTable :global(td:nth-child(4)) { width: 19%; }
-.paymentProofTable :global(th:nth-child(5)), .paymentProofTable :global(td:nth-child(5)) { width: 10%; }
-.paymentProofTable :global(th:nth-child(6)), .paymentProofTable :global(td:nth-child(6)) { width: 19%; }
+.paymentProofTable :global(table) { min-width: 1240px; table-layout: fixed; }
+.paymentProofTable :global(th:nth-child(1)), .paymentProofTable :global(td:nth-child(1)) { width: 22%; }
+.paymentProofTable :global(th:nth-child(2)), .paymentProofTable :global(td:nth-child(2)) { width: 12%; }
+.paymentProofTable :global(th:nth-child(3)), .paymentProofTable :global(td:nth-child(3)) { width: 15%; }
+.paymentProofTable :global(th:nth-child(4)), .paymentProofTable :global(td:nth-child(4)) { width: 17%; }
+.paymentProofTable :global(th:nth-child(5)), .paymentProofTable :global(td:nth-child(5)) { width: 20%; }
+.paymentProofTable :global(th:nth-child(6)), .paymentProofTable :global(td:nth-child(6)) { width: 14%; }
 .paymentProofTable :global(td) { vertical-align: middle; }
 .paymentProofTable :global(td:nth-child(1)) { overflow-wrap: anywhere; }
+.paymentProofTable :global(td:nth-child(2)), .paymentProofTable :global(td:nth-child(3)), .paymentProofTable :global(td:nth-child(4)) { font-variant-numeric: tabular-nums; }
+.paymentProofTable :global(th:nth-child(2)), .paymentProofTable :global(td:nth-child(2)),
+.paymentProofTable :global(th:nth-child(3)), .paymentProofTable :global(td:nth-child(3)),
+.paymentProofTable :global(th:nth-child(4)), .paymentProofTable :global(td:nth-child(4)) { text-align: center; }
+.paymentProofTable :global(td:nth-child(4)) { white-space: nowrap; }
 .proofFilenameCell { color: #302927; font-weight: 600; line-height: 1.5; }
+.proofContentCell { overflow-wrap: anywhere; }
+.paymentProofStatus { display: inline-flex; min-height: 26px; align-items: center; justify-content: center; padding: 3px 8px; border: 1px solid transparent; border-radius: 6px; font-size: 12px; font-weight: 700; line-height: 1.35; white-space: nowrap; }
+.paymentProofStatusAPPROVED { border-color: #c8dfcf; background: #edf6ef; color: #23613b; }
+.paymentProofStatusREJECTED { border-color: #f0c9c5; background: #fff3f1; color: #a52a1f; }
+.paymentProofStatusSUBMITTED { border-color: #edd8b5; background: #fff8e9; color: #805c18; }
 .proofActionCell { display: grid; gap: 7px; }
 .proofReviewChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .retryButton.proofActionButton { width: 100%; min-height: 38px; padding: 6px 10px; font-size: 13px; line-height: 1.35; white-space: normal; }

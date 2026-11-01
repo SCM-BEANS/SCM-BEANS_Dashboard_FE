@@ -11,6 +11,7 @@ import { SupportRequestsListScreen } from "../support/support-requests-list-scre
 import { LocalRecipeForm } from "./local-recipe-screen";
 import { OwnerMenuDeviceScreen } from "../menu/menu-screen";
 import { NotificationInbox } from "./notification-inbox";
+import { PaymentProofSubmissionScreen } from "../invoices/payment-proof-submission-screen";
 import styles from "../customer-shell.module.css";
 
 export { getCustomerWorkflowDescriptor };
@@ -68,6 +69,20 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   const fallbackAction = screen.back?.fallbackHref
     ? { label: screen.back.label, href: screen.back.fallbackHref, variant: "secondary" as const }
     : undefined;
+
+  if (["invoices/payment", "invoices/shortfall", "invoices/standard-payment"].includes(sectionPath)) {
+    return withWorkflowActions(
+      <PaymentProofSubmissionScreen
+        title={screen.title}
+        description={screen.description}
+        proofTitle={sectionPath === "invoices/payment" ? messages.INVOICE_PAYMENT_TITLE : messages.ACTION_SEND_ADDITIONAL_PROOF}
+        back={screen.back}
+      />,
+      screen.title,
+      actions,
+      fallbackAction,
+    );
+  }
 
   if (sectionPath === "support") {
     return withWorkflowActions(
