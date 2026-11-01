@@ -2,12 +2,106 @@ import { z } from "zod";
 
 export const InvoiceIdSchema = z.string().uuid();
 export const PaymentProofIdSchema = z.string().uuid();
+export const ExportJobIdSchema = z.string().uuid();
 const optionalText = z.string().nullish();
+
+export const InvoiceListParamsSchema = z.object({
+  ownerId: z.string().uuid().optional(),
+  status: z.enum(["DRAFT", "PENDING", "UNPAID", "PAID", "OVERDUE", "CANCELLED"]).optional(),
+  type: z.enum(["SUPPLY", "RENTAL", "REPAIR"]).optional(),
+  period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+  page: z.number().int().nonnegative().optional(),
+  size: z.number().int().positive().max(100).optional(),
+}).strict();
+
+export const BillingExportRequestSchema = z.object({
+  format: z.enum(["CSV", "PDF"]),
+  invoiceIds: z.array(InvoiceIdSchema).max(1000).optional(),
+  ownerId: z.string().uuid().optional(),
+}).strict().refine(
+  ({ invoiceIds, ownerId }) => Boolean(ownerId || (invoiceIds && invoiceIds.length > 0)),
+  { message: "Select invoices or specify one owner for the export." },
+);
+
+export const ExportJobResponseSchema = z.object({
+  id: ExportJobIdSchema,
+  ownerId: z.string().uuid().nullish(),
+  format: z.enum(["CSV", "PDF"]).nullish(),
+  status: z.enum(["QUEUED", "PROCESSING", "COMPLETED", "FAILED"]),
+  createdAt: optionalText,
+  completedAt: optionalText,
+  invoiceCount: z.number().int().nonnegative().nullish(),
+  downloadPath: optionalText,
+  errorCode: optionalText,
+  message: optionalText,
+}).strict();
+
+export const BillingPreviewLineItemSchema = z.object({
+  serviceCode: z.enum(["RENTAL_FEE", "INSTALLATION_FEE", "DEPOSIT", "PAYG_CUPS"]).nullish(),
+  description: optionalText,
+  quantity: z.number().finite().nullish(),
+  unitPrice: z.number().finite().nullish(),
+  amount: z.number().finite().nullish(),
+  currency: optionalText,
+  effectiveStart: optionalText,
+  effectiveEnd: optionalText,
+}).strict();
+
+export const RepairChargePreviewLineSchema = z.object({
+  repairCostReviewId: z.string().uuid().nullish(),
+  repairCaseId: z.string().uuid().nullish(),
+  componentId: z.string().uuid().nullish(),
+  serviceCode: optionalText,
+  description: optionalText,
+  reviewStatus: z.enum([
+    "PROPOSED",
+    "APPROVED_NO_OWNER_CHARGE",
+    "APPROVED_PENDING_OWNER_ACK",
+    "DISPUTED",
+    "RESOLVED_PENDING_OWNER_ACK",
+    "COLLECTIBLE",
+    "REJECTED",
+  ]).nullish(),
+  responsibleParty: z.enum(["TENANT", "COMPANY", "UNKNOWN"]).nullish(),
+  ownerAcknowledged: z.boolean().nullish(),
+  amountSource: z.enum(["APPROVED_COMPONENT", "APPROVED_AMOUNT", "ESTIMATED_AMOUNT"]).nullish(),
+  currency: optionalText,
+  amount: z.number().finite().nullish(),
+  alreadyInvoiced: z.boolean().nullish(),
+  includedInPreview: z.boolean().nullish(),
+  requiresReviewOrAcknowledgement: z.boolean().nullish(),
+}).strict();
+
+export const BillingCurrencySubtotalSchema = z.object({
+  currency: optionalText,
+  contractAmount: z.number().finite().nullish(),
+  repairAmount: z.number().finite().nullish(),
+  tenantRepairAmount: z.number().finite().nullish(),
+  companyRepairAmount: z.number().finite().nullish(),
+  unknownRepairAmount: z.number().finite().nullish(),
+  previewTotal: z.number().finite().nullish(),
+}).strict();
+
+export const ContractBillingPreviewResponseSchema = z.object({
+  previewOnly: z.boolean().nullish(),
+  contractId: z.string().uuid().nullish(),
+  ownerId: z.string().uuid().nullish(),
+  asOf: optionalText,
+  period: optionalText,
+  fromDate: optionalText,
+  throughDate: optionalText,
+  eligible: z.boolean().nullish(),
+  eligibilityReasons: z.array(z.string()).nullish(),
+  warnings: z.array(z.string()).nullish(),
+  contractCharges: z.array(BillingPreviewLineItemSchema).nullish(),
+  repairCharges: z.array(RepairChargePreviewLineSchema).nullish(),
+  totalsByCurrency: z.array(BillingCurrencySubtotalSchema).nullish(),
+}).strict();
 
 export const InvoiceSchema = z.object({
   id: z.string().uuid(),
   ownerId: z.string().uuid(),
-  contractId: z.string().uuid(),
+  contractId: z.string().uuid().nullable(),
   amount: z.number(),
   period: z.string(),
   type: z.string(),
@@ -45,6 +139,10 @@ export const InvoiceLineItemSchema = z.object({
 export const InvoiceLineItemsSchema = z.array(InvoiceLineItemSchema);
 
 export type Invoice = z.infer<typeof InvoiceSchema>;
+export type InvoiceListParams = z.infer<typeof InvoiceListParamsSchema>;
+export type BillingExportRequest = z.infer<typeof BillingExportRequestSchema>;
+export type ExportJobResponse = z.infer<typeof ExportJobResponseSchema>;
+export type ContractBillingPreviewResponse = z.infer<typeof ContractBillingPreviewResponseSchema>;
 
 // Moderator reads may use tenantId while Admin's billing DTO uses ownerId.
 // Keep this schema separate so the existing Admin contract stays unchanged.
@@ -83,6 +181,9 @@ export const PaymentProofSchema = z.object({
   ownerId: z.string().uuid().nullish(),
   tenantId: z.string().uuid().nullish(),
   paymentId: z.string().uuid(),
+  // Older server deployments may omit these fields from PaymentProofResponse.
+  amount: z.number().finite().nullish(),
+  currency: z.string().nullish(),
   originalFilename: z.string(),
   contentType: z.string(),
   sizeBytes: z.number().int().nonnegative(),

@@ -41,6 +41,9 @@ export const PATH_ADMIN = {
   MACHINE_OPERATIONAL_OVERVIEW: (id: string) => `${ADMIN_ROOT}/machines/${encodeURIComponent(id)}/operations`,
   IOT: `${ADMIN_ROOT}/iot`,
   MENU: `${ADMIN_ROOT}/menu`,
+  INVOICES: `${ADMIN_ROOT}/invoices`,
+  INVOICE_DETAIL: (id: string) => `${ADMIN_ROOT}/invoices/${encodeURIComponent(id)}`,
+  BILLING_EXPORT_JOB: (id: string) => `${ADMIN_ROOT}/invoices/exports/${encodeURIComponent(id)}`,
   REPORTS: `${ADMIN_ROOT}/reports`,
   NOTIFICATIONS: `${ADMIN_ROOT}/notifications`,
 } as const;

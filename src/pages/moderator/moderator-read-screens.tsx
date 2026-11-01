@@ -16,7 +16,6 @@ const ModeratorMachinesScreen = lazy(() => import("./machines/machines-screen").
 const ModeratorMachineOperationalOverviewScreen = lazy(() => import("./machines/machine-operational-overview-screen").then((module) => ({ default: module.ModeratorMachineOperationalOverviewScreen })));
 const ModeratorIoTScreen = lazy(() => import("./iot/iot-screen").then((module) => ({ default: module.ModeratorIoTScreen })));
 const ModeratorTechnicalScreen = lazy(() => import("./technical/technical-screen").then((module) => ({ default: module.ModeratorTechnicalScreen })));
-const ModeratorInvoicesScreen = lazy(() => import("./invoices/invoices-screen").then((module) => ({ default: module.ModeratorInvoicesScreen })));
 const ModeratorRecipesScreen = lazy(() => import("./menu/recipes-screen").then((module) => ({ default: module.ModeratorRecipesScreen })));
 const ModeratorBuybackScreen = lazy(() => import("./buyback/buyback-screen").then((module) => ({ default: module.ModeratorBuybackScreen })));
 
@@ -60,10 +59,6 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
   if (sectionPath === "technical-requests" || sectionPath.startsWith("technical-requests/") ||
       sectionPath === "machine-history" || sectionPath.startsWith("machine-history/")) {
     return loadScreen(<ModeratorTechnicalScreen path={sectionPath} />);
-  }
-  if (sectionPath === "invoices" || sectionPath === "invoices/list" ||
-      /^invoices\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {
-    return loadScreen(<ModeratorInvoicesScreen sectionPath={sectionPath} />);
   }
   if (sectionPath === "menu" || sectionPath === "menu/new" ||
       /^menu\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {

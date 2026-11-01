@@ -59,6 +59,53 @@
 .evidenceTable :global(td:last-child) { white-space: nowrap; }
 .evidenceActions { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
 .retryButton.evidenceActionButton { min-height: 36px; padding: 0 11px; font-size: 13px; white-space: nowrap; }
+.paymentProofTable :global(table) { min-width: 1120px; table-layout: fixed; }
+.paymentProofTable :global(th:nth-child(1)), .paymentProofTable :global(td:nth-child(1)) { width: 27%; }
+.paymentProofTable :global(th:nth-child(2)), .paymentProofTable :global(td:nth-child(2)) { width: 11%; }
+.paymentProofTable :global(th:nth-child(3)), .paymentProofTable :global(td:nth-child(3)) { width: 14%; }
+.paymentProofTable :global(th:nth-child(4)), .paymentProofTable :global(td:nth-child(4)) { width: 19%; }
+.paymentProofTable :global(th:nth-child(5)), .paymentProofTable :global(td:nth-child(5)) { width: 10%; }
+.paymentProofTable :global(th:nth-child(6)), .paymentProofTable :global(td:nth-child(6)) { width: 19%; }
+.paymentProofTable :global(td) { vertical-align: middle; }
+.paymentProofTable :global(td:nth-child(1)) { overflow-wrap: anywhere; }
+.proofFilenameCell { color: #302927; font-weight: 600; line-height: 1.5; }
+.proofActionCell { display: grid; gap: 7px; }
+.proofReviewChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.retryButton.proofActionButton { width: 100%; min-height: 38px; padding: 6px 10px; font-size: 13px; line-height: 1.35; white-space: normal; }
+.proofReviewRow :global(td) { padding: 0 !important; border-bottom: 1px solid #e9e2dc !important; background: #fdfbf9; }
+.proofReviewPanel { display: grid; gap: 12px; padding: 16px; margin: 10px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; }
+.proofReviewHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.proofReviewTitle { margin: 0; color: #302927; font-size: 16px; line-height: 1.4; }
+.proofReviewHelp { margin: 4px 0 0; color: #706561; font-size: 13px; line-height: 1.5; }
+.proofReviewLabel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #514843; font-size: 13px; font-weight: 700; }
+.proofReviewLabel span { color: #9b252d; font-size: 12px; font-weight: 600; }
+.proofReviewTextarea { display: block; width: 100%; min-height: 82px; padding: 10px 12px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; line-height: 1.5; resize: vertical; }
+.proofReviewTextarea::placeholder { color: #948983; }
+.proofReviewTextarea:focus-visible { border-color: #b81724; outline: 3px solid rgb(184 23 36 / 14%); outline-offset: 1px; }
+.proofReviewFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.proofReviewCounter { margin: 0; color: #706561; font-size: 12px; line-height: 1.5; }
+.retryButton.proofReviewSubmit { min-width: 156px; border-color: #b81724; background: #b81724; color: #fff; font-weight: 700; }
+.retryButton.proofReviewSubmit:hover:not(:disabled) { border-color: #9c111d; background: #9c111d; }
+.retryButton.proofReviewCancel { min-width: 76px; min-height: 38px; }
+.proofReviewError { padding: 10px 12px; margin: 0; border: 1px solid #efc3c5; border-radius: 8px; background: #fff7f7; color: #8c1d26; font-size: 13px; line-height: 1.5; }
+.invoiceListTable :global(table) { table-layout: fixed; }
+.invoiceListTable :global(th:nth-child(1)), .invoiceListTable :global(td:nth-child(1)) { width: 23%; }
+.invoiceListTable :global(th:nth-child(2)), .invoiceListTable :global(td:nth-child(2)) { width: 19%; }
+.invoiceListTable :global(th:nth-child(3)), .invoiceListTable :global(td:nth-child(3)) { width: 18%; }
+.invoiceListTable :global(th:nth-child(4)), .invoiceListTable :global(td:nth-child(4)) { width: 25%; }
+.invoiceListTable :global(th:nth-child(5)), .invoiceListTable :global(td:nth-child(5)) { width: 15%; }
+.invoiceCustomerCell, .invoicePeriodCell { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.invoiceCustomerCell > span, .invoicePeriodCell > span { color: #706561; font-size: 12px; line-height: 1.4; }
+.invoiceAmountCell { color: #302927 !important; font-size: 14px !important; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right !important; white-space: nowrap; }
+.invoiceProofSummary { display: grid; gap: 3px; color: #514843; font-size: 13px; line-height: 1.4; }
+.invoiceProofSummary strong { color: #302927; font-variant-numeric: tabular-nums; }
+.invoiceProofRejected { color: #9e1c26; }
+.invoiceProofEmpty { color: #706561; font-size: 13px; line-height: 1.45; }
+.invoiceStatusBadge { display: inline-flex; min-height: 28px; align-items: center; padding: 3px 9px; border-radius: 6px; background: #f0eeec; color: #625953; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.invoiceStatusPaid { background: #e8f4ec; color: #246b3a; }
+.invoiceStatusUnpaid, .invoiceStatusPending { background: #fff2e6; color: #80512b; }
+.invoiceStatusOverdue { background: #fdebea; color: #a01520; }
+.invoiceStatusNeutral { background: #f0eeec; color: #706561; }
 .formPanel { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .formRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
 .formField { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #706561; font-size: 13px; font-weight: 600; }
@@ -144,6 +191,11 @@
   .installationDispatchForm .dispatchFormWide,
   .installationDispatchForm > .retryButton { grid-column: 1; }
   .installationDispatchForm > .retryButton { width: 100%; }
+  .proofReviewPanel { padding: 14px; margin: 8px; }
+  .proofReviewHeader { align-items: flex-start; }
+  .proofReviewFooter { align-items: stretch; flex-direction: column; }
+  .proofReviewSubmit { width: 100%; }
+  .proofReviewChoices { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

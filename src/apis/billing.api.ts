@@ -1,5 +1,11 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import { ContractIdSchema } from "@/schema/contracts.schema";
 import {
+  BillingExportRequestSchema,
+  ContractBillingPreviewResponseSchema,
+  ExportJobIdSchema,
+  ExportJobResponseSchema,
+  InvoiceListParamsSchema,
   InvoiceIdSchema,
   InvoicesSchema,
   ModeratorInvoiceSchema,
@@ -13,6 +19,8 @@ import {
   InvoiceStatusChangeRequestSchema,
   type PaymentProofReviewRequest,
   type InvoiceStatusChangeRequest,
+  type BillingExportRequest,
+  type InvoiceListParams,
 } from "@/schema/billing.schema";
 
 const invoicePath = (id: string) =>
@@ -21,13 +29,76 @@ const invoicePath = (id: string) =>
 const proofContentPath = (id: string) =>
   "/billing/payment-proofs/" + encodeURIComponent(PaymentProofIdSchema.parse(id)) + "/content";
 
+async function fetchInvoicePage(params: InvoiceListParams = {}, signal?: AbortSignal) {
+  const query = InvoiceListParamsSchema.parse(params);
+  const response = await axiosClient.get<unknown>("/billing/invoices", {
+    baseURL: DOLORES_API_BASE_URL,
+    ...(Object.keys(query).length ? { params: query } : {}),
+    signal,
+  });
+  const headerNumber = (name: string, fallback: number) => {
+    const parsed = Number(response.headers[name] ?? fallback);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+  const items = InvoicesSchema.parse(response.data);
+  const requestedSize = query.size ?? 50;
+  const hasNextHeader = response.headers["x-has-next"];
+  return {
+    items,
+    page: headerNumber("x-page", query.page ?? 0),
+    size: headerNumber("x-page-size", requestedSize),
+    hasNext: hasNextHeader == null
+      ? items.length === requestedSize
+      : String(hasNextHeader).toLowerCase() === "true",
+  };
+}
+
 export const billingApi = {
   async listInvoices(signal?: AbortSignal) {
-    const response = await axiosClient.get<unknown>("/billing/invoices", {
+    return (await fetchInvoicePage({}, signal)).items;
+  },
+
+  async listInvoicesPage(params: InvoiceListParams = {}, signal?: AbortSignal) {
+    return fetchInvoicePage(params, signal);
+  },
+
+  async createExport(input: BillingExportRequest) {
+    const request = BillingExportRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>("/billing/exports", request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return ExportJobResponseSchema.parse(response.data);
+  },
+
+  async getExportJob(jobId: string, signal?: AbortSignal) {
+    const validId = ExportJobIdSchema.parse(jobId);
+    const response = await axiosClient.get<unknown>(`/billing/exports/${encodeURIComponent(validId)}`, {
       baseURL: DOLORES_API_BASE_URL,
       signal,
     });
-    return InvoicesSchema.parse(response.data);
+    const job = ExportJobResponseSchema.parse(response.data);
+    if (job.id !== validId) throw new Error("Dolores returned an export job that does not match the requested ID.");
+    return job;
+  },
+
+  async downloadExportContent(jobId: string, signal?: AbortSignal) {
+    const validId = ExportJobIdSchema.parse(jobId);
+    const response = await axiosClient.get<Blob>(`/billing/exports/${encodeURIComponent(validId)}/content`, {
+      baseURL: DOLORES_API_BASE_URL,
+      headers: { Accept: "*/*" },
+      responseType: "blob",
+      signal,
+    });
+    return response.data;
+  },
+
+  async getContractPreview(contractId: string, signal?: AbortSignal) {
+    const validId = ContractIdSchema.parse(contractId);
+    const response = await axiosClient.get<unknown>(
+      `/billing/contracts/${encodeURIComponent(validId)}/preview`,
+      { baseURL: DOLORES_API_BASE_URL, signal },
+    );
+    return ContractBillingPreviewResponseSchema.parse(response.data);
   },
 
   async getInvoice(id: string, signal?: AbortSignal) {

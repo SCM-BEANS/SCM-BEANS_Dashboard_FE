@@ -9,6 +9,7 @@ export const ADMIN_MESSAGES = {
     CONTRACTS: "Hợp đồng",
     MACHINES: "Máy & tồn kho",
     IOT: "Giám sát Smart IoT",
+    INVOICES: "Hóa đơn",
     MENU: "Menu & công thức",
     REPORTS: "Báo cáo vận hành",
     NOTIFICATIONS: "Thông báo",
