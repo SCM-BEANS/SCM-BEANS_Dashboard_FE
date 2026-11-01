@@ -6,6 +6,7 @@ import { buybacksApi } from "@/apis/buybacks.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
+import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -16,11 +17,12 @@ import type { AssignedInstallationWorkOrderSummary } from "@/schema/installation
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import type { MaintenanceTicket, RepairCase, RepairCaseSummary } from "@/schema/machines.schema";
 import type { BuybackCaseSummary, BuybackStatus } from "@/schema/buybacks.schema";
+import type { RecallWorkOrderStatus, RecallWorkOrderSummary } from "@/schema/recall-work-orders.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import shellStyles from "../technician-shell.module.css";
 import styles from "./technician-tasks-table.module.css";
 
-type TaskCategory = "installation" | "maintenance" | "repair" | "buyback";
+type TaskCategory = "installation" | "maintenance" | "repair" | "recall" | "buyback";
 type TaskFilter = "all" | TaskCategory;
 type AssignedTask = {
   key: string;
@@ -38,13 +40,15 @@ const categoryLabels: Record<TaskCategory, string> = {
   installation: messages.FILTER_INSTALLATION,
   maintenance: "Bảo trì",
   repair: messages.FILTER_REPAIR,
-  buyback: messages.FILTER_RETRIEVAL,
+  recall: "Thu hồi máy",
+  buyback: "Thu mua máy cũ",
 };
 const filters: Array<{ id: TaskFilter; label: string }> = [
   { id: "all", label: messages.FILTER_ALL },
   { id: "installation", label: categoryLabels.installation },
   { id: "maintenance", label: categoryLabels.maintenance },
   { id: "repair", label: categoryLabels.repair },
+  { id: "recall", label: categoryLabels.recall },
   { id: "buyback", label: categoryLabels.buyback },
 ];
 
@@ -95,6 +99,18 @@ const buybackStatusLabels: Record<BuybackStatus, string> = {
   REJECTED: "Đã từ chối",
   CANCELLED: "Đã hủy",
 };
+const recallStatusLabels: Record<RecallWorkOrderStatus, string> = {
+  UNASSIGNED: "Chưa phân công",
+  ASSIGNED: "Đã phân công",
+  SCHEDULED: "Đã lên lịch nhận máy",
+  PICKUP_IN_PROGRESS: "Đang nhận máy",
+  OWNER_ACK_PENDING: "Chờ Owner xác nhận bàn giao",
+  CUSTODY_VERIFICATION_PENDING: "Chờ đưa máy về kho",
+  RECEIPT_REVIEW_PENDING: "Chờ duyệt biên nhận kho",
+  RECEIVED_AT_DEPOT: "Đã nhận tại kho",
+  LEGACY_REVIEW_REQUIRED: "Cần rà soát hồ sơ cũ",
+  CANCELLED: "Đã hủy",
+};
 
 function shortReference(value: string): string {
   return value.replace(/-/g, "").slice(0, 8).toUpperCase();
@@ -119,6 +135,7 @@ function createTasks(
   workOrders: AssignedInstallationWorkOrderSummary[] | undefined,
   maintenanceTickets: MaintenanceTicket[] | undefined,
   repairCases: RepairCaseSummary[] | undefined,
+  recallOrders: RecallWorkOrderSummary[] | undefined,
   buybacks: BuybackCaseSummary[] | undefined,
   technicianId: string | null,
 ): AssignedTask[] {
@@ -143,7 +160,7 @@ function createTasks(
         status: item.status ? maintenanceStatusLabels[item.status] : "Chưa cập nhật trạng thái",
         dateLabel: item.scheduledDueAt ? "Dự kiến" : item.completedAt || item.resolvedAt ? "Hoàn tất" : "Cập nhật",
         date: item.scheduledDueAt ?? item.completedAt ?? item.resolvedAt ?? item.startedAt ?? item.acknowledgedAt ?? null,
-        href: PATH_TECHNICIAN.MACHINE_HISTORY_DETAIL(item.machineId),
+        href: PATH_TECHNICIAN.TASK_DETAIL(item.id),
       }];
     }),
     ...(repairCases ?? []).map((item): AssignedTask => ({
@@ -154,6 +171,16 @@ function createTasks(
       status: repairStatusLabels[item.status],
       dateLabel: "Cập nhật",
       date: item.updatedAt,
+      href: PATH_TECHNICIAN.TASK_DETAIL(item.id),
+    })),
+    ...(recallOrders ?? []).map((item): AssignedTask => ({
+      key: "recall-" + item.id,
+      category: "recall",
+      id: item.id,
+      machineId: item.machineId,
+      status: recallStatusLabels[item.status],
+      dateLabel: item.scheduledPickupAt ? "Lịch nhận" : "Cập nhật",
+      date: item.scheduledPickupAt ?? item.updatedAt ?? item.createdAt ?? null,
       href: PATH_TECHNICIAN.TASK_DETAIL(item.id),
     })),
     ...(buybacks ?? []).map((item): AssignedTask => ({
@@ -222,6 +249,12 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
     queryKey: ["dolores", "technician", "repair-cases"],
     queryFn: ({ signal }) => repairCasesApi.list(signal),
   });
+  const recallOrders = useQuery({
+    queryKey: ["dolores", "technician", "recall-work-orders", technicianId, 0, 100],
+    queryFn: async ({ signal }) => (await recallWorkOrdersApi.list({ technicianId: technicianId!, page: 0, size: 100 }, signal)).content,
+    enabled: technicianIdentityReady && Boolean(technicianId),
+    retry: false,
+  });
   const buybacks = useQuery({
     queryKey: ["dolores", "technician", "buybacks", "assigned", 0, 100],
     queryFn: ({ signal }) => buybacksApi.list({ page: 0, size: 100 }, signal),
@@ -231,6 +264,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
     workOrders.data,
     maintenanceTickets.data,
     repairCases.data,
+    recallOrders.data,
     buybacks.data?.items,
     technicianId,
   );
@@ -249,17 +283,19 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         : getApiErrorMessage(maintenanceTickets.error),
     },
     { category: "repair" as const, label: "Sửa chữa", hasError: repairCases.isError, isPending: repairCases.isPending, message: getApiErrorMessage(repairCases.error) },
-    { category: "buyback" as const, label: "Thu hồi", hasError: buybacks.isError, isPending: buybacks.isPending, message: buybacks.error ? getBuybackError(buybacks.error) : "" },
+    { category: "recall" as const, label: categoryLabels.recall, hasError: recallOrders.isError, isPending: Boolean(technicianId) && recallOrders.isPending, message: getApiErrorMessage(recallOrders.error) },
+    { category: "buyback" as const, label: categoryLabels.buyback, hasError: buybacks.isError, isPending: buybacks.isPending, message: buybacks.error ? getBuybackError(buybacks.error) : "" },
   ];
   const activeQueries = queryGroups.filter((item) => filter === "all" || item.category === filter);
   const isLoading = activeQueries.some((item) => item.isPending) || !technicianIdentityReady;
   const hasActiveError = activeQueries.some((item) => item.hasError);
-  const isFetching = workOrders.isFetching || maintenanceTickets.isFetching || repairCases.isFetching || buybacks.isFetching;
-  const allLoaded = workOrders.isSuccess && Boolean(technicianId) && maintenanceTickets.isSuccess && repairCases.isSuccess && buybacks.isSuccess;
+  const isFetching = workOrders.isFetching || maintenanceTickets.isFetching || repairCases.isFetching || recallOrders.isFetching || buybacks.isFetching;
+  const allLoaded = workOrders.isSuccess && Boolean(technicianId) && maintenanceTickets.isSuccess && repairCases.isSuccess && recallOrders.isSuccess && buybacks.isSuccess;
   const refreshTasks = () => Promise.all([
     workOrders.refetch(),
     ...(technicianId ? [maintenanceTickets.refetch()] : []),
     repairCases.refetch(),
+    ...(technicianId ? [recallOrders.refetch()] : []),
     buybacks.refetch(),
   ]);
   const counts: Record<TaskFilter, number | string> = {
@@ -267,6 +303,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
     installation: workOrders.isSuccess ? workOrders.data.length : "—",
     maintenance: maintenanceTickets.isSuccess ? tasks.filter((task) => task.category === "maintenance").length : "—",
     repair: repairCases.isSuccess ? repairCases.data.length : "—",
+    recall: recallOrders.isSuccess ? recallOrders.data.length : "—",
     buyback: buybacks.isSuccess ? buybacks.data.items.length : "—",
   };
 

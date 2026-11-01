@@ -123,26 +123,13 @@ export const ContractContinuationRequestSchema = z.object({
 }).strict().superRefine((value, context) => {
   if (value.startDate >= value.endDate) context.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "End date must be after start date." });
 });
-export const TerminationCaseRequestSchema = z.object({
-  type: z.enum(["NORMAL", "EARLY", "VIOLATION"]),
-  reason: z.string().trim().min(1),
-  effectiveDate: contractDateSchema.optional(),
-  idempotencyKey: z.string().trim().min(1),
-  correlationId: z.string().trim().min(1),
-}).strict();
-export const TerminationCaseResponseSchema = z.object({
-  id: z.string().uuid(), ownerId: z.string().uuid(), contractId: ContractIdSchema,
-  machineId: z.string().uuid().nullish(), type: z.enum(["NORMAL", "EARLY", "VIOLATION"]),
-  status: z.string(), requestedBy: z.string().nullish(), reason: z.string(),
-  effectiveDate: contractDateSchema.nullish(), createdAt: z.string().nullish(), updatedAt: z.string().nullish(),
-}).passthrough();
+export { TerminationCaseRequestSchema, TerminationCaseResponseSchema } from "./termination-cases.schema";
+export type { TerminationCaseRequest, TerminationCaseResponse } from "./termination-cases.schema";
 export type Contract = z.infer<typeof ContractSchema>;
 export type CreateContractRequest = z.infer<typeof CreateContractRequestSchema>;
 export type ContractTermsSnapshot = z.infer<typeof ContractTermsSnapshotSchema>;
 export type ContractPolicyAmendmentRequest = z.infer<typeof ContractPolicyAmendmentRequestSchema>;
 export type ContractContinuationRequest = z.infer<typeof ContractContinuationRequestSchema>;
-export type TerminationCaseRequest = z.infer<typeof TerminationCaseRequestSchema>;
-export type TerminationCaseResponse = z.infer<typeof TerminationCaseResponseSchema>;
 export type ContractExpiry = z.infer<typeof ContractExpirySchema>;
 export type ContractExpiryDecisionRequest = z.infer<typeof ContractExpiryDecisionRequestSchema>;
 export type ModeratorContract = z.infer<typeof ModeratorContractSchema>;

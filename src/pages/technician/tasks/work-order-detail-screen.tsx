@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
+import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
+import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
@@ -10,6 +12,8 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { AssignedInstallationWorkOrderSummary, InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 import type { RepairCase, RepairCustodyEventRequest } from "@/schema/machines.schema";
+import type { RecallEvidence, RecallWorkOrder } from "@/schema/recall-work-orders.schema";
+import type { TerminationInspectionRequest } from "@/schema/termination-cases.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
 import shellStyles from "../technician-shell.module.css";
@@ -20,6 +24,7 @@ const detailQueryKey = (workOrderId: string) => ["dolores", "installation-work-o
 const assignedQueryKey = ["dolores", "technician", "installation-work-orders", "assigned"] as const;
 const MAX_EVIDENCE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_EVIDENCE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const createWorkflowCorrelationId = (prefix: string) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 type ChecklistResult = "PASSED" | "FAILED" | "NOT_APPLICABLE";
 type ChecklistEdit = { result: ChecklistResult | ""; notes: string };
 
@@ -375,6 +380,362 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
   );
 }
 
+const recallStatusLabels: Record<RecallWorkOrder["status"], string> = {
+  UNASSIGNED: "Chưa phân công",
+  ASSIGNED: "Đã phân công",
+  SCHEDULED: "Đã lên lịch nhận máy",
+  PICKUP_IN_PROGRESS: "Đang nhận máy",
+  OWNER_ACK_PENDING: "Chờ Owner xác nhận bàn giao",
+  CUSTODY_VERIFICATION_PENDING: "Chờ đưa máy về kho",
+  RECEIPT_REVIEW_PENDING: "Chờ duyệt biên nhận kho",
+  RECEIVED_AT_DEPOT: "Đã nhận tại kho",
+  LEGACY_REVIEW_REQUIRED: "Cần rà soát hồ sơ cũ",
+  CANCELLED: "Đã hủy",
+};
+
+function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrderId: string }) {
+  const queryClient = useQueryClient();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadedEvidence, setUploadedEvidence] = useState<{ id: string; type: RecallEvidence["evidenceType"] } | null>(null);
+  const [pickupNotes, setPickupNotes] = useState("");
+  const [depotLocation, setDepotLocation] = useState("");
+  const [fileError, setFileError] = useState("");
+  const [evidenceActionError, setEvidenceActionError] = useState("");
+  const orderQuery = useQuery({
+    queryKey: ["dolores", "recall-work-orders", "id", recallWorkOrderId],
+    queryFn: ({ signal }) => recallWorkOrdersApi.getById(recallWorkOrderId, signal),
+    retry: false,
+  });
+  const events = useQuery({
+    queryKey: ["dolores", "recall-work-orders", "events", recallWorkOrderId],
+    queryFn: ({ signal }) => recallWorkOrdersApi.getEvents(recallWorkOrderId, signal),
+    retry: false,
+  });
+  const evidence = useQuery({
+    queryKey: ["dolores", "recall-work-orders", "evidence", recallWorkOrderId],
+    queryFn: ({ signal }) => recallWorkOrdersApi.listEvidence(recallWorkOrderId, signal),
+    retry: false,
+  });
+  const order = orderQuery.data;
+  const uploadType: RecallEvidence["evidenceType"] | null = order?.status === "PICKUP_IN_PROGRESS"
+    ? "PICKUP"
+    : order?.status === "CUSTODY_VERIFICATION_PENDING" ? "DEPOT_RECEIPT" : null;
+  const refresh = async () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "id", recallWorkOrderId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "events", recallWorkOrderId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "evidence", recallWorkOrderId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "recall-work-orders"] }),
+  ]);
+  const startPickup = useMutation({
+    mutationFn: () => recallWorkOrdersApi.startPickup(recallWorkOrderId, createWorkflowCorrelationId("recall-pickup-start")),
+    onSuccess: refresh,
+  });
+  const upload = useMutation({
+    mutationFn: (file: File) => {
+      if (!uploadType) throw new Error("Lệnh thu hồi chưa ở bước cần tải chứng cứ.");
+      return recallWorkOrdersApi.uploadEvidence(recallWorkOrderId, uploadType, file);
+    },
+    onSuccess: async (item) => {
+      setUploadedEvidence({ id: item.id, type: item.evidenceType });
+      setSelectedFile(null);
+      setFileError("");
+      await refresh();
+    },
+  });
+  const pickupAttempt = useMutation({
+    mutationFn: (successful: boolean) => recallWorkOrdersApi.recordPickup(recallWorkOrderId, {
+      successful,
+      ...(successful && uploadedEvidence?.type === "PICKUP" ? { evidenceId: uploadedEvidence.id } : {}),
+      ...(pickupNotes.trim() ? { notes: pickupNotes.trim() } : {}),
+      correlationId: createWorkflowCorrelationId("recall-pickup-attempt"),
+    }),
+    onSuccess: async () => {
+      setPickupNotes("");
+      setUploadedEvidence(null);
+      await refresh();
+    },
+  });
+  const depotReceipt = useMutation({
+    mutationFn: () => recallWorkOrdersApi.submitDepotReceipt(recallWorkOrderId, {
+      depotLocation: depotLocation.trim(),
+      evidenceId: uploadedEvidence?.type === "DEPOT_RECEIPT" ? uploadedEvidence.id : "",
+      correlationId: createWorkflowCorrelationId("recall-depot-receipt"),
+    }),
+    onSuccess: async () => {
+      setDepotLocation("");
+      setUploadedEvidence(null);
+      await refresh();
+    },
+  });
+  const downloadEvidence = async (item: RecallEvidence) => {
+    setEvidenceActionError("");
+    try {
+      const blob = await recallWorkOrdersApi.downloadEvidence(recallWorkOrderId, item.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = safeEvidenceFilename(item.originalFilename, item.id);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setEvidenceActionError(getApiErrorMessage(error));
+    }
+  };
+  const handleFile = (file: File | null) => {
+    setSelectedFile(file);
+    setUploadedEvidence(null);
+    setFileError("");
+    if (!file) return;
+    if (file.size <= 0) setFileError("Tệp chứng cứ không được để trống.");
+    else if (file.size > MAX_EVIDENCE_BYTES) setFileError("Tệp chứng cứ không được vượt quá 20 MB.");
+    else if (!ALLOWED_EVIDENCE_TYPES.has(file.type)) setFileError("Chỉ chấp nhận tệp PDF, JPEG hoặc PNG.");
+  };
+  const isPickupEvidenceReady = uploadedEvidence?.type === "PICKUP";
+  const isDepotEvidenceReady = uploadedEvidence?.type === "DEPOT_RECEIPT";
+
+  return (
+    <TechnicianShell pageTitle="Thu hồi máy">
+      <section className={shellStyles.pageContent} aria-labelledby="technician-recall-title">
+        <header className={shellStyles.pageHeading}>
+          <h1 id="technician-recall-title">Thu hồi máy theo hợp đồng</h1>
+          <p>Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự.</p>
+          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
+        </header>
+        {orderQuery.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải lệnh thu hồi…</p> : null}
+        {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
+        {order ? (
+          <>
+            <section className={styles.panel} aria-labelledby="technician-recall-overview-title">
+              <h2 id="technician-recall-overview-title">Thông tin lệnh thu hồi</h2>
+              <dl className={styles.detailGrid}>
+                <DetailValue label="Mã lệnh" value={order.id} code />
+                <DetailValue label="Trạng thái" value={recallStatusLabels[order.status]} />
+                <DetailValue label="Mã hồ sơ chấm dứt" value={order.terminationCaseId} code />
+                <DetailValue label="Mã hợp đồng" value={order.contractId} code />
+                <DetailValue label="Mã máy" value={order.machineId} code />
+                <DetailValue label="Lịch nhận máy" value={formatDateTime(order.scheduledPickupAt)} />
+              </dl>
+              {order.status === "ASSIGNED" || order.status === "SCHEDULED" ? (
+                <>
+                  <p className={styles.hint}>Bắt đầu khi đã đến điểm nhận máy theo lịch được giao.</p>
+                  {startPickup.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(startPickup.error, "mutation")}</p> : null}
+                  <ButtonBar type="button" disabled={startPickup.isPending} onClick={() => startPickup.mutate()}>
+                    {startPickup.isPending ? "Đang bắt đầu…" : "Bắt đầu nhận máy"}
+                  </ButtonBar>
+                </>
+              ) : null}
+            </section>
+
+            {order.status === "PICKUP_IN_PROGRESS" ? (
+              <section className={styles.panel} aria-labelledby="technician-recall-pickup-title">
+                <h2 id="technician-recall-pickup-title">Ghi nhận lần đến nhận máy</h2>
+                <p className={styles.hint}>Nếu nhận được máy, tải chứng cứ trước rồi xác nhận. Nếu chưa nhận được, ghi rõ lý do để Moderator sắp xếp lại.</p>
+                <label className={styles.formField} htmlFor="recall-pickup-evidence">
+                  <span>Ảnh hoặc biên bản nhận máy</span>
+                  <input id="recall-pickup-evidence" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" onChange={(event) => handleFile(event.target.files?.[0] ?? null)} />
+                </label>
+                {evidence.data?.some((item) => item.evidenceType === "PICKUP") ? (
+                  <label className={styles.formField} htmlFor="recall-existing-pickup-evidence">
+                    <span>Hoặc chọn chứng cứ đã tải lên</span>
+                    <select id="recall-existing-pickup-evidence" value={uploadedEvidence?.type === "PICKUP" ? uploadedEvidence.id : ""} onChange={(event) => {
+                      const item = evidence.data?.find((candidate) => candidate.id === event.target.value && candidate.evidenceType === "PICKUP");
+                      setUploadedEvidence(item ? { id: item.id, type: item.evidenceType } : null);
+                      setSelectedFile(null);
+                      setFileError("");
+                    }}>
+                      <option value="">Chọn chứng cứ nhận máy</option>
+                      {evidence.data.filter((item) => item.evidenceType === "PICKUP").map((item) => (
+                        <option key={item.id} value={item.id}>{item.originalFilename} · {formatDateTime(item.uploadedAt)}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {selectedFile ? <p className={styles.fileName}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</p> : null}
+                {fileError ? <p className={styles.error} role="alert">{fileError}</p> : null}
+                {upload.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(upload.error, "mutation")}</p> : null}
+                {uploadType === "PICKUP" && selectedFile ? <ButtonBar type="button" disabled={Boolean(fileError) || upload.isPending} onClick={() => upload.mutate(selectedFile)}>{upload.isPending ? "Đang tải chứng cứ…" : "Tải chứng cứ nhận máy"}</ButtonBar> : null}
+                {isPickupEvidenceReady ? <p className={styles.success} role="status">Đã tải chứng cứ nhận máy.</p> : null}
+                <label className={styles.formField} htmlFor="recall-pickup-notes">
+                  <span>Ghi chú lần nhận máy</span>
+                  <textarea id="recall-pickup-notes" rows={3} maxLength={2000} value={pickupNotes} onChange={(event) => setPickupNotes(event.target.value)} />
+                </label>
+                {pickupAttempt.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(pickupAttempt.error, "mutation")}</p> : null}
+                <div className={styles.evidenceActions}>
+                  <ButtonBar type="button" disabled={!isPickupEvidenceReady || pickupAttempt.isPending} onClick={() => pickupAttempt.mutate(true)}>{pickupAttempt.isPending ? "Đang ghi nhận…" : "Đã nhận được máy"}</ButtonBar>
+                  <ButtonBar type="button" disabled={!pickupNotes.trim() || pickupAttempt.isPending} onClick={() => pickupAttempt.mutate(false)}>Chưa nhận được máy</ButtonBar>
+                </div>
+              </section>
+            ) : null}
+
+            {order.status === "OWNER_ACK_PENDING" ? <p className={styles.notice} role="status">Đang chờ Owner xác nhận tình trạng và việc bàn giao máy. Sau khi Owner xác nhận, bạn có thể tiếp tục nộp biên nhận kho.</p> : null}
+
+            {order.status === "CUSTODY_VERIFICATION_PENDING" ? (
+              <section className={styles.panel} aria-labelledby="technician-recall-depot-title">
+                <h2 id="technician-recall-depot-title">Bàn giao máy vào kho</h2>
+                <p className={styles.hint}>Owner đã xác nhận bàn giao. Tải chứng cứ nhận kho rồi gửi địa điểm để Moderator duyệt.</p>
+                <label className={styles.formField} htmlFor="recall-depot-location"><span>Địa điểm kho</span><input id="recall-depot-location" maxLength={240} value={depotLocation} onChange={(event) => setDepotLocation(event.target.value)} /></label>
+                <label className={styles.formField} htmlFor="recall-depot-evidence">
+                  <span>Ảnh hoặc biên bản nhận kho</span>
+                  <input id="recall-depot-evidence" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" onChange={(event) => handleFile(event.target.files?.[0] ?? null)} />
+                </label>
+                {evidence.data?.some((item) => item.evidenceType === "DEPOT_RECEIPT") ? (
+                  <label className={styles.formField} htmlFor="recall-existing-depot-evidence">
+                    <span>Hoặc chọn chứng cứ đã tải lên</span>
+                    <select id="recall-existing-depot-evidence" value={uploadedEvidence?.type === "DEPOT_RECEIPT" ? uploadedEvidence.id : ""} onChange={(event) => {
+                      const item = evidence.data?.find((candidate) => candidate.id === event.target.value && candidate.evidenceType === "DEPOT_RECEIPT");
+                      setUploadedEvidence(item ? { id: item.id, type: item.evidenceType } : null);
+                      setSelectedFile(null);
+                      setFileError("");
+                    }}>
+                      <option value="">Chọn chứng cứ nhận kho</option>
+                      {evidence.data.filter((item) => item.evidenceType === "DEPOT_RECEIPT").map((item) => (
+                        <option key={item.id} value={item.id}>{item.originalFilename} · {formatDateTime(item.uploadedAt)}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {selectedFile ? <p className={styles.fileName}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</p> : null}
+                {fileError ? <p className={styles.error} role="alert">{fileError}</p> : null}
+                {upload.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(upload.error, "mutation")}</p> : null}
+                {uploadType === "DEPOT_RECEIPT" && selectedFile ? <ButtonBar type="button" disabled={Boolean(fileError) || upload.isPending} onClick={() => upload.mutate(selectedFile)}>{upload.isPending ? "Đang tải chứng cứ…" : "Tải chứng cứ nhận kho"}</ButtonBar> : null}
+                {isDepotEvidenceReady ? <p className={styles.success} role="status">Đã tải chứng cứ nhận kho.</p> : null}
+                {depotReceipt.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(depotReceipt.error, "mutation")}</p> : null}
+                <ButtonBar type="button" disabled={!depotLocation.trim() || !isDepotEvidenceReady || depotReceipt.isPending} onClick={() => depotReceipt.mutate()}>{depotReceipt.isPending ? "Đang gửi biên nhận…" : "Gửi biên nhận về kho"}</ButtonBar>
+              </section>
+            ) : null}
+
+            {order.status === "RECEIPT_REVIEW_PENDING" ? <p className={styles.notice} role="status">Biên nhận đã gửi. Đang chờ Admin hoặc Moderator xác nhận máy đã về kho.</p> : null}
+            {order.status === "RECEIVED_AT_DEPOT" ? <p className={styles.success} role="status">Máy đã được nhận tại kho. Admin hoặc Moderator có thể tạo phiếu kiểm tra.</p> : null}
+            {order.status === "CANCELLED" ? <p className={styles.notice} role="status">Lệnh thu hồi đã bị hủy. Liên hệ Moderator nếu cần hướng dẫn tiếp theo.</p> : null}
+
+            {evidence.data?.length ? (
+              <section className={styles.panel} aria-labelledby="technician-recall-evidence-title">
+                <h2 id="technician-recall-evidence-title">Chứng cứ đã lưu ({evidence.data.length})</h2>
+                <DataTable variant="moderator" rows={evidence.data} rowKey={(item) => item.id} columns={[
+                  { key: "type", header: "Loại", render: (item) => item.evidenceType === "PICKUP" ? "Nhận máy" : item.evidenceType === "OWNER_HANDOVER" ? "Bàn giao Owner" : "Nhận kho" },
+                  { key: "file", header: "Tệp", render: (item) => item.originalFilename },
+                  { key: "uploaded", header: "Thời điểm", render: (item) => formatDateTime(item.uploadedAt) },
+                  { key: "action", header: "Thao tác", render: (item) => <ButtonBar type="button" onClick={() => void downloadEvidence(item)}>Tải xuống</ButtonBar> },
+                ]} />
+                {evidenceActionError ? <p className={styles.error} role="alert">{evidenceActionError}</p> : null}
+              </section>
+            ) : null}
+            {evidence.isError || events.isError ? <p className={styles.error} role="alert">Không tải được đầy đủ lịch sử hoặc chứng cứ của lệnh thu hồi.</p> : null}
+            {events.data?.content.length ? (
+              <section className={styles.panel} aria-labelledby="technician-recall-events-title">
+                <h2 id="technician-recall-events-title">Lịch sử xử lý</h2>
+                <ol className={styles.eventList}>{events.data.content.map((event) => <li key={event.id}><strong>{event.eventType.replaceAll("_", " ")}</strong> · {formatDateTime(event.occurredAt)}{event.reason ? <p>{event.reason}</p> : null}</li>)}</ol>
+              </section>
+            ) : null}
+          </>
+        ) : null}
+      </section>
+    </TechnicianShell>
+  );
+}
+
+function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminationCaseId }: { maintenanceTicketId: string; terminationCaseId: string }) {
+  const queryClient = useQueryClient();
+  const [diagnosis, setDiagnosis] = useState("");
+  const [responsibility, setResponsibility] = useState<TerminationInspectionRequest["responsibility"]>("UNKNOWN");
+  const [actualCost, setActualCost] = useState("");
+  const [evidenceReference, setEvidenceReference] = useState("");
+  const [resolutionResult, setResolutionResult] = useState("");
+  const [notes, setNotes] = useState("");
+  const ticket = useQuery({
+    queryKey: ["dolores", "technician", "maintenance-ticket", maintenanceTicketId],
+    queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(maintenanceTicketId, signal),
+    retry: false,
+  });
+  const terminationCase = useQuery({
+    queryKey: ["dolores", "termination-cases", "id", terminationCaseId],
+    queryFn: ({ signal }) => terminationCasesApi.getById(terminationCaseId, signal),
+    retry: false,
+  });
+  const refresh = async () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-ticket", maintenanceTicketId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "termination-cases", "id", terminationCaseId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-tickets", "assigned"] }),
+  ]);
+  const start = useMutation({
+    mutationFn: () => machinesApi.updateMaintenanceTicketStatus(maintenanceTicketId, "IN_PROGRESS"),
+    onSuccess: refresh,
+  });
+  const completeInspection = useMutation({
+    mutationFn: () => terminationCasesApi.completeInspection(terminationCaseId, {
+      maintenanceTicketId,
+      diagnosis: diagnosis.trim(),
+      responsibility,
+      ...(actualCost.trim() ? { actualCost: Number(actualCost) } : {}),
+      evidenceReference: evidenceReference.trim(),
+      resolutionResult: resolutionResult.trim(),
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
+      correlationId: createWorkflowCorrelationId("termination-inspection"),
+    }),
+    onSuccess: refresh,
+  });
+  const canSubmit = Boolean(diagnosis.trim() && evidenceReference.trim() && resolutionResult.trim()
+    && (!actualCost.trim() || (Number.isFinite(Number(actualCost)) && Number(actualCost) >= 0)));
+
+  return (
+    <TechnicianShell pageTitle="Kiểm tra máy thu hồi">
+      <section className={shellStyles.pageContent} aria-labelledby="termination-inspection-title">
+        <header className={shellStyles.pageHeading}>
+          <h1 id="termination-inspection-title">Kiểm tra máy sau khi thu hồi</h1>
+          <p>Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng.</p>
+          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
+        </header>
+        {ticket.isPending || terminationCase.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải phiếu kiểm tra…</p> : null}
+        {ticket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(ticket.error)}</p> : null}
+        {terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
+        {ticket.data ? (
+          <>
+            <section className={styles.panel} aria-labelledby="termination-inspection-summary-title">
+              <h2 id="termination-inspection-summary-title">Thông tin công việc</h2>
+              <dl className={styles.detailGrid}>
+                <DetailValue label="Mã phiếu" value={ticket.data.id} code />
+                <DetailValue label="Trạng thái phiếu" value={ticket.data.status ?? "Chưa cập nhật"} />
+                <DetailValue label="Mã hồ sơ chấm dứt" value={terminationCaseId} code />
+                <DetailValue label="Trạng thái hồ sơ" value={terminationCase.data?.status ?? "Chưa tải được"} />
+                <DetailValue label="Mã máy" value={ticket.data.machineId ?? "—"} code />
+                <DetailValue label="Mã hợp đồng" value={ticket.data.contractId ?? "—"} code />
+              </dl>
+              {ticket.data.status === "ASSIGNED" ? (
+                <>
+                  <p className={styles.hint}>Bắt đầu kiểm tra khi máy đã về kho và phiếu được giao cho bạn.</p>
+                  {start.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(start.error, "mutation")}</p> : null}
+                  <ButtonBar type="button" disabled={start.isPending} onClick={() => start.mutate()}>{start.isPending ? "Đang bắt đầu…" : "Bắt đầu kiểm tra"}</ButtonBar>
+                </>
+              ) : null}
+            </section>
+            {ticket.data.status === "IN_PROGRESS" ? (
+              <form className={styles.panel} onSubmit={(event) => { event.preventDefault(); if (canSubmit) completeInspection.mutate(); }}>
+                <h2>Kết quả kiểm tra máy</h2>
+                <label className={styles.formField} htmlFor="termination-diagnosis"><span>Chẩn đoán *</span><textarea id="termination-diagnosis" required rows={4} maxLength={4000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
+                <div className={styles.formGrid}>
+                  <label className={styles.formField} htmlFor="termination-responsibility"><span>Trách nhiệm chi phí *</span><select id="termination-responsibility" value={responsibility} onChange={(event) => setResponsibility(event.target.value as TerminationInspectionRequest["responsibility"])}><option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Khách thuê / Owner</option><option value="COMPANY">Công ty Dolores</option></select></label>
+                  <label className={styles.formField} htmlFor="termination-actual-cost"><span>Chi phí thực tế (VND, nếu có)</span><input id="termination-actual-cost" type="number" min="0" step="any" value={actualCost} onChange={(event) => setActualCost(event.target.value)} /></label>
+                  <label className={styles.formField} htmlFor="termination-evidence-reference"><span>Mã tham chiếu chứng cứ *</span><input id="termination-evidence-reference" required maxLength={512} value={evidenceReference} onChange={(event) => setEvidenceReference(event.target.value)} /></label>
+                  <label className={styles.formField} htmlFor="termination-resolution-result"><span>Kết quả xử lý *</span><input id="termination-resolution-result" required maxLength={4000} value={resolutionResult} onChange={(event) => setResolutionResult(event.target.value)} /></label>
+                </div>
+                <label className={styles.formField} htmlFor="termination-inspection-notes"><span>Ghi chú thêm</span><textarea id="termination-inspection-notes" rows={3} maxLength={4000} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+                <p className={styles.hint}>Gửi kết quả sẽ hoàn tất phiếu kiểm tra liên kết. Hợp đồng chỉ được chấm dứt sau khi bộ phận vận hành hoàn tất các bước tiếp theo.</p>
+                {completeInspection.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(completeInspection.error, "mutation")}</p> : null}
+                {completeInspection.isSuccess ? <p className={styles.success} role="status">Đã gửi kết quả kiểm tra.</p> : null}
+                <ButtonBar type="submit" disabled={!canSubmit || completeInspection.isPending}>{completeInspection.isPending ? "Đang gửi kết quả…" : "Gửi kết quả kiểm tra"}</ButtonBar>
+              </form>
+            ) : null}
+            {ticket.data.status === "RESOLVED" ? <p className={styles.success} role="status">Phiếu kiểm tra đã hoàn tất. Hồ sơ chấm dứt đang chờ bước tiếp theo từ bộ phận vận hành.</p> : null}
+            {ticket.data.status === "PENDING" ? <p className={styles.notice} role="status">Phiếu đang chờ Admin hoặc Moderator phân công kỹ thuật viên.</p> : null}
+          </>
+        ) : null}
+      </section>
+    </TechnicianShell>
+  );
+}
+
 export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrderId: string }) {
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -401,15 +762,27 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     enabled: details.isError,
     retry: false,
   });
-
-  if (repairCaseDetails.data) {
-    return <TechnicianRepairCaseScreen repairCaseId={workOrderId} />;
-  }
+  const recallWorkOrderDetails = useQuery({
+    queryKey: ["dolores", "recall-work-orders", "id", workOrderId],
+    queryFn: ({ signal }) => recallWorkOrdersApi.getById(workOrderId, signal),
+    enabled: details.isError && repairCaseDetails.isError,
+    retry: false,
+  });
+  const terminationInspectionTicket = useQuery({
+    queryKey: ["dolores", "technician", "maintenance-ticket", workOrderId],
+    queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(workOrderId, signal),
+    enabled: details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isError,
+    retry: false,
+  });
 
   const refreshWorkOrder = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: detailQueryKey(workOrderId) }),
       queryClient.invalidateQueries({ queryKey: assignedQueryKey }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "id", workOrderId] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "events", workOrderId] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "evidence", workOrderId] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-ticket", workOrderId] }),
     ]);
   };
 
@@ -472,6 +845,16 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     onSuccess: refreshWorkOrder,
     onError: refreshWorkOrder,
   });
+
+  if (repairCaseDetails.data) {
+    return <TechnicianRepairCaseScreen repairCaseId={workOrderId} />;
+  }
+  if (recallWorkOrderDetails.data) {
+    return <TechnicianRecallWorkOrderScreen recallWorkOrderId={workOrderId} />;
+  }
+  if (terminationInspectionTicket.data?.source === "TERMINATION_INSPECTION" && terminationInspectionTicket.data.terminationCaseId) {
+    return <TechnicianTerminationInspectionScreen maintenanceTicketId={workOrderId} terminationCaseId={terminationInspectionTicket.data.terminationCaseId} />;
+  }
 
   const detailData = details.data;
   const workOrder = detailData?.workOrder;
@@ -555,16 +938,20 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
           </div>
         </header>
 
-        {(details.isPending || (details.isError && repairCaseDetails.isPending)) && <p className={shellStyles.pendingNotice} role="status">Đang tải chi tiết công việc…</p>}
-        {details.isError && repairCaseDetails.isError && (
+        {(details.isPending
+          || (details.isError && repairCaseDetails.isPending)
+          || (details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isPending)
+          || (details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isError && terminationInspectionTicket.isPending))
+          && <p className={shellStyles.pendingNotice} role="status">Đang tải chi tiết công việc…</p>}
+        {details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isError && terminationInspectionTicket.isError && (
           <div className={styles.notice} role="alert">
-            <p>{getApiErrorMessage(details.error)}</p>
+            <p>{getApiErrorMessage(terminationInspectionTicket.error)}</p>
             <ButtonBar
               type="button"
-              disabled={details.isFetching || repairCaseDetails.isFetching}
-              onClick={() => void Promise.all([details.refetch(), repairCaseDetails.refetch()])}
+              disabled={details.isFetching || repairCaseDetails.isFetching || recallWorkOrderDetails.isFetching || terminationInspectionTicket.isFetching}
+              onClick={() => void Promise.all([details.refetch(), repairCaseDetails.refetch(), recallWorkOrderDetails.refetch(), terminationInspectionTicket.refetch()])}
             >
-              {details.isFetching || repairCaseDetails.isFetching ? "Đang tải…" : "Tải lại"}
+              {details.isFetching || repairCaseDetails.isFetching || recallWorkOrderDetails.isFetching || terminationInspectionTicket.isFetching ? "Đang tải…" : "Tải lại"}
             </ButtonBar>
           </div>
         )}

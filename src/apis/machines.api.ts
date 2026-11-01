@@ -175,6 +175,28 @@ export const machinesApi = {
     if (ticket.id !== ticketId) throw new Error("Dolores returned a different maintenance ticket.");
     return ticket;
   },
+  async assignMaintenanceTicket(id: string, technicianId: string, assignedTo?: string) {
+    const ticketId = MachineIdSchema.parse(id);
+    const technician = ProfileIdSchema.parse(technicianId);
+    const response = await axiosClient.post<unknown>(
+      `/maintenance-tickets/${encodeURIComponent(ticketId)}/assign`,
+      undefined,
+      {
+        baseURL: DOLORES_API_BASE_URL,
+        params: { technicianId: technician, ...(assignedTo?.trim() ? { assignedTo: assignedTo.trim() } : {}) },
+      },
+    );
+    return MaintenanceTicketDetailsSchema.parse(response.data);
+  },
+  async updateMaintenanceTicketStatus(id: string, status: "IN_PROGRESS") {
+    const ticketId = MachineIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `/maintenance-tickets/${encodeURIComponent(ticketId)}/status`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL, params: { status } },
+    );
+    return MaintenanceTicketDetailsSchema.parse(response.data);
+  },
   async createRepairIntake(input: RepairIntakeRequest) {
     const request = RepairIntakeRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>(

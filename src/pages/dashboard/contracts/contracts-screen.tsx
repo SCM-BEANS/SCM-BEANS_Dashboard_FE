@@ -2,9 +2,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { contractsApi } from "@/apis/contracts.api";
+import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
 import { ContractIdSchema, type Contract } from "@/schema/contracts.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
@@ -81,6 +83,16 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     queryFn: ({ signal }) => contractsApi.getExpiry(contractId!, signal),
     enabled: Boolean(contractId),
   });
+  const recallOrders = useQuery({
+    queryKey: ["dolores", "recall-work-orders", "contract", contractId],
+    queryFn: ({ signal }) => recallWorkOrdersApi.list({ contractId: contractId!, page: 0, size: 100 }, signal),
+    enabled: Boolean(contractId && detail.data),
+    retry: false,
+  });
+  const sortedRecallOrders = [...(recallOrders.data?.content ?? [])]
+    .sort((left, right) => Date.parse(right.createdAt ?? "") - Date.parse(left.createdAt ?? ""));
+  const latestRecall = sortedRecallOrders.find((order) => order.status !== "CANCELLED") ?? sortedRecallOrders[0];
+  const hasTerminationCase = Boolean(expiry.data?.terminationCaseId || latestRecall?.terminationCaseId);
   const recordExpiryDecision = useMutation({
     mutationFn: (decision: "CONTINUE" | "DO_NOT_CONTINUE") =>
       contractsApi.recordExpiryDecision(contractId!, { decision }),
@@ -240,6 +252,13 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                   </>
                 ) : null}
               </section>
+              {hasTerminationCase || (recallOrders.isError && detail.data.status === "ACTIVE") ? (
+                <section className={styles.dataPanel} aria-labelledby="owner-termination-link-title">
+                  <h2 id="owner-termination-link-title">Hồ sơ chấm dứt hợp đồng</h2>
+                  <p>Theo dõi lịch thu hồi máy và xác nhận tình trạng bàn giao trong hồ sơ riêng.</p>
+                  <ButtonBar href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
+                </section>
+              ) : null}
             </>
           ) : null}
         </>

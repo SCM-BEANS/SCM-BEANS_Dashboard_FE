@@ -223,7 +223,7 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     return [link("Gửi đề nghị thu mua", "/dashboard/buyback/new"), link("Xem chứng từ thu mua", "/dashboard/buyback/documents", "secondary")];
   }
   if (sectionPath === "invoices/refund") {
-    return [blocked("Gửi yêu cầu hoàn tiền"), link("Về hóa đơn", "/dashboard/invoices", "secondary")];
+    return [link("Về hóa đơn", "/dashboard/invoices", "secondary")];
   }
   if (sectionPath === "menu/sent") {
     return [link("Về menu của tôi", "/dashboard/menu"), blocked("Gửi menu riêng đến máy", "secondary")];

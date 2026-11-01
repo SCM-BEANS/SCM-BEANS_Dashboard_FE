@@ -16,7 +16,7 @@ import { profilesApi } from "@/apis/profiles.api";
 
 import { PATH_MODERATOR } from "@/routes/path";
 
-import { MachineIdSchema, type MaintenanceTicket, type RepairCase, type RepairCaseSummary } from "@/schema/machines.schema";
+import { MachineIdSchema, RepairCaseSchema, type MaintenanceTicket, type RepairCase, type RepairCaseSummary } from "@/schema/machines.schema";
 
 import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 
