@@ -130,12 +130,17 @@ export const MaintenanceScheduleSchema = z.object({
 export const MaintenanceTicketSchema = z.object({
   id: z.string().uuid().nullish(),
   machineId: MachineIdSchema.nullish(),
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
   status: z.enum(["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"]).nullish(),
+  alertLevel: z.string().nullish(),
   scheduledDueAt: dateTimeSchema.nullish(),
   maintenanceWindowDeadline: dateTimeSchema.nullish(),
+  overdueReviewRequired: z.boolean().optional(),
   startedAt: dateTimeSchema.nullish(),
   acknowledgedAt: dateTimeSchema.nullish(),
   completedAt: dateTimeSchema.nullish(),
+  resolvedAt: dateTimeSchema.nullish(),
   assignedTo: z.string().nullish(),
   assignedTechnicianId: z.string().uuid().nullish(),
   source: z.string().nullish(),
@@ -144,6 +149,7 @@ export const MaintenanceTicketSchema = z.object({
   diagnosis: z.string().nullish(),
   resolutionResult: z.string().nullish(),
   actionableInstructions: z.string().nullish(),
+  version: z.number().int().nonnegative().optional(),
 }).strip();
 
 export const MaintenanceTicketDetailsSchema = MaintenanceTicketSchema.extend({

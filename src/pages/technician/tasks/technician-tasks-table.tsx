@@ -1,22 +1,26 @@
 ﻿import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { machinesApi } from "@/apis/machines.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { getAccessTokenSubject } from "@/lib/auth-role";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { AssignedInstallationWorkOrderSummary } from "@/schema/installation-work-orders.schema";
-import type { RepairCase, RepairCaseSummary } from "@/schema/machines.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
+import type { MaintenanceTicket, RepairCase, RepairCaseSummary } from "@/schema/machines.schema";
 import type { BuybackCaseSummary, BuybackStatus } from "@/schema/buybacks.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import shellStyles from "../technician-shell.module.css";
 import styles from "./technician-tasks-table.module.css";
 
-type TaskCategory = "installation" | "repair" | "buyback";
+type TaskCategory = "installation" | "maintenance" | "repair" | "buyback";
 type TaskFilter = "all" | TaskCategory;
 type AssignedTask = {
   key: string;
@@ -32,12 +36,14 @@ type AssignedTask = {
 const messages = T.WORKFLOWS;
 const categoryLabels: Record<TaskCategory, string> = {
   installation: messages.FILTER_INSTALLATION,
+  maintenance: "Bảo trì",
   repair: messages.FILTER_REPAIR,
   buyback: messages.FILTER_RETRIEVAL,
 };
 const filters: Array<{ id: TaskFilter; label: string }> = [
   { id: "all", label: messages.FILTER_ALL },
   { id: "installation", label: categoryLabels.installation },
+  { id: "maintenance", label: categoryLabels.maintenance },
   { id: "repair", label: categoryLabels.repair },
   { id: "buyback", label: categoryLabels.buyback },
 ];
@@ -67,6 +73,12 @@ const repairStatusLabels: Record<RepairCase["status"], string> = {
   CLOSED: "Đã đóng",
   REJECTED: "Đã từ chối",
   CANCELLED: "Đã hủy",
+};
+const maintenanceStatusLabels: Record<NonNullable<MaintenanceTicket["status"]>, string> = {
+  PENDING: "Chờ xử lý",
+  ASSIGNED: "Đã phân công",
+  IN_PROGRESS: "Đang bảo trì",
+  RESOLVED: "Đã hoàn tất",
 };
 const buybackStatusLabels: Record<BuybackStatus, string> = {
   REQUESTED: "Đã gửi yêu cầu",
@@ -105,8 +117,10 @@ function getBuybackError(error: Error): string {
 
 function createTasks(
   workOrders: AssignedInstallationWorkOrderSummary[] | undefined,
+  maintenanceTickets: MaintenanceTicket[] | undefined,
   repairCases: RepairCaseSummary[] | undefined,
   buybacks: BuybackCaseSummary[] | undefined,
+  technicianId: string | null,
 ): AssignedTask[] {
   return [
     ...(workOrders ?? []).map((item): AssignedTask => ({
@@ -119,6 +133,19 @@ function createTasks(
       date: item.scheduledFor ?? item.updatedAt,
       href: PATH_TECHNICIAN.TASK_DETAIL(item.id),
     })),
+    ...(maintenanceTickets ?? []).flatMap((item): AssignedTask[] => {
+      if (!technicianId || !item.id || !item.machineId || item.assignedTechnicianId !== technicianId) return [];
+      return [{
+        key: "maintenance-" + item.id,
+        category: "maintenance",
+        id: item.id,
+        machineId: item.machineId,
+        status: item.status ? maintenanceStatusLabels[item.status] : "Chưa cập nhật trạng thái",
+        dateLabel: item.scheduledDueAt ? "Dự kiến" : item.completedAt || item.resolvedAt ? "Hoàn tất" : "Cập nhật",
+        date: item.scheduledDueAt ?? item.completedAt ?? item.resolvedAt ?? item.startedAt ?? item.acknowledgedAt ?? null,
+        href: PATH_TECHNICIAN.MACHINE_HISTORY_DETAIL(item.machineId),
+      }];
+    }),
     ...(repairCases ?? []).map((item): AssignedTask => ({
       key: "repair-" + item.id,
       category: "repair",
@@ -141,7 +168,7 @@ function createTasks(
   ].sort((first, second) => Date.parse(second.date ?? "") - Date.parse(first.date ?? ""));
 }
 
-function TaskCard({ task }: { task: AssignedTask }) {
+function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boolean }) {
   return (
     <article className={styles.taskCard}>
       <div className={styles.taskContent}>
@@ -153,23 +180,43 @@ function TaskCard({ task }: { task: AssignedTask }) {
           Máy <code title={task.machineId}>{shortReference(task.machineId)}</code>
         </p>
         <p className={styles.taskMeta}>
-          Mã việc <code title={task.id}>{shortReference(task.id)}</code>
-          <span aria-hidden="true">·</span>
+          {!compact ? (
+            <>
+              Mã việc <code title={task.id}>{shortReference(task.id)}</code>
+              <span aria-hidden="true">·</span>
+            </>
+          ) : null}
           {task.dateLabel} {formatDate(task.date)}
         </p>
       </div>
       {task.href ? (
-        <TextLinkButton href={task.href}>Mở việc</TextLinkButton>
+        <TextLinkButton href={task.href}>
+          {compact && task.category === "maintenance" ? "Xem lịch sử máy" : "Mở việc"}
+        </TextLinkButton>
       ) : null}
     </article>
   );
 }
 
-export function TechnicianTasksTable() {
+export function TechnicianTasksTable({ display = "page" }: { display?: "page" | "notifications" }) {
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [technicianId, setTechnicianId] = useState<string | null>(null);
+  const [technicianIdentityReady, setTechnicianIdentityReady] = useState(false);
+  useEffect(() => {
+    const token = Cookies.get("access_token");
+    const subject = token ? getAccessTokenSubject(token) : null;
+    setTechnicianId(ProfileIdSchema.safeParse(subject).success ? subject : null);
+    setTechnicianIdentityReady(true);
+  }, []);
+
   const workOrders = useQuery({
     queryKey: ["dolores", "technician", "installation-work-orders", "assigned"],
     queryFn: ({ signal }) => installationWorkOrdersApi.listAssigned(signal),
+  });
+  const maintenanceTickets = useQuery({
+    queryKey: ["dolores", "technician", "maintenance-tickets", "assigned", technicianId],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ page: 0, size: 100 }, signal),
+    enabled: technicianIdentityReady && Boolean(technicianId),
   });
   const repairCases = useQuery({
     queryKey: ["dolores", "technician", "repair-cases"],
@@ -180,26 +227,79 @@ export function TechnicianTasksTable() {
     queryFn: ({ signal }) => buybacksApi.list({ page: 0, size: 100 }, signal),
   });
 
-  const tasks = createTasks(workOrders.data, repairCases.data, buybacks.data?.items);
+  const tasks = createTasks(
+    workOrders.data,
+    maintenanceTickets.data,
+    repairCases.data,
+    buybacks.data?.items,
+    technicianId,
+  );
   const visibleTasks = filter === "all"
     ? tasks
     : tasks.filter((task) => task.category === filter);
   const queryGroups = [
-    { category: "installation" as const, label: "Giao máy", query: workOrders, message: getApiErrorMessage(workOrders.error) },
-    { category: "repair" as const, label: "Sửa chữa", query: repairCases, message: getApiErrorMessage(repairCases.error) },
-    { category: "buyback" as const, label: "Thu hồi", query: buybacks, message: buybacks.error ? getBuybackError(buybacks.error) : "" },
+    { category: "installation" as const, label: "Giao máy", hasError: workOrders.isError, isPending: workOrders.isPending, message: getApiErrorMessage(workOrders.error) },
+    {
+      category: "maintenance" as const,
+      label: "Bảo trì",
+      hasError: maintenanceTickets.isError || (technicianIdentityReady && !technicianId),
+      isPending: Boolean(technicianId) && maintenanceTickets.isPending,
+      message: !technicianId && technicianIdentityReady
+        ? "Không xác định được tài khoản kỹ thuật viên để lọc phiếu được giao."
+        : getApiErrorMessage(maintenanceTickets.error),
+    },
+    { category: "repair" as const, label: "Sửa chữa", hasError: repairCases.isError, isPending: repairCases.isPending, message: getApiErrorMessage(repairCases.error) },
+    { category: "buyback" as const, label: "Thu hồi", hasError: buybacks.isError, isPending: buybacks.isPending, message: buybacks.error ? getBuybackError(buybacks.error) : "" },
   ];
   const activeQueries = queryGroups.filter((item) => filter === "all" || item.category === filter);
-  const isLoading = activeQueries.some((item) => item.query.isPending);
-  const hasActiveError = activeQueries.some((item) => item.query.isError);
-  const isFetching = workOrders.isFetching || repairCases.isFetching || buybacks.isFetching;
-  const allLoaded = workOrders.isSuccess && repairCases.isSuccess && buybacks.isSuccess;
+  const isLoading = activeQueries.some((item) => item.isPending) || !technicianIdentityReady;
+  const hasActiveError = activeQueries.some((item) => item.hasError);
+  const isFetching = workOrders.isFetching || maintenanceTickets.isFetching || repairCases.isFetching || buybacks.isFetching;
+  const allLoaded = workOrders.isSuccess && Boolean(technicianId) && maintenanceTickets.isSuccess && repairCases.isSuccess && buybacks.isSuccess;
+  const refreshTasks = () => Promise.all([
+    workOrders.refetch(),
+    ...(technicianId ? [maintenanceTickets.refetch()] : []),
+    repairCases.refetch(),
+    buybacks.refetch(),
+  ]);
   const counts: Record<TaskFilter, number | string> = {
     all: allLoaded ? tasks.length : tasks.length > 0 ? tasks.length + "+" : "—",
     installation: workOrders.isSuccess ? workOrders.data.length : "—",
+    maintenance: maintenanceTickets.isSuccess ? tasks.filter((task) => task.category === "maintenance").length : "—",
     repair: repairCases.isSuccess ? repairCases.data.length : "—",
     buyback: buybacks.isSuccess ? buybacks.data.items.length : "—",
   };
+
+  if (display === "notifications") {
+    const recentTasks = tasks.slice(0, 5);
+
+    return (
+      <section className={styles.panel} aria-labelledby="technician-work-updates-title">
+        <div className={styles.panelHeading}>
+          <div>
+            <h2 id="technician-work-updates-title">Công việc được giao cập nhật</h2>
+            <p className={styles.helperText}>Tổng hợp lệnh lắp đặt, phiếu bảo trì, sửa chữa và thu hồi được giao.</p>
+          </div>
+          <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Xem tất cả</TextLinkButton>
+        </div>
+
+        {activeQueries.filter((item) => item.hasError).map((item) => (
+          <p className={styles.queryNotice} role="alert" key={item.category}>
+            <strong>{item.label}:</strong> {item.message}
+          </p>
+        ))}
+        {isLoading ? <p className={styles.loading} role="status">Đang tải công việc được giao…</p> : null}
+        {recentTasks.length > 0 ? (
+          <div className={styles.taskList}>
+            {recentTasks.map((task) => <TaskCard key={task.key} task={task} compact />)}
+          </div>
+        ) : !isLoading && !hasActiveError ? (
+          <p className={styles.emptyState}>Chưa có công việc được giao.</p>
+        ) : null}
+        <p className={styles.helperText}>Trạng thái đã đọc/chưa đọc chỉ áp dụng cho thông báo ở phía trên.</p>
+      </section>
+    );
+  }
 
   return (
     <section className={shellStyles.pageContent} aria-labelledby="technician-tasks-title">
@@ -232,8 +332,8 @@ export function TechnicianTasksTable() {
           </span>
         </div>
 
-        {activeQueries.map(({ category, label, query, message }) => (
-          query.isError ? (
+        {activeQueries.map(({ category, label, hasError, message }) => (
+          hasError ? (
             <p className={styles.queryNotice} role="alert" key={category}>
               <strong>{label}:</strong> {message}
             </p>
@@ -246,7 +346,7 @@ export function TechnicianTasksTable() {
           <div className={styles.taskList}>
             {visibleTasks.map((task) => <TaskCard key={task.key} task={task} />)}
           </div>
-        ) : !isLoading && activeQueries.every((item) => !item.query.isError) ? (
+        ) : !isLoading && activeQueries.every((item) => !item.hasError) ? (
           <p className={styles.emptyState}>Không có việc trong mục này.</p>
         ) : null}
 
@@ -258,7 +358,7 @@ export function TechnicianTasksTable() {
       <ActionBar label={messages.TASKS_PANEL_TITLE}>
         <ButtonBar
           disabled={isFetching}
-          onClick={() => void Promise.all([workOrders.refetch(), repairCases.refetch(), buybacks.refetch()])}
+          onClick={() => void refreshTasks()}
         >
           {isFetching ? messages.TASKS_RELOADING : messages.TASKS_RETRY}
         </ButtonBar>
