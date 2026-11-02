@@ -16,37 +16,102 @@ import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
+import { RepairCaseSchema } from "@/schema/machines.schema";
+import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 
-export const HOME_NAVIGATION_LINKS = [
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0], HREF: PATH_HOME.SECTIONS.SOLUTIONS },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[1], HREF: PATH_HOME.SECTIONS.PRODUCTS },
-  { LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[2], HREF: PATH_HOME.SECTIONS.TECHNOLOGY },
+
+export const HOME_NAVIGATION_LINKS =  [
+   {
+    LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[0],
+    HREF: PATH_HOME.SECTIONS.SOLUTIONS
+  },
+   {
+    LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[1],
+    HREF: PATH_HOME.SECTIONS.PRODUCTS
+  },
+   {
+    LABEL: HOME_MESSAGES.NAVIGATION.ITEMS[2],
+    HREF: PATH_HOME.SECTIONS.TECHNOLOGY
+  }
 ] as const;
 
-export const HOME_FOOTER_PRODUCT_LINKS = [
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[0], HREF: PATH_HOME.SECTIONS.PRODUCTS },
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[1], HREF: PATH_HOME.SECTIONS.TECHNOLOGY },
-  { LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[2], HREF: PATH_HOME.SECTIONS.SOLUTIONS },
+export const HOME_FOOTER_PRODUCT_LINKS =  [
+   {
+    LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[0],
+    HREF: PATH_HOME.SECTIONS.PRODUCTS
+  },
+   {
+    LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[1],
+    HREF: PATH_HOME.SECTIONS.TECHNOLOGY
+  },
+   {
+    LABEL: HOME_MESSAGES.FOOTER.PRODUCT_LINKS[2],
+    HREF: PATH_HOME.SECTIONS.SOLUTIONS
+  }
 ] as const;
 
-export const HOME_FOOTER_DISCOVERY_LINKS = [
-  { LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[0], HREF: PATH_HOME.SECTIONS.ABOUT },
+export const HOME_FOOTER_DISCOVERY_LINKS =  [
+   {
+    LABEL: HOME_MESSAGES.FOOTER.DISCOVERY_LINKS[0],
+    HREF: PATH_HOME.SECTIONS.ABOUT
+  }
 ] as const;
 
-export const ADMIN_NAVIGATION_LINKS = [
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_ADMIN.ROOT, ICON: "LayoutDashboard" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.USERS, HREF: PATH_ADMIN.USERS, ICON: "Users" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.BUSINESSES, HREF: PATH_ADMIN.BUSINESSES, ICON: "Store" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.STORES, HREF: PATH_ADMIN.STORES, ICON: "Building2" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_ADMIN.CONTRACTS, ICON: "FileText" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_ADMIN.MACHINES, ICON: "Package" },
+export const ADMIN_NAVIGATION_LINKS =  [
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.OVERVIEW,
+    HREF: PATH_ADMIN.ROOT,
+    ICON: "LayoutDashboard"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.USERS,
+    HREF: PATH_ADMIN.USERS,
+    ICON: "Users"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.BUSINESSES,
+    HREF: PATH_ADMIN.BUSINESSES,
+    ICON: "Store"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.STORES,
+    HREF: PATH_ADMIN.STORES,
+    ICON: "Building2"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.CONTRACTS,
+    HREF: PATH_ADMIN.CONTRACTS,
+    ICON: "FileText"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.MACHINES,
+    HREF: PATH_ADMIN.MACHINES,
+    ICON: "Package"
+  },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS, HREF: PATH_ADMIN.TECHNICAL_REQUESTS, ICON: "Wrench" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.IOT, HREF: PATH_ADMIN.IOT, ICON: "Activity" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.MENU, HREF: PATH_ADMIN.MENU, ICON: "Utensils" },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.IOT,
+    HREF: PATH_ADMIN.IOT,
+    ICON: "Activity"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.MENU,
+    HREF: PATH_ADMIN.MENU,
+    ICON: "Utensils"
+  },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_ADMIN.INVOICES, ICON: "Receipt" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.BUYBACKS, HREF: PATH_ADMIN.BUYBACKS, ICON: "Package" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.REPORTS, HREF: PATH_ADMIN.REPORTS, ICON: "BarChart3" },
-  { LABEL: ADMIN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_ADMIN.NOTIFICATIONS, ICON: "Bell" },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.REPORTS,
+    HREF: PATH_ADMIN.REPORTS,
+    ICON: "BarChart3"
+  },
+   {
+    LABEL: ADMIN_MESSAGES.NAVIGATION.NOTIFICATIONS,
+    HREF: PATH_ADMIN.NOTIFICATIONS,
+    ICON: "Bell"
+  },
+  { LABEL: ADMIN_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_ADMIN.INVOICES, ICON: "FileText" }
 ] as const;
 
 // Expose only routes that already have a page implementation.
@@ -66,44 +131,136 @@ export const ADMIN_ENABLED_PATHS = new Set<string>([
   PATH_ADMIN.NOTIFICATIONS,
 ]);
 
-export const MODERATOR_NAVIGATION_LINKS = [
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_MODERATOR.ROOT, ICON: "LayoutDashboard" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_MODERATOR.CONTRACTS, ICON: "FileText" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.CUSTOMERS, HREF: PATH_MODERATOR.CUSTOMERS, ICON: "Users" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_MODERATOR.INVOICES, ICON: "FileText" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_MODERATOR.MACHINES, ICON: "Coffee" },
+export const MODERATOR_NAVIGATION_LINKS =  [
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.OVERVIEW,
+    HREF: PATH_MODERATOR.ROOT,
+    ICON: "LayoutDashboard"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.CONTRACTS,
+    HREF: PATH_MODERATOR.CONTRACTS,
+    ICON: "FileText"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.CUSTOMERS,
+    HREF: PATH_MODERATOR.CUSTOMERS,
+    ICON: "Users"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.INVOICES,
+    HREF: PATH_MODERATOR.INVOICES,
+    ICON: "FileText"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINES,
+    HREF: PATH_MODERATOR.MACHINES,
+    ICON: "Coffee"
+  },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_MODERATOR.LOCATIONS, ICON: "Building2" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT, HREF: PATH_MODERATOR.IOT, ICON: "Activity" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MENU, HREF: PATH_MODERATOR.MENU, ICON: "Utensils" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS, HREF: PATH_MODERATOR.TECHNICAL_REQUESTS, ICON: "Wrench" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINE_HISTORY, HREF: PATH_MODERATOR.MACHINE_HISTORY, ICON: "ClipboardCheck" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.BUYBACK, HREF: PATH_MODERATOR.BUYBACK, ICON: "Package" },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_MODERATOR.NOTIFICATIONS, ICON: "Bell" },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT,
+    HREF: PATH_MODERATOR.IOT,
+    ICON: "Activity"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.MENU,
+    HREF: PATH_MODERATOR.MENU,
+    ICON: "Utensils"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS,
+    HREF: PATH_MODERATOR.TECHNICAL_REQUESTS,
+    ICON: "Wrench"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINE_HISTORY,
+    HREF: PATH_MODERATOR.MACHINE_HISTORY,
+    ICON: "ClipboardCheck"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.BUYBACK,
+    HREF: PATH_MODERATOR.BUYBACK,
+    ICON: "Package"
+  },
+   {
+    LABEL: MODERATOR_MESSAGES.NAVIGATION.NOTIFICATIONS,
+    HREF: PATH_MODERATOR.NOTIFICATIONS,
+    ICON: "Bell"
+  }
 ] as const;
 
-export const CUSTOMER_NAVIGATION_LINKS = [
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_CUSTOMER.ROOT, ICON: "LayoutDashboard" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_CUSTOMER.CONTRACTS, ICON: "FileText" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_CUSTOMER.MACHINES, ICON: "Coffee" },
+export const CUSTOMER_NAVIGATION_LINKS =  [
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.OVERVIEW,
+    HREF: PATH_CUSTOMER.ROOT,
+    ICON: "LayoutDashboard"
+  },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.CONTRACTS,
+    HREF: PATH_CUSTOMER.CONTRACTS,
+    ICON: "FileText"
+  },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.MACHINES,
+    HREF: PATH_CUSTOMER.MACHINES,
+    ICON: "Coffee"
+  },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_CUSTOMER.LOCATIONS, ICON: "MapPin" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MENU, HREF: PATH_CUSTOMER.MENU, ICON: "Utensils" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_CUSTOMER.INVOICES, ICON: "FileText" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.SUPPORT, HREF: PATH_CUSTOMER.SUPPORT, ICON: "Wrench" },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.MENU,
+    HREF: PATH_CUSTOMER.MENU,
+    ICON: "Utensils"
+  },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.INVOICES,
+    HREF: PATH_CUSTOMER.INVOICES,
+    ICON: "FileText"
+  },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.SUPPORT,
+    HREF: PATH_CUSTOMER.SUPPORT,
+    ICON: "Wrench"
+  },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MAINTENANCE, HREF: PATH_CUSTOMER.MAINTENANCE, ICON: "Wrench" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.RECALLS, HREF: PATH_CUSTOMER.RECALLS, ICON: "Package" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.BUYBACK, HREF: PATH_CUSTOMER.BUYBACK, ICON: "Package" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_CUSTOMER.NOTIFICATIONS, ICON: "Bell" },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.BUYBACK,
+    HREF: PATH_CUSTOMER.BUYBACK,
+    ICON: "Package"
+  },
+   {
+    LABEL: CUSTOMER_MESSAGES.NAVIGATION.NOTIFICATIONS,
+    HREF: PATH_CUSTOMER.NOTIFICATIONS,
+    ICON: "Bell"
+  }
 ] as const;
 
-export const TECHNICIAN_NAVIGATION_LINKS = [
-  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.TASKS, HREF: PATH_TECHNICIAN.TASKS, ICON: "ClipboardCheck" },
+export const TECHNICIAN_NAVIGATION_LINKS =  [
+   {
+    LABEL: TECHNICIAN_MESSAGES.NAVIGATION.TASKS,
+    HREF: PATH_TECHNICIAN.TASKS,
+    ICON: "ClipboardCheck"
+  },
   { LABEL: "Thu hồi máy", HREF: PATH_TECHNICIAN.TASK_RETRIEVAL, ICON: "Package" },
-  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.MACHINE_CHECK, HREF: PATH_TECHNICIAN.MACHINE_CHECK, ICON: "Wrench" },
-  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.HISTORY, HREF: PATH_TECHNICIAN.HISTORY, ICON: "Coffee" },
-  { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_TECHNICIAN.NOTIFICATIONS, ICON: "Bell" },
+   {
+    LABEL: TECHNICIAN_MESSAGES.NAVIGATION.MACHINE_CHECK,
+    HREF: PATH_TECHNICIAN.MACHINE_CHECK,
+    ICON: "Wrench"
+  },
+   {
+    LABEL: TECHNICIAN_MESSAGES.NAVIGATION.HISTORY,
+    HREF: PATH_TECHNICIAN.HISTORY,
+    ICON: "Coffee"
+  },
+   {
+    LABEL: TECHNICIAN_MESSAGES.NAVIGATION.NOTIFICATIONS,
+    HREF: PATH_TECHNICIAN.NOTIFICATIONS,
+    ICON: "Bell"
+  }
 ] as const;
 
-const customerStaticSections = [
+const customerStaticSections =  [
   "contracts",
   "contracts/new",
   "contracts/expiry",
@@ -137,10 +294,10 @@ const customerStaticSections = [
   "buyback/documents",
   "buyback/documents/confirmed",
   "buyback/issue",
-  "notifications",
+  "notifications"
 ] as const;
 
-const technicianStaticSections = [
+const technicianStaticSections =  [
   "tasks",
   "tasks/standard-handover",
   "tasks/smart-activation",
@@ -153,19 +310,23 @@ const technicianStaticSections = [
   "tasks/maintenance-history",
   "machine-check",
   "history",
-  "notifications",
+  "notifications"
 ] as const;
 
-export const CUSTOMER_ROUTE_CATALOG = {
+export const CUSTOMER_ROUTE_CATALOG =  {
   root: PATH_CUSTOMER.ROOT,
-  pages: [PATH_CUSTOMER.ROOT],
-  sections: customerStaticSections.map((section) => `${PATH_CUSTOMER.ROOT}/${section}`),
+  pages: [
+    PATH_CUSTOMER.ROOT
+  ],
+  sections: customerStaticSections.map((section) => `${PATH_CUSTOMER.ROOT}/${section}`)
 } as const;
 
-export const TECHNICIAN_ROUTE_CATALOG = {
+export const TECHNICIAN_ROUTE_CATALOG =  {
   root: PATH_TECHNICIAN.ROOT,
-  pages: [PATH_TECHNICIAN.ROOT],
-  sections: technicianStaticSections.map((section) => `${PATH_TECHNICIAN.ROOT}/${section}`),
+  pages: [
+    PATH_TECHNICIAN.ROOT
+  ],
+  sections: technicianStaticSections.map((section) => `${PATH_TECHNICIAN.ROOT}/${section}`)
 } as const;
 
 const customerExactPaths = new Set<string>([
@@ -266,22 +427,48 @@ function staticPaths(group: Record<string, string | ((value: string) => string)>
   return Object.values(group).filter((value): value is string => typeof value === "string");
 }
 
-const moderatorDynamicSections = [
-  { base: PATH_MODERATOR.INVOICES, segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
-  { base: PATH_MODERATOR.MENU, segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
-  { base: PATH_MODERATOR.CONTRACTS, segment: /^(?:C-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
-  { base: PATH_MODERATOR.CUSTOMERS, segment: /^[a-z0-9]+(?:-[a-z0-9]+)*$/i },
-  { base: PATH_MODERATOR.MACHINES, segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
-  { base: PATH_MODERATOR.TECHNICAL_REQUESTS, segment: /^(?:YC-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
-  { base: PATH_MODERATOR.MACHINE_HISTORY, segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
-  { base: PATH_MODERATOR.BUYBACK, segment: /^(?:MB-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i },
+const moderatorDynamicSections =  [
+   {
+    base: PATH_MODERATOR.INVOICES,
+    segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  },
+   {
+    base: PATH_MODERATOR.MENU,
+    segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  },
+   {
+    base: PATH_MODERATOR.CONTRACTS,
+    segment: /^(?:C-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+  },
+   {
+    base: PATH_MODERATOR.CUSTOMERS,
+    segment: /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
+  },
+   {
+    base: PATH_MODERATOR.MACHINES,
+    segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+  },
+   {
+    base: PATH_MODERATOR.TECHNICAL_REQUESTS,
+    segment: /^(?:YC-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+  },
+   {
+    base: PATH_MODERATOR.MACHINE_HISTORY,
+    segment: /^(?:[A-Z]{1,2}-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+  },
+   {
+    base: PATH_MODERATOR.BUYBACK,
+    segment: /^(?:MB-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
+  }
 ] as const;
 
-export const MODERATOR_ROUTE_CATALOG = {
+export const MODERATOR_ROUTE_CATALOG =  {
   root: PATH_MODERATOR.ROOT,
-  pages: [PATH_MODERATOR.ROOT],
+  pages: [
+    PATH_MODERATOR.ROOT
+  ],
   sections: staticPaths(PATH_MODERATOR).filter((path) => path !== PATH_MODERATOR.ROOT),
-  dynamicSections: moderatorDynamicSections,
+  dynamicSections: moderatorDynamicSections
 } as const;
 
 const moderatorExactPaths = new Set([

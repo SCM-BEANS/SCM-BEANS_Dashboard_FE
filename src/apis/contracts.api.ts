@@ -7,10 +7,12 @@ import {
 } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { TenantIdSchema } from "@/schema/tenants.schema";
+import { ContractDocumentSchema, ContractExpiryDecisionRequestSchema, ContractContinuationRequestSchema, ContractPolicyAmendmentRequestSchema, ContractPolicyHistorySchema, TerminationCaseRequestSchema, TerminationCaseResponseSchema, type ContractContinuationRequest, type ContractExpiryDecisionRequest, type ContractPolicyAmendmentRequest, type TerminationCaseRequest } from "@/schema/contracts.schema";
+
 
 const contractPath = (id: string) => `/contracts/${encodeURIComponent(ContractIdSchema.parse(id))}`;
 
-export const contractsApi = {
+export const contractsApi =  {
   async create(input: CreateContractRequest) {
     const request = CreateContractRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>("/contracts", request, { baseURL: DOLORES_API_BASE_URL });
@@ -90,4 +92,82 @@ export const contractsApi = {
     });
     return response.data;
   },
+  async recordExpiryDecision(id: string, input: ContractExpiryDecisionRequest) {
+    const contractId = ContractIdSchema.parse(id);
+    const request = ContractExpiryDecisionRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${contractPath(contractId)}/expiry-decision`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const expiry = ContractExpirySchema.parse(response.data);
+    if (expiry.contractId && expiry.contractId !== contractId) {
+      throw new Error("Dolores returned expiry status for a different contract.");
+    }
+    return expiry;
+  },
+  async uploadDocument(id: string, input: { documentType: "MAIN_CONTRACT"; file: File }) {
+    const contractId = ContractIdSchema.parse(id);
+    const { file } = input;
+    if (!file || file.size <= 0) throw new Error("A non-empty contract document is required.");
+    if (file.size > 20 * 1024 * 1024) throw new Error("Contract documents cannot exceed 20 MB.");
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
+      throw new Error("Contract documents must be a PDF, JPEG, or PNG file.");
+    }
+    const form = new FormData();
+    form.append("file", file);
+    const response = await axiosClient.post<unknown>(`${contractPath(contractId)}/documents`, form, {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { documentType: input.documentType },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const document = ContractDocumentSchema.parse(response.data);
+    if (document.contractId !== contractId) throw new Error("Dolores returned a document for a different contract.");
+    return document;
+  },
+  async archiveDocument(contractId: string, documentId: string) {
+    const validContractId = ContractIdSchema.parse(contractId);
+    const validDocumentId = ContractIdSchema.parse(documentId);
+    const response = await axiosClient.post<unknown>(
+      `${contractPath(validContractId)}/documents/${encodeURIComponent(validDocumentId)}/archive`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const document = ContractDocumentSchema.parse(response.data);
+    if (document.contractId !== validContractId || document.id !== validDocumentId) {
+      throw new Error("Dolores returned a different contract document.");
+    }
+    return document;
+  },
+  async amendPolicy(id: string, input: ContractPolicyAmendmentRequest) {
+    const contractId = ContractIdSchema.parse(id);
+    const request = ContractPolicyAmendmentRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${contractPath(contractId)}/policy-amendments`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return ContractSchema.parse(response.data);
+  },
+  async getPolicyHistory(id: string, signal?: AbortSignal) {
+    const contractId = ContractIdSchema.parse(id);
+    const response = await axiosClient.get<unknown>(`${contractPath(contractId)}/policy-history`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { page: 0, size: 100 },
+      signal,
+    });
+    return ContractPolicyHistorySchema.parse(response.data);
+  },
+  async continueContract(id: string, input: ContractContinuationRequest) {
+    const contractId = ContractIdSchema.parse(id);
+    const request = ContractContinuationRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${contractPath(contractId)}/continuations`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return CreateContractResponseSchema.parse(response.data);
+  },
+  async requestTermination(id: string, input: TerminationCaseRequest) {
+    const contractId = ContractIdSchema.parse(id);
+    const request = TerminationCaseRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`/contracts/${encodeURIComponent(contractId)}/termination-cases`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return TerminationCaseResponseSchema.parse(response.data);
+  }
 };

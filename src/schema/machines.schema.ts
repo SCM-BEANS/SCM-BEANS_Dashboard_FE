@@ -465,3 +465,120 @@ export type CreateMachineRequest = z.infer<typeof CreateMachineRequestSchema>;
 export type InventorySummary = z.infer<typeof InventorySummarySchema>;
 export type MaintenanceSchedule = z.infer<typeof MaintenanceScheduleSchema>;
 export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;
+
+
+export const MachineTypeMappingRequestSchema = z.object({
+  machineType: MachineTypeSchema,
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+
+export type MachineTypeMappingRequest = z.infer<typeof MachineTypeMappingRequestSchema>;
+
+export const UpdateMachineRequestSchema = z.object({
+  serialNumber: z.string().trim().min(1),
+  status: MachineStatusSchema,
+  ownerId: z.string().uuid().optional(),
+  deployedAt: dateTimeSchema.optional(),
+  nextPreventiveMaintenanceAt: dateTimeSchema.optional(),
+  cupsServedSinceLastDescale: countSchema.optional(),
+  region: z.string().optional(),
+  locationId: z.string().uuid().optional(),
+}).strict();
+
+export type UpdateMachineRequest = z.infer<typeof UpdateMachineRequestSchema>;
+
+export const MaintenanceTicketDetailsSchema = MaintenanceTicketSchema.extend({
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  terminationCaseId: z.string().uuid().nullish(),
+  alertLevel: z.string().nullish(),
+  createdFromAlertId: z.string().uuid().nullish(),
+  policyVersionId: z.string().uuid().nullish(),
+  maintenanceRequestId: z.string().uuid().nullish(),
+  repairCaseId: z.string().uuid().nullish(),
+  overdueReviewRequired: z.boolean().optional(),
+  overdueReviewAt: dateTimeSchema.nullish(),
+  overdueReviewReason: z.string().nullish(),
+  overdueReviewedAt: dateTimeSchema.nullish(),
+  overdueReviewedBy: z.string().uuid().nullish(),
+  completionEvidenceReferences: z.string().nullish(),
+  completedBy: z.string().nullish(),
+  createdBy: z.string().nullish(),
+  resolvedAt: dateTimeSchema.nullish(),
+  partsCost: z.number().nullish(),
+  partsReplaced: z.string().nullish(),
+  resolutionDurationMinutes: z.number().int().nonnegative().nullish(),
+  responsibility: z.string().nullish(),
+  estimatedCost: z.number().nullish(),
+  actualCost: z.number().nullish(),
+  evidenceReference: z.string().nullish(),
+  version: z.number().int().nonnegative().optional(),
+}).passthrough();
+
+export const MaintenanceTicketListParamsSchema = z.object({
+  machineId: MachineIdSchema.optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().optional(),
+  size: z.number().int().positive().max(100).optional(),
+}).strict();
+
+export type MaintenanceTicketListParams = z.infer<typeof MaintenanceTicketListParamsSchema>;
+
+export const RepairDiagnosisRequestSchema = z.object({
+  diagnosis: z.string().trim().min(1).max(4000),
+  evidenceReference: z.string().trim().min(1).max(512),
+}).strict();
+
+export const RepairWorkCompletionRequestSchema = z.object({
+  diagnosis: z.string().trim().min(1).max(4000),
+  resolutionResult: z.string().trim().min(1).max(4000),
+  workScope: z.string().trim().min(1).max(2000),
+  evidenceReferences: z.array(z.string().trim().min(1).max(512)).min(1),
+  notes: z.string().max(4000).optional(),
+  emergencyAuthorizationId: z.string().uuid().optional(),
+}).strict();
+
+export const RepairFallbackDecisionRequestSchema = z.object({
+  replacementMachineId: MachineIdSchema,
+  accepted: z.boolean(),
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+
+export const RepairCustodyEventRequestSchema = z.object({
+  eventType: z.enum([
+    "PRIMARY_COLLECTED",
+    "REPLACEMENT_DELIVERED",
+    "REPLACEMENT_COLLECTED",
+    "PRIMARY_RETURNED",
+  ]),
+  machineId: MachineIdSchema,
+  conditionNotes: z.string().trim().min(1).max(2000),
+  evidenceReference: z.string().trim().min(1).max(512),
+}).strict();
+
+export const RepairTriageRequestSchema = z.object({
+  accepted: z.boolean(),
+  reason: z.string().max(1000),
+});
+
+export const RepairTriageResponseSchema = z.object({
+  requestId: z.string().uuid(),
+  accepted: z.boolean(),
+  requestStatus: z.string(),
+  repairCase: RepairCaseSchema.nullish(),
+}).passthrough();
+
+export type MaintenanceAppointmentRequest = z.infer<typeof MaintenanceAppointmentRequestSchema>;
+
+export type RepairTriageRequest = z.infer<typeof RepairTriageRequestSchema>;
+
+export type RepairTriageResponse = z.infer<typeof RepairTriageResponseSchema>;
+
+export type RepairDiagnosisRequest = z.infer<typeof RepairDiagnosisRequestSchema>;
+
+export type RepairWorkCompletionRequest = z.infer<typeof RepairWorkCompletionRequestSchema>;
+
+export type RepairFallbackDecisionRequest = z.infer<typeof RepairFallbackDecisionRequestSchema>;
+
+export type RepairCustodyEventRequest = z.infer<typeof RepairCustodyEventRequestSchema>;

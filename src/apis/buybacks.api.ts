@@ -30,6 +30,57 @@ import {
   type BuybackRefurbishmentStartRequest,
   type BuybackValuationRequest,
 } from "@/schema/buybacks.schema";
+import { BuybackCaseSummaryListSchema, BuybackInspectionHistorySchema, BuybackQaDecisionHistorySchema, BuybackRefurbishmentHistorySchema, type BuybackCollectionRequest } from "@/schema/buybacks.schema";
+const BuybackListQuerySchema = z.object({
+  status: BuybackStatusSchema.optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  machineId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(50),
+});
+type BuybackListQuery = z.input<typeof BuybackListQuerySchema>;
+async function getCaseHistory<TSchema extends z.ZodTypeAny>(
+  id: string,
+  historyPath: string,
+  schema: TSchema,
+  page = 0,
+  size = 50,
+  signal?: AbortSignal,
+) {
+  const caseId = BuybackIdSchema.parse(id);
+  const response = await axiosClient.get<unknown>(`${buybackPath(caseId)}${historyPath}`, {
+    baseURL: DOLORES_API_BASE_URL,
+    params: { page, size },
+    signal,
+  });
+  const items = schema.parse(response.data) as Array<z.infer<TSchema>>;
+  if (items.some((item) => {
+    if (typeof item !== "object" || item === null) return false;
+    const relatedCaseId = (item as { buybackCaseId?: unknown }).buybackCaseId;
+    return typeof relatedCaseId === "string" && relatedCaseId !== caseId;
+  })) {
+    throw new Error("Dolores returned buyback history for a different case.");
+  }
+  const pageHeader = Number(response.headers["x-page"]);
+  const sizeHeader = Number(response.headers["x-page-size"]);
+  return {
+    items,
+    page: Number.isInteger(pageHeader) && pageHeader >= 0 ? pageHeader : page,
+    size: Number.isInteger(sizeHeader) && sizeHeader > 0 ? sizeHeader : size,
+    hasNext: String(response.headers["x-has-next"] ?? "false").toLowerCase() === "true",
+  };
+}
+async function postCaseAction(id: string, actionPath: string, body: unknown) {
+  const caseId = BuybackIdSchema.parse(id);
+  const response = await axiosClient.post<unknown>(`${buybackPath(caseId)}${actionPath}`, body, {
+    baseURL: DOLORES_API_BASE_URL,
+  });
+  const buyback = BuybackCaseSchema.parse(response.data);
+  if (buyback.id !== caseId) throw new Error("Dolores returned a different buyback case.");
+  return buyback;
+}
+
 
 const pageParamsSchema = z.object({
   page: z.number().int().nonnegative().default(0),
@@ -78,7 +129,7 @@ async function validatePaymentProofFile(file: File) {
   if (!valid) throw new Error("Nội dung tệp không khớp định dạng chứng từ đã chọn.");
 }
 
-export const buybacksApi = {
+export const buybacksApi =  {
   async list(input: z.input<typeof pageParamsSchema> = {}, signal?: AbortSignal) {
     const params = pageParamsSchema.parse(input);
     const response = await axiosClient.get<unknown>("/buybacks", { baseURL: DOLORES_API_BASE_URL, params, signal });
@@ -196,4 +247,13 @@ export const buybacksApi = {
     const response = await axiosClient.get<unknown>(`${buybackPath(validId)}/qa-decisions`, { baseURL: DOLORES_API_BASE_URL, params: { page, size }, signal });
     return BuybackQaDecisionSchema.array().parse(response.data);
   },
+  async getInspections(id: string, page = 0, size = 50, signal?: AbortSignal) {
+    return getCaseHistory(id, "/inspections", BuybackInspectionHistorySchema, page, size, signal);
+  },
+  async getRefurbishments(id: string, page = 0, size = 50, signal?: AbortSignal) {
+    return getCaseHistory(id, "/refurbishments", BuybackRefurbishmentHistorySchema, page, size, signal);
+  },
+  async getQaDecisions(id: string, page = 0, size = 50, signal?: AbortSignal) {
+    return getCaseHistory(id, "/qa-decisions", BuybackQaDecisionHistorySchema, page, size, signal);
+  }
 };

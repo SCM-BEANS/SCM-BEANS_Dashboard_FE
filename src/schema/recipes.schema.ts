@@ -43,3 +43,38 @@ export type GlobalRecipe = z.infer<typeof GlobalRecipeSchema>;
 export type RecipePublishRequest = z.infer<typeof RecipePublishRequestSchema>;
 export type LocalRecipe = z.infer<typeof LocalRecipeSchema>;
 export type LocalRecipeUpsertRequest = z.infer<typeof LocalRecipeUpsertRequestSchema>;
+
+
+export const LocalRecipeSummarySchema = z.object({
+  id: LocalRecipeIdSchema,
+  ownerId: z.string().uuid().nullish(),
+  globalRecipeId: GlobalRecipeIdSchema,
+}).passthrough();
+
+export const RecipeSyncRequestSchema = z.object({
+  machineIds: z.array(z.string().uuid()).min(1),
+}).strict();
+
+export const RecipeSyncStatusSchema = z.object({
+  machineId: z.string().uuid(),
+  targetVersion: z.number().int().nonnegative(),
+  targetHash: z.string().nullish(),
+  appliedVersion: z.number().int().nonnegative().nullish(),
+  appliedHash: z.string().nullish(),
+  commandId: z.string().uuid().nullish(),
+  state: z.string().min(1),
+  retryCount: z.number().int().nonnegative(),
+  lastError: z.string().nullish(),
+  requestedAt: z.string().nullish(),
+  lastAttemptAt: z.string().nullish(),
+  appliedAt: z.string().nullish(),
+  expiresAt: z.string().nullish(),
+}).passthrough();
+
+export const RecipeSyncStatusesSchema = z.array(RecipeSyncStatusSchema);
+
+export type LocalRecipeSummary = z.infer<typeof LocalRecipeSummarySchema>;
+
+export type RecipeSyncRequest = z.infer<typeof RecipeSyncRequestSchema>;
+
+export type RecipeSyncStatus = z.infer<typeof RecipeSyncStatusSchema>;

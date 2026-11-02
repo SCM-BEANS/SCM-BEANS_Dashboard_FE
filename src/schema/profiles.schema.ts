@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const ProfileIdSchema = z.string().uuid();
+export const UpdateProfileContactRequestSchema = z.object({
+  phone: z.string().max(64),
+}).strict();
 export const ProfileSchema = z.object({
   idaasUserId: ProfileIdSchema,
   email: z.string().email().or(z.literal("")),
@@ -42,6 +45,7 @@ export const ProfileContractPageSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
+export type UpdateProfileContactRequest = z.infer<typeof UpdateProfileContactRequestSchema>;
 export type ProfilePage = z.infer<typeof ProfilePageSchema>;
 export type ProfileListParams = z.infer<typeof ProfileListParamsSchema>;
 export type ProfileContractSummary = z.infer<typeof ProfileContractSummarySchema>;

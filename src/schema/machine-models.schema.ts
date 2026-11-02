@@ -20,7 +20,24 @@ export const MachineModelSchema = z.object({
   updatedAt: dateTimeSchema,
 }).passthrough();
 
-export const MachineModelListSchema = z.array(MachineModelSchema);
+export const MachineModelSummarySchema = z.object({
+  id: MachineModelIdSchema,
+  modelCode: z.string(),
+  manufacturer: z.string(),
+  displayName: z.string(),
+  machineType: MachineTypeSchema,
+  active: z.boolean(),
+}).passthrough();
+
+export const MachineModelListSchema = z.array(MachineModelSummarySchema);
+export const MachineModelMappingSchema = z.object({
+  machineId: z.string().uuid(),
+  modelId: MachineModelIdSchema,
+  machineType: MachineTypeSchema,
+  mappedAt: dateTimeSchema,
+  mappedBy: z.string().nullish(),
+  reason: z.string(),
+}).passthrough();
 
 export const CreateMachineModelRequestSchema = z.object({
   modelCode: z.string().trim().min(1),
@@ -35,5 +52,6 @@ export const AssignMachineToModelRequestSchema = z.object({
 });
 
 export type MachineModel = z.infer<typeof MachineModelSchema>;
+export type MachineModelSummary = z.infer<typeof MachineModelSummarySchema>;
 export type CreateMachineModelRequest = z.infer<typeof CreateMachineModelRequestSchema>;
 export type AssignMachineToModelRequest = z.infer<typeof AssignMachineToModelRequestSchema>;

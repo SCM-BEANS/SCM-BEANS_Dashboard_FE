@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const NotificationIdSchema = z.string().uuid();
+export const AlertIdSchema = z.string().uuid();
 
 export const NotificationSchema = z.object({
   id: NotificationIdSchema,
@@ -18,7 +19,7 @@ export const NotificationUnreadCountSchema = z.object({
 }).passthrough();
 
 export const AlertSchema = z.object({
-  id: z.string().uuid(),
+  id: AlertIdSchema,
   level: z.string(),
   machineId: z.string().uuid().nullish(),
   message: z.string(),

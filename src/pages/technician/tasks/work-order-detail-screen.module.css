@@ -5,7 +5,7 @@
   gap: 16px;
   padding: 20px;
   border: 1px solid #e9e2dc;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -49,6 +49,30 @@
   font-size: 12px !important;
 }
 
+.evidenceTable :global(th:last-child),
+.evidenceTable :global(td:last-child) {
+  width: 188px;
+  min-width: 188px;
+}
+
+.evidenceTable :global(td:last-child) {
+  white-space: nowrap;
+}
+
+.evidenceActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.evidenceActions .evidenceActionButton.evidenceActionButton {
+  min-height: 36px;
+  padding: 0 11px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .hint,
 .notes {
   margin: 0;
@@ -65,7 +89,8 @@
 }
 
 .fileField,
-.recipientField {
+.recipientField,
+.formField {
   display: flex;
   min-width: min(100%, 320px);
   flex: 1;
@@ -74,15 +99,64 @@
 }
 
 .fileField input,
-.recipientField input {
+.recipientField input,
+.formField input,
+.formField textarea,
+.formField select,
+.tableControl {
   width: 100%;
   min-height: 44px;
   padding: 9px 10px;
   border: 1px solid #ded6d0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   color: #302927;
   font: inherit;
+}
+
+.formField span {
+  color: #706561;
+  font-size: 13px;
+}
+
+.eventList {
+  display: grid;
+  gap: 12px;
+  padding-left: 24px;
+  margin: 0;
+  color: #504845;
+  line-height: 1.55;
+}
+
+.eventList li + li {
+  padding-top: 10px;
+  border-top: 1px solid #eee8e2;
+}
+
+.eventList p {
+  margin: 4px 0 0;
+  color: #706561;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tableControl {
+  min-width: 130px;
+  min-height: 38px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.tableControl:disabled,
+.formField input:disabled,
+.formField textarea:disabled {
+  cursor: not-allowed;
+  background: #f7f5f3;
+  color: #706561;
 }
 
 .fileName {
@@ -92,12 +166,36 @@
   overflow-wrap: anywhere;
 }
 
+.backLink {
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.backLink :global(a:link),
+.backLink :global(a:visited),
+.backLink :global(a:hover) {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid #e2dad4;
+  border-radius: 6px;
+  background: #fff;
+  color: #514843;
+  text-decoration: none;
+}
+
+.backLink :global(a:hover) {
+  border-color: #c9bcb4;
+  background: #fdfbf9;
+}
+
 .error,
 .notice,
 .success {
   margin: 0;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   line-height: 1.5;
 }
@@ -130,7 +228,12 @@
   }
 
   .fileField,
-  .recipientField {
+  .recipientField,
+  .formField {
     min-width: 0;
+  }
+
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

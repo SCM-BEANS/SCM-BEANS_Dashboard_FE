@@ -26,6 +26,9 @@ import {
   type MaintenanceCustodyAcknowledgementRequest,
   type RepairWorkStartRequest,
 } from "@/schema/machines.schema";
+import { MaintenanceRequestSchema, RepairCustodyEventRequestSchema, RepairDiagnosisRequestSchema, RepairFallbackDecisionRequestSchema, RepairCaseListSchema, RepairTriageRequestSchema, RepairTriageResponseSchema, RepairWorkCompletionRequestSchema, type RepairCustodyEventRequest, type RepairDiagnosisRequest, type RepairFallbackDecisionRequest, type RepairTriageRequest, type RepairWorkCompletionRequest } from "@/schema/machines.schema";
+const repairCasePath = (id: string) => `/repair-cases/${encodeURIComponent(RepairCaseSchema.shape.id.parse(id))}`;
+
 
 type BoundedPage<T> = {
   items: T[];
@@ -53,7 +56,7 @@ function boundedPage<T>(items: T[], headers: unknown, requested: { page: number;
   };
 }
 
-export const repairCasesApi = {
+export const repairCasesApi =  {
   async list(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/repair-cases", {
       baseURL: DOLORES_API_BASE_URL,
@@ -196,4 +199,59 @@ export const repairCasesApi = {
     );
     return response.data;
   },
+  async getCustodyEvents(id: string, signal?: AbortSignal) {
+    const caseId = RepairCaseSchema.shape.id.parse(id);
+    const response = await axiosClient.get<unknown>(`${repairCasePath(caseId)}/custody-events`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { page: 0, size: 50 },
+      signal,
+    });
+    const events = MaintenanceCustodyEventListSchema.parse(response.data);
+    if (events.some((event) => event.repairCaseId !== caseId)) {
+      throw new Error("Dolores returned custody history for a different repair case.");
+    }
+    return events;
+  },
+  async recordDiagnosis(id: string, input: RepairDiagnosisRequest) {
+    const caseId = RepairCaseSchema.shape.id.parse(id);
+    const request = RepairDiagnosisRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/diagnosis`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return MaintenanceTicketSchema.parse(response.data);
+  },
+  async completeWork(id: string, input: RepairWorkCompletionRequest) {
+    const caseId = RepairCaseSchema.shape.id.parse(id);
+    const request = RepairWorkCompletionRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/work/complete`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return MaintenanceTicketSchema.parse(response.data);
+  },
+  async decideFallback(id: string, input: RepairFallbackDecisionRequest) {
+    const caseId = RepairCaseSchema.shape.id.parse(id);
+    const request = RepairFallbackDecisionRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/replacement-decision`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const event = RepairCaseTimelinePageSchema.shape.content.element.parse(response.data);
+    if (event.repairCaseId !== caseId || event.relatedMachineId !== request.replacementMachineId) {
+      throw new Error("Dolores returned a replacement decision for a different repair case.");
+    }
+    return event;
+  },
+  async triage(requestId: string, input: RepairTriageRequest) {
+    const validRequestId = MaintenanceRequestSchema.shape.id.parse(requestId);
+    const request = RepairTriageRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `/repair-cases/intakes/${encodeURIComponent(validRequestId)}/triage`,
+      request,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const result = RepairTriageResponseSchema.parse(response.data);
+    if (result.requestId !== validRequestId || result.accepted !== request.accepted) {
+      throw new Error("Dolores returned a repair triage result that does not match the submitted request.");
+    }
+    return result;
+  }
 };

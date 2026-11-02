@@ -14,6 +14,8 @@ import {
   type TerminationSettlementRequest,
 } from "@/schema/termination-workflow.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
+import { TerminationCaseRequestSchema, TerminationCaseResponseSchema, type TerminationCaseRequest } from "@/schema/termination-cases.schema";
+
 
 const casePath = (id: string) => `/termination-cases/${encodeURIComponent(TerminationCaseIdSchema.parse(id))}`;
 
@@ -25,7 +27,7 @@ function verifyCaseIdentity(value: unknown, expectedId: string, expectedContract
   return terminationCase;
 }
 
-export const terminationCasesApi = {
+export const terminationCasesApi =  {
   async create(contractId: string, input: TerminationCaseCreateRequest) {
     const validContractId = ContractIdSchema.parse(contractId);
     const request = TerminationCaseCreateRequestSchema.parse(input);
@@ -92,5 +94,5 @@ export const terminationCasesApi = {
     const terminationCase = verifyCaseIdentity(response.data, validId);
     if (terminationCase.status !== "COMPLETED") throw new Error("Dolores did not confirm Contract termination completion.");
     return terminationCase;
-  },
+  }
 };

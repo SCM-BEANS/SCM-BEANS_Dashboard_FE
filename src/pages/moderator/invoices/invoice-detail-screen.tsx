@@ -1,0 +1,130 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { billingApi } from "@/apis/billing.api";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { type InvoiceLineItem, type ModeratorInvoice } from "@/schema/billing.schema";
+import { DataTable } from "@/components/table/data-table";
+import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
+import { ModeratorPageHeading } from "../moderator-page-heading";
+import { moderatorStyles as styles } from "../moderator-shell";
+import { amountText, DetailField, QueryFeedback } from "./invoice-shared";
+import { PaymentProofList } from "./payment-proof-list";
+
+const messages = MODERATOR_MESSAGES.READ_SCREENS;
+
+function InvoiceDetails({ invoice }: { invoice: ModeratorInvoice }) {
+  return (
+    <dl className={styles.detailGrid}>
+      <DetailField label={messages.INVOICE_ID} value={invoice.id} />
+      <DetailField label={messages.INVOICE_OWNER} value={invoice.ownerId ?? invoice.tenantId} />
+      <DetailField label={messages.INVOICE_CONTRACT} value={invoice.contractId} />
+      <DetailField label={messages.INVOICE_TYPE} value={invoice.type} />
+      <DetailField label={messages.INVOICE_PERIOD} value={invoice.period} />
+      <DetailField label={messages.INVOICE_AMOUNT} value={amountText(invoice.amount, invoice.currency)} />
+      <DetailField label={messages.INVOICE_STATUS} value={invoice.status} />
+      <DetailField label={messages.INVOICE_DUE_DATE} value={invoice.dueDate} />
+      <DetailField label={messages.INVOICE_PAID_AT} value={invoice.paidAt} />
+    </dl>
+  );
+}
+
+function InvoiceStatusActions({ invoice }: { invoice: ModeratorInvoice }) {
+  const queryClient = useQueryClient();
+  const isPastDue = Boolean(invoice.dueDate && Date.parse(invoice.dueDate) < Date.now());
+  const targets: ModeratorInvoice["status"][] = invoice.status === "DRAFT"
+    ? ["PENDING", "CANCELLED"]
+    : invoice.status === "PENDING" || invoice.status === "UNPAID"
+      ? [...(isPastDue ? ["OVERDUE" as const] : []), "CANCELLED"]
+      : invoice.status === "OVERDUE" ? ["CANCELLED"] : [];
+  const changeStatus = useMutation({
+    mutationFn: (status: ModeratorInvoice["status"]) => billingApi.changeInvoiceStatus(invoice.id, { status }),
+    onSuccess: async () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoice", invoice.id] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "moderator", "billing", "invoices"] }),
+    ]),
+  });
+
+  if (targets.length === 0) return null;
+  return (
+    <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-status-actions">
+      <h2 id="moderator-invoice-status-actions" className={styles.sectionTitle}>{messages.INVOICE_STATUS_ACTION}</h2>
+      <div className={styles.createActions}>
+        {targets.map((status) => (
+          <button
+            key={status}
+            className={styles.retryButton}
+            type="button"
+            disabled={changeStatus.isPending}
+            onClick={() => {
+              if (status === "CANCELLED" && !window.confirm("Bạn có chắc muốn hủy hóa đơn này?")) return;
+              changeStatus.mutate(status);
+            }}
+          >
+            {changeStatus.isPending && changeStatus.variables === status
+              ? messages.INVOICE_STATUS_UPDATING
+              : messages.INVOICE_STATUS_LABELS[status]}
+          </button>
+        ))}
+      </div>
+      {changeStatus.isError && <p role="alert">{getApiErrorMessage(changeStatus.error)}</p>}
+      {changeStatus.isSuccess && <p role="status">{messages.INVOICE_STATUS_UPDATED}</p>}
+    </section>
+  );
+}
+
+function InvoiceLineItems({ items, invoice }: { items: InvoiceLineItem[]; invoice: ModeratorInvoice }) {
+  return (
+    <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-line-items">
+      <h2 id="moderator-invoice-line-items" className={styles.sectionTitle}>{messages.INVOICE_LINE_ITEMS}</h2>
+      {items.length === 0 ? <p role="status">{messages.INVOICE_LINE_ITEMS_EMPTY}</p> : (
+        <DataTable variant="moderator" headers={[
+          messages.INVOICE_LINE_ITEM_DESCRIPTION,
+          messages.INVOICE_LINE_ITEM_QUANTITY,
+          messages.INVOICE_LINE_ITEM_UNIT_PRICE,
+          messages.INVOICE_LINE_ITEM_AMOUNT,
+        ]}>
+          {items.map((item, index) => (
+            <tr key={item.id ?? `${item.serviceCode ?? "line"}-${index}`}>
+              <td>{item.description ?? item.serviceCode ?? "—"}</td>
+              <td>{item.quantity ?? "—"}</td>
+              <td>{item.unitPrice == null ? "—" : amountText(item.unitPrice, invoice.currency)}</td>
+              <td>{item.amount == null ? "—" : amountText(item.amount, invoice.currency)}</td>
+            </tr>
+          ))}
+        </DataTable>
+      )}
+    </section>
+  );
+}
+
+export function ModeratorInvoiceDetailScreen({ invoiceId }: { invoiceId: string }) {
+  const invoice = useQuery({
+    queryKey: ["dolores", "moderator", "billing", "invoice", invoiceId],
+    queryFn: ({ signal }) => billingApi.getModeratorInvoice(invoiceId, signal),
+  });
+  const proofs = useQuery({
+    queryKey: ["dolores", "moderator", "billing", "invoice", invoiceId, "proofs"],
+    queryFn: ({ signal }) => billingApi.listPaymentProofs(invoiceId, signal),
+    enabled: Boolean(invoice.data),
+  });
+  const lineItems = useQuery({
+    queryKey: ["dolores", "moderator", "billing", "invoice", invoiceId, "line-items"],
+    queryFn: ({ signal }) => billingApi.listInvoiceLineItems(invoiceId, signal),
+    enabled: Boolean(invoice.data),
+    retry: false,
+  });
+
+  return (
+    <div className={styles.pageContent}>
+      <ModeratorPageHeading title={messages.INVOICES_TITLE} description={messages.INVOICES_DESCRIPTION} />
+      <QueryFeedback query={invoice} loadingMessage={messages.LOADING_INVOICE} />
+      {invoice.data && !invoice.isError && <>
+        <InvoiceDetails invoice={invoice.data} />
+        <InvoiceStatusActions invoice={invoice.data} />
+        <QueryFeedback query={lineItems} loadingMessage={messages.LOADING_INVOICE_LINE_ITEMS} />
+        {lineItems.data && !lineItems.isError && <InvoiceLineItems items={lineItems.data} invoice={invoice.data} />}
+        <QueryFeedback query={proofs} loadingMessage={messages.LOADING_PAYMENT_PROOFS} />
+        {proofs.data && !proofs.isError && <PaymentProofList proofs={proofs.data} invoiceId={invoice.data.id} currency={invoice.data.currency} />}
+      </>}
+    </div>
+  );
+}

@@ -141,3 +141,52 @@ export type InstallationWorkOrderSummary = z.infer<typeof InstallationWorkOrderS
 export type AssignedInstallationWorkOrderSummary = z.infer<typeof AssignedInstallationWorkOrderSummarySchema>;
 export type InstallationWorkOrderRecord = z.infer<typeof InstallationWorkOrderRecordSchema>;
 export type InstallationWorkOrderDetails = z.infer<typeof InstallationWorkOrderDetailsSchema>;
+
+
+export const InstallationWorkOrderTenantIdSchema = InstallationWorkOrderOwnerIdSchema;
+
+export const AssignInstallationWorkOrderRequestSchema = z.object({
+  technicianId: uuidSchema,
+});
+
+export const RescheduleInstallationWorkOrderRequestSchema = z.object({
+  scheduledFor: dateTimeSchema,
+});
+
+export const CancelInstallationWorkOrderRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(4000),
+});
+
+export type AssignInstallationWorkOrderRequest = z.infer<typeof AssignInstallationWorkOrderRequestSchema>;
+
+export type RescheduleInstallationWorkOrderRequest = z.infer<typeof RescheduleInstallationWorkOrderRequestSchema>;
+
+export type CancelInstallationWorkOrderRequest = z.infer<typeof CancelInstallationWorkOrderRequestSchema>;
+
+export const InstallationChecklistResultRequestSchema = z.object({
+  result: z.enum(["PASSED", "FAILED", "NOT_APPLICABLE"]),
+  notes: z.string().max(4000).optional(),
+}).strict();
+
+export const InstallationChecklistResultResponseSchema = z.object({
+  workOrderId: InstallationWorkOrderIdSchema,
+  checklistItemId: uuidSchema,
+  result: z.enum(["PENDING", "PASSED", "FAILED", "NOT_APPLICABLE"]),
+}).passthrough();
+
+export const InstallationAccessoryRequestSchema = z.object({
+  accessoryName: z.string().trim().min(1).max(160),
+  quantity: z.number().int().positive().optional(),
+  serialNumber: z.string().max(128).optional(),
+  notes: z.string().max(4000).optional(),
+}).strict();
+
+export const FailInstallationWorkOrderRequestSchema = z.object({
+  failureReason: z.string().trim().min(1).max(4000),
+}).strict();
+
+export type InstallationChecklistResultRequest = z.infer<typeof InstallationChecklistResultRequestSchema>;
+
+export type InstallationAccessoryRequest = z.infer<typeof InstallationAccessoryRequestSchema>;
+
+export type FailInstallationWorkOrderRequest = z.infer<typeof FailInstallationWorkOrderRequestSchema>;

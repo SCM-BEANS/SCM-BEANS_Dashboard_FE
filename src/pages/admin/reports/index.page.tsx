@@ -5,8 +5,11 @@ import { CalendarDays } from "lucide-react";
 import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DASHBOARD_BUSINESS_TIME_ZONE, DashboardDateRangeSchema } from "@/schema/dashboard.schema";
+import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
@@ -32,6 +35,15 @@ const quickRanges: { key: QuickRange; label: string }[] = [
 
 function queryString(value: string | string[] | undefined): string {
   return typeof value === "string" ? value : "";
+}
+
+function reportsHref(fromDate: string, toDate: string, invoiceId?: string): string {
+  const query = new URLSearchParams();
+  if (fromDate) query.set("fromDate", fromDate);
+  if (toDate) query.set("toDate", toDate);
+  if (invoiceId) query.set("invoiceId", invoiceId);
+  const search = query.toString();
+  return search ? `${PATH_ADMIN.REPORTS}?${search}` : PATH_ADMIN.REPORTS;
 }
 
 function displayAmount(value: number | null | undefined, currency: string | null | undefined): string {
@@ -135,8 +147,20 @@ function invoiceStatusClass(status: string): string {
   }
 }
 
+function invoiceTypeLabel(type: string): string {
+  switch (type.toUpperCase()) {
+    case "RENTAL": return "Hóa đơn thuê máy";
+    case "SUPPLY": return "Hóa đơn vật tư";
+    case "REPAIR": return "Hóa đơn sửa chữa";
+    default: return type;
+  }
+}
+
 function ReportContent() {
   const router = useRouter();
+  const invoiceId = queryString(router.query.invoiceId);
+  const isInvoiceDetail = router.query.invoiceId !== undefined;
+  const invoiceIdIsValid = InvoiceIdSchema.safeParse(invoiceId).success;
   const [today, setToday] = useState("");
   const [fromDate, setFromDate] = useState(() => queryString(router.query.fromDate));
   const [toDate, setToDate] = useState(() => queryString(router.query.toDate));
@@ -191,12 +215,26 @@ function ReportContent() {
       validRange?.fromDate,
       validRange?.toDate,
     ),
-    enabled: router.isReady && rangeIsValid,
+    enabled: router.isReady && rangeIsValid && !isInvoiceDetail,
   });
   const invoices = useQuery({
     queryKey: INVOICE_QUERY_KEY,
     queryFn: ({ signal }) => billingApi.listInvoices(signal),
+    enabled: router.isReady && !isInvoiceDetail,
   });
+  const invoiceDetail = useQuery({
+    queryKey: [...INVOICE_QUERY_KEY, "detail", invoiceId],
+    queryFn: ({ signal }) => billingApi.getInvoice(invoiceId, signal),
+    enabled: router.isReady && isInvoiceDetail && invoiceIdIsValid,
+    retry: false,
+  });
+  const invoiceLineItems = useQuery({
+    queryKey: [...INVOICE_QUERY_KEY, "line-items", invoiceId],
+    queryFn: ({ signal }) => billingApi.listInvoiceLineItems(invoiceId, signal),
+    enabled: router.isReady && isInvoiceDetail && invoiceIdIsValid,
+    retry: false,
+  });
+  const selectedInvoice = invoiceDetail.data;
 
   const applyRange = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -260,6 +298,108 @@ function ReportContent() {
       : overview.isPending
         ? "Đang tải chu kỳ mặc định…"
         : "Chu kỳ mặc định của Dashboard";
+
+  if (isInvoiceDetail) {
+    const returnHref = reportsHref(
+      queryString(router.query.fromDate),
+      queryString(router.query.toDate),
+    );
+
+    return (
+      <div className={styles.pageContent}>
+        <BackButtonHeading
+          title="Chi tiết hóa đơn"
+          titleId="admin-invoice-detail-title"
+          description="Thông tin hóa đơn thuê máy và các dòng cấu thành hóa đơn."
+          className={styles.pageHeading}
+          back={{ label: "Về báo cáo", fallbackHref: returnHref }}
+        />
+
+        {!router.isReady ? (
+          <section className={styles.panel} role="status">Đang tải…</section>
+        ) : !invoiceIdIsValid ? (
+          <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+            <p>Mã hóa đơn không hợp lệ.</p>
+            <ButtonBar href={returnHref}>Về báo cáo</ButtonBar>
+          </div>
+        ) : invoiceDetail.isPending ? (
+          <section className={styles.panel} role="status">Đang tải chi tiết hóa đơn…</section>
+        ) : invoiceDetail.isError ? (
+          <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+            <p>{getApiErrorMessage(invoiceDetail.error)}</p>
+            <button type="button" onClick={() => void invoiceDetail.refetch()}>Thử lại</button>
+          </div>
+        ) : selectedInvoice ? (
+          <>
+            <section className={styles.panel}>
+              <h2>Thông tin hóa đơn thuê</h2>
+              <dl className={styles.reportInvoiceDetailGrid}>
+                {[
+                  { label: "Mã hóa đơn", value: selectedInvoice.id },
+                  { label: "Owner ID", value: selectedInvoice.ownerId },
+                  { label: "Hợp đồng", value: selectedInvoice.contractId ?? "—" },
+                  { label: "Loại hóa đơn", value: invoiceTypeLabel(selectedInvoice.type) },
+                  { label: "Kỳ hóa đơn", value: selectedInvoice.period },
+                  { label: "Số tiền", value: displayAmount(selectedInvoice.amount, selectedInvoice.currency) },
+                  {
+                    label: "Trạng thái",
+                    value: (
+                      <span className={[styles.reportStatus, styles[invoiceStatusClass(selectedInvoice.status)]].join(" ")}>
+                        {invoiceStatusLabel(selectedInvoice.status)}
+                      </span>
+                    ),
+                  },
+                  { label: "Hạn thanh toán", value: formatDateOnly(selectedInvoice.dueDate) },
+                  { label: "Bắt đầu kỳ", value: formatDateOnly(selectedInvoice.billingPeriodStart) },
+                  { label: "Kết thúc kỳ", value: formatDateOnly(selectedInvoice.billingPeriodEnd) },
+                  { label: "Ngày tạo", value: formatDateTime(selectedInvoice.createdAt) },
+                  { label: "Ngày thanh toán", value: formatDateTime(selectedInvoice.paidAt) },
+                ].map((field) => (
+                  <div className={styles.reportInvoiceDetailField} key={field.label}>
+                    <dt>{field.label}</dt>
+                    <dd>{field.value || "—"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+
+            <section className={styles.panel}>
+              <h2>Dòng hóa đơn</h2>
+              {invoiceLineItems.isPending && <p role="status">Đang tải các dòng hóa đơn…</p>}
+              {invoiceLineItems.isError && (
+                <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
+                  <p>{getApiErrorMessage(invoiceLineItems.error)}</p>
+                  <button type="button" onClick={() => void invoiceLineItems.refetch()}>Thử tải lại dòng hóa đơn</button>
+                </div>
+              )}
+              {invoiceLineItems.data && invoiceLineItems.data.length === 0 && (
+                <p className={styles.emptyText}>Hóa đơn chưa có dòng chi tiết.</p>
+              )}
+              {invoiceLineItems.data && invoiceLineItems.data.length > 0 && (
+                <DataTable
+                  headerVariant="admin"
+                  className={styles.reportInvoiceLineItemsTable}
+                  rows={invoiceLineItems.data}
+                  rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`}
+                  columns={[
+                    { key: "description", header: "Nội dung", render: (item) => item.description || item.serviceCode || "—" },
+                    { key: "service", header: "Mã dịch vụ", render: (item) => item.serviceCode || "—" },
+                    { key: "quantity", header: "Số lượng", align: "center", render: (item) => item.quantity == null ? "—" : amountFormatter.format(item.quantity) },
+                    { key: "unit-price", header: "Đơn giá", align: "right", render: (item) => displayAmount(item.unitPrice, selectedInvoice.currency) },
+                    { key: "amount", header: "Thành tiền", align: "right", render: (item) => displayAmount(item.amount, selectedInvoice.currency) },
+                    { key: "effective-period", header: "Thời gian áp dụng", render: (item) => [formatDateOnly(item.effectiveStart), formatDateOnly(item.effectiveEnd)].filter((value) => value !== "—").join(" – ") || "—" },
+                  ]}
+                />
+              )}
+            </section>
+            <div className={styles.pageActions}>
+              <ButtonBar href={returnHref}>Về báo cáo</ButtonBar>
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -443,6 +583,7 @@ function ReportContent() {
         )}
         {overview.data && dailyUsage.length > 0 && (
           <DataTable
+            headerVariant="admin"
             variant="standard"
             className={styles.reportDailyTable}
             rows={dailyUsage}
@@ -471,13 +612,15 @@ function ReportContent() {
           <>
             <p className={styles.reportInvoiceHint}>Cuộn ngang để xem đầy đủ thông tin hóa đơn.</p>
             <DataTable
+              headerVariant="admin"
               className={styles.reportInvoiceTable}
               rows={rentalInvoices}
               rowKey={(invoice) => invoice.id}
               columns={[
+                { key: "invoice-id", header: "Mã hóa đơn", render: (invoice) => <span className={styles.reportInvoiceId}>{invoice.id}</span> },
                 { key: "period", header: ADMIN_MESSAGES.REPORTS.INVOICE_PERIOD, render: (invoice) => invoice.period },
                 { key: "owner", header: ADMIN_MESSAGES.REPORTS.OWNER_ID, render: (invoice) => invoice.ownerId },
-                { key: "contract", header: ADMIN_MESSAGES.REPORTS.CONTRACT_ID, render: (invoice) => invoice.contractId },
+                { key: "contract", header: ADMIN_MESSAGES.REPORTS.CONTRACT_ID, render: (invoice) => invoice.contractId ?? "—" },
                 { key: "amount", header: ADMIN_MESSAGES.REPORTS.AMOUNT, render: (invoice) => displayAmount(invoice.amount, invoice.currency) },
                 {
                   key: "status",
@@ -489,6 +632,19 @@ function ReportContent() {
                   ),
                 },
                 { key: "created", header: ADMIN_MESSAGES.REPORTS.CREATED, render: (invoice) => formatDateTime(invoice.createdAt) },
+                {
+                  key: "actions",
+                  header: "Thao tác",
+                  render: (invoice) => (
+                    <ButtonBar href={reportsHref(
+                      queryString(router.query.fromDate),
+                      queryString(router.query.toDate),
+                      invoice.id,
+                    )}>
+                      Xem chi tiết
+                    </ButtonBar>
+                  ),
+                },
               ]}
             />
           </>

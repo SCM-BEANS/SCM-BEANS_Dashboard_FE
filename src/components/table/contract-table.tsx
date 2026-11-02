@@ -7,12 +7,14 @@ interface ContractTableProps {
   contracts: readonly Contract[];
   contractHref: (contractId: string) => string;
   draftStatusHref?: (contractId: string) => string;
+  headerVariant?: "admin";
 }
 
-export function ContractTable({ contracts, contractHref, draftStatusHref }: ContractTableProps) {
+export function ContractTable({ contracts, contractHref, draftStatusHref, headerVariant }: ContractTableProps) {
   return (
     <DataTable
       variant="moderator"
+      headerVariant={headerVariant}
       rows={contracts}
       rowKey={(contract) => contract.id}
       columns={[

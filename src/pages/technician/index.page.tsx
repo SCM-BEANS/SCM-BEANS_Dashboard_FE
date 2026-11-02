@@ -1,6 +1,11 @@
-import { TechnicianRoutePage } from "./technician-route-page";
-import { getTechnicianTaskScreenDescriptor } from "./tasks/task-screens";
+import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
+import { TechnicianShell } from "./technician-shell";
+import { TechnicianTasksTable } from "./tasks/technician-tasks-table";
 
 export default function TechnicianIndexPage() {
-  return <TechnicianRoutePage screen={getTechnicianTaskScreenDescriptor("")} />;
+  return (
+    <TechnicianShell pageTitle={TECHNICIAN_MESSAGES.NAVIGATION.TASKS}>
+      <TechnicianTasksTable />
+    </TechnicianShell>
+  );
 }

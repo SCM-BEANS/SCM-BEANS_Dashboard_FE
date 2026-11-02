@@ -45,6 +45,21 @@ export const DailyMachineCupUsageSchema = z.object({
 });
 export const DailyMachineCupUsageListSchema = z.array(DailyMachineCupUsageSchema);
 
+
+
+
+export const DashboardActionItemsQuerySchema = z.object({
+  actionType: z.string().optional(),
+  resourceType: z.string().optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  machineId: z.string().uuid().optional(),
+  technicianId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+});
+export type TDashboardActionItemsQuery = z.input<typeof DashboardActionItemsQuerySchema>;
+
 const OperationalMetricsSchema = z.object({
   totalOwners: nonnegativeCount.nullish(),
   legacyUnmappedContracts: nonnegativeCount.nullish(),
@@ -70,6 +85,26 @@ const FinancialMetricSchema = z.object({
   overdueBalance: z.number().nullish(),
 }).passthrough();
 
+const PeriodFinancialQualitySchema = z.object({
+  status: z.enum(["COMPLETE", "PARTIAL", "UNAVAILABLE"]).optional(),
+  eligibleCount: nonnegativeCount.optional(),
+  evidencedCount: nonnegativeCount.optional(),
+  missingCount: nonnegativeCount.optional(),
+  ambiguousCount: nonnegativeCount.optional(),
+  excludedClassificationCount: nonnegativeCount.optional(),
+  exclusionReasons: z.record(nonnegativeCount).optional(),
+}).strict();
+
+const PeriodFinancialMetricSchema = z.object({
+  currency: z.string().optional(),
+  amountIssuedInPeriod: z.number().finite().optional(),
+  amountCollectedInPeriod: z.number().finite().optional(),
+  issuanceQuality: PeriodFinancialQualitySchema.optional(),
+  collectionQuality: PeriodFinancialQualitySchema.optional(),
+  issuanceBasis: z.string().optional(),
+  collectionBasis: z.string().optional(),
+}).strict();
+
 export const DashboardOverviewSchema = z.object({
   scope: z.string().nullish(),
   ownerId: z.string().uuid().nullish(),
@@ -78,6 +113,7 @@ export const DashboardOverviewSchema = z.object({
   usagePeriodEnd: isoDate.nullish(),
   operationalMetrics: OperationalMetricsSchema.nullish(),
   financialMetrics: z.array(FinancialMetricSchema).nullish(),
+  periodFinancialMetrics: z.array(PeriodFinancialMetricSchema).optional(),
 }).passthrough();
 
 export const DashboardDateRangeSchema = dateRangeInputSchema;

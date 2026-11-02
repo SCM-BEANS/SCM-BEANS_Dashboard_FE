@@ -4,6 +4,8 @@ import {
   LocationListSchema, LocationSchema, TenantLocationListParamsSchema, unwrapLocations,
 } from "@/schema/locations.schema";
 import { MachineIdSchema, MachineSchema } from "@/schema/machines.schema";
+import { LocationUpdateSchema, type LocationUpdate } from "@/schema/locations.schema";
+
 
 export class LocationOwnerMismatchError extends Error {
   constructor() {
@@ -40,7 +42,7 @@ function responseHeader(headers: unknown, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-export const locationsApi = {
+export const locationsApi =  {
   async list(params: { ownerId: string; activeOnly?: boolean }, signal?: AbortSignal) {
     const valid = LocationListParamsSchema.parse(params);
     const response = await axiosClient.get<unknown>("/locations", {
@@ -122,4 +124,33 @@ export const locationsApi = {
     }
     return machine;
   },
+  async listByOwner(ownerId: string, signal?: AbortSignal) {
+    const validOwnerId = LocationListParamsSchema.shape.ownerId.parse(ownerId);
+    const response = await axiosClient.get<unknown>("/locations", {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { ownerId: validOwnerId, activeOnly: false },
+      signal,
+    });
+    const locations = unwrapLocations(LocationListSchema.parse(response.data));
+    if (locations.some((location) => location.ownerId !== validOwnerId)) {
+      throw new LocationOwnerMismatchError();
+    }
+    return locations;
+  },
+  async update(id: string, input: LocationUpdate) {
+    const validId = LocationIdSchema.parse(id);
+    const body = LocationUpdateSchema.parse(input);
+    const response = await axiosClient.put<unknown>(`/locations/${encodeURIComponent(validId)}`, body, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const updated = LocationSchema.parse(response.data);
+    if (updated.id !== validId) throw new LocationIdentityMismatchError();
+    return updated;
+  },
+  async deactivate(id: string) {
+    const validId = LocationIdSchema.parse(id);
+    await axiosClient.delete(`/locations/${encodeURIComponent(validId)}`, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+  }
 };

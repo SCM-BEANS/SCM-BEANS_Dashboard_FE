@@ -25,6 +25,9 @@ import {
   RepairIntakeResponseSchema,
   type RepairIntakeRequest,
 } from "@/schema/machines.schema";
+import { MaintenanceTicketDetailsSchema, MaintenanceTicketListParamsSchema, type MaintenanceTicketListParams, UpdateMachineRequestSchema, MachineTypeMappingRequestSchema, type UpdateMachineRequest, type MachineTypeMappingRequest } from "@/schema/machines.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
+
 
 export class MachineIdentityMismatchError extends Error {
   constructor() {
@@ -59,7 +62,7 @@ function responseHeader(headers: unknown, key: string): string | undefined {
 
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
-export const machinesApi = {
+export const machinesApi =  {
   async create(input: CreateMachineRequest) {
     const request = CreateMachineRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>("/machines", request, { baseURL: DOLORES_API_BASE_URL });
@@ -118,9 +121,11 @@ export const machinesApi = {
     });
     return MaintenanceScheduleSchema.parse(response.data);
   },
-  async listMaintenanceTickets(signal?: AbortSignal) {
+  async listMaintenanceTickets(input: MaintenanceTicketListParams = {}, signal?: AbortSignal) {
+    const params = MaintenanceTicketListParamsSchema.parse(input);
     const response = await axiosClient.get<unknown>("/maintenance-tickets", {
       baseURL: DOLORES_API_BASE_URL,
+      params,
       signal,
     });
     return MaintenanceTicketListSchema.parse(response.data);
@@ -230,4 +235,43 @@ export const machinesApi = {
     );
     return RepairIntakeResponseSchema.parse(response.data);
   },
+  async update(id: string, input: UpdateMachineRequest) {
+    const validId = MachineIdSchema.parse(id);
+    const request = UpdateMachineRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(machinePath(validId), request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const machine = MachineSchema.parse(response.data);
+    if (machine.id !== validId) throw new MachineIdentityMismatchError();
+    return machine;
+  },
+  async delete(id: string) {
+    const validId = MachineIdSchema.parse(id);
+    await axiosClient.delete(machinePath(validId), { baseURL: DOLORES_API_BASE_URL });
+  },
+  async setType(id: string, input: MachineTypeMappingRequest) {
+    const validId = MachineIdSchema.parse(id);
+    const request = MachineTypeMappingRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>(`${machinePath(validId)}/type`, request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return response.data;
+  },
+  async assignTechnician(technicianId: string, machineId: string) {
+    const validTechnicianId = ProfileIdSchema.parse(technicianId);
+    const validMachineId = MachineIdSchema.parse(machineId);
+    await axiosClient.post<unknown>(
+      `/technician-assignments/${encodeURIComponent(validTechnicianId)}/machines/${encodeURIComponent(validMachineId)}`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  },
+  async unassignTechnician(technicianId: string, machineId: string) {
+    const validTechnicianId = ProfileIdSchema.parse(technicianId);
+    const validMachineId = MachineIdSchema.parse(machineId);
+    await axiosClient.delete(
+      `/technician-assignments/${encodeURIComponent(validTechnicianId)}/machines/${encodeURIComponent(validMachineId)}`,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  }
 };

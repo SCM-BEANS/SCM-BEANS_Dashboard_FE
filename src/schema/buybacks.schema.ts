@@ -193,3 +193,25 @@ export type BuybackPaymentProofReviewRequest = z.infer<typeof BuybackPaymentProo
 export type BuybackRefurbishmentStartRequest = z.infer<typeof BuybackRefurbishmentStartRequestSchema>;
 export type BuybackRefurbishmentCompleteRequest = z.infer<typeof BuybackRefurbishmentCompleteRequestSchema>;
 export type BuybackQaRequest = z.infer<typeof BuybackQaRequestSchema>;
+
+
+export const BuybackCaseSummaryListSchema = z.array(BuybackCaseSummarySchema);
+
+export const BuybackInspectionHistorySchema = z.array(BuybackInspectionSchema);
+
+export const BuybackRefurbishmentHistorySchema = z.array(BuybackRefurbishmentSchema);
+
+export const BuybackQaDecisionHistorySchema = z.array(BuybackQaDecisionSchema);
+
+const buybackCommandKeys = {
+  idempotencyKey: z.string().trim().min(1).max(128),
+  correlationId: z.string().trim().min(1).max(128),
+};
+
+export type BuybackCaseSummary = z.infer<typeof BuybackCaseSummarySchema>;
+
+export type BuybackPayment = z.infer<typeof BuybackPaymentSchema>;
+
+export type BuybackStatus = z.infer<typeof BuybackStatusSchema>;
+
+export type BuybackCollectionRequest = z.infer<typeof BuybackCollectionRequestSchema>;

@@ -1,4 +1,4 @@
-export const HOME_SECTION_IDS = {
+export const HOME_SECTION_IDS =  {
   TOP: "top",
   SOLUTIONS: "solutions",
   PRODUCTS: "products",
@@ -6,10 +6,10 @@ export const HOME_SECTION_IDS = {
   ABOUT: "about",
   CUSTOMERS: "customers",
   NEWS: "news",
-  CONTACT: "contact",
+  CONTACT: "contact"
 } as const;
 
-export const PATH_HOME = {
+export const PATH_HOME =  {
   ROOT: "/",
   ALIAS: "/home",
   SECTIONS: {
@@ -20,17 +20,17 @@ export const PATH_HOME = {
     ABOUT: `#${HOME_SECTION_IDS.ABOUT}`,
     CUSTOMERS: `#${HOME_SECTION_IDS.CUSTOMERS}`,
     NEWS: `#${HOME_SECTION_IDS.NEWS}`,
-    CONTACT: `#${HOME_SECTION_IDS.CONTACT}`,
-  },
+    CONTACT: `#${HOME_SECTION_IDS.CONTACT}`
+  }
 } as const;
 
-export const PATH_AUTH = {
-  LOGIN: "/login",
+export const PATH_AUTH =  {
+  LOGIN: "/login"
 } as const;
 
 const ADMIN_ROOT = "/admin";
 
-export const PATH_ADMIN = {
+export const PATH_ADMIN =  {
   ROOT: ADMIN_ROOT,
   USERS: `${ADMIN_ROOT}/users`,
   BUSINESSES: `${ADMIN_ROOT}/businesses`,
@@ -50,12 +50,16 @@ export const PATH_ADMIN = {
   BUYBACKS: `${ADMIN_ROOT}/buybacks`,
   INVOICE_DETAIL: (id: string) => `${ADMIN_ROOT}/invoices/${encodeURIComponent(id)}`,
   NOTIFICATIONS: `${ADMIN_ROOT}/notifications`,
+  CONTRACT_DETAIL: (id: string) => `${ADMIN_ROOT}/contracts?view=detail&id=${encodeURIComponent(id)}`,
+  CONTRACT_TERMINATION: (id: string) => `${ADMIN_ROOT}/contracts/${encodeURIComponent(id)}/termination`,
+  MACHINE_OPERATIONAL_OVERVIEW: (id: string) => `${ADMIN_ROOT}/machines/${encodeURIComponent(id)}/operations`,
+  BILLING_EXPORT_JOB: (id: string) => `${ADMIN_ROOT}/invoices/exports/${encodeURIComponent(id)}`
 } as const;
 
 const MODERATOR_ROOT = "/moderator";
 
 // Moderator URLs mirror the operator-facing destinations on the Sơn branch.
-export const PATH_MODERATOR = {
+export const PATH_MODERATOR =  {
   ROOT: MODERATOR_ROOT,
   CONTRACTS: MODERATOR_ROOT + "/contracts",
   CONTRACTS_LIST: MODERATOR_ROOT + "/contracts/list",
@@ -131,11 +135,20 @@ export const PATH_MODERATOR = {
   BUYBACK_REFURBISHMENT: MODERATOR_ROOT + "/buyback/refurbishment",
   NOTIFICATIONS: MODERATOR_ROOT + "/notifications",
   NOTIFICATION_ALERTS: MODERATOR_ROOT + "/notifications/alerts",
+  CONTRACT_TERMINATION: (id: string) => MODERATOR_ROOT + "/contracts/" + encodeURIComponent(id) + "/termination",
+  MACHINE_MODELS: MODERATOR_ROOT + "/machines/models",
+  MACHINE_MODEL_DETAIL: (id: string) => MODERATOR_ROOT + "/machines/models/" + encodeURIComponent(id),
+  MACHINE_OPERATIONAL_OVERVIEW: (id: string) => MODERATOR_ROOT + "/machines/" + encodeURIComponent(id) + "/operations",
+  NEW_MACHINE: MODERATOR_ROOT + "/machines/new",
+  NEW_MACHINE_MODEL: MODERATOR_ROOT + "/machines/models/new",
+  MENU_NEW: MODERATOR_ROOT + "/menu/new",
+  TECHNICAL_REPAIR_DETAIL: (id: string) => MODERATOR_ROOT + "/technical-requests/repair/" + encodeURIComponent(id),
+  BUYBACK_NEW: MODERATOR_ROOT + "/buyback/new"
 } as const;
 
 const CUSTOMER_ROOT = "/dashboard";
 
-export const PATH_CUSTOMER = {
+export const PATH_CUSTOMER =  {
   ROOT: CUSTOMER_ROOT,
   CONTRACTS: `${CUSTOMER_ROOT}/contracts`,
   CONTRACT_DETAIL: (id: string) => `${CUSTOMER_ROOT}/contracts/${encodeURIComponent(id)}`,
@@ -180,11 +193,13 @@ export const PATH_CUSTOMER = {
   BUYBACK_DOCUMENTS_CONFIRMED: `${CUSTOMER_ROOT}/buyback/documents/confirmed`,
   BUYBACK_ISSUE: `${CUSTOMER_ROOT}/buyback/issue`,
   NOTIFICATIONS: `${CUSTOMER_ROOT}/notifications`,
+  CONTRACT_TERMINATION: (id: string) => `${CUSTOMER_ROOT}/contracts/${encodeURIComponent(id)}/termination`,
+  MACHINE_OPERATIONAL_OVERVIEW: (id: string) => `${CUSTOMER_ROOT}/machines/${encodeURIComponent(id)}/operations`
 } as const;
 
 const TECHNICIAN_ROOT = "/technician";
 
-export const PATH_TECHNICIAN = {
+export const PATH_TECHNICIAN =  {
   ROOT: TECHNICIAN_ROOT,
   TASKS: `${TECHNICIAN_ROOT}/tasks`,
   TASK_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/tasks/${encodeURIComponent(id)}`,
@@ -204,5 +219,5 @@ export const PATH_TECHNICIAN = {
   MACHINE_CHECK_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/machine-check/${encodeURIComponent(id)}`,
   HISTORY: `${TECHNICIAN_ROOT}/history`,
   MACHINE_HISTORY_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/history/${encodeURIComponent(id)}`,
-  NOTIFICATIONS: `${TECHNICIAN_ROOT}/notifications`,
+  NOTIFICATIONS: `${TECHNICIAN_ROOT}/notifications`
 } as const;

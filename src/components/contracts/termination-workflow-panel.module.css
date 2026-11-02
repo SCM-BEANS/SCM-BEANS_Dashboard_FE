@@ -1,0 +1,242 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.heading,
+.subheading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heading h2,
+.subheading h3,
+.step h3 {
+  margin: 0;
+  color: #302927;
+}
+
+.heading h2 {
+  font-size: 20px;
+}
+
+.subheading h3,
+.step h3 {
+  font-size: 16px;
+}
+
+.heading p,
+.step > p,
+.notice,
+.success,
+.error {
+  margin: 6px 0 0;
+  color: #706561;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8eeee;
+  color: #b51224;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+
+.summary > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #eee8e3;
+  border-radius: 9px;
+  background: #fcfbfa;
+}
+
+.summary dt {
+  margin-bottom: 4px;
+  color: #706561;
+  font-size: 12px;
+}
+
+.summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #302927;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.actions,
+.formGrid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.formGrid > label,
+.rejectField,
+.orderPicker,
+.step > label {
+  display: flex;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 6px;
+  color: #514843;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fullWidth {
+  flex-basis: 100% !important;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.step label input,
+.step label select,
+.step label textarea,
+.formGrid input,
+.formGrid select,
+.formGrid textarea,
+.orderPicker select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #dcd2ca;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  font-weight: 400;
+}
+
+.step textarea,
+.formGrid textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.recallSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #eee8e3;
+}
+
+.subheading {
+  align-items: center;
+}
+
+.subheading span {
+  color: #706561;
+  font-size: 13px;
+}
+
+.orderPicker {
+  max-width: 560px;
+}
+
+.notice,
+.success,
+.error {
+  padding: 11px 13px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #faf8f6;
+}
+
+.success {
+  border-color: #c5dfcf;
+  background: #f3faf5;
+  color: #28633d;
+}
+
+.error {
+  border-color: #efc2c2;
+  background: #fff7f7;
+  color: #9e1d25;
+}
+
+.evidenceList,
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.evidenceList li,
+.eventList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #eee8e3;
+  border-radius: 8px;
+  color: #514843;
+  font-size: 13px;
+}
+
+.evidenceList li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.eventList li {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.eventList li p {
+  flex-basis: 100%;
+  margin: 0;
+  color: #706561;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .heading {
+    flex-direction: column;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .actions > button,
+  .step > button {
+    width: 100%;
+  }
+}

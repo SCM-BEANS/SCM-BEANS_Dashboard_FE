@@ -404,6 +404,7 @@ function AdminOverview() {
 
             {days.length ? (
               <DataTable
+                  headerVariant="admin"
                   variant="standard"
                   className={`${styles.adminTable} ${styles.overviewDailyTable}`}
                   headers={["Chọn", ADMIN_MESSAGES.OVERVIEW.DATE, ADMIN_MESSAGES.OVERVIEW.CUP_COUNT]}
@@ -456,6 +457,7 @@ function AdminOverview() {
                               {machineUsage.data && machineUsage.data.length > 0 && (
                                 <div className={styles.overviewMachineRows}>
                                   <DataTable
+                                    headerVariant="admin"
                                     variant="standard"
                                     className={styles.adminTable}
                                     rows={machineUsage.data}

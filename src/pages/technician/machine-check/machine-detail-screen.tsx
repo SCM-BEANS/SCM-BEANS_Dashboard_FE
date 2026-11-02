@@ -110,7 +110,7 @@ export function TechnicianMachineDetailScreen() {
         disabled={
           !machine.data
           || !machine.data.serialNumber
-          || machine.data.status === "AVAILABLE_FOR_RENT"
+          || machine.data.status !== "IN_WAREHOUSE"
           || machine.isError
           || machine.isPending
           || statusUpdate.isPending
@@ -189,14 +189,21 @@ export function TechnicianMachineDetailScreen() {
         {statusUpdate.isError && (
           <div className={styles.machineCheckError} role="alert">
             <p>{getApiErrorMessage(statusUpdate.error)}</p>
-            <button className={styles.machineCheckRetry} type="button" onClick={() => statusUpdate.mutate()}>
-              {T.MACHINE_CHECK.UPDATE_STATUS}
-            </button>
+            {device.status === "IN_WAREHOUSE" ? (
+              <button className={styles.machineCheckRetry} type="button" onClick={() => statusUpdate.mutate()}>
+                {T.MACHINE_CHECK.UPDATE_STATUS}
+              </button>
+            ) : null}
           </div>
         )}
         <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-profile-title">
           <h2 id="technician-machine-profile-title">{T.MACHINE_CHECK.TABLE_TITLE}</h2>
           <MachineDetailFields machine={device} />
+          {device.status !== "IN_WAREHOUSE" ? (
+            <p className={styles.pendingNotice} role="status">
+              Chỉ xác nhận sẵn sàng cho máy đang ở trạng thái Trong kho. Máy hiện tại không đủ điều kiện.
+            </p>
+          ) : null}
         </section>
       </section>
       {actionBar(true)}
