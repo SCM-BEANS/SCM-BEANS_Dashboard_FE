@@ -41,13 +41,15 @@ test("the whole machine stays still, details rotate at the active stop, and the 
   await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-model-mode", "overview");
   await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-overview-visible", "true");
   await expect.poll(async () => cards.evaluateAll((elements) => elements.every((element) => getComputedStyle(element).opacity === "0"))).toBe(true);
+  const partStart = 0.46;
+  const partSpan = (1 - partStart) / 4;
   for (let index = 0; index < 4; index++) {
-    await scrollOpening(page, 1 / 8 + 7 / 8 * (0.22 + index * 0.18 + 0.18 * 0.20));
+    await scrollOpening(page, 1 / 8 + 7 / 8 * (partStart + index * partSpan + partSpan * 0.20));
     await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-model-mode", "detail");
     await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-overview-visible", "false");
     await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-focused-part", String(index));
     await expect(cards.nth(index)).toHaveCSS("opacity", "1");
-    await scrollOpening(page, 1 / 8 + 7 / 8 * (0.22 + index * 0.18 + 0.18 * 0.60));
+    await scrollOpening(page, 1 / 8 + 7 / 8 * (partStart + index * partSpan + partSpan * 0.60));
     await expect(cards.nth(index)).toHaveCSS("opacity", "1");
     const copy = (await cards.nth(index).boundingBox())!;
     const model = (await page.locator(".digital-twin-panel").boundingBox())!;
@@ -79,7 +81,7 @@ test("one cutaway machine reveals its internals while component copy types witho
   await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-model-mode", "overview");
   await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-overview-visible", "true");
   await page.screenshot({ path: process.env.TEMP + "/dolores-cutaway-overview.png" });
-  await scrollOpening(page, 1 / 8 + 7 / 8 * (0.22 + 0.18 * 0.33));
+  await scrollOpening(page, 1 / 8 + 7 / 8 * (0.46 + ((1 - 0.46) / 4) * 0.33));
   await expect(page.locator(".digital-twin-section")).toHaveAttribute("data-focused-part", "0");
   const description = page.locator(".digital-twin-part-card").first().locator("p");
   const typedText = description.locator(".digital-twin-typed-text");

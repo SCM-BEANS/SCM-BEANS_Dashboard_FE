@@ -4,7 +4,7 @@ import Image from "next/image";
 import { HOME_SECTION_IDS } from "@/routes/path";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import coffeeMachineImage from "@/assets/coffee-machine-float.png";
-import { getCutaway, getFocusedPartIndex, getPartVisibility, getWholeVisibility } from "./digital-twin-story";
+import { getCutaway, getFocusedPartIndex, getOverviewCenterProgress, getPartVisibility, getWholeVisibility } from "./digital-twin-story";
 
 const DigitalTwinViewer = dynamic(() => import("./digital-twin-viewer"), { ssr: false });
 
@@ -19,6 +19,7 @@ export function DigitalTwinSection({ progress, scrollEnabled, active }: { progre
   const cardOpacity = (index: number) => scrollEnabled ? getPartVisibility(progress, index) : 1;
   const activeIndex = scrollEnabled ? getFocusedPartIndex(progress) : -1;
   const introOpacity = scrollEnabled ? 1 - getCutaway(progress) : 1;
+  const overviewCenterProgress = scrollEnabled ? getOverviewCenterProgress(progress) : 0;
 
   return (
     <section
@@ -27,7 +28,7 @@ export function DigitalTwinSection({ progress, scrollEnabled, active }: { progre
       data-scroll-story={scrollEnabled ? "true" : "false"}
       data-focused-part={activeIndex}
       data-model-mode={activeIndex < 0 ? "overview" : "detail"}
-      data-overview-visible={getWholeVisibility(progress) === 1}
+      data-overview-visible={getWholeVisibility(progress) > 0}
       data-model-ready={viewerReady}
       aria-hidden={scrollEnabled && !active}
     >
@@ -78,6 +79,7 @@ export function DigitalTwinSection({ progress, scrollEnabled, active }: { progre
             className="digital-twin-panel"
             role="group"
             aria-label={HOME_MESSAGES.DIGITAL_TWIN.VIEWER_LABEL}
+            style={{ transform: overviewCenterProgress > 0 ? `translate3d(${-34.3 * overviewCenterProgress}%, 0, 0)` : undefined }}
           >
             <div className="digital-twin-poster" style={{ opacity: viewerReady ? 0 : 1 }} aria-hidden="true">
               <Image src={coffeeMachineImage} alt="" width={760} height={760} sizes="(max-width: 1023px) 90vw, 58vw" />

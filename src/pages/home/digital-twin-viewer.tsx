@@ -8,6 +8,7 @@ import {
   DIGITAL_TWIN_SHELL_NODES,
   getCutaway,
   getFocusedPartIndex,
+  getOverviewTurnProgress,
   getWholeVisibility,
 } from "./digital-twin-story";
 
@@ -74,16 +75,22 @@ function CoffeeMachineModel({ progress, rotationEnabled, onReady }: { progress: 
   const activePartIndexRef = useRef(-1);
   const visuals = useMemo(() => {
     scene.updateMatrixWorld(true);
-    const whole = scene.clone(true);
-    whole.updateMatrixWorld(true);
-    const wholeMaterialsData = cloneMaterials(whole);
-    const box = new Box3().setFromObject(whole);
+    const wholeModel = scene.clone(true);
+    wholeModel.updateMatrixWorld(true);
+    const wholeMaterialsData = cloneMaterials(wholeModel);
+    const box = new Box3().setFromObject(wholeModel);
     const center = box.getCenter(new Vector3());
     const size = box.getSize(new Vector3());
     const extent = Math.max(size.x, size.y, size.z);
     const shells = DIGITAL_TWIN_SHELL_NODES.flatMap((name) => collectRecords(
-      whole.getObjectByName(name), wholeMaterialsData.recordsByObject,
+      wholeModel.getObjectByName(name), wholeMaterialsData.recordsByObject,
     ));
+    const wholeCentering = new Group();
+    wholeCentering.position.copy(center).negate();
+    wholeCentering.add(wholeModel);
+    const whole = new Group();
+    whole.position.copy(center);
+    whole.add(wholeCentering);
 
     // Focused component models remain separate, as in the source assembly.
     const parts = DIGITAL_TWIN_PART_NODES.map((name) => {
@@ -132,6 +139,8 @@ function CoffeeMachineModel({ progress, rotationEnabled, onReady }: { progress: 
     const cutaway = getCutaway(progress);
     const focusedIndex = getFocusedPartIndex(progress);
     visuals.whole.visible = overview > 0;
+    visuals.whole.rotation.y = getOverviewTurnProgress(progress) * Math.PI * 2;
+    setOpacity(visuals.wholeMaterials, overview);
     setOpacity(visuals.shells, overview * (1 - cutaway * 0.84));
     visuals.parts.forEach((part, index) => {
       if (!part) return;
