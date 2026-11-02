@@ -13,7 +13,7 @@ import { DataTable } from "@/components/table/data-table";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getIotBackDestination } from "../admin-back-destination";
 
@@ -153,10 +153,10 @@ function IoTContent() {
           </section>
         </>}
       </div>
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
         <ButtonBar type="button" disabled={profile.isFetching || machines.isFetching || contracts.isFetching || locations.isFetching} onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     </AdminShell>;
   }
 
@@ -193,10 +193,10 @@ function IoTContent() {
         </div>
       </section>}
     </div>
-    <ActionBar>
+    <ActionBarConfig>
       <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
       <ButtonBar type="button" disabled={owners.isFetching || machines.isFetching || contracts.isFetching} onClick={() => { void Promise.all([owners.refetch(), machines.refetch(), contracts.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-    </ActionBar>
+    </ActionBarConfig>
   </AdminShell>;
 }
 

@@ -9,8 +9,17 @@ import {
   CreateMachineResponseSchema,
   MarkMachineReadyRequestSchema,
   type CreateMachineRequest,
+  MaintenanceTicketSchema,
+  type MaintenanceTicketAssignmentParams,
   type MarkMachineReadyRequest,
   MaintenanceTicketListSchema,
+  MaintenanceTicketAssignmentParamsSchema,
+  MaintenanceTicketIdSchema,
+  MaintenanceTicketPartsRequestSchema,
+  MaintenanceTicketResolutionRequestSchema,
+  MaintenanceTicketStatusRequestSchema,
+  MaintenanceTicketStatusSchema,
+  type MaintenanceTicket,
   MaintenanceScheduleSchema,
   RepairIntakeRequestSchema,
   RepairIntakeResponseSchema,
@@ -31,6 +40,23 @@ export class MachineCreateUnexpectedStatusError extends Error {
   }
 }
 
+type MaintenanceTicketPageParams = {
+  source?: string;
+  status?: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED";
+  machineId?: string;
+  ownerId?: string;
+  contractId?: string;
+  page?: number;
+  size?: number;
+};
+
+function responseHeader(headers: unknown, key: string): string | undefined {
+  if (!headers || typeof headers !== "object") return undefined;
+  const record = headers as Record<string, unknown>;
+  const value = record[key] ?? record[key.toLowerCase()];
+  return typeof value === "string" ? value : undefined;
+}
+
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
 export const machinesApi = {
@@ -49,9 +75,13 @@ export const machinesApi = {
     });
     return MachineInventorySchema.parse(response.data);
   },
-  async listRentalCandidates(signal?: AbortSignal) {
+  async listRentalCandidates(
+    signal?: AbortSignal,
+    filters?: { machineType?: "CONVENTIONAL" | "SMART_IOT"; page?: number; size?: number },
+  ) {
     const response = await axiosClient.get<unknown>("/inventory/rental-candidates", {
       baseURL: DOLORES_API_BASE_URL,
+      ...(filters ? { params: { page: 0, size: 25, ...filters } } : {}),
       signal,
     });
     return RentalCandidatePageSchema.parse(response.data).content;
@@ -94,6 +124,102 @@ export const machinesApi = {
       signal,
     });
     return MaintenanceTicketListSchema.parse(response.data);
+  },
+  async listMaintenanceTicketsPage(input: MaintenanceTicketPageParams = {}, signal?: AbortSignal) {
+    const params = { page: 0, size: 50, ...input };
+    const response = await axiosClient.get<unknown>("/maintenance-tickets", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = MaintenanceTicketListSchema.parse(response.data);
+    const responsePage = Number(responseHeader(response.headers, "x-page"));
+    const responseSize = Number(responseHeader(response.headers, "x-page-size"));
+    const hasNext = responseHeader(response.headers, "x-has-next");
+    return {
+      items,
+      page: Number.isInteger(responsePage) && responsePage >= 0 ? responsePage : params.page,
+      size: Number.isInteger(responseSize) && responseSize > 0 ? responseSize : params.size,
+      hasNext: hasNext?.toLowerCase() === "true",
+    };
+  },
+  async getMaintenanceTicketById(ticketId: string, signal?: AbortSignal) {
+    const validId = MaintenanceTicketIdSchema.parse(ticketId);
+    const response = await axiosClient.get<unknown>(`/maintenance-tickets/${encodeURIComponent(validId)}`, {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (ticket.id !== validId) throw new Error("Dolores returned a different maintenance ticket than requested.");
+    return ticket;
+  },
+  async assignMaintenanceTicket(
+    ticketId: string,
+    input: MaintenanceTicketAssignmentParams,
+  ) {
+    const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
+    const params = MaintenanceTicketAssignmentParamsSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `/maintenance-tickets/${encodeURIComponent(validTicketId)}/assign`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL, params },
+    );
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (ticket.id !== validTicketId
+      || ticket.assignedTechnicianId !== params.technicianId
+      || !["ASSIGNED", "IN_PROGRESS"].includes(ticket.status ?? "")) {
+      throw new Error("Dolores did not confirm assignment of the requested Technician to this maintenance ticket.");
+    }
+    return ticket;
+  },
+  async updateMaintenanceTicketStatus(ticketId: string, status: MaintenanceTicket["status"]) {
+    const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
+    const validStatus = MaintenanceTicketStatusSchema.parse(status);
+    const query = MaintenanceTicketStatusRequestSchema.parse({ status: validStatus });
+    const response = await axiosClient.post<unknown>(
+      "/maintenance-tickets/" + encodeURIComponent(validTicketId) + "/status",
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL, params: query },
+    );
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (ticket.id !== validTicketId || ticket.status !== validStatus) {
+      throw new Error("Dolores did not confirm the requested maintenance ticket status.");
+    }
+    return ticket;
+  },
+  async recordMaintenanceTicketParts(
+    ticketId: string,
+    input: { partsReplaced?: string | null; partsCost?: number | null },
+  ) {
+    const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
+    const body = MaintenanceTicketPartsRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      "/maintenance-tickets/" + encodeURIComponent(validTicketId) + "/parts",
+      body,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (ticket.id !== validTicketId) {
+      throw new Error("Dolores returned a different maintenance ticket after recording parts.");
+    }
+    return ticket;
+  },
+  async resolveMaintenanceTicket(
+    ticketId: string,
+    input: { diagnosis: string; resolutionResult: string; evidenceReferences: string[]; notes?: string },
+  ) {
+    const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
+    const body = MaintenanceTicketResolutionRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      "/maintenance-tickets/" + encodeURIComponent(validTicketId) + "/resolve",
+      body,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (ticket.id !== validTicketId || ticket.status !== "RESOLVED") {
+      throw new Error("Dolores did not confirm that the maintenance ticket was resolved.");
+    }
+    return ticket;
   },
   async createRepairIntake(input: RepairIntakeRequest) {
     const request = RepairIntakeRequestSchema.parse(input);

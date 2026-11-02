@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { MachineHeartbeatPanel } from "@/components/features/operations/machine-heartbeat-panel";
+import { MachineTelemetryPointsPanel } from "@/components/features/operations/machine-telemetry-points-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
+import { MachineLocationAssignmentPanel } from "@/components/features/asset-management/machine-location-assignment-panel";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import { DetailItem, formatDate, QueryFeedback, statusLabel } from "../shared/customer-screen-common";
+import { DetailItem, formatDate, QueryFeedback, statusLabel, useOwnerSubject } from "../shared/customer-screen-common";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 
 export function MachinesScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
+  const { ownerId } = useOwnerSubject();
   const candidate = sectionPath.startsWith("machines/") ? sectionPath.slice("machines/".length) : "";
   const machineId = MachineIdSchema.safeParse(candidate).success ? candidate : null;
   const isList = sectionPath === "machines";
@@ -39,16 +43,30 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
           {detail.data ? (
-            <dl className={styles.detailGrid}>
-              <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.id} />
-              <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
-              <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
-              <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType} />
-              <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
-              <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
-              <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
-              <DetailItem label={messages.FIELD_NEXT_MAINTENANCE} value={formatDate(detail.data.nextPreventiveMaintenanceAt)} />
-            </dl>
+            <>
+              <dl className={styles.detailGrid}>
+                <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.id} />
+                <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
+                <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
+                <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType} />
+                <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
+                <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
+                <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
+                <DetailItem label={messages.FIELD_NEXT_MAINTENANCE} value={formatDate(detail.data.nextPreventiveMaintenanceAt)} />
+              </dl>
+              {detail.data.machineType === "SMART_IOT" && <>
+                <MachineHeartbeatPanel machineId={detail.data.id} role="OWNER" />
+                <MachineTelemetryPointsPanel machineId={detail.data.id} role="OWNER" />
+              </>}
+              {detail.data.machineType === "CONVENTIONAL" && <p className={styles.dataFootnote}>Máy thường không có heartbeat hoặc telemetry IoT.</p>}
+              <MachineLocationAssignmentPanel
+                machineId={detail.data.id}
+                ownerId={detail.data.ownerId ?? ownerId}
+                currentLocationId={detail.data.locationId}
+                variant="customer"
+                createLocationHref={PATH_CUSTOMER.LOCATIONS}
+              />
+            </>
           ) : null}
         </>
       ) : (

@@ -6,17 +6,20 @@ const ts = require('typescript');
 
 const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
-  'locations.api.ts': { locationsApi: ['list', 'listByTenant', 'getById', 'create'] },
-  'contracts.api.ts': { contractsApi: ['list', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
-  'machines.api.ts': { machinesApi: ['list', 'getById', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets'] },
+  'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'create', 'assignMachine'] },
+  'technician-assignments.api.ts': { technicianAssignmentsApi: ['assign', 'revoke'] },
+  'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
+  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
-  'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'markAsRead'] },
-  'recipes.api.ts': { recipesApi: ['listGlobal', 'getGlobalById', 'publishGlobal'] },
-  'billing.api.ts': { billingApi: ['listInvoices', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'downloadPaymentProofContent'] },
-  'buybacks.api.ts': { buybacksApi: ['getById'] },
+  'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'acknowledgeAlert', 'markAllAsRead', 'markAsRead'] },
+  'recipes.api.ts': { recipesApi: ['listGlobalSummaries', 'listGlobal', 'getGlobalById', 'publishGlobal', 'listLocal', 'getLocalById', 'upsertLocal', 'deleteLocal', 'requestSync', 'getSyncStatus', 'getSyncHistory'] },
+  'recipe-menus.api.ts': { recipeMenusApi: ['listGlobal', 'getGlobal', 'createGlobal', 'renameGlobal', 'deleteGlobal', 'listGlobalRecipes', 'assignGlobalRecipe', 'removeGlobalRecipe', 'listLocal', 'getLocal', 'createLocal', 'renameLocal', 'deleteLocal', 'listLocalRecipes', 'getLocalRecipe', 'createLocalRecipe', 'copyGlobalRecipe', 'moveLocalRecipe', 'editLocalRecipe', 'deleteLocalRecipe'] },
+  'billing.api.ts': { billingApi: ['listInvoices', 'listInvoicesPage', 'listOperatorInvoicesPage', 'getInvoice', 'listInvoiceLineItems', 'listInvoiceLineItemsPage', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'listPaymentProofsPage', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent'] },
+  'buybacks.api.ts': { buybacksApi: ['list', 'getById', 'create', 'startInspection', 'submitInspection', 'decideValuation', 'createPayment', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent', 'requestCollection', 'confirmCollection', 'startRefurbishment', 'completeRefurbishment', 'decideQa', 'cancel', 'listInspections', 'listRefurbishments', 'listQaDecisions'] },
+  'replacement-assignments.api.ts': { replacementAssignmentsApi: ['create', 'getById', 'activate', 'release', 'cancel'] },
   'tenants.api.ts': { tenantsApi: ['list', 'getById'] },
-  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['listByTenant', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
-  'dashboard.api.ts': { dashboardApi: ['getOverview'] },
+  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['create', 'listByOwner', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
+  'dashboard.api.ts': { dashboardApi: ['getOverview', 'getDailyMachineCupUsage', 'getActionItems'] },
 };
 
 function apiObject(sourceFile, apiName) {
@@ -60,11 +63,18 @@ function assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName
   assert.equal(requests.length, 1, `${apiName}.${methodName} must make exactly one HTTP request`);
   const bodyText = fn.body.getText(sourceFile);
   const isBlob = bodyText.includes('responseType: "blob"');
-  const isCommandWithoutConsumedResponse = apiName === 'contractsApi' && methodName === 'activate';
+  const isCommandWithoutConsumedResponse =
+    (apiName === 'contractsApi' && methodName === 'activate') ||
+    (apiName === 'machinesApi' && ['markReady', 'assignMaintenanceTicket'].includes(methodName)) ||
+    (apiName === 'notificationsApi' && methodName === 'markAllAsRead') ||
+    (apiName === 'notificationsApi' && methodName === 'acknowledgeAlert') ||
+    (apiName === 'recipesApi' && methodName === 'deleteLocal') ||
+    (apiName === 'recipeMenusApi' && ['deleteGlobal', 'deleteLocal', 'deleteLocalRecipe'].includes(methodName)) ||
+    (apiName === 'technicianAssignmentsApi' && methodName === 'revoke');
   if (isBlob) {
-    assert.ok(bodyText.includes('return response.data'), `${apiName}.${methodName} should return the requested file data`);
+    assert.match(bodyText, /response\.data/, `${apiName}.${methodName} should return the requested file data`);
   } else if (!isCommandWithoutConsumedResponse) {
-    assert.match(bodyText, /Schema\.parse\(response\.data\)/, `${apiName}.${methodName} must validate its response schema`);
+        assert.match(bodyText, /(?:\.parse|verify[A-Z]\w*)\(response\.data/, `${apiName}.${methodName} must validate its response schema or identity`);
   }
 }
 

@@ -2,6 +2,7 @@ import Cookies from "js-cookie";
 import {
   Activity,
   Bell,
+  Building2,
   ClipboardCheck,
   Coffee,
   FileText,
@@ -10,13 +11,14 @@ import {
   Users,
   Utensils,
   Wrench,
+  MapPin,
 } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig, ActionBarLayout } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
@@ -33,10 +35,12 @@ import styles from "./moderator-shell.module.css";
 const NAV_ICONS = {
   Activity,
   Bell,
+  Building2,
   ClipboardCheck,
   Coffee,
   FileText,
   LayoutDashboard,
+  MapPin,
   Package,
   Users,
   Utensils,
@@ -211,8 +215,10 @@ export function ModeratorShell({
           <div className={styles.mobileBreadcrumb}>
             {renderBreadcrumb()}
           </div>
-          <main className={styles.main}>{children}</main>
-          {isSectionList && <ActionBar label={actionMessages.LABEL}>{renderActions()}</ActionBar>}
+          <ActionBarLayout label={actionMessages.LABEL}>
+            <main className={styles.main}>{children}</main>
+            {isSectionList && <ActionBarConfig>{renderActions()}</ActionBarConfig>}
+          </ActionBarLayout>
         </div>
       </div>
       {logoutSucceeded && (

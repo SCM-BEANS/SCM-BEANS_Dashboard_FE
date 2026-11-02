@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateMachineModelRequestSchema, type CreateMachineModelRequest } from "@/schema/machine-models.schema";
@@ -141,12 +141,12 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
         </div>
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       </form>
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar type="button" onClick={onCancel}>{T.MACHINE_MODELS.CANCEL}</ButtonBar>
         <ButtonBar type="submit" form="machine-model-create-form" disabled={create.isPending || blockResubmit}>
           {create.isPending ? T.MACHINE_MODELS.CREATING : T.MACHINE_MODELS.CREATE_SUBMIT}
         </ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     </>
   );
 }

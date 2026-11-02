@@ -2,7 +2,10 @@ import { useRouter } from "next/router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
+import { MachineLocationAssignmentPanel } from "@/components/features/asset-management/machine-location-assignment-panel";
+import { TechnicianMachineAccessPanel } from "@/components/features/asset-management/technician-machine-access-panel";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -10,7 +13,7 @@ import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachineDetailBackDestination } from "../admin-back-destination";
 
@@ -77,12 +80,13 @@ function MachineDetailContent() {
   });
   const isSmartIot = machine.data?.machineType === "SMART_IOT";
   const heartbeat = useQuery({
-    queryKey: ["dolores", "telemetry", "heartbeat", machineId],
+    queryKey: ["dolores", "telemetry", "heartbeat", authScopedQuerySubject("ADMIN"), machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
     enabled: validId && isSmartIot,
+    refetchInterval: isSmartIot ? 5_000 : false,
   });
   const points = useInfiniteQuery({
-    queryKey: ["dolores", "telemetry", "points", machineId, range?.from, range?.to],
+    queryKey: ["dolores", "telemetry", "points", authScopedQuerySubject("ADMIN"), machineId, range?.from, range?.to],
     queryFn: ({ signal, pageParam }) => {
       if (!range) throw new Error("A telemetry time range is required.");
       return telemetryApi.listMachinePoints(machineId, range, pageParam, signal);
@@ -103,10 +107,10 @@ function MachineDetailContent() {
     ]);
   };
   const actionBar = (showRefresh: boolean) => (
-    <ActionBar>
+    <ActionBarConfig>
       {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
       {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
-    </ActionBar>
+    </ActionBarConfig>
   );
   const renderHeading = () => (
     <BackButtonHeading
@@ -196,17 +200,29 @@ function MachineDetailContent() {
           </button>
         </div>
         {detailTab === "profile" ? (
-          <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
-            <h2>{T.MACHINES.DETAIL}</h2>
-            <div className={styles.operationsGrid}>
-              <div><span>{T.MACHINES.MACHINE_ID}</span><strong>{device.id}</strong></div>
-              <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.OWNER_ID}</span><strong>{device.ownerId ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.REGION}</span><strong>{device.region ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.LOCATION_ID}</span><strong>{device.locationId ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
-            </div>
-          </section>
+          <>
+            <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
+              <h2>{T.MACHINES.DETAIL}</h2>
+              <div className={styles.operationsGrid}>
+                <div><span>{T.MACHINES.MACHINE_ID}</span><strong>{device.id}</strong></div>
+                <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
+                <div><span>{T.MACHINES.OWNER_ID}</span><strong>{device.ownerId ?? "—"}</strong></div>
+                <div><span>{T.MACHINES.REGION}</span><strong>{device.region ?? "—"}</strong></div>
+                <div><span>{T.MACHINES.LOCATION_ID}</span><strong>{device.locationId ?? "—"}</strong></div>
+                <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
+              </div>
+            </section>
+            <MachineLocationAssignmentPanel
+              machineId={device.id}
+              ownerId={device.ownerId}
+              currentLocationId={device.locationId}
+              variant="operations"
+              createLocationHref={device.ownerId ? `${PATH_ADMIN.STORES}?ownerId=${encodeURIComponent(device.ownerId)}` : undefined}
+            />
+            {device.ownerId
+              ? <TechnicianMachineAccessPanel machineId={device.id} />
+              : <section className={styles.panel}><h2>Quyền Technician trên máy</h2><p>Chỉ có thể gán quyền máy sau khi máy thuộc về một Owner hoặc hợp đồng DRAFT.</p></section>}
+          </>
         ) : (
           <section id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
             <h2>{T.MACHINES.MACHINE_TYPE}</h2>

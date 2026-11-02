@@ -1,8 +1,9 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
-  LocationCreateSchema, LocationIdSchema, LocationListParamsSchema,
+  LocationCreateSchema, LocationIdSchema, LocationListPageParamsSchema, LocationListParamsSchema,
   LocationListSchema, LocationSchema, TenantLocationListParamsSchema, unwrapLocations,
 } from "@/schema/locations.schema";
+import { MachineIdSchema, MachineSchema } from "@/schema/machines.schema";
 
 export class LocationOwnerMismatchError extends Error {
   constructor() {
@@ -25,6 +26,20 @@ export class LocationTenantMismatchError extends Error {
   }
 }
 
+export class LocationMachineAssignmentMismatchError extends Error {
+  constructor(message = "Dolores returned a different machine or location after assignment.") {
+    super(message);
+    this.name = "LocationMachineAssignmentMismatchError";
+  }
+}
+
+function responseHeader(headers: unknown, key: string): string | undefined {
+  if (!headers || typeof headers !== "object") return undefined;
+  const record = headers as Record<string, unknown>;
+  const value = record[key] ?? record[key.toLowerCase()];
+  return typeof value === "string" ? value : undefined;
+}
+
 export const locationsApi = {
   async list(params: { ownerId: string; activeOnly?: boolean }, signal?: AbortSignal) {
     const valid = LocationListParamsSchema.parse(params);
@@ -32,6 +47,30 @@ export const locationsApi = {
       baseURL: DOLORES_API_BASE_URL, params: valid, signal,
     });
     return unwrapLocations(LocationListSchema.parse(response.data));
+  },
+  async listPage(
+    input: { ownerId: string; activeOnly?: boolean; q?: string; page?: number; size?: number },
+    signal?: AbortSignal,
+  ) {
+    const params = LocationListPageParamsSchema.parse(input);
+    const response = await axiosClient.get<unknown>("/locations", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = unwrapLocations(LocationListSchema.parse(response.data));
+    if (items.some((location) => location.ownerId !== params.ownerId)) {
+      throw new LocationOwnerMismatchError();
+    }
+    const responsePage = Number(responseHeader(response.headers, "x-page"));
+    const responseSize = Number(responseHeader(response.headers, "x-page-size"));
+    const hasNext = responseHeader(response.headers, "x-has-next");
+    return {
+      items,
+      page: Number.isInteger(responsePage) && responsePage >= 0 ? responsePage : params.page,
+      size: Number.isInteger(responseSize) && responseSize > 0 ? responseSize : params.size,
+      hasNext: hasNext?.toLowerCase() === "true",
+    };
   },
   async listByTenant(tenantId: string, signal?: AbortSignal) {
     const params = TenantLocationListParamsSchema.parse({ tenantId, activeOnly: false });
@@ -61,9 +100,26 @@ export const locationsApi = {
     });
     const created = LocationSchema.parse(response.data);
     const responseOwnerId = created.ownerId;
-    if (responseOwnerId && responseOwnerId !== validOwner) {
+    if (responseOwnerId !== validOwner) {
       throw new LocationOwnerMismatchError();
     }
     return created;
+  },
+  async assignMachine(locationId: string, machineId: string) {
+    const validLocationId = LocationIdSchema.parse(locationId);
+    const validMachineId = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.post<unknown>(
+      `/locations/${encodeURIComponent(validLocationId)}/machines/${encodeURIComponent(validMachineId)}/assign`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const machine = MachineSchema.parse(response.data);
+    if (machine.id !== validMachineId) {
+      throw new LocationMachineAssignmentMismatchError("Dolores returned a different machine after location assignment.");
+    }
+    if (machine.locationId !== validLocationId) {
+      throw new LocationMachineAssignmentMismatchError("Dolores did not return the requested machine location.");
+    }
+    return machine;
   },
 };

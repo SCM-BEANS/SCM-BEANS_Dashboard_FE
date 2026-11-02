@@ -44,12 +44,19 @@ export const CreateContractRequestSchema = z.object({
   }
 });
 
+export const ActivateContractRequestSchema = z.object({
+  effectiveStartDate: contractDateSchema,
+  terms: z.string().min(1),
+  contractTermsSnapshot: ContractTermsSnapshotSchema,
+});
+
 export const CreateContractResponseSchema = z.object({ id: ContractIdSchema }).passthrough();
 
 export const ContractSchema = z.object({
   id: ContractIdSchema, ownerId: z.string().uuid(), machineId: z.string().uuid().nullish(),
   startDate: z.string().nullish(), endDate: z.string().nullish(), terms: z.string().nullish(),
-  termsSnapshot: z.string().nullish(), status: z.enum(["DRAFT", "ACTIVE", "TERMINATED"]),
+  termsSnapshot: z.string().nullish(), contractTermsSnapshot: z.unknown().optional(),
+  status: z.enum(["DRAFT", "ACTIVE", "TERMINATED"]),
   machineTypeSnapshot: z.string().nullish(), monthlyRentalFee: z.number().nullish(),
   depositAmount: z.number().nullish(), installationFee: z.number().nullish(),
   paygUnitPrice: z.number().nullish(), offlineLimitMinutes: z.number().int().nullish(),
@@ -91,6 +98,7 @@ export const ContractDocumentSchema = z.object({
 export const ContractDocumentsSchema = z.array(ContractDocumentSchema);
 export type Contract = z.infer<typeof ContractSchema>;
 export type CreateContractRequest = z.infer<typeof CreateContractRequestSchema>;
+export type ActivateContractRequest = z.infer<typeof ActivateContractRequestSchema>;
 export type ContractTermsSnapshot = z.infer<typeof ContractTermsSnapshotSchema>;
 export type ModeratorContract = z.infer<typeof ModeratorContractSchema>;
 export type ContractDocument = z.infer<typeof ContractDocumentSchema>;

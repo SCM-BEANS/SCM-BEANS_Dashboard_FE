@@ -140,12 +140,23 @@ test("moderator detail screens do not keep duplicate parent-list links", () => {
     "src/pages/moderator/machines/machines-screen.tsx",
     "src/pages/moderator/invoices/invoices-screen.tsx",
     "src/pages/moderator/menu/recipes-screen.tsx",
-    "src/pages/moderator/technical/technical-screen.tsx",
     "src/pages/moderator/alerts/alerts-screen.tsx",
   ];
   for (const file of detailScreens) {
     const content = source(file);
     assert.match(content, /ModeratorPageHeading/, `${file} must render a shared heading`);
     assert.doesNotMatch(content, /Quay lại danh sách|Quay láº¡i danh|href=\{PATH_MODERATOR\.(CUSTOMERS|CONTRACTS|INVOICES|MACHINES|MENU|TECHNICAL_REQUESTS|NOTIFICATIONS)\}[^\n]*>/, `${file} has a duplicate parent link`);
+  }
+
+  const technicalScreen = source("src/components/features/repair-workflow/technical-operations-screen.tsx");
+  const requestDetail = source("src/components/features/repair-workflow/maintenance-request-detail-screen.tsx");
+  const requestAssignment = source("src/components/features/repair-workflow/maintenance-request-assignment-screen.tsx");
+  assert.match(technicalScreen, /BackButtonHeading/, "the shared technical workbench uses the shared heading control");
+  for (const [file, content] of [
+    ["shared maintenance request detail", requestDetail],
+    ["shared maintenance request assignment", requestAssignment],
+  ]) {
+    assert.match(content, /BackButtonHeading/, `${file} must render the shared back heading`);
+    assert.doesNotMatch(content, /ActionBarConfig[\s\S]*Quay lại danh sách yêu cầu/, `${file} must not render a duplicate list link`);
   }
 });

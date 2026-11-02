@@ -6,7 +6,7 @@ import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -52,15 +52,22 @@ export async function loadOwnerLocations(signal?: AbortSignal, selectedOwnerId?:
   const failed: string[] = [];
   for (let index = 0; index < owners.length; index += 5) {
     const batch = owners.slice(index, index + 5);
-    const results = await Promise.allSettled(batch.map((owner) => locationsApi.list({ ownerId: owner.idaasUserId }, signal)));
+    const results = await Promise.allSettled(batch.map(async (owner) => {
+      const items: Awaited<ReturnType<typeof locationsApi.list>> = [];
+      let page = 0;
+      while (!signal?.aborted) {
+        const result = await locationsApi.listPage({ ownerId: owner.idaasUserId, page, size: 100 }, signal);
+        items.push(...result.items);
+        if (!result.hasNext) break;
+        if (result.page !== page) throw new Error("Dolores returned an unexpected location page index.");
+        page += 1;
+      }
+      return items;
+    }));
     results.forEach((result, position) => {
       const owner = batch[position];
       if (result.status === "rejected") { failed.push(owner.fullName || owner.idaasUserId); return; }
-      for (const location of result.value) {
-        const responseOwnerId = location.ownerId;
-        if (responseOwnerId && responseOwnerId !== owner.idaasUserId) { failed.push(owner.fullName || owner.idaasUserId); continue; }
-        locations.push({ owner, location });
-      }
+      for (const location of result.value) locations.push({ owner, location });
     });
     if (signal?.aborted) break;
   }
@@ -230,16 +237,16 @@ function StoresContent() {
     />}
   </div>
   {view === "list" && (
-    <ActionBar>
+    <ActionBarConfig>
       <ButtonBar type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) }); }}>{T.STORES.CREATE}</ButtonBar>
-    </ActionBar>
+    </ActionBarConfig>
   )}
-  {view === "create" && <ActionBar>
+  {view === "create" && <ActionBarConfig>
     <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
-  </ActionBar>}
-  {view === "detail" && <ActionBar>
+  </ActionBarConfig>}
+  {view === "detail" && <ActionBarConfig>
     <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>
-  </ActionBar>}
+  </ActionBarConfig>}
   </>;
 }
 

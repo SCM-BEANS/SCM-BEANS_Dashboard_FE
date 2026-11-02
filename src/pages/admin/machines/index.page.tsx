@@ -13,7 +13,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { DataTable } from "@/components/table/data-table";
 import { MachineStatusSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachinesBackDestination } from "../admin-back-destination";
 import { CreateMachineForm } from "./create-machine-form";
@@ -266,7 +266,7 @@ function MachinesContent() {
         )}
       </div>
       {isCreateView || isCreateMachineModelView || isMachineModelDetailView ? null : (
-        <ActionBar>
+        <ActionBarConfig>
           <ButtonBar type="button" onClick={navigateToCreate}>{T.MACHINES.CREATE}</ButtonBar>
           <ButtonBar type="button" onClick={navigateToCreateMachineModel}>{T.MACHINE_MODELS.CREATE}</ButtonBar>
           <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
@@ -286,7 +286,7 @@ function MachinesContent() {
           >
             {T.COMMON.RETRY}
           </ButtonBar>
-        </ActionBar>
+        </ActionBarConfig>
       )}
       {successSerialNumber && (
         <NotificationDialog

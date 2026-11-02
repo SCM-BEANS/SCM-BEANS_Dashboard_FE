@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { DataTable } from "@/components/table/data-table";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
+import { DirectReplacementAssignmentPanel } from "@/components/features/repair-workflow/direct-replacement-assignment-panel";
+import { ContractTerminationPanel } from "@/components/features/contract-termination/contract-termination-panel";
 
 import { contractsApi } from "@/apis/contracts.api";
 
@@ -115,6 +117,17 @@ export function ContractDetailScreen({ id }: { id: string }) {
             )}
           </section>
           <ContractActivationPanel contract={contract.data} />
+          {contract.data.status === "ACTIVE" && contract.data.machineId ? (
+            <DirectReplacementAssignmentPanel
+              contractId={contract.data.id}
+              primaryMachineId={contract.data.machineId}
+              machineType={contract.data.machineTypeSnapshot}
+              role="MODERATOR"
+            />
+          ) : null}
+          {contract.data.status === "ACTIVE" && contract.data.machineId ? (
+            <ContractTerminationPanel contractId={contract.data.id} role="MODERATOR" />
+          ) : null}
         </>
       )}
     </div>

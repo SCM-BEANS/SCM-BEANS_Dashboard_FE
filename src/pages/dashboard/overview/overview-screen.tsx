@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { formatDate, formatMoney, MetricCard, QueryFeedback } from "../shared/customer-screen-common";
@@ -27,6 +28,7 @@ export function OverviewScreen() {
         <h1 id="customer-screen-title">{messages.OVERVIEW_TITLE}</h1>
         <p>{messages.OVERVIEW_DESCRIPTION}</p>
       </header>
+      <ActionItemsPanel role="OWNER" />
       {query.isPending || query.isError ? (
         <QueryFeedback loading={query.isPending} failed={query.isError} empty={false} emptyText="" />
       ) : (

@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { AlertAcknowledgementButton } from "@/components/features/operations/alert-acknowledgement-button";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { notificationsApi } from "@/apis/notifications.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { DataTable } from "@/components/table/data-table";
@@ -9,7 +11,7 @@ import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
-const ALERTS_QUERY_KEY = ["dolores", "alerts"] as const;
+const ALERTS_QUERY_KEY = ["dolores", "alerts", authScopedQuerySubject("ADMIN")] as const;
 
 function NotificationContent() {
   const alerts = useQuery({
@@ -28,7 +30,7 @@ function NotificationContent() {
       >
         <section className={styles.panel} aria-labelledby="alerts-list-title">
           <h2 id="alerts-list-title">{ADMIN_MESSAGES.NOTIFICATIONS.ALERTS}</h2>
-          <p className={styles.panelSubtitle}>{ADMIN_MESSAGES.NOTIFICATIONS.ALERT_READ_ONLY}</p>
+          <p className={styles.panelSubtitle}>Cảnh báo mức CRITICAL/HIGH có thể được xác nhận tại đây.</p>
           {alerts.isPending && <p role="status">{ADMIN_MESSAGES.NOTIFICATIONS.LOADING}</p>}
           {alerts.isError && (
             <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
@@ -49,14 +51,15 @@ function NotificationContent() {
                 { key: "time", header: ADMIN_MESSAGES.NOTIFICATIONS.TIME, render: (alert) => alert.ts },
                 { key: "content", header: ADMIN_MESSAGES.NOTIFICATIONS.CONTENT, render: (alert) => alert.message },
                 { key: "status", header: ADMIN_MESSAGES.NOTIFICATIONS.STATUS, render: (alert) => alert.acknowledged ? ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACKNOWLEDGED : ADMIN_MESSAGES.NOTIFICATIONS.ALERT_ACTIVE },
+                { key: "acknowledge", header: "Thao tác", render: (alert) => !alert.acknowledged ? <AlertAcknowledgementButton id={alert.id} level={alert.level} /> : null },
               ]}
             />
           )}
         </section>
       </NotificationInbox>
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.REPORTS.TITLE}</ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     </>
   );
 }

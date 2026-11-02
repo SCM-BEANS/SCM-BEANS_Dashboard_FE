@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 
 import { DataTable } from "@/components/table/data-table";
 
@@ -90,6 +91,7 @@ export function OverviewScreen() {
         query={overview}
         loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_OVERVIEW}
       />
+      <ActionItemsPanel role="MODERATOR" />
       {overview.data && !overview.isError && !metrics && (
         <p className={styles.pendingNotice} role="status">
           {MODERATOR_MESSAGES.READ_SCREENS.EMPTY_OVERVIEW}

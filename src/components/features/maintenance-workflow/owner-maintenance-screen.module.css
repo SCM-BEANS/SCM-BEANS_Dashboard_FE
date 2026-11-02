@@ -1,0 +1,86 @@
+.pageContent {
+  display: grid;
+  min-width: 0;
+  gap: 20px;
+}
+
+.pageHeading { min-width: 0; }
+
+.detailGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.detailGrid > div {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #eee8e3;
+  border-radius: 9px;
+  background: #fdfbf9;
+}
+
+.detailGrid dt { color: #706561; font-size: 13px; }
+.detailGrid dd { overflow-wrap: anywhere; margin: 6px 0 0; color: #302927; font-size: 14px; font-weight: 600; }
+.code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+
+.notice, .hint {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #eee8e3;
+  border-radius: 9px;
+  background: #fdfbf9;
+  color: #514843;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.hint { padding: 0; border: 0; background: transparent; color: #706561; }
+.error { border-color: #efc3c5; background: #fff6f6; color: #8c1d26; }
+.success { border-color: #b6d9bd; background: #f3fbf5; color: #23653a; }
+.error p { margin: 0 0 10px; }
+
+.form {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  max-width: 520px;
+  padding: 18px;
+  border: 1px solid #eee8e3;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.form label { color: #514843; font-size: 14px; font-weight: 600; }
+.form input {
+  width: min(100%, 360px);
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #d8d0ca;
+  border-radius: 8px;
+  color: #302927;
+  font: inherit;
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #b81724;
+  border-radius: 8px;
+  background: #b81724;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled { cursor: not-allowed; opacity: .55; }
+.button:focus-visible, .link:focus-visible { outline: 3px solid #b81724; outline-offset: 2px; }
+.link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .pageContent { gap: 16px; }
+  .form { width: 100%; padding: 14px; }
+}

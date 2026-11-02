@@ -3,7 +3,9 @@ import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
 import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { CalendarDays } from "lucide-react";
+import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -227,6 +229,8 @@ function AdminOverview() {
           <p>{ADMIN_MESSAGES.OVERVIEW.DESCRIPTION}</p>
         </div>
       </div>
+
+      <ActionItemsPanel role="ADMIN" />
 
       {overview.isPending && (
         <div className={styles.notice} role="status">
@@ -510,14 +514,13 @@ function AdminOverview() {
 
 export default function AdminPage() {
   return (
-    <AdminShell actions={
-      <>
+    <AdminShell>
+      <AdminOverview />
+      <ActionBarConfig>
         <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.NAVIGATION.REPORTS}</ButtonBar>
         <ButtonBar href={PATH_ADMIN.IOT}>{ADMIN_MESSAGES.NAVIGATION.IOT}</ButtonBar>
         <ButtonBar href={PATH_ADMIN.MACHINES}>{ADMIN_MESSAGES.NAVIGATION.MACHINES}</ButtonBar>
-      </>
-    }>
-      <AdminOverview />
+      </ActionBarConfig>
     </AdminShell>
   );
 }

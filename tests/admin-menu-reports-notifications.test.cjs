@@ -171,14 +171,14 @@ test("recipe APIs validate payloads and use only global list, detail, and publis
   await assert.rejects(recipesApi.getGlobalById("invalid"));
 });
 
-test("billing and notification schemas keep ownerId invoices and reject malformed responses", async () => {
+test("billing and notification schemas accept nullable legacy invoice scope fields and reject malformed responses", async () => {
   const billingSchemas = loadModule("src/schema/billing.schema.ts");
   assert.deepEqual(billingSchemas.InvoicesSchema.parse([invoice]), [invoice]);
   assert.equal(billingSchemas.InvoiceSchema.safeParse({ ...invoice, amount: "1250000" }).success, false);
   assert.equal(billingSchemas.InvoiceSchema.safeParse({
     ...invoice,
     ownerId: undefined,
-  }).success, false);
+  }).success, true);
 
   const notificationSchemas = loadModule("src/schema/notifications.schema.ts");
   assert.equal(notificationSchemas.NotificationsSchema.parse([notification])[0].read, false);

@@ -47,6 +47,8 @@ function getCustomerReadBack(sectionPath: string): BackButtonDestination | null 
   if (sectionPath.startsWith("contracts/")) return backTo("Danh sách hợp đồng", "/dashboard/contracts");
 
   if (sectionPath === "machines") return null;
+  if (sectionPath === "locations") return null;
+  if (sectionPath === "machines/new") return backTo("Danh sách máy của tôi", "/dashboard/machines");
   if (sectionPath === "machines/history" || sectionPath === "machines/substitute") {
     return backTo("Danh sách máy của tôi", "/dashboard/machines");
   }
@@ -111,8 +113,10 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
   }
 
   if (sectionPath === "machines") {
-    return [link("Xem lịch sử bảo trì", "/dashboard/machines/history"), link("Xem hợp đồng", "/dashboard/contracts", "secondary")];
+    return [link("Đăng ký máy", "/dashboard/machines/new"), link("Xem địa điểm", "/dashboard/locations", "secondary"), link("Xem lịch sử bảo trì", "/dashboard/machines/history", "secondary"), link("Xem hợp đồng", "/dashboard/contracts", "secondary")];
   }
+  if (sectionPath === "locations") return [link("Xem máy của tôi", "/dashboard/machines", "secondary")];
+  if (sectionPath === "machines/new") return [];
   if (sectionPath === "machines/history") {
     return [link("Gửi yêu cầu hỗ trợ", "/dashboard/support/new")];
   }
@@ -188,6 +192,12 @@ export function getCustomerScreenDescriptor(sectionPath: string): CustomerScreen
 
   if (sectionPath === "machines") {
     return descriptor(sectionPath, messages.MACHINES_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));
+  }
+  if (sectionPath === "locations") {
+    return descriptor(sectionPath, "Địa điểm của tôi", "Danh sách địa điểm thuộc Owner đang đăng nhập.", "unavailable", getCustomerReadActions(sectionPath));
+  }
+  if (sectionPath === "machines/new") {
+    return descriptor(sectionPath, "Đăng ký máy", "Đăng ký máy trong phạm vi Owner đang đăng nhập.", "unavailable", getCustomerReadActions(sectionPath));
   }
   if (sectionPath === "machines/history") {
     return descriptor(sectionPath, messages.MACHINE_HISTORY_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));

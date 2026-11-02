@@ -4,11 +4,45 @@ export const InvoiceIdSchema = z.string().uuid();
 export const PaymentProofIdSchema = z.string().uuid();
 const optionalText = z.string().nullish();
 
+export const BILLING_DEFAULT_PAGE_SIZE = 50;
+export const BILLING_MAX_PAGE_SIZE = 100;
+
+const pageFields = {
+  page: z.number().int().min(0).default(0),
+  size: z.number().int().min(1).max(BILLING_MAX_PAGE_SIZE).default(BILLING_DEFAULT_PAGE_SIZE),
+};
+
+export const InvoiceListParamsSchema = z.object({
+  ownerId: z.string().uuid().optional(),
+  status: z.enum(["DRAFT", "PENDING", "UNPAID", "PAID", "OVERDUE", "CANCELLED"]).optional(),
+  type: z.enum(["SUPPLY", "RENTAL", "REPAIR"]).optional(),
+  period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+  ...pageFields,
+});
+
+export const InvoiceLineItemListParamsSchema = z.object(pageFields);
+
+export const PaymentProofListParamsSchema = z.object({
+  status: z.enum(["SUBMITTED", "APPROVED", "REJECTED"]).optional(),
+  ...pageFields,
+});
+
+export type InvoiceListParams = z.input<typeof InvoiceListParamsSchema>;
+export type InvoiceLineItemListParams = z.input<typeof InvoiceLineItemListParamsSchema>;
+export type PaymentProofListParams = z.input<typeof PaymentProofListParamsSchema>;
+
+export type BillingPage<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
 export const InvoiceSchema = z.object({
   id: z.string().uuid(),
-  ownerId: z.string().uuid(),
-  contractId: z.string().uuid(),
-  amount: z.number(),
+  ownerId: z.string().uuid().nullish(),
+  contractId: z.string().uuid().nullish(),
+  amount: z.number().finite(),
   period: z.string(),
   type: z.string(),
   status: z.string(),
@@ -58,7 +92,7 @@ export const ModeratorInvoiceSchema = z.object({
   repairCostDecisionId: z.string().uuid().nullish(),
   amount: z.number().finite(),
   period: z.string(),
-  type: z.enum(["SUPPLY", "RENTAL"]),
+  type: z.enum(["SUPPLY", "RENTAL", "REPAIR"]),
   status: z.enum(["DRAFT", "PENDING", "UNPAID", "PAID", "OVERDUE", "CANCELLED"]),
   currency: z.string(),
   billingPeriodStart: optionalText,
@@ -96,7 +130,11 @@ export const PaymentProofSchema = z.object({
 });
 
 export const PaymentProofsSchema = z.array(PaymentProofSchema);
-export const PaymentProofSubmitResponseSchema = z.object({}).passthrough();
+export const PaymentProofSubmitResponseSchema = PaymentProofSchema;
+export const PaymentProofReviewRequestSchema = z.object({
+  approve: z.boolean(),
+  reason: z.string().trim().min(1),
+});
 
 export type ModeratorInvoice = z.infer<typeof ModeratorInvoiceSchema>;
 export type PaymentProof = z.infer<typeof PaymentProofSchema>;

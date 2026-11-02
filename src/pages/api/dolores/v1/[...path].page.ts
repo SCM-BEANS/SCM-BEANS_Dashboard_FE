@@ -9,7 +9,8 @@ export const config = {
 };
 
 const REQUEST_TIMEOUT_MS = 15_000;
-const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+// Allow a 20 MiB payment proof plus multipart boundaries and form headers.
+const MAX_REQUEST_BYTES = 21 * 1024 * 1024;
 
 const requestHeadersToSkip = new Set([
   "host",

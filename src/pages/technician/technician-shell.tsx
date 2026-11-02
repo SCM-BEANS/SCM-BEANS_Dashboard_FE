@@ -1,10 +1,11 @@
 import Cookies from "js-cookie";
-import { Bell, ClipboardCheck, Coffee, Wrench } from "lucide-react";
+import { Bell, ClipboardCheck, Coffee, Package, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
+import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -20,6 +21,7 @@ const NAV_ICONS = {
   Bell,
   ClipboardCheck,
   Coffee,
+  Package,
   Wrench,
 } as const;
 
@@ -146,7 +148,9 @@ export function TechnicianShell({
           <div className={styles.mobileBreadcrumb}>
             {TECHNICIAN_MESSAGES.ROLE} / {currentSection.LABEL}
           </div>
-          <main className={styles.main}>{children}</main>
+          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
+            <main className={styles.main}>{children}</main>
+          </ActionBarLayout>
         </div>
       </div>
       {logoutSucceeded && (

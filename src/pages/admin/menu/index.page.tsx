@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { recipesApi } from "@/apis/recipes.api";
+import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { PATH_ADMIN } from "@/routes/path";
@@ -13,7 +14,7 @@ import {
   type RecipePublishRequest,
 } from "@/schema/recipes.schema";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMenuBackDestination } from "../admin-back-destination";
 
@@ -38,7 +39,7 @@ function MenuContent() {
   const queryClient = useQueryClient();
   const recipes = useQuery({
     queryKey: RECIPE_QUERY_KEY,
-    queryFn: ({ signal }) => recipesApi.listGlobal(signal),
+    queryFn: ({ signal }) => recipesApi.listGlobalSummaries(signal),
     enabled: !isCreateView,
   });
   const [selectedRecipeId, setSelectedRecipeId] = useState("");
@@ -232,22 +233,23 @@ function MenuContent() {
           onClose={() => setPublishedRecipeName("")}
         />
       )}
+      {!isCreateView ? <RecipeMenusScreen role="operator" operatorRole="ADMIN" /> : null}
     </div>
     {isCreateView ? (
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar type="submit" form="global-recipe-form" disabled={publish.isPending || Boolean(pendingPublish)}>
           {ADMIN_MESSAGES.MENU.PUBLISH}
         </ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     ) : (
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar type="button" onClick={navigateToCreate}>
           {ADMIN_MESSAGES.MENU.CREATE}
         </ButtonBar>
         <ButtonBar type="button" disabled={recipes.isFetching} onClick={() => void recipes.refetch()}>
           {ADMIN_MESSAGES.MENU.RETRY}
         </ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     )}
     </>
   );

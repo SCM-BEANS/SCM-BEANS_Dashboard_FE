@@ -60,7 +60,7 @@ Nút bị disable nếu chưa có máy tải được, thiếu serialNumber, má
 
 Swagger mô tả POST /inventory/machines/{machineId}/readiness là xác nhận **máy trong kho** đã sẵn sàng cho thuê. Điều kiện ở client hiện không bắt buộc status phải là IN_WAREHOUSE; vì vậy nút có thể được bật cho máy đang triển khai/bảo trì hoặc trạng thái khác. Backend có thể từ chối các chuyển trạng thái đó; UI nên đối chiếu trạng thái hợp lệ trước khi hiển thị thao tác. Swagger chỉ định nghĩa field reason dạng string nhưng không đánh dấu bắt buộc; frontend lại yêu cầu reason không rỗng. Swagger của operation này cũng không nêu rõ role Technician hoặc response 401/403, nên quyền thực tế của Technician cần được xác nhận với backend.
 
-## 4. Endpoint Swagger phù hợp với task flow nhưng Technician chưa gọi
+## 4. Endpoint Swagger cho task flow
 
 ### 4.1 Lệnh lắp đặt được giao
 
@@ -75,7 +75,7 @@ Swagger có endpoint riêng cho Technician:
 - POST /installation-work-orders/{workOrderId}/fail — failureReason bắt buộc.
 - POST /installation-work-orders/{workOrderId}/complete — handoverRecipient bắt buộc.
 
-Đây là API có thể dùng để hiện thực danh sách giao máy, mở chi tiết, checklist và kết quả bàn giao. Hiện tại không trang Technician nào gọi các endpoint này và chưa có API client cho route /assigned.
+`/technician/tasks` dùng `GET /installation-work-orders/assigned` để hiển thị lệnh lắp đặt được giao. Màn chi tiết dùng `GET /installation-work-orders/{workOrderId}`, `POST .../start`, `POST .../evidence` và `POST .../complete`. Checklist, phụ kiện và báo thất bại chưa được nối.
 
 Thông báo trong code tại src/text/technician/technician-messages.ts hiện ghi rằng API chỉ liệt kê công việc theo tenant và chưa có endpoint xác nhận công việc được giao cho Technician. Nội dung đó không còn đúng với Swagger hiện tại vì GET /installation-work-orders/assigned đã được công bố trên cả local lẫn server. Nút và danh sách vẫn đang khóa, nên đây là khoảng cách giữa code thông báo và hợp đồng API.
 
@@ -93,7 +93,7 @@ Các thao tác này chưa được nối vào route /technician/tasks/repair, /s
 
 ### 4.3 Lịch sử và thông báo
 
-- Swagger có GET /maintenance-tickets với các bộ lọc source, status, machineId, ownerId, contractId, page và size; GET /maintenance-tickets/{ticketId}; và GET /machines/{id}/maintenance-tickets. Có thể dùng để xây lịch sử ticket theo máy, nhưng không có trang Technician nào gọi chúng.
+- Swagger có GET /maintenance-tickets với các bộ lọc source, status, machineId, ownerId, contractId, page và size; GET /maintenance-tickets/{ticketId}; và GET /machines/{id}/maintenance-tickets. `/technician/tasks` hiện gọi GET `/maintenance-tickets` không kèm filter và hiển thị phiếu bảo trì ở bảng riêng bên cạnh installation work order. Query này là phần bổ sung, giữ nguyên GET `/installation-work-orders/assigned`.
 - Swagger có GET /repair-cases/{caseId}/timeline và các API chi tiết installation work order; hiện chưa có trang lịch sử kết hợp các loại sự kiện.
 - Swagger có GET /notifications, GET /notifications/unread-count, POST /notifications/{id}/read và POST /notifications/read-all. Generic list hỗ trợ ownerId/unreadOnly/page/size nhưng không nhận technicianId query. Màn hình Technician đang chờ xác nhận việc backend tự scope thông báo theo người nhận; hiện không gọi bất kỳ endpoint thông báo nào.
 
@@ -103,12 +103,12 @@ Swagger công bố một số thao tác Buyback & Refurbishment như đọc hồ
 
 ## 5. API client/schema có trong code nhưng không được Technician dùng
 
-- src/apis/installation-work-orders.api.ts có create, listByTenant và getById; Technician pages không import module này. Không có method listAssigned/start/complete/checklist/evidence.
-- src/apis/machines.api.ts chứa nhiều API khác như inventory summary, maintenance schedule, maintenance tickets và repair intake; ngoài list/getById/markReady nêu trên, Technician screens không gọi các method đó.
+- src/apis/installation-work-orders.api.ts có create, listByOwner, listAssigned, getById, start, uploadEvidence và complete; Technician task list và detail dùng các method được hỗ trợ trên.
+- src/apis/machines.api.ts có listMaintenanceTickets; `/technician/tasks` dùng method này để tải phiếu bảo trì bổ sung. Các method inventory summary, maintenance schedule và repair intake không được Technician screens gọi.
 - src/apis/telemetry.api.ts tồn tại nhưng Technician không dùng telemetry.
 - Technician không gọi notificationsApi, maintenanceRequestsApi, repairCasesApi, profilesApi hoặc buybacksApi.
 
-Schema InstallationWorkOrderSummarySchema hiện yêu cầu tenantId. Swagger response của GET /installation-work-orders/assigned là InstallationWorkOrderSummaryResponse với ownerId và không liệt kê tenantId. Vì vậy không nên tái sử dụng schema list hiện có cho endpoint assigned nếu DTO response giữ nguyên như Swagger; cần tạo schema phù hợp với response Technician và xác nhận DTO thực tế.
+`GET /installation-work-orders/assigned` dùng DTO riêng `AssignedInstallationWorkOrderSummarySchema` với `ownerId`, tách biệt schema danh sách theo Owner.
 
 ## 6. Cấu hình và luồng xác thực
 
@@ -123,7 +123,7 @@ Frontend dùng cùng cấu hình API như các role khác:
 
 ## 7. Kết luận cho việc dùng chung logic trong Flutter
 
-Đã có thể hiện thực API cho màn Check máy theo ba endpoint đang hoạt động. Các màn Task, lịch sử và thông báo hiện chủ yếu là thiết kế/placeholder.
+Màn Task hiện tải danh sách installation work order được giao và danh sách maintenance ticket. Các workflow khác như sửa chữa, thu hồi, bàn giao máy thay thế, lịch sử và thông báo vẫn có những phần thiết kế/placeholder cần đối chiếu API và quyền riêng.
 
 Backend đã có endpoint assigned work order nhưng UI hiện vẫn báo là chưa có endpoint và chưa gọi nó. Trước khi triển khai task list trong Flutter, cần sửa hợp đồng giao diện theo GET /installation-work-orders/assigned, xác nhận scope chỉ trả task của Technician đăng nhập, và dùng DTO response riêng khớp Swagger. Các task sửa chữa cần dùng RepairCase API theo đúng điều kiện Owner xác nhận bàn giao; task bảo trì cần chốt API/status và phạm vi người được giao. Thông báo cần xác nhận scope theo recipient.
 

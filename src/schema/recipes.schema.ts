@@ -16,6 +16,14 @@ export const GlobalRecipeSchema = z.object({
 }).passthrough();
 
 export const GlobalRecipesSchema = z.array(GlobalRecipeSchema);
+export const GlobalRecipeSummarySchema = z.object({
+  id: GlobalRecipeIdSchema,
+  name: z.string().min(1),
+  revision: z.number().int().nonnegative(),
+  menuId: z.string().uuid().nullish(),
+}).passthrough();
+export const GlobalRecipeSummariesSchema = z.array(GlobalRecipeSummarySchema);
+export type GlobalRecipeSummary = z.infer<typeof GlobalRecipeSummarySchema>;
 
 export const LocalRecipeIdSchema = z.string().uuid();
 export const LocalRecipeSchema = z.object({

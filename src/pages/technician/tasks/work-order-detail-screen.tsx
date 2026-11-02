@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { MachineHeartbeatPanel } from "@/components/features/operations/machine-heartbeat-panel";
+import { MachineTelemetryPointsPanel } from "@/components/features/operations/machine-telemetry-points-panel";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -88,8 +90,9 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     onError: refreshWorkOrder,
   });
 
-  const workOrder = details.data?.workOrder;
-  const evidenceCount = details.data?.evidenceCount ?? details.data?.evidence.length ?? 0;
+  const workOrderDetails = details.data;
+  const workOrder = workOrderDetails?.workOrder;
+  const evidenceCount = workOrderDetails?.evidenceCount ?? workOrderDetails?.evidence.length ?? 0;
   const canComplete = Boolean(workOrder?.status === "IN_PROGRESS" && evidenceCount > 0 && handoverRecipient.trim());
 
   const handleFileChange = (file: File | null) => {
@@ -128,7 +131,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
           </div>
         )}
 
-        {workOrder && !details.isError && (
+        {workOrder && workOrderDetails && !details.isError && (
           <>
             <section className={styles.panel} aria-labelledby="work-order-overview-title">
               <h2 id="work-order-overview-title">Thông tin lệnh lắp đặt</h2>
@@ -145,8 +148,15 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                 <DetailValue label="Người nhận bàn giao" value={workOrder.handoverRecipient ?? "—"} />
                 {workOrder.failureReason && <DetailValue label="Lý do thất bại" value={workOrder.failureReason} />}
               </dl>
-              {details.data.installationNotes && <p className={styles.notes}><strong>Ghi chú:</strong> {details.data.installationNotes}</p>}
+              {workOrderDetails.installationNotes && <p className={styles.notes}><strong>Ghi chú:</strong> {workOrderDetails.installationNotes}</p>}
             </section>
+
+            {workOrder.machineType === "SMART_IOT" && (
+              <>
+                <MachineHeartbeatPanel machineId={workOrder.machineId} role="TECHNICIAN" />
+                <MachineTelemetryPointsPanel machineId={workOrder.machineId} role="TECHNICIAN" />
+              </>
+            )}
 
             {workOrder.status === "ASSIGNED" && (
               <section className={styles.panel} aria-labelledby="work-order-start-title">
@@ -164,10 +174,10 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                 <section className={styles.panel} aria-labelledby="work-order-evidence-title">
                   <h2 id="work-order-evidence-title">Minh chứng bàn giao ({evidenceCount})</h2>
                   <p className={styles.hint}>Tải ít nhất một tệp PDF, JPEG hoặc PNG, dung lượng tối đa 20 MB. Tệp được lưu riêng tư.</p>
-                  {details.data.evidence.length > 0 && (
+                  {workOrderDetails.evidence.length > 0 && (
                     <DataTable
                       variant="moderator"
-                      rows={details.data.evidence}
+                      rows={workOrderDetails.evidence}
                       rowKey={(item) => item.id}
                       columns={[
                         { key: "filename", header: "Tệp", render: (item) => item.originalFilename },
@@ -239,11 +249,11 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
             )}
 
             <section className={styles.panel} aria-labelledby="work-order-checklist-title">
-              <h2 id="work-order-checklist-title">Checklist tham khảo ({details.data.checklistItemCount ?? details.data.checklistItems.length})</h2>
+              <h2 id="work-order-checklist-title">Checklist tham khảo ({workOrderDetails.checklistItemCount ?? workOrderDetails.checklistItems.length})</h2>
               <p className={styles.hint}>Checklist chỉ để theo dõi; API hoàn tất bàn giao không yêu cầu ghi hoặc đạt checklist.</p>
               <DataTable
                 variant="moderator"
-                rows={details.data.checklistItems}
+                rows={workOrderDetails.checklistItems}
                 rowKey={(item) => item.id}
                 emptyMessage="Không có mục checklist cho lệnh này."
                 columns={[
@@ -256,12 +266,12 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
               />
             </section>
 
-            {details.data.accessories.length > 0 && (
+            {workOrderDetails.accessories.length > 0 && (
               <section className={styles.panel} aria-labelledby="work-order-accessories-title">
                 <h2 id="work-order-accessories-title">Phụ kiện đã ghi nhận</h2>
                 <DataTable
                   variant="moderator"
-                  rows={details.data.accessories}
+                  rows={workOrderDetails.accessories}
                   rowKey={(item) => item.id}
                   columns={[
                     { key: "name", header: "Phụ kiện", render: (item) => item.accessoryName },

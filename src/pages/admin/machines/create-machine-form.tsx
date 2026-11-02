@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { MachineCreateUnexpectedStatusError, machinesApi } from "@/apis/machines.api";
@@ -148,7 +148,7 @@ export function CreateMachineForm({
         {machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       </form>
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar type="button" disabled={create.isPending || assignMachine.isPending} onClick={onCancel}>{T.MACHINE_MODELS.CANCEL}</ButtonBar>
         {pendingAssignment ? (
           <ButtonBar type="button" disabled={assignMachine.isPending} onClick={() => assignMachine.mutate(pendingAssignment)}>
@@ -163,7 +163,7 @@ export function CreateMachineForm({
             {create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}
           </ButtonBar>
         )}
-      </ActionBar>
+      </ActionBarConfig>
     </>
   );
 }

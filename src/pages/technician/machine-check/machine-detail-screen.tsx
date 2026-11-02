@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -104,7 +104,7 @@ export function TechnicianMachineDetailScreen() {
   });
 
   const actionBar = (showRefresh: boolean) => (
-    <ActionBar label={`Thao tác ${T.MACHINE_CHECK.DETAIL_TITLE}`}>
+    <ActionBarConfig>
       <ButtonBar href={PATH_TECHNICIAN.MACHINE_CHECK}>{T.MACHINE_CHECK.BACK_TO_LIST}</ButtonBar>
       <ButtonBar
         disabled={
@@ -124,7 +124,7 @@ export function TechnicianMachineDetailScreen() {
           {machine.isFetching ? T.MACHINE_CHECK.LOADING : T.MACHINE_CHECK.RETRY}
         </ButtonBar>
       )}
-    </ActionBar>
+    </ActionBarConfig>
   );
   const heading = (title: string = T.MACHINE_CHECK.DETAIL_TITLE, description?: string) => (
     <BackButtonHeading

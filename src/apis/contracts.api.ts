@@ -1,7 +1,8 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   ContractDocumentsSchema, ContractExpirySchema, ContractIdSchema,
-  CreateContractRequestSchema, CreateContractResponseSchema, type CreateContractRequest,
+  ActivateContractRequestSchema, CreateContractRequestSchema, CreateContractResponseSchema,
+  type ActivateContractRequest, type CreateContractRequest,
   ContractListSchema, ContractSchema, ModeratorContractListSchema, ModeratorContractSchema,
 } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
@@ -67,9 +68,10 @@ export const contractsApi = {
     });
     return ContractDocumentsSchema.parse(response.data);
   },
-  async activate(id: string) {
+  async activate(id: string, input: ActivateContractRequest) {
     const contractId = ContractIdSchema.parse(id);
-    await axiosClient.post<unknown>(`${contractPath(contractId)}/activate`, undefined, {
+    const request = ActivateContractRequestSchema.parse(input);
+    await axiosClient.post<unknown>(`${contractPath(contractId)}/activate`, request, {
       baseURL: DOLORES_API_BASE_URL,
     });
   },

@@ -1,29 +1,135 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  BILLING_DEFAULT_PAGE_SIZE,
   InvoiceIdSchema,
+  InvoiceLineItemListParamsSchema,
+  InvoiceLineItemsSchema,
+  InvoiceListParamsSchema,
   InvoicesSchema,
+  InvoiceSchema,
   ModeratorInvoiceSchema,
   ModeratorInvoicesSchema,
   PaymentProofIdSchema,
+  PaymentProofListParamsSchema,
+  PaymentProofReviewRequestSchema,
   PaymentProofsSchema,
-  InvoiceLineItemsSchema,
-  InvoiceSchema,
+  PaymentProofSchema,
   PaymentProofSubmitResponseSchema,
+  type BillingPage,
+  type Invoice,
+  type InvoiceLineItemListParams,
+  type InvoiceListParams,
+  type PaymentProofListParams,
 } from "@/schema/billing.schema";
+
+const MAX_PAYMENT_PROOF_BYTES = 20 * 1024 * 1024;
+const ALLOWED_PROOF_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 
 const invoicePath = (id: string) =>
   "/billing/invoices/" + encodeURIComponent(InvoiceIdSchema.parse(id));
 
-const proofContentPath = (id: string) =>
-  "/billing/payment-proofs/" + encodeURIComponent(PaymentProofIdSchema.parse(id)) + "/content";
+const proofPath = (id: string) =>
+  "/billing/payment-proofs/" + encodeURIComponent(PaymentProofIdSchema.parse(id));
+
+const proofContentPath = (id: string) => proofPath(id) + "/content";
+
+function paginationHeader(headers: unknown, name: string): unknown {
+  if (!headers || typeof headers !== "object") return undefined;
+  const candidate = headers as Record<string, unknown> & { get?: (header: string) => unknown };
+  return candidate.get?.(name) ?? candidate[name.toLowerCase()] ?? candidate[name];
+}
+
+function numberHeader(headers: unknown, name: string, fallback: number): number {
+  const raw = paginationHeader(headers, name);
+  if (raw == null || raw === "") return fallback;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value >= 0 ? value : fallback;
+}
+
+function pageFromResponse<T>(
+  items: T[],
+  headers: unknown,
+  requestedPage: number,
+  requestedSize: number,
+): BillingPage<T> {
+  const hasNextValue = paginationHeader(headers, "X-Has-Next");
+  const hasNext = hasNextValue === undefined
+    ? items.length === requestedSize
+    : String(hasNextValue).toLowerCase() === "true";
+  return {
+    items,
+    page: numberHeader(headers, "X-Page", requestedPage),
+    size: numberHeader(headers, "X-Page-Size", requestedSize),
+    hasNext,
+  };
+}
+
+function invoiceQueryParams(input: InvoiceListParams) {
+  const params = InvoiceListParamsSchema.parse(input);
+  return {
+    ...(params.ownerId ? { ownerId: params.ownerId } : {}),
+    ...(params.status ? { status: params.status } : {}),
+    ...(params.type ? { type: params.type } : {}),
+    ...(params.period ? { period: params.period } : {}),
+    page: params.page,
+    size: params.size,
+  };
+}
+
+function detectPaymentProofType(bytes: Uint8Array): string | undefined {
+  if (bytes.length >= 5 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2d) {
+    return "application/pdf";
+  }
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) {
+    return "image/png";
+  }
+  return undefined;
+}
+
+export async function validatePaymentProofFile(file: File): Promise<void> {
+  if (!file || file.size <= 0) throw new Error("Chọn một tệp chứng từ không rỗng.");
+  if (file.size > MAX_PAYMENT_PROOF_BYTES) throw new Error("Tệp chứng từ phải nhỏ hơn hoặc bằng 20 MB.");
+  if (!ALLOWED_PROOF_TYPES.has(file.type)) throw new Error("Chỉ hỗ trợ chứng từ PDF, JPEG hoặc PNG.");
+
+  const signature = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  if (detectPaymentProofType(signature) !== file.type) {
+    throw new Error("Nội dung tệp không khớp với định dạng PDF, JPEG hoặc PNG đã chọn.");
+  }
+}
 
 export const billingApi = {
+  async listInvoicesPage(input: InvoiceListParams = {}, signal?: AbortSignal): Promise<BillingPage<Invoice>> {
+    const params = invoiceQueryParams(input);
+    const response = await axiosClient.get<unknown>("/billing/invoices", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InvoicesSchema.parse(response.data);
+    return pageFromResponse(items, response.headers, params.page, params.size);
+  },
+
   async listInvoices(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/billing/invoices", {
       baseURL: DOLORES_API_BASE_URL,
+      params: { page: 0, size: BILLING_DEFAULT_PAGE_SIZE },
       signal,
     });
     return InvoicesSchema.parse(response.data);
+  },
+
+  async listOperatorInvoicesPage(input: InvoiceListParams = {}, signal?: AbortSignal) {
+    const params = invoiceQueryParams(input);
+    const response = await axiosClient.get<unknown>("/billing/invoices", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = ModeratorInvoicesSchema.parse(response.data);
+    return pageFromResponse(items, response.headers, params.page, params.size);
   },
 
   async getInvoice(id: string, signal?: AbortSignal) {
@@ -39,27 +145,6 @@ export const billingApi = {
     return invoice;
   },
 
-  async listInvoiceLineItems(id: string, signal?: AbortSignal) {
-    const validId = InvoiceIdSchema.parse(id);
-    const response = await axiosClient.get<unknown>(invoicePath(validId) + "/line-items", {
-      baseURL: DOLORES_API_BASE_URL,
-      signal,
-    });
-    const items = InvoiceLineItemsSchema.parse(response.data);
-    if (items.some((item) => item.invoiceId !== validId)) {
-      throw new Error("Dolores returned an invoice line item for a different invoice.");
-    }
-    return items;
-  },
-
-  async listModeratorInvoices(signal?: AbortSignal) {
-    const response = await axiosClient.get<unknown>("/billing/invoices", {
-      baseURL: DOLORES_API_BASE_URL,
-      signal,
-    });
-    return ModeratorInvoicesSchema.parse(response.data);
-  },
-
   async getModeratorInvoice(id: string, signal?: AbortSignal) {
     const validId = InvoiceIdSchema.parse(id);
     const response = await axiosClient.get<unknown>(invoicePath(validId), {
@@ -73,17 +158,72 @@ export const billingApi = {
     return invoice;
   },
 
-  async listPaymentProofs(invoiceId: string, signal?: AbortSignal) {
+  async listInvoiceLineItemsPage(id: string, input: InvoiceLineItemListParams = {}, signal?: AbortSignal) {
+    const validId = InvoiceIdSchema.parse(id);
+    const params = InvoiceLineItemListParamsSchema.parse(input);
+    const response = await axiosClient.get<unknown>(invoicePath(validId) + "/line-items", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InvoiceLineItemsSchema.parse(response.data);
+    if (items.some((item) => item.invoiceId !== validId)) {
+      throw new Error("Dolores returned an invoice line item for a different invoice.");
+    }
+    return pageFromResponse(items, response.headers, params.page, params.size);
+  },
+
+  async listInvoiceLineItems(id: string, signal?: AbortSignal) {
+    const validId = InvoiceIdSchema.parse(id);
+    const params = InvoiceLineItemListParamsSchema.parse({});
+    const response = await axiosClient.get<unknown>(invoicePath(validId) + "/line-items", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InvoiceLineItemsSchema.parse(response.data);
+    if (items.some((item) => item.invoiceId !== validId)) {
+      throw new Error("Dolores returned an invoice line item for a different invoice.");
+    }
+    return items;
+  },
+
+  async listModeratorInvoices(signal?: AbortSignal) {
+    const params = invoiceQueryParams({});
+    const response = await axiosClient.get<unknown>("/billing/invoices", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    return ModeratorInvoicesSchema.parse(response.data);
+  },
+
+  async listPaymentProofsPage(invoiceId: string, input: PaymentProofListParams = {}, signal?: AbortSignal) {
     const validInvoiceId = InvoiceIdSchema.parse(invoiceId);
+    const params = PaymentProofListParamsSchema.parse(input);
     const response = await axiosClient.get<unknown>(
       invoicePath(validInvoiceId) + "/payment-proofs",
-      { baseURL: DOLORES_API_BASE_URL, signal },
+      { baseURL: DOLORES_API_BASE_URL, params, signal },
     );
-    const proofs = PaymentProofsSchema.parse(response.data);
-    if (proofs.some((proof) => proof.invoiceId !== validInvoiceId)) {
+    const items = PaymentProofsSchema.parse(response.data);
+    if (items.some((proof) => proof.invoiceId !== validInvoiceId)) {
       throw new Error("Dolores returned a payment proof for a different invoice.");
     }
-    return proofs;
+    return pageFromResponse(items, response.headers, params.page, params.size);
+  },
+
+  async listPaymentProofs(invoiceId: string, signal?: AbortSignal) {
+    const validInvoiceId = InvoiceIdSchema.parse(invoiceId);
+    const params = PaymentProofListParamsSchema.parse({});
+    const response = await axiosClient.get<unknown>(
+      invoicePath(validInvoiceId) + "/payment-proofs",
+      { baseURL: DOLORES_API_BASE_URL, params, signal },
+    );
+    const items = PaymentProofsSchema.parse(response.data);
+    if (items.some((proof) => proof.invoiceId !== validInvoiceId)) {
+      throw new Error("Dolores returned a payment proof for a different invoice.");
+    }
+    return items;
   },
 
   async submitPaymentProof(input: {
@@ -96,12 +236,12 @@ export const billingApi = {
     if (!Number.isFinite(input.amount) || input.amount <= 0) {
       throw new Error("Payment amount must be greater than zero.");
     }
-    if (!input.file || input.file.size <= 0) {
-      throw new Error("A non-empty payment proof file is required.");
+    const idempotencyKey = input.idempotencyKey.trim();
+    if (!idempotencyKey || idempotencyKey.length > 128) {
+      throw new Error("An idempotency key between 1 and 128 characters is required.");
     }
-    if (!input.idempotencyKey.trim()) {
-      throw new Error("An idempotency key is required.");
-    }
+    await validatePaymentProofFile(input.file);
+
     const form = new FormData();
     form.append("file", input.file);
     const response = await axiosClient.post<unknown>(
@@ -110,13 +250,32 @@ export const billingApi = {
       {
         baseURL: DOLORES_API_BASE_URL,
         params: { amount: input.amount },
+        // Override axiosClient's shared JSON default; the browser adapter adds
+        // the multipart boundary when it sends this FormData body.
         headers: {
-          "Idempotency-Key": input.idempotencyKey,
+          "Idempotency-Key": idempotencyKey,
           "Content-Type": "multipart/form-data",
         },
       },
     );
-    return PaymentProofSubmitResponseSchema.parse(response.data);
+    const proof = PaymentProofSubmitResponseSchema.parse(response.data);
+    if (proof.invoiceId !== invoiceId) {
+      throw new Error("Dolores returned a payment proof for a different invoice.");
+    }
+    return proof;
+  },
+
+  async reviewPaymentProof(input: { proofId: string; approve: boolean; reason: string }) {
+    const proofId = PaymentProofIdSchema.parse(input.proofId);
+    const body = PaymentProofReviewRequestSchema.parse({ approve: input.approve, reason: input.reason });
+    const response = await axiosClient.post<unknown>(proofPath(proofId) + "/review", body, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    const proof = PaymentProofSchema.parse(response.data);
+    if (proof.id !== proofId) {
+      throw new Error("Dolores returned a different payment proof after review.");
+    }
+    return proof;
   },
 
   async downloadPaymentProofContent(proofId: string, signal?: AbortSignal) {

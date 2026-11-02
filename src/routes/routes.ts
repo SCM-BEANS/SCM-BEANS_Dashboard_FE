@@ -7,9 +7,10 @@ import {
 } from "./path";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
-import { MachineIdSchema } from "@/schema/machines.schema";
+import { MachineIdSchema, MaintenanceRequestIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
+import { RepairCostReviewIdSchema } from "@/schema/repair-cost-reviews.schema";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
@@ -39,8 +40,11 @@ export const ADMIN_NAVIGATION_LINKS = [
   { LABEL: ADMIN_MESSAGES.NAVIGATION.STORES, HREF: PATH_ADMIN.STORES, ICON: "Building2" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_ADMIN.CONTRACTS, ICON: "FileText" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_ADMIN.MACHINES, ICON: "Package" },
+  { LABEL: ADMIN_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS, HREF: PATH_ADMIN.TECHNICAL_REQUESTS, ICON: "Wrench" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.IOT, HREF: PATH_ADMIN.IOT, ICON: "Activity" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.MENU, HREF: PATH_ADMIN.MENU, ICON: "Utensils" },
+  { LABEL: ADMIN_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_ADMIN.INVOICES, ICON: "Receipt" },
+  { LABEL: ADMIN_MESSAGES.NAVIGATION.BUYBACKS, HREF: PATH_ADMIN.BUYBACKS, ICON: "Package" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.REPORTS, HREF: PATH_ADMIN.REPORTS, ICON: "BarChart3" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_ADMIN.NOTIFICATIONS, ICON: "Bell" },
 ] as const;
@@ -53,8 +57,11 @@ export const ADMIN_ENABLED_PATHS = new Set<string>([
   PATH_ADMIN.STORES,
   PATH_ADMIN.CONTRACTS,
   PATH_ADMIN.MACHINES,
+  PATH_ADMIN.TECHNICAL_REQUESTS,
   PATH_ADMIN.IOT,
   PATH_ADMIN.MENU,
+  PATH_ADMIN.INVOICES,
+  PATH_ADMIN.BUYBACKS,
   PATH_ADMIN.REPORTS,
   PATH_ADMIN.NOTIFICATIONS,
 ]);
@@ -65,6 +72,7 @@ export const MODERATOR_NAVIGATION_LINKS = [
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.CUSTOMERS, HREF: PATH_MODERATOR.CUSTOMERS, ICON: "Users" },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_MODERATOR.INVOICES, ICON: "FileText" },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_MODERATOR.MACHINES, ICON: "Coffee" },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_MODERATOR.LOCATIONS, ICON: "Building2" },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT, HREF: PATH_MODERATOR.IOT, ICON: "Activity" },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.MENU, HREF: PATH_MODERATOR.MENU, ICON: "Utensils" },
   { LABEL: MODERATOR_MESSAGES.NAVIGATION.TECHNICAL_REQUESTS, HREF: PATH_MODERATOR.TECHNICAL_REQUESTS, ICON: "Wrench" },
@@ -77,15 +85,19 @@ export const CUSTOMER_NAVIGATION_LINKS = [
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.OVERVIEW, HREF: PATH_CUSTOMER.ROOT, ICON: "LayoutDashboard" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.CONTRACTS, HREF: PATH_CUSTOMER.CONTRACTS, ICON: "FileText" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MACHINES, HREF: PATH_CUSTOMER.MACHINES, ICON: "Coffee" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_CUSTOMER.LOCATIONS, ICON: "MapPin" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MENU, HREF: PATH_CUSTOMER.MENU, ICON: "Utensils" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_CUSTOMER.INVOICES, ICON: "FileText" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.SUPPORT, HREF: PATH_CUSTOMER.SUPPORT, ICON: "Wrench" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MAINTENANCE, HREF: PATH_CUSTOMER.MAINTENANCE, ICON: "Wrench" },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.RECALLS, HREF: PATH_CUSTOMER.RECALLS, ICON: "Package" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.BUYBACK, HREF: PATH_CUSTOMER.BUYBACK, ICON: "Package" },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_CUSTOMER.NOTIFICATIONS, ICON: "Bell" },
 ] as const;
 
 export const TECHNICIAN_NAVIGATION_LINKS = [
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.TASKS, HREF: PATH_TECHNICIAN.TASKS, ICON: "ClipboardCheck" },
+  { LABEL: "Thu hồi máy", HREF: PATH_TECHNICIAN.TASK_RETRIEVAL, ICON: "Package" },
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.MACHINE_CHECK, HREF: PATH_TECHNICIAN.MACHINE_CHECK, ICON: "Wrench" },
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.HISTORY, HREF: PATH_TECHNICIAN.HISTORY, ICON: "Coffee" },
   { LABEL: TECHNICIAN_MESSAGES.NAVIGATION.NOTIFICATIONS, HREF: PATH_TECHNICIAN.NOTIFICATIONS, ICON: "Bell" },
@@ -99,8 +111,10 @@ const customerStaticSections = [
   "contracts/end",
   "contracts/deposit-complete",
   "machines",
+  "machines/new",
   "machines/substitute",
   "machines/history",
+  "locations",
   "invoices",
   "invoices/payment",
   "invoices/shortfall",
@@ -117,6 +131,7 @@ const customerStaticSections = [
   "support",
   "support/new",
   "support/menu",
+  "maintenance",
   "buyback",
   "buyback/new",
   "buyback/documents",
@@ -192,6 +207,24 @@ export function isSupportedCustomerSection(section: string): boolean {
     }
     if (group === "menu") return GlobalRecipeIdSchema.safeParse(id).success;
     if (group === "support") return isUuidRouteSegment(id);
+    if (group === "maintenance") return MaintenanceRequestIdSchema.safeParse(id).success;
+    if (group === "repair-cost-reviews") return RepairCostReviewIdSchema.safeParse(id).success;
+  }
+
+  if (
+    segments.length === 3 &&
+    segments[0] === "contracts" &&
+    segments[1] === "recall"
+  ) {
+    return isUuidRouteSegment(segments[2]);
+  }
+
+  if (
+    segments.length === 3 &&
+    segments[0] === "support" &&
+    segments[1] === "repair-cases"
+  ) {
+    return isUuidRouteSegment(segments[2]);
   }
 
   if (
@@ -210,6 +243,15 @@ export function isSupportedTechnicianSection(section: string): boolean {
   if (technicianExactPaths.has(pathname)) return true;
 
   const segments = section.split("/");
+  if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "retrieval") {
+    return isUuidRouteSegment(segments[2]);
+  }
+  if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "repair-cases") {
+    return isUuidRouteSegment(segments[2]);
+  }
+  if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "maintenance-tickets") {
+    return isUuidRouteSegment(segments[2]);
+  }
   if (segments.length !== 2) return false;
   if (segments[0] === "tasks") {
     return InstallationWorkOrderIdSchema.safeParse(segments[1]).success;
@@ -254,6 +296,20 @@ export function isSupportedModeratorSection(section: string): boolean {
   const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(section);
   if (contractInstallationRequest) {
     return ContractIdSchema.safeParse(contractInstallationRequest[1]).success;
+  }
+  const maintenanceRequestDetail = /^technical-requests\/requests\/([^/]+)$/.exec(section);
+  if (maintenanceRequestDetail) {
+    return MaintenanceRequestIdSchema.safeParse(maintenanceRequestDetail[1]).success;
+  }
+  const maintenanceRequestAssignment = /^technical-requests\/requests\/([^/]+)\/assign$/.exec(section);
+  if (maintenanceRequestAssignment) {
+    return MaintenanceRequestIdSchema.safeParse(maintenanceRequestAssignment[1]).success;
+  }
+  const costReviewDetail = /^technical-requests\/cost-reviews\/([^/]+)$/.exec(section);
+  if (costReviewDetail) return RepairCostReviewIdSchema.safeParse(costReviewDetail[1]).success;
+  const repairCaseDetail = /^technical-requests\/cases\/([^/]+)$/.exec(section);
+  if (repairCaseDetail) {
+    return RepairCaseIdSchema.safeParse(repairCaseDetail[1]).success;
   }
   const pathname = section
     ? PATH_MODERATOR.ROOT + "/" + section

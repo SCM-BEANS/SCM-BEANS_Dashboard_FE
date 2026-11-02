@@ -82,5 +82,83 @@ export const DashboardOverviewSchema = z.object({
 
 export const DashboardDateRangeSchema = dateRangeInputSchema;
 
+export const DashboardActionTypeSchema = z.enum([
+  "CONTRACT_EXPIRING", "CONTRACT_EXPIRY_FOLLOW_UP", "CONTRACT_DATA_REVIEW",
+  "PAYMENT_PROOF_REVIEW", "REPAIR_COST_REVIEW", "REPAIR_COST_DISPUTE", "REPAIR_COST_OWNER_RESPONSE",
+  "MAINTENANCE_SCHEDULE", "MAINTENANCE_WORK_ORDER", "MAINTENANCE_OVERDUE_REVIEW", "MAINTENANCE_PROGRESS",
+  "REPAIR_TRIAGE", "REPAIR_REPLACEMENT", "REPAIR_REPLACEMENT_DECISION", "REPAIR_PROGRESS",
+  "TECHNICAL_WORK", "INSTALLATION_WORK", "OWNER_HANDOVER_ACK",
+  "RECALL_ASSIGN", "RECALL_WORK", "RECALL_OWNER_ACK", "RECALL_RECEIPT_REVIEW", "LEGACY_RECALL_REVIEW",
+  "BUYBACK_REVIEW", "BUYBACK_WORK", "BUYBACK_PAYMENT_PROOF_REVIEW",
+  "REFUND_REVIEW", "REFUND_PAYOUT", "REFUND_OWNER_RECEIPT", "REFUND_DISPUTE", "REFUND_CONFIRM_REQUEST",
+  "OWNER_INVOICE_PAYMENT",
+]);
+
+export const DashboardResourceTypeSchema = z.enum([
+  "CONTRACT", "TERMINATION_CASE", "PAYMENT_PROOF", "REPAIR_COST_REVIEW", "MAINTENANCE_REQUEST",
+  "MAINTENANCE_TICKET", "REPAIR_CASE", "MAINTENANCE_CUSTODY_EVENT", "INSTALLATION_WORK_ORDER",
+  "RECALL_WORK_ORDER", "BUYBACK_CASE", "BUYBACK_PAYMENT_PROOF", "REFUND", "INVOICE",
+]);
+
+export const DashboardTimeBucketSchema = z.enum(["TODAY", "UPCOMING", "OVERDUE", "UNSCHEDULED"]);
+
+export const DashboardActionItemSchema = z.object({
+  actionKey: z.string().min(1),
+  resourceType: DashboardResourceTypeSchema,
+  resourceId: z.string().uuid(),
+  actionType: DashboardActionTypeSchema,
+  status: z.string(),
+  title: z.string(),
+  ownerId: z.string().uuid().nullish(),
+  ownerName: z.string().nullish(),
+  contractId: z.string().uuid().nullish(),
+  machineId: z.string().uuid().nullish(),
+  machineSerialNumber: z.string().nullish(),
+  technicianId: z.string().uuid().nullish(),
+  technicianName: z.string().nullish(),
+  createdAt: z.string().datetime({ offset: true }).nullish(),
+  scheduledAt: z.string().datetime({ offset: true }).nullish(),
+  dueAt: z.string().datetime({ offset: true }).nullish(),
+  overdue: z.boolean(),
+  priority: z.string(),
+  priorityReason: z.string().nullish(),
+  detailPath: z.string().min(1),
+  workType: z.string().nullish(),
+  availableActions: z.array(z.object({ code: z.string(), method: z.string(), path: z.string() })),
+  nextAction: z.object({ code: z.string(), method: z.string(), path: z.string() }).nullish(),
+}).passthrough();
+
+export const DashboardWorkflowAvailabilitySchema = z.object({
+  workflow: z.string(),
+  available: z.boolean(),
+  reason: z.string().nullish(),
+}).passthrough();
+
+export const DashboardActionItemsPageSchema = z.object({
+  items: z.array(DashboardActionItemSchema),
+  page: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  hasMore: z.boolean(),
+  generatedAt: z.string().datetime({ offset: true }),
+  businessTimezone: z.string(),
+  workflowAvailability: z.array(DashboardWorkflowAvailabilitySchema),
+}).passthrough();
+
+export const DashboardActionItemsFilterSchema = z.object({
+  actionType: DashboardActionTypeSchema.optional(),
+  resourceType: DashboardResourceTypeSchema.optional(),
+  timeBucket: DashboardTimeBucketSchema.optional(),
+  ownerId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(),
+  machineId: z.string().uuid().optional(),
+  technicianId: z.string().uuid().optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+});
+
+export type TDashboardActionItem = z.infer<typeof DashboardActionItemSchema>;
+export type TDashboardActionItemsPage = z.infer<typeof DashboardActionItemsPageSchema>;
+export type TDashboardActionItemsFilter = z.input<typeof DashboardActionItemsFilterSchema>;
+
 export type TDashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 export type TDailyMachineCupUsage = z.infer<typeof DailyMachineCupUsageSchema>;

@@ -13,6 +13,7 @@ const ContractCreateScreen = lazy(() => import("./contracts/contract-create-scre
 const ContractDetailScreen = lazy(() => import("./contracts/contract-detail-screen").then((module) => ({ default: module.ContractDetailScreen })));
 const ContractInstallationRequestScreen = lazy(() => import("./contracts/contract-installation-request-screen").then((module) => ({ default: module.ContractInstallationRequestScreen })));
 const ModeratorMachinesScreen = lazy(() => import("./machines/machines-screen").then((module) => ({ default: module.ModeratorMachinesScreen })));
+const ModeratorLocationsScreen = lazy(() => import("./locations/locations-screen").then((module) => ({ default: module.ModeratorLocationsScreen })));
 const ModeratorIoTScreen = lazy(() => import("./iot/iot-screen").then((module) => ({ default: module.ModeratorIoTScreen })));
 const ModeratorTechnicalScreen = lazy(() => import("./technical/technical-screen").then((module) => ({ default: module.ModeratorTechnicalScreen })));
 const ModeratorInvoicesScreen = lazy(() => import("./invoices/invoices-screen").then((module) => ({ default: module.ModeratorInvoicesScreen })));
@@ -49,6 +50,7 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
   if (sectionPath === "machines" || sectionPath.startsWith("machines/")) {
     return loadScreen(<ModeratorMachinesScreen path={sectionPath} />);
   }
+  if (sectionPath === "locations") return loadScreen(<ModeratorLocationsScreen />);
   if (sectionPath === "iot" || sectionPath === "iot/customer" || sectionPath === "iot/machines") {
     return loadScreen(<ModeratorIoTScreen path={sectionPath} />);
   }

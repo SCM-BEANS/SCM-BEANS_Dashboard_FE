@@ -71,6 +71,24 @@ const schemaMocks = {
   "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
   "@/schema/tenants.schema": loadModule("src/schema/tenants.schema.ts"),
 };
+function loadAdminStoresPage(mocks = {}) {
+  return loadModule("src/pages/admin/stores/index.page.tsx", {
+    ...schemaMocks,
+    "@/lib/api-errors": {
+      API_ERROR_MESSAGES: {},
+      getApiErrorMessage: () => "Request failed",
+      isUncertainApiMutation: () => false,
+    },
+    "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+    "@/components/table/data-table": { DataTable: () => null },
+    "@/components/notification-dialog/notification-dialog": { NotificationDialog: () => null },
+    "@/apis/tenants.api": { tenantsApi: {} },
+    "../admin-back-destination": { getStoresBackDestination: () => null },
+    "../admin-shell": { AdminShell: () => null, adminStyles: {} },
+    "next/router": { useRouter: () => ({}) },
+    ...mocks,
+  });
+}
 
 test("profile API lists, details, contracts, and history with the Dolores base URL", async () => {
   const historyPage = page([{ id: "history-1", changedAt: "2026-10-23T00:00:00Z", source: "SYSTEM" }]);
@@ -81,9 +99,11 @@ test("profile API lists, details, contracts, and history with the Dolores base U
   assert.equal((await profilesApi.list({ role: "OWNER", page: 0, size: 20 })).items[0].idaasUserId, ownerId);
   assert.equal((await profilesApi.getById(ownerId)).email, profile.email);
   assert.equal((await profilesApi.getContracts(ownerId)).items[0].contractId, contractId);
+  assert.equal((await profilesApi.getContracts(ownerId, 2, 25)).items[0].contractId, contractId);
   assert.equal((await profilesApi.getHistory(ownerId)).items[0].source, "SYSTEM");
   assert.ok(calls.every((call) => call.config.baseURL === "/api/dolores/v1"));
-  assert.deepEqual(calls.map((call) => call.url), ["/profiles", `/profiles/${ownerId}`, `/profiles/${ownerId}/contracts`, `/profiles/${ownerId}/history`]);
+  assert.deepEqual(calls.map((call) => call.url), ["/profiles", `/profiles/${ownerId}`, `/profiles/${ownerId}/contracts`, `/profiles/${ownerId}/contracts`, `/profiles/${ownerId}/history`]);
+  assert.deepEqual(calls[3].config.params, { page: 2, size: 25 });
   await assert.rejects(profilesApi.getById("invalid-id"));
 });
 
@@ -281,35 +301,35 @@ test("store fan-out keeps successful Owner data, records partial failures, and c
   const profilesApi = {
     list: async () => page(owners),
   };
+  const requestedPages = [];
   const locationsApi = {
-    list: async ({ ownerId: requestedOwnerId }) => {
+    listPage: async ({ ownerId: requestedOwnerId, page: requestedPage }) => {
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       await new Promise((resolve) => setTimeout(resolve, 3));
       inFlight -= 1;
       if (requestedOwnerId === owners[6].idaasUserId) throw Object.assign(new Error("forbidden"), { response: { status: 403 } });
-      return [{
+      requestedPages.push({ ownerId: requestedOwnerId, page: requestedPage });
+      return { items: [{
         ...location,
         id: requestedOwnerId.slice(0, 8) + "-0000-4000-8000-000000000099",
-        ownerId: undefined,
-        tenantId: documentId,
-      }];
+        ownerId: requestedOwnerId,
+      }], page: requestedPage, size: 100,
+      hasNext: requestedOwnerId === owners[0].idaasUserId && requestedPage === 0 };
     },
   };
-  const pageModule = loadModule("src/pages/admin/stores.page.tsx", {
-    ...schemaMocks,
+  const pageModule = loadAdminStoresPage({
     "@/apis/admin-users.api": { adminUsersApi: { list: async () => ({ items: [], page: 1, page_size: 100, total: 0 }) } },
     "@/apis/profiles.api": { profilesApi },
     "@/apis/locations.api": { locationsApi },
     "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES: {} },
-    "./admin-shell": { AdminShell: () => null, adminStyles: {} },
-    "next/router": { useRouter: () => ({}) },
   });
   const result = await pageModule.loadOwnerLocations();
   assert.equal(result.owners.length, 12);
-  assert.equal(result.locations.length, 11);
+  assert.equal(result.locations.length, 12);
   assert.deepEqual(result.failed, [owners[6].fullName]);
   assert.equal(maxInFlight, 5);
+  assert.deepEqual(requestedPages.filter(({ ownerId: requestedOwnerId }) => requestedOwnerId === owners[0].idaasUserId).map(({ page: requestedPage }) => requestedPage), [0, 1]);
 });
 
 test("store creation owner options request IDaaS owners and keep the returned id and name", async () => {
@@ -329,14 +349,11 @@ test("store creation owner options request IDaaS owners and keep the returned id
       };
     },
   };
-  const pageModule = loadModule("src/pages/admin/stores.page.tsx", {
-    ...schemaMocks,
+  const pageModule = loadAdminStoresPage({
     "@/apis/admin-users.api": { adminUsersApi },
     "@/apis/profiles.api": { profilesApi: { list: async () => page([]) } },
-    "@/apis/locations.api": { locationsApi: { list: async () => [] } },
+    "@/apis/locations.api": { locationsApi: { list: async () => [], listPage: async () => ({ items: [], page: 0, size: 100, hasNext: false }) } },
     "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES: {} },
-    "./admin-shell": { AdminShell: () => null, adminStyles: {} },
-    "next/router": { useRouter: () => ({}) },
   });
 
   const owners = await pageModule.loadOwnerUsers();
@@ -349,7 +366,7 @@ test("store creation owner options request IDaaS owners and keep the returned id
   ]);
 });
 
-test("store fan-out stops scheduling later Owners after the current batch is cancelled", async () => {
+test("store fan-out stops starting requests after cancellation", async () => {
   const owners = Array.from({ length: 12 }, (_, index) => ({
     ...profile,
     idaasUserId: `f3${String(index).padStart(6, "0")}-0000-4000-8000-000000000001`,
@@ -357,20 +374,17 @@ test("store fan-out stops scheduling later Owners after the current batch is can
   }));
   const controller = new AbortController();
   const requested = [];
-  const pageModule = loadModule("src/pages/admin/stores.page.tsx", {
-    ...schemaMocks,
+  const pageModule = loadAdminStoresPage({
     "@/apis/admin-users.api": { adminUsersApi: { list: async () => ({ items: [], page: 1, page_size: 100, total: 0 }) } },
     "@/apis/profiles.api": { profilesApi: { list: async () => page(owners) } },
-    "@/apis/locations.api": { locationsApi: { list: async ({ ownerId: requestedOwnerId }) => {
+    "@/apis/locations.api": { locationsApi: { listPage: async ({ ownerId: requestedOwnerId, page: requestedPage }) => {
       requested.push(requestedOwnerId);
       if (requested.length === 1) controller.abort();
-      return [{ ...location, ownerId: requestedOwnerId }];
+      return { items: [{ ...location, ownerId: requestedOwnerId }], page: requestedPage, size: 100, hasNext: false };
     } } },
     "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES: {} },
-    "./admin-shell": { AdminShell: () => null, adminStyles: {} },
-    "next/router": { useRouter: () => ({}) },
   });
   const result = await pageModule.loadOwnerLocations(controller.signal);
-  assert.equal(requested.length, 5);
-  assert.equal(result.locations.length, 5);
+  assert.equal(requested.length, 1);
+  assert.equal(result.locations.length, 1);
 });

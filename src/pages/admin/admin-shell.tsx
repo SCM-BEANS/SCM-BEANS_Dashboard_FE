@@ -3,7 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -19,10 +19,8 @@ export { styles as adminStyles };
 
 export function AdminShell({
   children,
-  actions,
 }: {
   children: ReactNode;
-  actions?: ReactNode;
 }) {
   const router = useRouter();
   const [access, setAccess] = useState<"checking" | "allowed" | "forbidden">(
@@ -118,8 +116,9 @@ export function AdminShell({
               footer={<p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>}
             />
           </header>
-          <main className={styles.main}>{children}</main>
-          {actions && <ActionBar>{actions}</ActionBar>}
+          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
+            <main className={styles.main}>{children}</main>
+          </ActionBarLayout>
         </div>
       </div>
       {logoutSucceeded && (

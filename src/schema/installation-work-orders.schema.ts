@@ -4,7 +4,7 @@ const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
 
 export const InstallationWorkOrderIdSchema = uuidSchema;
-export const InstallationWorkOrderTenantIdSchema = uuidSchema;
+export const InstallationWorkOrderOwnerIdSchema = uuidSchema;
 
 export const CreateInstallationWorkOrderRequestSchema = z.object({
   ownerId: uuidSchema,
@@ -25,7 +25,7 @@ export type CreateInstallationWorkOrderResponse = z.infer<typeof CreateInstallat
 
 export const InstallationWorkOrderSummarySchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  tenantId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
@@ -44,7 +44,7 @@ export const InstallationWorkOrderListSchema = z.array(InstallationWorkOrderSumm
 
 export const AssignedInstallationWorkOrderSummarySchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  ownerId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),
@@ -64,7 +64,7 @@ export const AssignedInstallationWorkOrderListSchema = z.array(AssignedInstallat
 
 export const InstallationWorkOrderRecordSchema = z.object({
   id: InstallationWorkOrderIdSchema,
-  ownerId: InstallationWorkOrderTenantIdSchema,
+  ownerId: InstallationWorkOrderOwnerIdSchema,
   contractId: uuidSchema,
   machineId: uuidSchema,
   machineType: z.enum(["CONVENTIONAL", "SMART_IOT"]),

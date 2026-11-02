@@ -1,10 +1,11 @@
 import Cookies from "js-cookie";
-import { Bell, Coffee, FileText, LayoutDashboard, Package, Utensils, Wrench } from "lucide-react";
+import { Bell, Coffee, FileText, LayoutDashboard, MapPin, Package, Utensils, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
+import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -21,6 +22,7 @@ const NAV_ICONS = {
   Coffee,
   FileText,
   LayoutDashboard,
+  MapPin,
   Package,
   Utensils,
   Wrench,
@@ -149,7 +151,9 @@ export function CustomerShell({
           <div className={styles.mobileBreadcrumb}>
             {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
           </div>
-          <main className={styles.main}>{children}</main>
+          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
+            <main className={styles.main}>{children}</main>
+          </ActionBarLayout>
         </div>
       </div>
       {logoutSucceeded && (

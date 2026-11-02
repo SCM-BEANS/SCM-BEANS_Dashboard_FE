@@ -23,6 +23,7 @@ export function isModeratorReadRoute(sectionPath: string): boolean {
     sectionPath === "notifications/alerts" ||
     sectionPath === "machines" ||
     sectionPath.startsWith("machines/") ||
+    sectionPath === "locations" ||
     sectionPath === "iot" ||
     sectionPath === "iot/customer" ||
     sectionPath === "iot/machines" ||

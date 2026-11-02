@@ -206,6 +206,8 @@
 .accountFormGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .accountFormGrid > label, .accountFormGrid > div { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
 .accountFormGrid strong { min-height: 44px; display: flex; align-items: center; color: #302927; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.accountProfileContracts { display: flex; min-width: 0; flex-direction: column; gap: 12px; margin-top: 18px; }
+.accountProfileContracts h3 { margin: 0; font-size: 17px; }
 .accountActionsDock { position: fixed; z-index: 5; right: 0; bottom: 0; left: 240px; display: flex; height: 80px; align-items: center; padding: 12px 32px; border-top: 1px solid #e9e2dc; background: white; }
 .accountActions { display: flex; width: 100%; align-items: center; gap: 8px; overflow-x: auto; }
 

@@ -86,11 +86,14 @@ Response được kiểm tra bằng `DashboardOverviewSchema`. Màn hình hiển
 | --- | --- | --- | --- |
 | GET | IDaaS | `/admin/users` | Danh sách Owner, `role=owner`, `page` bắt đầu từ 1, `page_size=20`; có thể gửi `q` và `status=ACTIVE\|DISABLED`. |
 | GET | IDaaS | `/admin/users/{userId}` | Chi tiết Owner; chỉ gọi khi `view=detail` và `userId` là UUID hợp lệ. |
+| POST | IDaaS | `/admin/users` | Tạo tài khoản Admin Users từ `view=create`; gửi `name`, `email`, `role`, xác nhận trước khi gọi và hiện mật khẩu tạm một lần khi thành công. |
 | GET | Dolores | `/profiles/{idaasUserId}/contracts` | Hợp đồng của Owner trong màn chi tiết; gọi sau khi chi tiết tài khoản tải thành công, `page` bắt đầu từ 0, `size=20`. |
 
 Ô tìm kiếm giới hạn 100 ký tự. Lọc trạng thái và phân trang được giữ trong query string. Chi tiết hiển thị tên, email, ID, role, trạng thái, xác minh email, ngày tạo và hợp đồng của Owner.
 
-**Chưa được nối vào màn Admin:** `PATCH /admin/users/{userId}`, `DELETE /admin/users/{userId}`, `POST /admin/users/{userId}/temporary-password/reissue`. Các wrapper này có trong `adminUsersApi`, nhưng không có call site từ trang Admin. `POST /admin/users` hiện được dùng ở luồng Moderator tạo Owner, không phải màn Admin.
+`POST /admin/users` hỗ trợ tạo `owner`, `moderator` và `technician`; request Admin chỉ gửi `name`, `email`, `role` theo contract IDaaS, không gửi `tenant_id`. Mật khẩu tạm chỉ hiển thị trong dialog sau khi tạo thành công.
+
+**Chưa được nối vào màn Admin:** `PATCH /admin/users/{userId}`, `DELETE /admin/users/{userId}`, `POST /admin/users/{userId}/temporary-password/reissue`. Các wrapper này có trong `adminUsersApi`, nhưng chưa có call site từ trang Admin.
 
 Schema cập nhật tài khoản chỉ chấp nhận `status=ACTIVE`; vô hiệu hóa có wrapper riêng bằng `DELETE`.
 
@@ -209,7 +212,7 @@ Ngày dùng định dạng `YYYY-MM-DD`; `fromDate <= toDate`; ngày kết thúc
 
 | Wrapper | Endpoint | Tình trạng trong UI Admin |
 | --- | --- | --- |
-| `adminUsersApi.create` | `POST /admin/users` | Được gọi ở luồng tạo Owner của Moderator; Admin chưa có form tạo tài khoản. |
+| `adminUsersApi.create` | `POST /admin/users` | Được gọi ở luồng tạo Owner của Moderator và form tạo tài khoản trong Admin Users. |
 | `adminUsersApi.update` | `PATCH /admin/users/{userId}` | Không tìm thấy call site trong trang Admin. |
 | `adminUsersApi.disable` | `DELETE /admin/users/{userId}` | Không tìm thấy call site trong trang Admin. |
 | `adminUsersApi.reissueTemporaryPassword` | `POST /admin/users/{userId}/temporary-password/reissue` | Không tìm thấy call site trong trang Admin. |
@@ -260,7 +263,7 @@ Phạm vi so sánh là route, method, query/path parameter và schema request/re
 4. **Danh sách công thức toàn cục cũng có thể lỗi parse.** Swagger mô tả `GET /recipes/global` bằng `GlobalRecipeSummaryResponse` (`id/name/revision/menuId`), trong khi `GlobalRecipeSchema` frontend yêu cầu `id/name/steps/dosageBounds`. Route detail `/recipes/global/{id}` trả `GlobalRecipeDetailsResponse` đầy đủ. Nên tách schema summary và detail trong frontend hoặc cập nhật response list nếu backend thực sự trả full recipe.
 5. **Telemetry points chưa có response contract cụ thể.** Swagger chỉ nói response là `object`; client hiện yêu cầu `array` và xác nhận `machineId` cho từng điểm. Cần backend chốt mảng trực tiếp hay object có field bọc trước khi viết DTO Flutter.
 6. **Một số giới hạn là validation riêng của frontend.** Ví dụ `StoreLocationRequest.name` bắt buộc ở form nhưng không được đánh dấu `required` trong Swagger; các ngưỡng thời gian, độ dài và số tiền ở form/Zod cũng không phải lúc nào được mô tả thành `minimum/maximum` trong spec. Khi chuyển sang Flutter, không suy ra rằng backend đang cưỡng chế các giới hạn này nếu Swagger không ghi.
-7. **Wrapper tạo/cập nhật tài khoản có field ngoài Swagger.** FE schema cho `POST /admin/users` và `PATCH /admin/users/{id}` cho phép `tenant_id`; hai request DTO Swagger hiện không khai báo field này. Create user là luồng Moderator, không phải màn Admin hiện tại; cần chốt contract nếu Flutter cũng làm luồng đó.
+7. **Schema tạo/cập nhật tài khoản cho phép field ngoài Swagger.** Frontend Zod schema cho `POST /admin/users` và `PATCH /admin/users/{id}` cho phép `tenant_id`, trong khi hai request DTO Swagger hiện không khai báo field này. Form tạo tài khoản ở Admin và Moderator hiện chỉ gửi `name`, `email`, `role`; cần chốt contract trước khi thêm `tenant_id` vào payload khác.
 
 ### Kết luận cập nhật cho tài liệu
 

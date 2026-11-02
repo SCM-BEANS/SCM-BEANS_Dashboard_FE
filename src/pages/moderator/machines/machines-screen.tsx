@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 
 import Link from "next/link";
 
@@ -17,6 +18,10 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 
 import { DataTable } from "@/components/table/data-table";
+import { ButtonBar } from "@/components/button/button-bar";
+import { MachineLocationAssignmentPanel } from "@/components/features/asset-management/machine-location-assignment-panel";
+import { MachineRegistrationForm } from "@/components/features/asset-management/machine-registration-form";
+import { TechnicianMachineAccessPanel } from "@/components/features/asset-management/technician-machine-access-panel";
 
 import { moderatorStyles as styles } from "../moderator-shell";
 import { ModeratorPageHeading } from "../moderator-page-heading";
@@ -150,7 +155,9 @@ function MaintenanceTicketTable({ tickets, machineId }: { tickets: MaintenanceTi
 }
 
 export function ModeratorMachinesScreen({ path }: { path: string }) {
-  const machineId = getMachineDetailId(path);
+  const router = useRouter();
+  const isRegister = path === "machines/register";
+  const machineId = isRegister ? "" : getMachineDetailId(path);
   const validMachineId = MachineIdSchema.safeParse(machineId).success;
   const isDetail = Boolean(machineId);
   const isHistory = path === machineHistoryPath;
@@ -160,13 +167,13 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const inventory = useQuery({
     queryKey: ["dolores", "machines"],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isDetail && !isHistory && !isUnsupported,
+    enabled: !isDetail && !isHistory && !isUnsupported && !isRegister,
     retry: false,
   });
   const inventorySummary = useQuery({
     queryKey: ["dolores", "inventory-summary"],
     queryFn: ({ signal }) => machinesApi.getInventorySummary(signal),
-    enabled: !isDetail && !isHistory && !isUnsupported,
+    enabled: !isDetail && !isHistory && !isUnsupported && !isRegister,
     retry: false,
   });
   const machine = useQuery({
@@ -185,7 +192,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets"],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTickets(signal),
-    enabled: shouldReadTickets,
+    enabled: shouldReadTickets && !isRegister,
     retry: false,
   });
   const locationId = machine.data?.locationId ?? "";
@@ -202,6 +209,20 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       (machine.data.ownerId && location.data.ownerId && machine.data.ownerId !== location.data.ownerId)
     ),
   );
+
+  if (isRegister) {
+    return (
+      <div className={styles.pageContent}>
+        <PageHeading title="Đăng ký máy" description="Chọn Owner trong phạm vi Moderator được phép xem. Máy mới bắt đầu ở trạng thái Trong kho." />
+        <MachineRegistrationForm
+          mode="moderator"
+          ownerId={null}
+          onCancel={() => void router.push(PATH_MODERATOR.MACHINES)}
+          onCreated={(createdMachineId) => void router.replace(PATH_MODERATOR.MACHINE_DETAIL(createdMachineId))}
+        />
+      </div>
+    );
+  }
 
   if (isUnsupported) {
     return <div className={styles.pageContent}><PageHeading title={messages.MACHINES_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.MACHINE_UNAVAILABLE_ACTION}</p></div>;
@@ -234,6 +255,16 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                   ? <p className={styles.partialNotice} role="alert">{messages.LOCATION_MACHINE_SCOPE_MISMATCH}</p>
                   : <QueryFeedback query={location} loadingMessage={messages.LOCATION_LOADING} />
             )}
+            {machine.data.ownerId && !locationScopeMismatch && <MachineLocationAssignmentPanel
+              machineId={machine.data.id}
+              ownerId={machine.data.ownerId}
+              currentLocationId={machine.data.locationId}
+              variant="moderator"
+              createLocationHref={PATH_MODERATOR.LOCATIONS}
+            />}
+            {machine.data.ownerId
+              ? <TechnicianMachineAccessPanel machineId={machine.data.id} />
+              : <p className={styles.pendingNotice} role="note">Quyền Technician cấp máy chỉ dùng được sau khi máy thuộc một Owner hoặc hợp đồng DRAFT.</p>}
             <section className={styles.pendingNotice}>
               <h2 className={styles.sectionTitle}>{messages.MACHINE_NEXT_MAINTENANCE}</h2>
               <QueryFeedback query={schedule} loadingMessage={messages.LOADING_MACHINE_SCHEDULE} />
@@ -275,6 +306,10 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   return (
     <div className={styles.pageContent}>
       <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />
+      {!isUnsupported && !isHistory && <div className={styles.createActions}>
+        <ButtonBar href={PATH_MODERATOR.MACHINE_REGISTER}>Đăng ký máy</ButtonBar>
+        <ButtonBar href={PATH_MODERATOR.LOCATIONS}>Quản lý địa điểm</ButtonBar>
+      </div>}
       <div className={styles.detailGrid}>
         <section className={styles.detailItem}>
           <h2 className={styles.sectionTitle}>{messages.MACHINE_INVENTORY_SUMMARY}</h2>

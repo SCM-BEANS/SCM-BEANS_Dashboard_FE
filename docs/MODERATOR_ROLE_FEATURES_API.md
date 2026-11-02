@@ -28,7 +28,7 @@ Menu có 11 mục. Tình trạng tính năng hiện tại:
 | `/moderator/iot` | Chọn máy Smart IoT, heartbeat và biểu đồ telemetry | Có API đọc; response telemetry chưa khớp spec |
 | `/moderator/iot/customer` | Tổng hợp địa điểm theo tenant | Code gọi API chưa có hợp đồng phù hợp trong Swagger |
 | `/moderator/menu` | Danh sách và chi tiết công thức toàn cục | Có API đọc; schema danh sách chưa khớp spec |
-| `/moderator/technical-requests` | Danh sách repair case; xem chi tiết installation work order | Có API đọc; schema danh sách repair case chưa khớp spec |
+| `/moderator/technical-requests` | Danh sách maintenance request; triage yêu cầu sửa chữa; xem chi tiết installation work order | Có API đọc maintenance request và POST triage repair intake |
 | `/moderator/machine-history` | Danh sách maintenance ticket; lọc ticket theo máy | Có API đọc |
 | `/moderator/buyback` | Mở chi tiết buyback theo UUID | Chi tiết có API; danh sách chưa nối và response schema không khớp |
 | `/moderator/notifications` | Danh sách, số chưa đọc, đánh dấu từng thông báo đã đọc | Có API đọc/ghi |
@@ -137,11 +137,12 @@ Trang “địa điểm theo tenant” hiện gọi `GET /tenants`, rồi gọi 
 
 | Method | Dịch vụ / endpoint | Cách dùng và điều kiện |
 | --- | --- | --- |
-| GET | Dolores `/repair-cases` | Danh sách repair case ở `/moderator/technical-requests`; hiện không truyền filter/page. UI đọc event cuối trong `timeline` để hiện công việc mới nhất. |
+| GET | Dolores `/maintenance-requests` | Danh sách maintenance request ở `/moderator/technical-requests`; hiện không truyền filter/page. Bảng hiển thị mã, loại, Owner ID và thời điểm cập nhật. Với trạng thái `TRIAGED`, dựa vào `technicianId` để hiển thị Phân công hoặc Đã phân công. |
+| POST | Dolores `/repair-cases/intakes/{requestId}/triage` | Với maintenance request loại `REPAIR` đang ở trạng thái `REQUESTED`, Chấp nhận gửi `{ accepted: true, reason: "Yêu cầu sửa chữa được chấp nhận; hệ thống đã tạo và ticket kỹ thuật liên kết." }`; Từ chối gửi `{ accepted: false, reason: "Yêu cầu sửa chữa bị từ chối trong bước triage." }`. Sau thành công, tải lại danh sách để nhận trạng thái `TRIAGED` hoặc `CANCELLED`. |
 | GET | Dolores `/maintenance-tickets` | Danh sách ticket ở machine history; nếu mở theo máy thì lọc `machineId` ở client. |
 | GET | Dolores `/installation-work-orders/{workOrderId}` | Chi tiết work order theo UUID; hiển thị trạng thái, checklist, phụ kiện và evidence. |
 
-Tạo technical request hiện bị khóa; Moderator không gọi API tạo repair case từ màn này.
+Tạo maintenance request vẫn bị khóa. Chấp nhận repair intake qua API triage sẽ tạo repair case và ticket kỹ thuật liên kết.
 
 ### 4.7 Hóa đơn và chứng từ thanh toán
 
@@ -187,14 +188,12 @@ API `GET /buybacks` có trong Swagger nhưng danh sách buyback hiện báo chư
 
 1. **Tenant API chưa được công bố và query location không khớp.** Cả Swagger local/server đều không có `GET /tenants` hoặc `GET /tenants/{id}`. Swagger `GET /locations` yêu cầu `ownerId`; không khai báo `tenantId`. Màn IoT Moderator lại gọi `/tenants` và gửi `tenantId` để đọc locations, nên không thể triển khai DTO/luồng Flutter theo contract hiện công bố nếu backend chưa bổ sung spec hoặc chỉ rõ API thay thế.
 2. **Buyback detail không khớp DTO frontend.** Swagger `BuybackCaseDetailsResponse` trả `ownerId`, `collectionEvidenceRecorded` và các dữ liệu inspection/refurbishment; Zod `BuybackCaseSchema` bắt buộc `tenantId`, `requestedBy`, `collectionEvidence` và `version`. Nếu backend trả đúng schema Swagger, `buybacksApi.getById` sẽ lỗi parse.
-3. **Repair case list là summary nhưng frontend đòi timeline đầy đủ.** Swagger `GET /repair-cases` trả `RepairCaseSummaryResponse` không có `timeline`; frontend `RepairCaseSchema` bắt buộc `timeline` rồi đọc event cuối. Spec còn có API detail/timeline riêng nhưng Moderator hiện không gọi chúng.
-4. **Work order detail dùng Owner ID trong Swagger, tenant ID trong frontend.** Swagger `InstallationWorkOrderSummaryResponse` có `ownerId` và không khai báo `tenantId`; `InstallationWorkOrderSummarySchema` frontend yêu cầu `tenantId`. Vì summary là một phần của `GET /installation-work-orders/{workOrderId}`, response theo Swagger có thể bị Zod từ chối.
-5. **Invoice type `REPAIR` chưa được frontend Moderator cho phép.** Swagger enum invoice có `SUPPLY`, `RENTAL`, `REPAIR`; `ModeratorInvoiceSchema` chỉ nhận `SUPPLY` hoặc `RENTAL`. Hóa đơn repair sẽ lỗi parse nếu xuất hiện trong response.
-6. **Recipe list chỉ trả summary.** Swagger `GET /recipes/global` trả `id/name/revision/menuId`, còn frontend `GlobalRecipeSchema` yêu cầu cả `steps` và `dosageBounds`. Route chi tiết trả schema đầy đủ; nên tách DTO list/detail hoặc xác nhận backend list trả thêm field.
-7. **Telemetry points response chưa có shape dùng được.** Swagger khai báo response là generic `object`, còn frontend yêu cầu array và kiểm tra `machineId` trên từng điểm. Backend cần chốt array trực tiếp hay object bọc dữ liệu.
-8. **Auth MFA login và logout không có trong IDaaS spec.** Frontend gọi `POST /auth/login/mfa` và `POST /auth/logout`, nhưng hai route vắng mặt. `POST /auth/mfa/confirm` trong Swagger nhận `secret`/`token` và yêu cầu BearerAuth, nên không phải contract thay cho login OTP bằng `temp_token`/`code`.
-9. **Wrapper tenant-scoped chưa dùng không khớp spec.** `contractsApi.listByTenant` gọi `/contracts/tenant/{tenantId}` nhưng route này không có trong Swagger và hiện không có call site Moderator. `installationWorkOrdersApi.listByTenant` gọi `GET /installation-work-orders?tenantId=...`; Swagger endpoint list yêu cầu `ownerId`, không khai báo `tenantId`. Các wrapper này chưa tạo nên tính năng đang chạy trên màn Moderator.
-10. **Form hợp đồng có thể gửi enum snapshot không được Swagger chấp nhận.** Zod frontend cho phép chuỗi tự do không rỗng ở `offlineViolationAction` và `buybackValuationMethod`, trong khi Swagger chỉ chấp nhận `WARN_ONLY|MANUAL_REVIEW` và `MANUAL_APPRAISAL`. Giá trị khởi tạo hiện khớp spec, nhưng Moderator có thể sửa text thành giá trị khác rồi vẫn qua frontend validation.
+3. **Invoice type `REPAIR` chưa được frontend Moderator cho phép.** Swagger enum invoice có `SUPPLY`, `RENTAL`, `REPAIR`; `ModeratorInvoiceSchema` chỉ nhận `SUPPLY` hoặc `RENTAL`. Hóa đơn repair sẽ lỗi parse nếu xuất hiện trong response.
+4. **Recipe list chỉ trả summary.** Swagger `GET /recipes/global` trả `id/name/revision/menuId`, còn frontend `GlobalRecipeSchema` yêu cầu cả `steps` và `dosageBounds`. Route chi tiết trả schema đầy đủ; nên tách DTO list/detail hoặc xác nhận backend list trả thêm field.
+5. **Telemetry points response chưa có shape dùng được.** Swagger khai báo response là generic `object`, còn frontend yêu cầu array và kiểm tra `machineId` trên từng điểm. Backend cần chốt array trực tiếp hay object bọc dữ liệu.
+6. **Auth MFA login và logout không có trong IDaaS spec.** Frontend gọi `POST /auth/login/mfa` và `POST /auth/logout`, nhưng hai route vắng mặt. `POST /auth/mfa/confirm` trong Swagger nhận `secret`/`token` và yêu cầu BearerAuth, nên không phải contract thay cho login OTP bằng `temp_token`/`code`.
+7. **Wrapper hợp đồng theo tenant chưa khớp spec.** `contractsApi.listByTenant` gọi `/contracts/tenant/{tenantId}` nhưng route này không có trong Swagger và hiện không có call site Moderator. Danh sách installation work order đã dùng query `ownerId` theo Swagger và được Admin gọi để kiểm tra điều kiện kích hoạt hợp đồng.
+8. **Form hợp đồng có thể gửi enum snapshot không được Swagger chấp nhận.** Zod frontend cho phép chuỗi tự do không rỗng ở `offlineViolationAction` và `buybackValuationMethod`, trong khi Swagger chỉ chấp nhận `WARN_ONLY|MANUAL_REVIEW` và `MANUAL_APPRAISAL`. Giá trị khởi tạo hiện khớp spec, nhưng Moderator có thể sửa text thành giá trị khác rồi vẫn qua frontend validation.
 
 Các giới hạn form như min/max số tháng, tiền, ký tự và kiểm tra UUID chủ yếu nằm ở Zod/UI. Không nên coi chúng là validation backend nếu Swagger không mô tả tương ứng.
 

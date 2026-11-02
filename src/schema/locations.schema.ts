@@ -30,6 +30,11 @@ export const LocationListSchema = z.union([
 ]);
 export const LocationListParamsSchema = z.object({ ownerId: z.string().uuid(), activeOnly: z.boolean().optional() });
 export const TenantLocationListParamsSchema = z.object({ tenantId: z.string().uuid(), activeOnly: z.boolean().default(false) });
+export const LocationListPageParamsSchema = LocationListParamsSchema.extend({
+  q: z.string().trim().max(120).optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(50),
+});
 export const LocationCreateSchema = z.object({
   name: z.string().trim().min(1), address: z.string().trim().optional(),
   city: z.string().trim().optional(), contactPerson: z.string().trim().optional(),
@@ -37,6 +42,7 @@ export const LocationCreateSchema = z.object({
 });
 export type Location = z.infer<typeof LocationSchema>;
 export type LocationListResponse = z.infer<typeof LocationListSchema>;
+export type LocationListPageParams = z.input<typeof LocationListPageParamsSchema>;
 export type LocationCreate = z.infer<typeof LocationCreateSchema>;
 
 export function unwrapLocations(response: LocationListResponse): Location[] {

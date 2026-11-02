@@ -1,0 +1,53 @@
+.pageContent { display: grid; min-width: 0; gap: 18px; }
+.pageHeading { min-width: 0; }
+.detailGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.detailGrid > div, .panel, .notice {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+}
+.detailGrid dt { color: #706561; font-size: 13px; }
+.detailGrid dd { overflow-wrap: anywhere; margin: 6px 0 0; color: #302927; font-size: 14px; font-weight: 600; }
+.code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.panel { display: grid; justify-items: start; gap: 10px; max-width: 640px; }
+.panel h2, .notice h2 { margin: 0; color: #302927; font-size: 17px; }
+.panel p, .notice p { margin: 0; color: #514843; font-size: 14px; line-height: 1.55; }
+.panel label { color: #514843; font-size: 14px; font-weight: 600; }
+.panel textarea, .panel input {
+  width: min(100%, 440px);
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid #d8d0ca;
+  border-radius: 8px;
+  color: #302927;
+  font: inherit;
+}
+.button, .disabledButton {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #b81724;
+  border-radius: 8px;
+  background: #b81724;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.button:disabled { cursor: not-allowed; opacity: .55; }
+.disabledButton { cursor: not-allowed; opacity: .55; }
+.notice { display: grid; gap: 10px; color: #514843; font-size: 14px; line-height: 1.55; }
+.error { border-color: #efc3c5; background: #fff6f6; color: #8c1d26; }
+.error p { margin: 0 0 10px; }
+.success { border-color: #b6d9bd; background: #f3fbf5; color: #23653a; }
+.hint { color: #706561 !important; font-size: 12px !important; }
+.link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.button:focus-visible, .link:focus-visible { outline: 3px solid #b81724; outline-offset: 2px; }
+@media (max-width: 600px) { .pageContent { gap: 14px; } .panel, .notice { padding: 14px; } }

@@ -15,7 +15,20 @@ const schemas = new Proxy({ shape: { ownerId: passthrough } }, {
   get(target, name) {
     if (name === 'unwrapLocations') return (value) => value;
     if (name === 'shape') return target.shape;
+    if (name === 'BILLING_DEFAULT_PAGE_SIZE') return 50;
+    if (name === 'InvoiceListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
+    if (name === 'InvoiceLineItemListParamsSchema' || name === 'PaymentProofListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
     if (name === 'LocationListParamsSchema') return { ...passthrough, shape: { ownerId: passthrough } };
+    return passthrough;
+  },
+});
+const buybackSchemas = new Proxy({}, {
+  get(_target, name) {
+    if (name === "BuybackStatusSchema") return require("zod").z.enum([
+      "REQUESTED", "INSPECTION_PENDING", "VALUATION_PENDING", "APPROVED", "PAYMENT_PENDING",
+      "PAID", "COLLECTION_PENDING", "COLLECTED", "REFURBISHING", "QA_PENDING",
+      "AVAILABLE_FOR_RENT", "REJECTED", "CANCELLED",
+    ]);
     return passthrough;
   },
 });
@@ -36,6 +49,7 @@ function loadApi(relativePath, axiosClient) {
   };
   const mockedRequire = (id) => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (id === "@/schema/buybacks.schema") return buybackSchemas;
     if (id.startsWith('@/schema/')) return schemas;
     return require(id);
   };
@@ -116,21 +130,22 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['recipes', 'listGlobal', [signal], [recipe], 'GET', '/recipes/global', { baseURL: '/api/dolores/v1', signal }],
     ['recipes', 'getGlobalById', [ids.recipe, signal], recipe, 'GET', `/recipes/global/${ids.recipe}`, { baseURL: '/api/dolores/v1', signal }],
     ['recipes', 'publishGlobal', [recipeInput], recipe, 'POST', '/recipes/global', { baseURL: '/api/dolores/v1' }, recipeInput],
-    ['billing', 'listInvoices', [signal], [], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
-    ['billing', 'listModeratorInvoices', [signal], [invoice], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'listInvoices', [signal], [], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal }],
+    ['billing', 'listModeratorInvoices', [signal], [invoice], 'GET', '/billing/invoices', { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal }],
     ['billing', 'getModeratorInvoice', [ids.invoice, signal], invoice, 'GET', `/billing/invoices/${ids.invoice}`, { baseURL: '/api/dolores/v1', signal }],
-    ['billing', 'listPaymentProofs', [ids.invoice, signal], [], 'GET', `/billing/invoices/${ids.invoice}/payment-proofs`, { baseURL: '/api/dolores/v1', signal }],
+    ['billing', 'listPaymentProofs', [ids.invoice, signal], [], 'GET', `/billing/invoices/${ids.invoice}/payment-proofs`, { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal }],
     ['billing', 'downloadPaymentProofContent', [ids.proof, signal], blob, 'GET', `/billing/payment-proofs/${ids.proof}/content`, { baseURL: '/api/dolores/v1', headers: { Accept: '*/*' }, responseType: 'blob', signal }],
     ['buybacks', 'getById', [ids.buyback, signal], { id: ids.buyback }, 'GET', `/buybacks/${ids.buyback}`, { baseURL: '/api/dolores/v1', signal }],
     ['tenants', 'list', [signal], [tenant], 'GET', '/tenants', { baseURL: '/api/dolores/v1', signal }],
     ['tenants', 'getById', [ids.tenant, signal], tenant, 'GET', `/tenants/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
-    ['workOrders', 'listByTenant', [ids.tenant, signal], [workOrder], 'GET', '/installation-work-orders', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant }, signal }],
+    ['workOrders', 'listByOwner', [ids.profile, signal], [{ id: ids.workOrder, ownerId: ids.profile }], 'GET', '/installation-work-orders', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile }, signal }],
     ['workOrders', 'getById', [ids.workOrder, signal], workOrderDetails, 'GET', `/installation-work-orders/${ids.workOrder}`, { baseURL: '/api/dolores/v1', signal }],
     ['dashboard', 'getOverview', [signal, '2026-10-01', '2026-10-07'], {}, 'GET', '/dashboard/overview', { baseURL: '/api/dolores/v1', signal, params: { fromDate: '2026-10-01', toDate: '2026-10-07' } }],
   ];
 
   for (const [apiName, methodName, args, expectedResponse, method, url, config, data] of operations) {
     responseData = expectedResponse;
+    assert.equal(typeof apis[apiName]?.[methodName], 'function', `${apiName}.${methodName} must be available`);
     const result = await apis[apiName][methodName](...args);
     assert.deepEqual(result, expectedResponse, `${apiName}.${methodName} returns parsed response data`);
     const actual = calls.at(-1);
@@ -142,4 +157,73 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
 
   assert.equal(calls.length, operations.length);
   assert.ok(calls.every((call) => !/^https?:\/\//i.test(call.url)), 'Dolores requests must use relative paths');
+});
+
+test('repair workflow reads use bounded pagination, request filters, and validated detail identities', async () => {
+  const signal = new AbortController().signal;
+  const ids = {
+    machine: '00000000-0000-4000-8000-000000000006',
+    request: '00000000-0000-4000-8000-000000000007',
+    otherRequest: '00000000-0000-4000-8000-000000000008',
+    repairCase: '00000000-0000-4000-8000-000000000009',
+    ticket: '00000000-0000-4000-8000-000000000010',
+    assignment: '00000000-0000-4000-8000-000000000011',
+  };
+  const calls = [];
+  const responses = [
+    {
+      data: [{ id: ids.repairCase, maintenanceRequestId: ids.otherRequest, status: 'TRIAGE' }],
+      headers: { 'x-page': '0', 'x-page-size': '100', 'x-has-next': 'true' },
+    },
+    {
+      data: [{ id: ids.repairCase, maintenanceRequestId: ids.request, status: 'REPLACEMENT_PLANNED' }],
+      headers: { 'x-page': '1', 'x-page-size': '100', 'x-has-next': 'false' },
+    },
+    { data: [{ id: ids.request, requestType: 'REPAIR' }], headers: { 'x-page': '2', 'x-page-size': '20', 'x-has-next': 'false' } },
+    { data: { id: ids.request }, headers: {} },
+    { data: { id: ids.ticket }, headers: {} },
+    { data: { id: ids.assignment }, headers: {} },
+  ];
+  const axiosClient = {
+    get: async (url, config = {}) => {
+      calls.push({ url, config });
+      return responses.shift();
+    },
+  };
+  const repairCasesApi = loadApi('src/apis/repair-cases.api.ts', axiosClient).repairCasesApi;
+  const maintenanceRequestsApi = loadApi('src/apis/maintenance-requests.api.ts', axiosClient).maintenanceRequestsApi;
+  const machinesApi = loadApi('src/apis/machines.api.ts', axiosClient).machinesApi;
+  const replacementAssignmentsApi = loadApi('src/apis/replacement-assignments.api.ts', axiosClient).replacementAssignmentsApi;
+
+  const repairCase = await repairCasesApi.findReferenceByMaintenanceRequestId(ids.request, ids.machine, signal);
+  assert.deepEqual(repairCase, {
+    id: ids.repairCase,
+    maintenanceRequestId: ids.request,
+    status: 'REPLACEMENT_PLANNED',
+  });
+  assert.deepEqual(calls.slice(0, 2).map(({ url, config }) => ({ url, config })), [
+    { url: '/repair-cases', config: { baseURL: '/api/dolores/v1', params: { machineId: ids.machine, page: 0, size: 100 }, signal } },
+    { url: '/repair-cases', config: { baseURL: '/api/dolores/v1', params: { machineId: ids.machine, page: 1, size: 100 }, signal } },
+  ]);
+
+  const requestPage = await maintenanceRequestsApi.listPage({ page: 2, size: 20, requestType: 'REPAIR' }, signal);
+  assert.deepEqual(requestPage, { items: [{ id: ids.request, requestType: 'REPAIR' }], page: 2, size: 20, hasNext: false });
+  assert.deepEqual(calls.at(-1), {
+    url: '/maintenance-requests',
+    config: { baseURL: '/api/dolores/v1', params: { page: 2, size: 20, requestType: 'REPAIR' }, signal },
+  });
+
+  assert.equal((await maintenanceRequestsApi.getById(ids.request, signal)).id, ids.request);
+  assert.equal((await machinesApi.getMaintenanceTicketById(ids.ticket, signal)).id, ids.ticket);
+  assert.equal((await replacementAssignmentsApi.getById(ids.assignment, signal)).id, ids.assignment);
+  assert.deepEqual(calls.slice(-3).map(({ url, config }) => ({ url, config })), [
+    { url: `/maintenance-requests/${ids.request}`, config: { baseURL: '/api/dolores/v1', signal } },
+    { url: `/maintenance-tickets/${ids.ticket}`, config: { baseURL: '/api/dolores/v1', signal } },
+    { url: `/replacement-assignments/${ids.assignment}`, config: { baseURL: '/api/dolores/v1', signal } },
+  ]);
+
+  const mismatchedApi = loadApi('src/apis/maintenance-requests.api.ts', {
+    get: async () => ({ data: { id: ids.otherRequest }, headers: {} }),
+  }).maintenanceRequestsApi;
+  await assert.rejects(mismatchedApi.getById(ids.request), /different maintenance request/);
 });

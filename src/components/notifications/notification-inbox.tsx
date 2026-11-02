@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { notificationsApi } from "@/apis/notifications.api";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
 import styles from "./notification-inbox.module.css";
@@ -20,7 +21,21 @@ interface NotificationInboxProps {
   back?: BackButtonDestination | null;
   showOwnerId?: boolean;
   onRefreshExtra?: () => Promise<unknown>;
+  repairCostReviewHref?: (reviewId: string) => string;
   children?: ReactNode;
+}
+
+function RepairCostReviewNotificationLink({
+  notification,
+  hrefForReview,
+}: {
+  notification: { type: string; message: string };
+  hrefForReview: (reviewId: string) => string;
+}) {
+  if (notification.type !== "REPAIR_COST_REVIEW") return null;
+  const match = /(?:^|\s)Review ID:\s*([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:$|\s)/i.exec(notification.message);
+  if (!match) return null;
+  return <Link className={styles.viewAllLink} href={hrefForReview(match[1])}>Mở chi tiết xem xét chi phí</Link>;
 }
 
 function formatDate(value?: string | null) {
@@ -40,12 +55,14 @@ export function NotificationInbox({
   back = null,
   showOwnerId = false,
   onRefreshExtra,
+  repairCostReviewHref,
   children,
 }: NotificationInboxProps) {
   const queryClient = useQueryClient();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
-  const queryKey = ["notifications", scope] as const;
+  const roleScope = scope === "customer" ? "OWNER" : scope.toUpperCase();
+  const queryKey = ["notifications", scope, authScopedQuerySubject(roleScope)] as const;
   const list = useQuery({
     queryKey: [...queryKey, unreadOnly],
     queryFn: ({ signal }) => notificationsApi.list(signal, unreadOnly ? true : undefined),
@@ -141,6 +158,7 @@ export function NotificationInbox({
                     </div>
                     <h3>{notification.title}</h3>
                     <p>{notification.message}</p>
+                    {repairCostReviewHref ? <RepairCostReviewNotificationLink notification={notification} hrefForReview={repairCostReviewHref} /> : null}
                     {!notification.read && (
                       <button
                         className={styles.button}
@@ -267,6 +285,7 @@ export function NotificationInbox({
                 </div>
                 <h3>{notification.title}</h3>
                 <p>{notification.message}</p>
+                {repairCostReviewHref ? <RepairCostReviewNotificationLink notification={notification} hrefForReview={repairCostReviewHref} /> : null}
                 {!notification.read && (
                   <button
                     className={styles.button}

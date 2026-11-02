@@ -3,8 +3,12 @@ import {
   DashboardOverviewSchema,
   DashboardDateRangeSchema,
   DailyMachineCupUsageListSchema,
+  DashboardActionItemsFilterSchema,
+  DashboardActionItemsPageSchema,
   type TDashboardOverview,
   type TDailyMachineCupUsage,
+  type TDashboardActionItemsFilter,
+  type TDashboardActionItemsPage,
 } from "@/schema/dashboard.schema";
 
 export const dashboardApi = {
@@ -40,5 +44,18 @@ export const dashboardApi = {
       params: { date },
     });
     return DailyMachineCupUsageListSchema.parse(response.data);
+  },
+
+  getActionItems: async (
+    filters: TDashboardActionItemsFilter = {},
+    signal?: AbortSignal,
+  ): Promise<TDashboardActionItemsPage> => {
+    const params = DashboardActionItemsFilterSchema.parse(filters);
+    const response = await axiosClient.get<unknown>("/dashboard/action-items", {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+      params,
+    });
+    return DashboardActionItemsPageSchema.parse(response.data);
   },
 };

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateContractRequestSchema } from "@/schema/contracts.schema";
@@ -108,8 +108,8 @@ export function ContractCreateForm({
         const candidates = await machinesApi.listRentalCandidates(signal);
         return candidates.map(({ machineId, displayName }) => ({
           machineId,
-          displayName,
-          optionLabel: displayName,
+          displayName: displayName || machineId,
+          optionLabel: displayName || machineId,
         }));
       }
 
@@ -281,11 +281,11 @@ export function ContractCreateForm({
           {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
         </form>
       </section>
-      <ActionBar label="Thao tác tạo hợp đồng">
+      <ActionBarConfig>
         <ButtonBar type="submit" form={FORM_ID} disabled={submitDisabled}>
           {create.isPending ? T.CONTRACTS.CREATING : createdContractId ? "Đã tạo" : T.CONTRACTS.CREATE_SUBMIT}
         </ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     </>
   );
 }

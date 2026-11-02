@@ -1,6 +1,7 @@
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
+import { PATH_CUSTOMER } from "@/routes/path";
 
 type WorkflowFieldType = "text" | "textarea" | "file";
 
@@ -102,6 +103,11 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     reason: messages.SUPPORT_API_REASON,
     actions: [messages.REPAIR_INTAKE_SUBMIT],
   },
+  maintenance: {
+    title: "Lịch bảo trì",
+    description: "Theo dõi yêu cầu bảo trì định kỳ và xác nhận lịch hẹn.",
+    reason: "Lịch bảo trì được tải theo quyền Owner từ Dolores.",
+  },
   "support/new": {
     title: messages.SUPPORT_NEW_TITLE,
     description: messages.SUPPORT_NEW_DESCRIPTION,
@@ -165,6 +171,51 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
   const exactScreen = screens[sectionPath];
   if (exactScreen) return { ...exactScreen, back: getCustomerWorkflowBack(sectionPath) };
 
+  if (sectionPath === "contracts/recall") {
+    return {
+      title: "Thu hồi máy",
+      description: "Xác nhận bàn giao máy và theo dõi trạng thái thu hồi hợp đồng.",
+      reason: "Lệnh thu hồi được lọc theo Owner đã đăng nhập.",
+      back: { label: "Hợp đồng", fallbackHref: PATH_CUSTOMER.CONTRACTS },
+    };
+  }
+
+  if (/^contracts\/recall\/[0-9a-f-]{36}$/i.test(sectionPath)) {
+    return {
+      title: "Chi tiết thu hồi máy",
+      description: "Xác nhận bàn giao evidence cho lệnh thu hồi trong phạm vi Owner.",
+      reason: "Dolores kiểm tra quyền Owner cho từng lệnh thu hồi.",
+      back: { label: "Danh sách thu hồi", fallbackHref: PATH_CUSTOMER.RECALLS },
+    };
+  }
+
+  if (/^support\/repair-cases\/[0-9a-f-]{36}$/i.test(sectionPath)) {
+    return {
+      title: "Chi tiết hồ sơ sửa chữa",
+      description: "Trạng thái, lịch sử bàn giao và tiến độ sửa máy.",
+      reason: messages.SUPPORT_API_REASON,
+      back: getCustomerWorkflowBack(sectionPath),
+    };
+  }
+
+  if (/^maintenance\/[0-9a-f-]{36}$/i.test(sectionPath)) {
+    return {
+      title: "Chi tiết bảo trì",
+      description: "Xem lịch và trạng thái bảo trì thiết bị của bạn.",
+      reason: "Thông tin được tải theo quyền Owner từ Dolores.",
+      back: getCustomerWorkflowBack(sectionPath),
+    };
+  }
+
+  if (/^repair-cost-reviews\/[0-9a-f-]{36}$/i.test(sectionPath)) {
+    return {
+      title: "Xem xét chi phí sửa chữa",
+      description: "Theo dõi đề xuất, quyết định và trạng thái phần chi phí sửa chữa.",
+      reason: "Chi tiết được tải theo quyền Owner từ Dolores.",
+      back: { label: "Thông báo", fallbackHref: "/dashboard/notifications" },
+    };
+  }
+
   if (sectionPath.startsWith("support/") && sectionPath.split("/").length === 2) {
     return {
       title: messages.SUPPORT_PROGRESS_TITLE,
@@ -178,8 +229,14 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
 }
 
 export function getCustomerWorkflowBack(sectionPath: string): BackButtonDestination | null {
-  if (sectionPath === "support" || sectionPath === "buyback" || sectionPath === "notifications") {
+  if (sectionPath === "support" || sectionPath === "maintenance" || sectionPath === "buyback" || sectionPath === "notifications") {
     return { label: "Tổng quan", fallbackHref: "/dashboard" };
+  }
+  if (sectionPath.startsWith("maintenance/")) {
+    return { label: "Lịch bảo trì", fallbackHref: "/dashboard/maintenance" };
+  }
+  if (sectionPath.startsWith("repair-cost-reviews/")) {
+    return { label: "Thông báo", fallbackHref: "/dashboard/notifications" };
   }
   if (sectionPath === "support/new" || sectionPath === "support/menu" || sectionPath.startsWith("support/")) {
     return { label: "Yêu cầu hỗ trợ", fallbackHref: "/dashboard/support" };

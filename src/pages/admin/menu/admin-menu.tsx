@@ -6,9 +6,11 @@ import {
   FileText,
   LayoutDashboard,
   Package,
+  Receipt,
   Store,
   Users,
   Utensils,
+  Wrench,
 } from "lucide-react";
 import { useRouter } from "next/router";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
@@ -25,6 +27,8 @@ const NAV_ICONS = {
   Building2,
   FileText,
   Package,
+  Receipt,
+  Wrench,
   Activity,
   Utensils,
   BarChart3,

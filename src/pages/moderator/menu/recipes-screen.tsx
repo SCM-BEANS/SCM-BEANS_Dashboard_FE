@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { recipesApi } from "@/apis/recipes.api";
+import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 
 import { PATH_MODERATOR } from "@/routes/path";
 import { ModeratorPageHeading } from "../moderator-page-heading";
 
-import { GlobalRecipeIdSchema, type GlobalRecipe } from "@/schema/recipes.schema";
+import { GlobalRecipeIdSchema, type GlobalRecipe, type GlobalRecipeSummary } from "@/schema/recipes.schema";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -56,17 +57,17 @@ function DetailField({ label, value }: { label: string; value: string | number |
   );
 }
 
-function RecipeList({ recipes }: { recipes: GlobalRecipe[] }) {
+function RecipeList({ recipes }: { recipes: GlobalRecipeSummary[] }) {
   if (recipes.length === 0) {
     return <p className={styles.pendingNotice} role="status">{messages.EMPTY_RECIPES}</p>;
   }
   return (
-    <DataTable variant="moderator" headers={[messages.RECIPE_NAME, messages.RECIPE_ID, messages.RECIPE_STEP_COUNT]}>
+    <DataTable variant="moderator" headers={[messages.RECIPE_NAME, messages.RECIPE_ID, messages.RECIPE_REVISION]}>
       {recipes.map((recipe) => (
         <tr key={recipe.id}>
           <td><Link className={styles.tableLink} href={PATH_MODERATOR.MENU_RECIPE_DETAIL(recipe.id)}>{recipe.name}</Link></td>
           <td>{recipe.id}</td>
-          <td>{recipe.steps.length}</td>
+      <td>{recipe.revision}</td>
         </tr>
       ))}
     </DataTable>
@@ -98,7 +99,7 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
   const validId = GlobalRecipeIdSchema.safeParse(requestedId).success ? requestedId : "";
   const recipes = useQuery({
     queryKey: ["dolores", "moderator", "recipes", "global"],
-    queryFn: ({ signal }) => recipesApi.listGlobal(signal),
+    queryFn: ({ signal }) => recipesApi.listGlobalSummaries(signal),
     enabled: isList,
   });
   const recipe = useQuery({
@@ -115,6 +116,7 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
         <>
           <QueryFeedback query={recipes} loadingMessage={messages.LOADING_RECIPES} />
           {recipes.data && !recipes.isError && <RecipeList recipes={recipes.data} />}
+          <RecipeMenusScreen role="operator" operatorRole="MODERATOR" />
         </>
       ) : validId ? (
         <>

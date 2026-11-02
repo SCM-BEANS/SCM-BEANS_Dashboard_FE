@@ -1,4 +1,4 @@
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
@@ -81,9 +81,9 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
           {screen.fields.map(renderField)}
         </fieldset>
       ) : null}
-      <ActionBar label={`Thao tác ${screen.title}`}>
+      <ActionBarConfig>
         <ActionBarActions actions={actions} />
-      </ActionBar>
+      </ActionBarConfig>
     </section>
   );
 }

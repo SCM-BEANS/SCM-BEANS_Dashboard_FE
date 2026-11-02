@@ -4,7 +4,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import { createIdempotencyKey } from "../shared/idempotency-key";
+import { createIdempotencyKey } from "@/lib/idempotency-key";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;

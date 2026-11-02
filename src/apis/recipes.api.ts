@@ -3,6 +3,7 @@ import {
   GlobalRecipeIdSchema,
   GlobalRecipesSchema,
   GlobalRecipeSchema,
+  GlobalRecipeSummariesSchema,
   RecipePublishRequestSchema,
   LocalRecipeIdSchema,
   LocalRecipesSchema,
@@ -11,11 +12,22 @@ import {
   type RecipePublishRequest,
   type LocalRecipeUpsertRequest,
 } from "@/schema/recipes.schema";
+import { RecipeSyncRequestSchema, RecipeSyncStatusSchema, RecipeSyncStatusesSchema } from "@/schema/recipe-menus.schema";
+import { MachineIdSchema } from "@/schema/machines.schema";
 
 const recipePath = (id: string) =>
   "/recipes/global/" + encodeURIComponent(GlobalRecipeIdSchema.parse(id));
 
 export const recipesApi = {
+  async listGlobalSummaries(signal?: AbortSignal, page = 0, size = 50) {
+    const response = await axiosClient.get<unknown>("/recipes/global", {
+      baseURL: DOLORES_API_BASE_URL,
+      params: { page, size },
+      signal,
+    });
+    return GlobalRecipeSummariesSchema.parse(response.data);
+  },
+
   async listGlobal(signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/recipes/global", {
       baseURL: DOLORES_API_BASE_URL,
@@ -78,5 +90,31 @@ export const recipesApi = {
     await axiosClient.delete("/recipes/local/" + encodeURIComponent(validId), {
       baseURL: DOLORES_API_BASE_URL,
     });
+  },
+
+  async requestSync(machineIds: string[]) {
+    const request = RecipeSyncRequestSchema.parse({ machineIds });
+    const response = await axiosClient.post<unknown>("/recipes/sync", request, { baseURL: DOLORES_API_BASE_URL });
+    const statuses = RecipeSyncStatusesSchema.parse(response.data);
+    const requested = new Set(request.machineIds);
+    if (statuses.some((status) => !requested.has(status.machineId))) throw new Error("Dolores returned sync status for an unrequested machine.");
+    return statuses;
+  },
+
+  async getSyncStatus(machineId: string, signal?: AbortSignal) {
+    const validId = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.get<unknown>(`/recipes/sync/${encodeURIComponent(validId)}`, { baseURL: DOLORES_API_BASE_URL, signal });
+    const status = RecipeSyncStatusSchema.parse(response.data);
+    if (status.machineId !== validId) throw new Error("Dolores returned a different machine's recipe sync status.");
+    return status;
+  },
+
+  async getSyncHistory(machineId: string, page = 0, size = 50, signal?: AbortSignal) {
+    const validId = MachineIdSchema.parse(machineId);
+    const params = { page, size };
+    const response = await axiosClient.get<unknown>(`/recipes/sync/${encodeURIComponent(validId)}/history`, { baseURL: DOLORES_API_BASE_URL, params, signal });
+    const history = RecipeSyncStatusesSchema.parse(response.data);
+    if (history.some((item) => item.machineId !== validId)) throw new Error("Dolores returned sync history for a different machine.");
+    return history;
   },
 };

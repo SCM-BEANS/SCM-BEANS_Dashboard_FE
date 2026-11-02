@@ -34,6 +34,15 @@ export const notificationsApi = {
     return AlertsSchema.parse(response.data);
   },
 
+  async acknowledgeAlert(id: string): Promise<void> {
+    const validId = NotificationIdSchema.parse(id);
+    await axiosClient.post<unknown>(
+      "/alerts/" + encodeURIComponent(validId) + "/ack",
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+  },
+
   async markAsRead(id: string) {
     const validId = NotificationIdSchema.parse(id);
     const response = await axiosClient.post<unknown>(

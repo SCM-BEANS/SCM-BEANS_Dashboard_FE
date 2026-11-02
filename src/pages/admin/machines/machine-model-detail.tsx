@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
@@ -56,9 +56,9 @@ export function MachineModelDetail({ modelId }: { modelId: string }) {
           </div>
         </div>
       </section>
-      <ActionBar>
+      <ActionBarConfig>
         <ButtonBar href={`${PATH_ADMIN.MACHINES}?view=types`}>{T.MACHINE_MODELS.BACK}</ButtonBar>
-      </ActionBar>
+      </ActionBarConfig>
     </>
   );
 }

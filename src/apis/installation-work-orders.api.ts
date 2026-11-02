@@ -9,7 +9,7 @@ import {
   InstallationWorkOrderIdSchema,
   InstallationWorkOrderListSchema,
   InstallationWorkOrderRecordSchema,
-  InstallationWorkOrderTenantIdSchema,
+  InstallationWorkOrderOwnerIdSchema,
   type CreateInstallationWorkOrderRequest,
 } from "@/schema/installation-work-orders.schema";
 
@@ -20,10 +20,10 @@ export class InstallationWorkOrderIdentityMismatchError extends Error {
   }
 }
 
-export class InstallationWorkOrderTenantMismatchError extends Error {
+export class InstallationWorkOrderOwnerMismatchError extends Error {
   constructor() {
-    super("Dolores returned a work order outside the requested tenant scope.");
-    this.name = "InstallationWorkOrderTenantMismatchError";
+    super("Dolores returned a work order outside the requested owner scope.");
+    this.name = "InstallationWorkOrderOwnerMismatchError";
   }
 }
 
@@ -39,16 +39,16 @@ export const installationWorkOrdersApi = {
     return CreateInstallationWorkOrderResponseSchema.parse(response.data);
   },
 
-  async listByTenant(id: string, signal?: AbortSignal) {
-    const tenantId = InstallationWorkOrderTenantIdSchema.parse(id);
+  async listByOwner(id: string, signal?: AbortSignal) {
+    const ownerId = InstallationWorkOrderOwnerIdSchema.parse(id);
     const response = await axiosClient.get<unknown>("/installation-work-orders", {
       baseURL: DOLORES_API_BASE_URL,
-      params: { tenantId },
+      params: { ownerId },
       signal,
     });
     const workOrders = InstallationWorkOrderListSchema.parse(response.data);
-    if (workOrders.some((workOrder) => workOrder.tenantId !== tenantId)) {
-      throw new InstallationWorkOrderTenantMismatchError();
+    if (workOrders.some((workOrder) => workOrder.ownerId !== ownerId)) {
+      throw new InstallationWorkOrderOwnerMismatchError();
     }
     return workOrders;
   },

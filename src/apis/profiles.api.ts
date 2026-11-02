@@ -6,6 +6,13 @@ import {
 
 const profilePath = (id: string) => `/profiles/${encodeURIComponent(ProfileIdSchema.parse(id))}`;
 
+export class ProfileIdentityMismatchError extends Error {
+  constructor() {
+    super("Dolores returned a different profile than the requested IDaaS UUID.");
+    this.name = "ProfileIdentityMismatchError";
+  }
+}
+
 export const profilesApi = {
   async list(params: { role?: string; status?: string; q?: string; page: number; size: number }, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>("/profiles", {
@@ -14,8 +21,11 @@ export const profilesApi = {
     return ProfilePageSchema.parse(response.data);
   },
   async getById(id: string, signal?: AbortSignal) {
-    const response = await axiosClient.get<unknown>(profilePath(id), { baseURL: DOLORES_API_BASE_URL, signal });
-    return ProfileSchema.parse(response.data);
+    const validId = ProfileIdSchema.parse(id);
+    const response = await axiosClient.get<unknown>(profilePath(validId), { baseURL: DOLORES_API_BASE_URL, signal });
+    const profile = ProfileSchema.parse(response.data);
+    if (profile.idaasUserId !== validId) throw new ProfileIdentityMismatchError();
+    return profile;
   },
   async getHistory(id: string, page = 0, size = 20, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>(`${profilePath(id)}/history`, {

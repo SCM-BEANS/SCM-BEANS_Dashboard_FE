@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { useRouter } from "next/router";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -7,8 +8,14 @@ import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type CustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
 import { RepairIntakeForm } from "./repair-intake-screen";
 import { SupportRequestsListScreen } from "../support/support-requests-list-screen";
-import { LocalRecipeForm } from "./local-recipe-screen";
+import { RepairCaseDetailScreen } from "@/components/features/repair-workflow/repair-case-detail-screen";
+import { OwnerMaintenanceScreen } from "@/components/features/maintenance-workflow/owner-maintenance-screen";
+import { RepairCostReviewScreen } from "@/components/features/maintenance-workflow/repair-cost-review-screen";
+import { PATH_CUSTOMER } from "@/routes/path";
+import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { NotificationInbox } from "./notification-inbox";
+import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
+import { BuybackWorkflowScreen } from "@/components/features/buyback/buyback-workflow-screen";
 import styles from "../customer-shell.module.css";
 
 export { getCustomerWorkflowDescriptor };
@@ -17,7 +24,6 @@ const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
 function withWorkflowActions(
   content: ReactNode,
-  title: string,
   workflowActions: readonly ActionBarAction[],
   fallbackAction?: ActionBarAction,
 ) {
@@ -31,9 +37,9 @@ function withWorkflowActions(
     <>
       {content}
       {actions.length > 0 ? (
-        <ActionBar label={`Thao tác ${title}`}>
+        <ActionBarConfig>
           <ActionBarActions actions={actions} />
-        </ActionBar>
+        </ActionBarConfig>
       ) : null}
     </>
   );
@@ -55,6 +61,7 @@ function renderField(field: WorkflowField, index: number) {
 }
 
 export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string }) {
+  const router = useRouter();
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
   const actions = getCustomerWorkflowActions(sectionPath, screen);
@@ -65,7 +72,41 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   if (sectionPath === "support") {
     return withWorkflowActions(
       <SupportRequestsListScreen />,
-      screen.title,
+      actions,
+      fallbackAction,
+    );
+  }
+  const recallDetail = /^contracts\/recall\/([^/]+)$/.exec(sectionPath);
+  if (recallDetail) {
+    return <RecallWorkOrdersScreen
+      role="owner"
+      workOrderId={recallDetail[1]}
+      backHref={PATH_CUSTOMER.RECALLS}
+    />;
+  }
+  if (sectionPath === "contracts/recall") {
+    return <RecallWorkOrdersScreen
+      role="owner"
+      backHref={PATH_CUSTOMER.CONTRACTS}
+      onOpen={(id) => void router.push(PATH_CUSTOMER.RECALL_DETAIL(id))}
+    />;
+  }
+  if (sectionPath === "maintenance") return <OwnerMaintenanceScreen />;
+  if (sectionPath === "buyback" || sectionPath === "buyback/new" || sectionPath === "buyback/documents" || sectionPath === "buyback/documents/confirmed") {
+    return <BuybackWorkflowScreen role="owner" listHref={PATH_CUSTOMER.BUYBACK} />;
+  }
+  const maintenanceRequestDetail = /^maintenance\/([^/]+)$/.exec(sectionPath);
+  if (maintenanceRequestDetail) return <OwnerMaintenanceScreen requestId={maintenanceRequestDetail[1]} />;
+  const repairCostReview = /^repair-cost-reviews\/([^/]+)$/.exec(sectionPath);
+  if (repairCostReview) return <RepairCostReviewScreen reviewId={repairCostReview[1]} role="owner" listHref={PATH_CUSTOMER.NOTIFICATIONS} />;
+  const repairCaseDetail = /^support\/repair-cases\/([^/]+)$/.exec(sectionPath);
+  if (repairCaseDetail) {
+    return withWorkflowActions(
+      <RepairCaseDetailScreen
+        caseId={repairCaseDetail[1]}
+        role="owner"
+        listHref={PATH_CUSTOMER.SUPPORT}
+      />,
       actions,
       fallbackAction,
     );
@@ -73,16 +114,15 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   if (sectionPath === "support/new") {
     return withWorkflowActions(
       <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />,
-      screen.title,
       actions,
       fallbackAction,
     );
   }
   if (sectionPath === "menu/add-dish") {
-    return withWorkflowActions(<LocalRecipeForm back={screen.back} />, screen.title, actions, fallbackAction);
+    return <RecipeMenusScreen role="owner" />;
   }
   if (sectionPath === "notifications") {
-    return withWorkflowActions(<NotificationInbox back={screen.back} />, screen.title, actions, fallbackAction);
+    return withWorkflowActions(<NotificationInbox back={screen.back} />, actions, fallbackAction);
   }
 
   return (
@@ -123,9 +163,9 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         </div>
       ) : null}
       {actions.length ? (
-        <ActionBar label={`Thao tác ${screen.title}`}>
+        <ActionBarConfig>
           <ActionBarActions actions={actions} />
-        </ActionBar>
+        </ActionBarConfig>
       ) : null}
     </section>
   );

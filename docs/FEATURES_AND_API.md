@@ -122,9 +122,10 @@ Các trang nhiệm vụ, lịch sử, notification và form được dựng dư�
 | GET | /machines/{machineId}/maintenance-schedule | Đọc lịch bảo trì trong chi tiết máy Admin/Moderator. |
 | GET | /maintenance-tickets | Moderator xem ticket bảo trì; có thể lọc theo máy ở màn lịch sử ticket. |
 | GET | /maintenance-requests | Customer đọc danh sách yêu cầu bảo trì tại màn hỗ trợ. |
-| GET | /repair-cases | Customer xem tình trạng repair case; Moderator xem danh sách case kỹ thuật. |
+| GET | /repair-cases | Customer xem tình trạng repair case. |
 | POST | /repair-cases/intakes | Customer gửi yêu cầu sửa chữa: chọn máy, nhập mô tả lỗi tối đa 4.000 ký tự. Gửi machineId, issueDescription và idempotency key do frontend tạo để hạn chế gửi trùng. |
-| GET | /installation-work-orders?tenantId={tenantId} | Có wrapper đọc danh sách work order theo tenant nhưng hiện chưa thấy UI gọi. |
+| POST | /repair-cases/intakes/{requestId}/triage | Moderator chấp nhận hoặc từ chối yêu cầu sửa chữa; gửi accepted và reason. |
+| GET | /installation-work-orders?ownerId={ownerId} | Admin kiểm tra work order COMPLETED theo Owner khi kích hoạt hợp đồng. |
 | GET | /installation-work-orders/{workOrderId} | Moderator tải chi tiết work order khi mở route có ID hợp lệ. |
 | GET | /telemetry-query/machines/{machineId}/heartbeats/latest | Lấy heartbeat mới nhất ở chi tiết máy Admin và IoT Moderator. |
 | GET | /telemetry-query/machines/{machineId}/points | Đọc telemetry theo khoảng thời gian, phân trang bằng limit=100 và offset; dùng trong chart chi tiết máy Admin và màn IoT Moderator. |
@@ -177,7 +178,7 @@ Các trang nhiệm vụ, lịch sử, notification và form được dựng dư�
 | Contracts | GET /contracts/tenant/{tenantId} | Wrapper đọc hợp đồng theo tenant, chưa có màn hình gọi. |
 | Recipes | GET /recipes/local/{recipeId} | Chưa có màn chi tiết công thức cục bộ dùng endpoint này. |
 | Recipes | DELETE /recipes/local/{recipeId} | Chưa có thao tác xóa công thức cục bộ nối API. |
-| Installation work orders | GET /installation-work-orders?tenantId={tenantId} | Wrapper đọc danh sách theo tenant chưa được màn kỹ thuật gọi; màn chi tiết hiện tải theo ID. |
+| Installation work orders | GET /installation-work-orders?ownerId={ownerId} | Admin dùng khi kiểm tra điều kiện kích hoạt; Moderator tải chi tiết work order theo ID. |
 
 ## Màn hình có giao diện nhưng chưa phải luồng API hoàn chỉnh
 

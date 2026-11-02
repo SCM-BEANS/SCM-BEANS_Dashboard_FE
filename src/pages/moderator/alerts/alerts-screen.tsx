@@ -4,10 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/table/data-table";
 
 import { notificationsApi } from "@/apis/notifications.api";
+import { AlertAcknowledgementButton } from "@/components/features/operations/alert-acknowledgement-button";
 
 import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 
 import { moderatorStyles as styles } from "../moderator-shell";
 
@@ -45,7 +47,7 @@ function QueryFeedback({
 
 export function AlertsScreen() {
   const alerts = useQuery({
-    queryKey: ["dolores", "alerts"],
+    queryKey: ["dolores", "alerts", authScopedQuerySubject("MODERATOR")],
     queryFn: ({ signal }) => notificationsApi.listAlerts(signal),
   });
 
@@ -74,6 +76,7 @@ export function AlertsScreen() {
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_TIME,
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_CONTENT,
             MODERATOR_MESSAGES.READ_SCREENS.ALERT_STATUS,
+            "Thao tác",
           ]}>
             {alerts.data.map((alert) => (
               <tr key={alert.id}>
@@ -84,6 +87,7 @@ export function AlertsScreen() {
                 <td>{alert.acknowledged
                   ? MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACKNOWLEDGED
                   : MODERATOR_MESSAGES.READ_SCREENS.ALERT_ACTIVE}</td>
+                <td>{!alert.acknowledged ? <AlertAcknowledgementButton id={alert.id} level={alert.level} /> : null}</td>
               </tr>
             ))}
           </DataTable>

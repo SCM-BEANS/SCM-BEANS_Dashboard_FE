@@ -2,17 +2,26 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
+import { profilesApi } from "@/apis/profiles.api";
 import { tenantsApi } from "@/apis/tenants.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { getApiErrorMessage } from "@/lib/api-errors";
+import { AccountCreateForm, type AccountCreateValue } from "@/components/account/account-create-form";
+import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
 import {
+  AccountCreatedResponseValidationError,
+  getApiErrorMessage,
+  isUncertainApiMutation,
+} from "@/lib/api-errors";
+import {
+  AdminUserCreateSchema,
   AdminUserIdSchema,
   AdminUserRoleSchema,
   AdminUserStatusSchema,
   AdminUserUpdateSchema,
+  type AdminUserCreate,
   type AdminUser,
   type AdminUserRole,
   type AdminUserUpdate,
@@ -59,16 +68,22 @@ function formatDate(value: string): string {
 function AdminUsersContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const view = queryValue(router.query.view) === "detail" ? "detail" : "list";
+  const queryView = queryValue(router.query.view);
+  const view = queryView === "detail" ? "detail" : queryView === "create" ? "create" : "list";
   const userId = queryValue(router.query.id);
   const validUserId = AdminUserIdSchema.safeParse(userId).success;
   const page = positiveNumber(queryValue(router.query.page), 1);
+  const contractPage = positiveNumber(queryValue(router.query.contractPage), 1) - 1;
   const pageSize = 20;
   const search = queryValue(router.query.q).trim().slice(0, 100);
   const roleFilter = AdminUserRoleSchema.safeParse(queryValue(router.query.role));
   const statusFilter = AdminUserStatusSchema.safeParse(queryValue(router.query.status));
   const [searchDraft, setSearchDraft] = useState(search);
   const [form, setForm] = useState<UserForm>({ name: "", email: "", role: "", tenantId: "" });
+  const [createForm, setCreateForm] = useState<AccountCreateValue>({ name: "", email: "", role: "" });
+  const [createError, setCreateError] = useState("");
+  const [createCredential, setCreateCredential] = useState<AccountCredential | null>(null);
+  const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [pendingUpdate, setPendingUpdate] = useState<AdminUserUpdate | null>(null);
   const [dialog, setDialog] = useState<"confirm" | "success" | "error" | null>(null);
@@ -94,6 +109,18 @@ function AdminUsersContent() {
   });
   const user = detail.data;
   const currentRole = user ? userRole(user) : null;
+  const doloresProfile = useQuery({
+    queryKey: ["dolores", "profiles", "detail", userId],
+    queryFn: ({ signal }) => profilesApi.getById(userId, signal),
+    enabled: router.isReady && view === "detail" && validUserId && currentRole === "owner",
+    retry: false,
+  });
+  const ownerContracts = useQuery({
+    queryKey: ["dolores", "profiles", "contracts", userId, contractPage, 20],
+    queryFn: ({ signal }) => profilesApi.getContracts(userId, contractPage, 20, signal),
+    enabled: router.isReady && view === "detail" && validUserId && currentRole === "owner" && Boolean(doloresProfile.data),
+    retry: false,
+  });
   const tenants = useQuery({
     queryKey: ["dolores", "tenants"],
     queryFn: ({ signal }) => tenantsApi.list(signal),
@@ -118,7 +145,7 @@ function AdminUsersContent() {
 
   function navigate(patch: Record<string, string | null>) {
     const next: Record<string, string> = {};
-    for (const key of ["view", "id", "page", "q", "role", "status"]) {
+    for (const key of ["view", "id", "page", "q", "role", "status", "contractPage"]) {
       const value = queryValue(router.query[key]);
       if (value) next[key] = value;
     }
@@ -141,10 +168,78 @@ function AdminUsersContent() {
     },
     onError: () => setDialog("error"),
   });
+  const createUser = useMutation({
+    mutationFn: (input: AdminUserCreate) => adminUsersApi.create(input),
+    onSuccess: async (result) => {
+      setCreateCredential({
+        password: result.temporary_password,
+        expiresAt: result.temporary_password_expires_at,
+        emailVerificationStarted: result.email_verification_started,
+        onboardingEmailSent: result.onboarding_email_sent,
+      });
+      setCreateConfirmOpen(false);
+      await Promise.allSettled([
+        queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] }),
+      ]);
+    },
+    onError: (error: unknown) => {
+      setCreateError(getApiErrorMessage(error, "mutation"));
+      setCreateConfirmOpen(false);
+      if (error instanceof AccountCreatedResponseValidationError || isUncertainApiMutation(error)) {
+        void queryClient.invalidateQueries({ queryKey: ["idaas", "admin-users"] });
+      }
+    },
+  });
 
   function updateField(field: keyof UserForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setRequestError("");
+  }
+
+  function updateCreateField(field: "name" | "email" | "role", value: string) {
+    if (field === "role") {
+      const parsedRole = AdminUserRoleSchema.safeParse(value);
+      setCreateForm((current) => ({ ...current, role: parsedRole.success ? parsedRole.data : "" }));
+    } else {
+      setCreateForm((current) => ({ ...current, [field]: value }));
+    }
+    setCreateError("");
+    if (createUser.isError) createUser.reset();
+  }
+
+  function requestCreateAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (createUser.isPending || createCredential || createConfirmOpen) return;
+
+    const parsed = AdminUserCreateSchema.safeParse({
+      name: createForm.name,
+      email: createForm.email,
+      role: createForm.role,
+    });
+    if (!parsed.success) {
+      setCreateError(T.FORM.INVALID);
+      return;
+    }
+
+    setCreateError("");
+    createUser.reset();
+    setCreateConfirmOpen(true);
+  }
+
+  function confirmCreateAccount() {
+    if (createUser.isPending || createCredential) return;
+    const parsed = AdminUserCreateSchema.safeParse({
+      name: createForm.name,
+      email: createForm.email,
+      role: createForm.role,
+    });
+    if (!parsed.success) {
+      setCreateError(T.FORM.INVALID);
+      setCreateConfirmOpen(false);
+      return;
+    }
+    setCreateError("");
+    createUser.mutate(parsed.data);
   }
 
   function prepareUpdate(event: FormEvent<HTMLFormElement>) {
@@ -188,10 +283,18 @@ function AdminUsersContent() {
   const total = users.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canEdit = Boolean(user && currentRole);
+  const createRetryBlocked = createUser.isError && (
+    createUser.error instanceof AccountCreatedResponseValidationError ||
+    isUncertainApiMutation(createUser.error)
+  );
 
   const roleOptions = (Object.keys(roleLabels) as AdminUserRole[]).map((role) => (
     <option key={role} value={role}>{roleLabels[role]}</option>
   ));
+  const createRoleOptions = (Object.keys(roleLabels) as AdminUserRole[]).map((role) => ({
+    value: role,
+    label: roleLabels[role],
+  }));
 
   const tenantOptions = (
     <>
@@ -209,8 +312,8 @@ function AdminUsersContent() {
     <>
       <div className={`${styles.pageContent} ${styles.accountPageContent}`}>
         <div className={styles.pageHeading}>
-          <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : T.LIST.TITLE}</h1>
-          <p>{view === "detail" ? T.FORM.DETAIL_DESCRIPTION : T.LIST.DESCRIPTION}</p>
+          <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : view === "create" ? T.FORM.CREATE_TITLE : T.LIST.TITLE}</h1>
+          <p>{view === "detail" ? T.FORM.DETAIL_DESCRIPTION : view === "create" ? T.FORM.CREATE_DESCRIPTION : T.LIST.DESCRIPTION}</p>
         </div>
 
         {view === "list" ? (
@@ -274,7 +377,7 @@ function AdminUsersContent() {
                     } },
                     { key: "status", header: T.FORM.STATUS, render: (entry) => entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED },
                     { key: "detail", header: "", render: (entry) => (
-                      <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: entry.id })}>
+                      <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: entry.id, contractPage: null })}>
                         {T.LIST.DETAIL}
                       </button>
                     ) },
@@ -291,6 +394,17 @@ function AdminUsersContent() {
               </>
             )}
           </section>
+        ) : view === "create" ? (
+          <AccountCreateForm
+            id="admin-user-create-form"
+            title={T.FORM.CREATE_TITLE}
+            value={createForm}
+            roleOptions={createRoleOptions}
+            onChange={updateCreateField}
+            onSubmit={requestCreateAccount}
+            error={createError}
+            disabled={createUser.isPending || createConfirmOpen || createRetryBlocked}
+          />
         ) : !validUserId ? (
           <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.INVALID_ID}</div>
         ) : detail.isPending ? (
@@ -301,6 +415,7 @@ function AdminUsersContent() {
             <button className={styles.accountSecondaryButton} type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button>
           </div>
         ) : user ? (
+          <>
           <form id="admin-user-edit-form" className={styles.panel} onSubmit={prepareUpdate}>
             <h2>{T.FORM.DETAIL_TITLE}</h2>
             {!currentRole && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.UNSUPPORTED_ROLE}</div>}
@@ -340,19 +455,125 @@ function AdminUsersContent() {
             {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
             {updateUser.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(updateUser.error, "mutation")}</p>}
           </form>
+          {currentRole === "owner" && <section className={styles.panel} aria-labelledby="owner-profile-verification-title">
+            <h2 id="owner-profile-verification-title">Xác minh hồ sơ Owner trong Dolores</h2>
+            <p>Tra cứu bằng cùng UUID IDaaS được API tạo tài khoản trả về: <code>{user.id}</code>.</p>
+            {doloresProfile.isPending && <p role="status">Đang tải hồ sơ Dolores…</p>}
+            {doloresProfile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
+              <p>{getApiErrorMessage(doloresProfile.error)}</p>
+              <p>Hồ sơ có thể chưa được đồng bộ từ IDaaS. Hãy thử lại sau; trình duyệt không gọi API đồng bộ nội bộ.</p>
+              <button className={styles.accountSecondaryButton} type="button" disabled={doloresProfile.isFetching} onClick={() => void doloresProfile.refetch()}>{T.COMMON.RETRY}</button>
+            </div>}
+            {doloresProfile.data && <div className={styles.accountFormGrid}>
+              <div><span>UUID IDaaS</span><strong>{doloresProfile.data.idaasUserId}</strong></div>
+              <div><span>Email</span><strong>{doloresProfile.data.email || "—"}</strong></div>
+              <div><span>Vai trò Dolores</span><strong>{doloresProfile.data.roles.join(", ") || "—"}</strong></div>
+              <div><span>Trạng thái hồ sơ</span><strong>{doloresProfile.data.status}</strong></div>
+              <div><span>Email đã xác minh</span><strong>{doloresProfile.data.emailVerified ? "Có" : "Chưa"}</strong></div>
+            </div>}
+            {doloresProfile.data && <div className={styles.accountProfileContracts}>
+              <h3>Hợp đồng của Owner</h3>
+              {ownerContracts.isPending && <p role="status">Đang tải hợp đồng…</p>}
+              {ownerContracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
+                <p>{getApiErrorMessage(ownerContracts.error)}</p>
+                <button className={styles.accountSecondaryButton} type="button" disabled={ownerContracts.isFetching} onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button>
+              </div>}
+              {ownerContracts.data && <DataTable
+                variant="accounts"
+                rows={ownerContracts.data.items}
+                rowKey={(contract) => contract.contractId ?? contract.id ?? `${contract.machineId}-${contract.startDate}`}
+                emptyMessage="Owner chưa có hợp đồng."
+                columns={[
+                  { key: "contract", header: "UUID hợp đồng", render: (contract) => contract.contractId ?? contract.id ?? "—" },
+                  { key: "machine", header: "UUID máy", render: (contract) => contract.machineId ?? "—" },
+                  { key: "status", header: "Trạng thái", render: (contract) => contract.status ?? "—" },
+                  { key: "dates", header: "Thời hạn", render: (contract) => `${contract.startDate ?? "—"} – ${contract.endDate ?? "—"}` },
+                ]}
+              />}
+              {ownerContracts.data && ownerContracts.data.totalPages > 0 && (
+                <div className={styles.accountPagination} aria-label="Phân trang hợp đồng Owner">
+                  <span>Trang {contractPage + 1}/{ownerContracts.data.totalPages}</span>
+                  <div>
+                    <button
+                      className={styles.accountSecondaryButton}
+                      type="button"
+                      disabled={contractPage <= 0 || ownerContracts.isFetching}
+                      onClick={() => navigate({ contractPage: String(contractPage) })}
+                    >
+                      {T.LIST.PREVIOUS}
+                    </button>
+                    <button
+                      className={styles.accountSecondaryButton}
+                      type="button"
+                      disabled={contractPage + 1 >= ownerContracts.data.totalPages || ownerContracts.isFetching}
+                      onClick={() => navigate({ contractPage: String(contractPage + 2) })}
+                    >
+                      {T.LIST.NEXT}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>}
+          </section>}
+          </>
         ) : null}
       </div>
 
-      <ActionBar>
+      <ActionBarConfig>
         {view === "detail" ? (
           <>
             <ButtonBar type="submit" form="admin-user-edit-form" disabled={!canEdit || detail.isPending || updateUser.isPending}>{T.FORM.SAVE}</ButtonBar>
-            <ButtonBar type="button" onClick={() => navigate({ view: null, id: null })}>{T.FORM.BACK}</ButtonBar>
+            <ButtonBar type="button" onClick={() => navigate({ view: null, id: null, contractPage: null })}>{T.FORM.BACK}</ButtonBar>
+          </>
+        ) : view === "create" ? (
+          <>
+            <ButtonBar type="submit" form="admin-user-create-form" disabled={createUser.isPending || createConfirmOpen || createRetryBlocked}>
+              {createUser.isPending ? "Đang tạo…" : T.LIST.CREATE}
+            </ButtonBar>
+            <ButtonBar href={PATH_ADMIN.USERS}>{T.FORM.CANCEL}</ButtonBar>
           </>
         ) : (
-          <ButtonBar type="button" disabled={users.isFetching} onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
+          <>
+            <ButtonBar type="button" disabled={users.isFetching} onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
+            <ButtonBar type="button" onClick={() => navigate({ view: "create", id: null, contractPage: null })}>{T.LIST.CREATE}</ButtonBar>
+          </>
         )}
-      </ActionBar>
+      </ActionBarConfig>
+
+      {createConfirmOpen && (
+        <NotificationDialog
+          variant="confirm"
+          title={T.DIALOG.CONFIRM}
+          description={T.DIALOG.CREATE}
+          primaryAction={{
+            label: T.DIALOG.PROCEED,
+            pending: createUser.isPending,
+            pendingLabel: "Đang tạo…",
+            onClick: confirmCreateAccount,
+          }}
+          secondaryAction={{ label: T.FORM.CANCEL, disabled: createUser.isPending, onClick: () => setCreateConfirmOpen(false) }}
+          onClose={() => { if (!createUser.isPending) setCreateConfirmOpen(false); }}
+          closeOnEscape={!createUser.isPending}
+        >
+          <p>{createForm.name.trim()} · {createForm.email.trim()} · {roleLabels[createForm.role as AdminUserRole] ?? T.FORM.SELECT_ROLE}</p>
+        </NotificationDialog>
+      )}
+      {createCredential && (
+        <AccountSuccessDialog
+          credential={createCredential}
+          title={T.DIALOG.SUCCESS}
+          summary={`${createForm.name.trim()} · ${createForm.email.trim()} · ${roleLabels[createForm.role as AdminUserRole]}${createUser.data?.role === "owner" ? ` · UUID IDaaS: ${createUser.data.id}` : ""}`}
+          actionLabel={createUser.data?.role === "owner" ? "Tiếp tục xác minh hồ sơ" : T.FORM.BACK}
+          onClose={() => {
+            const createdUser = createUser.data;
+            setCreateCredential(null);
+            setCreateForm({ name: "", email: "", role: "" });
+            void router.push(createdUser?.role === "owner"
+              ? { pathname: PATH_ADMIN.USERS, query: { view: "detail", id: createdUser.id } }
+              : PATH_ADMIN.USERS);
+          }}
+        />
+      )}
 
       {dialog === "confirm" && pendingUpdate && (
         <NotificationDialog

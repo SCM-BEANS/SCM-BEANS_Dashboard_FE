@@ -43,22 +43,76 @@ const buttonBar = loadModule("src/components/button/button-bar.tsx", {
 const actionBarActions = loadModule("src/components/action-bar/action-bar-actions.tsx", {
   "@/components/button/button-bar": buttonBar,
 });
+const schemas = {
+  "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
+  "@/schema/billing.schema": loadModule("src/schema/billing.schema.ts"),
+  "@/schema/machines.schema": loadModule("src/schema/machines.schema.ts"),
+  "@/schema/recipes.schema": loadModule("src/schema/recipes.schema.ts"),
+  "@/schema/installation-work-orders.schema": loadModule("src/schema/installation-work-orders.schema.ts"),
+  "@/schema/repair-cost-reviews.schema": loadModule("src/schema/repair-cost-reviews.schema.ts"),
+};
+const customerReadDescriptor = loadModule("src/pages/dashboard/read/customer-read-descriptor.ts", {
+  "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
+});
 const customerReadScreens = loadModule("src/pages/dashboard/read/customer-read-screen.tsx", {
+  ...schemas,
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
+  "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+  "./customer-read-descriptor": customerReadDescriptor,
+  "../overview/overview-screen": { OverviewScreen: () => null },
+  "../contracts/contracts-screen": { ContractsScreen: () => null },
+  "../machines/machines-screen": { MachinesScreen: () => null },
+  "../locations/locations-screen": { LocationsScreen: () => null },
+  "../machines/machine-registration-screen": { MachineRegistrationScreen: () => null },
+  "../menu/menu-screen": { MenuScreen: () => null },
+  "../invoices/invoices-screen": { InvoicesScreen: () => null },
   "../customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+});
+const customerWorkflowDescriptor = loadModule("src/pages/dashboard/workflows/customer-workflow-descriptor.ts", {
+  "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
 });
 const customerWorkflowScreens = loadModule("src/pages/dashboard/workflows/customer-workflow-screen.tsx", {
   "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
+  "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+  "@/routes/path": paths,
+  "./customer-workflow-descriptor": customerWorkflowDescriptor,
+  "./repair-intake-screen": { RepairIntakeForm: () => null },
+  "../support/support-requests-list-screen": { SupportRequestsListScreen: () => null },
+  "@/components/features/repair-workflow/repair-case-detail-screen": { RepairCaseDetailScreen: () => null },
+  "@/components/features/maintenance-workflow/owner-maintenance-screen": { OwnerMaintenanceScreen: () => null },
+  "@/components/features/maintenance-workflow/repair-cost-review-screen": { RepairCostReviewScreen: () => null },
+  "./local-recipe-screen": { LocalRecipeForm: () => null },
+  "./notification-inbox": { NotificationInbox: () => null },
   "../customer-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
+});
+const technicianHistoryScreens = loadModule("src/pages/technician/history/history-screen.tsx", {
+  "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
+});
+const technicianTaskScreens = loadModule("src/pages/technician/tasks/task-screens.tsx", {
+  "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
+});
+const technicianScreen = loadModule("src/pages/technician/technician-screen.tsx", {
+  "@/components/action-bar/action-bar": actionBar,
+  "@/components/action-bar/action-bar-actions": actionBarActions,
+  "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+  "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
+  "./technician-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const technicianRouteScreens = loadModule("src/pages/technician/technician-route-screens.tsx", {
   "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
+  "./history/history-screen": technicianHistoryScreens,
+  "./tasks/task-screens": technicianTaskScreens,
+  "./machine-check/machine-check-screen": { technicianMachineCheckScreen: {
+    title: "Kiểm tra máy", description: "Kiểm tra thiết bị.", reason: "Chưa có dữ liệu.", actions: [],
+  } },
+  "./notifications/notifications-screen": { TechnicianNotificationsScreen: () => null },
+  "./technician-screen": technicianScreen,
   "./technician-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
 const tokenWithRoles = (roles) => `header.${Buffer.from(JSON.stringify({ roles })).toString("base64url")}.signature`;
@@ -98,14 +152,6 @@ const moderatorMessages = {
     BUYBACK: "Thu mua",
     NOTIFICATIONS: "Thông báo",
   },
-};
-
-const schemas = {
-  "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
-  "@/schema/billing.schema": loadModule("src/schema/billing.schema.ts"),
-  "@/schema/machines.schema": loadModule("src/schema/machines.schema.ts"),
-  "@/schema/recipes.schema": loadModule("src/schema/recipes.schema.ts"),
-  "@/schema/installation-work-orders.schema": loadModule("src/schema/installation-work-orders.schema.ts"),
 };
 
 const routes = loadModule("src/routes/routes.ts", {
