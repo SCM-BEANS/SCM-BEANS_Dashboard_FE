@@ -3,10 +3,17 @@ import { Bounds, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Box3, Group, Material, Mesh, Object3D, Vector3 } from "three";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
-import { DIGITAL_TWIN_PART_NODES, getPartEntrance, getPartVisibility, getPartYaw, getWholeVisibility } from "./digital-twin-story";
+import {
+  DIGITAL_TWIN_PART_NODES,
+  DIGITAL_TWIN_SHELL_NODES,
+  getCutaway,
+  getFocusedPartIndex,
+  getWholeVisibility,
+} from "./digital-twin-story";
 
 const MODEL_URL = "/models/digital-twin/body/coffee_machine_03_v2.glb";
-
+const PART_ROTATION_DURATION_SECONDS = 24;
+const PART_ROTATION_SPEED = (Math.PI * 2) / PART_ROTATION_DURATION_SECONDS;
 interface FadeMaterial {
   material: Material;
   opacity: number;
@@ -14,8 +21,9 @@ interface FadeMaterial {
   depthWrite: boolean;
 }
 
-function cloneMaterials(root: Object3D): FadeMaterial[] {
-  const result: FadeMaterial[] = [];
+function cloneMaterials(root: Object3D) {
+  const records: FadeMaterial[] = [];
+  const recordsByObject = new WeakMap<Object3D, FadeMaterial[]>();
   root.traverse((child) => {
     if (!(child instanceof Mesh)) return;
     const cloned = Array.isArray(child.material)
@@ -23,100 +31,150 @@ function cloneMaterials(root: Object3D): FadeMaterial[] {
       : child.material.clone();
     child.material = cloned;
     const materials = Array.isArray(cloned) ? cloned : [cloned];
-    materials.forEach((material) => result.push({
-      material,
-      opacity: material.opacity,
-      transparent: material.transparent,
-      depthWrite: material.depthWrite,
-    }));
+    const meshRecords = materials.map((material) => {
+      const record: FadeMaterial = {
+        material,
+        opacity: material.opacity,
+        transparent: material.transparent,
+        depthWrite: material.depthWrite,
+      };
+      records.push(record);
+      return record;
+    });
+    recordsByObject.set(child, meshRecords);
   });
-  return result;
+  return { records, recordsByObject };
 }
 
-function showAtOpacity(root: Object3D, materials: FadeMaterial[], weight: number) {
-  root.visible = weight > 0.001;
-  if (!root.visible) return;
-  materials.forEach(({ material, opacity, transparent, depthWrite }) => {
-    const shouldBeTransparent = transparent || weight < 0.999;
+function collectRecords(root: Object3D | undefined, recordsByObject: WeakMap<Object3D, FadeMaterial[]>) {
+  const records: FadeMaterial[] = [];
+  root?.traverse((child) => records.push(...(recordsByObject.get(child) ?? [])));
+  return records;
+}
+
+function setOpacity(records: FadeMaterial[], amount: number, object?: Object3D) {
+  if (object) object.visible = amount > 0.001;
+  records.forEach(({ material, opacity, transparent, depthWrite }) => {
+    const shouldBeTransparent = transparent || amount < 0.999;
     if (material.transparent !== shouldBeTransparent) {
       material.transparent = shouldBeTransparent;
       material.needsUpdate = true;
     }
-    material.opacity = opacity * weight;
-    material.depthWrite = depthWrite && weight >= 0.999;
+    material.opacity = opacity * amount;
+    material.depthWrite = depthWrite && amount >= 0.999;
   });
 }
 
-function CoffeeMachineModel({ progress, onReady }: { progress: number; onReady: () => void }) {
-  const { scene } = useGLTF(MODEL_URL);
+function CoffeeMachineModel({ progress, rotationEnabled, onReady }: { progress: number; rotationEnabled: boolean; onReady: () => void }) {
+  const { scene } = useGLTF(MODEL_URL, "/draco-gltf/");
   const { invalidate } = useThree();
   const renderedFrames = useRef(0);
   const readyRef = useRef(false);
   const checkScheduledRef = useRef(false);
+  const activePartIndexRef = useRef(-1);
   const visuals = useMemo(() => {
+    scene.updateMatrixWorld(true);
     const whole = scene.clone(true);
-    const fullBox = new Box3().setFromObject(whole);
-    const fullCenter = fullBox.getCenter(new Vector3());
-    const fullSize = fullBox.getSize(new Vector3());
-    const fullExtent = Math.max(fullSize.x, fullSize.y, fullSize.z);
-    const wholeMaterials = cloneMaterials(whole);
+    whole.updateMatrixWorld(true);
+    const wholeMaterialsData = cloneMaterials(whole);
+    const box = new Box3().setFromObject(whole);
+    const center = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
+    const extent = Math.max(size.x, size.y, size.z);
+    const shells = DIGITAL_TWIN_SHELL_NODES.flatMap((name) => collectRecords(
+      whole.getObjectByName(name), wholeMaterialsData.recordsByObject,
+    ));
 
+    // Focused component models remain separate, as in the source assembly.
     const parts = DIGITAL_TWIN_PART_NODES.map((name) => {
       const source = scene.getObjectByName(name);
       if (!source) return null;
-
       const part = source.clone(true);
-      const box = new Box3().setFromObject(part);
-      const center = box.getCenter(new Vector3());
-      const size = box.getSize(new Vector3());
-      const extent = Math.max(size.x, size.y, size.z, 0.001);
-      part.position.sub(center);
+      const partWorld = source.matrixWorld.clone();
+      part.matrix.identity();
+      part.matrixAutoUpdate = true;
+      part.position.set(0, 0, 0);
+      part.quaternion.identity();
+      part.scale.set(1, 1, 1);
+      part.updateMatrix();
 
+      const worldPart = new Group();
+      worldPart.matrix.copy(partWorld);
+      worldPart.matrixAutoUpdate = false;
+      worldPart.add(part);
+      worldPart.updateMatrixWorld(true);
+
+      const partBox = new Box3().setFromObject(worldPart);
+      const partCenter = partBox.getCenter(new Vector3());
+      const partExtent = partBox.getSize(new Vector3());
+      const maxPartExtent = Math.max(partExtent.x, partExtent.y, partExtent.z, 0.001);
+      const pivot = new Group();
+      pivot.position.copy(partCenter).negate();
+      pivot.add(worldPart);
       const group = new Group();
-      group.add(part);
-      group.position.copy(fullCenter);
-      const baseScale = Math.min(4.2, Math.max(0.8, (fullExtent / extent) * 0.85));
+      group.add(pivot);
+      const baseScale = Math.min(4.2, Math.max(0.8, (extent / maxPartExtent) * 0.85));
       group.scale.setScalar(baseScale);
-      group.visible = false;
-      return { group, materials: cloneMaterials(group), baseScale, centerY: fullCenter.y, lift: fullSize.y * 0.07 };
+      group.position.copy(center);
+      return { group };
     });
 
-    return { whole, wholeMaterials, parts };
+    return {
+      whole,
+      wholeMaterials: wholeMaterialsData.records,
+      shells,
+      parts,
+    };
   }, [scene]);
 
   useLayoutEffect(() => {
-    showAtOpacity(visuals.whole, visuals.wholeMaterials, getWholeVisibility(progress));
+    const overview = getWholeVisibility(progress);
+    const cutaway = getCutaway(progress);
+    const focusedIndex = getFocusedPartIndex(progress);
+    visuals.whole.visible = overview > 0;
+    setOpacity(visuals.shells, overview * (1 - cutaway * 0.84));
     visuals.parts.forEach((part, index) => {
       if (!part) return;
-      const entrance = getPartEntrance(progress, index);
-      part.group.position.y = part.centerY - part.lift * (1 - entrance);
-      part.group.scale.setScalar(part.baseScale * (0.9 + 0.1 * entrance));
-      part.group.rotation.y = getPartYaw(progress, index);
-      showAtOpacity(part.group, part.materials, getPartVisibility(progress, index));
+      const focused = focusedIndex === index;
+      part.group.visible = focused;
+      if (focused && activePartIndexRef.current !== focusedIndex) {
+        part.group.rotation.y = 0;
+      }
     });
+    activePartIndexRef.current = focusedIndex;
     invalidate();
-  }, [invalidate, progress, visuals]);
+  }, [invalidate, progress, rotationEnabled, visuals]);
 
   useEffect(() => () => {
     visuals.wholeMaterials.forEach(({ material }) => material.dispose());
-    visuals.parts.forEach((part) => part?.materials.forEach(({ material }) => material.dispose()));
   }, [visuals]);
 
-  useFrame((state) => {
-    if (readyRef.current) return;
-    renderedFrames.current += 1;
-    if (renderedFrames.current < 3 || checkScheduledRef.current) return;
-    checkScheduledRef.current = true;
-    window.requestAnimationFrame(() => {
-      checkScheduledRef.current = false;
-      if (readyRef.current) return;
-      if (state.gl.info.render.calls > 0) {
-        readyRef.current = true;
-        onReady();
-      } else if (renderedFrames.current < 12) {
+  useFrame((state, delta) => {
+    if (!readyRef.current) {
+      state.invalidate();
+      renderedFrames.current += 1;
+      if (renderedFrames.current >= 3 && !checkScheduledRef.current) {
+        checkScheduledRef.current = true;
+        window.requestAnimationFrame(() => {
+          checkScheduledRef.current = false;
+          if (readyRef.current) return;
+          if (state.gl.info.render.calls > 0) {
+            readyRef.current = true;
+            onReady();
+          } else if (renderedFrames.current < 12) {
+            state.invalidate();
+          }
+        });
+      }
+    }
+
+    if (readyRef.current && rotationEnabled) {
+      const activePart = visuals.parts.find((part) => part?.group.visible);
+      if (activePart) {
+        activePart.group.rotation.y = (activePart.group.rotation.y + Math.min(delta, 0.05) * PART_ROTATION_SPEED) % (Math.PI * 2);
         state.invalidate();
       }
-    });
+    }
   });
 
   return (
@@ -131,10 +189,10 @@ function CoffeeMachineModel({ progress, onReady }: { progress: number; onReady: 
   );
 }
 
-export default function DigitalTwinViewer({ progress, onReady }: { progress: number; onReady: () => void }) {
+export default function DigitalTwinViewer({ progress, rotationEnabled, onReady }: { progress: number; rotationEnabled: boolean; onReady: () => void }) {
   return (
     <Canvas
-      camera={{ position: [6, 2.5, -3], fov: 36, near: 0.01, far: 2000 }}
+      camera={{ position: [4.5, 2.5, 8], fov: 36, near: 0.01, far: 2000 }}
       dpr={[1, 1.5]}
       frameloop="demand"
       gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}
@@ -144,7 +202,7 @@ export default function DigitalTwinViewer({ progress, onReady }: { progress: num
       <directionalLight position={[-4, 7, 5]} intensity={2.1} />
       <directionalLight position={[5, 2, -4]} intensity={1.1} />
       <Suspense fallback={null}>
-        <CoffeeMachineModel progress={progress} onReady={onReady} />
+        <CoffeeMachineModel progress={progress} rotationEnabled={rotationEnabled} onReady={onReady} />
       </Suspense>
     </Canvas>
   );

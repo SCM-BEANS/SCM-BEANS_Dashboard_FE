@@ -11,6 +11,7 @@ export default defineConfig({
     baseURL,
     ...devices["Desktop Chrome"],
     browserName: "chromium",
+    channel: process.env.PLAYWRIGHT_CHANNEL,
     headless: true,
     trace: "retain-on-failure",
   },

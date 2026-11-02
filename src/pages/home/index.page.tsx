@@ -1,6 +1,5 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ActionButton } from "@/components/button/action-button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { SectionHeading } from "@/components/heading/section-heading";
@@ -10,48 +9,12 @@ import {
   HOME_FOOTER_PRODUCT_LINKS,
 } from "@/routes/routes";
 import { HOME_MESSAGES } from "@/text/home/home-messages";
-import { DigitalTwinSection } from "./digital-twin-section";
-import { HeroSection } from "./hero-section";
+import { LandingOpening } from "./landing-opening";
 import { HomeHeader } from "./home-header";
-import { HomeIntro } from "./home-intro";
 import { ProductSection } from "./product-section";
 import styles from "./home.module.css";
 
-const INTRO_EXIT_AT_MS = 1140;
-const INTRO_END_AT_MS = 1400;
-
 export default function HomePage() {
-  const [introPhase, setIntroPhase] = useState<"entering" | "exiting" | "done">("entering");
-  const introActive = introPhase !== "done";
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setIntroPhase("done");
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const splash = document.querySelector("[data-intro-splash]");
-    const splashAnimation = splash?.getAnimations()[0];
-    const elapsed = Number(splashAnimation?.currentTime ?? 0);
-
-    const exitTimer = window.setTimeout(
-      () => setIntroPhase("exiting"),
-      Math.max(0, INTRO_EXIT_AT_MS - elapsed),
-    );
-    const endTimer = window.setTimeout(() => {
-      setIntroPhase("done");
-      document.body.style.overflow = previousOverflow;
-    }, Math.max(0, INTRO_END_AT_MS - elapsed));
-
-    return () => {
-      window.clearTimeout(exitTimer);
-      window.clearTimeout(endTimer);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-
   return (
     <>
       <Head>
@@ -60,14 +23,11 @@ export default function HomePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {introPhase !== "done" && <HomeIntro phase={introPhase} />}
-
-      <div className={styles.root} data-intro-active={introActive ? "true" : undefined}>
+      <div className={styles.root}>
         <HomeHeader />
 
         <main id={HOME_SECTION_IDS.TOP}>
-          <HeroSection />
-          <DigitalTwinSection />
+          <LandingOpening />
           <ProductSection />
 
           <section id={HOME_SECTION_IDS.TECHNOLOGY} className="section technology-section">
