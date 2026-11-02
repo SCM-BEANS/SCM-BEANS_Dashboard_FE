@@ -144,16 +144,48 @@ test("Private evidence schemas reject public URLs and line breaks", () => {
   }));
 });
 
-test("Owner return acknowledgments follow the prior custody acknowledgment chain; evidence-gated writes stay unconnected", () => {
+test("Phase 4 return steps use the correct machine, role, order, and Owner acknowledgments", () => {
   const source = readFileSync(join(__dirname, "../src/components/features/repair-workflow/repair-case-detail-screen.tsx"), "utf8");
-  assert.match(source, /event\.eventType === "REPLACEMENT_COLLECTED" && replacementDeliveryAcknowledged/);
-  assert.match(source, /event\.eventType === "PRIMARY_RETURNED" && replacementCollectionAcknowledged/);
-  assert.match(source, /canCollectReplacement = repairCase\.data\?\.status === "REPAIR_COMPLETED"/);
-  assert.match(source, /canReturnPrimary = repairCase\.data\?\.status === "REPLACEMENT_COLLECTED"/);
-  assert.match(source, /canReleaseReplacement = repairCase\.data\?\.status === "OWNER_ACKNOWLEDGED"/);
-  assert.match(source, /canCollectReplacement && !replacementCollectionEvent/);
-  assert.match(source, /canReturnPrimary && !primaryReturnEvent/);
-  assert.match(source, /releaseEvidenceStepBlocked = canRecordCustody && custody\.isSuccess && canReleaseReplacement/);
-  assert.match(source, /M\.PRIVATE_EVIDENCE_RELEASE_REQUIRED/);
-  assert.doesNotMatch(source, /repairCasesApi\.recordCustodyEvent\(|replacementAssignmentsApi\.release\(/);
+  assert.match(source, /canCollectReplacement = repairCase\.isSuccess && !repairCase\.isFetching/);
+  assert.match(source, /repairCase\.data\?\.status === "REPAIR_COMPLETED" && ticket\.data\?\.status === "RESOLVED"/);
+  assert.match(source, /canReturnPrimary = repairCase\.isSuccess && !repairCase\.isFetching/);
+  assert.match(source, /repairCase\.data\?\.status === "REPLACEMENT_COLLECTED" && ticket\.data\?\.status === "RESOLVED"/);
+  assert.match(source, /input\.eventType === "REPLACEMENT_COLLECTED"[\s\S]*Boolean\(replacementDeliveredEvent\?\.ownerAcknowledgedAt\)[\s\S]*replacementDeliveredEvent\?\.machineId === assignment\.data\?\.replacementMachineId[\s\S]*!replacementCollectionEvent/);
+  assert.match(source, /input\.eventType === "PRIMARY_RETURNED"[\s\S]*Boolean\(replacementCollectionEvent\?\.ownerAcknowledgedAt\)[\s\S]*replacementCollectionEvent\?\.machineId === assignment\.data\?\.replacementMachineId[\s\S]*assignment\.data\?\.primaryMachineId === repairCase\.data\?\.primaryMachineId[\s\S]*!primaryReturnEvent/);
+  assert.match(source, /machineId = assignment\.data\?\.replacementMachineId/);
+  assert.match(source, /machineId = repairCase\.data\?\.primaryMachineId/);
+  assert.match(source, /assignment\.data\.replacementMachineId !== repairCase\.data\.primaryMachineId/);
+  assert.match(source, /assignment\.data\.primaryMachineId === repairCase\.data\.primaryMachineId/);
+  assert.match(source, /canReleaseReplacement = repairCase\.isSuccess && !repairCase\.isFetching[\s\S]*repairCase\.data\?\.status === "OWNER_ACKNOWLEDGED"/);
+  assert.match(source, /role === "admin" \|\| role === "moderator" \|\| \(role === "technician" && isAssignedTechnician\)/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_REPLACEMENT_COLLECTION\}/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT\}/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_PRIMARY_RETURN\}/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT\}/);
+  assert.match(source, /primaryReturnAcknowledged &&\s*\["OWNER_ACKNOWLEDGED", "CLOSED"\]\.includes\(repairCase\.data\?\.status \?\? ""\)/);
+  assert.match(source, /primaryReturnEvent \? role === "owner" && !primaryReturnAcknowledged \? "current" : "waiting"/);
+  assert.match(source, /M\.PRIMARY_RETURN_STATUS_SYNC_PENDING/);
+  assert.match(source, /renderOwnerAcknowledgment\(replacementCollectionEvent, M\.ACKNOWLEDGMENT_REPLACEMENT_COLLECTED_PROMPT\)/);
+  assert.match(source, /renderOwnerAcknowledgment\(primaryReturnEvent, M\.ACKNOWLEDGMENT_PRIMARY_RETURNED_PROMPT\)/);
+  assert.match(source, /eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes, evidenceReference/);
+  assert.match(source, /eventType: "PRIMARY_RETURNED", machineId, conditionNotes, evidenceReference/);
+  assert.doesNotMatch(source, /privateEvidenceStepBlocked/);
+});
+
+test("Phase 5 release requires the acknowledged case state, confirmation, idempotency, and read-after-write", () => {
+  const source = readFileSync(join(__dirname, "../src/components/features/repair-workflow/repair-case-detail-screen.tsx"), "utf8");
+  assert.match(source, /canReleaseReplacement = repairCase\.isSuccess && !repairCase\.isFetching/);
+  assert.match(source, /repairCase\.data\?\.status === "OWNER_ACKNOWLEDGED"/);
+  assert.match(source, /assignment\.data\?\.status === "ACTIVE" && assignment\.data\.repairCaseId === caseId/);
+  assert.match(source, /replacementCollectionAcknowledged && replacementCollectionEvent\?\.machineId === assignment\.data\.replacementMachineId/);
+  assert.match(source, /primaryReturnAcknowledged && primaryReturnEvent\?\.machineId === repairCase\.data\.primaryMachineId/);
+  assert.match(source, /const canReleaseAsRole = role === "admin" \|\| role === "moderator" \|\| role === "technician"/);
+  assert.match(source, /replacementAssignmentsApi\.release\(expectedAssignmentId, releaseRequest\)/);
+  assert.match(source, /idempotencyKey: globalThis\.crypto\.randomUUID\(\)/);
+  assert.match(source, /correlationId: globalThis\.crypto\.randomUUID\(\)/);
+  assert.match(source, /releaseReadAfterWriteConfirmed = assignment\.data\?\.status === "RELEASED" && repairCase\.data\?\.status === "CLOSED"/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_RELEASE_ASSIGNMENT\}/);
+  assert.match(source, /<NotificationDialog\s+variant="confirm"/);
+  assert.match(source, /M\.RELEASE_STATUS_SYNC_PENDING/);
+  assert.doesNotMatch(source, /releaseEvidenceStepBlocked|PRIVATE_EVIDENCE_RELEASE_REQUIRED/);
 });

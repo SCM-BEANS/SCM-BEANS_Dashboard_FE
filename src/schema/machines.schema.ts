@@ -345,6 +345,8 @@ export const MaintenanceCustodyEventCreateRequestSchema = z.object({
   evidenceReference: z.string().trim().min(1).max(512)
     .refine((value) => !/^https?:\/\//i.test(value) && !/[\r\n]/.test(value), "Evidence must be a private storage reference."),
 }).strict();
+export const PrimaryCollectionRequestSchema = MaintenanceCustodyEventCreateRequestSchema
+  .extend({ eventType: z.literal("PRIMARY_COLLECTED") });
 export const MaintenanceCustodyAcknowledgementRequestSchema = z.object({
   acknowledgement: z.string().trim().min(1).max(1000),
 }).strict();
@@ -445,6 +447,7 @@ export type RepairCaseTimelineEvent = z.infer<typeof RepairCaseTimelineEventSche
 export type RepairCaseTimelinePage = z.infer<typeof RepairCaseTimelinePageSchema>;
 export type MaintenanceCustodyEvent = z.infer<typeof MaintenanceCustodyEventSchema>;
 export type MaintenanceCustodyEventCreateRequest = z.infer<typeof MaintenanceCustodyEventCreateRequestSchema>;
+export type PrimaryCollectionRequest = z.infer<typeof PrimaryCollectionRequestSchema>;
 export type MaintenanceCustodyAcknowledgementRequest = z.infer<typeof MaintenanceCustodyAcknowledgementRequestSchema>;
 export type ReplacementAssignment = z.infer<typeof ReplacementAssignmentSchema>;
 export type ReplacementAssignmentCreateRequest = z.infer<typeof ReplacementAssignmentCreateRequestSchema>;
@@ -525,16 +528,19 @@ export const MaintenanceTicketListParamsSchema = z.object({
 
 export type MaintenanceTicketListParams = z.infer<typeof MaintenanceTicketListParamsSchema>;
 
+const privateRepairEvidenceReferenceSchema = z.string().trim().min(1).max(512)
+  .refine((reference) => !/^https?:\/\//i.test(reference) && !/[\r\n]/.test(reference), "Evidence must be a private storage reference.");
+
 export const RepairDiagnosisRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(4000),
-  evidenceReference: z.string().trim().min(1).max(512),
+  evidenceReference: privateRepairEvidenceReferenceSchema,
 }).strict();
 
 export const RepairWorkCompletionRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(4000),
   resolutionResult: z.string().trim().min(1).max(4000),
   workScope: z.string().trim().min(1).max(2000),
-  evidenceReferences: z.array(z.string().trim().min(1).max(512)).min(1),
+  evidenceReferences: z.array(privateRepairEvidenceReferenceSchema).min(1),
   notes: z.string().max(4000).optional(),
   emergencyAuthorizationId: z.string().uuid().optional(),
 }).strict();

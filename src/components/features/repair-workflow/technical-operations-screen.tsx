@@ -28,7 +28,7 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
-import { DataTable } from "@/components/table/data-table";
+import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 
 import styles from "./repair-workflow.module.css";
 
@@ -134,13 +134,14 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role }:
   );
 }
 
-function MaintenanceRequestRows({
+function MaintenanceRequestTable({
   requests,
   onTriage,
   isPending,
   pendingRequestId,
   pendingAccepted,
   routes,
+  role,
 }: {
   requests: MaintenanceRequest[];
   onTriage: (input: TriageInput) => void;
@@ -148,50 +149,69 @@ function MaintenanceRequestRows({
   pendingRequestId?: string;
   pendingAccepted?: boolean;
   routes: Pick<TechnicalScreenRoutes, "requestDetail" | "requestAssign">;
+  role: TechnicalScreenRoutes["role"];
 }) {
-  return <>
-    {requests.map((request) => {
-      const isCurrentRequestPending = isPending && pendingRequestId === request.id;
-      return (
-        <tr key={request.id}>
-          <td><TextLinkButton href={routes.requestDetail(request.id)}>{request.id}</TextLinkButton></td>
-          <td>{requestTypeLabel(request.requestType)}</td>
-          <td className={styles.codeValue}>{request.ownerId ?? "—"}</td>
-          <td>{formatDate(request.updatedAt ?? request.createdAt)}</td>
-          <td>
-            {request.status === "REQUESTED" && request.requestType === "REPAIR" ? (
-              <div className={styles.technicalRequestActions}>
-                <button
-                  className={styles.technicalRequestAccept}
-                  disabled={isPending}
-                  onClick={() => onTriage({ requestId: request.id, accepted: true })}
-                  type="button"
-                >
-                  {isCurrentRequestPending && pendingAccepted
-                    ? messages.TECHNICAL_ACCEPTING
-                    : messages.TECHNICAL_ACCEPT}
-                </button>
-                <button
-                  className={styles.technicalRequestReject}
-                  disabled={isPending}
-                  onClick={() => onTriage({ requestId: request.id, accepted: false })}
-                  type="button"
-                >
-                  {isCurrentRequestPending && pendingAccepted === false
-                    ? messages.TECHNICAL_REJECTING
-                    : messages.TECHNICAL_REJECT}
-                </button>
-              </div>
-            ) : request.status === "TRIAGED" ? (
-              request.technicianId === null || request.technicianId === undefined
-                ? <Link className={styles.technicalRequestAssign} href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</Link>
-                : <span className={styles.technicalRequestAssigned}>{messages.TECHNICAL_ASSIGNED}</span>
-            ) : "—"}
-          </td>
-        </tr>
-      );
-    })}
-  </>;
+  const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
+    {
+      key: "id",
+      header: messages.TECHNICAL_ID,
+      render: (request) => <TextLinkButton href={routes.requestDetail(request.id)}>{request.id}</TextLinkButton>,
+    },
+    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => requestTypeLabel(request.requestType) },
+    {
+      key: "owner",
+      header: messages.TECHNICAL_OWNER,
+      cellProps: () => ({ className: styles.codeValue }),
+      render: (request) => request.ownerId ?? "—",
+    },
+    { key: "updated", header: messages.TECHNICAL_UPDATED, render: (request) => formatDate(request.updatedAt ?? request.createdAt) },
+    {
+      key: "actions",
+      header: messages.TECHNICAL_ACTIONS,
+      render: (request) => {
+        const isCurrentRequestPending = isPending && pendingRequestId === request.id;
+        return request.status === "REQUESTED" && request.requestType === "REPAIR" ? (
+          <div className={styles.technicalRequestActions}>
+            <button
+              className={styles.technicalRequestAccept}
+              disabled={isPending}
+              onClick={() => onTriage({ requestId: request.id, accepted: true })}
+              type="button"
+            >
+              {isCurrentRequestPending && pendingAccepted
+                ? messages.TECHNICAL_ACCEPTING
+                : messages.TECHNICAL_ACCEPT}
+            </button>
+            <button
+              className={styles.technicalRequestReject}
+              disabled={isPending}
+              onClick={() => onTriage({ requestId: request.id, accepted: false })}
+              type="button"
+            >
+              {isCurrentRequestPending && pendingAccepted === false
+                ? messages.TECHNICAL_REJECTING
+                : messages.TECHNICAL_REJECT}
+            </button>
+          </div>
+        ) : request.status === "TRIAGED" ? (
+          request.technicianId === null || request.technicianId === undefined
+            ? <Link className={styles.technicalRequestAssign} href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</Link>
+            : <span className={styles.technicalRequestAssigned}>{messages.TECHNICAL_ASSIGNED}</span>
+        ) : "—";
+      },
+    },
+  ];
+
+  return (
+    <DataTable
+      variant={role === "admin" ? "operations" : "moderator"}
+      {...(role === "admin" ? { headerVariant: "admin" as const } : {})}
+      style={{ minWidth: 980 }}
+      rows={requests}
+      rowKey={(request) => request.id}
+      columns={columns}
+    />
+  );
 }
 
 function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails }) {
@@ -337,6 +357,21 @@ export function TechnicalOperationsScreen({
   if (!isTechnicalRequestList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
 
   const listReady = !maintenanceRequests.isPending;
+  const requestList = listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length > 0 ? (
+    <>
+      <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>
+      <MaintenanceRequestTable
+        requests={maintenanceRequests.data.items}
+        onTriage={triage.mutate}
+        isPending={triage.isPending}
+        pendingRequestId={triage.variables?.requestId}
+        pendingAccepted={triage.variables?.accepted}
+        routes={routes}
+        role={routes.role}
+      />
+      <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
+    </>
+  ) : null;
   return (
     <div className={styles.pageContent}>
       <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
@@ -349,31 +384,20 @@ export function TechnicalOperationsScreen({
       )}
       <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
       {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-      {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length > 0 && (
-        <>
-          <h2 className={styles.sectionTitle}>{messages.TECHNICAL_LIST_TITLE}</h2>
-          <DataTable variant={routes.role === "admin" ? "operations" : "moderator"} headers={[messages.TECHNICAL_ID, messages.TECHNICAL_TYPE, messages.TECHNICAL_OWNER, messages.TECHNICAL_UPDATED, messages.TECHNICAL_ACTIONS]} minWidth={980}>
-            <MaintenanceRequestRows
-              requests={maintenanceRequests.data.items}
-              onTriage={triage.mutate}
-              isPending={triage.isPending}
-              pendingRequestId={triage.variables?.requestId}
-              pendingAccepted={triage.variables?.accepted}
-              routes={routes}
-            />
-          </DataTable>
-          <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
-        </>
-      )}
+      {routes.role === "admin" && requestList ? (
+        <section className={styles.panel} aria-labelledby="technical-request-list-title">{requestList}</section>
+      ) : requestList}
       {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
         <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
       ) : null}
-      <RepairCaseListPanel
-        role={routes.role}
-        detailHref={routes.repairCaseDetail}
-        title="Hồ sơ sửa chữa"
-        description="Mở hồ sơ để xem trạng thái, vé bảo trì, phương án máy thay thế và dòng thời gian."
-      />
+      {routes.role === "moderator" ? (
+        <RepairCaseListPanel
+          role={routes.role}
+          detailHref={routes.repairCaseDetail}
+          title="Hồ sơ sửa chữa"
+          description="Mở hồ sơ để xem trạng thái, vé bảo trì, phương án máy thay thế và dòng thời gian."
+        />
+      ) : null}
     </div>
   );
 }

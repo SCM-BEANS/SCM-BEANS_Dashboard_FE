@@ -1,15 +1,26 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { machinesApi } from "@/apis/machines.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
+import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { SectionHeading } from "@/components/heading/section-heading";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { RepairCaseIdSchema } from "@/schema/machines.schema";
+import {
+  RepairCaseIdSchema,
+  ReplacementAssignmentIdSchema,
+  type MaintenanceCustodyEvent,
+  type MaintenanceCustodyEventCreateRequest,
+  type RepairDiagnosisRequest,
+  type ReplacementAssignmentActivateRequest,
+  type ReplacementAssignmentReleaseRequest,
+  type RepairWorkCompletionRequest,
+} from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import styles from "./repair-workflow.module.css";
@@ -55,6 +66,41 @@ function QueryError({ label, error, onRetry }: { label: string; error: unknown; 
   );
 }
 
+type WorkflowStepState = "complete" | "current" | "waiting" | "locked";
+
+function WorkflowStep({
+  title,
+  status,
+  children,
+}: {
+  title: string;
+  status: WorkflowStepState;
+  children?: ReactNode;
+}) {
+  const statusText = {
+    complete: M.PROCESS_STEP_COMPLETE,
+    current: M.PROCESS_STEP_CURRENT,
+    waiting: M.PROCESS_STEP_WAITING,
+    locked: M.PROCESS_STEP_LOCKED,
+  }[status];
+  const statusClass = {
+    complete: styles.workflowStepComplete,
+    current: styles.workflowStepCurrent,
+    waiting: styles.workflowStepWaiting,
+    locked: styles.workflowStepLocked,
+  }[status];
+
+  return (
+    <li className={`${styles.workflowStep} ${statusClass}`} aria-current={status === "current" ? "step" : undefined}>
+      <div className={styles.workflowStepHeading}>
+        <strong>{title}</strong>
+        <span>{statusText}</span>
+      </div>
+      {children}
+    </li>
+  );
+}
+
 function eventLabel(eventType: string): string {
   const labels: Record<string, string> = {
     PRIMARY_COLLECTED: "Nhận máy chính",
@@ -63,6 +109,21 @@ function eventLabel(eventType: string): string {
     PRIMARY_RETURNED: "Trả máy chính",
   };
   return labels[eventType] ?? eventType.replaceAll("_", " ");
+}
+
+function timelineDetails(reason: string | null | undefined, details: string | null | undefined): string {
+  const value = reason || details || "—";
+  return value
+    .replace(/;evidence=[\s\S]*$/i, "")
+    .replace(/;emergencyAuthorizationId=[\s\S]*$/i, "") || "—";
+}
+
+function replacementAssignmentIdFromTimeline(events: Array<{ eventType: string; reason?: string | null }>): string | undefined {
+  const plannedEvent = [...events].reverse().find((event) => event.eventType === "REPLACEMENT_PLANNED");
+  const match = plannedEvent?.reason?.match(/(?:^|[;\s])replacementAssignmentId=([0-9a-f-]{36})(?:;|$)/i);
+  if (!match) return undefined;
+  const parsedId = ReplacementAssignmentIdSchema.safeParse(match[1]);
+  return parsedId.success ? parsedId.data : undefined;
 }
 
 function tableVariant(role: RepairWorkflowRole): "operations" | "moderator" | "standard" | "customer" {
@@ -86,10 +147,60 @@ export function RepairCaseDetailScreen({
   const subject = querySubject(role);
   const [timelinePage, setTimelinePage] = useState(0);
   const [custodyPage, setCustodyPage] = useState(0);
+  const [receiveMachineNotes, setReceiveMachineNotes] = useState<Record<string, string>>({});
+  const [receiveMachineEvidenceReferences, setReceiveMachineEvidenceReferences] = useState<Record<string, string>>({});
   const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
+  const [activationEvidence, setActivationEvidence] = useState("");
+  const [activationReason, setActivationReason] = useState("");
+  const [activationAttempt, setActivationAttempt] = useState<{
+    fingerprint: string;
+    idempotencyKey: string;
+    correlationId: string;
+  } | null>(null);
+  const [replacementDeliveryNotes, setReplacementDeliveryNotes] = useState("");
+  const [replacementDeliveryEvidence, setReplacementDeliveryEvidence] = useState("");
+  const [replacementCollectionConditions, setReplacementCollectionConditions] = useState<Record<string, string>>({});
+  const [replacementCollectionEvidenceReferences, setReplacementCollectionEvidenceReferences] = useState<Record<string, string>>({});
+  const [primaryReturnConditions, setPrimaryReturnConditions] = useState<Record<string, string>>({});
+  const [primaryReturnEvidenceReferences, setPrimaryReturnEvidenceReferences] = useState<Record<string, string>>({});
+  const [releaseEvidenceReferences, setReleaseEvidenceReferences] = useState<Record<string, string>>({});
+  const [releaseConfirmationDialogs, setReleaseConfirmationDialogs] = useState<Record<string, boolean>>({});
+  const [releaseAttempts, setReleaseAttempts] = useState<Record<string, {
+    fingerprint: string;
+    idempotencyKey: string;
+    correlationId: string;
+  }>>({});
   const [workScopes, setWorkScopes] = useState<Record<string, string>>({});
+  const [diagnosisTexts, setDiagnosisTexts] = useState<Record<string, string>>({});
+  const [diagnosisEvidenceReferences, setDiagnosisEvidenceReferences] = useState<Record<string, string>>({});
+  const [completionWorkScopes, setCompletionWorkScopes] = useState<Record<string, string>>({});
+  const [resolutionResults, setResolutionResults] = useState<Record<string, string>>({});
+  const [completionEvidenceReferences, setCompletionEvidenceReferences] = useState<Record<string, string>>({});
+  const [completionNotes, setCompletionNotes] = useState<Record<string, string>>({});
+  const receiveMachineConditionNotes = receiveMachineNotes[caseId] ?? "";
+  const receiveMachineEvidenceReference = receiveMachineEvidenceReferences[caseId] ?? "";
   const workScope = workScopes[caseId] ?? "";
+  const diagnosisText = diagnosisTexts[caseId] ?? "";
+  const diagnosisEvidenceReference = diagnosisEvidenceReferences[caseId] ?? "";
+  const completionWorkScope = completionWorkScopes[caseId] ?? "";
+  const resolutionResult = resolutionResults[caseId] ?? "";
+  const completionEvidenceReferenceText = completionEvidenceReferences[caseId] ?? "";
+  const completionNote = completionNotes[caseId] ?? "";
+  const replacementCollectionCondition = replacementCollectionConditions[caseId] ?? "";
+  const replacementCollectionEvidenceReference = replacementCollectionEvidenceReferences[caseId] ?? "";
+  const primaryReturnCondition = primaryReturnConditions[caseId] ?? "";
+  const primaryReturnEvidenceReference = primaryReturnEvidenceReferences[caseId] ?? "";
+  const releaseEvidenceReference = releaseEvidenceReferences[caseId] ?? "";
+  const releaseConfirmationOpen = releaseConfirmationDialogs[caseId] ?? false;
   const setWorkScope = (value: string) => setWorkScopes((current) => ({ ...current, [caseId]: value }));
+  const invalidateWorkflowQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow"] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-requests"] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "dashboard", "action-items"] }),
+      queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
+    ]);
+  };
   const repairCase = useQuery({
     queryKey: ["dolores", "repair-workflow", subject, "case", caseId],
     queryFn: ({ signal }) => repairCasesApi.getById(caseId, signal),
@@ -108,16 +219,18 @@ export function RepairCaseDetailScreen({
     enabled: Boolean(repairCase.data?.maintenanceTicketId),
     retry: false,
   });
-  const assignment = useQuery({
-    queryKey: ["dolores", "repair-workflow", subject, "assignment", request.data?.replacementAssignmentId],
-    queryFn: ({ signal }) => replacementAssignmentsApi.getById(request.data!.replacementAssignmentId!, signal),
-    enabled: Boolean(request.data?.replacementAssignmentId),
-    retry: false,
-  });
   const timeline = useQuery({
     queryKey: ["dolores", "repair-workflow", subject, "timeline", caseId, timelinePage, 50],
     queryFn: ({ signal }) => repairCasesApi.getTimeline(caseId, timelinePage, 50, signal),
     enabled: validCaseId && repairCase.isSuccess,
+    retry: false,
+  });
+  const replacementAssignmentId = request.data?.replacementAssignmentId ??
+    replacementAssignmentIdFromTimeline(timeline.data?.content ?? []);
+  const assignment = useQuery({
+    queryKey: ["dolores", "repair-workflow", subject, "assignment", replacementAssignmentId],
+    queryFn: ({ signal }) => replacementAssignmentsApi.getById(replacementAssignmentId!, signal),
+    enabled: Boolean(replacementAssignmentId),
     retry: false,
   });
   const custody = useQuery({
@@ -148,61 +261,377 @@ export function RepairCaseDetailScreen({
     onSuccess: (_event, variables) => {
       setAcknowledgementTexts((current) => ({ ...current, [variables.eventId]: "" }));
     },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow", subject] });
+    onSettled: invalidateWorkflowQueries,
+  });
+  const recordRepairDiagnosis = useMutation({
+    mutationFn: ({ expectedTicketId, diagnosis, evidenceReference }: RepairDiagnosisRequest & { expectedTicketId: string }) => {
+      if (
+        role !== "technician" || !isAssignedTechnician ||
+        repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
+        repairCase.data?.status !== "REPLACEMENT_DELIVERED" ||
+        ticket.data?.status !== "ASSIGNED" || ticket.data?.id !== expectedTicketId ||
+        ticket.data?.repairCaseId !== caseId ||
+        assignment.data?.status !== "ACTIVE" || assignment.data.repairCaseId !== caseId ||
+        !replacementDeliveryAcknowledged
+      ) {
+        throw new Error(M.TECHNICIAN_DIAGNOSIS_STATUS_CHANGED);
+      }
+      return repairCasesApi.recordDiagnosis(caseId, expectedTicketId, { diagnosis, evidenceReference });
     },
+    onSuccess: () => {
+      setDiagnosisTexts((current) => ({ ...current, [caseId]: "" }));
+      setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+    },
+    onSettled: invalidateWorkflowQueries,
   });
   const startRepairWork = useMutation({
     mutationFn: ({ expectedTicketId, workScope }: { expectedTicketId: string; workScope: string }) => {
-      if (role !== "technician" || !isAssignedTechnician) throw new Error(M.TECHNICIAN_WAITING_ASSIGNED_TASK);
-      if (repairCase.data?.status !== "DIAGNOSIS") throw new Error(M.TECHNICIAN_DIAGNOSIS_EVIDENCE_REQUIRED);
-      if (ticket.data?.status !== "ASSIGNED") throw new Error(M.TECHNICIAN_WAITING_ASSIGNED_TICKET);
-      if (!replacementDeliveryAcknowledged) throw new Error(M.TECHNICIAN_WAITING_OWNER_ACK);
+      if (
+        role !== "technician" || !isAssignedTechnician ||
+        repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
+        repairCase.data?.status !== "DIAGNOSIS" ||
+        ticket.data?.status !== "ASSIGNED" || ticket.data?.id !== expectedTicketId ||
+        ticket.data?.repairCaseId !== caseId ||
+        assignment.data?.status !== "ACTIVE" || assignment.data.repairCaseId !== caseId ||
+        !replacementDeliveryAcknowledged
+      ) throw new Error(M.TECHNICIAN_START_STATUS_CHANGED);
       return repairCasesApi.startWork(caseId, expectedTicketId, { workScope });
     },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow", subject] });
+    onSettled: invalidateWorkflowQueries,
+  });
+  const completeRepairWork = useMutation({
+    mutationFn: ({ expectedTicketId, request }: { expectedTicketId: string; request: RepairWorkCompletionRequest }) => {
+      if (
+        role !== "technician" || !isAssignedTechnician ||
+        repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
+        repairCase.data?.status !== "REPAIR_IN_PROGRESS" ||
+        ticket.data?.status !== "IN_PROGRESS" || ticket.data?.id !== expectedTicketId ||
+        ticket.data?.repairCaseId !== caseId ||
+        assignment.data?.status !== "ACTIVE" || assignment.data.repairCaseId !== caseId ||
+        !replacementDeliveryAcknowledged
+      ) throw new Error(M.TECHNICIAN_COMPLETION_STATUS_CHANGED);
+      return repairCasesApi.completeWork(caseId, expectedTicketId, request);
     },
+    onSuccess: () => {
+      setCompletionWorkScopes((current) => ({ ...current, [caseId]: "" }));
+      setResolutionResults((current) => ({ ...current, [caseId]: "" }));
+      setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      setCompletionNotes((current) => ({ ...current, [caseId]: "" }));
+    },
+    onSettled: invalidateWorkflowQueries,
+  });
+  const recordPrimaryCollection = useMutation({
+    mutationFn: ({ submittedCaseId, conditionNotes, evidenceReference }: { submittedCaseId: string; conditionNotes: string; evidenceReference: string }) => {
+      if (submittedCaseId !== caseId) throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
+      if (role !== "technician" || !isAssignedTechnician) throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
+      if (repairCase.data?.status !== "REPLACEMENT_PLANNED" || !repairCase.data.primaryMachineId) {
+        throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
+      }
+      if (!custody.isSuccess || custody.isFetching || primaryCollectionEvent) {
+        throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
+      }
+      return repairCasesApi.recordPrimaryCollection(caseId, {
+        machineId: repairCase.data.primaryMachineId,
+        conditionNotes,
+        evidenceReference,
+      });
+    },
+    onSuccess: () => {
+      setReceiveMachineNotes((current) => {
+        const next = { ...current };
+        delete next[caseId];
+        return next;
+      });
+      setReceiveMachineEvidenceReferences((current) => {
+        const next = { ...current };
+        delete next[caseId];
+        return next;
+      });
+    },
+    onSettled: invalidateWorkflowQueries,
+  });
+  const activateReplacementAssignment = useMutation({
+    mutationFn: (input: ReplacementAssignmentActivateRequest) => {
+      if (
+        (role !== "admin" && role !== "moderator") ||
+        repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
+        repairCase.data?.status !== "PRIMARY_COLLECTED" ||
+        assignment.data?.status !== "PLANNED" ||
+        assignment.data.repairCaseId !== caseId ||
+        ticket.data?.status !== "ASSIGNED" ||
+        !primaryCollectionEvent?.ownerAcknowledgedAt ||
+        !assignment.data.id
+      ) {
+        throw new Error(M.ACTIVATE_STATUS_CHANGED);
+      }
+      return replacementAssignmentsApi.activate(assignment.data.id, input);
+    },
+    onSuccess: () => {
+      setActivationEvidence("");
+      setActivationReason("");
+      setActivationAttempt(null);
+    },
+    onSettled: invalidateWorkflowQueries,
+  });
+  const recordReplacementDelivery = useMutation({
+    mutationFn: (input: MaintenanceCustodyEventCreateRequest) => {
+      const canRecordAsRole = role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician);
+      if (
+        !canRecordAsRole ||
+        repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
+        input.eventType !== "REPLACEMENT_DELIVERED" ||
+        repairCase.data?.status !== "PRIMARY_COLLECTED" ||
+        assignment.data?.status !== "ACTIVE" ||
+        assignment.data.repairCaseId !== caseId ||
+        !primaryCollectionEvent?.ownerAcknowledgedAt ||
+        !assignment.data.replacementMachineId ||
+        input.machineId !== assignment.data.replacementMachineId ||
+        replacementDeliveredEvent
+      ) {
+        throw new Error(M.REPLACEMENT_DELIVERY_STATUS_CHANGED);
+      }
+      return repairCasesApi.recordCustodyEvent(caseId, input);
+    },
+    onSuccess: () => {
+      setReplacementDeliveryNotes("");
+      setReplacementDeliveryEvidence("");
+    },
+    onSettled: invalidateWorkflowQueries,
+  });
+  const recordReturnCustodyEvent = useMutation({
+    mutationFn: (input: MaintenanceCustodyEventCreateRequest) => {
+      const canRecordAsRole = role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician);
+      const sharedDataReady = canRecordAsRole &&
+        repairCase.isSuccess && !repairCase.isFetching && assignment.isSuccess && !assignment.isFetching &&
+        ticket.isSuccess && !ticket.isFetching && custody.isSuccess && !custody.isFetching &&
+        assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+        ticket.data?.repairCaseId === caseId;
+      const expectedMachineId = input.eventType === "REPLACEMENT_COLLECTED"
+        ? assignment.data?.replacementMachineId
+        : input.eventType === "PRIMARY_RETURNED"
+          ? repairCase.data?.primaryMachineId
+          : undefined;
+      const canRecordCurrentEvent = input.eventType === "REPLACEMENT_COLLECTED"
+        ? repairCase.data?.status === "REPAIR_COMPLETED" && ticket.data?.status === "RESOLVED" &&
+          Boolean(replacementDeliveredEvent?.ownerAcknowledgedAt) &&
+          replacementDeliveredEvent?.machineId === assignment.data?.replacementMachineId && !replacementCollectionEvent
+        : input.eventType === "PRIMARY_RETURNED"
+          ? repairCase.data?.status === "REPLACEMENT_COLLECTED" && ticket.data?.status === "RESOLVED" &&
+            Boolean(replacementCollectionEvent?.ownerAcknowledgedAt) &&
+            replacementCollectionEvent?.machineId === assignment.data?.replacementMachineId &&
+            assignment.data?.primaryMachineId === repairCase.data?.primaryMachineId && !primaryReturnEvent
+          : false;
+      if (!sharedDataReady || !canRecordCurrentEvent || !expectedMachineId || input.machineId !== expectedMachineId) {
+        throw new Error(M.CUSTODY_EVENT_STATUS_CHANGED);
+      }
+      return repairCasesApi.recordCustodyEvent(caseId, input);
+    },
+    onSuccess: (_event, input) => {
+      if (input.eventType === "REPLACEMENT_COLLECTED") {
+        setReplacementCollectionConditions((current) => ({ ...current, [caseId]: "" }));
+        setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      }
+      if (input.eventType === "PRIMARY_RETURNED") {
+        setPrimaryReturnConditions((current) => ({ ...current, [caseId]: "" }));
+        setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      }
+    },
+    onSettled: invalidateWorkflowQueries,
+  });
+  const releaseReplacementAssignment = useMutation({
+    mutationFn: ({
+      expectedCaseId,
+      expectedAssignmentId,
+      request: releaseRequest,
+    }: {
+      expectedCaseId: string;
+      expectedAssignmentId: string;
+      request: ReplacementAssignmentReleaseRequest;
+    }) => {
+      const canReleaseAsRole = role === "admin" || role === "moderator" || role === "technician";
+      const prerequisitesReady = canReleaseAsRole &&
+        repairCase.isSuccess && !repairCase.isFetching && repairCase.data?.id === expectedCaseId &&
+        repairCase.data?.status === "OWNER_ACKNOWLEDGED" &&
+        assignment.isSuccess && !assignment.isFetching && assignment.data?.id === expectedAssignmentId &&
+        assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+        assignment.data.primaryMachineId === repairCase.data.primaryMachineId &&
+        assignment.data.replacementMachineId !== repairCase.data.primaryMachineId &&
+        custody.isSuccess && !custody.isFetching &&
+        Boolean(replacementCollectionEvent?.ownerAcknowledgedAt) &&
+        replacementCollectionEvent?.machineId === assignment.data?.replacementMachineId &&
+        Boolean(primaryReturnEvent?.ownerAcknowledgedAt) &&
+        primaryReturnEvent?.machineId === repairCase.data.primaryMachineId;
+      if (!prerequisitesReady) throw new Error(M.RELEASE_STATUS_CHANGED);
+      return replacementAssignmentsApi.release(expectedAssignmentId, releaseRequest);
+    },
+    onSuccess: () => {
+      setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: false }));
+      setReleaseAttempts((current) => {
+        const next = { ...current };
+        delete next[caseId];
+        return next;
+      });
+    },
+    onSettled: invalidateWorkflowQueries,
   });
 
   const refreshAll = async () => {
     await Promise.all([
       repairCase.refetch(),
       ...(repairCase.data ? [request.refetch(), ticket.refetch(), timeline.refetch(), custody.refetch()] : []),
-      ...(request.data?.replacementAssignmentId ? [assignment.refetch()] : []),
+      ...(replacementAssignmentId ? [assignment.refetch()] : []),
     ]);
   };
-  const isRefreshing = repairCase.isFetching || request.isFetching || ticket.isFetching || assignment.isFetching || timeline.isFetching || custody.isFetching || acknowledgeCustody.isPending || startRepairWork.isPending;
-  const canRecordCustody = role === "admin" || role === "moderator" || role === "technician";
-  const canCollectReplacement = repairCase.data?.status === "REPAIR_COMPLETED" &&
-    ticket.data?.status === "RESOLVED" && assignment.data?.status === "ACTIVE" && replacementDeliveryAcknowledged;
-  const canReturnPrimary = repairCase.data?.status === "REPLACEMENT_COLLECTED" &&
-    assignment.data?.status === "ACTIVE" && replacementCollectionAcknowledged;
-  const canReleaseReplacement = repairCase.data?.status === "OWNER_ACKNOWLEDGED" &&
-    assignment.data?.status === "ACTIVE" && replacementCollectionAcknowledged && primaryReturnAcknowledged;
-  const privateEvidenceStepBlocked = canRecordCustody && custody.isSuccess && (
-    (repairCase.data?.status === "REPLACEMENT_PLANNED" &&
-      assignment.data?.status === "PLANNED" && ticket.data?.status === "ASSIGNED" && !primaryCollectionEvent ||
-    repairCase.data?.status === "PRIMARY_COLLECTED" && primaryCollectionAcknowledged && (
-      assignment.data?.status === "PLANNED" ||
-      assignment.data?.status === "ACTIVE" && !replacementDeliveredEvent
-    )) ||
-    canCollectReplacement && !replacementCollectionEvent ||
-    canReturnPrimary && !primaryReturnEvent
-  );
+  const isRefreshing = repairCase.isFetching || request.isFetching || ticket.isFetching || assignment.isFetching || timeline.isFetching || custody.isFetching ||
+    acknowledgeCustody.isPending || recordRepairDiagnosis.isPending || startRepairWork.isPending || completeRepairWork.isPending ||
+    recordPrimaryCollection.isPending || activateReplacementAssignment.isPending || recordReplacementDelivery.isPending || recordReturnCustodyEvent.isPending ||
+    releaseReplacementAssignment.isPending;
+  const currentPrimaryCollectionSuccess = recordPrimaryCollection.isSuccess && recordPrimaryCollection.variables?.submittedCaseId === caseId;
+  const currentPrimaryCollectionError = recordPrimaryCollection.isError && recordPrimaryCollection.variables?.submittedCaseId === caseId;
+  const canActivateAssignment = (role === "admin" || role === "moderator") &&
+    !repairCase.isFetching && !assignment.isFetching && !ticket.isFetching && custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "PRIMARY_COLLECTED" &&
+    assignment.data?.status === "PLANNED" && assignment.data.repairCaseId === caseId &&
+    ticket.data?.status === "ASSIGNED" && primaryCollectionAcknowledged;
+  const canRecordReplacementDelivery =
+    (role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician)) &&
+    !repairCase.isFetching && !assignment.isFetching && !ticket.isFetching && custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "PRIMARY_COLLECTED" &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+    primaryCollectionAcknowledged && Boolean(assignment.data.replacementMachineId) && !replacementDeliveredEvent;
+  const canSubmitReceiveMachine = role === "technician" && repairCase.isSuccess && !repairCase.isFetching &&
+    repairCase.data.status === "REPLACEMENT_PLANNED" && Boolean(repairCase.data.primaryMachineId) &&
+    isAssignedTechnician && custody.isSuccess && !custody.isFetching && !primaryCollectionEvent;
+  const canRecordReturnCustodyAsRole = role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician);
+  const canCollectReplacement = repairCase.isSuccess && !repairCase.isFetching &&
+    ticket.isSuccess && !ticket.isFetching && assignment.isSuccess && !assignment.isFetching && custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "REPAIR_COMPLETED" && ticket.data?.status === "RESOLVED" && ticket.data.repairCaseId === caseId &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId && Boolean(assignment.data.replacementMachineId) &&
+    assignment.data.replacementMachineId !== repairCase.data.primaryMachineId &&
+    assignment.data.primaryMachineId === repairCase.data.primaryMachineId &&
+    replacementDeliveryAcknowledged && replacementDeliveredEvent?.machineId === assignment.data.replacementMachineId && !replacementCollectionEvent;
+  const canReturnPrimary = repairCase.isSuccess && !repairCase.isFetching &&
+    ticket.isSuccess && !ticket.isFetching && assignment.isSuccess && !assignment.isFetching && custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "REPLACEMENT_COLLECTED" && ticket.data?.status === "RESOLVED" && ticket.data.repairCaseId === caseId &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId && Boolean(repairCase.data.primaryMachineId) &&
+    assignment.data.primaryMachineId === repairCase.data.primaryMachineId &&
+    replacementCollectionAcknowledged && replacementCollectionEvent?.machineId === assignment.data.replacementMachineId && !primaryReturnEvent;
+  const canSubmitReplacementCollection = canRecordReturnCustodyAsRole && canCollectReplacement;
+  const canSubmitPrimaryReturn = canRecordReturnCustodyAsRole && canReturnPrimary;
+  const canReleaseAsRole = role === "admin" || role === "moderator" || role === "technician";
+  const canReleaseReplacement = repairCase.isSuccess && !repairCase.isFetching &&
+    assignment.isSuccess && !assignment.isFetching && custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "OWNER_ACKNOWLEDGED" &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+    assignment.data.primaryMachineId === repairCase.data.primaryMachineId &&
+    assignment.data.replacementMachineId !== repairCase.data.primaryMachineId &&
+    replacementCollectionAcknowledged && replacementCollectionEvent?.machineId === assignment.data.replacementMachineId &&
+    primaryReturnAcknowledged && primaryReturnEvent?.machineId === repairCase.data.primaryMachineId;
+  const canSubmitRelease = canReleaseAsRole && canReleaseReplacement;
+  const releaseReadAfterWriteConfirmed = assignment.data?.status === "RELEASED" && repairCase.data?.status === "CLOSED" &&
+    replacementCollectionAcknowledged && primaryReturnAcknowledged;
   const ownerWaitingForHandover = role === "owner" && (
     repairCase.data?.status === "REPLACEMENT_PLANNED" && !primaryCollectionEvent ||
     repairCase.data?.status === "PRIMARY_COLLECTED" && primaryCollectionAcknowledged && !replacementDeliveredEvent
   );
-  const ownerWaitingForReplacementCollection = role === "owner" && canCollectReplacement && !replacementCollectionEvent;
-  const ownerWaitingForPrimaryReturn = role === "owner" && canReturnPrimary && !primaryReturnEvent;
-  const ownerWaitingForRelease = role === "owner" && canReleaseReplacement;
-  const releaseEvidenceStepBlocked = canRecordCustody && custody.isSuccess && canReleaseReplacement;
-  const canStartWork = isAssignedTechnician &&
-    repairCase.data?.status === "DIAGNOSIS" &&
-    ticket.data?.status === "ASSIGNED" &&
-    Boolean(ticket.data?.id) &&
+  const currentRepairCaseStatus = repairCase.data?.status;
+  const currentTicketStatus = ticket.data?.status;
+  const ticketDiagnosis = ticket.data?.diagnosis?.trim() ?? "";
+  const diagnosisConfirmed =
+    (currentRepairCaseStatus === "DIAGNOSIS" && currentTicketStatus === "ASSIGNED") ||
+    (currentRepairCaseStatus === "REPAIR_IN_PROGRESS" && currentTicketStatus === "IN_PROGRESS") ||
+    (["REPAIR_COMPLETED", "REPLACEMENT_COLLECTED", "PRIMARY_RETURNED", "OWNER_ACKNOWLEDGED", "CLOSED"].includes(currentRepairCaseStatus ?? "") && currentTicketStatus === "RESOLVED");
+  const repairStartConfirmed =
+    (currentRepairCaseStatus === "REPAIR_IN_PROGRESS" && currentTicketStatus === "IN_PROGRESS") ||
+    (["REPAIR_COMPLETED", "REPLACEMENT_COLLECTED", "PRIMARY_RETURNED", "OWNER_ACKNOWLEDGED", "CLOSED"].includes(currentRepairCaseStatus ?? "") && currentTicketStatus === "RESOLVED");
+  const repairCompletionCaseReached = ["REPAIR_COMPLETED", "REPLACEMENT_COLLECTED", "PRIMARY_RETURNED", "OWNER_ACKNOWLEDGED", "CLOSED"].includes(currentRepairCaseStatus ?? "");
+  const repairCompletionConfirmed = repairCompletionCaseReached && currentTicketStatus === "RESOLVED";
+  const canRecordDiagnosis = role === "technician" && isAssignedTechnician &&
+    repairCase.isSuccess && !repairCase.isFetching &&
+    ticket.isSuccess && !ticket.isFetching &&
+    assignment.isSuccess && !assignment.isFetching &&
+    custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "REPLACEMENT_DELIVERED" &&
+    ticket.data?.status === "ASSIGNED" && ticket.data.repairCaseId === caseId &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
     replacementDeliveryAcknowledged;
+  const canStartWork = isAssignedTechnician &&
+    repairCase.isSuccess && !repairCase.isFetching &&
+    ticket.isSuccess && !ticket.isFetching &&
+    assignment.isSuccess && !assignment.isFetching &&
+    custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "DIAGNOSIS" &&
+    ticket.data?.status === "ASSIGNED" && ticket.data.repairCaseId === caseId &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+    replacementDeliveryAcknowledged;
+  const canCompleteWork = role === "technician" && isAssignedTechnician &&
+    repairCase.isSuccess && !repairCase.isFetching &&
+    ticket.isSuccess && !ticket.isFetching &&
+    assignment.isSuccess && !assignment.isFetching &&
+    custody.isSuccess && !custody.isFetching &&
+    repairCase.data?.status === "REPAIR_IN_PROGRESS" &&
+    ticket.data?.status === "IN_PROGRESS" && ticket.data.repairCaseId === caseId &&
+    Boolean(ticketDiagnosis) &&
+    assignment.data?.status === "ACTIVE" && assignment.data.repairCaseId === caseId &&
+    replacementDeliveryAcknowledged;
+  const primaryCollectionStepState: WorkflowStepState = primaryCollectionEvent
+    ? "complete"
+    : repairCase.data?.status === "REPLACEMENT_PLANNED"
+      ? canSubmitReceiveMachine ? "current" : "waiting"
+      : "locked";
+  const primaryAcknowledgmentStepState: WorkflowStepState = primaryCollectionAcknowledged
+    ? "complete"
+    : primaryCollectionEvent
+      ? role === "owner" ? "current" : "waiting"
+      : "locked";
+  const activationStepState: WorkflowStepState = assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED"
+    ? "complete"
+    : canActivateAssignment
+      ? "current"
+      : primaryCollectionAcknowledged ? "waiting" : "locked";
+  const replacementDeliveryStepState: WorkflowStepState = replacementDeliveredEvent
+    ? "complete"
+    : canRecordReplacementDelivery
+      ? "current"
+      : assignment.data?.status === "ACTIVE" ? "waiting" : "locked";
+  const replacementAcknowledgmentStepState: WorkflowStepState = replacementDeliveryAcknowledged
+    ? "complete"
+    : replacementDeliveredEvent
+      ? role === "owner" && primaryCollectionAcknowledged ? "current" : "waiting"
+      : "locked";
+  const diagnosisStepState: WorkflowStepState = diagnosisConfirmed
+    ? "complete"
+    : replacementDeliveryAcknowledged ? canRecordDiagnosis ? "current" : "waiting" : "locked";
+  const startWorkStepState: WorkflowStepState = repairStartConfirmed
+    ? "complete"
+    : repairCase.data?.status === "DIAGNOSIS" ? canStartWork ? "current" : "waiting"
+      : repairCase.data?.status === "REPAIR_IN_PROGRESS" || ["REPAIR_COMPLETED", "REPLACEMENT_COLLECTED", "PRIMARY_RETURNED", "OWNER_ACKNOWLEDGED", "CLOSED"].includes(repairCase.data?.status ?? "")
+        ? "waiting"
+        : replacementDeliveryAcknowledged ? "waiting" : "locked";
+  const completeWorkStepState: WorkflowStepState = repairCompletionConfirmed
+    ? "complete"
+    : repairCase.data?.status === "REPAIR_IN_PROGRESS" ? canCompleteWork ? "current" : "waiting"
+      : repairCompletionCaseReached ? "waiting" : "locked";
+  const replacementCollectionStepState: WorkflowStepState = replacementCollectionEvent
+    ? "complete"
+    : repairCase.data?.status === "REPAIR_COMPLETED" ? canSubmitReplacementCollection ? "current" : "waiting" : "locked";
+  const replacementCollectionAcknowledgmentStepState: WorkflowStepState = replacementCollectionAcknowledged
+    ? "complete"
+    : replacementCollectionEvent ? role === "owner" ? "current" : "waiting" : "locked";
+  const primaryReturnStepState: WorkflowStepState = primaryReturnEvent
+    ? "complete"
+    : repairCase.data?.status === "REPLACEMENT_COLLECTED" ? canSubmitPrimaryReturn ? "current" : "waiting" : "locked";
+  const primaryReturnFinalStateConfirmed = primaryReturnAcknowledged &&
+    ["OWNER_ACKNOWLEDGED", "CLOSED"].includes(repairCase.data?.status ?? "");
+  const primaryReturnAcknowledgmentStepState: WorkflowStepState = primaryReturnFinalStateConfirmed
+    ? "complete"
+    : primaryReturnEvent ? role === "owner" && !primaryReturnAcknowledged ? "current" : "waiting" : "locked";
+  const releaseStepState: WorkflowStepState = releaseReadAfterWriteConfirmed
+    ? "complete"
+    : releaseReplacementAssignment.isSuccess ? "waiting"
+      : canSubmitRelease ? "current"
+      : repairCase.data?.status === "OWNER_ACKNOWLEDGED" || releaseReplacementAssignment.isSuccess ? "waiting" : "locked";
 
   const submitAcknowledgement = (event: FormEvent<HTMLFormElement>, eventId: string) => {
     event.preventDefault();
@@ -214,6 +643,155 @@ export function RepairCaseDetailScreen({
     event.preventDefault();
     if (!validCaseId || !canStartWork || !ticket.data?.id || !workScope.trim() || startRepairWork.isPending || startRepairWork.isSuccess) return;
     startRepairWork.mutate({ expectedTicketId: ticket.data.id, workScope: workScope.trim() });
+  };
+  const submitDiagnosis = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const diagnosis = diagnosisText.trim();
+    const evidenceReference = diagnosisEvidenceReference.trim();
+    if (
+      !validCaseId || !canRecordDiagnosis || !ticket.data?.id || !diagnosis || !evidenceReference ||
+      recordRepairDiagnosis.isPending || recordRepairDiagnosis.isSuccess
+    ) return;
+    recordRepairDiagnosis.mutate({ expectedTicketId: ticket.data.id, diagnosis, evidenceReference });
+  };
+  const submitCompleteWork = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const diagnosis = ticketDiagnosis;
+    const result = resolutionResult.trim();
+    const scope = completionWorkScope.trim();
+    const evidenceReferences = completionEvidenceReferenceText.split(/\r?\n/).map((reference) => reference.trim()).filter(Boolean);
+    const notes = completionNote.trim();
+    if (
+      !validCaseId || !canCompleteWork || !ticket.data?.id || !diagnosis || !result || !scope || evidenceReferences.length === 0 ||
+      completeRepairWork.isPending || completeRepairWork.isSuccess
+    ) return;
+    completeRepairWork.mutate({
+      expectedTicketId: ticket.data.id,
+      request: {
+        diagnosis,
+        resolutionResult: result,
+        workScope: scope,
+        evidenceReferences,
+        ...(notes ? { notes } : {}),
+      },
+    });
+  };
+  const submitReceiveMachine = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const conditionNotes = receiveMachineConditionNotes.trim();
+    const evidenceReference = receiveMachineEvidenceReference.trim();
+    if (!validCaseId || !canSubmitReceiveMachine || !conditionNotes || !evidenceReference || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess) return;
+    recordPrimaryCollection.mutate({ submittedCaseId: caseId, conditionNotes, evidenceReference });
+  };
+  const submitActivation = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const handoverEvidence = activationEvidence.trim();
+    const approvalReasonText = activationReason.trim();
+    if (!validCaseId || !canActivateAssignment || !handoverEvidence || !approvalReasonText || isRefreshing || activateReplacementAssignment.isPending) return;
+    const fingerprint = `${caseId}|${assignment.data?.id}|${handoverEvidence}|${approvalReasonText}`;
+    const attempt = activationAttempt?.fingerprint === fingerprint
+      ? activationAttempt
+      : {
+          fingerprint,
+          idempotencyKey: globalThis.crypto.randomUUID(),
+          correlationId: globalThis.crypto.randomUUID(),
+        };
+    setActivationAttempt(attempt);
+    activateReplacementAssignment.mutate({
+      handoverEvidence,
+      approvalReason: approvalReasonText,
+      idempotencyKey: attempt.idempotencyKey,
+      correlationId: attempt.correlationId,
+    });
+  };
+  const submitReplacementDelivery = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const conditionNotes = replacementDeliveryNotes.trim();
+    const evidenceReference = replacementDeliveryEvidence.trim();
+    const replacementMachineId = assignment.data?.replacementMachineId;
+    if (!validCaseId || !canRecordReplacementDelivery || !replacementMachineId || !conditionNotes || !evidenceReference || isRefreshing || recordReplacementDelivery.isPending) return;
+    recordReplacementDelivery.mutate({
+      eventType: "REPLACEMENT_DELIVERED",
+      machineId: replacementMachineId,
+      conditionNotes,
+      evidenceReference,
+    });
+  };
+  const submitReplacementCollection = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const conditionNotes = replacementCollectionCondition.trim();
+    const evidenceReference = replacementCollectionEvidenceReference.trim();
+    const machineId = assignment.data?.replacementMachineId;
+    if (!validCaseId || !canSubmitReplacementCollection || !machineId || !conditionNotes || !evidenceReference || isRefreshing || recordReturnCustodyEvent.isPending) return;
+    recordReturnCustodyEvent.mutate({ eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes, evidenceReference });
+  };
+  const submitPrimaryReturn = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const conditionNotes = primaryReturnCondition.trim();
+    const evidenceReference = primaryReturnEvidenceReference.trim();
+    const machineId = repairCase.data?.primaryMachineId;
+    if (!validCaseId || !canSubmitPrimaryReturn || !machineId || !conditionNotes || !evidenceReference || isRefreshing || recordReturnCustodyEvent.isPending) return;
+    recordReturnCustodyEvent.mutate({ eventType: "PRIMARY_RETURNED", machineId, conditionNotes, evidenceReference });
+  };
+  const submitReleaseReplacement = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validCaseId || !canSubmitRelease || !assignment.data?.id || !releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess) return;
+    setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: true }));
+  };
+  const confirmReleaseReplacement = () => {
+    const evidence = releaseEvidenceReference.trim();
+    const assignmentId = assignment.data?.id;
+    if (!validCaseId || !canSubmitRelease || !assignmentId || !evidence || isRefreshing || releaseReplacementAssignment.isSuccess) return;
+    const fingerprint = `${caseId}|${assignmentId}|${evidence}`;
+    const attempt = releaseAttempts[caseId]?.fingerprint === fingerprint
+      ? releaseAttempts[caseId]
+      : {
+          fingerprint,
+          idempotencyKey: globalThis.crypto.randomUUID(),
+          correlationId: globalThis.crypto.randomUUID(),
+        };
+    setReleaseAttempts((current) => ({ ...current, [caseId]: attempt }));
+    releaseReplacementAssignment.mutate({
+      expectedCaseId: caseId,
+      expectedAssignmentId: assignmentId,
+      request: {
+        releaseEvidence: evidence,
+        idempotencyKey: attempt.idempotencyKey,
+        correlationId: attempt.correlationId,
+      },
+    });
+  };
+  const renderOwnerAcknowledgment = (event: MaintenanceCustodyEvent | undefined, prompt: string) => {
+    if (role !== "owner" || !event || event.ownerAcknowledgedAt) return null;
+    const acknowledgementPending = acknowledgeCustody.isPending && acknowledgeCustody.variables?.eventId === event.id;
+    const acknowledgementError = acknowledgeCustody.isError && acknowledgeCustody.variables?.eventId === event.id;
+    return (
+      <>
+        <p>{prompt}</p>
+        {acknowledgementError ? (
+          <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(acknowledgeCustody.error)}</p>
+        ) : null}
+        <form className={styles.assignmentForm} onSubmit={(formEvent) => submitAcknowledgement(formEvent, event.id)}>
+          <label className={styles.formField} htmlFor={`custody-acknowledgement-${event.id}`}>
+            <span>{M.ACKNOWLEDGMENT_TEXT}</span>
+            <textarea
+              id={`custody-acknowledgement-${event.id}`}
+              maxLength={1000}
+              disabled={isRefreshing || acknowledgeCustody.isPending}
+              onChange={(inputEvent) => setAcknowledgementTexts((current) => ({
+                ...current,
+                [event.id]: inputEvent.target.value,
+              }))}
+              required
+              value={acknowledgementTexts[event.id] ?? ""}
+            />
+          </label>
+          <ButtonBar type="submit" disabled={!acknowledgementTexts[event.id]?.trim() || isRefreshing || acknowledgeCustody.isPending}>
+            {acknowledgementPending ? M.ACKNOWLEDGMENT_SUBMITTING : M.ACKNOWLEDGMENT_SUBMIT}
+          </ButtonBar>
+        </form>
+      </>
+    );
   };
 
   if (!validCaseId) {
@@ -275,29 +853,234 @@ export function RepairCaseDetailScreen({
             </dl>
           </section>
 
-          {role === "technician" && ["REPLACEMENT_DELIVERED", "DIAGNOSIS", "REPAIR_IN_PROGRESS"].includes(repairCase.data.status) ? (
-            <section className={styles.panel} aria-label={M.TECHNICIAN_ACTIONS}>
-              <SectionHeading title={M.TECHNICIAN_ACTIONS} description={M.TECHNICIAN_ACTIONS_DESCRIPTION} />
-              {startRepairWork.isSuccess ? (
-                <p className={styles.notice} role="status">{M.TECHNICIAN_WORK_START_SUCCESS}</p>
-              ) : null}
-              {repairCase.data.status === "REPLACEMENT_DELIVERED" ? (
-                !replacementDeliveryAcknowledged ? (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_OWNER_ACK}</p>
-                ) : isAssignedTechnician ? (
-                  <p className={styles.notice} role="note">{M.TECHNICIAN_DIAGNOSIS_EVIDENCE_REQUIRED}</p>
+          <section className={styles.panel} aria-label={M.PROCESS_TITLE}>
+            <SectionHeading title={M.PROCESS_TITLE} description={M.PROCESS_DESCRIPTION} />
+            <ol className={styles.workflowSteps} aria-label={M.PROCESS_TITLE}>
+              <WorkflowStep title={M.PROCESS_PRIMARY_COLLECTION} status={primaryCollectionStepState}>
+                <p>{M.PROCESS_PRIMARY_COLLECTION_DESCRIPTION}</p>
+                {primaryCollectionEvent ? (
+                  <p className={styles.acknowledged} role="status">{`${M.TECHNICIAN_RECEIVE_MACHINE_SUCCESS} ${formatDateTime(primaryCollectionEvent.occurredAt)} · ${primaryCollectionEvent.machineId}`}</p>
+                ) : canSubmitReceiveMachine ? (
+                  <form className={styles.assignmentForm} onSubmit={submitReceiveMachine}>
+                    <label className={styles.formField} htmlFor="primary-collection-condition">
+                      <span>{M.TECHNICIAN_RECEIVE_MACHINE_CONDITION}</span>
+                      <textarea
+                        id="primary-collection-condition"
+                        maxLength={2000}
+                        disabled={recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess}
+                        onChange={(event) => setReceiveMachineNotes((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={receiveMachineConditionNotes}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor="primary-collection-evidence-reference">
+                      <span>{M.TECHNICIAN_RECEIVE_MACHINE_EVIDENCE_REFERENCE}</span>
+                      <input
+                        id="primary-collection-evidence-reference"
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        placeholder="private/repair-handover/collect-machine-a-001.jpg"
+                        disabled={recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess}
+                        onChange={(event) => setReceiveMachineEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={receiveMachineEvidenceReference}
+                      />
+                      <span className={styles.formHint}>{M.TECHNICIAN_RECEIVE_MACHINE_EVIDENCE_HINT}</span>
+                    </label>
+                    {currentPrimaryCollectionError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordPrimaryCollection.error, "mutation")}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || !receiveMachineEvidenceReference.trim() || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess}>
+                      {recordPrimaryCollection.isPending ? M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING : M.TECHNICIAN_RECEIVE_MACHINE}
+                    </ButtonBar>
+                  </form>
                 ) : (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_ASSIGNED_TASK}</p>
-                )
-              ) : null}
-              {repairCase.data.status === "DIAGNOSIS" ? (
-                canStartWork ? (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_PRIMARY_ACKNOWLEDGMENT} status={primaryAcknowledgmentStepState}>
+                <p>{M.PROCESS_PRIMARY_ACKNOWLEDGMENT_DESCRIPTION}</p>
+                {primaryCollectionAcknowledged ? (
+                  <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(primaryCollectionEvent?.ownerAcknowledgedAt)}`}</p>
+                ) : primaryCollectionEvent && role === "owner" ? (
+                  renderOwnerAcknowledgment(primaryCollectionEvent, M.ACKNOWLEDGMENT_PRIMARY_PROMPT)
+                ) : primaryCollectionEvent ? (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_OWNER}</p>
+                ) : (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_ACTIVATE_ASSIGNMENT} status={activationStepState}>
+                <p>{M.PROCESS_ACTIVATE_ASSIGNMENT_DESCRIPTION}</p>
+                {assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED" ? (
+                  <p className={styles.acknowledged} role="status">{`${M.ACTIVATE_SUCCESS} ${assignmentStatusLabel(assignment.data.status)}`}</p>
+                ) : canActivateAssignment ? (
+                  <form className={styles.assignmentForm} onSubmit={submitActivation}>
+                    <label className={styles.formField} htmlFor="replacement-activation-evidence">
+                      <span>{M.ACTIVATE_EVIDENCE}</span>
+                      <input
+                        id="replacement-activation-evidence"
+                        type="text"
+                        autoComplete="off"
+                        disabled={activateReplacementAssignment.isPending}
+                        value={activationEvidence}
+                        onChange={(event) => setActivationEvidence(event.target.value)}
+                        required
+                      />
+                      <span className={styles.formHint}>{M.ACTIVATE_EVIDENCE_HINT}</span>
+                    </label>
+                    <label className={styles.formField} htmlFor="replacement-activation-reason">
+                      <span>{M.ACTIVATE_REASON}</span>
+                      <textarea
+                        id="replacement-activation-reason"
+                        maxLength={2000}
+                        disabled={activateReplacementAssignment.isPending}
+                        value={activationReason}
+                        onChange={(event) => setActivationReason(event.target.value)}
+                        required
+                      />
+                    </label>
+                    {activateReplacementAssignment.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(activateReplacementAssignment.error, "mutation")}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!activationEvidence.trim() || !activationReason.trim() || activateReplacementAssignment.isPending}>
+                      {activateReplacementAssignment.isPending ? M.ACTIVATE_SUBMITTING : M.ACTIVATE_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <p className={styles.notice} role="status">
+                    {!primaryCollectionEvent?.ownerAcknowledgedAt
+                      ? primaryCollectionEvent ? M.PROCESS_WAITING_FOR_OWNER : M.PROCESS_WAITING_FOR_TECHNICIAN
+                      : role === "admin" || role === "moderator" ? M.ACTIVATE_PREREQUISITES_PENDING : M.PROCESS_WAITING_FOR_OPERATOR}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_DELIVERY} status={replacementDeliveryStepState}>
+                <p>{M.PROCESS_REPLACEMENT_DELIVERY_DESCRIPTION}</p>
+                {replacementDeliveredEvent ? (
+                  <p className={styles.acknowledged} role="status">{`${M.REPLACEMENT_DELIVERY_SUCCESS} ${formatDateTime(replacementDeliveredEvent.occurredAt)} · ${replacementDeliveredEvent.machineId}`}</p>
+                ) : canRecordReplacementDelivery ? (
+                  <form className={styles.assignmentForm} onSubmit={submitReplacementDelivery}>
+                    <DetailValue label={M.ASSIGNMENT_MACHINE} value={assignment.data?.replacementMachineId ?? "—"} code />
+                    <label className={styles.formField} htmlFor="replacement-delivery-condition">
+                      <span>{M.REPLACEMENT_DELIVERY_CONDITION}</span>
+                      <textarea
+                        id="replacement-delivery-condition"
+                        maxLength={2000}
+                        disabled={recordReplacementDelivery.isPending}
+                        value={replacementDeliveryNotes}
+                        onChange={(event) => setReplacementDeliveryNotes(event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor="replacement-delivery-evidence-reference">
+                      <span>{M.REPLACEMENT_DELIVERY_EVIDENCE}</span>
+                      <input
+                        id="replacement-delivery-evidence-reference"
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        disabled={recordReplacementDelivery.isPending}
+                        value={replacementDeliveryEvidence}
+                        onChange={(event) => setReplacementDeliveryEvidence(event.target.value)}
+                        required
+                      />
+                      <span className={styles.formHint}>{M.REPLACEMENT_DELIVERY_EVIDENCE_HINT}</span>
+                    </label>
+                    {recordReplacementDelivery.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReplacementDelivery.error, "mutation")}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!replacementDeliveryNotes.trim() || !replacementDeliveryEvidence.trim() || recordReplacementDelivery.isPending}>
+                      {recordReplacementDelivery.isPending ? M.REPLACEMENT_DELIVERY_SUBMITTING : M.REPLACEMENT_DELIVERY_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : assignment.data?.status === "ACTIVE" ? (
+                  <p className={styles.notice} role="status">
+                    {primaryCollectionAcknowledged ? M.PROCESS_WAITING_FOR_TECHNICIAN : M.PROCESS_WAITING_FOR_OWNER}
+                  </p>
+                ) : (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_OPERATOR}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_ACKNOWLEDGMENT} status={replacementAcknowledgmentStepState}>
+                <p>{M.PROCESS_REPLACEMENT_ACKNOWLEDGMENT_DESCRIPTION}</p>
+                {replacementDeliveryAcknowledged ? (
+                  <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(replacementDeliveredEvent?.ownerAcknowledgedAt)}`}</p>
+                ) : replacementDeliveredEvent && primaryCollectionAcknowledged && role === "owner" ? (
+                  renderOwnerAcknowledgment(replacementDeliveredEvent, M.ACKNOWLEDGMENT_REPLACEMENT_PROMPT)
+                ) : replacementDeliveredEvent ? (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_OWNER}</p>
+                ) : (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_HANDOVER}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_DIAGNOSIS} status={diagnosisStepState}>
+                <p>{M.PROCESS_DIAGNOSIS_DESCRIPTION}</p>
+                {diagnosisStepState === "complete" ? (
+                  <p className={styles.acknowledged} role="status">{M.TECHNICIAN_DIAGNOSIS_SUCCESS}</p>
+                ) : recordRepairDiagnosis.isSuccess ? (
+                  <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
+                ) : canRecordDiagnosis ? (
+                  <form className={styles.assignmentForm} onSubmit={submitDiagnosis}>
+                    <label className={styles.formField} htmlFor={`repair-diagnosis-${caseId}`}>
+                      <span>{M.TECHNICIAN_DIAGNOSIS}</span>
+                      <textarea
+                        id={`repair-diagnosis-${caseId}`}
+                        maxLength={4000}
+                        disabled={isRefreshing || recordRepairDiagnosis.isSuccess}
+                        onChange={(event) => setDiagnosisTexts((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={diagnosisText}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor={`repair-diagnosis-evidence-${caseId}`}>
+                      <span>{M.TECHNICIAN_DIAGNOSIS_EVIDENCE}</span>
+                      <input
+                        id={`repair-diagnosis-evidence-${caseId}`}
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        disabled={isRefreshing || recordRepairDiagnosis.isSuccess}
+                        onChange={(event) => setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={diagnosisEvidenceReference}
+                      />
+                      <span className={styles.formHint}>{M.TECHNICIAN_PRIVATE_EVIDENCE_HINT}</span>
+                    </label>
+                    {recordRepairDiagnosis.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordRepairDiagnosis.error)}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!diagnosisText.trim() || !diagnosisEvidenceReference.trim() || isRefreshing || recordRepairDiagnosis.isSuccess}>
+                      {recordRepairDiagnosis.isPending ? M.TECHNICIAN_DIAGNOSIS_SUBMITTING : M.TECHNICIAN_DIAGNOSIS_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <p className={styles.notice} role="status">
+                    {!replacementDeliveryAcknowledged ? M.TECHNICIAN_WAITING_OWNER_ACK : !isAssignedTechnician ? M.TECHNICIAN_WAITING_ASSIGNED_TASK : M.TECHNICIAN_DIAGNOSIS_STATUS_CHANGED}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_START_REPAIR} status={startWorkStepState}>
+                <p>{M.PROCESS_START_REPAIR_DESCRIPTION}</p>
+                {startWorkStepState === "complete" ? (
+                  <p className={styles.acknowledged} role="status">{M.TECHNICIAN_WORK_START_SUCCESS}</p>
+                ) : startRepairWork.isSuccess ? (
+                  <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
+                ) : canStartWork ? (
                   <form className={styles.assignmentForm} onSubmit={submitStartWork}>
-                    <label className={styles.formField} htmlFor="repair-work-scope">
+                    <label className={styles.formField} htmlFor={`repair-work-scope-${caseId}`}>
                       <span>{M.TECHNICIAN_WORK_SCOPE}</span>
                       <textarea
-                        id="repair-work-scope"
+                        id={`repair-work-scope-${caseId}`}
                         maxLength={2000}
+                        disabled={isRefreshing || startRepairWork.isSuccess}
                         onChange={(event) => setWorkScope(event.target.value)}
                         required
                         value={workScope}
@@ -307,29 +1090,279 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(startRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <button className={styles.inlineButton} disabled={!workScope.trim() || startRepairWork.isPending || startRepairWork.isSuccess} type="submit">
+                    <ButtonBar type="submit" disabled={!workScope.trim() || isRefreshing || startRepairWork.isSuccess}>
                       {startRepairWork.isPending ? M.TECHNICIAN_START_WORKING : M.TECHNICIAN_START_WORK}
-                    </button>
+                    </ButtonBar>
                   </form>
-                ) : !isAssignedTechnician ? (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_ASSIGNED_TASK}</p>
-                ) : !replacementDeliveryAcknowledged ? (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_OWNER_ACK}</p>
-                ) : ticket.data?.status !== "ASSIGNED" ? (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_ASSIGNED_TICKET}</p>
-                ) : !ticket.data?.id ? (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_TICKET_DETAILS_UNAVAILABLE}</p>
                 ) : (
-                  <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_ASSIGNED_TASK}</p>
-                )
-              ) : null}
-              {repairCase.data.status === "REPAIR_IN_PROGRESS" ? (
-                isAssignedTechnician
-                  ? <p className={styles.notice} role="note">{M.TECHNICIAN_COMPLETION_EVIDENCE_REQUIRED}</p>
-                  : <p className={styles.notice} role="status">{M.TECHNICIAN_WAITING_ASSIGNED_TASK}</p>
-              ) : null}
-            </section>
-          ) : null}
+                  <p className={styles.notice} role="status">
+                    {repairCase.data.status === "REPAIR_IN_PROGRESS" || repairCompletionCaseReached
+                      ? M.TECHNICIAN_STATUS_SYNC_PENDING
+                      : repairCase.data.status === "REPLACEMENT_DELIVERED" && replacementDeliveryAcknowledged
+                      ? M.PROCESS_WAITING_FOR_TECHNICIAN
+                      : !isAssignedTechnician ? M.TECHNICIAN_WAITING_ASSIGNED_TASK
+                        : !replacementDeliveryAcknowledged ? M.TECHNICIAN_WAITING_OWNER_ACK
+                          : ticket.data?.status !== "ASSIGNED" ? M.TECHNICIAN_WAITING_ASSIGNED_TICKET
+                            : M.TECHNICIAN_START_STATUS_CHANGED}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_COMPLETE_REPAIR} status={completeWorkStepState}>
+                <p>{M.PROCESS_COMPLETE_REPAIR_DESCRIPTION}</p>
+                {completeWorkStepState === "complete" ? (
+                  <p className={styles.acknowledged} role="status">{M.TECHNICIAN_WORK_COMPLETION_SUCCESS}</p>
+                ) : completeRepairWork.isSuccess ? (
+                  <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
+                ) : canCompleteWork ? (
+                  <form className={styles.assignmentForm} onSubmit={submitCompleteWork}>
+                    <p className={styles.notice} role="note"><strong>{M.TECHNICIAN_RECORDED_DIAGNOSIS}:</strong> {ticketDiagnosis}</p>
+                    <label className={styles.formField} htmlFor={`repair-completion-scope-${caseId}`}>
+                      <span>{M.TECHNICIAN_WORK_SCOPE}</span>
+                      <textarea
+                        id={`repair-completion-scope-${caseId}`}
+                        maxLength={2000}
+                        disabled={isRefreshing || completeRepairWork.isSuccess}
+                        onChange={(event) => setCompletionWorkScopes((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={completionWorkScope}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor={`repair-resolution-result-${caseId}`}>
+                      <span>{M.TECHNICIAN_RESOLUTION_RESULT}</span>
+                      <textarea
+                        id={`repair-resolution-result-${caseId}`}
+                        maxLength={4000}
+                        disabled={isRefreshing || completeRepairWork.isSuccess}
+                        onChange={(event) => setResolutionResults((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={resolutionResult}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor={`repair-completion-evidence-${caseId}`}>
+                      <span>{M.TECHNICIAN_COMPLETION_EVIDENCE}</span>
+                      <textarea
+                        id={`repair-completion-evidence-${caseId}`}
+                        disabled={isRefreshing || completeRepairWork.isSuccess}
+                        onChange={(event) => setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={completionEvidenceReferenceText}
+                      />
+                      <span className={styles.formHint}>{M.TECHNICIAN_COMPLETION_EVIDENCE_HINT}</span>
+                    </label>
+                    <label className={styles.formField} htmlFor={`repair-completion-notes-${caseId}`}>
+                      <span>{M.TECHNICIAN_COMPLETION_NOTES}</span>
+                      <textarea
+                        id={`repair-completion-notes-${caseId}`}
+                        maxLength={4000}
+                        disabled={isRefreshing || completeRepairWork.isSuccess}
+                        onChange={(event) => setCompletionNotes((current) => ({ ...current, [caseId]: event.target.value }))}
+                        value={completionNote}
+                      />
+                    </label>
+                    {completeRepairWork.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(completeRepairWork.error)}</p>
+                    ) : null}
+                    <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
+                    <ButtonBar
+                      type="submit"
+                      disabled={!completionWorkScope.trim() || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess}
+                    >
+                      {completeRepairWork.isPending ? M.TECHNICIAN_COMPLETION_SUBMITTING : M.TECHNICIAN_COMPLETION_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <p className={styles.notice} role="status">
+                    {repairCase.data.status === "REPAIR_IN_PROGRESS" && !ticketDiagnosis
+                      ? M.TECHNICIAN_DIAGNOSIS_DETAILS_UNAVAILABLE
+                      : repairCompletionCaseReached ? M.TECHNICIAN_STATUS_SYNC_PENDING
+                      : !isAssignedTechnician ? M.TECHNICIAN_WAITING_ASSIGNED_TASK
+                        : repairCase.data.status !== "REPAIR_IN_PROGRESS" ? M.PROCESS_COMPLETE_REPAIR_LOCKED
+                          : ticket.data?.status !== "IN_PROGRESS" ? M.TECHNICIAN_WAITING_IN_PROGRESS_TICKET
+                            : M.TECHNICIAN_COMPLETION_STATUS_CHANGED}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION} status={replacementCollectionStepState}>
+                <p>{M.PROCESS_REPLACEMENT_COLLECTION_DESCRIPTION}</p>
+                {replacementCollectionEvent ? (
+                  <p className={styles.acknowledged} role="status">{`${M.REPLACEMENT_COLLECTION_SUCCESS} ${formatDateTime(replacementCollectionEvent.occurredAt)} · ${replacementCollectionEvent.machineId}`}</p>
+                ) : recordReturnCustodyEvent.isSuccess && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
+                  <p className={styles.notice} role="status">{M.CUSTODY_STATUS_SYNC_PENDING}</p>
+                ) : canSubmitReplacementCollection ? (
+                  <form className={styles.assignmentForm} onSubmit={submitReplacementCollection}>
+                    <p className={styles.notice} role="note">{`${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
+                    <label className={styles.formField} htmlFor={`replacement-collection-condition-${caseId}`}>
+                      <span>{M.REPLACEMENT_COLLECTION_CONDITION}</span>
+                      <textarea
+                        id={`replacement-collection-condition-${caseId}`}
+                        maxLength={2000}
+                        disabled={isRefreshing}
+                        onChange={(event) => setReplacementCollectionConditions((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={replacementCollectionCondition}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor={`replacement-collection-evidence-${caseId}`}>
+                      <span>{M.REPLACEMENT_COLLECTION_EVIDENCE}</span>
+                      <input
+                        id={`replacement-collection-evidence-${caseId}`}
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        aria-describedby={`replacement-collection-evidence-hint-${caseId}`}
+                        disabled={isRefreshing}
+                        onChange={(event) => setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={replacementCollectionEvidenceReference}
+                      />
+                      <span className={styles.formHint} id={`replacement-collection-evidence-hint-${caseId}`}>{M.CUSTODY_EVIDENCE_HINT}</span>
+                    </label>
+                    {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!replacementCollectionCondition.trim() || !replacementCollectionEvidenceReference.trim() || isRefreshing}>
+                      {recordReturnCustodyEvent.isPending ? M.REPLACEMENT_COLLECTION_SUBMITTING : M.REPLACEMENT_COLLECTION_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <p className={styles.notice} role="status">
+                    {!replacementDeliveryAcknowledged ? M.PROCESS_WAITING_FOR_OWNER
+                      : role === "owner" ? M.PROCESS_WAITING_FOR_CUSTODY_ACTOR
+                        : role === "technician" && !isAssignedTechnician ? M.TECHNICIAN_WAITING_ASSIGNED_TASK
+                          : M.PROCESS_COMPLETE_REPAIR_LOCKED}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT} status={replacementCollectionAcknowledgmentStepState}>
+                <p>{M.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT_DESCRIPTION}</p>
+                {replacementCollectionAcknowledged ? (
+                  <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(replacementCollectionEvent?.ownerAcknowledgedAt)}`}</p>
+                ) : replacementCollectionEvent && role === "owner" ? (
+                  renderOwnerAcknowledgment(replacementCollectionEvent, M.ACKNOWLEDGMENT_REPLACEMENT_COLLECTED_PROMPT)
+                ) : replacementCollectionEvent ? (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_OWNER}</p>
+                ) : (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_CUSTODY_ACTOR}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN} status={primaryReturnStepState}>
+                <p>{M.PROCESS_PRIMARY_RETURN_DESCRIPTION}</p>
+                {primaryReturnEvent ? (
+                  <p className={styles.acknowledged} role="status">{`${M.PRIMARY_RETURN_SUCCESS} ${formatDateTime(primaryReturnEvent.occurredAt)} · ${primaryReturnEvent.machineId}`}</p>
+                ) : recordReturnCustodyEvent.isSuccess && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
+                  <p className={styles.notice} role="status">{M.CUSTODY_STATUS_SYNC_PENDING}</p>
+                ) : canSubmitPrimaryReturn ? (
+                  <form className={styles.assignmentForm} onSubmit={submitPrimaryReturn}>
+                    <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"}`}</p>
+                    <label className={styles.formField} htmlFor={`primary-return-condition-${caseId}`}>
+                      <span>{M.PRIMARY_RETURN_CONDITION}</span>
+                      <textarea
+                        id={`primary-return-condition-${caseId}`}
+                        maxLength={2000}
+                        disabled={isRefreshing}
+                        onChange={(event) => setPrimaryReturnConditions((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={primaryReturnCondition}
+                      />
+                    </label>
+                    <label className={styles.formField} htmlFor={`primary-return-evidence-${caseId}`}>
+                      <span>{M.PRIMARY_RETURN_EVIDENCE}</span>
+                      <input
+                        id={`primary-return-evidence-${caseId}`}
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        aria-describedby={`primary-return-evidence-hint-${caseId}`}
+                        disabled={isRefreshing}
+                        onChange={(event) => setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={primaryReturnEvidenceReference}
+                      />
+                      <span className={styles.formHint} id={`primary-return-evidence-hint-${caseId}`}>{M.CUSTODY_EVIDENCE_HINT}</span>
+                    </label>
+                    {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!primaryReturnCondition.trim() || !primaryReturnEvidenceReference.trim() || isRefreshing}>
+                      {recordReturnCustodyEvent.isPending ? M.PRIMARY_RETURN_SUBMITTING : M.PRIMARY_RETURN_SUBMIT}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <p className={styles.notice} role="status">
+                    {!replacementCollectionAcknowledged ? M.PROCESS_WAITING_FOR_OWNER
+                      : role === "owner" ? M.PROCESS_WAITING_FOR_CUSTODY_ACTOR
+                        : role === "technician" && !isAssignedTechnician ? M.TECHNICIAN_WAITING_ASSIGNED_TASK
+                          : M.PROCESS_WAITING_FOR_OWNER}
+                  </p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT} status={primaryReturnAcknowledgmentStepState}>
+                <p>{M.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT_DESCRIPTION}</p>
+                {primaryReturnAcknowledged ? (
+                  primaryReturnFinalStateConfirmed ? (
+                    <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(primaryReturnEvent?.ownerAcknowledgedAt)}`}</p>
+                  ) : (
+                    <p className={styles.notice} role="status">{M.PRIMARY_RETURN_STATUS_SYNC_PENDING}</p>
+                  )
+                ) : primaryReturnEvent && role === "owner" ? (
+                  renderOwnerAcknowledgment(primaryReturnEvent, M.ACKNOWLEDGMENT_PRIMARY_RETURNED_PROMPT)
+                ) : primaryReturnEvent ? (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_OWNER}</p>
+                ) : (
+                  <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_CUSTODY_ACTOR}</p>
+                )}
+              </WorkflowStep>
+
+              <WorkflowStep title={M.PROCESS_RELEASE_ASSIGNMENT} status={releaseStepState}>
+                <p>{M.PROCESS_RELEASE_ASSIGNMENT_DESCRIPTION}</p>
+                {releaseReadAfterWriteConfirmed ? (
+                  <p className={styles.acknowledged} role="status">{`${M.RELEASE_SUCCESS} ${formatDateTime(assignment.data?.releasedAt)}`}</p>
+                ) : releaseReplacementAssignment.isSuccess ? (
+                  <p className={styles.notice} role="status">{M.RELEASE_STATUS_SYNC_PENDING}</p>
+                ) : canSubmitRelease ? (
+                  <form className={styles.assignmentForm} onSubmit={submitReleaseReplacement}>
+                    <p className={styles.notice} role="note">{`${M.REPLACEMENT_ASSIGNMENT}: ${assignment.data?.id ?? "—"}`}</p>
+                    <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"} · ${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
+                    <label className={styles.formField} htmlFor={`release-evidence-${caseId}`}>
+                      <span>{M.RELEASE_EVIDENCE}</span>
+                      <input
+                        id={`release-evidence-${caseId}`}
+                        type="text"
+                        maxLength={512}
+                        autoComplete="off"
+                        aria-describedby={`release-evidence-hint-${caseId}`}
+                        disabled={isRefreshing || releaseReplacementAssignment.isSuccess}
+                        onChange={(event) => setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        required
+                        value={releaseEvidenceReference}
+                      />
+                      <span className={styles.formHint} id={`release-evidence-hint-${caseId}`}>{M.RELEASE_EVIDENCE_HINT}</span>
+                    </label>
+                    {releaseReplacementAssignment.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
+                    ) : null}
+                    <ButtonBar type="submit" disabled={!releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess}>
+                      {M.RELEASE_REVIEW_ACTION}
+                    </ButtonBar>
+                  </form>
+                ) : (
+                  <>
+                    <p className={styles.notice} role="status">
+                      {role === "owner" && canReleaseReplacement ? M.RELEASE_WAITING_FOR_ACTOR : M.RELEASE_PREREQUISITES_PENDING}
+                    </p>
+                    {releaseReplacementAssignment.isError ? (
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
+                    ) : null}
+                  </>
+                )}
+              </WorkflowStep>
+            </ol>
+          </section>
 
           <section className={styles.panel} aria-label={M.TIMELINE_TITLE}>
             <SectionHeading title={M.TIMELINE_TITLE} description="Sự kiện RepairCase được sắp theo thời điểm." />
@@ -341,7 +1374,7 @@ export function RepairCaseDetailScreen({
                 {timeline.data.content.map((event) => (
                   <li className={styles.timelineItem} key={event.id}>
                     <strong>{event.eventType.replaceAll("_", " ")}</strong>
-                    <p>{event.reason || event.details || "—"}</p>
+                    <p>{timelineDetails(event.reason, event.details)}</p>
                     <span>{formatDateTime(event.occurredAt)} · {event.actorRole}{event.actorId ? ` · ${event.actorId}` : ""}</span>
                   </li>
                 ))}
@@ -358,76 +1391,24 @@ export function RepairCaseDetailScreen({
 
           <section className={styles.panel} aria-label={M.CUSTODY_TITLE}>
             <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của Owner được lưu riêng với các sự kiện trạng thái." />
-            {privateEvidenceStepBlocked ? <p className={styles.notice} role="status">{M.PRIVATE_EVIDENCE_SOURCE_REQUIRED}</p> : null}
             {ownerWaitingForHandover ? <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p> : null}
-            {ownerWaitingForReplacementCollection ? <p className={styles.notice} role="status">{M.WAITING_FOR_REPLACEMENT_COLLECTION}</p> : null}
-            {ownerWaitingForPrimaryReturn ? <p className={styles.notice} role="status">{M.WAITING_FOR_PRIMARY_RETURN}</p> : null}
-            {ownerWaitingForRelease ? <p className={styles.notice} role="status">{M.OWNER_WAITING_RELEASE}</p> : null}
-            {releaseEvidenceStepBlocked ? <p className={styles.notice} role="status">{M.PRIVATE_EVIDENCE_RELEASE_REQUIRED}</p> : null}
             {custody.isPending ? <p className={styles.notice} role="status">{M.CUSTODY_LOADING}</p> : null}
             {custody.isError ? <QueryError label={M.CUSTODY_ERROR} error={custody.error} onRetry={() => void custody.refetch()} /> : null}
             {custody.data?.items.length === 0 ? <p className={styles.notice} role="status">{M.CUSTODY_EMPTY}</p> : null}
             {custody.data && custody.data.items.length > 0 ? (
               <ol className={styles.timeline} aria-label={M.CUSTODY_TITLE}>
-                {custody.data.items.map((event) => {
-                  const canAcknowledgeEvent = role === "owner" && !event.ownerAcknowledgedAt && (
-                    event.eventType === "PRIMARY_COLLECTED" ||
-                    event.eventType === "REPLACEMENT_DELIVERED" && primaryCollectionAcknowledged ||
-                    event.eventType === "REPLACEMENT_COLLECTED" && replacementDeliveryAcknowledged ||
-                    event.eventType === "PRIMARY_RETURNED" && replacementCollectionAcknowledged
-                  );
-                  const acknowledgementPending = acknowledgeCustody.isPending && acknowledgeCustody.variables?.eventId === event.id;
-                  const acknowledgementPrompt = event.eventType === "PRIMARY_COLLECTED"
-                    ? M.ACKNOWLEDGMENT_PRIMARY_PROMPT
-                    : event.eventType === "REPLACEMENT_DELIVERED"
-                      ? M.ACKNOWLEDGMENT_REPLACEMENT_PROMPT
-                      : event.eventType === "REPLACEMENT_COLLECTED"
-                        ? M.ACKNOWLEDGMENT_REPLACEMENT_COLLECTED_PROMPT
-                        : M.ACKNOWLEDGMENT_PRIMARY_RETURNED_PROMPT;
-
-                  return (
-                    <li className={styles.timelineItem} key={event.id}>
-                      <strong>{eventLabel(event.eventType)}</strong>
-                      <p>{event.conditionNotes || "—"}</p>
-                      <span>{formatDateTime(event.occurredAt)} · {event.actorRole} · {event.machineId}</span>
-                      <span className={event.ownerAcknowledgedAt ? styles.acknowledged : styles.waitingAcknowledgment}>
-                        {event.ownerAcknowledgedAt
-                          ? `${M.ACKNOWLEDGED}: ${formatDateTime(event.ownerAcknowledgedAt)}${event.ownerAcknowledgement ? ` · ${event.ownerAcknowledgement}` : ""}`
-                          : M.AWAITING_ACKNOWLEDGMENT}
-                      </span>
-                      {canAcknowledgeEvent ? (
-                        <>
-                          <p>{acknowledgementPrompt}</p>
-                          {acknowledgeCustody.isError && acknowledgeCustody.variables?.eventId === event.id ? (
-                            <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(acknowledgeCustody.error)}</p>
-                          ) : null}
-                          <form className={styles.assignmentForm} onSubmit={(formEvent) => submitAcknowledgement(formEvent, event.id)}>
-                            <label className={styles.formField} htmlFor={`custody-acknowledgement-${event.id}`}>
-                              <span>{M.ACKNOWLEDGMENT_TEXT}</span>
-                              <textarea
-                                id={`custody-acknowledgement-${event.id}`}
-                                maxLength={1000}
-                                onChange={(inputEvent) => setAcknowledgementTexts((current) => ({
-                                  ...current,
-                                  [event.id]: inputEvent.target.value,
-                                }))}
-                                required
-                                value={acknowledgementTexts[event.id] ?? ""}
-                              />
-                            </label>
-                            <button
-                              className={styles.inlineButton}
-                              disabled={!acknowledgementTexts[event.id]?.trim() || acknowledgeCustody.isPending}
-                              type="submit"
-                            >
-                              {acknowledgementPending ? M.ACKNOWLEDGMENT_SUBMITTING : M.ACKNOWLEDGMENT_SUBMIT}
-                            </button>
-                          </form>
-                        </>
-                      ) : null}
-                    </li>
-                  );
-                })}
+                {custody.data.items.map((event) => (
+                  <li className={styles.timelineItem} key={event.id}>
+                    <strong>{eventLabel(event.eventType)}</strong>
+                    <p>{event.conditionNotes || "—"}</p>
+                    <span>{formatDateTime(event.occurredAt)} · {event.actorRole} · {event.machineId}</span>
+                    <span className={event.ownerAcknowledgedAt ? styles.acknowledged : styles.waitingAcknowledgment}>
+                      {event.ownerAcknowledgedAt
+                        ? `${M.ACKNOWLEDGED}: ${formatDateTime(event.ownerAcknowledgedAt)}${event.ownerAcknowledgement ? ` · ${event.ownerAcknowledgement}` : ""}`
+                        : M.AWAITING_ACKNOWLEDGMENT}
+                    </span>
+                  </li>
+                ))}
               </ol>
             ) : null}
             {custody.data && (custody.data.page > 0 || custody.data.hasNext) ? (
@@ -439,6 +1420,36 @@ export function RepairCaseDetailScreen({
             ) : null}
           </section>
         </>
+      ) : null}
+      {releaseConfirmationOpen ? (
+        <NotificationDialog
+          variant="confirm"
+          title={M.RELEASE_CONFIRM_TITLE}
+          description={M.RELEASE_CONFIRM_DESCRIPTION}
+          onClose={() => {
+            if (!releaseReplacementAssignment.isPending) {
+              setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: false }));
+            }
+          }}
+          primaryAction={{
+            label: M.RELEASE_CONFIRM_ACTION,
+            pendingLabel: M.RELEASE_CONFIRM_PENDING,
+            pending: releaseReplacementAssignment.isPending,
+            disabled: !canSubmitRelease || !releaseEvidenceReference.trim() || isRefreshing,
+            onClick: confirmReleaseReplacement,
+          }}
+          secondaryAction={{
+            label: M.RELEASE_CONFIRM_CANCEL,
+            disabled: releaseReplacementAssignment.isPending,
+            onClick: () => setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: false })),
+          }}
+        >
+          <p>{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"}`}</p>
+          <p>{`${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
+          {releaseReplacementAssignment.isError ? (
+            <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
+          ) : null}
+        </NotificationDialog>
       ) : null}
     </div>
   );

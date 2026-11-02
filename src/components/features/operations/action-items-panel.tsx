@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { repairCasesApi } from "@/apis/repair-cases.api";
+import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
@@ -10,6 +13,23 @@ import styles from "./action-items-panel.module.css";
 
 type ActionItemsRole = "ADMIN" | "MODERATOR" | "OWNER" | "TECHNICIAN";
 type TimeBucket = "ALL" | "TODAY" | "UPCOMING" | "OVERDUE" | "UNSCHEDULED";
+
+function ownerCustodyAcknowledgementTarget(item: TDashboardActionItem): { caseId: string; eventId: string } | undefined {
+  if (item.actionType !== "OWNER_HANDOVER_ACK" || item.resourceType !== "MAINTENANCE_CUSTODY_EVENT") return undefined;
+  for (const candidate of [item.nextAction?.path, item.detailPath]) {
+    if (!candidate) continue;
+    let pathname = candidate;
+    try {
+      pathname = new URL(candidate, "http://dashboard.local").pathname;
+    } catch {
+      continue;
+    }
+    const match = /\/repair-cases\/([0-9a-f-]{36})(?:\/custody-events\/([0-9a-f-]{36})(?:\/acknowledge)?)?\/?$/i.exec(pathname);
+    if (!match || (match[2] && match[2].toLowerCase() !== item.resourceId.toLowerCase())) continue;
+    return { caseId: match[1], eventId: match[2] ?? item.resourceId };
+  }
+  return undefined;
+}
 
 const bucketOptions: { value: TimeBucket; label: string }[] = [
   { value: "ALL", label: "Tất cả thời hạn" },
@@ -36,6 +56,10 @@ function mappedWorkflowPath(item: TDashboardActionItem, role: ActionItemsRole): 
       case "INVOICE": return PATH_CUSTOMER.INVOICES;
       case "MAINTENANCE_REQUEST": return PATH_CUSTOMER.MAINTENANCE_DETAIL(item.resourceId);
       case "REPAIR_CASE": return PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(item.resourceId);
+      case "MAINTENANCE_CUSTODY_EVENT": {
+        const target = ownerCustodyAcknowledgementTarget(item);
+        return target ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(target.caseId) : undefined;
+      }
       case "REPAIR_COST_REVIEW": return PATH_CUSTOMER.REPAIR_COST_REVIEW_DETAIL(item.resourceId);
       case "RECALL_WORK_ORDER": return PATH_CUSTOMER.RECALL_DETAIL(item.resourceId);
       default: return undefined;
@@ -100,15 +124,107 @@ function formatDate(value?: string | null) {
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
+function tableVariant(role: ActionItemsRole): "operations" | "moderator" | "customer" | "standard" {
+  if (role === "OWNER") return "customer";
+  if (role === "MODERATOR") return "moderator";
+  if (role === "TECHNICIAN") return "standard";
+  return "operations";
+}
+
 export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
   const [bucket, setBucket] = useState<TimeBucket>("ALL");
   const [page, setPage] = useState(0);
+  const [openAcknowledgement, setOpenAcknowledgement] = useState<Record<string, boolean>>({});
+  const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
   const parsedBucket = bucket === "ALL" ? undefined : DashboardTimeBucketSchema.parse(bucket);
   const items = useQuery({
     queryKey: ["dolores", "dashboard", "action-items", authScopedQuerySubject(role), parsedBucket ?? "ALL", page],
     queryFn: ({ signal }) => dashboardApi.getActionItems({ page, size: 20, ...(parsedBucket ? { timeBucket: parsedBucket } : {}) }, signal),
     retry: false,
   });
+  const acknowledgeCustodyEvent = useMutation({
+    mutationFn: ({ caseId, eventId, acknowledgement }: { actionKey: string; caseId: string; eventId: string; acknowledgement: string }) => {
+      if (role !== "OWNER") throw new Error("Chỉ Owner mới có thể xác nhận bàn giao.");
+      return repairCasesApi.acknowledgeCustodyEvent(caseId, eventId, { acknowledgement });
+    },
+    onSuccess: (_event, variables) => {
+      setOpenAcknowledgement((current) => ({ ...current, [variables.actionKey]: false }));
+      setAcknowledgementTexts((current) => ({ ...current, [variables.actionKey]: "" }));
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "dashboard", "action-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow"] });
+    },
+  });
+  const columns: readonly DataTableColumn<TDashboardActionItem>[] = [
+    {
+      key: "work",
+      header: "Công việc",
+      render: (item) => <strong className={styles.workTitle}>{item.title}</strong>,
+    },
+    {
+      key: "priority",
+      header: "Ưu tiên",
+      render: (item) => <span className={item.overdue ? styles.overdue : styles.priority}>{item.overdue ? "Quá hạn" : item.priority}</span>,
+    },
+    { key: "due-date", header: "Hạn xử lý", render: (item) => formatDate(item.dueAt ?? item.scheduledAt) },
+    { key: "owner", header: "Khách hàng", render: (item) => item.ownerName || "—" },
+    { key: "machine", header: "Máy", render: (item) => item.machineSerialNumber || "—" },
+    {
+      key: "action",
+      header: "Thao tác",
+      render: (item) => {
+        const acknowledgementTarget = role === "OWNER" ? ownerCustodyAcknowledgementTarget(item) : undefined;
+        if (acknowledgementTarget) {
+          const acknowledgement = acknowledgementTexts[item.actionKey] ?? "";
+          const acknowledgementError = acknowledgeCustodyEvent.isError && acknowledgeCustodyEvent.variables?.actionKey === item.actionKey;
+          const isAcknowledging = acknowledgeCustodyEvent.isPending && acknowledgeCustodyEvent.variables?.actionKey === item.actionKey;
+          const submitAcknowledgement = (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            const value = acknowledgement.trim();
+            if (!value || value.length > 1000 || acknowledgeCustodyEvent.isPending) return;
+            acknowledgeCustodyEvent.mutate({
+              actionKey: item.actionKey,
+              ...acknowledgementTarget,
+              acknowledgement: value,
+            });
+          };
+
+          return openAcknowledgement[item.actionKey] ? (
+            <form className={styles.acknowledgementForm} onSubmit={submitAcknowledgement}>
+              <label className={styles.acknowledgementField}>
+                <span>Nội dung xác nhận</span>
+                <textarea
+                  maxLength={1000}
+                  onChange={(event) => setAcknowledgementTexts((current) => ({ ...current, [item.actionKey]: event.target.value }))}
+                  required
+                  value={acknowledgement}
+                />
+              </label>
+              {acknowledgementError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(acknowledgeCustodyEvent.error)}</p> : null}
+              <div className={styles.acknowledgementActions}>
+                <ButtonBar type="submit" disabled={!acknowledgement.trim() || acknowledgeCustodyEvent.isPending}>
+                  {isAcknowledging ? "Đang xác nhận…" : "Gửi xác nhận"}
+                </ButtonBar>
+                <ButtonBar type="button" disabled={acknowledgeCustodyEvent.isPending} onClick={() => setOpenAcknowledgement((current) => ({ ...current, [item.actionKey]: false }))}>
+                  Hủy
+                </ButtonBar>
+              </div>
+            </form>
+          ) : (
+            <ButtonBar type="button" onClick={() => setOpenAcknowledgement((current) => ({ ...current, [item.actionKey]: true }))}>
+              Xác nhận bàn giao
+            </ButtonBar>
+          );
+        }
+        const href = safeWorkflowHref(item, role);
+        return href
+          ? <Link className={styles.openLink} href={href}>Mở công việc</Link>
+          : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>;
+      },
+    },
+  ];
 
   return (
     <section className={styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
@@ -132,35 +248,16 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
           <button type="button" onClick={() => void items.refetch()}>Thử lại</button>
         </div>
       )}
-      {items.data && !items.isError && items.data.items.length === 0 && (
-        <p className={styles.notice} role="status">Không có công việc trong khoảng thời hạn này.</p>
-      )}
-      {items.data && items.data.items.length > 0 && (
-        <div className={styles.list}>
-          {items.data.items.map((item) => {
-            const href = safeWorkflowHref(item, role);
-            return (
-              <article className={styles.item} key={item.actionKey}>
-                <div className={styles.itemHeading}>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.resourceType.replaceAll("_", " ")} · {item.status}</p>
-                  </div>
-                  <span className={item.overdue ? styles.overdue : styles.priority}>{item.overdue ? "Quá hạn" : item.priority}</span>
-                </div>
-                <dl className={styles.metadata}>
-                  <div><dt>Hạn xử lý</dt><dd>{formatDate(item.dueAt ?? item.scheduledAt)}</dd></div>
-                  {item.ownerName && <div><dt>Khách hàng</dt><dd>{item.ownerName}</dd></div>}
-                  {item.machineSerialNumber && <div><dt>Máy</dt><dd>{item.machineSerialNumber}</dd></div>}
-                </dl>
-                {item.nextAction && item.nextAction.code !== "VIEW" && (
-                  <p className={styles.nextAction}>Bước kế tiếp: {item.nextAction.code.replaceAll("_", " ")}</p>
-                )}
-                {href ? <Link className={styles.openLink} href={href}>Mở công việc</Link> : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>}
-              </article>
-            );
-          })}
-        </div>
+      {items.data && (
+        <DataTable
+          variant={tableVariant(role)}
+          {...(role === "ADMIN" ? { headerVariant: "admin" as const } : {})}
+          rows={items.data.items}
+          rowKey={(item) => item.actionKey}
+          columns={columns}
+          style={{ minWidth: 1040 }}
+          emptyMessage="Không có công việc trong khoảng thời hạn này."
+        />
       )}
 
       <footer className={styles.pagination}>

@@ -13,10 +13,12 @@ import {
   RepairCaseTimelinePageSchema,
   MaintenanceCustodyEventListSchema,
   MaintenanceCustodyEventCreateRequestSchema,
+  PrimaryCollectionRequestSchema,
   MaintenanceCustodyAcknowledgementRequestSchema,
   MaintenanceCustodyEventIdSchema,
   MaintenanceCustodyEventSchema,
   type MaintenanceCustodyEventCreateRequest,
+  type PrimaryCollectionRequest,
   MaintenanceTicketSchema,
   RepairWorkStartRequestSchema,
   type RepairCaseIntakeTriageRequest,
@@ -54,6 +56,19 @@ function boundedPage<T>(items: T[], headers: unknown, requested: { page: number;
     size: Number.isInteger(size) && size > 0 ? size : requested.size,
     hasNext: hasNextHeader === undefined ? false : hasNextHeader.toLowerCase() === "true",
   };
+}
+
+async function postCustodyEvent(caseId: string, request: MaintenanceCustodyEventCreateRequest) {
+  const response = await axiosClient.post<unknown>(
+    `/repair-cases/${encodeURIComponent(caseId)}/custody-events`,
+    request,
+    { baseURL: DOLORES_API_BASE_URL },
+  );
+  const event = MaintenanceCustodyEventSchema.parse(response.data);
+  if (event.repairCaseId !== caseId || event.eventType !== request.eventType || event.machineId !== request.machineId) {
+    throw new Error("Dolores returned a different RepairCase custody event than requested.");
+  }
+  return event;
 }
 
 export const repairCasesApi =  {
@@ -149,20 +164,17 @@ export const repairCasesApi =  {
   async recordCustodyEvent(caseId: string, input: MaintenanceCustodyEventCreateRequest) {
     const validCaseId = RepairCaseIdSchema.parse(caseId);
     const request = MaintenanceCustodyEventCreateRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(
-      `/repair-cases/${encodeURIComponent(validCaseId)}/custody-events`,
-      request,
-      { baseURL: DOLORES_API_BASE_URL },
-    );
-    const event = MaintenanceCustodyEventSchema.parse(response.data);
-    if (
-      event.repairCaseId !== validCaseId ||
-      event.eventType !== request.eventType ||
-      event.machineId !== request.machineId
-    ) {
-      throw new Error("Dolores returned a different RepairCase custody event than requested.");
-    }
-    return event;
+    return postCustodyEvent(validCaseId, request);
+  },
+  async recordPrimaryCollection(caseId: string, input: Omit<PrimaryCollectionRequest, "eventType">) {
+    const validCaseId = RepairCaseIdSchema.parse(caseId);
+    const request = PrimaryCollectionRequestSchema.parse({
+      eventType: "PRIMARY_COLLECTED",
+      machineId: input.machineId,
+      conditionNotes: input.conditionNotes,
+      evidenceReference: input.evidenceReference,
+    });
+    return postCustodyEvent(validCaseId, request);
   },
   async startWork(caseId: string, expectedTicketId: string, input: RepairWorkStartRequest) {
     const validCaseId = RepairCaseIdSchema.parse(caseId);
@@ -212,21 +224,40 @@ export const repairCasesApi =  {
     }
     return events;
   },
-  async recordDiagnosis(id: string, input: RepairDiagnosisRequest) {
-    const caseId = RepairCaseSchema.shape.id.parse(id);
+  async recordDiagnosis(id: string, expectedTicketId: string, input: RepairDiagnosisRequest) {
+    const caseId = RepairCaseIdSchema.parse(id);
+    const ticketId = MaintenanceTicketIdSchema.parse(expectedTicketId);
     const request = RepairDiagnosisRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/diagnosis`, request, {
       baseURL: DOLORES_API_BASE_URL,
     });
-    return MaintenanceTicketSchema.parse(response.data);
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (
+      ticket.id !== ticketId ||
+      ticket.repairCaseId !== caseId ||
+      ticket.status !== "ASSIGNED" ||
+      ticket.diagnosis !== request.diagnosis
+    ) {
+      throw new Error("Dolores did not confirm the diagnosis for the expected assigned ticket.");
+    }
+    return ticket;
   },
-  async completeWork(id: string, input: RepairWorkCompletionRequest) {
-    const caseId = RepairCaseSchema.shape.id.parse(id);
+  async completeWork(id: string, expectedTicketId: string, input: RepairWorkCompletionRequest) {
+    const caseId = RepairCaseIdSchema.parse(id);
+    const ticketId = MaintenanceTicketIdSchema.parse(expectedTicketId);
     const request = RepairWorkCompletionRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/work/complete`, request, {
       baseURL: DOLORES_API_BASE_URL,
     });
-    return MaintenanceTicketSchema.parse(response.data);
+    const ticket = MaintenanceTicketSchema.parse(response.data);
+    if (
+      ticket.id !== ticketId ||
+      ticket.repairCaseId !== caseId ||
+      ticket.status !== "RESOLVED"
+    ) {
+      throw new Error("Dolores did not confirm completion for the expected RepairCase ticket.");
+    }
+    return ticket;
   },
   async decideFallback(id: string, input: RepairFallbackDecisionRequest) {
     const caseId = RepairCaseSchema.shape.id.parse(id);

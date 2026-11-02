@@ -279,6 +279,86 @@
   background: #fdfbf9;
 }
 
+.workflowSteps {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: workflow-step;
+}
+
+.workflowStep {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: 16px 16px 16px 50px;
+  border: 1px solid #e9e2dc;
+  border-left: 4px solid #d8d0ca;
+  border-radius: 10px;
+  background: #fff;
+  counter-increment: workflow-step;
+}
+
+.workflowStep::before {
+  position: absolute;
+  top: 15px;
+  left: 14px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid #d8d0ca;
+  border-radius: 50%;
+  background: #fff;
+  color: #514843;
+  content: counter(workflow-step);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflowStepHeading {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+
+.workflowStepHeading strong {
+  overflow-wrap: anywhere;
+  color: #302927;
+  font-size: 15px;
+}
+
+.workflowStepHeading span {
+  color: #706561;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.workflowStep > p {
+  margin: 0;
+  color: #514843;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.workflowStepComplete { border-left-color: #43865b; background: #f5fbf6; }
+.workflowStepComplete::before { border-color: #43865b; color: #23653a; }
+.workflowStepComplete .workflowStepHeading span { color: #23653a; }
+.workflowStepCurrent { border-color: #dfc8a4; border-left-color: #b88238; background: #fffaf1; }
+.workflowStepCurrent::before { border-color: #b88238; color: #80512b; }
+.workflowStepCurrent .workflowStepHeading span { color: #80512b; }
+.workflowStepWaiting { border-left-color: #b8a58f; background: #fdfbf9; }
+.workflowStepLocked { background: #f8f6f3; }
+.workflowStepLocked .workflowStepHeading strong,
+.workflowStepLocked .workflowStepHeading span,
+.workflowStepLocked > p { color: #817771; }
+
 .timelineItem strong {
   overflow-wrap: anywhere;
   color: #302927;
@@ -330,4 +410,7 @@
   .heading h1 {
     font-size: 21px;
   }
+
+  .workflowStep { padding: 13px 12px 13px 44px; }
+  .workflowStep::before { top: 12px; left: 11px; }
 }

@@ -64,15 +64,24 @@ test("Technician work start rejects a response for another ticket or case state"
   await assert.rejects(repairCasesApi.startWork(caseId, ticketId, { workScope: "Inspect." }), /did not confirm/);
 });
 
-test("Technician action panel gates start by assignment, diagnosis, ticket state, and Owner acknowledgment", () => {
+test("Technician diagnosis, start, and completion are gated in the ordered workflow steps", () => {
   const source = readFileSync(join(__dirname, "../src/components/features/repair-workflow/repair-case-detail-screen.tsx"), "utf8");
   assert.match(source, /ticket\.data\?\.assignedTechnicianId\?\.toLowerCase\(\) === currentSubjectId\.toLowerCase\(\)/);
+  assert.match(source, /const canRecordDiagnosis = role === "technician"/);
+  assert.match(source, /repairCase\.data\?\.status === "REPLACEMENT_DELIVERED"/);
+  assert.match(source, /repairCasesApi\.recordDiagnosis\(caseId, expectedTicketId, \{ diagnosis, evidenceReference \}\)/);
+  assert.match(source, /const canStartWork = isAssignedTechnician/);
   assert.match(source, /repairCase\.data\?\.status === "DIAGNOSIS"/);
   assert.match(source, /ticket\.data\?\.status === "ASSIGNED"/);
   assert.match(source, /replacementDeliveryAcknowledged/);
   assert.match(source, /repairCasesApi\.startWork\(caseId, expectedTicketId, \{ workScope \}\)/);
-  assert.match(source, /M\.TECHNICIAN_DIAGNOSIS_EVIDENCE_REQUIRED/);
-  assert.match(source, /M\.TECHNICIAN_COMPLETION_EVIDENCE_REQUIRED/);
-  assert.doesNotMatch(source, /emergencyAuthorizationId/);
-  assert.doesNotMatch(source, /repairCasesApi\.recordDiagnosis|repairCasesApi\.completeWork/);
+  assert.match(source, /const canCompleteWork = role === "technician"/);
+  assert.match(source, /repairCase\.data\?\.status === "REPAIR_IN_PROGRESS"/);
+  assert.match(source, /ticket\.data\?\.status === "IN_PROGRESS"/);
+  assert.match(source, /repairCasesApi\.completeWork\(caseId, expectedTicketId, request\)/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_DIAGNOSIS\}/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_START_REPAIR\}/);
+  assert.match(source, /<WorkflowStep title=\{M\.PROCESS_COMPLETE_REPAIR\}/);
+  assert.doesNotMatch(source, /aria-label=\{M\.TECHNICIAN_ACTIONS\}/);
+  assert.doesNotMatch(source, /emergencyAuthorizationId:/);
 });

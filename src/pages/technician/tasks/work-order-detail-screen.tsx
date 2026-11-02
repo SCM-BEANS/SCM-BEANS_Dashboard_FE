@@ -151,7 +151,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
   };
 
   const recordDiagnosis = useMutation({
-    mutationFn: () => repairCasesApi.recordDiagnosis(repairCaseId, { diagnosis, evidenceReference: diagnosisEvidence }),
+    mutationFn: () => repairCasesApi.recordDiagnosis(repairCaseId, ticket.data?.id ?? "", { diagnosis, evidenceReference: diagnosisEvidence }),
     onSuccess: refreshRepairCase,
   });
   const startWork = useMutation({
@@ -159,7 +159,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
     onSuccess: refreshRepairCase,
   });
   const completeWork = useMutation({
-    mutationFn: () => repairCasesApi.completeWork(repairCaseId, {
+    mutationFn: () => repairCasesApi.completeWork(repairCaseId, ticket.data?.id ?? "", {
       diagnosis,
       resolutionResult,
       workScope,
