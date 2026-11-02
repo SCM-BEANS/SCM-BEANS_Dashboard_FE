@@ -124,7 +124,7 @@ function AdminUsersContent() {
   const tenants = useQuery({
     queryKey: ["dolores", "tenants"],
     queryFn: ({ signal }) => tenantsApi.list(signal),
-    enabled: router.isReady && (view === "list" || (view === "detail" && form.role === "owner")),
+    enabled: router.isReady && view === "list",
     staleTime: 60_000,
   });
   const tenantNames = useMemo(
@@ -246,11 +246,6 @@ function AdminUsersContent() {
     event.preventDefault();
     if (!user || !currentRole) return;
 
-    if (form.role === "owner" && currentRole !== "owner" && !form.tenantId) {
-      setRequestError(T.FORM.TENANT_REQUIRED);
-      return;
-    }
-
     const input: AdminUserUpdate = {};
     if (form.name.trim() !== user.name) input.name = form.name;
     if (form.email.trim() !== user.email) input.email = form.email;
@@ -295,18 +290,6 @@ function AdminUsersContent() {
     value: role,
     label: roleLabels[role],
   }));
-
-  const tenantOptions = (
-    <>
-      <option value="">{T.FORM.TENANT_PLACEHOLDER}</option>
-      {form.tenantId && !tenantNames.has(form.tenantId) && (
-        <option value={form.tenantId}>{form.tenantId}</option>
-      )}
-      {(tenants.data ?? []).map((tenant) => (
-        <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-      ))}
-    </>
-  );
 
   return (
     <>
@@ -434,24 +417,11 @@ function AdminUsersContent() {
                   {roleOptions}
                 </select>
               </label>
-              {form.role === "owner" && (
-                <label>
-                  {T.FORM.TENANT}
-                  <select
-                    value={form.tenantId}
-                    disabled={!canEdit || tenants.isPending || tenants.isError || !tenants.data?.length}
-                    onChange={(event) => updateField("tenantId", event.target.value)}
-                  >
-                    {tenantOptions}
-                  </select>
-                </label>
-              )}
               <div><span>{T.FORM.STATUS}</span><strong>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</strong></div>
               <div><span>{T.FORM.VERIFIED}</span><strong>{user.email_verified ? T.FORM.YES : T.FORM.NO}</strong></div>
               <div><span>{T.FORM.CREATED}</span><strong>{formatDate(user.created_at)}</strong></div>
               <div><span>{T.FORM.UPDATED}</span><strong>{formatDate(user.updated_at)}</strong></div>
             </div>
-            {tenants.isError && form.role === "owner" && <p className={styles.accountInlineWarning}>{T.FORM.TENANT_UNAVAILABLE} {getApiErrorMessage(tenants.error)}</p>}
             {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
             {updateUser.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(updateUser.error, "mutation")}</p>}
           </form>

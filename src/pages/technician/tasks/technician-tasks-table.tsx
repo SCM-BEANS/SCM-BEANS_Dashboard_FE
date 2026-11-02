@@ -26,7 +26,6 @@ type AssignedTask = {
   locationName: string | null;
   locationAddress: string | null;
   summary: string | null;
-  relatedSteps: TechnicianWorkItem["relatedSteps"];
   status: string;
   dateLabel: string;
   date: string | null;
@@ -139,7 +138,6 @@ function createTasks(items: TechnicianWorkItem[]): AssignedTask[] {
       locationName: item.locationName ?? null,
       locationAddress: item.locationAddress ?? null,
       summary: item.summary ?? null,
-      relatedSteps: item.relatedSteps,
       status: formatStatus(item.status),
       dateLabel: item.scheduledAt ? (category === "recall" ? "Lịch nhận" : "Dự kiến") : "Cập nhật",
       date: item.scheduledAt ?? item.createdAt ?? null,
@@ -177,11 +175,6 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
           ) : null}
           {task.dateLabel} {formatDate(task.date)}
         </p>
-        {!compact && task.relatedSteps.length > 0 ? (
-          <p className={styles.helperText}>
-            Bước liên quan: {task.relatedSteps.map((step) => step.stepType + " · " + formatStatus(step.status)).join("; ")}
-          </p>
-        ) : null}
       </div>
       {task.href ? <TextLinkButton href={task.href}>Mở việc</TextLinkButton> : null}
     </article>
@@ -280,7 +273,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
                 render: (task) => (
                   <div className={styles.tableCellStack}>
                     <strong>{task.serialNumber || shortReference(task.machineId)}</strong>
-                    {task.modelName ? <span>{task.modelName}</span> : null}
                     {task.machineType ? <span>{task.machineType === "SMART_IOT" ? "Smart IoT" : task.machineType}</span> : null}
                   </div>
                 ),
@@ -288,27 +280,12 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
               {
                 key: "work",
                 header: "Công việc",
-                render: (task) => (
-                  <div className={styles.tableCellStack}>
-                    <span>{task.summary || "—"}</span>
-                    {task.relatedSteps.length > 0 ? (
-                      <span className={styles.tableSubtext}>
-                        {task.relatedSteps.map((step) => step.stepType + " · " + formatStatus(step.status)).join("; ")}
-                      </span>
-                    ) : null}
-                  </div>
-                ),
+                render: (task) => task.summary || "—",
               },
               {
-                key: "owner-location",
-                header: "Owner / Địa điểm",
-                render: (task) => (
-                  <div className={styles.tableCellStack}>
-                    <span>{task.ownerName || "—"}</span>
-                    {task.locationName ? <span>{task.locationName}</span> : null}
-                    {task.locationAddress ? <span className={styles.tableSubtext}>{task.locationAddress}</span> : null}
-                  </div>
-                ),
+                key: "owner",
+                header: "Owner",
+                render: (task) => task.ownerName || "—",
               },
               {
                 key: "status",

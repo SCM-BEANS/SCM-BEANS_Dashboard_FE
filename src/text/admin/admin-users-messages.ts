@@ -28,7 +28,6 @@ export const ADMIN_USERS_MESSAGES = {
     ROLE: "Vai trò",
     TENANT: "Tenant được gán",
     TENANT_PLACEHOLDER: "Chọn tenant",
-    TENANT_REQUIRED: "Chọn tenant trước khi chuyển tài khoản sang vai trò Owner.",
     TENANT_UNAVAILABLE: "Không tải được danh sách tenant.",
     SELECT_ROLE: "Chọn vai trò",
     TENANT_UNASSIGNED: "Chưa gán tenant",
