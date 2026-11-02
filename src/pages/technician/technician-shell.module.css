@@ -76,6 +76,10 @@
   display: none;
 }
 
+.mobileBreadcrumb {
+  display: none;
+}
+
 .pageContent {
   display: flex;
   width: min(100%, 1440px);
@@ -335,6 +339,15 @@
     gap: 12px;
     padding: 0 16px;
     background: #fff;
+  }
+
+  .mobileBreadcrumb {
+    display: block;
+    padding: 8px 16px;
+    background: #fff;
+    color: #706561;
+    font-size: 14px;
+    line-height: 1.4;
   }
 
   .mobileBrand {

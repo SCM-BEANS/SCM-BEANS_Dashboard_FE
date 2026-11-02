@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
@@ -21,7 +22,7 @@ import styles from "./work-order-detail-screen.module.css";
 
 const messages = T.WORKFLOWS;
 const detailQueryKey = (workOrderId: string) => ["dolores", "installation-work-orders", "id", workOrderId] as const;
-const assignedQueryKey = ["dolores", "technician", "installation-work-orders", "assigned"] as const;
+const assignedQueryKey = TECHNICIAN_WORK_ITEMS_QUERY_KEY;
 const MAX_EVIDENCE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_EVIDENCE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const createWorkflowCorrelationId = (prefix: string) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
@@ -145,7 +146,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
       queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "repair-cases", "timeline", repairCaseId] }),
       queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "repair-cases", "custody", repairCaseId] }),
       queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-ticket", repairCase.data?.maintenanceTicketId] }),
-      queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "repair-cases"] }),
+      queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
     ]);
   };
 
@@ -424,7 +425,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
     queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "id", recallWorkOrderId] }),
     queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "events", recallWorkOrderId] }),
     queryClient.invalidateQueries({ queryKey: ["dolores", "recall-work-orders", "evidence", recallWorkOrderId] }),
-    queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "recall-work-orders"] }),
+    queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
   ]);
   const startPickup = useMutation({
     mutationFn: () => recallWorkOrdersApi.startPickup(recallWorkOrderId, createWorkflowCorrelationId("recall-pickup-start")),
@@ -657,7 +658,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
   const refresh = async () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-ticket", maintenanceTicketId] }),
     queryClient.invalidateQueries({ queryKey: ["dolores", "termination-cases", "id", terminationCaseId] }),
-    queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-tickets", "assigned"] }),
+    queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
   ]);
   const start = useMutation({
     mutationFn: () => machinesApi.updateMaintenanceTicketStatus(maintenanceTicketId, "IN_PROGRESS"),

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -34,6 +35,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
   const refresh = async () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ticketKey }),
     queryClient.invalidateQueries({ queryKey: ["dolores", "technician", querySubject("technician"), "maintenance-tickets"] }),
+    queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
   ]);
 
   const startWork = useMutation({

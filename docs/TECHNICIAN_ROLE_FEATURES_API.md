@@ -14,7 +14,7 @@ Ngày rà soát: 29/10/2026. Đây là lượt đối chiếu lại code hiện 
 
 | Mục / route | Tình trạng trong code hiện tại | Endpoint chính |
 | --- | --- | --- |
-| Việc được giao — /technician/tasks | Đã tải lệnh lắp đặt được giao và hồ sơ RepairCase trong phạm vi Technician | GET /installation-work-orders/assigned; GET /repair-cases |
+| Assigned work - /technician/tasks | Loads JWT-scoped assigned work with paging and optional workType filtering | GET /technician/work-items (page, size, optional workType) |
 | Chi tiết lệnh lắp đặt — /technician/tasks/{workOrderId} | Đọc chi tiết; bắt đầu, lưu checklist, ghi phụ kiện, tải minh chứng, hoàn tất và báo thất bại đã nối | GET /installation-work-orders/{workOrderId}; POST .../{workOrderId}/start; PUT .../{workOrderId}/checklist/{checklistItemId}; POST .../{workOrderId}/accessories; POST .../{workOrderId}/evidence; POST .../{workOrderId}/complete; POST .../{workOrderId}/fail |
 | Chi tiết sửa chữa — /technician/tasks/{caseId} | Đọc tiến độ, lịch sử và bàn giao; ghi chẩn đoán, bắt đầu/hoàn tất sửa chữa và ghi sự kiện bàn giao | GET /repair-cases/{caseId}; GET .../{caseId}/timeline; GET/POST .../{caseId}/custody-events; GET /maintenance-tickets/{ticketId}; POST .../{caseId}/diagnosis; POST .../{caseId}/work/start; POST .../{caseId}/work/complete |
 | Check máy — /technician/machine-check và /{machineId} | Đọc danh sách/chi tiết máy; xác nhận sẵn sàng chỉ khi máy IN_WAREHOUSE, chưa gán Owner và đủ điều kiện model | GET /machines; GET /machines/{id}; POST /inventory/machines/{machineId}/readiness |
@@ -23,7 +23,7 @@ Ngày rà soát: 29/10/2026. Đây là lượt đối chiếu lại code hiện 
 
 ### Điều kiện và giới hạn của luồng lắp đặt đang có
 
-- Danh sách hiện gọi GET /installation-work-orders/assigned mà không gửi status, machineType, page hoặc size; các bộ lọc/phân trang Swagger hỗ trợ chưa được UI sử dụng.
+- The task list calls GET /technician/work-items. page and size control pagination; workType is optional. The response contains items, page, size and hasNext.
 - Lệnh lắp đặt chỉ cho bắt đầu ở trạng thái ASSIGNED; lưu checklist, ghi phụ kiện, tải minh chứng, hoàn tất và báo thất bại chỉ khả dụng khi IN_PROGRESS. Báo thất bại cần failureReason.
 - Hoàn tất lắp đặt yêu cầu ít nhất một minh chứng và người nhận bàn giao không rỗng. Checklist được lưu riêng; API complete hiện vẫn chỉ gửi handoverRecipient.
 - Tệp minh chứng ở frontend giới hạn 20 MiB và chỉ nhận PDF, JPEG hoặc PNG. Swagger cũng có thể trả 413, 415 hoặc 503 cho thao tác upload.
@@ -42,7 +42,7 @@ Ngày rà soát: 29/10/2026. Đây là lượt đối chiếu lại code hiện 
 
 ## 4. Điều kiện API và các điểm cần xác nhận
 
-- GET /installation-work-orders/assigned được Swagger mô tả dành cho TECHNICIAN; list và detail có thể trả 401/403/404 tùy token, quyền và ID.
+- GET /technician/work-items is scoped to the technician in the JWT. Detail and mutation endpoints remain specific to each work type.
 - Start chỉ có ý nghĩa với lệnh được giao; complete cần handoverRecipient. Swagger yêu cầu xử lý các trạng thái xung đột 409.
 - RepairCase work/start chỉ được thực hiện sau khi Owner xác nhận đã nhận máy thay thế. Diagnosis cần diagnosis và evidenceReference; hoàn tất cần diagnosis, resolutionResult, workScope, evidenceReferences; custody event cần đúng eventType, machineId, conditionNotes và evidenceReference.
 - GET /notifications không gửi ownerId hay technicianId từ client; frontend dựa vào backend để scope theo người gọi. Không được xem tham số ownerId tùy chọn trong Swagger là quyền đọc chéo tenant.

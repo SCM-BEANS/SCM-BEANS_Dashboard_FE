@@ -156,6 +156,25 @@
   font-weight: 600;
 }
 
+.taskSummary {
+  margin: 0;
+  color: #514843;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tableCellStack {
+  display: grid;
+  min-width: 110px;
+  gap: 4px;
+}
+
+.tableSubtext {
+  color: #706561;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .taskMachine code,
 .taskMeta code {
   color: inherit;
