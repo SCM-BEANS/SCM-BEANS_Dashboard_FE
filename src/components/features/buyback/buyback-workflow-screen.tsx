@@ -127,7 +127,7 @@ export function BuybackWorkflowScreen({ role, initialCaseId, listHref, operatorR
   const backHref = listHref ?? "/dashboard/buyback";
 
   return (
-    <main className={styles.screen}>
+    <main className={`${styles.screen} ${styles.pageContent}`}>
       <BackButtonHeading title="Thu mua và tân trang máy" titleId="buyback-title" description="Theo dõi đề nghị, thẩm định, thanh toán, thu hồi và kiểm định theo trạng thái do Dolores xác nhận." back={detailId && !initialCaseId ? { label: "Danh sách hồ sơ", fallbackHref: backHref } : null} />
       {list.isPending ? <p className={styles.notice} role="status">Đang tải hồ sơ thu mua…</p> : null}
       {list.isError ? <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><ButtonBar type="button" onClick={() => void list.refetch()}>Thử lại</ButtonBar></div> : null}

@@ -91,23 +91,25 @@ export function OverviewScreen() {
         query={overview}
         loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_OVERVIEW}
       />
-      <ActionItemsPanel role="MODERATOR" />
+      {metrics && (
+        <section
+          className={styles.metricGrid}
+          aria-label={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_TITLE}
+        >
+          <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.TOTAL_OWNERS} value={countFormat(metrics.totalOwners)} />
+          <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.CUPS_IN_PERIOD} value={countFormat(metrics.cupsInSelectedPeriod)} />
+          <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_MAINTENANCE} value={countFormat(metrics.openMaintenanceTickets)} />
+          <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_INSTALLATIONS} value={countFormat(metrics.openInstallationWorkOrders)} />
+        </section>
+      )}
       {overview.data && !overview.isError && !metrics && (
         <p className={styles.pendingNotice} role="status">
           {MODERATOR_MESSAGES.READ_SCREENS.EMPTY_OVERVIEW}
         </p>
       )}
+      <ActionItemsPanel role="MODERATOR" />
       {metrics && (
         <>
-          <section
-            className={styles.metricGrid}
-            aria-label={MODERATOR_MESSAGES.READ_SCREENS.OVERVIEW_TITLE}
-          >
-            <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.TOTAL_OWNERS} value={countFormat(metrics.totalOwners)} />
-            <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.CUPS_IN_PERIOD} value={countFormat(metrics.cupsInSelectedPeriod)} />
-            <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_MAINTENANCE} value={countFormat(metrics.openMaintenanceTickets)} />
-            <MetricCard label={MODERATOR_MESSAGES.READ_SCREENS.OPEN_INSTALLATIONS} value={countFormat(metrics.openInstallationWorkOrders)} />
-          </section>
           <section className={styles.overviewPanel} aria-labelledby="moderator-daily-usage">
             <h2 className={styles.panelHeading} id="moderator-daily-usage">{MODERATOR_MESSAGES.READ_SCREENS.DAILY_USAGE}</h2>
             {dailyUsage.length === 0 ? (

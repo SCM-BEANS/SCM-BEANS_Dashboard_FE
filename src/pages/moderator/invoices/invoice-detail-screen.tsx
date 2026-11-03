@@ -6,24 +6,101 @@ import { DataTable } from "@/components/table/data-table";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ModeratorPageHeading } from "../moderator-page-heading";
 import { moderatorStyles as styles } from "../moderator-shell";
-import { amountText, DetailField, QueryFeedback } from "./invoice-shared";
+import { amountText, billingPeriodText, invoiceStatusText, QueryFeedback } from "./invoice-shared";
 import { PaymentProofList } from "./payment-proof-list";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
 function InvoiceDetails({ invoice }: { invoice: ModeratorInvoice }) {
+  const period = invoice.period.trim() || invoice.billingPeriodStart?.slice(0, 7) || "";
+  const periodMatch = /^(\d{4})-(\d{2})$/.exec(period);
+  const periodLabel = periodMatch
+    ? `Tháng ${periodMatch[2]}/${periodMatch[1]}`
+    : billingPeriodText(invoice);
+
   return (
-    <dl className={styles.detailGrid}>
-      <DetailField label={messages.INVOICE_ID} value={invoice.id} />
-      <DetailField label={messages.INVOICE_OWNER} value={invoice.ownerId ?? invoice.tenantId} />
-      <DetailField label={messages.INVOICE_CONTRACT} value={invoice.contractId} />
-      <DetailField label={messages.INVOICE_TYPE} value={invoice.type} />
-      <DetailField label={messages.INVOICE_PERIOD} value={invoice.period} />
-      <DetailField label={messages.INVOICE_AMOUNT} value={amountText(invoice.amount, invoice.currency)} />
-      <DetailField label={messages.INVOICE_STATUS} value={invoice.status} />
-      <DetailField label={messages.INVOICE_DUE_DATE} value={invoice.dueDate} />
-      <DetailField label={messages.INVOICE_PAID_AT} value={invoice.paidAt} />
-    </dl>
+    <div className={styles.invoiceDetailOverview}>
+      <section className={styles.invoiceOverviewMain} aria-labelledby="moderator-invoice-summary-title">
+        <div className={styles.invoiceOverviewHeader}>
+          <div className={styles.invoiceOverviewIdentity}>
+            <span className={styles.invoiceOverviewLabel}>{messages.INVOICE_ID}</span>
+            <h2 className={styles.invoiceOverviewTitle} id="moderator-invoice-summary-title">
+              #{invoice.id.slice(0, 8)}
+            </h2>
+          </div>
+          <span className={`${styles.invoiceStatusBadge} ${invoiceStatusClassName(invoice.status)}`}>
+            {invoiceStatusText(invoice.status)}
+          </span>
+        </div>
+
+        <div className={styles.invoiceOverviewAmount}>
+          <span>{messages.INVOICE_AMOUNT}</span>
+          <strong>{amountText(invoice.amount, invoice.currency)}</strong>
+        </div>
+      </section>
+
+      <dl className={styles.invoiceHighlights}>
+        <div className={styles.invoiceHighlight}>
+          <dt>{messages.INVOICE_PERIOD}</dt>
+          <dd>{periodLabel}</dd>
+        </div>
+        <div className={styles.invoiceHighlight}>
+          <dt>{messages.INVOICE_DUE_DATE}</dt>
+          <dd>{formatInvoiceDate(invoice.dueDate)}</dd>
+        </div>
+        <div className={styles.invoiceHighlight}>
+          <dt>{messages.INVOICE_PAID_AT}</dt>
+          <dd>{formatInvoiceDate(invoice.paidAt, true)}</dd>
+        </div>
+      </dl>
+
+      <section className={styles.invoiceMetadataPanel} aria-labelledby="moderator-invoice-metadata-title">
+        <h2 className={styles.invoiceMetadataHeading} id="moderator-invoice-metadata-title">Thông tin hóa đơn</h2>
+        <dl className={styles.invoiceMetadataGrid}>
+          <InvoiceMetadataField label={messages.INVOICE_ID} value={invoice.id} isCode />
+          <InvoiceMetadataField label={messages.INVOICE_OWNER} value={invoice.ownerId ?? invoice.tenantId} isCode />
+          <InvoiceMetadataField label={messages.INVOICE_CONTRACT} value={invoice.contractId ?? "Chưa liên kết"} isCode={Boolean(invoice.contractId)} />
+          <InvoiceMetadataField label={messages.INVOICE_TYPE} value={invoice.type} />
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+function invoiceStatusClassName(status: ModeratorInvoice["status"]): string {
+  switch (status) {
+    case "PAID": return styles.invoiceStatusPaid;
+    case "OVERDUE": return styles.invoiceStatusOverdue;
+    case "UNPAID": return styles.invoiceStatusUnpaid;
+    case "PENDING": return styles.invoiceStatusPending;
+    default: return styles.invoiceStatusNeutral;
+  }
+}
+
+function formatInvoiceDate(value: string | null | undefined, includeTime = false): string {
+  if (!value) return "—";
+  if (!includeTime && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split("-");
+    return `${day}/${month}/${year}`;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("vi-VN", includeTime
+    ? { dateStyle: "medium", timeStyle: "short" }
+    : { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
+function InvoiceMetadataField({ label, value, isCode = false }: {
+  label: string;
+  value: string | number | null | undefined;
+  isCode?: boolean;
+}) {
+  return (
+    <div className={styles.invoiceMetadataItem}>
+      <dt>{label}</dt>
+      <dd className={isCode ? styles.invoiceMetadataCode : undefined}>{value == null || value === "" ? "—" : value}</dd>
+    </div>
   );
 }
 
