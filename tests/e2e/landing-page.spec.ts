@@ -244,6 +244,12 @@ test("landing remains visible and usable across the viewport matrix", async ({ p
 test("keyboard focus follows the page order and operates the mobile disclosure", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  const focusedLink = page.locator("a:focus");
   const expectedDesktopLinks = [
     "/#top",
     "/#solutions",
@@ -254,9 +260,9 @@ test("keyboard focus follows the page order and operates the mobile disclosure",
   ];
   for (const href of expectedDesktopLinks) {
     await page.keyboard.press("Tab");
-    await expect(page.locator(":focus")).toHaveAttribute("href", href);
+    await expect(focusedLink).toHaveAttribute("href", href);
   }
-  const primaryFocus = await page.locator(":focus").evaluate((element) => ({
+  const primaryFocus = await focusedLink.evaluate((element) => ({
     outlineStyle: getComputedStyle(element).outlineStyle,
     outlineWidth: getComputedStyle(element).outlineWidth,
   }));
@@ -265,6 +271,11 @@ test("keyboard focus follows the page order and operates the mobile disclosure",
   const mobilePage = await page.context().newPage();
   await mobilePage.setViewportSize({ width: 390, height: 844 });
   await mobilePage.goto("/");
+  await expect(mobilePage.getByRole("heading", { level: 1 })).toBeVisible();
+  await mobilePage.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
+  await mobilePage.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
   const menuButton = mobilePage.locator("#home-mobile-menu-toggle");
   await mobilePage.keyboard.press("Tab");
   await mobilePage.keyboard.press("Tab");
@@ -276,8 +287,8 @@ test("keyboard focus follows the page order and operates the mobile disclosure",
   await mobilePage.keyboard.press("Tab");
   const firstMobileLink = navigation.getByRole("link", { name: "Giải pháp" });
   await expect(firstMobileLink).toBeFocused();
-  const mobileLinkHeight = await firstMobileLink.evaluate((element) => element.getBoundingClientRect().height);
-  expect(mobileLinkHeight).toBeGreaterThanOrEqual(44);
+  await expect.poll(() => firstMobileLink.evaluate((element) => element.getBoundingClientRect().height))
+    .toBeGreaterThanOrEqual(44);
   await mobilePage.keyboard.press("Enter");
   await expect(mobilePage).toHaveURL(/#solutions$/);
   await expect(navigation).toBeHidden();
@@ -315,7 +326,7 @@ test("landing keeps Arial, uses no external font, and meets text contrast and to
       background: surfaceColor(element),
     }));
     const links = Array.from(document.querySelectorAll("header a, .hero .button-row a, .contact-panel .button-row a, .footer-links a"))
-      .filter((element) => element.getClientRects().length > 0);
+      .filter((element) => element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden");
     const linkHeights = links.map((element) => element.getBoundingClientRect().height);
     const menu = document.querySelector(".mobile-toggle")!.getBoundingClientRect();
     return { fonts, contrast, linkHeights, menu: { width: menu.width, height: menu.height } };

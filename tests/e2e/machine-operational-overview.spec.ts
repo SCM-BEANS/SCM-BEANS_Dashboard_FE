@@ -162,7 +162,8 @@ test.describe("machine operational overview cross-role presentation", () => {
         await expect(page).toHaveURL(new RegExp(`${role.listPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
       }
 
-      await expect.poll(() => requests.some((request) => request.includes("/heartbeats/latest"))).toBe(true);
+      const heartbeatRequested = requests.some((request) => request.includes("/heartbeats/latest"));
+      expect(heartbeatRequested).toBe(role.claim !== "moderator");
       await expect.poll(() => requests.some((request) => request.startsWith("/dashboard/overview?"))).toBe(true);
       const dashboardRequest = requests.find((request) => request.startsWith("/dashboard/overview?"));
       expect(dashboardRequest).toBeTruthy();

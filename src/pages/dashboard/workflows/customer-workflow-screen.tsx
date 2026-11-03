@@ -15,7 +15,7 @@ import { PATH_CUSTOMER } from "@/routes/path";
 import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { NotificationInbox } from "./notification-inbox";
 import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
-import { BuybackWorkflowScreen } from "@/components/features/buyback/buyback-workflow-screen";
+import { BuybackOwnerScreen } from "@/components/features/buyback/buyback-owner-screen";
 import styles from "../customer-shell.module.css";
 
 export { getCustomerWorkflowDescriptor };
@@ -93,7 +93,14 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   }
   if (sectionPath === "maintenance") return <OwnerMaintenanceScreen />;
   if (sectionPath === "buyback" || sectionPath === "buyback/new" || sectionPath === "buyback/documents" || sectionPath === "buyback/documents/confirmed") {
-    return <BuybackWorkflowScreen role="owner" listHref={PATH_CUSTOMER.BUYBACK} />;
+    return withWorkflowActions(
+      <BuybackOwnerScreen
+        listHref={PATH_CUSTOMER.BUYBACK}
+        showCreateForm={sectionPath === "buyback/new"}
+      />,
+      actions,
+      fallbackAction,
+    );
   }
   const maintenanceRequestDetail = /^maintenance\/([^/]+)$/.exec(sectionPath);
   if (maintenanceRequestDetail) return <OwnerMaintenanceScreen requestId={maintenanceRequestDetail[1]} />;

@@ -374,6 +374,14 @@ export function isSupportedCustomerSection(section: string): boolean {
 
   if (
     segments.length === 3 &&
+    segments[0] === "machines" &&
+    segments[2] === "operations"
+  ) {
+    return MachineIdSchema.safeParse(segments[1]).success;
+  }
+
+  if (
+    segments.length === 3 &&
     segments[0] === "contracts" &&
     segments[1] === "recall"
   ) {
@@ -479,6 +487,10 @@ const moderatorExactPaths = new Set([
 export function isSupportedModeratorSection(section: string): boolean {
   if (section && (section.startsWith("/") || section.endsWith("/") || section.includes("//"))) {
     return false;
+  }
+  const machineOperations = /^machines\/([^/]+)\/operations$/.exec(section);
+  if (machineOperations) {
+    return MachineIdSchema.safeParse(machineOperations[1]).success;
   }
   const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(section);
   if (contractInstallationRequest) {

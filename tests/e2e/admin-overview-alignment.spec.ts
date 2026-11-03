@@ -34,6 +34,11 @@ function dateAtBusinessZone(offsetDays = 0) {
     .toISOString().slice(0, 10);
 }
 
+function dateInputValue(isoDate: string) {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 function displayDate(date: string) {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString("vi-VN", { timeZone: "UTC" });
 }
@@ -135,8 +140,8 @@ test("Admin can filter accepted cups, open reports and inspect daily machine tot
   await expect.poll(() => requestedRanges.at(-1)).toBe(`${today}:${today}`);
   await expect(page.getByRole("button", { name: "Hôm nay" })).toHaveAttribute("aria-pressed", "true");
 
-  await page.getByLabel("Từ ngày").fill(yesterday);
-  await page.getByLabel("Đến ngày").fill(today);
+  await page.getByLabel("Từ ngày").fill(dateInputValue(yesterday));
+  await page.getByLabel("Đến ngày").fill(dateInputValue(today));
   await page.getByRole("button", { name: "Áp dụng kỳ" }).click();
   await expect.poll(() => requestedRanges.at(-1)).toBe(`${yesterday}:${today}`);
   await expect(page.getByRole("link", { name: "Xem báo cáo" })).toHaveAttribute(
@@ -146,7 +151,10 @@ test("Admin can filter accepted cups, open reports and inspect daily machine tot
 
   await page.getByRole("checkbox", { name: `Xem chi tiết số ly theo máy ngày ${displayDate(today)}` }).check();
   await expect(page.getByRole("heading", { name: `Số ly theo máy · ${displayDate(today)}` })).toBeVisible();
-  const machineTable = page.locator("table").filter({ has: page.getByRole("columnheader", { name: "Khu vực" }) });
+  const machineTable = page.getByRole("heading", { name: `Số ly theo máy · ${displayDate(today)}` })
+    .locator("xpath=ancestor::tr")
+    .getByRole("table");
+  await expect(machineTable).toHaveCount(1);
   await expect(machineTable).toContainText("DL-001");
   await expect(machineTable).toContainText("580");
   await expect(machineTable).toContainText("DL-002");

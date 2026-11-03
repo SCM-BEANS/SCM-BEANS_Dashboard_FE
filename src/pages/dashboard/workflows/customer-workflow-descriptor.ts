@@ -277,7 +277,7 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     return [link("Gửi yêu cầu mới", "/dashboard/support/new"), link("Cập nhật menu cần hỗ trợ", "/dashboard/support/menu", "secondary")];
   }
   if (sectionPath === "buyback") {
-    return [link("Gửi đề nghị thu mua", "/dashboard/buyback/new"), link("Xem chứng từ thu mua", "/dashboard/buyback/documents", "secondary")];
+    return [link("Tạo yêu cầu thu mua", "/dashboard/buyback/new"), link("Xem chứng từ thu mua", "/dashboard/buyback/documents", "secondary")];
   }
   if (sectionPath === "invoices/refund") {
     return [link("Về hóa đơn", "/dashboard/invoices", "secondary")];

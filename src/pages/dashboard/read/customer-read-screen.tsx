@@ -11,6 +11,7 @@ import { getCustomerScreenDescriptor } from "./customer-read-descriptor";
 import { OverviewScreen } from "../overview/overview-screen";
 import { ContractsScreen } from "../contracts/contracts-screen";
 import { MachinesScreen } from "../machines/machines-screen";
+import { CustomerMachineOperationalOverviewScreen } from "../machines/machine-operational-overview-screen";
 import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { InvoicesScreen } from "../invoices/invoices-screen";
 import { LocationsScreen } from "../locations/locations-screen";
@@ -42,6 +43,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
   const machineCandidate = sectionPath.startsWith("machines/")
     ? sectionPath.slice("machines/".length)
     : "";
+  const machineOperationsMatch = /^machines\/([^/]+)\/operations$/.exec(sectionPath);
   const invoiceCandidate = sectionPath.startsWith("invoices/")
     ? sectionPath.slice("invoices/".length)
     : "";
@@ -49,6 +51,9 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
   if (!sectionPath) return withCustomerActions(<OverviewScreen />, screen.actions);
   if (sectionPath === "locations") return withCustomerActions(<LocationsScreen />, screen.actions);
   if (sectionPath === "machines/new") return withCustomerActions(<MachineRegistrationScreen />, screen.actions);
+  if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {
+    return <CustomerMachineOperationalOverviewScreen machineId={machineOperationsMatch[1]} />;
+  }
   if (sectionPath === "contracts" || ContractIdSchema.safeParse(contractCandidate).success) {
     return withCustomerActions(<ContractsScreen sectionPath={sectionPath} back={screen.back} />, screen.actions);
   }

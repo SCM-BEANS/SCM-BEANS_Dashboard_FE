@@ -1,6 +1,6 @@
-import { TechnicianRoutePage } from "../technician-route-page";
-import { getTechnicianTaskScreenDescriptor } from "./task-screens";
+import { BuybackTechnicianScreen } from "@/components/features/buyback/buyback-technician-screen";
+import { TechnicianShell } from "../technician-shell";
 
 export default function TechnicianBuybackAssessmentPage() {
-  return <TechnicianRoutePage screen={getTechnicianTaskScreenDescriptor("tasks/buyback-assessment")} />;
+  return <TechnicianShell pageTitle="Đánh giá máy thu mua"><BuybackTechnicianScreen /></TechnicianShell>;
 }

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   BuybackActionRequestSchema,
+  BuybackAssignModeratorRequestSchema,
+  BuybackAssignTechnicianRequestSchema,
   BuybackCaseSchema,
   BuybackCasesSchema,
   BuybackCollectionRequestSchema,
@@ -9,10 +11,13 @@ import {
   BuybackIdSchema,
   BuybackInspectionRequestSchema,
   BuybackInspectionSchema,
+  BuybackMachineRegistrationRequestSchema,
+  BuybackOwnerDecisionRequestSchema,
   BuybackPaymentProofReviewRequestSchema,
   BuybackPaymentProofSchema,
   BuybackPaymentRequestSchema,
   BuybackPaymentSchema,
+  BuybackPickupEvidenceRequestSchema,
   BuybackQaRequestSchema,
   BuybackQaDecisionSchema,
   BuybackRefurbishmentCompleteRequestSchema,
@@ -21,10 +26,15 @@ import {
   BuybackStatusSchema,
   BuybackValuationRequestSchema,
   type BuybackActionRequest,
+  type BuybackAssignModeratorRequest,
+  type BuybackAssignTechnicianRequest,
   type BuybackCreateRequest,
   type BuybackInspectionRequest,
+  type BuybackMachineRegistrationRequest,
+  type BuybackOwnerDecisionRequest,
   type BuybackPaymentProofReviewRequest,
   type BuybackPaymentRequest,
+  type BuybackPickupEvidenceRequest,
   type BuybackQaRequest,
   type BuybackRefurbishmentCompleteRequest,
   type BuybackRefurbishmentStartRequest,
@@ -89,6 +99,10 @@ const pageParamsSchema = z.object({
   contractId: z.string().uuid().optional(),
   machineId: z.string().uuid().optional(),
 }).strict();
+const proofPageParamsSchema = z.object({
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(50),
+}).strict();
 const buybackPath = (id: string) => `/buybacks/${encodeURIComponent(BuybackIdSchema.parse(id))}`;
 const proofPath = (id: string) => `/buybacks/payment-proofs/${encodeURIComponent(z.string().uuid().parse(id))}`;
 const fileTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
@@ -149,10 +163,37 @@ export const buybacksApi =  {
     const request = BuybackCreateRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>("/buybacks", request, { baseURL: DOLORES_API_BASE_URL });
     const buyback = BuybackCaseSchema.parse(response.data);
-    if (buyback.contractId !== request.contractId || buyback.machineId !== request.machineId || buyback.status !== "REQUESTED") {
-      throw new Error("Dolores did not confirm the requested buyback for the selected Contract and machine.");
+    if (buyback.workflowVersion !== 2) {
+      throw new Error("Dolores did not confirm an external-machine buyback case.");
     }
     return buyback;
+  },
+  async assignModerator(id: string, input: BuybackAssignModeratorRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/moderator/assign`,
+      BuybackAssignModeratorRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return verifyCase(response.data, validId);
+  },
+  async assignInspection(id: string, input: BuybackAssignTechnicianRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/inspection/assign`,
+      BuybackAssignTechnicianRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return verifyCase(response.data, validId);
+  },
+  async decideOwnerPrice(id: string, input: BuybackOwnerDecisionRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/owner-decision`,
+      BuybackOwnerDecisionRequestSchema.parse(withoutResourceId(input, "id")),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return verifyCase(response.data, validId);
   },
   async startInspection(id: string, input: BuybackActionRequest) {
     const validId = BuybackIdSchema.parse(id);
@@ -202,9 +243,48 @@ export const buybacksApi =  {
     const response = await axiosClient.get<Blob>(`${proofPath(proofId)}/content`, { baseURL: DOLORES_API_BASE_URL, responseType: "blob", signal });
     return { blob: response.data, contentType: headerValue(response.headers, "content-type") };
   },
+  async listPaymentProofs(id: string, page = 0, size = 50, signal?: AbortSignal) {
+    const validId = BuybackIdSchema.parse(id);
+    const params = proofPageParamsSchema.parse({ page, size });
+    const response = await axiosClient.get<unknown>(`${buybackPath(validId)}/payment-proofs`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = BuybackPaymentProofSchema.array().parse(response.data);
+    if (items.some((proof) => proof.buybackCaseId !== validId)) {
+      throw new Error("Dolores returned payment proofs for a different buyback case.");
+    }
+    const pageHeader = Number(headerValue(response.headers, "X-Page") ?? params.page);
+    const sizeHeader = Number(headerValue(response.headers, "X-Page-Size") ?? params.size);
+    return {
+      items,
+      page: Number.isInteger(pageHeader) && pageHeader >= 0 ? pageHeader : params.page,
+      size: Number.isInteger(sizeHeader) && sizeHeader > 0 ? sizeHeader : params.size,
+      hasNext: String(headerValue(response.headers, "X-Has-Next") ?? "false").toLowerCase() === "true",
+    };
+  },
   async requestCollection(id: string, input: BuybackActionRequest) {
     const validId = BuybackIdSchema.parse(id);
     const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/collection/request`, BuybackActionRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
+    return verifyCase(response.data, validId);
+  },
+  async assignCollection(id: string, input: BuybackAssignTechnicianRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/collection/assign`,
+      BuybackAssignTechnicianRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return verifyCase(response.data, validId);
+  },
+  async recordCollectionEvidence(id: string, input: BuybackPickupEvidenceRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/collection/evidence`,
+      BuybackPickupEvidenceRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
     return verifyCase(response.data, validId);
   },
   async confirmCollection(id: string, input: z.input<typeof BuybackCollectionRequestSchema>) {
@@ -220,6 +300,24 @@ export const buybacksApi =  {
   async completeRefurbishment(id: string, input: BuybackRefurbishmentCompleteRequest) {
     const validId = BuybackIdSchema.parse(id);
     const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/refurbishment/complete`, BuybackRefurbishmentCompleteRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
+    return verifyCase(response.data, validId);
+  },
+  async assignRefurbishment(id: string, input: BuybackAssignTechnicianRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/refurbishment/assign`,
+      BuybackAssignTechnicianRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    return verifyCase(response.data, validId);
+  },
+  async registerMachine(id: string, input: BuybackMachineRegistrationRequest) {
+    const validId = BuybackIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/register-machine`,
+      BuybackMachineRegistrationRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
     return verifyCase(response.data, validId);
   },
   async decideQa(id: string, input: BuybackQaRequest) {

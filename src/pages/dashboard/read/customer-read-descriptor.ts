@@ -1,5 +1,6 @@
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
+import { MachineIdSchema } from "@/schema/machines.schema";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 
 type Availability = "unavailable" | "pending";
@@ -51,6 +52,10 @@ function getCustomerReadBack(sectionPath: string): BackButtonDestination | null 
   if (sectionPath === "machines/new") return backTo("Danh sách máy của tôi", "/dashboard/machines");
   if (sectionPath === "machines/history" || sectionPath === "machines/substitute") {
     return backTo("Danh sách máy của tôi", "/dashboard/machines");
+  }
+  const machineOperationsMatch = sectionPath.match(/^machines\/([^/]+)\/operations$/);
+  if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {
+    return backTo("Chi tiết máy", `/dashboard/machines/${encodeURIComponent(machineOperationsMatch[1])}`);
   }
   const machineModelMatch = sectionPath.match(/^machines\/([^/]+)\/model$/);
   if (machineModelMatch) {
@@ -120,6 +125,7 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
   if (sectionPath === "machines/history") {
     return [link("Gửi yêu cầu hỗ trợ", "/dashboard/support/new")];
   }
+  if (/^machines\/[^/]+\/operations$/.test(sectionPath)) return [];
   if (sectionPath === "machines/substitute") {
     return [link("Xem lịch sử máy", "/dashboard/machines/history", "secondary")];
   }
@@ -204,6 +210,16 @@ export function getCustomerScreenDescriptor(sectionPath: string): CustomerScreen
   }
   if (sectionPath === "machines/substitute") {
     return descriptor(sectionPath, messages.MACHINE_SUBSTITUTE_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));
+  }
+  const machineOperationsMatch = sectionPath.match(/^machines\/([^/]+)\/operations$/);
+  if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {
+    return descriptor(
+      sectionPath,
+      "Dữ liệu vận hành máy",
+      "Mức sử dụng và tình trạng hoạt động của máy.",
+      "unavailable",
+      getCustomerReadActions(sectionPath),
+    );
   }
   if (sectionPath.startsWith("machines/") && sectionPath.endsWith("/model")) {
     return descriptor(sectionPath, messages.MACHINE_MODEL_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));
