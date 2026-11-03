@@ -145,7 +145,7 @@ export function ContractTerminationScreen({
       {canCreateCase ? (
         <form className={styles.form} onSubmit={submitRequest}>
           <h2>Tạo hồ sơ chấm dứt</h2>
-          <p>Gửi yêu cầu sẽ mở hồ sơ theo dõi. Hợp đồng và máy chưa thay đổi cho đến khi hoàn tất quy trình.</p>
+          <p>Gửi yêu cầu sẽ mở hồ sơ theo dõi. Hợp đồng vẫn hiệu lực trong lúc xử lý; backend chuyển máy sang trạng thái bảo trì ngay khi ghi nhận yêu cầu.</p>
           <div className={styles.formGrid}>
             <label>Loại yêu cầu
               <select value={type} onChange={(event) => setType(event.target.value as TerminationCaseRequest["type"])}>
@@ -163,7 +163,7 @@ export function ContractTerminationScreen({
           </div>
           {formError ? <p className={styles.error} role="alert">{formError}</p> : null}
           {requestTermination.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(requestTermination.error, "mutation")}</p> : null}
-          {requestTermination.isSuccess ? <p className={styles.success} role="status">Đã tạo hồ sơ. Quy trình chấm dứt chưa hoàn tất.</p> : null}
+          {requestTermination.isSuccess ? <p className={styles.success} role="status">Đã tạo hồ sơ. Máy được chuyển sang trạng thái bảo trì; hợp đồng vẫn hiệu lực đến khi quy trình hoàn tất.</p> : null}
           <ButtonBar type="submit" disabled={requestTermination.isPending}>
             {requestTermination.isPending ? "Đang gửi yêu cầu…" : "Tạo hồ sơ chấm dứt"}
           </ButtonBar>
@@ -185,6 +185,7 @@ export function ContractTerminationScreen({
       {activeCaseId ? (
         <TerminationWorkflowPanel
           mode={role === "OWNER" ? "owner" : "operator"}
+          role={role}
           contractId={contractId}
           caseId={activeCaseId}
         />
@@ -194,7 +195,7 @@ export function ContractTerminationScreen({
         <NotificationDialog
           variant="confirm"
           title="Tạo hồ sơ chấm dứt hợp đồng?"
-          description="Hồ sơ được tạo để theo dõi quá trình xử lý. Hợp đồng và máy chưa bị thay đổi ở bước này."
+          description="Hồ sơ sẽ được tạo để theo dõi quá trình xử lý. Máy chuyển sang trạng thái bảo trì ngay khi backend ghi nhận; hợp đồng vẫn hiệu lực đến bước hoàn tất cuối cùng."
           primaryAction={{
             label: "Tạo hồ sơ",
             pending: requestTermination.isPending,

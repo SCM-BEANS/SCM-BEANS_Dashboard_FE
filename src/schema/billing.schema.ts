@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const InvoiceIdSchema = z.string().uuid();
 export const PaymentProofIdSchema = z.string().uuid();
+export const RefundIdSchema = z.string().uuid();
 const optionalText = z.string().nullish();
 
 export const BILLING_DEFAULT_PAGE_SIZE = 50;
@@ -137,6 +138,24 @@ export const PaymentProofReviewRequestSchema = z.object({
   approve: z.boolean(),
   reason: z.string().trim().min(1),
 });
+
+export const RefundStatusSchema = z.enum([
+  "REQUESTED",
+  "TENANT_CONFIRMED",
+  "APPROVED",
+  "SUBMITTED",
+  "COMPLETED",
+  "DISPUTED",
+]);
+
+export const RefundReceiptRequestSchema = z.object({
+  receivedAmount: z.number().finite().nonnegative(),
+  received: z.boolean(),
+  note: z.string().trim().max(2000).optional(),
+}).strict();
+
+export type RefundStatus = z.infer<typeof RefundStatusSchema>;
+export type RefundReceiptRequest = z.infer<typeof RefundReceiptRequestSchema>;
 
 export type ModeratorInvoice = z.infer<typeof ModeratorInvoiceSchema>;
 export type PaymentProof = z.infer<typeof PaymentProofSchema>;

@@ -15,11 +15,14 @@ import {
   PaymentProofsSchema,
   PaymentProofSchema,
   PaymentProofSubmitResponseSchema,
+  RefundIdSchema,
+  RefundReceiptRequestSchema,
   type BillingPage,
   type Invoice,
   type InvoiceLineItemListParams,
   type InvoiceListParams,
   type PaymentProofListParams,
+  type RefundReceiptRequest,
 } from "@/schema/billing.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { BillingExportRequestSchema, ContractBillingPreviewResponseSchema, ExportJobIdSchema, ExportJobResponseSchema, InvoiceStatusChangeRequestSchema, type PaymentProofReviewRequest, type InvoiceStatusChangeRequest, type BillingExportRequest } from "@/schema/billing.schema";
@@ -58,6 +61,7 @@ const proofPath = (id: string) =>
   "/billing/payment-proofs/" + encodeURIComponent(PaymentProofIdSchema.parse(id));
 
 const proofContentPath = (id: string) => proofPath(id) + "/content";
+const refundPath = (id: string) => "/billing/refunds/" + encodeURIComponent(RefundIdSchema.parse(id));
 
 function paginationHeader(headers: unknown, name: string): unknown {
   if (!headers || typeof headers !== "object") return undefined;
@@ -300,6 +304,25 @@ export const billingApi =  {
       signal,
     });
     return response.data;
+  },
+  async confirmRefund(refundId: string) {
+    await axiosClient.post<unknown>(refundPath(refundId) + "/confirm", undefined, { baseURL: DOLORES_API_BASE_URL });
+  },
+  async approveRefund(refundId: string) {
+    await axiosClient.post<unknown>(refundPath(refundId) + "/approve", undefined, { baseURL: DOLORES_API_BASE_URL });
+  },
+  async submitRefundTransferEvidence(refundId: string, file: File) {
+    await validatePaymentProofFile(file);
+    const form = new FormData();
+    form.append("file", file);
+    await axiosClient.post<unknown>(refundPath(refundId) + "/submit", form, {
+      baseURL: DOLORES_API_BASE_URL,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  async recordRefundReceipt(refundId: string, input: RefundReceiptRequest) {
+    const request = RefundReceiptRequestSchema.parse(input);
+    await axiosClient.post<unknown>(refundPath(refundId) + "/receipt", request, { baseURL: DOLORES_API_BASE_URL });
   },
   async createExport(input: BillingExportRequest) {
     const request = BillingExportRequestSchema.parse(input);

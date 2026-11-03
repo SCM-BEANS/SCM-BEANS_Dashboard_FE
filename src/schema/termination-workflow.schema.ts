@@ -29,6 +29,9 @@ export const TerminationCaseSchema = z.object({
   inspectionTicketId: z.string().uuid().nullish(),
   inspectionDecision: z.string().nullish(),
   settlementId: z.string().uuid().nullish(),
+  depositRefundAmount: z.number().finite().nonnegative().nullish(),
+  refundId: z.string().uuid().nullish(),
+  refundStatus: z.enum(["REQUESTED", "TENANT_CONFIRMED", "APPROVED", "SUBMITTED", "COMPLETED", "DISPUTED"]).nullish(),
   approvedBy: z.string().nullish(),
   approvedAt: nullableDateTime,
   completedAt: nullableDateTime,
@@ -68,7 +71,10 @@ export const TerminationSettlementRequestSchema = z.object({
   evidenceReference: z.string().trim().min(1).refine((value) => !/^https?:\/\//i.test(value)),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
-}).strict();
+}).strict().refine(
+  (input) => input.decision !== "NO_DAMAGE" || input.damageAmount === 0,
+  { message: "NO_DAMAGE cannot include a damage amount.", path: ["damageAmount"] },
+);
 
 export const TerminationRejectionRequestSchema = z.object({
   reason: z.string().trim().min(1).max(2000),

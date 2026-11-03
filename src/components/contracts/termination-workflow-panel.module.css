@@ -18,7 +18,8 @@
 
 .heading h2,
 .subheading h3,
-.step h3 {
+.step h3,
+.step h4 {
   margin: 0;
   color: #302927;
 }
@@ -30,6 +31,10 @@
 .subheading h3,
 .step h3 {
   font-size: 16px;
+}
+
+.step h4 {
+  font-size: 15px;
 }
 
 .heading p,
