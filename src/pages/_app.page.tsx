@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AppProps } from "next/app";
 import { useState } from "react";
 import { InAppHistoryProvider } from "@/components/navigation/in-app-history-provider";
+import { DevQuickLoginControls } from "@/components/dev-quick-login-controls";
 
 export default function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(
@@ -17,6 +18,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <InAppHistoryProvider>
         <Component {...pageProps} />
+        <DevQuickLoginControls floating />
       </InAppHistoryProvider>
     </QueryClientProvider>
   );

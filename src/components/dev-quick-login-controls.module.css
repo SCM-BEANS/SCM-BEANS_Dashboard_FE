@@ -1,0 +1,144 @@
+.dock {
+  position: fixed;
+  z-index: 1000;
+  top: 14px;
+  right: 88px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 160px);
+  padding: 6px;
+  border: 1px solid #e8dfd9;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 5px 18px rgb(48 41 39 / 12%);
+  color: #302927;
+  font-family: Arial, sans-serif;
+}
+
+.devLabel {
+  padding: 0 5px;
+  color: #9f252a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+
+.roleButton {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #e8dfd9;
+  border-radius: 9px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.roleButton:hover:not(:disabled),
+.dropdown button:hover:not(:disabled) {
+  border-color: #c7aaa0;
+  background: #faf6f3;
+}
+
+.roleButton:focus-visible,
+.dropdown button:focus-visible {
+  outline: 3px solid rgb(184 23 36 / 25%);
+  outline-offset: 2px;
+}
+
+.roleButton:disabled,
+.dropdown button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.roleButtonActive {
+  border-color: #c7aaa0;
+  background: #faf6f3;
+}
+
+.ownerMenu {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 1001;
+  display: grid;
+  width: max-content;
+  min-width: 218px;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid #e8dfd9;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgb(48 41 39 / 16%);
+}
+
+.dropdown button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.status {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(360px, calc(100vw - 24px));
+  padding: 9px 11px;
+  margin: 0;
+  border: 1px solid #efc3c5;
+  border-radius: 9px;
+  background: #fff7f7;
+  box-shadow: 0 5px 18px rgb(48 41 39 / 12%);
+  color: #8c1d26;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1023px) {
+  .dock {
+    top: 72px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .dock::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .dock {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .devLabel {
+    display: none;
+  }
+
+  .roleButton {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+}

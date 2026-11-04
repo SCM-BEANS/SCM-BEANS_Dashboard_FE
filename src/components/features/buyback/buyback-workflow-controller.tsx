@@ -152,6 +152,15 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       && caseData.responsibleModeratorId === ownerId
       && !caseData.inspectionTechnicianId,
   );
+  const canCancelExternalBuyback = Boolean(
+    role === "operator"
+      && isModeratorRoute
+      && isExternalBuyback
+      && caseData
+      && caseData.contractId == null
+      && caseData.responsibleModeratorId === ownerId
+      && ["REQUESTED", "INSPECTION_PENDING", "VALUATION_PENDING", "APPROVED", "COLLECTION_PENDING"].includes(caseData.status),
+  );
   const canRequestCollection = Boolean(
     role === "operator"
       && isExternalBuyback
@@ -353,6 +362,16 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     onSuccess: (_, input) => clearOperationKey(`owner-decision-${input.accepted ? "accept" : "reject"}`, input.id),
     onSettled: (_, __, input) => invalidate(input.id),
   });
+  const cancelBuyback = useMutation({
+    mutationFn: (input: { id: string; reason: string; idempotencyKey: string; correlationId: string }) => {
+      if (!canCancelExternalBuyback) throw new Error("Chỉ Moderator phụ trách mới có thể hủy hồ sơ thu mua đủ điều kiện.");
+      return buybacksApi.cancel(input.id, input);
+    },
+    onSuccess: (_, input) => {
+      clearOperationKey("buyback-cancel", input.id);
+    },
+    onSettled: (_, __, input) => invalidate(input.id),
+  });
   const startInspection = useMutation({ mutationFn: (input: { id: string; reason: string; idempotencyKey: string; correlationId: string }) => buybacksApi.startInspection(input.id, input), onSuccess: (_, input) => clearOperationKey("inspection-start", input.id), onSettled: () => invalidate() });
   const submitInspection = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.submitInspection>[1] & { id: string }) => buybacksApi.submitInspection(input.id, input), onSuccess: (_, input) => clearOperationKey("inspection-submit", input.id), onSettled: () => invalidate() });
   const decideValuation = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.decideValuation>[1] & { id: string }) => buybacksApi.decideValuation(input.id, input), onSuccess: (_, input) => clearOperationKey("valuation-decision", input.id), onSettled: () => invalidate() });
@@ -445,7 +464,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     create.mutate({ idempotencyKey: key, correlationId: key });
   };
   const perform = (run: () => void) => (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); run(); };
-  const commonError = [assignInspection, assignCollection, assignRefurbishment, assignModerator, decideOwnerPrice, startInspection, submitInspection, decideValuation, createPayment, submitProof, reviewProof, requestCollection, recordCollectionEvidence, confirmCollection, startRefurbishment, completeRefurbishment, registerMachine, decideQa, downloadProof].find((mutation) => mutation.isError);
+  const commonError = [assignInspection, assignCollection, assignRefurbishment, assignModerator, decideOwnerPrice, cancelBuyback, startInspection, submitInspection, decideValuation, createPayment, submitProof, reviewProof, requestCollection, recordCollectionEvidence, confirmCollection, startRefurbishment, completeRefurbishment, registerMachine, decideQa, downloadProof].find((mutation) => mutation.isError);
   const backHref = listHref ?? "/dashboard/buyback";
   const createFormOpen = role === "owner" && showCreateForm && !detailId;
   const showList = !createFormOpen && !(isModeratorRoute && Boolean(detailId));
@@ -475,6 +494,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     contracts,
     hasActiveContract,
     canAssignInspection,
+    canCancelExternalBuyback,
     canAssignModerator,
     canRequestCollection,
     canAssignCollection,
@@ -575,6 +595,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     assignRefurbishment,
     assignModerator,
     decideOwnerPrice,
+    cancelBuyback,
     startInspection,
     submitInspection,
     decideValuation,

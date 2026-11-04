@@ -48,6 +48,15 @@ export function BuybackWorkflowLayout({
 export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowController }) {
   const { list, showList, role, operatorRole, page, setPage } = workflow;
   if (!showList) return null;
+  const statusLabel = (item: BuybackCaseSummaryType) => {
+    if (workflow.isModeratorRoute && item.status === "REQUESTED" && !item.inspectionTechnicianId) {
+      return "Chưa phân công tech";
+    }
+    if (workflow.isModeratorRoute && item.status === "INSPECTION_PENDING") {
+      return "Chờ đánh giá thiết bị";
+    }
+    return buybackStatusLabels[item.status];
+  };
   const listColumns: DataTableColumn<BuybackCaseSummaryType>[] = [
     {
       key: "case-id",
@@ -72,7 +81,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     {
       key: "status",
       header: "Trạng thái",
-      render: (item) => <span className={styles.buybackStatus}>{buybackStatusLabels[item.status]}</span>,
+      render: (item) => <span className={styles.buybackStatus}>{statusLabel(item)}</span>,
     },
     {
       key: "updated-at",

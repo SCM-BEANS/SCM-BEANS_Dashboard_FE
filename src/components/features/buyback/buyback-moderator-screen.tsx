@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { PATH_MODERATOR } from "@/routes/path";
 import { formatBuybackMoney } from "./buyback-formatters";
 import {
@@ -145,7 +148,22 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
 export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { caseId?: string; listHref: string; operatorRole: "ADMIN" | "MODERATOR" }) {
   const workflow = useBuybackWorkflowController({ role: "operator", operatorRole, initialCaseId: caseId, listHref });
   const { caseData } = workflow;
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const selectedPaymentProof = workflow.paymentProofs.data?.items.find((proof) => proof.id === workflow.proofId);
+  const closeCancelDialog = () => {
+    if (workflow.cancelBuyback.isPending) return;
+    setCancelDialogOpen(false);
+  };
+  const submitCancelBuyback = () => {
+    const reason = cancelReason.trim();
+    if (!caseData || !workflow.canCancelExternalBuyback || !reason || workflow.cancelBuyback.isPending) return;
+    const key = workflow.operationKey("buyback-cancel", caseData.id, reason);
+    workflow.cancelBuyback.mutate(
+      { id: caseData.id, reason, idempotencyKey: key, correlationId: key },
+      { onSuccess: () => { setCancelDialogOpen(false); setCancelReason(""); } },
+    );
+  };
 
   return (
     <BuybackWorkflowLayout
@@ -154,6 +172,13 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
       actionBarBackHref={workflow.isModeratorRoute && caseId ? listHref : undefined}
     >
       <BuybackCaseList workflow={workflow} />
+      {caseId && caseData && workflow.canCancelExternalBuyback ? (
+        <ActionBarConfig>
+          <ButtonBar type="button" onClick={() => { setCancelReason(""); setCancelDialogOpen(true); }} disabled={workflow.cancelBuyback.isPending}>
+            {workflow.cancelBuyback.isPending ? "Đang hủy yêu cầu…" : "Hủy yêu cầu"}
+          </ButtonBar>
+        </ActionBarConfig>
+      ) : null}
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>
           {workflow.isExternalBuyback && caseData.responsibleModeratorId ? <p className={styles.notice}>Moderator phụ trách: <span className={styles.codeValue}>{caseData.responsibleModeratorId}</span></p> : null}
@@ -337,6 +362,29 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
           ) : null}
         </> : null}
       </BuybackDetailPanel>
+      {cancelDialogOpen && workflow.canCancelExternalBuyback ? (
+        <NotificationDialog
+          variant="confirm"
+          title="Hủy yêu cầu thu mua?"
+          description="Hồ sơ sẽ được chuyển sang trạng thái đã hủy. Hãy nhập lý do trước khi xác nhận."
+          primaryAction={{
+            label: "Xác nhận hủy",
+            pending: workflow.cancelBuyback.isPending,
+            pendingLabel: "Đang hủy…",
+            disabled: !cancelReason.trim(),
+            onClick: submitCancelBuyback,
+          }}
+          secondaryAction={{ label: "Quay lại", disabled: workflow.cancelBuyback.isPending, onClick: closeCancelDialog }}
+          onClose={closeCancelDialog}
+          closeOnEscape={!workflow.cancelBuyback.isPending}
+        >
+          <label className={styles.formField}>
+            <span>Lý do hủy</span>
+            <textarea required maxLength={2000} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} />
+          </label>
+          {workflow.cancelBuyback.isError ? <BuybackErrorNotice error={workflow.cancelBuyback.error} /> : null}
+        </NotificationDialog>
+      ) : null}
     </BuybackWorkflowLayout>
   );
 }
