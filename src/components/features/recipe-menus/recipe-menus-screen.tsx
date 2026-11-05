@@ -2,543 +2,273 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import { recipesApi } from "@/apis/recipes.api";
+import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
-import { getApiErrorMessage } from "@/lib/api-errors";
+import { getRecipeApiErrorDetails, getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_CUSTOMER } from "@/routes/path";
-import {
-  RecipeDosageBoundSchema,
-  RecipePublishRequestSchema,
-  type GlobalRecipeSummary,
-  type LocalRecipeSummary,
-} from "@/schema/recipes.schema";
+import { buildRecipeProcedure, emptyRecipeProcedure, GlobalRecipeIdSchema, type RecipePublishRequest } from "@/schema/recipes.schema";
+import { RecipeProcedureFields, RecipeSteps } from "./recipe-procedure-fields";
+import { LegacyRecipeOverrides } from "./legacy-recipe-overrides";
+import { RecipeSyncPanel } from "./recipe-sync-panel";
 import styles from "../repair-workflow/repair-workflow.module.css";
 
-type Role = "owner" | "operator";
-type View = "global" | "local";
-type GlobalFormMode = "view" | "create" | "edit";
-type DosageBoundDraft = { parameter: string; min: string; max: string };
+const DEFAULT_MENU = "00000000-0000-0000-0000-000000000090";
 
-function dosageBoundsForEditor(values: string[]): DosageBoundDraft[] {
-  const bounds = values.map((value) => {
-    try {
-      const parsed: unknown = JSON.parse(value);
-      if (parsed && typeof parsed === "object") {
-        const bound = parsed as Record<string, unknown>;
-        if (
-          typeof bound.parameter === "string" &&
-          typeof bound.minPercent === "number" &&
-          typeof bound.maxPercent === "number"
-        ) {
-          return { parameter: bound.parameter, min: String(bound.minPercent), max: String(bound.maxPercent) };
-        }
-      }
-    } catch {
-      // Keep non-JSON values as entered.
-    }
-    const parts = value.split(":");
-    if (parts.length === 3) return { parameter: parts[0].trim(), min: parts[1].trim(), max: parts[2].trim() };
-    return { parameter: value, min: "", max: "" };
-  });
-  return bounds.length ? bounds : [{ parameter: "", min: "", max: "" }];
-}
-
-function PageControls({ page, hasNext, onChange }: { page: number; hasNext: boolean; onChange: (page: number) => void }) {
-  if (page === 0 && !hasNext) return null;
-  return (
-    <nav className={styles.recipeMenuPagination} aria-label="Phân trang công thức">
-      <ButtonBar type="button" disabled={page <= 0} onClick={() => onChange(page - 1)}>Trang trước</ButtonBar>
-      <span aria-live="polite">Trang {page + 1}</span>
-      <ButtonBar type="button" disabled={!hasNext} onClick={() => onChange(page + 1)}>Trang sau</ButtonBar>
-    </nav>
-  );
-}
-
-function QueryError({ error, retry }: { error: unknown; retry: () => unknown }) {
-  return (
-    <div className={styles.recipeMenuError} role="alert">
-      <p>{getApiErrorMessage(error)}</p>
-      <ButtonBar type="button" onClick={() => void retry()}>Thử lại</ButtonBar>
-    </div>
-  );
-}
-
-function RecipeSummaryButton({
-  recipe,
-  selected,
-  onSelect,
-}: {
-  recipe: GlobalRecipeSummary;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <li className={styles.recipeMenuItem}>
-      <button type="button" aria-pressed={selected} onClick={onSelect}>
-        <span className={styles.recipeMenuRecipeMain}>
-          <strong>{recipe.name}</strong>
-          <span className={styles.recipeMenuMeta}>Phiên bản {recipe.revision}</span>
-        </span>
-        <span aria-hidden="true">›</span>
-      </button>
-    </li>
-  );
-}
-
-function LocalOverrideSummaryButton({
-  recipe,
-  selected,
-  onSelect,
-}: {
-  recipe: LocalRecipeSummary;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <li className={styles.recipeMenuItem}>
-      <button type="button" aria-pressed={selected} onClick={onSelect}>
-        <span className={styles.recipeMenuRecipeMain}>
-          <strong>{recipe.globalRecipeName || "Công thức dùng chung"}</strong>
-          <span className={styles.recipeMenuMeta}>
-            Owner ID: {recipe.ownerId ?? "—"}
-          </span>
-        </span>
-        <span aria-hidden="true">›</span>
-      </button>
-    </li>
-  );
-}
-
-export function RecipeManagementScreen({
-  role,
-  operatorRole,
-  showHeading = true,
-  initialGlobalRecipeId,
-}: {
-  role: Role;
-  operatorRole?: "ADMIN" | "MODERATOR";
-  showHeading?: boolean;
-  initialGlobalRecipeId?: string;
+export function RecipeManagementScreen({ role, operatorRole, showHeading = true, initialGlobalRecipeId }: {
+  role: "owner" | "operator"; operatorRole?: "ADMIN" | "MODERATOR"; showHeading?: boolean; initialGlobalRecipeId?: string;
 }) {
   const router = useRouter();
   const owner = role === "owner";
-  const canManageGlobal = !owner;
+  const admin = !owner && operatorRole === "ADMIN";
   const subject = authScopedQuerySubject(owner ? "OWNER" : operatorRole ?? "operator");
   const client = useQueryClient();
-  const [view, setView] = useState<View>("global");
-  const [globalPageIndex, setGlobalPageIndex] = useState(0);
-  const [localPageIndex, setLocalPageIndex] = useState(0);
-  const [selectedGlobalRecipeId, setSelectedGlobalRecipeId] = useState(initialGlobalRecipeId ?? "");
-  const [selectedLocalRecipeId, setSelectedLocalRecipeId] = useState("");
-  const [globalFormMode, setGlobalFormMode] = useState<GlobalFormMode>("view");
-  const [globalName, setGlobalName] = useState("");
-  const [globalSteps, setGlobalSteps] = useState<string[]>([""]);
-  const [globalBounds, setGlobalBounds] = useState<DosageBoundDraft[]>([{ parameter: "", min: "", max: "" }]);
-  const [globalFormError, setGlobalFormError] = useState("");
+  const [view, setView] = useState<"global" | "legacy" | "sync">("global");
+  const [menuPage, setMenuPage] = useState(0);
+  const [recipePage, setRecipePage] = useState(0);
+  const [ownerMenuPage, setOwnerMenuPage] = useState(0);
+  const [menuId, setMenuId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialGlobalRecipeId ?? "");
+  const [menuSearch, setMenuSearch] = useState("");
+  const [menuQ, setMenuQ] = useState("");
+  const [recipeSearch, setRecipeSearch] = useState("");
+  const [recipeQ, setRecipeQ] = useState("");
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [imagePath, setImagePath] = useState("");
+  const [procedure, setProcedure] = useState(emptyRecipeProcedure);
+  const [mode, setMode] = useState<"view" | "create" | "edit">("view");
+  const [confirmed, setConfirmed] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState<unknown>(null);
+  const [validation, setValidation] = useState("");
+  const [menuName, setMenuName] = useState("");
+  const [menuAction, setMenuAction] = useState<"create" | "rename" | "delete" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [editTargetId, setEditTargetId] = useState("");
+  const [moveMenuId, setMoveMenuId] = useState("");
+  const [copyMenuId, setCopyMenuId] = useState("");
 
-  const globalRecipes = useQuery({
-    queryKey: ["dolores", "recipes", "global", subject, globalPageIndex],
-    queryFn: ({ signal }) => recipesApi.listGlobalPage(globalPageIndex, 50, signal),
-    retry: false,
+  const menus = useQuery({
+    queryKey: ["dolores", "recipe-menus", "global", subject, menuPage, menuQ],
+    queryFn: ({ signal }) => recipeMenusApi.listGlobal({ page: menuPage, size: 20, q: menuQ }, signal),
+    enabled: view === "global", retry: false,
   });
-  const selectedGlobalId = selectedGlobalRecipeId || initialGlobalRecipeId || globalRecipes.data?.items[0]?.id || "";
-  const globalRecipe = useQuery({
-    queryKey: ["dolores", "recipes", "global-detail", subject, selectedGlobalId],
-    queryFn: ({ signal }) => recipesApi.getGlobalById(selectedGlobalId, signal),
-    enabled: Boolean(selectedGlobalId),
-    retry: false,
+  const menu = useQuery({
+    queryKey: ["dolores", "recipe-menus", "global-detail", subject, menuId],
+    queryFn: ({ signal }) => recipeMenusApi.getGlobal(menuId, signal),
+    enabled: view === "global" && Boolean(menuId), retry: false,
   });
-  const localRecipes = useQuery({
-    queryKey: ["dolores", "recipes", "local", subject, localPageIndex],
-    queryFn: ({ signal }) => recipesApi.listLocalPage({ page: localPageIndex, size: 50 }, signal),
-    enabled: view === "local",
-    retry: false,
+  const recipes = useQuery({
+    queryKey: ["dolores", "recipes", "global", subject, menuId, recipePage, recipeQ],
+    queryFn: async ({ signal }) => {
+      if (!menuId) return recipesApi.listGlobalPage(recipePage, 20, signal, recipeQ);
+      const page = await recipeMenusApi.listGlobalRecipes(menuId, { page: recipePage, size: 20, q: recipeQ }, signal);
+      return { items: page.content, page: page.page, hasNext: !page.last };
+    },
+    enabled: view === "global", retry: false,
   });
-  const selectedLocalId = selectedLocalRecipeId || localRecipes.data?.items[0]?.id || "";
-  const localRecipe = useQuery({
-    queryKey: ["dolores", "recipes", "local-detail", subject, selectedLocalId],
-    queryFn: ({ signal }) => recipesApi.getLocalById(selectedLocalId, signal),
-    enabled: view === "local" && Boolean(selectedLocalId),
-    retry: false,
+  const recipeId = selectedId || recipes.data?.items[0]?.id || "";
+  const detail = useQuery({
+    queryKey: ["dolores", "recipes", "global-detail", subject, recipeId],
+    queryFn: ({ signal }) => recipesApi.getGlobalById(recipeId, signal),
+    enabled: view === "global" && Boolean(recipeId), retry: false,
   });
+  const ownerMenus = useQuery({
+    queryKey: ["dolores", "recipe-menus", "local", subject, ownerMenuPage],
+    queryFn: ({ signal }) => recipeMenusApi.listLocal({ page: ownerMenuPage, size: 20 }, signal),
+    enabled: owner && view === "global", retry: false,
+  });
+  useEffect(() => { if (initialGlobalRecipeId) { setSelectedId(initialGlobalRecipeId); setMode("view"); setDeleteTarget(null); setEditTargetId(""); } }, [initialGlobalRecipeId]);
 
-  useEffect(() => {
-    if (initialGlobalRecipeId) setSelectedGlobalRecipeId(initialGlobalRecipeId);
-  }, [initialGlobalRecipeId]);
-
-  useEffect(() => {
-    if (globalFormMode === "edit" && globalRecipe.data) {
-      setGlobalName(globalRecipe.data.name);
-      setGlobalSteps(globalRecipe.data.steps.length ? [...globalRecipe.data.steps] : [""]);
-      setGlobalBounds(dosageBoundsForEditor(globalRecipe.data.dosageBounds));
-    }
-  }, [globalFormMode, globalRecipe.data]);
-
-  const invalidateGlobal = async () => Promise.all([
-    client.invalidateQueries({ queryKey: ["dolores", "recipes", "global", subject] }),
-    client.invalidateQueries({ queryKey: ["dolores", "recipes", "global-options", subject] }),
-    client.invalidateQueries({ queryKey: ["dolores", "recipes", "global-detail", subject] }),
+  const invalidate = () => Promise.all([
+    client.invalidateQueries({ queryKey: ["dolores", "recipes"] }),
+    client.invalidateQueries({ queryKey: ["dolores", "recipe-menus"] }),
+    client.invalidateQueries({ queryKey: ["dolores", "recipe-sync"] }),
+    client.invalidateQueries({ queryKey: ["dolores", "recipe-sync-history"] }),
   ]);
-  const invalidateLocal = async () => Promise.all([
-    client.invalidateQueries({ queryKey: ["dolores", "recipes", "local", subject] }),
-    client.invalidateQueries({ queryKey: ["dolores", "recipes", "local-detail", subject] }),
-  ]);
-
-  const createGlobal = useMutation({
-    mutationFn: (input: { name: string; steps: string[]; dosageBounds: string[] }) => recipesApi.publishGlobal(input),
-    onSuccess: async (recipe) => {
-      setSelectedGlobalRecipeId(recipe.id);
-      setGlobalFormMode("view");
-      setGlobalFormError("");
-      await invalidateGlobal();
+  const clearFeedback = () => { setFeedback(""); setError(null); setValidation(""); };
+  const write = useMutation({
+    mutationFn: async (input: { payload: RecipePublishRequest; id?: string; target: string }) => {
+      const recipe = input.id ? await recipesApi.updateGlobal(input.id, input.payload) : await recipesApi.publishGlobal(input.payload);
+      if (!input.id && input.target && input.target !== recipe.menuId) {
+        try { return { recipe: await recipeMenusApi.assignGlobalRecipe(input.target, recipe.id), moveError: undefined as unknown }; }
+        catch (moveError) { return { recipe, moveError }; }
+      }
+      return { recipe, moveError: undefined as unknown };
     },
+    onSuccess: async ({ recipe, moveError }) => {
+      setSelectedId(recipe.id); setMode("view");
+      setFeedback(moveError
+        ? "Đã tạo công thức. Chưa xác nhận được menu đích; hãy tải lại chi tiết trước khi chuyển lại. Không tạo công thức lần nữa."
+        : "Đã lưu công thức. Trạng thái máy áp dụng được theo dõi riêng trong phần đồng bộ.");
+      if (moveError) setError(moveError);
+      await invalidate();
+    },
+    onError: async (failure) => {
+      setError(failure);
+      const saved = getRecipeApiErrorDetails(failure);
+      if (saved.saved) {
+        if (GlobalRecipeIdSchema.safeParse(saved.recipeId).success) setSelectedId(saved.recipeId!);
+        setMode("view"); await invalidate();
+      }
+    },
+    retry: false,
   });
-  const updateGlobal = useMutation({
-    mutationFn: (input: { id: string; name: string; steps: string[]; dosageBounds: string[] }) => {
-      const { id, ...recipe } = input;
-      return recipesApi.updateGlobal(id, recipe);
+  const changeMenu = useMutation({
+    mutationFn: async (input: { action: "create" | "rename" | "delete"; menuId: string; name: string }) => {
+      if (input.action === "create") return recipeMenusApi.createGlobal(input.name);
+      if (input.action === "rename" && input.menuId) return recipeMenusApi.renameGlobal(input.menuId, input.name);
+      if (input.action === "delete" && input.menuId) { await recipeMenusApi.deleteGlobal(input.menuId); return null; }
+      throw new Error("No menu operation selected.");
     },
-    onSuccess: async (recipe) => {
-      setSelectedGlobalRecipeId(recipe.id);
-      setGlobalFormMode("view");
-      setGlobalFormError("");
-      await invalidateGlobal();
+    onSuccess: async (result) => {
+      setMenuId(result?.id ?? ""); setSelectedId(""); setRecipePage(0); setMode("view"); setMenuAction(null);
+      setFeedback("Đã cập nhật menu. Thao tác này không xác nhận việc triển khai lên máy."); await invalidate();
     },
+    onError: setError, retry: false,
   });
-  const deleteGlobal = useMutation({
+  const move = useMutation({
+    mutationFn: (input: { remove: boolean; id: string; menuId: string }) => input.remove ? recipeMenusApi.removeGlobalRecipe(input.menuId, input.id) : recipeMenusApi.assignGlobalRecipe(input.menuId, input.id),
+    onSuccess: async () => { setFeedback("Đã chuyển công thức sang menu đích."); await invalidate(); },
+    onError: setError, retry: false,
+  });
+  const remove = useMutation({
     mutationFn: (id: string) => recipesApi.deleteGlobal(id),
-    onSuccess: async () => {
-      setSelectedGlobalRecipeId("");
-      setGlobalFormMode("view");
-      await invalidateGlobal();
-    },
+    onSuccess: async () => { setSelectedId(""); setDeleteTarget(null); setFeedback("Đã xóa công thức."); await invalidate(); },
+    onError: setError, retry: false,
   });
-  const deleteLocal = useMutation({
-    mutationFn: (id: string) => recipesApi.deleteLocal(id),
-    onSuccess: async () => {
-      setSelectedLocalRecipeId("");
-      await invalidateLocal();
-    },
+  const copy = useMutation({
+    mutationFn: (input: { globalRecipeId: string; menuId?: string }) => recipeMenusApi.copyGlobalRecipe(input),
+    onSuccess: async () => { setFeedback("Đã tạo bản sao riêng. Bản này được giữ nguyên khi công thức của hãng thay đổi; kiểm tra trạng thái đồng bộ riêng."); await invalidate(); },
+    onError: setError, retry: false,
   });
 
-  const mutationError = createGlobal.error
-    ?? updateGlobal.error
-    ?? deleteGlobal.error
-    ?? deleteLocal.error;
-
-  const submitGlobal = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const steps = globalSteps.map((step) => step.trim());
-    const emptyStepIndex = steps.findIndex((step) => !step);
-    if (emptyStepIndex !== -1) {
-      setGlobalFormError(`Bước pha ${emptyStepIndex + 1} đang để trống. Hãy nhập nội dung hoặc xóa bước đó.`);
-      return;
-    }
-    const dosageBounds = globalBounds.map(({ parameter, min, max }) => `${parameter.trim()}:${min.trim()}:${max.trim()}`);
-    const invalidBoundIndex = dosageBounds.findIndex((bound) => !RecipeDosageBoundSchema.safeParse(bound).success);
-    if (invalidBoundIndex !== -1) {
-      setGlobalFormError(`Giới hạn định lượng ${invalidBoundIndex + 1} chưa đầy đủ hoặc chưa hợp lệ. Kiểm tra thông số, mức tối thiểu và mức tối đa.`);
-      return;
-    }
-    const parsed = RecipePublishRequestSchema.safeParse({
-      name: globalName,
-      steps,
-      dosageBounds,
-    });
-    if (!parsed.success) {
-      setGlobalFormError("Hãy nhập tên công thức, ít nhất một bước pha và một giới hạn định lượng hợp lệ.");
-      return;
-    }
-    setGlobalFormError("");
-    const recipe = {
-      name: parsed.data.name,
-      steps: parsed.data.steps,
-      dosageBounds: parsed.data.dosageBounds,
-    };
-    if (globalFormMode === "edit" && selectedGlobalId) {
-      updateGlobal.mutate({ id: selectedGlobalId, ...recipe });
-    } else {
-      createGlobal.mutate(recipe);
-    }
+  const submitRecipe = (event: FormEvent) => {
+    event.preventDefault(); clearFeedback();
+    if (busy) return;
+    try {
+      const payload: RecipePublishRequest = { name: name.trim(), procedure: buildRecipeProcedure(procedure), ...(slug.trim() ? { slug: slug.trim() } : {}), ...(imagePath.trim() ? { imagePath: imagePath.trim() } : {}) };
+      if (!payload.name || (mode === "edit" && !confirmed)) { setValidation("Nhập tên và xác nhận quy trình mới trước khi lưu."); return; }
+      if (mode === "edit" && !editTargetId) return;
+      write.mutate({ payload, ...(mode === "edit" ? { id: editTargetId } : {}), target: menuId });
+    } catch { setValidation("Kiểm tra lượng cà phê, lượng nước và các thông số. Mã công thức sữa phải là số nguyên."); }
   };
-
-  const startGlobalCreate = () => {
-    setSelectedGlobalRecipeId("");
-    setGlobalName("");
-    setGlobalSteps([""]);
-    setGlobalBounds([{ parameter: "", min: "", max: "" }]);
-    setGlobalFormError("");
-    setGlobalFormMode("create");
+  const openForm = (edit: boolean) => {
+    clearFeedback(); setMode(edit ? "edit" : "create"); setName(edit ? detail.data?.name ?? "" : "");
+    setSlug(""); setImagePath(""); setProcedure(emptyRecipeProcedure()); setConfirmed(false); setDeleteTarget(null); setEditTargetId(edit ? detail.data?.id ?? "" : "");
   };
+  const pagination = (page: number, hasNext: boolean, onChange: (value: number) => void, label: string) => <nav className={styles.recipeMenuPagination} aria-label={label}>
+    <ButtonBar disabled={busy || page === 0} onClick={() => onChange(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span>
+    <ButtonBar disabled={busy || !hasNext} onClick={() => onChange(page + 1)}>Trang sau</ButtonBar>
+  </nav>;
+  const busy = write.isPending || move.isPending || remove.isPending || copy.isPending || changeMenu.isPending;
 
-  const startOverrideForGlobalRecipe = (id: string) => {
-    void router.push({ pathname: PATH_CUSTOMER.MENU_ADJUSTMENTS, query: { recipeId: id } });
-  };
-
-  return (
-    <div className={styles.screen}>
-      {showHeading ? (
-        <BackButtonHeading
-          title={owner ? "Công thức pha chế" : "Quản lý công thức pha chế"}
-          titleId="recipe-management-title"
-          description={owner
-            ? "Xem công thức Dolores, lưu điều chỉnh định lượng riêng và theo dõi trạng thái áp dụng trên máy."
-            : "Quản lý công thức dùng chung và xem các điều chỉnh cục bộ theo quyền vận hành."}
-          back={null}
-        />
-      ) : null}
-
-      <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
-        <button
-          className={view === "global" ? styles.recipeMenuTabActive : ""}
-          type="button"
-          aria-pressed={view === "global"}
-          onClick={() => owner ? void router.push(PATH_CUSTOMER.MENU) : setView("global")}
-        >Công thức dùng chung</button>
-        <button
-          className={!owner && view === "local" ? styles.recipeMenuTabActive : ""}
-          type="button"
-          aria-pressed={!owner && view === "local"}
-          onClick={() => owner ? void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS) : setView("local")}
-        >{owner ? "Điều chỉnh của tôi" : "Bản ghi đè cục bộ"}</button>
-        {owner ? (
-          <button
-            className=""
-            type="button"
-            aria-pressed={false}
-            onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}
-          >Đồng bộ với máy</button>
-        ) : null}
-      </nav>
-
-      {view === "global" ? (
-        <section className={styles.recipeMenuPanel} aria-labelledby="global-recipe-panel-title">
-          <div className={styles.panelHeading}>
-            <div>
-              <h2 id="global-recipe-panel-title">Công thức dùng chung</h2>
-              <p>{owner
-                ? "Công thức hiện hành của Dolores. Bạn có thể lưu mức định lượng riêng mà không sửa công thức dùng chung."
-                : "Công thức dùng chung được Admin và Moderator quản lý; thay đổi có thể ảnh hưởng các Owner đang sử dụng."}</p>
-            </div>
-            {canManageGlobal ? <ButtonBar className={styles.recipeMenuPrimary} type="button" onClick={startGlobalCreate}>Tạo công thức</ButtonBar> : null}
+  return <div className={showHeading ? styles.pageContent : styles.screen}>
+    {showHeading ? <BackButtonHeading title={owner ? "Công thức pha chế" : "Menu & công thức"} titleId="recipe-management-title"
+      description="Quản lý thư viện công thức; theo dõi việc lưu và áp dụng lên máy riêng biệt." back={null} /> : null}
+    <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
+      <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Thư viện dùng chung</button>
+      {owner ? <>
+        <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS)}>Menu của tôi</button>
+        <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}>Đồng bộ với máy</button>
+      </> : admin ? <>
+        <button type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh cũ</button>
+        <button type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Theo dõi đồng bộ</button>
+      </> : null}
+    </nav>
+    {view === "legacy" && admin ? <LegacyRecipeOverrides role="ADMIN" /> : null}
+    {view === "sync" && admin ? <RecipeSyncPanel role="ADMIN" /> : null}
+    {view === "global" ? <>
+      {feedback ? <p className={styles.recipeMenuSuccess} role="status">{feedback}</p> : null}
+      {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
+      <section className={styles.recipeMenuPanel}>
+        <div className={styles.panelHeading}><div><h2>Menu dùng chung</h2><p>Menu tổ chức thư viện; không phải lựa chọn menu triển khai cho máy.</p></div>
+          {!owner ? <ButtonBar onClick={() => { clearFeedback(); setMenuAction("create"); setMenuName(""); }}>Tạo menu</ButtonBar> : null}</div>
+        <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; setMenuQ(menuSearch); setMenuPage(0); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }}>
+          <label className={styles.formField}><span>Tìm menu</span><input value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} /></label>
+          <ButtonBar type="submit">Tìm kiếm</ButtonBar>
+        </form>
+        {menus.isPending ? <p role="status">Đang tải menu…</p> : null}
+        {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
+        {menus.data ? <>
+          <label className={styles.formField}><span>Menu đang xem</span><select aria-label="Menu đang xem" value={menuId} disabled={busy} onChange={(event) => { setMenuId(event.target.value); setSelectedId(""); setRecipePage(0); setMode("view"); setMenuAction(null); setDeleteTarget(null); }}>
+            <option value="">Tất cả công thức</option>
+            {menuId && !menus.data.content.some((item) => item.id === menuId) ? <option value={menuId}>{menu.data?.name ?? "Menu đang chọn"}</option> : null}
+            {menus.data.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select></label>
+          {pagination(menus.data.page, !menus.data.last, (page) => { setMenuPage(page); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }, "Danh sách menu")}
+        </> : null}
+        {menu.isError ? <p role="alert">{getRecipeApiErrorMessage(menu.error)}</p> : null}
+        {!owner && menu.data ? <div className={styles.recipeMenuActions}>
+          <ButtonBar disabled={menuId === DEFAULT_MENU || busy} onClick={() => { clearFeedback(); setMenuName(menu.data.name); setMenuAction("rename"); }}>Đổi tên menu</ButtonBar>
+          <ButtonBar disabled={menuId === DEFAULT_MENU || busy} onClick={() => { clearFeedback(); setMenuAction("delete"); }}>Xóa menu rỗng</ButtonBar>
+          {menuId === DEFAULT_MENU ? <span className={styles.recipeMenuMeta}>Giữ tên menu mặc định để bảo toàn thao tác chuyển công thức về mặc định.</span> : null}
+        </div> : null}
+        {!owner && menuAction ? <form className={styles.recipeMenuEditor} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
+          <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : menuAction === "create" ? "Menu mới" : "Đổi tên menu"}</h3>
+          {menuAction !== "delete" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ xóa được khi menu không còn công thức.</p>}
+          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || (menuAction !== "delete" && !menuName.trim())}>Xác nhận</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
+        </form> : null}
+      </section>
+      <section className={styles.recipeMenuPanel}>
+        <div className={styles.panelHeading}><div><h2>Công thức dùng chung</h2><p>{owner ? "Bản hiện hành từ Dolores. Sao chép để giữ công thức riêng của bạn." : "Tạo công thức mới trong menu mặc định, sau đó chuyển sang menu mong muốn."}</p></div>
+          {!owner ? <ButtonBar className={styles.recipeMenuPrimary} disabled={busy} onClick={() => openForm(false)}>Tạo công thức</ButtonBar> : null}</div>
+        <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; setRecipeQ(recipeSearch); setRecipePage(0); setSelectedId(""); setMode("view"); setDeleteTarget(null); }}>
+          <label className={styles.formField}><span>Tìm công thức</span><input value={recipeSearch} onChange={(event) => setRecipeSearch(event.target.value)} /></label><ButtonBar type="submit">Tìm kiếm</ButtonBar>
+        </form>
+        {recipes.isPending ? <p role="status">Đang tải công thức…</p> : null}
+        {recipes.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(recipes.error)}</p><ButtonBar onClick={() => void recipes.refetch()}>Thử lại</ButtonBar></div> : null}
+        {recipes.data ? <>
+          <ul className={styles.recipeMenuList}>{recipes.data.items.map((item) => <li className={styles.recipeMenuItem} key={item.id}>
+            <button type="button" disabled={busy} aria-pressed={item.id === recipeId} onClick={() => { setSelectedId(item.id); setMode("view"); setDeleteTarget(null); clearFeedback(); }}>
+              <span className={styles.recipeMenuRecipeMain}><strong>{item.name}</strong><span className={styles.recipeMenuMeta}>Phiên bản {item.revision}</span></span><span aria-hidden="true">›</span>
+            </button></li>)}</ul>
+          {!recipes.data.items.length ? <p className={styles.recipeMenuEmpty}>Chưa có công thức phù hợp.</p> : null}
+          {pagination(recipes.data.page, recipes.data.hasNext, (page) => { setRecipePage(page); setSelectedId(""); setMode("view"); setDeleteTarget(null); }, "Danh sách công thức")}
+        </> : null}
+        {!owner && mode !== "view" ? <form className={styles.recipeMenuEditor} onSubmit={submitRecipe}>
+          <h3>{mode === "create" ? "Tạo công thức" : "Cập nhật công thức bằng quy trình mới"}</h3>
+          {mode === "edit" ? <p className={styles.recipeMenuError}>Thư viện chưa trả đầy đủ quy trình và thông tin ảnh/mã. Hãy nhập lại toàn bộ thông số cần lưu; không dùng các bước tham khảo bên dưới để suy ra giá trị hiện hành.</p> : null}
+          <div className={styles.recipeMenuFormGrid}>
+            <label className={styles.formField}><span>Tên công thức *</span><input required value={name} onChange={(event) => setName(event.target.value)} /></label>
+            <label className={styles.formField}><span>Mã tên (tùy chọn)</span><input value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="espresso" /></label>
+            <label className={styles.formField + " " + styles.recipeMenuFieldWide}><span>Đường dẫn ảnh (tùy chọn)</span><input value={imagePath} onChange={(event) => setImagePath(event.target.value)} placeholder="assets/images/espresso.webp" /></label>
           </div>
-
-          {globalRecipes.isPending ? <p className={styles.notice} role="status">Đang tải công thức…</p> : null}
-          {globalRecipes.isError ? <QueryError error={globalRecipes.error} retry={() => globalRecipes.refetch()} /> : null}
-          {globalRecipes.data?.items.length ? (
-            <>
-              <ul className={styles.recipeMenuList} aria-label="Danh sách công thức dùng chung">
-                {globalRecipes.data.items.map((recipe) => (
-                  <RecipeSummaryButton
-                    key={recipe.id}
-                    recipe={recipe}
-                    selected={selectedGlobalId === recipe.id}
-                    onSelect={() => {
-                      setSelectedGlobalRecipeId(recipe.id);
-                      setGlobalFormMode("view");
-                    }}
-                  />
-                ))}
-              </ul>
-              <PageControls page={globalRecipes.data.page} hasNext={globalRecipes.data.hasNext} onChange={setGlobalPageIndex} />
-            </>
-          ) : globalRecipes.isSuccess ? <p className={styles.recipeMenuEmpty} role="status">Chưa có công thức dùng chung.</p> : null}
-
-          {globalFormMode === "create" || globalFormMode === "edit" ? (
-            <form className={styles.recipeMenuEditor} onSubmit={submitGlobal}>
-              <div className={styles.panelHeading}>
-                <div>
-                  <h3>{globalFormMode === "create" ? "Tạo công thức dùng chung" : "Chỉnh sửa công thức dùng chung"}</h3>
-                  <p>Nhập từng bước và từng thông số vào ô riêng. Các trường được gửi đúng định dạng API khi lưu.</p>
-                </div>
-              </div>
-              <div className={styles.recipeMenuFormGrid}>
-                <label className={styles.formField + " " + styles.recipeMenuFieldWide}>
-                  <span>Tên công thức</span>
-                  <input maxLength={160} placeholder="Espresso" required value={globalName} onChange={(event) => setGlobalName(event.target.value)} />
-                </label>
-              </div>
-              <section className={styles.recipeMenuEditorGroup} aria-labelledby="global-recipe-steps-title">
-                <div className={styles.recipeMenuEditorGroupHeading}>
-                  <div>
-                    <h4 id="global-recipe-steps-title">Các bước pha</h4>
-                    <p>Thêm từng bước theo đúng thứ tự thực hiện.</p>
-                  </div>
-                  <ButtonBar type="button" onClick={() => setGlobalSteps((current) => [...current, ""])}>Thêm bước</ButtonBar>
-                </div>
-                <ol className={styles.recipeMenuStepList}>
-                  {globalSteps.map((step, index) => (
-                    <li className={styles.recipeMenuStepRow} key={index}>
-                      <span className={styles.recipeMenuRowIndex} aria-hidden="true">{index + 1}</span>
-                      <label className={styles.formField}>
-                        <span>Bước {index + 1}</span>
-                        <input
-                          maxLength={300}
-                          placeholder={index === 0 ? "Ví dụ: Xay hạt cà phê" : "Mô tả thao tác tiếp theo"}
-                          required
-                          value={step}
-                          onChange={(event) => setGlobalSteps((current) => current.map((value, rowIndex) => rowIndex === index ? event.target.value : value))}
-                        />
-                      </label>
-                      <ButtonBar type="button" disabled={globalSteps.length === 1} aria-label={`Xóa bước ${index + 1}`} onClick={() => setGlobalSteps((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Xóa</ButtonBar>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-              <section className={styles.recipeMenuEditorGroup} aria-labelledby="global-recipe-bounds-title">
-                <div className={styles.recipeMenuEditorGroupHeading}>
-                  <div>
-                    <h4 id="global-recipe-bounds-title">Giới hạn định lượng</h4>
-                    <p>Đặt khoảng cho phép riêng cho từng thông số. Mức tối đa phải bằng hoặc lớn hơn mức tối thiểu.</p>
-                  </div>
-                  <ButtonBar type="button" onClick={() => setGlobalBounds((current) => [...current, { parameter: "", min: "", max: "" }])}>Thêm thông số</ButtonBar>
-                </div>
-                <div className={styles.recipeMenuDosageList}>
-                  {globalBounds.map((bound, index) => (
-                    <div className={styles.recipeMenuDosageRow} key={index}>
-                      <label className={styles.formField}>
-                        <span>Thông số {index + 1}</span>
-                        <input
-                          maxLength={80}
-                          placeholder="Ví dụ: coffee"
-                          required
-                          value={bound.parameter}
-                          onChange={(event) => setGlobalBounds((current) => current.map((value, rowIndex) => rowIndex === index ? { ...value, parameter: event.target.value } : value))}
-                        />
-                      </label>
-                      <label className={styles.formField}>
-                        <span>Giá trị tối thiểu</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="any"
-                          placeholder="16"
-                          required
-                          value={bound.min}
-                          onChange={(event) => setGlobalBounds((current) => current.map((value, rowIndex) => rowIndex === index ? { ...value, min: event.target.value } : value))}
-                        />
-                      </label>
-                      <label className={styles.formField}>
-                        <span>Giá trị tối đa</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="any"
-                          placeholder="20"
-                          required
-                          value={bound.max}
-                          onChange={(event) => setGlobalBounds((current) => current.map((value, rowIndex) => rowIndex === index ? { ...value, max: event.target.value } : value))}
-                        />
-                      </label>
-                      <ButtonBar type="button" disabled={globalBounds.length === 1} aria-label={`Xóa thông số ${index + 1}`} onClick={() => setGlobalBounds((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Xóa</ButtonBar>
-                    </div>
-                  ))}
-                </div>
-              </section>
-              {globalFormError ? <p className={styles.recipeMenuError} role="alert">{globalFormError}</p> : null}
+          <RecipeProcedureFields value={procedure} onChange={setProcedure} prefix="global-procedure" disabled={write.isPending} />
+          {mode === "edit" ? <label><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> Tôi đã kiểm tra toàn bộ quy trình mới; mã tên và ảnh sẽ dùng dữ liệu nhập hoặc mặc định của hệ thống.</label> : null}
+          {validation ? <p className={styles.recipeMenuError} role="alert">{validation}</p> : null}
+          <div className={styles.recipeMenuActions}><ButtonBar className={styles.recipeMenuPrimary} type="submit" disabled={busy || (mode === "edit" && !confirmed)}>{write.isPending ? "Đang lưu…" : "Lưu công thức"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMode("view")}>Hủy</ButtonBar></div>
+        </form> : null}
+        {mode === "view" && recipeId ? <section className={styles.recipeMenuDetail}>
+          {detail.isPending ? <p role="status">Đang tải chi tiết…</p> : null}
+          {detail.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(detail.error)}</p><ButtonBar onClick={() => void detail.refetch()}>Thử lại</ButtonBar></div> : null}
+          {detail.data ? <>
+            <div className={styles.panelHeading}><div><h3>{detail.data.name}</h3><p>Phiên bản {detail.data.revision}</p></div>{!owner ? <ButtonBar disabled={busy} onClick={() => openForm(true)}>Chỉnh sửa</ButtonBar> : null}</div>
+            <p className={styles.recipeMenuMeta}>Menu: {menus.data?.content.find((item) => item.id === detail.data.menuId)?.name ?? (detail.data.menuId === DEFAULT_MENU ? "Menu mặc định" : "Chưa tải tên menu")}</p>
+            <h4>Các bước được thư viện trả về</h4><RecipeSteps steps={detail.data.steps} />
+            <p className={styles.recipeMenuMeta}>Các bước thư viện trả về có thể chưa phản ánh quy trình vừa cập nhật. Dữ liệu này chưa đủ để xác nhận toàn bộ thông số vật lý hoặc trạng thái máy đang áp dụng.</p>
+            {owner ? <>
+              {ownerMenus.isPending ? <p>Đang tải menu của bạn…</p> : null}
+              {ownerMenus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(ownerMenus.error)}</p><ButtonBar onClick={() => void ownerMenus.refetch()}>Thử lại</ButtonBar></div> : null}
+              {ownerMenus.data ? <>
+                {ownerMenus.data.totalElements > 0 ? <label className={styles.formField}><span>Sao chép vào menu của tôi *</span><select aria-label="Sao chép vào menu của tôi" value={copyMenuId} onChange={(event) => setCopyMenuId(event.target.value)}><option value="">Chọn menu</option>{ownerMenus.data.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : <p>Chưa có menu riêng; bản sao sẽ tạo cùng “Menu của tôi”.</p>}
+                {pagination(ownerMenus.data.page, !ownerMenus.data.last, (page) => { setOwnerMenuPage(page); setCopyMenuId(""); }, "Menu đích của Owner")}
+                <ButtonBar disabled={busy || (ownerMenus.data.totalElements > 0 && !copyMenuId)} onClick={() => { clearFeedback(); copy.mutate({ globalRecipeId: detail.data.id, ...(copyMenuId ? { menuId: copyMenuId } : {}) }); }}>{copy.isPending ? "Đang sao chép…" : "Lưu bản sao riêng"}</ButtonBar>
+              </> : null}
+            </> : <>
+              <label className={styles.formField}><span>Chuyển công thức sang menu</span><select aria-label="Chuyển công thức sang menu" value={moveMenuId} onChange={(event) => setMoveMenuId(event.target.value)}><option value="">Chọn menu đích</option>{menus.data?.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
               <div className={styles.recipeMenuActions}>
-                <ButtonBar className={styles.recipeMenuPrimary} type="submit" disabled={createGlobal.isPending || updateGlobal.isPending}>
-                  {createGlobal.isPending || updateGlobal.isPending ? "Đang lưu…" : "Lưu công thức"}
-                </ButtonBar>
-                <ButtonBar type="button" onClick={() => setGlobalFormMode("view")}>Hủy</ButtonBar>
+                <ButtonBar disabled={busy || !moveMenuId || moveMenuId === detail.data.menuId} onClick={() => { clearFeedback(); move.mutate({ remove: false, id: detail.data.id, menuId: moveMenuId }); }}>Chuyển menu</ButtonBar>
+                <ButtonBar disabled={busy || !detail.data.menuId || detail.data.menuId === DEFAULT_MENU} onClick={() => { clearFeedback(); move.mutate({ remove: true, id: detail.data.id, menuId: detail.data.menuId! }); }}>Về menu mặc định</ButtonBar>
+                <ButtonBar disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức</ButtonBar>
               </div>
-            </form>
-          ) : selectedGlobalId ? (
-            <>
-              {globalRecipe.isPending ? <p className={styles.notice} role="status">Đang tải chi tiết công thức…</p> : null}
-              {globalRecipe.isError ? <QueryError error={globalRecipe.error} retry={() => globalRecipe.refetch()} /> : null}
-              {globalRecipe.data ? (
-                <section className={styles.recipeMenuDetail} aria-label={"Chi tiết " + globalRecipe.data.name}>
-                  <div className={styles.panelHeading}>
-                    <div>
-                      <h3>{globalRecipe.data.name}</h3>
-                      <p>Phiên bản hiện hành · {globalRecipe.data.revision}</p>
-                    </div>
-                    <div className={styles.recipeMenuActions}>
-                      {owner ? (
-                        <ButtonBar className={styles.recipeMenuPrimary} type="button" onClick={() => startOverrideForGlobalRecipe(globalRecipe.data!.id)}>Điều chỉnh định lượng riêng</ButtonBar>
-                      ) : (
-                        <>
-                          <ButtonBar type="button" onClick={() => setGlobalFormMode("edit")}>Chỉnh sửa</ButtonBar>
-                          <ButtonBar type="button" disabled={deleteGlobal.isPending} onClick={() => {
-                            if (window.confirm("Xóa công thức dùng chung này? Thao tác có thể bị từ chối nếu còn bản ghi đè đang tham chiếu.")) {
-                              deleteGlobal.mutate(globalRecipe.data!.id);
-                            }
-                          }}>Xóa công thức</ButtonBar>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.recipeMenuDetailGrid}>
-                    <div><h4>Các bước pha</h4><ol>{globalRecipe.data.steps.map((step, index) => <li key={index}>{step}</li>)}</ol></div>
-                    <div><h4>Giới hạn định lượng</h4><ul>{globalRecipe.data.dosageBounds.map((bound, index) => <li key={index}>{bound}</li>)}</ul></div>
-                  </div>
-                </section>
-              ) : null}
-            </>
-          ) : null}
-        </section>
-      ) : null}
-
-      {view === "local" ? (
-        <section className={styles.recipeMenuPanel} aria-labelledby="local-recipe-panel-title">
-          <div className={styles.panelHeading}>
-            <div>
-              <h2 id="local-recipe-panel-title">Bản ghi đè cục bộ</h2>
-              <p>Admin và Moderator có thể xem cấu hình cục bộ theo API; mỗi bản ghi thuộc một Owner.</p>
-            </div>
-          </div>
-
-          {localRecipes.isPending ? <p className={styles.notice} role="status">Đang tải bản ghi cục bộ…</p> : null}
-          {localRecipes.isError ? <QueryError error={localRecipes.error} retry={() => localRecipes.refetch()} /> : null}
-          {localRecipes.data?.items.length ? (
-            <>
-              <ul className={styles.recipeMenuList} aria-label="Danh sách bản ghi đè cục bộ">
-                {localRecipes.data.items.map((recipe) => (
-                  <LocalOverrideSummaryButton
-                    key={recipe.id}
-                    recipe={recipe}
-                    selected={selectedLocalId === recipe.id}
-                    onSelect={() => setSelectedLocalRecipeId(recipe.id)}
-                  />
-                ))}
-              </ul>
-              <PageControls page={localRecipes.data.page} hasNext={localRecipes.data.hasNext} onChange={setLocalPageIndex} />
-            </>
-          ) : localRecipes.isSuccess ? (
-            <p className={styles.recipeMenuEmpty} role="status">Chưa có bản ghi đè cục bộ.</p>
-          ) : null}
-
-          {selectedLocalId ? (
-            <section className={styles.recipeMenuDetail} aria-label="Chi tiết bản ghi đè cục bộ">
-              {localRecipe.isPending ? <p className={styles.notice} role="status">Đang tải chi tiết bản ghi…</p> : null}
-              {localRecipe.isError ? <QueryError error={localRecipe.error} retry={() => localRecipe.refetch()} /> : null}
-              {localRecipe.data ? (
-                <>
-                  <div className={styles.panelHeading}>
-                    <div>
-                      <h3>{localRecipes.data?.items.find((item) => item.id === selectedLocalId)?.globalRecipeName || "Điều chỉnh công thức"}</h3>
-                      <p>Owner ID: {localRecipe.data.ownerId ?? "—"}</p>
-                    </div>
-                    <ButtonBar type="button" disabled={deleteLocal.isPending} onClick={() => {
-                      if (window.confirm("Xóa bản ghi đè cục bộ này?")) deleteLocal.mutate(localRecipe.data!.id);
-                    }}>Xóa bản ghi đè</ButtonBar>
-                  </div>
-                  <dl className={styles.recipeMenuStatus}>
-                    <div><dt>Mã công thức dùng chung</dt><dd>{localRecipe.data.globalRecipeId}</dd></div>
-                    <div><dt>Định lượng đã ghi đè</dt><dd>{localRecipe.data.dosageOverrides.length ? localRecipe.data.dosageOverrides.join(" · ") : "Chưa có giá trị"}</dd></div>
-                  </dl>
-                </>
-              ) : null}
-            </section>
-          ) : null}
-        </section>
-      ) : null}
-
-      {mutationError ? <p className={styles.recipeMenuError} role="alert">{getApiErrorMessage(mutationError, "mutation")}</p> : null}
-    </div>
-  );
+              {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa “{deleteTarget.name}”? Hệ thống có thể từ chối nếu còn điều chỉnh cũ tham chiếu.</p><div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => { clearFeedback(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
+            </>}
+          </> : null}
+        </section> : null}
+      </section>
+    </> : null}
+  </div>;
 }

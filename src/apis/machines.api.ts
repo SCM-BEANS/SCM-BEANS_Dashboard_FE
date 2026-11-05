@@ -78,6 +78,13 @@ export const machinesApi =  {
     });
     return MachineInventorySchema.parse(response.data);
   },
+  async listRecipeSyncMachines(page = 0, size = 20, serialNumber = "", signal?: AbortSignal) {
+    const params = { page, size, ...(serialNumber.trim() ? { serialNumber: serialNumber.trim() } : {}) };
+    const response = await axiosClient.get<unknown>("/machines", { baseURL: DOLORES_API_BASE_URL, params, signal });
+    const items = MachineInventorySchema.parse(response.data);
+    const hasNext = responseHeader(response.headers, "x-has-next");
+    return { items, page, hasNext: hasNext === undefined ? items.length >= size : hasNext.toLowerCase() === "true" };
+  },
   async listRentalCandidates(
     signal?: AbortSignal,
     filters?: { machineType?: "CONVENTIONAL" | "SMART_IOT"; page?: number; size?: number },

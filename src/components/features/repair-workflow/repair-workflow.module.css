@@ -741,6 +741,18 @@
   background: #fff;
 }
 
+fieldset.recipeMenuEditorGroup {
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.recipeMenuEditorGroup legend {
+  padding: 0 6px;
+  color: #302927;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 .recipeMenuEditorGroupHeading {
   display: flex;
   min-width: 0;
@@ -878,7 +890,7 @@
 .recipeMenuStatus {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   padding: 1px;
   margin: 0;
@@ -992,7 +1004,8 @@
   .recipeMenuActions { width: 100%; }
   .recipeMenuActions > * { flex: 1 1 100%; }
   .recipeMenuDetailGrid,
-  .recipeMenuFormGrid { grid-template-columns: minmax(0, 1fr); }
+  .recipeMenuFormGrid,
+  .recipeMenuStatus { grid-template-columns: minmax(0, 1fr); }
   .recipeMenuFormGrid .recipeMenuFieldWide { grid-column: auto; }
   .recipeMenuDetail,
   .recipeMenuEditor { padding: 14px; }

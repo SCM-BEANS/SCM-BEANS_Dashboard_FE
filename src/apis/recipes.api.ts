@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   GlobalRecipeIdSchema,
@@ -8,6 +9,7 @@ import {
   LocalRecipeSummariesSchema,
   LocalRecipeSchema,
   LocalRecipeUpsertRequestSchema,
+  RecipeCommandReplaySchema,
   type RecipePublishRequest,
   type LocalRecipeUpsertRequest,
 } from "@/schema/recipes.schema";
@@ -20,7 +22,7 @@ function responseHeader(headers: unknown, key: string): string | undefined {
   if (!headers || typeof headers !== "object") return undefined;
   const record = headers as Record<string, unknown>;
   const value = record[key] ?? record[key.toLowerCase()];
-  return typeof value === "string" ? value : undefined;
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : undefined;
 }
 
 function boundedPage<T>(items: T[], headers: unknown, requested: { page: number; size: number }): BoundedRecipePage<T> {
@@ -31,7 +33,7 @@ function boundedPage<T>(items: T[], headers: unknown, requested: { page: number;
     items,
     page: Number.isInteger(page) && page >= 0 ? page : requested.page,
     size: Number.isInteger(size) && size > 0 ? size : requested.size,
-    hasNext: hasNext?.toLowerCase() === "true",
+    hasNext: hasNext === undefined ? items.length >= requested.size : hasNext.toLowerCase() === "true",
   };
 }
 
@@ -40,8 +42,8 @@ const recipePath = (id: string) =>
   "/recipes/global/" + encodeURIComponent(GlobalRecipeIdSchema.parse(id));
 
 export const recipesApi =  {
-  async listGlobalPage(page = 0, size = 50, signal?: AbortSignal): Promise<BoundedRecipePage<import("@/schema/recipes.schema").GlobalRecipeSummary>> {
-    const params = { page, size };
+  async listGlobalPage(page = 0, size = 50, signal?: AbortSignal, q?: string): Promise<BoundedRecipePage<import("@/schema/recipes.schema").GlobalRecipeSummary>> {
+    const params = { page: z.number().int().nonnegative().parse(page), size: z.number().int().min(1).max(100).parse(size), ...(q?.trim() ? { q: q.trim() } : {}) };
     const response = await axiosClient.get<unknown>("/recipes/global", {
       baseURL: DOLORES_API_BASE_URL,
       params,
@@ -121,7 +123,7 @@ export const recipesApi =  {
     const response = await axiosClient.post<unknown>("/recipes/sync", request, { baseURL: DOLORES_API_BASE_URL });
     const statuses = RecipeSyncStatusesSchema.parse(response.data);
     const requested = new Set(request.machineIds);
-    if (statuses.some((status) => !requested.has(status.machineId))) throw new Error("Dolores returned sync status for an unrequested machine.");
+    if (statuses.some((status) => !requested.has(status.machineId)) || requested.size !== new Set(statuses.map((status) => status.machineId)).size) throw new Error("Dolores returned incomplete or unrequested machine sync statuses.");
     return statuses;
   },
   async getSyncStatus(machineId: string, signal?: AbortSignal) {
@@ -131,13 +133,24 @@ export const recipesApi =  {
     if (status.machineId !== validId) throw new Error("Dolores returned a different machine's recipe sync status.");
     return status;
   },
-  async getSyncHistory(machineId: string, page = 0, size = 50, signal?: AbortSignal) {
+  async getSyncHistoryPage(machineId: string, page = 0, size = 50, signal?: AbortSignal) {
     const validId = MachineIdSchema.parse(machineId);
     const params = { page, size };
     const response = await axiosClient.get<unknown>(`/recipes/sync/${encodeURIComponent(validId)}/history`, { baseURL: DOLORES_API_BASE_URL, params, signal });
     const history = RecipeSyncStatusesSchema.parse(response.data);
     if (history.some((item) => item.machineId !== validId)) throw new Error("Dolores returned sync history for a different machine.");
-    return history;
+    return boundedPage(history, response.headers, params);
+  },
+  async getSyncHistory(machineId: string, page = 0, size = 50, signal?: AbortSignal) {
+    return (await recipesApi.getSyncHistoryPage(machineId, page, size, signal)).items;
+  },
+  async replaySyncCommand(machineId: string, commandId: string) {
+    const validId = MachineIdSchema.parse(machineId);
+    const validCommandId = z.string().uuid().parse(commandId);
+    const response = await axiosClient.post<unknown>(`/recipes/sync/${encodeURIComponent(validId)}/commands/${encodeURIComponent(validCommandId)}/replay`, undefined, { baseURL: DOLORES_API_BASE_URL });
+    const command = RecipeCommandReplaySchema.parse(response.data);
+    if (command.machineId !== validId) throw new Error("Dolores returned a command for a different machine.");
+    return command;
   },
   async updateGlobal(id: string, input: RecipePublishRequest) {
     const validId = GlobalRecipeIdSchema.parse(id);

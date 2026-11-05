@@ -55,13 +55,13 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     actions: [messages.ACTION_SEND_PROOF],
   },
   "menu/add-dish": {
-    title: "Điều chỉnh công thức của tôi",
-    description: "Lưu định lượng riêng cho công thức dùng chung mà không thay đổi công thức gốc.",
+    title: "Tạo công thức riêng",
+    description: "Tạo món riêng bằng thông số pha và lưu vào menu của bạn.",
     reason: messages.MENU_API_REASON,
   },
   "menu/adjustments": {
-    title: "Điều chỉnh công thức của tôi",
-    description: "Lưu định lượng riêng cho công thức dùng chung mà không thay đổi công thức gốc.",
+    title: "Menu & công thức của tôi",
+    description: "Quản lý menu riêng, công thức tự tạo và các bản sao từ Dolores.",
     reason: "Điều chỉnh được lưu trong phạm vi Owner đăng nhập.",
   },
   "menu/sync": {
@@ -312,7 +312,7 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     "menu/fresh-milk": [link("Về công thức pha chế", "/dashboard/menu", "secondary")],
     "menu/add-dish": [link("Hủy", PATH_CUSTOMER.MENU, "secondary")],
     "menu/adjustments": [link("Về công thức pha chế", PATH_CUSTOMER.MENU, "secondary"), link("Đồng bộ với máy", PATH_CUSTOMER.MENU_SYNC)],
-    "menu/sync": [link("Về công thức pha chế", PATH_CUSTOMER.MENU, "secondary"), link("Điều chỉnh của tôi", PATH_CUSTOMER.MENU_ADJUSTMENTS)],
+    "menu/sync": [link("Về công thức pha chế", PATH_CUSTOMER.MENU, "secondary"), link("Menu của tôi", PATH_CUSTOMER.MENU_ADJUSTMENTS)],
     "support/new": [link("Về yêu cầu hỗ trợ", "/dashboard/support", "secondary")],
     "support/menu": [
       link("Kiểm tra đồng bộ công thức", "/dashboard/menu"),

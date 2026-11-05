@@ -6,6 +6,33 @@ export const API_ERROR_MESSAGES = APP_MESSAGES.API_ERROR;
 
 export type ApiErrorIntent = "read" | "mutation" | "login" | "mfa";
 
+export function getRecipeApiErrorDetails(error: unknown) {
+  const response = axios.isAxiosError(error) ? error.response : undefined;
+  let body: unknown = response?.data;
+  if (typeof body === "string") {
+    try { body = JSON.parse(body); } catch { /* Plain-text errors are also part of the recipe contract. */ }
+  }
+  const details = body && typeof body === "object" ? body as Record<string, unknown> : {};
+  return {
+    status: response?.status,
+    message: typeof details.message === "string" ? details.message : typeof body === "string" && body.trim() ? body : undefined,
+    correlationId: typeof details.correlationId === "string" ? details.correlationId : undefined,
+    saved: details.saved === true,
+    retryable: details.retryable === true,
+    recipeId: typeof details.recipeId === "string" ? details.recipeId : undefined,
+  };
+}
+
+export function getRecipeApiErrorMessage(error: unknown, intent: ApiErrorIntent = "read") {
+  const details = getRecipeApiErrorDetails(error);
+  const trace = details.correlationId ? " · Mã tra cứu: " + details.correlationId : "";
+  if (details.saved) return "Đã lưu công thức, đồng bộ chưa hoàn tất. Hãy tải lại dữ liệu và kiểm tra trạng thái máy." + trace;
+  if ((details.status ?? 0) >= 400 && details.status !== 401 && details.message) {
+    return ((details.status ?? 0) >= 500 && intent === "mutation" ? getApiErrorMessage(error, intent) + " " : "") + details.message + trace;
+  }
+  return getApiErrorMessage(error, intent);
+}
+
 export class AccountCreatedResponseValidationError extends Error {
   constructor() {
     super("The account was created, but its response did not match the expected format.");

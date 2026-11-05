@@ -1,169 +1,236 @@
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const path = require("node:path");
 const test = require("node:test");
 const ts = require("typescript");
 
-function load(relativePath, mocks = {}) {
-  const fileName = join(__dirname, "..", relativePath);
-  const { outputText } = ts.transpileModule(readFileSync(fileName, "utf8"), {
-    fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
-  });
-  const loaded = { exports: {} };
-  new Function("require", "module", "exports", outputText)((id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id), loaded, loaded.exports);
-  return loaded.exports;
+function loader(mocks = {}) {
+  const cache = new Map();
+  function load(relative) {
+    const file = path.resolve(__dirname, "..", relative);
+    if (cache.has(file)) return cache.get(file).exports;
+    const { outputText } = ts.transpileModule(readFileSync(file, "utf8"), {
+      fileName: file, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.React },
+    });
+    const result = { exports: {} }; cache.set(file, result);
+    const resolve = (id) => {
+      if (Object.hasOwn(mocks, id)) return mocks[id];
+      if (id.startsWith("@/")) return load("src/" + id.slice(2) + ".ts");
+      if (id.startsWith(".")) return load(path.relative(path.resolve(__dirname, ".."), path.resolve(path.dirname(file), id + ".ts")));
+      return require(id);
+    };
+    new Function("require", "module", "exports", outputText)(resolve, result, result.exports);
+    return result.exports;
+  }
+  return load;
 }
-
 const ownerId = "00000000-0000-4000-8000-000000000001";
 const menuId = "00000000-0000-4000-8000-000000000002";
 const recipeId = "00000000-0000-4000-8000-000000000003";
 const machineId = "00000000-0000-4000-8000-000000000004";
-const localRecipe = { id: recipeId, ownerId, menuId, sourceGlobalRecipeId: recipeId, sourceRevision: 3, name: "Espresso", steps: ["Brew"], dosageBounds: ["water:1:2"], dosageOverrides: [], createdAt: "2026-10-31T10:00:00Z", updatedAt: "2026-10-31T10:00:00Z" };
+const commandId = "00000000-0000-4000-8000-000000000005";
+const defaultMenuId = "00000000-0000-0000-0000-000000000090";
+const procedure = ["DOSE:18", "TAMP:100", "HOLDTAMP:50", "EXTRACT:36", "DRYTAMP:100"];
+const globalRecipe = { id: recipeId, name: "Espresso", steps: procedure, revision: 2, menuId: defaultMenuId };
+const local = { id: recipeId, ownerId, menuId, sourceGlobalRecipeId: null, sourceRevision: null, name: "My Espresso", createdAt: null, updatedAt: null, steps: procedure, dosageOverrides: [] };
+const syncStatus = { machineId, targetVersion: 2, targetHash: "target", appliedVersion: 1, appliedHash: "old", commandId, state: "PENDING", retryCount: 0, lastError: null, requestedAt: "2026-11-05T08:00:00Z", lastAttemptAt: null, appliedAt: null, expiresAt: null };
+const envelope = (content) => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: content.length ? 1 : 0, first: true, last: true });
+const apiLoader = (client) => loader({ "@/lib/http": { axiosClient: client, DOLORES_API_BASE_URL: "/api/dolores/v1" } });
+const schema = loader()("src/schema/recipes.schema.ts");
+const menuSchema = loader()("src/schema/recipe-menus.schema.ts");
 
-function loadMenus(axiosClient) {
-  const schemas = load("src/schema/recipe-menus.schema.ts");
-  return load("src/apis/recipe-menus.api.ts", {
-    "@/lib/http": { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" },
-    "@/schema/recipe-menus.schema": schemas,
-  }).recipeMenusApi;
-}
-
-test("Owner menu snapshots use the Owner-scoped collection and page response", async () => {
-  const calls = [];
-  const api = loadMenus({ get: async (url, config) => { calls.push([url, config]); return { data: { content: [localRecipe], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true } }; } });
-  const result = await api.listLocalRecipes(menuId, { page: 0, size: 20 });
-  assert.equal(result.content[0].ownerId, ownerId);
-  assert.deepEqual(calls[0], [`/recipe-menus/local/${menuId}/recipes`, { baseURL: "/api/dolores/v1", params: { page: 0, size: 20 }, signal: undefined }]);
+test("global detail strictly matches the five-field deployed DTO without dosageBounds", () => {
+  assert.deepEqual(schema.GlobalRecipeSchema.parse(globalRecipe), globalRecipe);
+  assert.equal(schema.GlobalRecipeSchema.safeParse({ ...globalRecipe, dosageBounds: [] }).success, false);
+  assert.equal(schema.GlobalRecipeSchema.safeParse({ ...globalRecipe, id: "invalid" }).success, false);
+  assert.equal(schema.GlobalRecipeSchema.safeParse({ ...globalRecipe, revision: undefined }).success, false);
 });
 
-test("copy creates an independent scoped snapshot and rejects a different source recipe", async () => {
-  const calls = [];
-  const api = loadMenus({ post: async (url, data, config) => { calls.push([url, data, config]); return { data: localRecipe }; } });
-  assert.equal((await api.copyGlobalRecipe({ globalRecipeId: recipeId, menuId })).id, recipeId);
-  assert.deepEqual(calls[0], ["/recipe-menus/local/copies", { globalRecipeId: recipeId, menuId }, { baseURL: "/api/dolores/v1" }]);
-  const mismatch = loadMenus({ post: async () => ({ data: { ...localRecipe, sourceGlobalRecipeId: ownerId } }) });
-  await assert.rejects(mismatch.copyGlobalRecipe({ globalRecipeId: recipeId, menuId }), /different recipe or menu/i);
+test("new writes use only procedure and optional metadata, not legacy dosage bounds or physical DTO values", () => {
+  assert.deepEqual(schema.RecipePublishRequestSchema.parse({ name: "Espresso", procedure, slug: "espresso" }), { name: "Espresso", procedure, slug: "espresso" });
+  for (const extra of [{ steps: ["GRIND"] }, { dosageBounds: ["bean:90:110"] }, { coffeeWeight: 18 }, { ownerId }, { menuId }]) {
+    assert.equal(schema.RecipePublishRequestSchema.safeParse({ name: "Espresso", procedure, ...extra }).success, false);
+  }
 });
 
-test("recipe sync request uses owner-authenticated machine IDs and validates status identity", async () => {
-  const calls = [];
-  const status = { machineId, targetVersion: 4, targetHash: "hash", appliedVersion: 3, appliedHash: "old", commandId: recipeId, state: "PENDING", retryCount: 0, lastError: null, requestedAt: "2026-10-31T10:00:00Z", lastAttemptAt: null, appliedAt: null, expiresAt: null };
-  const recipesSchema = load("src/schema/recipes.schema.ts");
-  const menuSchema = load("src/schema/recipe-menus.schema.ts");
-  const api = load("src/apis/recipes.api.ts", {
-    "@/lib/http": { axiosClient: { post: async (url, body, config) => { calls.push([url, body, config]); return { data: [status] }; } }, DOLORES_API_BASE_URL: "/api/dolores/v1" },
-    "@/schema/recipes.schema": recipesSchema,
-    "@/schema/recipe-menus.schema": menuSchema,
-    "@/schema/machines.schema": { MachineIdSchema: { parse: (value) => value } },
-  }).recipesApi;
-  assert.equal((await api.requestSync([machineId]))[0].state, "PENDING");
-  assert.deepEqual(calls[0], ["/recipes/sync", { machineIds: [machineId] }, { baseURL: "/api/dolores/v1" }]);
+test("structured fields preserve units, mandatory dose/extract and canonical directive order", () => {
+  const result = schema.buildRecipeProcedure({ ...schema.emptyRecipeProcedure(), DOSE: "18", EXTRACT: "36", PREMILK: "2", POSTWATER: "20" });
+  assert.deepEqual(result, ["PREMILK:2", "DOSE:18", "TAMP:100", "HOLDTAMP:50", "EXTRACT:36", "DRYTAMP:100", "POSTWATER:20"]);
+  for (const bad of [
+    ["DOSE:18"], ["EXTRACT:36"], ["DOSE:0.01", "EXTRACT:36"],
+    ["DOSE:18", "EXTRACT:36", "PREMILK:2.5"],
+    ["DOSE:18", "EXTRACT:36", "PREWATER:-1"],
+    ["DOSE:18", "EXTRACT:36", "HEAT"],
+    ["DOSE:18", "EXTRACT:36", "DOSE:20"],
+    ["DOSE:18", "EXTRACT:36", "DRYTAMP:50"],
+  ]) assert.equal(schema.RecipeProcedureSchema.safeParse(bad).success, false, JSON.stringify(bad));
 });
 
-test("Owner menu UI uses recipe-menu scope and omits device polling and raw storage references", () => {
-  const source = readFileSync(join(__dirname, "../src/components/features/recipe-menus/recipe-menus-screen.tsx"), "utf8");
-  assert.match(source, /recipeMenusApi\.listLocal/);
-  assert.match(source, /recipeMenusApi\.copyGlobalRecipe/);
-  assert.match(source, /recipeMenusApi\.createLocalRecipe/);
-  assert.match(source, /recipeMenusApi\.moveLocalRecipe/);
-  assert.match(source, /recipeMenusApi\.getLocal\(/);
-  assert.match(source, /recipeMenusApi\.getGlobal\(/);
-  assert.match(source, /recipeMenusApi\.editLocalRecipe/);
-  assert.match(source, /recipesApi\.requestSync/);
-  assert.doesNotMatch(source, /recipesApi\.(listLocal|upsertLocal|deleteLocal)/);
-  assert.doesNotMatch(source, /effective\/.*sync|pollRecipeCommand|deviceToken/i);
+test("Owner-created recipes tolerate null source and lifecycle timestamps, but reject invalid scope IDs", () => {
+  assert.equal(menuSchema.OwnerMenuRecipeSchema.parse(local).sourceGlobalRecipeId, null);
+  assert.equal(menuSchema.OwnerMenuRecipeSchema.safeParse({ ...local, menuId: "bad" }).success, false);
+  assert.equal(menuSchema.RecipeMenuNameRequestSchema.safeParse({ name: "x".repeat(255) }).success, true);
+  assert.equal(menuSchema.RecipeMenuNameRequestSchema.safeParse({ name: "x".repeat(256) }).success, false);
+  assert.equal(menuSchema.CreateRecipeDslRequestSchema.safeParse({ name: "X", procedure, ownerId }).success, false);
+  assert.equal(menuSchema.LocalRecipeSnapshotRequestSchema.safeParse({ name: "X", steps: procedure, dosageOverrides: [] }).success, true);
 });
 
-test("All recipe-menu controller methods use their documented endpoints and payloads", async () => {
+test("global POST and PUT send native procedure unchanged and validate returned identity", async () => {
   const calls = [];
-  const menu = { id: menuId, name: "Espresso", createdAt: "2026-11-04T10:00:00Z" };
-  const ownerMenu = { ...menu, ownerId };
-  const globalRecipe = { id: recipeId, name: "Espresso", revision: 3, menuId };
-  const localSummary = { id: recipeId, ownerId, menuId, sourceGlobalRecipeId: recipeId, sourceRevision: 3, name: "Espresso", createdAt: "2026-11-04T10:00:00Z", updatedAt: "2026-11-04T10:00:00Z" };
-  const localDetail = { ...localSummary, steps: ["Brew"], dosageBounds: ["water:1:2"], dosageOverrides: [] };
-  const page = (content) => ({ content: [content], page: 0, size: 100, totalElements: 1, totalPages: 1, first: true, last: true });
-  const response = (data) => ({ data });
-  const api = loadMenus({
-    get: async (url, config) => {
-      calls.push(["GET", url, undefined, config]);
-      if (url.endsWith("/global")) return response(page(menu));
-      if (url.endsWith("/global/" + menuId + "/recipes")) return response(page(globalRecipe));
-      if (url.endsWith("/local/" + menuId + "/recipes")) return response(page(localSummary));
-      if (url.endsWith("/local/recipes/" + recipeId)) return response(localDetail);
-      if (url.endsWith("/local")) return response(page(ownerMenu));
-      return response(url.includes("/local/") ? ownerMenu : menu);
-    },
-    post: async (url, body, config) => {
-      calls.push(["POST", url, body, config]);
-      return response(url.includes("/local") ? localDetail : menu);
-    },
-    patch: async (url, body, config) => { calls.push(["PATCH", url, body, config]); return response(url === `/recipe-menus/local/${menuId}` ? ownerMenu : url.includes("/local") ? localDetail : menu); },
-    put: async (url, body, config) => { calls.push(["PUT", url, body, config]); return response(url.includes("/local") ? localDetail : globalRecipe); },
-    delete: async (url, config) => { calls.push(["DELETE", url, undefined, config]); return response(undefined); },
-  });
-
-  await api.listGlobal({ page: 0, size: 100 });
-  await api.getGlobal(menuId);
-  await api.createGlobal("Espresso");
-  await api.renameGlobal(menuId, "Espresso");
-  await api.deleteGlobal(menuId);
-  await api.listGlobalRecipes(menuId, { page: 0, size: 100 });
-  await api.assignGlobalRecipe(menuId, recipeId);
-  await api.removeGlobalRecipe(menuId, recipeId);
-  await api.listLocal({ page: 0, size: 100 });
-  await api.getLocal(menuId);
-  await api.createLocal("Espresso");
-  await api.renameLocal(menuId, "Espresso");
-  await api.deleteLocal(menuId);
-  await api.listLocalRecipes(menuId, { page: 0, size: 100 });
-  await api.getLocalRecipe(recipeId);
-  await api.createLocalRecipe(menuId, { name: "Espresso", steps: ["Brew"], dosageBounds: ["water:1:2"], dosageOverrides: [] });
-  await api.copyGlobalRecipe({ globalRecipeId: recipeId, menuId });
-  await api.moveLocalRecipe(menuId, recipeId);
-  await api.editLocalRecipe(recipeId, { name: "Espresso", steps: ["Brew"], dosageBounds: ["water:1:2"], dosageOverrides: [] });
-  await api.deleteLocalRecipe(recipeId);
-
-  assert.deepEqual(calls.map(([method, url]) => `${method} ${url}`), [
-    `GET /recipe-menus/global`,
-    `GET /recipe-menus/global/${menuId}`,
-    `POST /recipe-menus/global`,
-    `PATCH /recipe-menus/global/${menuId}`,
-    `DELETE /recipe-menus/global/${menuId}`,
-    `GET /recipe-menus/global/${menuId}/recipes`,
-    `PUT /recipe-menus/global/${menuId}/recipes/${recipeId}`,
-    `DELETE /recipe-menus/global/${menuId}/recipes/${recipeId}`,
-    `GET /recipe-menus/local`,
-    `GET /recipe-menus/local/${menuId}`,
-    `POST /recipe-menus/local`,
-    `PATCH /recipe-menus/local/${menuId}`,
-    `DELETE /recipe-menus/local/${menuId}`,
-    `GET /recipe-menus/local/${menuId}/recipes`,
-    `GET /recipe-menus/local/recipes/${recipeId}`,
-    `POST /recipe-menus/local/${menuId}/recipes`,
-    `POST /recipe-menus/local/copies`,
-    `PUT /recipe-menus/local/${menuId}/recipes/${recipeId}`,
-    `PATCH /recipe-menus/local/recipes/${recipeId}`,
-    `DELETE /recipe-menus/local/recipes/${recipeId}`,
+  const api = apiLoader({
+    post: async (...args) => { calls.push(["post", ...args]); return { data: globalRecipe }; },
+    put: async (...args) => { calls.push(["put", ...args]); return { data: globalRecipe }; },
+  })("src/apis/recipes.api.ts").recipesApi;
+  const input = { name: "Espresso", procedure };
+  await api.publishGlobal(input); await api.updateGlobal(recipeId, input);
+  assert.deepEqual(calls.map((row) => [row[0], row[1], row[2]]), [
+    ["post", "/recipes/global", input], ["put", "/recipes/global/" + recipeId, input],
   ]);
-  assert.deepEqual(calls[0][3].params, { page: 0, size: 100 });
-  assert.deepEqual(calls[15][2], { name: "Espresso", steps: ["Brew"], dosageBounds: ["water:1:2"], dosageOverrides: [] });
-  assert.deepEqual(calls[16][2], { globalRecipeId: recipeId, menuId });
-  assert.equal(calls.length, 20);
-  assert.equal(calls.every((call) => call[3].baseURL === "/api/dolores/v1"), true);
+  assert.equal(calls.every((row) => row[3].baseURL === "/api/dolores/v1"), true);
+  const bad = apiLoader({ put: async () => ({ data: { ...globalRecipe, id: ownerId } }) })("src/apis/recipes.api.ts").recipesApi;
+  await assert.rejects(bad.updateGlobal(recipeId, input), /different global recipe/i);
 });
 
-test("Admin, Moderator, and Owner menu entry points share the role-scoped menu screen", () => {
-  const root = join(__dirname, "..");
-  const admin = readFileSync(join(root, "src/pages/admin/menu/index.page.tsx"), "utf8");
-  const moderator = readFileSync(join(root, "src/pages/moderator/menu/recipes-screen.tsx"), "utf8");
-  const dashboardMenu = readFileSync(join(root, "src/pages/dashboard/menu/menu-screen.tsx"), "utf8");
-  const ownerReadRoute = readFileSync(join(root, "src/pages/dashboard/read/customer-read-screen.tsx"), "utf8");
-  assert.match(admin, /RecipeMenusScreen role="operator" operatorRole="ADMIN"/);
-  assert.match(moderator, /RecipeMenusScreen role="operator" operatorRole="MODERATOR"/);
-  assert.match(dashboardMenu, /RecipeMenusScreen role="owner"/);
-  assert.match(ownerReadRoute, /RecipeMenusScreen role="owner"/);
-  const shared = readFileSync(join(root, "src/components/features/recipe-menus/recipe-menus-screen.tsx"), "utf8");
-  assert.match(shared, /enabled: owner/);
-  assert.match(shared, /enabled: !owner/);
+test("array pagination honors headers, q and does not silently hide a next page when headers are absent", async () => {
+  const calls = [];
+  const summary = { ...globalRecipe }; delete summary.steps;
+  const api = apiLoader({ get: async (...args) => { calls.push(args); return { data: [summary], headers: { "x-page": "2", "x-page-size": "1", "x-has-next": "false" } }; } })("src/apis/recipes.api.ts").recipesApi;
+  assert.deepEqual(await api.listGlobalPage(2, 1, undefined, " espresso "), { items: [summary], page: 2, size: 1, hasNext: false });
+  assert.deepEqual(calls[0][1].params, { page: 2, size: 1, q: "espresso" });
+  const noHeaders = apiLoader({ get: async () => ({ data: [summary] }) })("src/apis/recipes.api.ts").recipesApi;
+  assert.equal((await noHeaders.listGlobalPage(0, 1)).hasNext, true);
+});
+
+test("Owner native DSL uses path menu as target and only one create request per action", async () => {
+  const calls = [];
+  const api = apiLoader({ post: async (...args) => { calls.push(args); return { data: local }; } })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await api.createLocalDsl({ name: local.name, procedure, menuId: ownerId }, menuId);
+  await api.createLocalDsl({ name: local.name, procedure });
+  assert.deepEqual(calls.map((row) => [row[0], row[1]]), [
+    ["/recipe-menus/local/" + menuId + "/recipes/dsl", { name: local.name, procedure }],
+    ["/recipe-menus/local/dsl", { name: local.name, procedure }],
+  ]);
+  assert.equal(calls.length, 2);
+});
+
+test("copy preserves source ID/revision and rejects an unrelated source or destination", async () => {
+  const snapshot = { ...local, sourceGlobalRecipeId: recipeId, sourceRevision: 2 };
+  const api = apiLoader({ post: async () => ({ data: snapshot }) })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  assert.equal((await api.copyGlobalRecipe({ globalRecipeId: recipeId, menuId })).sourceRevision, 2);
+  const bad = apiLoader({ post: async () => ({ data: { ...snapshot, sourceGlobalRecipeId: ownerId } }) })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await assert.rejects(bad.copyGlobalRecipe({ globalRecipeId: recipeId, menuId }), /different recipe or menu/i);
+});
+
+test("menu lists use page envelopes, move is bodyless and removal means return to default", async () => {
+  const calls = [];
+  const api = apiLoader({
+    get: async (...args) => { calls.push(["get", ...args]); return { data: envelope([{ ...local, steps: undefined, dosageOverrides: undefined }].map(({ steps, dosageOverrides, ...summary }) => summary)) }; },
+    put: async (...args) => { calls.push(["put", ...args]); return { data: { ...globalRecipe, menuId } }; },
+    delete: async (...args) => { calls.push(["delete", ...args]); return { data: globalRecipe }; },
+  })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  assert.equal((await api.listLocalRecipes(menuId, { q: "Esp" })).totalElements, 1);
+  await api.assignGlobalRecipe(menuId, recipeId);
+  assert.equal((await api.removeGlobalRecipe(menuId, recipeId)).menuId, defaultMenuId);
+  assert.deepEqual(calls[1].slice(0, 3), ["put", "/recipe-menus/global/" + menuId + "/recipes/" + recipeId, undefined]);
+  assert.equal(calls[0][2].params.q, "Esp");
+  const wrong = apiLoader({ put: async () => ({ data: globalRecipe }) })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await assert.rejects(wrong.assignGlobalRecipe(menuId, recipeId), /different global recipe or menu/i);
+});
+
+test("204 deletes accept empty bodies and snapshot PATCH sends full name/steps without dosageBounds", async () => {
+  const calls = [];
+  const api = apiLoader({
+    delete: async (...args) => { calls.push(["delete", ...args]); return { status: 204, data: "" }; },
+    patch: async (...args) => { calls.push(["patch", ...args]); return { data: local }; },
+  })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await api.deleteGlobal(menuId); await api.deleteLocal(menuId); await api.deleteLocalRecipe(recipeId);
+  await api.editLocalRecipe(recipeId, { name: "My Espresso", steps: procedure, dosageOverrides: [] });
+  assert.deepEqual(calls[3][2], { name: "My Espresso", steps: procedure, dosageOverrides: [] });
+  assert.equal(calls.slice(0, 3).every((row) => row[0] === "delete"), true);
+});
+
+test("legacy update includes existing id, create omits id and ownerId is never accepted", async () => {
+  const calls = [];
+  const detail = { id: recipeId, ownerId, globalRecipeId: recipeId, globalRecipeName: "Espresso", dosageOverrides: ["water:40"] };
+  const api = apiLoader({ post: async (...args) => { calls.push(args); return { data: detail }; } })("src/apis/recipes.api.ts").recipesApi;
+  await api.upsertLocal({ globalRecipeId: recipeId, dosageOverrides: ["water:40"] });
+  await api.upsertLocal({ id: recipeId, globalRecipeId: recipeId, dosageOverrides: [] });
+  assert.equal(Object.hasOwn(calls[0][1], "id"), false);
+  assert.equal(calls[1][1].id, recipeId);
+  assert.equal(schema.LocalRecipeUpsertRequestSchema.safeParse({ ownerId, globalRecipeId: recipeId, dosageOverrides: [] }).success, false);
+});
+
+test("APPLIED requires target version/hash confirmation and sync history preserves pagination", async () => {
+  assert.equal(schema.isRecipeSyncApplied({ ...syncStatus, state: "APPLIED" }), false);
+  assert.equal(schema.isRecipeSyncApplied({ ...syncStatus, state: "DELIVERED", appliedVersion: 2, appliedHash: "target" }), false);
+  assert.equal(schema.isRecipeSyncApplied({ ...syncStatus, state: "APPLIED", appliedVersion: 2, appliedHash: "target" }), true);
+  const api = apiLoader({ get: async () => ({ data: [syncStatus], headers: { "x-page": "1", "x-page-size": "20", "x-has-next": "true" } }) })("src/apis/recipes.api.ts").recipesApi;
+  const result = await api.getSyncHistoryPage(machineId, 1, 20);
+  assert.equal(result.hasNext, true); assert.equal(result.page, 1);
+  const wrong = apiLoader({ get: async () => ({ data: [{ ...syncStatus, machineId: ownerId }] }) })("src/apis/recipes.api.ts").recipesApi;
+  await assert.rejects(wrong.getSyncHistoryPage(machineId), /different machine/i);
+});
+
+test("sync and replay stay on user APIs and reject foreign machine responses", async () => {
+  const calls = [];
+  const replay = { id: commandId, machineId, ownerId, commandType: "RECIPE_SYNC", payload: "[]", status: "PENDING", targetVersion: 2, targetHash: "target", attempts: 0, expiresAt: null, lastAttemptAt: null, acknowledgedAt: null, createdAt: null };
+  const api = apiLoader({ post: async (...args) => { calls.push(args); return { data: args[0].endsWith("/replay") ? replay : [syncStatus] }; } })("src/apis/recipes.api.ts").recipesApi;
+  await api.requestSync([machineId]); await api.replaySyncCommand(machineId, commandId);
+  assert.deepEqual(calls[0][1], { machineIds: [machineId] });
+  assert.equal(calls[1][0], "/recipes/sync/" + machineId + "/commands/" + commandId + "/replay");
+  assert.equal(calls.some((row) => row[0].includes("/effective")), false);
+});
+
+test("saved 503, JSON-string errors and plain-text errors remain distinguishable", () => {
+  const { getRecipeApiErrorDetails, getRecipeApiErrorMessage } = loader()("src/lib/api-errors.ts");
+  const error = (status, data) => ({ isAxiosError: true, response: { status, data } });
+  const saved = error(503, { saved: true, retryable: true, recipeId, message: "Propagation failed" });
+  assert.equal(getRecipeApiErrorDetails(saved).saved, true);
+  assert.match(getRecipeApiErrorMessage(saved, "mutation"), /Đã lưu công thức/);
+  assert.equal(getRecipeApiErrorMessage(error(400, '"Invalid procedure"')), "Invalid procedure");
+  assert.equal(getRecipeApiErrorMessage(error(409, { message: "Menu is not empty", correlationId: "trace-1" })), "Menu is not empty · Mã tra cứu: trace-1");
+  assert.equal(getRecipeApiErrorDetails(error(204, "")).saved, false);
+});
+
+test("global and Owner menu CRUD preserve role-specific paths and never accept an Owner selector", async () => {
+  const calls = [];
+  const globalMenu = { id: menuId, name: "Menu", createdAt: "2026-11-05T08:00:00Z" };
+  const client = {};
+  for (const method of ["get", "post", "patch", "delete"]) client[method] = async (...args) => {
+    calls.push([method, ...args]);
+    const localScope = args[0].includes("/local");
+    const menu = localScope ? { ...globalMenu, ownerId } : globalMenu;
+    return { data: method === "delete" ? "" : method === "get" && !args[0].endsWith(menuId) ? envelope([menu]) : menu, status: method === "delete" ? 204 : 200 };
+  };
+  const api = apiLoader(client)("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await api.listGlobal({ q: "Menu" }); await api.getGlobal(menuId);
+  await api.createGlobal(" Menu "); await api.renameGlobal(menuId, "Menu"); await api.deleteGlobal(menuId);
+  await api.listLocal(); await api.getLocal(menuId);
+  await api.createLocal(" Menu "); await api.renameLocal(menuId, "Menu"); await api.deleteLocal(menuId);
+  assert.deepEqual(calls.filter((row) => row[0] === "post").map((row) => [row[1], row[2]]), [
+    ["/recipe-menus/global", { name: "Menu" }], ["/recipe-menus/local", { name: "Menu" }],
+  ]);
+  assert.equal(calls.every((row) => !JSON.stringify(row).includes('"ownerId"')), true);
+});
+
+test("Owner move and compatibility snapshot create preserve explicit destination and reject mismatches", async () => {
+  const calls = [];
+  const api = apiLoader({
+    post: async (...args) => { calls.push(["post", ...args]); return { data: local }; },
+    put: async (...args) => { calls.push(["put", ...args]); return { data: local }; },
+  })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await api.createLocalRecipe(menuId, { name: "Compat", steps: procedure });
+  await api.moveLocalRecipe(menuId, recipeId);
+  assert.equal(calls[0][1], "/recipe-menus/local/" + menuId + "/recipes");
+  assert.equal(calls[1][1], "/recipe-menus/local/" + menuId + "/recipes/" + recipeId);
+  assert.equal(calls[1][2], undefined);
+  const mismatch = apiLoader({ put: async () => ({ data: { ...local, menuId: ownerId } }) })("src/apis/recipe-menus.api.ts").recipeMenusApi;
+  await assert.rejects(mismatch.moveLocalRecipe(menuId, recipeId), /different local recipe/i);
+});
+
+test("accepted sync request rejects missing and foreign machine confirmations", async () => {
+  for (const data of [[], [{ ...syncStatus, machineId: ownerId }]]) {
+    const api = apiLoader({ post: async () => ({ data }) })("src/apis/recipes.api.ts").recipesApi;
+    await assert.rejects(api.requestSync([machineId]), /incomplete or unrequested/i);
+  }
 });

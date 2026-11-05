@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import { GlobalRecipeSchema } from "@/schema/recipes.schema";
 import {
   GlobalMenuRecipeSummarySchema,
   GlobalMenuSchema,
@@ -10,6 +11,7 @@ import {
   RecipeCopyRequestSchema,
   RecipeMenuNameRequestSchema,
   RecipeMenuPageSchema,
+  CreateRecipeDslRequestSchema,
   type GlobalMenu,
   type OwnerMenu,
   type OwnerMenuRecipe,
@@ -59,17 +61,17 @@ export const recipeMenusApi = {
     const validMenuId = id(menuId);
     const validRecipeId = id(recipeId);
     const response = await axiosClient.put<unknown>(`${menuPath("global", validMenuId)}/recipes/${encodeURIComponent(validRecipeId)}`, undefined, { baseURL: DOLORES_API_BASE_URL });
-    const recipe = GlobalMenuRecipeSummarySchema.passthrough().parse(response.data);
-    if (recipe.id !== validRecipeId) throw new Error("Dolores returned a different global recipe.");
+    const recipe = GlobalRecipeSchema.parse(response.data);
+    if (recipe.id !== validRecipeId || recipe.menuId !== validMenuId) throw new Error("Dolores returned a different global recipe or menu.");
     return recipe;
   },
   async removeGlobalRecipe(menuId: string, recipeId: string) {
     const validMenuId = id(menuId);
     const validRecipeId = id(recipeId);
     const response = await axiosClient.delete<unknown>(`${menuPath("global", validMenuId)}/recipes/${encodeURIComponent(validRecipeId)}`, { baseURL: DOLORES_API_BASE_URL });
-    if (response.data === undefined) return;
-    const recipe = GlobalMenuRecipeSummarySchema.passthrough().parse(response.data);
+    const recipe = GlobalRecipeSchema.parse(response.data);
     if (recipe.id !== validRecipeId) throw new Error("Dolores returned a different global recipe.");
+    return recipe;
   },
   async listLocal(input: z.input<typeof pageSchema> = {}, signal?: AbortSignal) {
     const params = pageSchema.parse(input);
@@ -118,6 +120,16 @@ export const recipeMenusApi = {
     const response = await axiosClient.post<unknown>(`${menuPath("local", validMenuId)}/recipes`, request, { baseURL: DOLORES_API_BASE_URL });
     const recipe = OwnerMenuRecipeSchema.parse(response.data);
     if (recipe.menuId !== validMenuId) throw new Error("Dolores created the recipe in a different Owner menu.");
+    return recipe;
+  },
+  async createLocalDsl(input: z.input<typeof CreateRecipeDslRequestSchema>, menuId?: string) {
+    const { menuId: bodyMenuId, ...fields } = CreateRecipeDslRequestSchema.parse(input);
+    const targetId = menuId ? id(menuId) : bodyMenuId;
+    const path = menuId ? `${menuPath("local", menuId)}/recipes/dsl` : "/recipe-menus/local/dsl";
+    const request = menuId ? fields : { ...fields, ...(bodyMenuId ? { menuId: bodyMenuId } : {}) };
+    const response = await axiosClient.post<unknown>(path, request, { baseURL: DOLORES_API_BASE_URL });
+    const recipe = OwnerMenuRecipeSchema.parse(response.data);
+    if (targetId && recipe.menuId !== targetId) throw new Error("Dolores created the recipe in a different Owner menu.");
     return recipe;
   },
   async copyGlobalRecipe(input: { globalRecipeId: string; menuId?: string }): Promise<OwnerMenuRecipe> {
