@@ -55,15 +55,19 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     actions: [messages.ACTION_SEND_PROOF],
   },
   "menu/add-dish": {
-    title: messages.MENU_ADD_DISH_TITLE,
-    description: messages.MENU_ADD_DISH_DESCRIPTION,
+    title: "Điều chỉnh công thức của tôi",
+    description: "Lưu định lượng riêng cho công thức dùng chung mà không thay đổi công thức gốc.",
     reason: messages.MENU_API_REASON,
-    fields: [
-      { label: messages.FIELD_DISH_NAME, type: "text" },
-      { label: messages.FIELD_INGREDIENTS, type: "text" },
-      { label: messages.FIELD_QUANTITY, type: "text" },
-    ],
-    actions: [messages.ACTION_ADD_DISH],
+  },
+  "menu/adjustments": {
+    title: "Điều chỉnh công thức của tôi",
+    description: "Lưu định lượng riêng cho công thức dùng chung mà không thay đổi công thức gốc.",
+    reason: "Điều chỉnh được lưu trong phạm vi Owner đăng nhập.",
+  },
+  "menu/sync": {
+    title: "Đồng bộ công thức với máy",
+    description: "Gửi yêu cầu cập nhật công thức đến máy và theo dõi xác nhận từ thiết bị.",
+    reason: "Máy cần nhận lệnh và gửi xác nhận thì trạng thái mới cập nhật.",
   },
   "menu/espresso": {
     title: messages.MENU_EDIT_TITLE,
@@ -88,13 +92,13 @@ const screens: Record<string, CustomerWorkflowDescriptor> = {
     actions: [messages.ACTION_ADD_DISH],
   },
   "menu/sent": {
-    title: messages.MENU_SENT_TITLE,
-    description: messages.MENU_SENT_DESCRIPTION,
+    title: "Đồng bộ công thức với máy",
+    description: "Gửi yêu cầu cập nhật công thức đến máy và theo dõi xác nhận từ thiết bị.",
     reason: messages.MENU_API_REASON,
   },
   "menu/applied": {
-    title: messages.MENU_APPLIED_TITLE,
-    description: messages.MENU_APPLIED_DESCRIPTION,
+    title: "Đồng bộ công thức với máy",
+    description: "Theo dõi phiên bản công thức máy đã nhận và lịch sử đồng bộ.",
     reason: messages.MENU_SCOPE_REASON,
   },
   support: {
@@ -254,7 +258,7 @@ export function getCustomerWorkflowBack(sectionPath: string): BackButtonDestinat
     return { label: "Danh sách hóa đơn", fallbackHref: "/dashboard/invoices" };
   }
   if (sectionPath.startsWith("menu/")) {
-    return { label: "Menu của tôi", fallbackHref: "/dashboard/menu" };
+    return { label: "Công thức pha chế", fallbackHref: "/dashboard/menu" };
   }
   return null;
 }
@@ -274,7 +278,7 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
   const blockedActions = (screen.actions ?? []).map((action) => blocked(action));
 
   if (sectionPath === "support") {
-    return [link("Gửi yêu cầu mới", "/dashboard/support/new"), link("Cập nhật menu cần hỗ trợ", "/dashboard/support/menu", "secondary")];
+    return [link("Gửi yêu cầu mới", "/dashboard/support/new"), link("Cập nhật công thức cần hỗ trợ", "/dashboard/support/menu", "secondary")];
   }
   if (sectionPath === "buyback") {
     return [link("Tạo yêu cầu thu mua", "/dashboard/buyback/new"), link("Xem chứng từ thu mua", "/dashboard/buyback/documents", "secondary")];
@@ -283,10 +287,10 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     return [link("Về hóa đơn", "/dashboard/invoices", "secondary")];
   }
   if (sectionPath === "menu/sent") {
-    return [link("Về menu của tôi", "/dashboard/menu"), blocked("Gửi menu riêng đến máy", "secondary")];
+    return [link("Về công thức pha chế", PATH_CUSTOMER.MENU), link("Kiểm tra trạng thái đồng bộ", PATH_CUSTOMER.MENU_SYNC)];
   }
   if (sectionPath === "menu/applied") {
-    return [link("Về menu của tôi", "/dashboard/menu")];
+    return [link("Về công thức pha chế", PATH_CUSTOMER.MENU), link("Xem lịch sử đồng bộ", PATH_CUSTOMER.MENU_SYNC, "secondary")];
   }
   if (
     sectionPath.startsWith("support/") &&
@@ -304,12 +308,14 @@ function getCustomerWorkflowActionsForScreen(sectionPath: string, screen: Custom
     "invoices/shortfall": [link("Xem phần còn thiếu", "/dashboard/invoices", "secondary")],
     "invoices/reminder": [link("Về hóa đơn", "/dashboard/invoices", "secondary")],
     "invoices/standard-payment": [link("Về hóa đơn", "/dashboard/invoices", "secondary")],
-    "menu/espresso": [link("Về menu của tôi", "/dashboard/menu", "secondary")],
-    "menu/fresh-milk": [link("Về menu của tôi", "/dashboard/menu", "secondary")],
-    "menu/add-dish": [link("Hủy", "/dashboard/menu", "secondary")],
+    "menu/espresso": [link("Về công thức pha chế", "/dashboard/menu", "secondary")],
+    "menu/fresh-milk": [link("Về công thức pha chế", "/dashboard/menu", "secondary")],
+    "menu/add-dish": [link("Hủy", PATH_CUSTOMER.MENU, "secondary")],
+    "menu/adjustments": [link("Về công thức pha chế", PATH_CUSTOMER.MENU, "secondary"), link("Đồng bộ với máy", PATH_CUSTOMER.MENU_SYNC)],
+    "menu/sync": [link("Về công thức pha chế", PATH_CUSTOMER.MENU, "secondary"), link("Điều chỉnh của tôi", PATH_CUSTOMER.MENU_ADJUSTMENTS)],
     "support/new": [link("Về yêu cầu hỗ trợ", "/dashboard/support", "secondary")],
     "support/menu": [
-      link("Gửi menu đến máy", "/dashboard/menu/sent"),
+      link("Kiểm tra đồng bộ công thức", "/dashboard/menu"),
       link("Xem máy của tôi", "/dashboard/machines", "secondary"),
     ],
     "buyback/new": [link("Về thu mua máy cũ", "/dashboard/buyback", "secondary")],

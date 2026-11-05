@@ -2,6 +2,7 @@ import type { ActionBarAction } from "@/components/action-bar/action-bar-actions
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
+import { PATH_CUSTOMER } from "@/routes/path";
 
 type Availability = "unavailable" | "pending";
 
@@ -74,7 +75,7 @@ function getCustomerReadBack(sectionPath: string): BackButtonDestination | null 
   }
 
   if (sectionPath === "menu") return null;
-  if (/^menu\/[^/]+$/.test(sectionPath)) return backTo("Menu của tôi", "/dashboard/menu");
+  if (/^menu\/[^/]+$/.test(sectionPath)) return backTo("Công thức pha chế", "/dashboard/menu");
   return null;
 }
 
@@ -130,7 +131,7 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
     return [link("Xem lịch sử máy", "/dashboard/machines/history", "secondary")];
   }
   if (sectionPath.endsWith("/model")) {
-    return [link("Xem menu", "/dashboard/menu", "secondary")];
+    return [link("Xem công thức pha chế", "/dashboard/menu", "secondary")];
   }
   if (sectionPath.startsWith("machines/")) {
     return [link("Xem lịch sử bảo trì", "/dashboard/machines/history")];
@@ -152,14 +153,13 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
 
   if (sectionPath === "menu") {
     return [
-      link("Thêm món riêng", "/dashboard/menu/add-dish"),
-      link("Chỉnh Espresso", "/dashboard/menu/espresso", "secondary"),
-      link("Chỉnh cà phê sữa tươi", "/dashboard/menu/fresh-milk", "secondary"),
+      link("Điều chỉnh của tôi", PATH_CUSTOMER.MENU_ADJUSTMENTS),
+      link("Đồng bộ với máy", PATH_CUSTOMER.MENU_SYNC, "secondary"),
       link("Về máy của tôi", "/dashboard/machines", "secondary"),
     ];
   }
   if (sectionPath.startsWith("menu/")) {
-    return [link("Thêm món riêng", "/dashboard/menu/add-dish", "secondary")];
+    return [link("Về công thức pha chế", "/dashboard/menu", "secondary")];
   }
 
   return [link("Về tổng quan", "/dashboard")];

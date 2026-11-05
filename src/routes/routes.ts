@@ -293,6 +293,8 @@ const customerStaticSections =  [
   "menu",
   "menu/espresso",
   "menu/fresh-milk",
+  "menu/adjustments",
+  "menu/sync",
   "menu/add-dish",
   "menu/sent",
   "menu/applied",

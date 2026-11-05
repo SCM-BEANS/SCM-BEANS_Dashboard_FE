@@ -36,9 +36,16 @@ const messages = {
 };
 const routeCatalog = loadTypeScriptModule("src/routes/routes.ts", {
   "./path": paths,
-  "@/schema/contracts.schema": loadTypeScriptModule("src/schema/contracts.schema.ts"),
+  "@/schema/contracts.schema": loadTypeScriptModule("src/schema/contracts.schema.ts", {
+    "./termination-cases.schema": loadTypeScriptModule("src/schema/termination-cases.schema.ts"),
+  }),
   "@/schema/billing.schema": loadTypeScriptModule("src/schema/billing.schema.ts"),
   "@/schema/machines.schema": loadTypeScriptModule("src/schema/machines.schema.ts"),
+  "@/schema/machine-models.schema": loadTypeScriptModule("src/schema/machine-models.schema.ts", {
+    "./machines.schema": loadTypeScriptModule("src/schema/machines.schema.ts"),
+  }),
+  "@/schema/coffee-packages.schema": loadTypeScriptModule("src/schema/coffee-packages.schema.ts"),
+  "@/schema/repair-cost-reviews.schema": loadTypeScriptModule("src/schema/repair-cost-reviews.schema.ts"),
   "@/schema/recipes.schema": loadTypeScriptModule("src/schema/recipes.schema.ts"),
   "@/schema/installation-work-orders.schema": loadTypeScriptModule("src/schema/installation-work-orders.schema.ts"),
   "@/text/home/home-messages": { HOME_MESSAGES: messages.home.HOME_MESSAGES },
@@ -56,23 +63,33 @@ const roleMatrix = [
     links: routeCatalog.ADMIN_NAVIGATION_LINKS,
     expectedLabels: [
       "Tổng quan",
+      "Tài khoản",
       "Khách hàng",
       "Cửa hàng",
       "Hợp đồng",
       "Máy & tồn kho",
+      "Yêu cầu kỹ thuật",
       "Giám sát Smart IoT",
-      "Menu & công thức",
+      "Công thức pha chế",
+      "Hóa đơn & đối soát",
+      "Gói cà phê",
+      "Thu mua máy",
       "Báo cáo vận hành",
       "Thông báo",
     ],
     expectedHrefs: [
       paths.PATH_ADMIN.ROOT,
+      paths.PATH_ADMIN.USERS,
       paths.PATH_ADMIN.BUSINESSES,
       paths.PATH_ADMIN.STORES,
       paths.PATH_ADMIN.CONTRACTS,
       paths.PATH_ADMIN.MACHINES,
+      paths.PATH_ADMIN.TECHNICAL_REQUESTS,
       paths.PATH_ADMIN.IOT,
       paths.PATH_ADMIN.MENU,
+      paths.PATH_ADMIN.INVOICES,
+      paths.PATH_ADMIN.COFFEE_PACKAGES,
+      paths.PATH_ADMIN.BUYBACKS,
       paths.PATH_ADMIN.REPORTS,
       paths.PATH_ADMIN.NOTIFICATIONS,
     ],
@@ -92,9 +109,11 @@ const roleMatrix = [
       "Hợp đồng",
       "Tài khoản khách",
       "Hóa đơn",
+      "Gói cà phê",
       "Máy & tồn kho",
+      "Địa điểm",
       "Giám sát Smart IoT",
-      "Menu & công thức",
+      "Công thức pha chế",
       "Yêu cầu kỹ thuật",
       "Lịch sử máy",
       "Thu mua máy cũ",
@@ -105,7 +124,9 @@ const roleMatrix = [
       paths.PATH_MODERATOR.CONTRACTS,
       paths.PATH_MODERATOR.CUSTOMERS,
       paths.PATH_MODERATOR.INVOICES,
+      paths.PATH_MODERATOR.COFFEE_PACKAGES,
       paths.PATH_MODERATOR.MACHINES,
+      paths.PATH_MODERATOR.LOCATIONS,
       paths.PATH_MODERATOR.IOT,
       paths.PATH_MODERATOR.MENU,
       paths.PATH_MODERATOR.TECHNICAL_REQUESTS,
@@ -127,9 +148,13 @@ const roleMatrix = [
       "Tổng quan",
       "Hợp đồng",
       "Máy của tôi",
-      "Menu của tôi",
+      "Địa điểm của tôi",
+      "Công thức pha chế",
       "Hóa đơn",
+      "Gói cà phê",
       "Yêu cầu hỗ trợ",
+      "Lịch bảo trì",
+      "Thu hồi máy",
       "Thu mua máy cũ",
       "Thông báo",
     ],
@@ -137,9 +162,13 @@ const roleMatrix = [
       paths.PATH_CUSTOMER.ROOT,
       paths.PATH_CUSTOMER.CONTRACTS,
       paths.PATH_CUSTOMER.MACHINES,
+      paths.PATH_CUSTOMER.LOCATIONS,
       paths.PATH_CUSTOMER.MENU,
       paths.PATH_CUSTOMER.INVOICES,
+      paths.PATH_CUSTOMER.COFFEE_PACKAGES,
       paths.PATH_CUSTOMER.SUPPORT,
+      paths.PATH_CUSTOMER.MAINTENANCE,
+      paths.PATH_CUSTOMER.RECALLS,
       paths.PATH_CUSTOMER.BUYBACK,
       paths.PATH_CUSTOMER.NOTIFICATIONS,
     ],
@@ -155,11 +184,17 @@ const roleMatrix = [
     links: routeCatalog.TECHNICIAN_NAVIGATION_LINKS,
     expectedLabels: [
       "Việc được giao",
+      "Thu hồi máy",
+      "Check máy",
+      "Đánh giá máy",
       "Lịch sử máy",
       "Thông báo",
     ],
     expectedHrefs: [
       paths.PATH_TECHNICIAN.TASKS,
+      paths.PATH_TECHNICIAN.TASK_RETRIEVAL,
+      paths.PATH_TECHNICIAN.MACHINE_CHECK,
+      paths.PATH_TECHNICIAN.TASK_BUYBACK_ASSESSMENT,
       paths.PATH_TECHNICIAN.HISTORY,
       paths.PATH_TECHNICIAN.NOTIFICATIONS,
     ],
@@ -329,6 +364,7 @@ test("Admin logout callback calls auth logout, clears the token, and returns to 
   const cookieRemovals = [];
   const routerCalls = [];
   const navigationCalls = [];
+  let splashCompletion;
   const stateValues = [];
   let stateIndex = 0;
   let effects = [];
@@ -362,14 +398,26 @@ test("Admin logout callback calls auth logout, clears the token, and returns to 
       }),
     },
     "@/apis/auth.api": { authApi: { logout: async () => { logoutCalls.push("admin"); } } },
-    "@/components/action-bar/action-bar": { ActionBar: ({ children }) => React.createElement("footer", null, children) },
+    "@/components/action-bar/action-bar": {
+      ActionBar: ({ children }) => React.createElement("footer", null, children),
+      ActionBarLayout: ({ children }) => React.createElement("div", null, children),
+    },
+    "@/components/feedback/liquid-success-splash": {
+      LiquidSuccessSplash: ({ onComplete }) => {
+        splashCompletion = onComplete;
+        return null;
+      },
+      prepareLiquidSuccessAnimation: async () => undefined,
+    },
     "@/components/heading/admin-breadcrumb": { AdminBreadcrumb: () => null },
+    "@/components/sidebar/navigation-route": navigationRoute,
     "@/components/sidebar/mobile-navigation": {
       MobileNavigation: (props) => {
         navigationCalls.push(props);
         return React.createElement("div", { "data-mobile-navigation": "admin" });
       },
     },
+    "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
     "@/lib/auth-role": { hasAdminRole: () => true },
     "@/routes/path": paths,
     "@/text/admin/admin-messages": { ADMIN_MESSAGES: messages.admin.ADMIN_MESSAGES },
@@ -396,6 +444,8 @@ test("Admin logout callback calls auth logout, clears the token, and returns to 
   assert.equal(typeof adminLogout, "function");
 
   await adminLogout();
+  render();
+  await splashCompletion();
 
   assert.deepEqual(logoutCalls, ["admin"]);
   assert.deepEqual(cookieRemovals, [["access_token", { path: "/" }]]);

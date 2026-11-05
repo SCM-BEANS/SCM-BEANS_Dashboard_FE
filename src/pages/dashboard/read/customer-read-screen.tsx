@@ -3,6 +3,7 @@ import type { ActionBarAction } from "@/components/action-bar/action-bar-actions
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
+import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
@@ -12,7 +13,8 @@ import { OverviewScreen } from "../overview/overview-screen";
 import { ContractsScreen } from "../contracts/contracts-screen";
 import { MachinesScreen } from "../machines/machines-screen";
 import { CustomerMachineOperationalOverviewScreen } from "../machines/machine-operational-overview-screen";
-import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
+import { MenuScreen } from "../menu/menu-screen";
+import { RecipeManagementScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { InvoicesScreen } from "../invoices/invoices-screen";
 import { LocationsScreen } from "../locations/locations-screen";
 import { MachineRegistrationScreen } from "../machines/machine-registration-screen";
@@ -60,7 +62,11 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
   if (sectionPath === "machines" || MachineIdSchema.safeParse(machineCandidate).success) {
     return withCustomerActions(<MachinesScreen sectionPath={sectionPath} back={screen.back} />, screen.actions);
   }
-  if (sectionPath === "menu" || sectionPath.startsWith("menu/")) return <RecipeMenusScreen role="owner" />;
+  if (sectionPath === "menu") return <MenuScreen />;
+  const recipeDetailMatch = /^menu\/([^/]+)$/.exec(sectionPath);
+  if (recipeDetailMatch && GlobalRecipeIdSchema.safeParse(recipeDetailMatch[1]).success) {
+    return <RecipeManagementScreen role="owner" initialGlobalRecipeId={recipeDetailMatch[1]} />;
+  }
   if (
     sectionPath === "invoices" ||
     sectionPath === "invoices/standard" ||

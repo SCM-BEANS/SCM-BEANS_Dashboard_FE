@@ -1,12 +1,11 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   GlobalRecipeIdSchema,
-  GlobalRecipesSchema,
   GlobalRecipeSchema,
   GlobalRecipeSummariesSchema,
   RecipePublishRequestSchema,
   LocalRecipeIdSchema,
-  LocalRecipesSchema,
+  LocalRecipeSummariesSchema,
   LocalRecipeSchema,
   LocalRecipeUpsertRequestSchema,
   type RecipePublishRequest,
@@ -14,27 +13,48 @@ import {
 } from "@/schema/recipes.schema";
 import { RecipeSyncRequestSchema, RecipeSyncStatusSchema, RecipeSyncStatusesSchema } from "@/schema/recipe-menus.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
-import axios from "axios";
+
+type BoundedRecipePage<T> = { items: T[]; page: number; size: number; hasNext: boolean };
+
+function responseHeader(headers: unknown, key: string): string | undefined {
+  if (!headers || typeof headers !== "object") return undefined;
+  const record = headers as Record<string, unknown>;
+  const value = record[key] ?? record[key.toLowerCase()];
+  return typeof value === "string" ? value : undefined;
+}
+
+function boundedPage<T>(items: T[], headers: unknown, requested: { page: number; size: number }): BoundedRecipePage<T> {
+  const page = Number(responseHeader(headers, "x-page"));
+  const size = Number(responseHeader(headers, "x-page-size"));
+  const hasNext = responseHeader(headers, "x-has-next");
+  return {
+    items,
+    page: Number.isInteger(page) && page >= 0 ? page : requested.page,
+    size: Number.isInteger(size) && size > 0 ? size : requested.size,
+    hasNext: hasNext?.toLowerCase() === "true",
+  };
+}
 
 
 const recipePath = (id: string) =>
   "/recipes/global/" + encodeURIComponent(GlobalRecipeIdSchema.parse(id));
 
 export const recipesApi =  {
-  async listGlobalSummaries(signal?: AbortSignal, page = 0, size = 50) {
+  async listGlobalPage(page = 0, size = 50, signal?: AbortSignal): Promise<BoundedRecipePage<import("@/schema/recipes.schema").GlobalRecipeSummary>> {
+    const params = { page, size };
     const response = await axiosClient.get<unknown>("/recipes/global", {
       baseURL: DOLORES_API_BASE_URL,
-      params: { page, size },
+      params,
       signal,
     });
-    return GlobalRecipeSummariesSchema.parse(response.data);
+    const items = GlobalRecipeSummariesSchema.parse(response.data);
+    return boundedPage(items, response.headers, params);
+  },
+  async listGlobalSummaries(signal?: AbortSignal, page = 0, size = 50) {
+    return (await recipesApi.listGlobalPage(page, size, signal)).items;
   },
   async listGlobal(signal?: AbortSignal) {
-    const response = await axiosClient.get<unknown>("/recipes/global", {
-      baseURL: DOLORES_API_BASE_URL,
-      signal,
-    });
-    return GlobalRecipesSchema.parse(response.data);
+    return recipesApi.listGlobalSummaries(signal);
   },
   async getGlobalById(id: string, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>(recipePath(id), {
@@ -54,12 +74,22 @@ export const recipesApi =  {
     );
     return GlobalRecipeSchema.parse(response.data);
   },
-  async listLocal(signal?: AbortSignal) {
+  async listLocalPage(input: { page?: number; size?: number; globalRecipeId?: string } = {}, signal?: AbortSignal): Promise<BoundedRecipePage<import("@/schema/recipes.schema").LocalRecipeSummary>> {
+    const params = {
+      page: input.page ?? 0,
+      size: input.size ?? 50,
+      ...(input.globalRecipeId ? { globalRecipeId: GlobalRecipeIdSchema.parse(input.globalRecipeId) } : {}),
+    };
     const response = await axiosClient.get<unknown>("/recipes/local", {
       baseURL: DOLORES_API_BASE_URL,
+      params,
       signal,
     });
-    return LocalRecipesSchema.parse(response.data);
+    const items = LocalRecipeSummariesSchema.parse(response.data);
+    return boundedPage(items, response.headers, params);
+  },
+  async listLocal(signal?: AbortSignal) {
+    return (await recipesApi.listLocalPage({}, signal)).items;
   },
   async getLocalById(id: string, signal?: AbortSignal) {
     const validId = LocalRecipeIdSchema.parse(id);

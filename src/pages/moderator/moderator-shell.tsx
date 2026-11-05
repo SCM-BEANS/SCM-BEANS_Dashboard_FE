@@ -149,8 +149,6 @@ export function ModeratorShell({
         return <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>;
       case PATH_MODERATOR.IOT:
         return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
-      case PATH_MODERATOR.MENU:
-        return disabledAction(actionMessages.ADD_RECIPE);
       case PATH_MODERATOR.TECHNICAL_REQUESTS:
         return disabledAction(actionMessages.CREATE_TECHNICAL_REQUEST);
       case PATH_MODERATOR.MACHINE_HISTORY:
@@ -217,7 +215,9 @@ export function ModeratorShell({
           </div>
           <ActionBarLayout label={actionMessages.LABEL}>
             <main className={styles.main}>{children}</main>
-            {isSectionList && <ActionBarConfig>{renderActions()}</ActionBarConfig>}
+            {isSectionList && currentSection.HREF !== PATH_MODERATOR.MENU && (
+              <ActionBarConfig>{renderActions()}</ActionBarConfig>
+            )}
           </ActionBarLayout>
         </div>
       </div>

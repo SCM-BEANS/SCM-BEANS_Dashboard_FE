@@ -2,6 +2,7 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Coffee,
   Building2,
   FileText,
   LayoutDashboard,
@@ -33,6 +34,7 @@ const NAV_ICONS = {
   Utensils,
   BarChart3,
   Bell,
+  Coffee,
 } as const;
 
 type NavigationItem = (typeof ADMIN_NAVIGATION_LINKS)[number];

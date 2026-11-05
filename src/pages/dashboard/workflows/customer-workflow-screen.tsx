@@ -12,10 +12,11 @@ import { RepairCaseDetailScreen } from "@/components/features/repair-workflow/re
 import { OwnerMaintenanceScreen } from "@/components/features/maintenance-workflow/owner-maintenance-screen";
 import { RepairCostReviewScreen } from "@/components/features/maintenance-workflow/repair-cost-review-screen";
 import { PATH_CUSTOMER } from "@/routes/path";
-import { RecipeMenusScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { NotificationInbox } from "./notification-inbox";
 import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
 import { BuybackOwnerScreen } from "@/components/features/buyback/buyback-owner-screen";
+import { OwnerRecipeAdjustmentsScreen } from "../menu/owner-recipe-adjustments-screen";
+import { OwnerRecipeSyncScreen } from "../menu/owner-recipe-sync-screen";
 import styles from "../customer-shell.module.css";
 
 export { getCustomerWorkflowDescriptor };
@@ -68,6 +69,13 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   const fallbackAction = screen.back?.fallbackHref
     ? { label: screen.back.label, href: screen.back.fallbackHref, variant: "secondary" as const }
     : undefined;
+
+  if (sectionPath === "menu/adjustments" || sectionPath === "menu/add-dish") {
+    return <OwnerRecipeAdjustmentsScreen />;
+  }
+  if (sectionPath === "menu/sync" || sectionPath === "menu/sent" || sectionPath === "menu/applied") {
+    return <OwnerRecipeSyncScreen />;
+  }
 
   if (sectionPath === "support") {
     return withWorkflowActions(
@@ -124,9 +132,6 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
       actions,
       fallbackAction,
     );
-  }
-  if (sectionPath === "menu/add-dish") {
-    return <RecipeMenusScreen role="owner" />;
   }
   if (sectionPath === "notifications") {
     return withWorkflowActions(<NotificationInbox back={screen.back} />, actions, fallbackAction);

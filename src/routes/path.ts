@@ -180,6 +180,8 @@ export const PATH_CUSTOMER =  {
   INVOICE_STANDARD_PAYMENT: `${CUSTOMER_ROOT}/invoices/standard-payment`,
   MENU: `${CUSTOMER_ROOT}/menu`,
   MENU_RECIPE: (id: string) => `${CUSTOMER_ROOT}/menu/${encodeURIComponent(id)}`,
+  MENU_ADJUSTMENTS: `${CUSTOMER_ROOT}/menu/adjustments`,
+  MENU_SYNC: `${CUSTOMER_ROOT}/menu/sync`,
   MENU_ADD_DISH: `${CUSTOMER_ROOT}/menu/add-dish`,
   MENU_SENT: `${CUSTOMER_ROOT}/menu/sent`,
   MENU_APPLIED: `${CUSTOMER_ROOT}/menu/applied`,

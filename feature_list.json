@@ -1,232 +1,267 @@
 [
-  {
-    "id": "phase-01-product-native-login-shell",
-    "title": "Product-native login shell",
-    "status": "passing-unverified",
-    "evidence": "fast mode — no test evidence",
-    "user_visible_behavior": "The login route uses a centered responsive card, Dolores wordmark, and shared light dashboard palette without the large hero image.",
-    "verification_command": "node --test tests/login-ui-shell.test.cjs; manual browser check at 1440x900, 390x844, and 360x640; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build",
-    "notes": "Covers stories: P1 login focus, P1 visual consistency",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-auth-steps-accessibility-motion",
-    "title": "Auth steps, accessibility, and motion",
-    "status": "passing-unverified",
-    "evidence": "fast mode — no test evidence",
-    "user_visible_behavior": "Credentials, MFA, email OTP, and first-login password change share one layout with accessible controls and reduced-motion support.",
-    "verification_command": "node --test tests/login-auth-steps.test.cjs; manual keyboard/state walkthrough; verify transitions at 180-220ms/140-180ms and zero motion under prefers-reduced-motion; lint and TypeScript checks",
-    "notes": "Covers stories: P1 multi-step flow, P2 password visibility",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-login-success-liquid-splash",
-    "title": "Login success liquid splash",
-    "status": "passing-unverified",
-    "evidence": "fast mode — no test evidence",
-    "user_visible_behavior": "A visual-only Dolores-colored liquid success splash runs after final authentication, then safely routes to the dashboard within 1.5 seconds.",
-    "verification_command": "node --test tests/login-success-splash.test.cjs; controlled success/challenge/failure walkthrough; assert no audio, max 1.5s, reduced-motion skips animation, and redirect survives animation failure; production build",
-    "notes": "Covers stories: P2 success feedback",
-    "priority": "P2"
-  },
-  {
-    "id": "phase-01-history-aware-back-control",
-    "title": "Shared history-aware back control",
-    "status": "passing-unverified",
-    "evidence": "TDD: node --test tests/shared-back-navigation.test.cjs (6/6); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false. Browser route walkthrough pending after phase integration.",
-    "user_visible_behavior": "A shared BackButton returns to the previous Dolores screen or uses an internal parent fallback for direct entry.",
-    "verification_command": "node --test tests/shared-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser walkthrough after route integration.",
-    "notes": "Covers stories: US-01, US-02, US-04. History helper/provider and accessible BackButton implemented; Phase 01 review pending. Full suite currently has 46 unrelated failures across existing dashboard/domain tests.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-customer-technician-integration",
-    "title": "Customer and technician integration",
-    "status": "passing-unverified",
-    "evidence": "TDD: node --test tests/customer-technician-back-navigation.test.cjs (6/6); combined Phase 01/02 tests (12/12); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke test for four customer/technician routes returned HTTP 200. Browser navigation walkthrough pending.",
-    "user_visible_behavior": "Customer and technician detail/workflow screens with a parent have one consistent back button and preserve prior list state.",
-    "verification_command": "node --test tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke for customer/technician detail routes; browser navigation walkthrough.",
-    "notes": "Covers stories: US-01, US-02, US-03, US-04. Shared headings integrated for customer read/workflow and technician detail/workflow screens; Phase 02 approved by the user on 2026-10-27. Full suite at Phase 02: 95/141 pass; the same 46 unrelated failures reported in Phase 01 remained.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-moderator-admin-integration",
-    "title": "Moderator and admin integration",
-    "status": "passing-unverified",
-    "evidence": "TDD: node --test tests/moderator-admin-back-navigation.test.cjs (5/5); combined Phase 01–03 tests (17/17); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; 5 local moderator/admin route smoke requests returned HTTP 200. Interactive browser detail walkthrough could not complete because the local session redirected to the forbidden screen; original tab URL was restored.",
-    "user_visible_behavior": "Moderator and admin detail/workflow screens return to the prior same-app view or the configured parent fallback.",
-    "verification_command": "node --test tests/moderator-admin-back-navigation.test.cjs tests/shared-back-navigation.test.cjs tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local moderator/admin route smoke; manual browser walkthrough for detail, direct-entry, and query preservation.",
-    "notes": "Covers stories: US-01, US-02, US-03, US-04. The user approved Phase 03 on 2026-10-27 and Phase 04 proceeded. Interactive browser walkthrough remains unverified because the local Admin session reached the forbidden screen. Full suite at Phase 03: 100/146 pass; the same 46 baseline failures remained.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-04-cross-role-validation-accessibility",
-    "title": "Cross-role coverage and accessibility validation",
-    "status": "passing-unverified",
-    "evidence": "TDD: tests/back-navigation-coverage.test.cjs (3/3); combined navigation tests (20/20); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; isolated production build passed. Full suite: 103/149 pass with the same 46 pre-existing failures. Manual role walkthrough remains unverified because the available Admin browser session lacks access.",
-    "user_visible_behavior": "All applicable routes expose one accessible back control with a safe internal fallback.",
-    "verification_command": "Manual all-role route matrix; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build.",
-    "notes": "Covers stories: US-01, US-02, US-03, US-04. Admin create/detail route coverage completed, query fallbacks preserve parent list state, root lists stay free of back controls, and duplicate parent actions were removed. The user approved Phase 04 on 2026-10-27. Manual interactive browser validation remains unverified because the available Admin browser session lacks access.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-01-shared-mobile-navigation-admin",
-    "title": "Shared mobile navigation and Admin integration",
-    "status": "passing",
-    "evidence": "Production build, lint, and TypeScript pass; focused navigation checks 13/13; Admin browser walkthrough passes at 360/390/768/1024 px; full suite 111/157 with 46 recorded baseline failures.",
-    "user_visible_behavior": "Admin opens the shared, accessible bottom-sheet navigation from a mobile header hamburger while preserving Admin routes, disabled items, and logout behavior.",
-    "verification_command": "node --test tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; Admin mobile keyboard and 360/390/768/1024 px browser walkthrough.",
-    "notes": "Covers stories: P1 shared drawer, P1 role-specific destinations and disabled states, P1 keyboard accessibility, P2 nested-route active state. Code review APPROVED (10/10), no findings. Full-suite failure count matches the recorded baseline; historical failure names are unavailable for exact name-by-name comparison.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-moderator-mobile-navigation",
-    "title": "Moderator mobile navigation",
-    "status": "passing",
-    "evidence": "Production build, lint, and TypeScript pass; focused tests 18/18; code review APPROVED 10/10; full suite 116/162 with the same recorded 46-failure baseline.",
-    "user_visible_behavior": "Moderator uses the shared mobile drawer with its complete role-specific route list and unchanged notifications, desktop sidebar, and logout behavior.",
-    "verification_command": "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
-    "notes": "Covers stories: P1 shared mobile opening/selection, role-specific destinations, accessible dismissal/focus behavior; P2 nested Moderator route selection. Moderator-specific live browser walkthrough was not completed because no logged-in Moderator session was available; accessing through the LAN host also blocked Next dev resources. Shared drawer visual and keyboard behavior was verified in the Admin Phase 01 walkthrough; Moderator route, notifications link, logout callback, and ActionBar offset are covered by focused tests.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-customer-technician-mobile-navigation",
-    "title": "Customer and Technician mobile navigation",
-    "status": "passing",
-    "evidence": "Production build, lint, and TypeScript pass; focused navigation tests 23/23; code review APPROVED 10/10; full suite 121/167 with the same recorded 46-failure baseline.",
-    "user_visible_behavior": "Customer and Technician open their own complete menus in the shared mobile drawer, replacing horizontal strips while preserving notifications, routes, and logout behavior.",
-    "verification_command": "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/customer-technician-mobile-navigation.test.cjs tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
-    "notes": "Covers stories: P1 shared role-specific menus/logout and keyboard navigation; P2 nested customer/technician routes. Role-specific live browser walkthroughs were not completed because no logged-in Moderator, Customer, or Technician sessions were available. Shared drawer visual/keyboard behavior was verified in Admin Phase 01; role menus, notifications, dynamic active parents, logout handlers, and mobile ActionBar offset/content clearance are covered by focused tests.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-04-shared-mobile-navigation-cross-role-validation-accessibility",
-    "title": "Cross-role validation and accessibility",
-    "status": "passing-unverified",
-    "evidence": "Automated Phase 04 verification: focused navigation suite 36/36, including all four route/label matrices, logout callbacks, mobile header breakpoint/touch-target contract, open/close, focus containment/restoration, Escape/backdrop, link selection, and breakpoint resize; build, lint, and TypeScript pass; full suite 134/180 pass with the same 46 baseline failures; code review APPROVED 9.7/10. User selected automated validation; live visual role walkthrough is deferred and unverified.",
-    "user_visible_behavior": "All four roles use the same accessible mobile drawer with correct role-specific active/disabled links, responsive layouts, logout callbacks, and the existing desktop Sidebar.",
-    "verification_command": "Focused navigation tests; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; four-role mobile/desktop walkthroughs at 360 px, 390 px, 768 px, 1023 px, and 1024 px, including logout callbacks and breakpoint-close behavior.",
-    "notes": "Covers stories: P1 shared drawer, P1 role-specific destinations and states, P1 keyboard accessibility, P2 nested-route active state. Component handlers/effects are exercised with a DOM-free React element harness, and stylesheet contracts verify the 1023px breakpoint and 44px notification targets. Automated testing was selected by the user for Phase 04. Actual browser focus, overflow/header collisions, and rendered 360/390/768/1023/1024 px role-shell layouts remain unverified because no authenticated Moderator, Customer, or Technician sessions are available.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-01-landing-presentation-foundation",
-    "title": "Landing presentation foundation",
-    "status": "passing",
-    "evidence": "node --test tests/landing-page.test.cjs (3/3); npm.cmd run test:e2e -- --project=chromium (1/1; isolated Next dev on port 3100); npm.cmd run lint (pass); Chromium computed styles at 1440x900 and 390x844: Arial body/headings, primary and secondary links 48px, primary red fill, 10px radius, visible focus, reduced motion; npx.cmd tsc --noEmit --incremental false reports unrelated generated-route and Moderator message-key errors.",
-    "user_visible_behavior": "The public Home page uses the Dolores light palette and Arial typography, and its action links render as real, accessible buttons with working variants.",
-    "verification_command": "node --test tests/landing-page.test.cjs; npx.cmd playwright install chromium; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
-    "notes": "Covers stories: US-02, US-05; foundation for US-01. User confirmed the existing DOLORES COFFEE logo and requested Playwright E2E. Browser computed-style evidence verifies the Link receives CSS.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-public-header-navigation",
-    "title": "Public header and navigation",
-    "status": "passing",
-    "evidence": "TDD: Playwright Chromium E2E 4/4; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); browser inspection at 390px, 1023px, 1024px, and 1440px confirms sticky header, visible mobile login, 44x44 toggle, and correct breakpoint. TypeScript check reports 3 pre-existing errors outside changed landing files.",
-    "user_visible_behavior": "Landing navigation links only to visible sections, keeps Login visible on mobile, and provides a keyboard-operable sticky header with a dismissible mobile disclosure.",
-    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 390px, 1023/1024px, hash links, Escape/focus return, and /login navigation",
-    "notes": "Covers stories: US-03, US-04, US-05. User chose the compact modeless disclosure under the header. Playwright emitted existing Next Image width/height warnings from legacy content slated for Phase 03; E2E passed. TypeScript errors: stale .next/types/validator.ts technician route and missing LOADING_REPAIR_CASES / TECHNICAL_LAST_ACTOR keys in Moderator technical-screen.tsx; none point to changed landing files.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-landing-content-imagery",
-    "title": "Landing content and imagery",
-    "status": "passing",
-    "evidence": "TDD: expanded Playwright Chromium E2E 5/5; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Browser inspection: one H1 in 2 lines at 1440px and 390px, no horizontal overflow at 320/390/1440px, CTA visible and separated from hero image, one machine image optimized by Next in dev and no stock/background image requests. TypeScript reports 3 unrelated baseline errors outside changed landing files.",
-    "user_visible_behavior": "Home introduces the coffee machine and Dolores management platform, uses the selected product image once, and hides sample testimonials/news and their visible links.",
-    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 320px, 390px, 1440px; verify one H1, visible anchors, image usage, and no horizontal overflow",
-    "notes": "Covers stories: US-01, US-02, US-04. User confirmed the current email, phone, and address for publication; dashboard screenshot remains optional P2. Testimonials and news content are removed from the Home message payload and are not rendered; legacy card components remain available. Phase 03 was approved by the user on 2026-10-28.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-04-rendered-validation",
-    "title": "Rendered landing validation",
-    "status": "passing",
-    "evidence": "Playwright Chromium E2E 9/9 with workers=2; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Viewport matrix 320/390/768/1023/1024/1440/1920 confirmed no horizontal overflow, clipped CTA, or image overlap. Route checks cover /, /home, /login and browser back. Keyboard, hash offset, reduced motion, Arial, no external font, representative contrast, 44x44px targets, and focus ring passed. Isolated production runtime build succeeded with TypeScript validation skipped only in a disposable copy; production Chromium measured the hero AVIF at 30,063 bytes desktop and 13,121 bytes mobile, CLS 0.0424 / 0.0122. Normal workspace build/typecheck remains blocked by stale generated .next Technician route and two unrelated Moderator message-key errors.",
-    "user_visible_behavior": "The finished landing works at / and /home across target widths, with verified navigation, focus, reduced motion, typography, image delivery, and layout stability.",
-    "verification_command": "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; browser: 320, 390, 768, 1023, 1024, 1440, 1920px; production image payload and CLS profile",
-    "notes": "Covers stories: US-01, US-02, US-03, US-04, US-05. User selected Chromium E2E and approved Phase 04 on 2026-10-28; the MVP is complete. Production runtime measurements came from an isolated copy where only the build typecheck was skipped; a separate TypeScript check in the clean copy confirmed the two existing Moderator message-key errors. Direct workspace `next build` also hits an old generated route reference in `.next/types/validator.ts`. These baseline TypeScript issues are not in landing files. Optional Phase 05 remains deferred pending an authentic, verified dashboard screenshot.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-05-optional-dashboard-screenshot",
-    "title": "Optional verified dashboard screenshot",
-    "status": "not_started",
-    "evidence": "",
-    "user_visible_behavior": "If an approved and sanitized runtime dashboard screenshot is supplied, the platform section can show it with accurate alt text and responsive sizing; otherwise the text-only MVP remains complete.",
-    "verification_command": "After approved asset is supplied: node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: inspect source/PII sanitization, alt text, responsive sizing, payload, and CLS",
-    "notes": "Covers stories: US-06. Deferred P2; requires an authentic, approved, sanitized screenshot source and is not an MVP blocker.",
-    "priority": "P2"
-  },
-  {
-    "id": "phase-01-data-clarity",
-    "title": "Admin overview data clarity",
-    "status": "passing-unverified",
-    "evidence": "fast mode — no test evidence",
-    "user_visible_behavior": "Admin can interpret dashboard values with period and unit context and distinguish zero from unavailable, loading, empty, and error states.",
-    "verification_command": "Visual acceptance: /admin desktop and 375px; verify KPI meanings, cup-period context, zero/missing/loading/empty/error distinction, VND formatting, and unchanged API/query behavior.",
-    "notes": "Covers stories: US-01, US-02",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-table-readability",
-    "title": "Admin table readability",
-    "status": "passing-unverified",
-    "evidence": "Targeted Playwright alignment check passed at 375px and 1440px on isolated and local :3000 app; broader phase acceptance remains unverified",
-    "user_visible_behavior": "Admin sees readable Vietnamese customer status, machine owner identifier and machine-type labels, clear table scroll cues, and pagination range where the response provides totals.",
-    "verification_command": "Visual acceptance: /admin/businesses list/detail and /admin/machines desktop and 375px; verify labels, filters/URL, available pagination range, table reachability, and unchanged shared-role table styles.",
-    "notes": "Covers stories: US-03, US-04",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-interaction-feedback",
-    "title": "Admin interaction feedback",
-    "status": "passing-unverified",
-    "evidence": "fast mode — no test evidence",
-    "user_visible_behavior": "Admin controls provide brief hover, pressed, and focus feedback while respecting reduced-motion preferences and preserving existing actions.",
-    "verification_command": "Visual acceptance: Admin overview and targeted lists; confirm visible keyboard focus, transitions no longer than 180ms, reduced-motion suppression, unchanged handlers, and unchanged Customer/Technician/Moderator defaults.",
-    "notes": "Covers stories: US-05",
-    "priority": "P2"
-  },
-  {
-    "id": "phase-01-shared-machine-presentation",
-    "title": "Shared machine presentation across roles",
-    "status": "passing-unverified",
-    "evidence": "TDD: targeted Phase 01 tests 6/6; ESLint on all changed Phase 01 files passes; git diff --check passes (CRLF normalization warnings only); code review no findings. The full focused suite still has unrelated failures from existing test/code path drift and Moderator dashboard async-harness behavior. Repo-wide lint and tsc remain blocked by pre-existing errors in dashboard/menu, moderator/buyback, moderator/technical, and technician/work-order-detail.",
-    "user_visible_behavior": "Owner, Admin, and Moderator see the same machine list/detail hierarchy and Smart IoT panel placement while retaining role-specific routes, filters, permissions, and actions.",
-    "verification_command": "node --test tests/admin-machines-iot.test.cjs tests/moderator-dashboard.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser: Owner/Admin/Moderator machine lists and details plus /admin/iot and /moderator/iot at desktop and mobile widths",
-    "notes": "Covers stories: P1 story 2. Owner/Admin/Moderator now use shared list summary-controls-results regions and common machine-detail metric cards; Owner uses the shared DataTable; role queries, filters and actions remain role-owned. Admin/Moderator IoT routes share SmartIotPanel. Phase 01 defines role-specific machine operational-overview path helpers; the visible action and destination page are deferred to Phase 03 so no dead link is exposed. Browser validation is deferred to Phase 04. Phase 01 awaits user review before Phase 02. See plans/owner-iot-status-telemetry/phase-01-shared-machine-presentation.md.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-02-heartbeat-and-telemetry",
-    "title": "Role-scoped heartbeat and telemetry",
-    "status": "passing",
-    "evidence": "Phase 02 focused TDD checks: 10 passed; ESLint on touched files: pass; TypeScript reports no errors in Phase 02 files, with existing errors remaining in dashboard/menu, moderator/buyback, and moderator/technical. Legacy tests in admin-machines-iot and moderator-dashboard still fail on stale route/query fixtures.",
-    "user_visible_behavior": "All three roles see permitted heartbeat state on Smart IoT machine lists/details; Owner and Admin can review telemetry history, while Moderator sees an explicit permission state without a points request.",
-    "verification_command": "node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx.cmd eslint <touched Phase 02 source files>; npx.cmd tsc --noEmit --incremental false",
-    "notes": "Covers stories: P1 stories 1, 3, 4; P2 story 1. See plans/owner-iot-status-telemetry/phase-02-heartbeat-and-telemetry.md.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-03-operational-overview",
-    "title": "Role-scoped machine operational overview",
-    "status": "passing",
-    "evidence": "TDD: focused Phase 03 tests 5/5 pass; touched-file ESLint passes; git diff --check passes; code review APPROVED after fixing a nested main landmark. npx tsc --noEmit still reports pre-existing unrelated errors in dashboard/menu, moderator/buyback, and moderator/technical. Broader legacy tests still have existing path/alias harness failures (admin overview ./overview/overview-content and owner routing @/schema/billing.schema).",
-    "user_visible_behavior": "Owner, Admin, and Moderator can open the same operational-overview layout from machine detail using confirmed aggregate data; the page labels role scope and shows only authorized financial metrics.",
-    "verification_command": "node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npx eslint [changed Phase 03 TypeScript files]; npx tsc --noEmit; git diff --check",
-    "notes": "Covers story: P1 story 5. Calendar presets are separate from telemetry rolling date-time controls. Per-machine cup/PAYG values and 3D stay deferred. Phase 03 code review and user review are approved. See plans/owner-iot-status-telemetry/phase-03-operational-overview.md.",
-    "priority": "P1"
-  },
-  {
-    "id": "phase-04-cross-role-validation",
-    "title": "Cross-role IoT flow validation",
-    "status": "passing-unverified",
-    "evidence": "Phase 04 targeted Playwright: 3/3 passed at 390/768/1023/1024/1440px for Owner/Admin/Moderator (mock APIs/role claims). Targeted heartbeat/telemetry checks: 10/10; operational overview checks: 5/5. Manual authenticated API/browser validation remains unverified. Full Playwright: 11 passed, 3 unrelated failures in Admin overview date-range and landing keyboard-focus/touch-target checks; focused legacy Node suite: 20 passed, 11 harness/route drift failures. Repo-wide lint/tsc have unrelated errors; changed Phase 04 files pass ESLint and diff check.",
-    "user_visible_behavior": "Machine list → detail → operational overview works consistently across Owner, Admin, and Moderator without changing role permissions, maintenance behavior, or management actions.",
-    "verification_command": "npm.cmd run test:e2e -- --project=chromium tests/e2e/machine-operational-overview.spec.ts; node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
-    "notes": "Covers all P1 stories and functional requirements. Unavailable authenticated role sessions must be reported as unverified. See plans/owner-iot-status-telemetry/phase-04-cross-role-validation.md.",
-    "priority": "P1"
-  }
+    {
+        "value":  [
+                      {
+                          "id":  "phase-01-product-native-login-shell",
+                          "title":  "Product-native login shell",
+                          "status":  "passing-unverified",
+                          "evidence":  "fast mode — no test evidence",
+                          "user_visible_behavior":  "The login route uses a centered responsive card, Dolores wordmark, and shared light dashboard palette without the large hero image.",
+                          "verification_command":  "node --test tests/login-ui-shell.test.cjs; manual browser check at 1440x900, 390x844, and 360x640; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build",
+                          "notes":  "Covers stories: P1 login focus, P1 visual consistency",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-auth-steps-accessibility-motion",
+                          "title":  "Auth steps, accessibility, and motion",
+                          "status":  "passing-unverified",
+                          "evidence":  "fast mode — no test evidence",
+                          "user_visible_behavior":  "Credentials, MFA, email OTP, and first-login password change share one layout with accessible controls and reduced-motion support.",
+                          "verification_command":  "node --test tests/login-auth-steps.test.cjs; manual keyboard/state walkthrough; verify transitions at 180-220ms/140-180ms and zero motion under prefers-reduced-motion; lint and TypeScript checks",
+                          "notes":  "Covers stories: P1 multi-step flow, P2 password visibility",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-login-success-liquid-splash",
+                          "title":  "Login success liquid splash",
+                          "status":  "passing-unverified",
+                          "evidence":  "fast mode — no test evidence",
+                          "user_visible_behavior":  "A visual-only Dolores-colored liquid success splash runs after final authentication, then safely routes to the dashboard within 1.5 seconds.",
+                          "verification_command":  "node --test tests/login-success-splash.test.cjs; controlled success/challenge/failure walkthrough; assert no audio, max 1.5s, reduced-motion skips animation, and redirect survives animation failure; production build",
+                          "notes":  "Covers stories: P2 success feedback",
+                          "priority":  "P2"
+                      },
+                      {
+                          "id":  "phase-01-history-aware-back-control",
+                          "title":  "Shared history-aware back control",
+                          "status":  "passing-unverified",
+                          "evidence":  "TDD: node --test tests/shared-back-navigation.test.cjs (6/6); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false. Browser route walkthrough pending after phase integration.",
+                          "user_visible_behavior":  "A shared BackButton returns to the previous Dolores screen or uses an internal parent fallback for direct entry.",
+                          "verification_command":  "node --test tests/shared-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser walkthrough after route integration.",
+                          "notes":  "Covers stories: US-01, US-02, US-04. History helper/provider and accessible BackButton implemented; Phase 01 review pending. Full suite currently has 46 unrelated failures across existing dashboard/domain tests.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-customer-technician-integration",
+                          "title":  "Customer and technician integration",
+                          "status":  "passing-unverified",
+                          "evidence":  "TDD: node --test tests/customer-technician-back-navigation.test.cjs (6/6); combined Phase 01/02 tests (12/12); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke test for four customer/technician routes returned HTTP 200. Browser navigation walkthrough pending.",
+                          "user_visible_behavior":  "Customer and technician detail/workflow screens with a parent have one consistent back button and preserve prior list state.",
+                          "verification_command":  "node --test tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local GET smoke for customer/technician detail routes; browser navigation walkthrough.",
+                          "notes":  "Covers stories: US-01, US-02, US-03, US-04. Shared headings integrated for customer read/workflow and technician detail/workflow screens; Phase 02 approved by the user on 2026-10-27. Full suite at Phase 02: 95/141 pass; the same 46 unrelated failures reported in Phase 01 remained.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-moderator-admin-integration",
+                          "title":  "Moderator and admin integration",
+                          "status":  "passing-unverified",
+                          "evidence":  "TDD: node --test tests/moderator-admin-back-navigation.test.cjs (5/5); combined Phase 01–03 tests (17/17); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; 5 local moderator/admin route smoke requests returned HTTP 200. Interactive browser detail walkthrough could not complete because the local session redirected to the forbidden screen; original tab URL was restored.",
+                          "user_visible_behavior":  "Moderator and admin detail/workflow screens return to the prior same-app view or the configured parent fallback.",
+                          "verification_command":  "node --test tests/moderator-admin-back-navigation.test.cjs tests/shared-back-navigation.test.cjs tests/customer-technician-back-navigation.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; local moderator/admin route smoke; manual browser walkthrough for detail, direct-entry, and query preservation.",
+                          "notes":  "Covers stories: US-01, US-02, US-03, US-04. The user approved Phase 03 on 2026-10-27 and Phase 04 proceeded. Interactive browser walkthrough remains unverified because the local Admin session reached the forbidden screen. Full suite at Phase 03: 100/146 pass; the same 46 baseline failures remained.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-04-cross-role-validation-accessibility",
+                          "title":  "Cross-role coverage and accessibility validation",
+                          "status":  "passing-unverified",
+                          "evidence":  "TDD: tests/back-navigation-coverage.test.cjs (3/3); combined navigation tests (20/20); npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; isolated production build passed. Full suite: 103/149 pass with the same 46 pre-existing failures. Manual role walkthrough remains unverified because the available Admin browser session lacks access.",
+                          "user_visible_behavior":  "All applicable routes expose one accessible back control with a safe internal fallback.",
+                          "verification_command":  "Manual all-role route matrix; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build.",
+                          "notes":  "Covers stories: US-01, US-02, US-03, US-04. Admin create/detail route coverage completed, query fallbacks preserve parent list state, root lists stay free of back controls, and duplicate parent actions were removed. The user approved Phase 04 on 2026-10-27. Manual interactive browser validation remains unverified because the available Admin browser session lacks access.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-01-shared-mobile-navigation-admin",
+                          "title":  "Shared mobile navigation and Admin integration",
+                          "status":  "passing",
+                          "evidence":  "Production build, lint, and TypeScript pass; focused navigation checks 13/13; Admin browser walkthrough passes at 360/390/768/1024 px; full suite 111/157 with 46 recorded baseline failures.",
+                          "user_visible_behavior":  "Admin opens the shared, accessible bottom-sheet navigation from a mobile header hamburger while preserving Admin routes, disabled items, and logout behavior.",
+                          "verification_command":  "node --test tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; Admin mobile keyboard and 360/390/768/1024 px browser walkthrough.",
+                          "notes":  "Covers stories: P1 shared drawer, P1 role-specific destinations and disabled states, P1 keyboard accessibility, P2 nested-route active state. Code review APPROVED (10/10), no findings. Full-suite failure count matches the recorded baseline; historical failure names are unavailable for exact name-by-name comparison.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-moderator-mobile-navigation",
+                          "title":  "Moderator mobile navigation",
+                          "status":  "passing",
+                          "evidence":  "Production build, lint, and TypeScript pass; focused tests 18/18; code review APPROVED 10/10; full suite 116/162 with the same recorded 46-failure baseline.",
+                          "user_visible_behavior":  "Moderator uses the shared mobile drawer with its complete role-specific route list and unchanged notifications, desktop sidebar, and logout behavior.",
+                          "verification_command":  "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
+                          "notes":  "Covers stories: P1 shared mobile opening/selection, role-specific destinations, accessible dismissal/focus behavior; P2 nested Moderator route selection. Moderator-specific live browser walkthrough was not completed because no logged-in Moderator session was available; accessing through the LAN host also blocked Next dev resources. Shared drawer visual and keyboard behavior was verified in the Admin Phase 01 walkthrough; Moderator route, notifications link, logout callback, and ActionBar offset are covered by focused tests.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-customer-technician-mobile-navigation",
+                          "title":  "Customer and Technician mobile navigation",
+                          "status":  "passing",
+                          "evidence":  "Production build, lint, and TypeScript pass; focused navigation tests 23/23; code review APPROVED 10/10; full suite 121/167 with the same recorded 46-failure baseline.",
+                          "user_visible_behavior":  "Customer and Technician open their own complete menus in the shared mobile drawer, replacing horizontal strips while preserving notifications, routes, and logout behavior.",
+                          "verification_command":  "npm.cmd run build; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; node --test tests/customer-technician-mobile-navigation.test.cjs tests/moderator-mobile-navigation.test.cjs tests/shared-role-navigation.test.cjs tests/moderator-shell-data-label.test.cjs; node --test tests/*.test.cjs.",
+                          "notes":  "Covers stories: P1 shared role-specific menus/logout and keyboard navigation; P2 nested customer/technician routes. Role-specific live browser walkthroughs were not completed because no logged-in Moderator, Customer, or Technician sessions were available. Shared drawer visual/keyboard behavior was verified in Admin Phase 01; role menus, notifications, dynamic active parents, logout handlers, and mobile ActionBar offset/content clearance are covered by focused tests.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-04-shared-mobile-navigation-cross-role-validation-accessibility",
+                          "title":  "Cross-role validation and accessibility",
+                          "status":  "passing-unverified",
+                          "evidence":  "Automated Phase 04 verification: focused navigation suite 36/36, including all four route/label matrices, logout callbacks, mobile header breakpoint/touch-target contract, open/close, focus containment/restoration, Escape/backdrop, link selection, and breakpoint resize; build, lint, and TypeScript pass; full suite 134/180 pass with the same 46 baseline failures; code review APPROVED 9.7/10. User selected automated validation; live visual role walkthrough is deferred and unverified.",
+                          "user_visible_behavior":  "All four roles use the same accessible mobile drawer with correct role-specific active/disabled links, responsive layouts, logout callbacks, and the existing desktop Sidebar.",
+                          "verification_command":  "Focused navigation tests; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; four-role mobile/desktop walkthroughs at 360 px, 390 px, 768 px, 1023 px, and 1024 px, including logout callbacks and breakpoint-close behavior.",
+                          "notes":  "Covers stories: P1 shared drawer, P1 role-specific destinations and states, P1 keyboard accessibility, P2 nested-route active state. Component handlers/effects are exercised with a DOM-free React element harness, and stylesheet contracts verify the 1023px breakpoint and 44px notification targets. Automated testing was selected by the user for Phase 04. Actual browser focus, overflow/header collisions, and rendered 360/390/768/1023/1024 px role-shell layouts remain unverified because no authenticated Moderator, Customer, or Technician sessions are available.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-01-landing-presentation-foundation",
+                          "title":  "Landing presentation foundation",
+                          "status":  "passing",
+                          "evidence":  "node --test tests/landing-page.test.cjs (3/3); npm.cmd run test:e2e -- --project=chromium (1/1; isolated Next dev on port 3100); npm.cmd run lint (pass); Chromium computed styles at 1440x900 and 390x844: Arial body/headings, primary and secondary links 48px, primary red fill, 10px radius, visible focus, reduced motion; npx.cmd tsc --noEmit --incremental false reports unrelated generated-route and Moderator message-key errors.",
+                          "user_visible_behavior":  "The public Home page uses the Dolores light palette and Arial typography, and its action links render as real, accessible buttons with working variants.",
+                          "verification_command":  "node --test tests/landing-page.test.cjs; npx.cmd playwright install chromium; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
+                          "notes":  "Covers stories: US-02, US-05; foundation for US-01. User confirmed the existing DOLORES COFFEE logo and requested Playwright E2E. Browser computed-style evidence verifies the Link receives CSS.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-public-header-navigation",
+                          "title":  "Public header and navigation",
+                          "status":  "passing",
+                          "evidence":  "TDD: Playwright Chromium E2E 4/4; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); browser inspection at 390px, 1023px, 1024px, and 1440px confirms sticky header, visible mobile login, 44x44 toggle, and correct breakpoint. TypeScript check reports 3 pre-existing errors outside changed landing files.",
+                          "user_visible_behavior":  "Landing navigation links only to visible sections, keeps Login visible on mobile, and provides a keyboard-operable sticky header with a dismissible mobile disclosure.",
+                          "verification_command":  "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 390px, 1023/1024px, hash links, Escape/focus return, and /login navigation",
+                          "notes":  "Covers stories: US-03, US-04, US-05. User chose the compact modeless disclosure under the header. Playwright emitted existing Next Image width/height warnings from legacy content slated for Phase 03; E2E passed. TypeScript errors: stale .next/types/validator.ts technician route and missing LOADING_REPAIR_CASES / TECHNICAL_LAST_ACTOR keys in Moderator technical-screen.tsx; none point to changed landing files.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-landing-content-imagery",
+                          "title":  "Landing content and imagery",
+                          "status":  "passing",
+                          "evidence":  "TDD: expanded Playwright Chromium E2E 5/5; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Browser inspection: one H1 in 2 lines at 1440px and 390px, no horizontal overflow at 320/390/1440px, CTA visible and separated from hero image, one machine image optimized by Next in dev and no stock/background image requests. TypeScript reports 3 unrelated baseline errors outside changed landing files.",
+                          "user_visible_behavior":  "Home introduces the coffee machine and Dolores management platform, uses the selected product image once, and hides sample testimonials/news and their visible links.",
+                          "verification_command":  "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: 320px, 390px, 1440px; verify one H1, visible anchors, image usage, and no horizontal overflow",
+                          "notes":  "Covers stories: US-01, US-02, US-04. User confirmed the current email, phone, and address for publication; dashboard screenshot remains optional P2. Testimonials and news content are removed from the Home message payload and are not rendered; legacy card components remain available. Phase 03 was approved by the user on 2026-10-28.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-04-rendered-validation",
+                          "title":  "Rendered landing validation",
+                          "status":  "passing",
+                          "evidence":  "Playwright Chromium E2E 9/9 with workers=2; node --test tests/landing-page.test.cjs 3/3; npm.cmd run lint (pass); git diff --check (pass). Viewport matrix 320/390/768/1023/1024/1440/1920 confirmed no horizontal overflow, clipped CTA, or image overlap. Route checks cover /, /home, /login and browser back. Keyboard, hash offset, reduced motion, Arial, no external font, representative contrast, 44x44px targets, and focus ring passed. Isolated production runtime build succeeded with TypeScript validation skipped only in a disposable copy; production Chromium measured the hero AVIF at 30,063 bytes desktop and 13,121 bytes mobile, CLS 0.0424 / 0.0122. Normal workspace build/typecheck remains blocked by stale generated .next Technician route and two unrelated Moderator message-key errors.",
+                          "user_visible_behavior":  "The finished landing works at / and /home across target widths, with verified navigation, focus, reduced motion, typography, image delivery, and layout stability.",
+                          "verification_command":  "node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; npm.cmd run build; browser: 320, 390, 768, 1023, 1024, 1440, 1920px; production image payload and CLS profile",
+                          "notes":  "Covers stories: US-01, US-02, US-03, US-04, US-05. User selected Chromium E2E and approved Phase 04 on 2026-10-28; the MVP is complete. Production runtime measurements came from an isolated copy where only the build typecheck was skipped; a separate TypeScript check in the clean copy confirmed the two existing Moderator message-key errors. Direct workspace `next build` also hits an old generated route reference in `.next/types/validator.ts`. These baseline TypeScript issues are not in landing files. Optional Phase 05 remains deferred pending an authentic, verified dashboard screenshot.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-05-optional-dashboard-screenshot",
+                          "title":  "Optional verified dashboard screenshot",
+                          "status":  "not_started",
+                          "evidence":  "",
+                          "user_visible_behavior":  "If an approved and sanitized runtime dashboard screenshot is supplied, the platform section can show it with accurate alt text and responsive sizing; otherwise the text-only MVP remains complete.",
+                          "verification_command":  "After approved asset is supplied: node --test tests/landing-page.test.cjs; npm.cmd run test:e2e -- --project=chromium; browser: inspect source/PII sanitization, alt text, responsive sizing, payload, and CLS",
+                          "notes":  "Covers stories: US-06. Deferred P2; requires an authentic, approved, sanitized screenshot source and is not an MVP blocker.",
+                          "priority":  "P2"
+                      },
+                      {
+                          "id":  "phase-01-data-clarity",
+                          "title":  "Admin overview data clarity",
+                          "status":  "passing-unverified",
+                          "evidence":  "fast mode — no test evidence",
+                          "user_visible_behavior":  "Admin can interpret dashboard values with period and unit context and distinguish zero from unavailable, loading, empty, and error states.",
+                          "verification_command":  "Visual acceptance: /admin desktop and 375px; verify KPI meanings, cup-period context, zero/missing/loading/empty/error distinction, VND formatting, and unchanged API/query behavior.",
+                          "notes":  "Covers stories: US-01, US-02",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-table-readability",
+                          "title":  "Admin table readability",
+                          "status":  "passing-unverified",
+                          "evidence":  "Targeted Playwright alignment check passed at 375px and 1440px on isolated and local :3000 app; broader phase acceptance remains unverified",
+                          "user_visible_behavior":  "Admin sees readable Vietnamese customer status, machine owner identifier and machine-type labels, clear table scroll cues, and pagination range where the response provides totals.",
+                          "verification_command":  "Visual acceptance: /admin/businesses list/detail and /admin/machines desktop and 375px; verify labels, filters/URL, available pagination range, table reachability, and unchanged shared-role table styles.",
+                          "notes":  "Covers stories: US-03, US-04",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-interaction-feedback",
+                          "title":  "Admin interaction feedback",
+                          "status":  "passing-unverified",
+                          "evidence":  "fast mode — no test evidence",
+                          "user_visible_behavior":  "Admin controls provide brief hover, pressed, and focus feedback while respecting reduced-motion preferences and preserving existing actions.",
+                          "verification_command":  "Visual acceptance: Admin overview and targeted lists; confirm visible keyboard focus, transitions no longer than 180ms, reduced-motion suppression, unchanged handlers, and unchanged Customer/Technician/Moderator defaults.",
+                          "notes":  "Covers stories: US-05",
+                          "priority":  "P2"
+                      },
+                      {
+                          "id":  "phase-01-shared-machine-presentation",
+                          "title":  "Shared machine presentation across roles",
+                          "status":  "passing-unverified",
+                          "evidence":  "TDD: targeted Phase 01 tests 6/6; ESLint on all changed Phase 01 files passes; git diff --check passes (CRLF normalization warnings only); code review no findings. The full focused suite still has unrelated failures from existing test/code path drift and Moderator dashboard async-harness behavior. Repo-wide lint and tsc remain blocked by pre-existing errors in dashboard/menu, moderator/buyback, moderator/technical, and technician/work-order-detail.",
+                          "user_visible_behavior":  "Owner, Admin, and Moderator see the same machine list/detail hierarchy and Smart IoT panel placement while retaining role-specific routes, filters, permissions, and actions.",
+                          "verification_command":  "node --test tests/admin-machines-iot.test.cjs tests/moderator-dashboard.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; browser: Owner/Admin/Moderator machine lists and details plus /admin/iot and /moderator/iot at desktop and mobile widths",
+                          "notes":  "Covers stories: P1 story 2. Owner/Admin/Moderator now use shared list summary-controls-results regions and common machine-detail metric cards; Owner uses the shared DataTable; role queries, filters and actions remain role-owned. Admin/Moderator IoT routes share SmartIotPanel. Phase 01 defines role-specific machine operational-overview path helpers; the visible action and destination page are deferred to Phase 03 so no dead link is exposed. Browser validation is deferred to Phase 04. Phase 01 awaits user review before Phase 02. See plans/owner-iot-status-telemetry/phase-01-shared-machine-presentation.md.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-heartbeat-and-telemetry",
+                          "title":  "Role-scoped heartbeat and telemetry",
+                          "status":  "passing",
+                          "evidence":  "Phase 02 focused TDD checks: 10 passed; ESLint on touched files: pass; TypeScript reports no errors in Phase 02 files, with existing errors remaining in dashboard/menu, moderator/buyback, and moderator/technical. Legacy tests in admin-machines-iot and moderator-dashboard still fail on stale route/query fixtures.",
+                          "user_visible_behavior":  "All three roles see permitted heartbeat state on Smart IoT machine lists/details; Owner and Admin can review telemetry history, while Moderator sees an explicit permission state without a points request.",
+                          "verification_command":  "node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx.cmd eslint <touched Phase 02 source files>; npx.cmd tsc --noEmit --incremental false",
+                          "notes":  "Covers stories: P1 stories 1, 3, 4; P2 story 1. See plans/owner-iot-status-telemetry/phase-02-heartbeat-and-telemetry.md.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-operational-overview",
+                          "title":  "Role-scoped machine operational overview",
+                          "status":  "passing",
+                          "evidence":  "TDD: focused Phase 03 tests 5/5 pass; touched-file ESLint passes; git diff --check passes; code review APPROVED after fixing a nested main landmark. npx tsc --noEmit still reports pre-existing unrelated errors in dashboard/menu, moderator/buyback, and moderator/technical. Broader legacy tests still have existing path/alias harness failures (admin overview ./overview/overview-content and owner routing @/schema/billing.schema).",
+                          "user_visible_behavior":  "Owner, Admin, and Moderator can open the same operational-overview layout from machine detail using confirmed aggregate data; the page labels role scope and shows only authorized financial metrics.",
+                          "verification_command":  "node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npx eslint [changed Phase 03 TypeScript files]; npx tsc --noEmit; git diff --check",
+                          "notes":  "Covers story: P1 story 5. Calendar presets are separate from telemetry rolling date-time controls. Per-machine cup/PAYG values and 3D stay deferred. Phase 03 code review and user review are approved. See plans/owner-iot-status-telemetry/phase-03-operational-overview.md.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-04-cross-role-validation",
+                          "title":  "Cross-role IoT flow validation",
+                          "status":  "passing-unverified",
+                          "evidence":  "Phase 04 targeted Playwright: 3/3 passed at 390/768/1023/1024/1440px for Owner/Admin/Moderator (mock APIs/role claims). Targeted heartbeat/telemetry checks: 10/10; operational overview checks: 5/5. Manual authenticated API/browser validation remains unverified. Full Playwright: 11 passed, 3 unrelated failures in Admin overview date-range and landing keyboard-focus/touch-target checks; focused legacy Node suite: 20 passed, 11 harness/route drift failures. Repo-wide lint/tsc have unrelated errors; changed Phase 04 files pass ESLint and diff check.",
+                          "user_visible_behavior":  "Machine list → detail → operational overview works consistently across Owner, Admin, and Moderator without changing role permissions, maintenance behavior, or management actions.",
+                          "verification_command":  "npm.cmd run test:e2e -- --project=chromium tests/e2e/machine-operational-overview.spec.ts; node --test --test-name-pattern=\"shared machine connection|shared heartbeat panel|all role machine lists|all role machine details|Moderator machine detail|Moderator IoT heartbeat|heartbeat visibility fallback|Owner and Admin machine details|Owner and Admin telemetry history|telemetry detail requests\" tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; node --test --test-name-pattern=\"operational dashboard date range|dashboard response strictly validates|operational overview requests|shared operational overview|machine routes retain context\" tests/admin-overview.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false",
+                          "notes":  "Covers all P1 stories and functional requirements. Unavailable authenticated role sessions must be reported as unverified. See plans/owner-iot-status-telemetry/phase-04-cross-role-validation.md.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-01-route-map-and-module-metadata",
+                          "title":  "Route map and module metadata",
+                          "status":  "not_started",
+                          "evidence":  "Implementation reverted at user request on 2026-11-05; earlier checks applied to the reverted version only.",
+                          "user_visible_behavior":  "Existing navigation entries across Admin, Moderator, Owner, and Technician carry shared module context without changing URLs, access, or feature behavior.",
+                          "verification_command":  "node --test tests/shared-role-navigation-cross-role.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; git diff --check",
+                          "notes":  "Covers stories: P1 module navigation, P1 cross-role consistency",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-02-grouped-role-navigation",
+                          "title":  "Grouped role navigation",
+                          "status":  "not_started",
+                          "evidence":  "Implementation reverted at user request on 2026-11-05; earlier checks applied to the reverted version only.",
+                          "user_visible_behavior":  "All four roles can find existing pages under shared Operations and Maintenance & Inventory menu groups on desktop and mobile.",
+                          "verification_command":  "node --test tests/shared-role-navigation.test.cjs tests/shared-role-navigation-cross-role.test.cjs; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; git diff --check; manual desktop/mobile role walkthrough.",
+                          "notes":  "Covers stories: P1 module navigation, P1 mobile navigation, P2 role-specific groups. Desktop and mobile share SidebarNavigation; user review is required before Phase 03 per cook --hard.",
+                          "priority":  "P1"
+                      },
+                      {
+                          "id":  "phase-03-module-breadcrumbs-and-validation",
+                          "title":  "Module breadcrumbs and validation",
+                          "status":  "not_started",
+                          "evidence":  "Implementation reverted at user request on 2026-11-05; earlier checks applied to the reverted version only.",
+                          "user_visible_behavior":  "Breadcrumbs identify the active role, business module, and existing navigation page on desktop and mobile, including nested detail URLs.",
+                          "verification_command":  "Manual route walkthrough: direct-load, refresh, Back/Forward, and query-string cases show the expected active item, module breadcrumb, and expanded group at 360, 768, 1023, and 1024px.",
+                          "notes":  "Covers stories: P1 module context, P1 deep-link navigation",
+                          "priority":  "P1"
+                      }
+                  ],
+        "Count":  26
+    }
 ]
