@@ -7,6 +7,7 @@
 - Phạm vi: tích hợp FE cho workflow buyback máy ngoài hệ thống (`workflowVersion = 2`) từ Owner tạo yêu cầu đến Moderator đăng ký máy.
 - Backend `C:\GitHub\BEANS\dolores_platform` được dùng để đối chiếu contract trong lúc lập kế hoạch; kế hoạch này không bao gồm sửa mã BE.
 - Dữ liệu workflow cũ gắn với hợp đồng (`workflowVersion` khác 2) phải tiếp tục hoạt động như hiện tại.
+- Cập nhật plan 2026-11-04: phần bổ sung entry Technician cho thu máy/tân trang và kiểm chứng đọc kết quả đăng ký đang chờ thực thi; trạng thái các phase trước giữ nguyên.
 
 ## Quyết định đã chốt
 
@@ -15,10 +16,12 @@
 | Ranh giới FE | Giữ chung API, schema và thành phần dùng lại; tách điều phối UI cho Owner, Moderator, Technician. Giữ `/admin/buybacks` bằng một Admin adapter dùng chung thành phần operator và chỉ hiện thao tác Admin được BE cho phép. | Tiếp tục dồn mọi vai trò vào một `BuybackWorkflowScreen`; hoặc sao chép API/client theo vai trò. | Component hiện tại chứa nhiều nhánh theo vai trò và trạng thái. Tách UI giúp thêm thao tác mà không làm các role trộn lẫn; một domain API chung vẫn giữ contract và cache nhất quán. |
 | Điều hướng | Giữ điều hướng đã thống nhất: Owner ở `/dashboard/buyback` và `/dashboard/buyback/new`; Moderator xem danh sách rồi bấm mã hồ sơ để mở route detail riêng có nút quay lại; Technician dùng `/technician/tasks/buyback-assessment`. | Tạo route detail riêng cho cả ba vai trò. | Bảo toàn hành vi Owner và Technician hiện có; giữ đúng yêu cầu đã chốt cho Moderator. |
 | Bằng chứng thu máy | FE nhận `evidenceReference` thật đã được tạo ở hệ thống lưu trữ khác. Không thêm API upload BE trong phạm vi này. | Mở rộng cả BE để tạo upload/read API cho collection. | Người dùng chọn phạm vi FE. Nếu không có reference thật thì dừng tại bước ghi bằng chứng; không tạo reference giả hoặc gửi giá trị mẫu. |
+| Nhiệm vụ thu máy, tân trang và xem kết quả của Technician | Mở rộng danh sách/detail buyback đang có tại `/technician/tasks/buyback-assessment`; không tạo route buyback mới và không dùng `/technician/tasks/retrieval` vốn thuộc luồng thu hồi máy theo hợp đồng. Dùng GET `/buybacks` và GET `/{caseId}` theo quyền hiện tại. | Tách trang thu máy buyback hoặc nhập luồng này vào trang thu hồi hợp đồng. | Giữ một nơi cho nhiệm vụ buyback theo đúng cấu trúc hiện có; tránh trộn hai nghiệp vụ có API và điều kiện giao việc khác nhau. |
+| Quyền đăng ký và kết quả | Chỉ Moderator phụ trách gọi `POST /{caseId}/register-machine`. Các role được BE cho phép đọc hồ sơ thấy trạng thái `REGISTERED` và `registeredMachineId` từ GET buyback detail; không gọi thêm GET `/machines/{id}` trong scope này. | Cho Technician đăng ký hoặc tạo trang/GET chi tiết máy riêng. | Khớp authorization BE và lựa chọn của người dùng; phản hồi đăng ký đã có ID máy trong buyback case. |
 
 ## Mục tiêu và điều kiện hoàn tất
 
-Owner có thể mở yêu cầu theo hợp đồng đang hoạt động, theo dõi trạng thái, rồi chấp nhận hoặc từ chối giá đã được duyệt. Moderator có thể xem hồ sơ trong danh sách API, mở detail riêng, giao việc, duyệt giá, điều phối thu máy, thanh toán, tân trang và đăng ký máy. Technician chỉ thấy các hồ sơ Dolores giao cho tài khoản đó và có thể nộp kết quả theo từng nhiệm vụ được giao.
+Owner có thể mở yêu cầu theo hợp đồng đang hoạt động, theo dõi trạng thái, rồi chấp nhận hoặc từ chối giá đã được duyệt. Moderator có thể xem hồ sơ trong danh sách API, mở detail riêng, giao việc, duyệt giá, điều phối thu máy, thanh toán, tân trang và đăng ký máy. Technician xem các hồ sơ Dolores giao cho tài khoản đó trong trang buyback hiện có, mở đúng nhiệm vụ thu máy/tân trang theo giai đoạn, nộp kết quả được giao và đọc trạng thái cùng mã máy sau khi Moderator đăng ký thành công.
 
 Luồng workflow v2 hoàn tất khi FE hỗ trợ các chuyển trạng thái hợp lệ đến `REGISTERED`, mọi hành động gọi đúng endpoint và payload Dolores, dữ liệu danh sách/detail phản ánh trạng thái server sau mutation, các trường hợp lỗi/quyền bị từ chối được hiển thị rõ ràng, và các route Admin hiện có không bị suy giảm.
 
@@ -42,6 +45,17 @@ Base path: `/api/v1/buybacks`. Danh sách được lọc theo JWT hiện tại: 
 | Đăng ký máy | Moderator phụ trách | `POST /{caseId}/register-machine` với `machineType`, `modelId`, region tùy chọn, reason và khóa idempotency/correlation. Chọn model từ `machine-models.api.ts` hiện có. Controller chỉ cho Moderator phụ trách thao tác. | Chỉ mở thao tác khi case `READY_FOR_REGISTRATION`; sau thành công hiển thị `registeredMachineId`/thông tin máy và trạng thái `REGISTERED`. |
 
 Chuỗi trạng thái mục tiêu của workflow v2: `REQUESTED` → `INSPECTION_PENDING` → `VALUATION_PENDING` → `APPROVED` → `COLLECTION_PENDING` → `COLLECTED` → `PAYMENT_PENDING` → `PAID` → `REFURBISHING` → `READY_FOR_REGISTRATION` → `REGISTERED`. Nhánh từ chối kết thúc ở `REJECTED`. Trạng thái thực tế và quyền thao tác luôn lấy từ Dolores; FE không tự chuyển trạng thái.
+
+### Quy tắc hiển thị nhiệm vụ Technician và kết quả đăng ký
+
+| Dữ liệu server | Hiển thị trong trang buyback Technician | Thao tác/điều hướng |
+|---|---|---|
+| `COLLECTION_PENDING`, `collectionTechnicianId = null` | Chờ phân công thu máy; không coi là việc đã giao cho Technician. | Không hiện action thu máy. |
+| `COLLECTION_PENDING`, `collectionTechnicianId` có giá trị | Đang thu máy. | Chỉ tài khoản khớp ID được mở action “Thu máy”; detail dùng form evidence hiện có. Khi `collectionEvidenceRecorded = true`, detail báo đang chờ Moderator/Admin xác nhận. |
+| `PAID`, `refurbishmentTechnicianId` khớp tài khoản | Nhiệm vụ tân trang được giao. | Hiện action “Tân trang” tới detail để bắt đầu. |
+| `REFURBISHING`, `refurbishmentTechnicianId` khớp tài khoản | Đang tân trang. | Hiện action “Tiếp tục tân trang” tới detail để ghi kết quả. |
+| `READY_FOR_REGISTRATION` | Đang chờ Moderator đăng ký máy. | Technician chỉ xem trạng thái; không được đăng ký. |
+| `REGISTERED` và có `registeredMachineId` | Đã đăng ký; detail hiển thị mã máy Dolores. | Mã hồ sơ dạng text link hiện có mở detail; không thêm nút/trang kết quả riêng. Mọi role chỉ thấy dữ liệu nếu GET hồ sơ cho phép. |
 
 ## Ranh giới triển khai
 
@@ -167,6 +181,54 @@ Chuỗi trạng thái mục tiêu của workflow v2: `REQUESTED` → `INSPECTION
 
 **Rủi ro/dừng:** Không có session đúng role hoặc môi trường staging thì không suy ra kết quả E2E từ mock. Ghi phần chưa xác minh làm điều kiện còn lại.
 
+## Bổ sung kế hoạch theo yêu cầu Technician → đăng ký → xem kết quả
+
+Các hạng mục dưới đây tiếp nối Phase 3–5 trong tài liệu này; không tạo plan thứ hai và không thay đổi lịch sử xác minh đã ghi. API nghiệp vụ thu máy, tân trang và đăng ký đã được nối ở FE; phần bổ sung tập trung vào entry point nhiệm vụ Technician và kiểm chứng quyền đọc kết quả theo role.
+
+### Phase 3 follow-up — Tìm và mở nhiệm vụ thu máy
+
+**Kết quả:** Technician tìm thấy hồ sơ thu máy đã được giao trong danh sách buyback hiện tại và mở đúng detail để ghi evidence.
+
+**Phạm vi:** Mở rộng list/detail tại `/technician/tasks/buyback-assessment`. `GET /buybacks` tiếp tục dùng server scope theo JWT. Thêm action “Thu máy” ở hàng có `status = COLLECTION_PENDING` và `collectionTechnicianId` khớp Technician hiện tại; action mở detail hiện có, nơi `POST /{caseId}/collection/evidence` gửi serial, địa điểm, evidence reference thật và khóa request. Giữ chính xác nhãn/ngữ nghĩa: `COLLECTION_PENDING` không có `collectionTechnicianId` là chờ phân công; có Technician được giao là đang thu máy; đã có evidence thì chờ Moderator/Admin xác nhận.
+
+**Ngoài phạm vi:** Route mới; thay đổi `/technician/tasks/retrieval` (luồng thu hồi theo hợp đồng); thao tác phân công/yêu cầu thu của Moderator; upload evidence hoặc sửa BE.
+
+**Phụ thuộc:** API GET list/detail và API collection evidence đang có; current authenticated Technician ID; assignment từ `/collection/assign`.
+
+**Ranh giới/thành phần:** `buyback-technician-screen.tsx`, `buyback-workflow-controller.tsx`, `buyback-workflow-shared.tsx`, `buybacks.api.ts` và `buybacks.schema.ts`. Dùng lại TextLinkButton/mã hồ sơ để vào detail; action “Thu máy” chỉ là entry tới form, không gọi mutation ngay trong list.
+
+**Tác động phụ:** GET list/detail chỉ đọc; gửi evidence là mutation thật khi người dùng submit. Mọi xác minh mutation phải dùng mock hoặc fixture/staging được cấp phép; không dùng reference giả.
+
+**Xác minh:** Bao phủ hàng chờ phân công không có action; hồ sơ đã giao cho tài khoản hiện tại có action; hồ sơ giao người khác không có action và bị từ chối nếu cố truy cập; mở detail đúng case; form lỗi/đang gửi/thành công; sau evidence detail phản ánh response và vẫn ở trạng thái do server trả tới khi Moderator/Admin xác nhận.
+
+**Tiêu chí chấp nhận:** Technician có thể tìm và mở việc thu máy từ list; action chỉ hiện khi status và ID người được giao cùng hợp lệ; không thể ghi evidence ngoài assignment; luồng legacy và màn assessment hiện tại giữ nguyên.
+
+**Điều kiện vào/ra và review:** Vào sau khi xác nhận staging/test account Technician và fixture case ba trạng thái: chưa phân công, giao cho chính Technician, giao cho Technician khác. Rời phase khi role/status gating, detail routing và evidence refresh được review.
+
+**Rủi ro/dừng:** Nếu GET list không còn trả hồ sơ đã giao sau khi trạng thái đổi, hoặc GET detail trả 403 cho Technician được gán, dừng và đối chiếu contract/security BE; không tạo fallback gọi GET máy hay dùng dữ liệu cache cũ để giả lập nhiệm vụ.
+
+### Phase 4 follow-up — Theo dõi tân trang và đọc kết quả đăng ký
+
+**Kết quả:** Technician theo dõi việc tân trang đã giao tới `READY_FOR_REGISTRATION`; sau khi Moderator phụ trách đăng ký, Technician và các role được phép xem thấy trạng thái `REGISTERED` cùng `registeredMachineId` trên detail hồ sơ.
+
+**Phạm vi:** Thêm action “Tân trang” khi `status = PAID` và `refurbishmentTechnicianId` khớp Technician hiện tại; thêm “Tiếp tục tân trang” ở `REFURBISHING` với cùng điều kiện. Form start/complete hiện có tiếp tục gọi đúng API và refresh case. Hiển thị trạng thái chờ đăng ký ở `READY_FOR_REGISTRATION`. Moderator phụ trách vẫn là role duy nhất gọi `POST /{caseId}/register-machine`. Sau mutation, dùng response và GET detail để hiển thị trạng thái server `REGISTERED` cùng `registeredMachineId`; mọi role có quyền GET case dùng detail hiện có để xem kết quả. Không gọi `GET /machines/{id}` và không thêm route riêng.
+
+**Ngoài phạm vi:** Cho Technician đăng ký; thay đổi authorization/API BE; tạo trang riêng cho kết quả; lấy thông tin máy bổ sung từ Machine API; thay đổi model catalog hoặc QA workflow v2.
+
+**Phụ thuộc:** Phase 3 case đạt `PAID`; technician assignment tân trang; registration API/model catalog hiện có; case fixture đã `READY_FOR_REGISTRATION` và kết quả `REGISTERED` trong môi trường kiểm thử.
+
+**Ranh giới/thành phần:** Buyback Technician list/detail và shared case summary; Moderator registration screen/controller; shared buyback API/schema và query invalidation theo role/case ID.
+
+**Tác động phụ:** Start/complete refurbishment và đăng ký máy ghi thay đổi nghiệp vụ thật. GET list/detail để xem kết quả chỉ đọc. Mutation chỉ xác minh trên test/staging được cấp phép.
+
+**Xác minh:** Kiểm tra assignment/status gating cho hai action tân trang; xác nhận Tech không thấy/không thể gọi register; registration chỉ do Moderator phụ trách; sau registration, refetch list/detail cho từng role được cấp quyền; hiển thị mã máy chỉ từ response `registeredMachineId`, trạng thái từ `status`, không báo thành công khi GET chưa phản ánh kết quả. Kiểm tra 401/403/404/409/422 và dữ liệu thiếu ID.
+
+**Tiêu chí chấp nhận:** Toàn đường Tech thu máy → collection xác nhận → payout được duyệt → Tech tân trang → `READY_FOR_REGISTRATION` → Moderator đăng ký → các role có quyền xem `REGISTERED` và đúng mã máy trên detail. Tech không có action đăng ký; không cần endpoint Machine bổ sung.
+
+**Điều kiện vào/ra và review:** Vào khi có case `PAID`/`READY_FOR_REGISTRATION`, model active và identity Technician/Moderator/Owner/Admin hợp lệ ở test/staging. Rời khi đường đọc kết quả được xác minh bằng GET sau registration, authorization từng role đúng và các gate Phase 3 còn mở được ghi nhận rõ.
+
+**Rủi ro/dừng:** Không có dữ liệu thật/test cho registration thì chỉ hoàn tất mock/local và giữ staging gate mở. Nếu GET detail của Technician không cho đọc case đã đăng ký dù assignment còn gắn, ghi nhận chênh lệch contract; không tự gọi Machine API để vòng qua quyền.
+
 ## Điều kiện dừng chung
 
 - Endpoint, role, request/response, trạng thái hoặc authorization BE khác với mapping trong kế hoạch: dừng endpoint/phase đó để đối chiếu lại contract trước khi tiếp tục.
@@ -209,3 +271,20 @@ Chuỗi trạng thái mục tiêu của workflow v2: `REQUESTED` → `INSPECTION
 - Verification Phase 5: `node_modules/.bin/tsc.cmd --noEmit` (pass); `npm.cmd run build` (pass); `npm.cmd run lint` (0 lỗi, warning hook có sẵn tại `src/components/contracts/contract-activation-panel.tsx:96`); `node --test tests/buyback-workflow-phase6.test.cjs` (6/6); Chromium full E2E (17/17, exit code 0) qua Next dev riêng và Playwright config tạm; `git diff --check` (pass, cảnh báo LF/CRLF). Mọi request/mutation buyback trong E2E đều mock; không gửi mutation Dolores thật. Server/config/log tạm đã dọn.
 - Kiểm tra API rộng ngoài buyback chạy `node --test tests/buyback-workflow-phase6.test.cjs tests/dolores-api-requests.test.cjs tests/dolores-api-signatures.test.cjs`: 6 pass, 3 fail trong test không thuộc buyback. `dolores-api-requests.test.cjs` mong đợi `signal` nhưng implementation `machines.listMaintenanceTickets` đặt options khác và trả `signal: undefined`; một test repair loader dừng trước assertion với `Cannot read properties of undefined (reading 'id')`; `dolores-api-signatures.test.cjs` mong public methods của `profilesApi` thiếu `updateContactInfo` trong khi implementation hiện có method đó. Những test/module này không được thay đổi trong workflow buyback; chưa sửa ngoài scope.
 - Current gate: Phase 3, Phase 4 và Phase 5 `partial`; local/mock criteria của Phase 5 đã xong nhưng toàn workflow chưa hoàn tất. Để đóng Phase 3 cần staging/test credentials đúng vai trò, `evidenceReference` thật từ hệ thống lưu trữ ngoài, và xử lý contract gap BE đối chiếu reference. Để đóng Phase 4–5 cần staging verification với case `PAID`, identities đúng role, danh mục model thật và machine ID server trả về; không suy kết quả staging từ mock.
+- Plan update 2026-11-04 theo yêu cầu người dùng: tiếp tục file plan hiện tại; giữ Technician trong `/technician/tasks/buyback-assessment`; không gộp với `/technician/tasks/retrieval`; chỉ Moderator phụ trách được gọi đăng ký máy; mọi role được BE cho phép xem trạng thái `REGISTERED` và mã máy trên GET buyback detail. Bổ sung tiêu chí hiển thị action “Thu máy”/“Tân trang” theo assignment và trạng thái, cùng kiểm chứng việc đọc kết quả sau đăng ký. Form ghi evidence/tân trang, đăng ký Moderator và trường `registeredMachineId` đã có trong FE; entry action cho task collection/refurbishment và kiểm chứng lại đường đọc kết quả theo role là phần thực thi tiếp theo. Không đổi contract BE hoặc thêm GET `/machines/{id}`.
+- Execution update 2026-11-04 — Phase 3 follow-up status: `partial`. Technician list hiển thị “Thu máy” chỉ khi hồ sơ v2 ở `COLLECTION_PENDING` và `collectionTechnicianId` khớp tài khoản hiện tại; hồ sơ chưa phân công hiện “Chờ phân công thu máy” và không có action. Detail thu máy ẩn form sau khi server trả `collectionEvidenceRecorded=true`. Summary schema khai báo rõ assignment IDs. E2E được đồng bộ với nút mã hồ sơ, action/detail hiện hành, Technician kiểm tra được dùng lại ở bước thu, trạng thái sau Owner đồng ý/yêu cầu thu, case 403 khi Technician khác mở detail trực tiếp, và nhánh legacy.
+- Verification follow-up: production `npm.cmd run build` đã pass với route dynamic detail; production-server E2E `npm.cmd run test:e2e -- tests/e2e/buyback-collection-payment.spec.ts --project=chromium --workers=1` pass 3/3; `node --test tests/buyback-workflow-phase6.test.cjs` pass 6/6; `npm.cmd run lint` có 0 lỗi và một warning hook có sẵn tại `src/components/contracts/contract-activation-panel.tsx:96`; `git diff --check` pass. E2E chặn toàn bộ API Dolores bằng mock, không có mutation thật.
+- Review follow-up: read-only review không phát hiện lỗi chặn mới trong assignment/status gating, route detail, evidence form sau khi submit, schema hoặc regression legacy. Next dev E2E vẫn không resolve dynamic detail route (404), trong khi production build ghi nhận route và production E2E mở route thành công; coi đây là khác biệt môi trường dev cần điều tra nếu tiếp tục dùng dev server để E2E.
+- Gate follow-up: giữ `partial` vì chưa có staging session/identity Technician thật và evidence reference được cấp từ storage để xác minh authorization/collection flow với Dolores. Contract gap đối chiếu `evidenceReference` lúc `collection/confirm` đã ghi ở Phase 3 vẫn mở. Theo Standard, dừng tại boundary này; Phase 4 follow-up chưa được review như một phase riêng.
+- Execution update 2026-11-04 — Phase 4 follow-up status: `partial`. Thêm action “Tân trang” cho hồ sơ v2 `PAID` được giao và “Tiếp tục tân trang” cho `REFURBISHING` được giao; hai action chỉ mở detail, form hiện tại vẫn dùng các endpoint start/complete. Khi `READY_FOR_REGISTRATION`, Technician xem trạng thái chờ đăng ký nhưng không có action đăng ký. Thêm cảnh báo chung nếu server báo `REGISTERED` mà thiếu `registeredMachineId`, tránh hiển thị thông báo hoàn tất không có mã.
+- Verification Phase 4 follow-up: `npm.cmd run build` pass, production route table có Technician detail động; `npm.cmd run lint` 0 lỗi, warning hook có sẵn tại `src/components/contracts/contract-activation-panel.tsx:96`; `node --test tests/buyback-workflow-phase6.test.cjs tests/dolores-axios-client.test.cjs` 10/10 (gồm refresh một lần khi 401); Chromium production-server E2E cho buyback pass 5/5, bao gồm action/assignment, start → list → continue → complete, Admin/Technician/non-responsible Moderator không đăng ký, responsible Moderator đăng ký, GET detail sau mutation và đọc `REGISTERED`/`registeredMachineId` cho Owner, Moderator, Admin và Technician được giao, thiếu mã máy, cùng lỗi 403/404/409/422 không báo thành công; `git diff --check` pass. API Dolores trong E2E được mock; không có mutation thật.
+- Review Phase 4 follow-up: read-only review không thấy lỗi chặn mới về trạng thái/assignment, role guard đăng ký, invalidation query theo role/case, hiển thị mã máy hoặc nhánh legacy. 401 dựa trên test shared Axios refresh; quyền GET thật của từng role và luồng đăng ký chỉ được xác minh theo contract nguồn/mock, chưa chạy trên staging.
+- Gate Phase 4 follow-up: giữ `partial` do chưa có staging case `PAID`/`READY_FOR_REGISTRATION`, identities thật, catalog model active và machine ID được Dolores tạo để xác minh end-to-end. Phase 3 vẫn `partial` với gate evidence reference/collection confirmation chưa đóng. Theo Standard, dừng ở đây trước final integration Phase 5.
+- Final integration update 2026-11-04: full Chromium E2E trên local production server pass 19/19 (`npm.cmd run test:e2e -- --project=chromium --workers=1`); buyback flow gồm các test follow-up Phase 3/4, còn lại cover admin overview, landing/accessibility, legacy workflow và operational overview. Production build pass; lint 0 lỗi với warning hook có sẵn ngoài scope; buyback + shared Axios contract tests pass 10/10; `git diff --check` pass. E2E dùng mock API; server local đã dừng.
+- Final integrated review: read-only review không phát hiện blocker mới ở các thay đổi buyback đã thực hiện; các action chỉ điều hướng tới detail và mutation vẫn bị chặn bởi role/status guard hiện có. Dynamic detail route được xác minh trên production build/server; Next dev vẫn có lỗi resolve route đã ghi ở Phase 3 follow-up.
+- Final integration status: `unverified` cho toàn workflow Dolores vì không có staging identity/case/model/evidenceReference; Phase 3 evidence-reference comparison gap trong BE vẫn mở. Local/mock integration đã pass nhưng không thay thế authorization hoặc dữ liệu staging. Không có mutation production/staging; không commit, push hoặc deploy.
+- UI follow-up 2026-11-05: phần metadata “Chứng từ thanh toán” trên Moderator Buyback detail dùng `DataTable` chung để hiển thị dữ liệu GET `/buybacks/{caseId}/payment-proofs`, gồm trạng thái, tiền, tệp, thời điểm gửi, mã chứng từ, lý do và thao tác theo quyền; thêm empty state. API, payload và điều kiện duyệt không đổi. TypeScript, lint (0 lỗi; warning hook có sẵn ngoài scope), production build và `git diff --check` pass. Không chạy E2E/test và không gửi mutation Dolores thật. Phase 3–5 vẫn `partial`/`unverified` theo staging gates đã ghi ở trên.
+- Owner payment receipt update 2026-11-05: đồng bộ FE với `POST /buybacks/payment-proofs/{proofId}/owner-receipt` và payload bắt buộc `received`, `idempotencyKey`, `correlationId`; Owner chỉ thao tác từ action dashboard `BUYBACK_OWNER_RECEIPT` do BE trả. `received: true` xác nhận chứng từ và chuyển hồ sơ sang PAID; `received: false` giữ PAYMENT_PENDING, ghi trạng thái Owner chưa nhận và gỡ action cho tới khi Moderator/Admin tải chứng từ cập nhật. Operator không còn duyệt chứng từ v2; review cũ chỉ còn cho v1. Bổ sung hiển thị trạng thái/thời điểm Owner phản hồi và cập nhật action tải lại chứng từ sau khi Owner báo chưa nhận.
+- Verification Owner payment receipt: TypeScript, lint và production build pass; Chromium production-server E2E buyback pass 5/5. Luồng chính mock kiểm tra cả `received:false` → Owner action tạm dừng → Moderator tải chứng từ mới → Owner `received:true` → PAYMENT `PAID`, cùng payload idempotency/correlation và không gọi `/review` cho v2. Lần chạy ban đầu bằng Next dev gặp 404 do test đi tới `/dashboard/overview`; fixture đã sửa về route Owner thực tế `/dashboard` và production E2E pass. Các request Dolores đều được mock; không gửi mutation thật. `git diff --check` pass.
+- Gate Owner payment receipt: kết quả production-server E2E chứng minh tích hợp FE với contract fixture, không xác minh phân quyền hay side effect trên Dolores thật. Trạng thái Phase 3–5 tiếp tục `partial`/`unverified` cho đến khi có staging identity/case và các gate evidence-reference/model đã nêu ở trên; không commit, push hoặc deploy.
+- Detail parsing follow-up 2026-11-05: cho phép `refurbishment.machineId` null trong schema FE, khớp BuybackRefurbishmentResponse của BE. Workflow v2 tạo bản ghi tân trang trước khi máy được đăng ký, nên chưa có machine ID; schema cũ bắt buộc UUID và khiến GET `/buybacks/{caseId}` trả dữ liệu bị báo không hỗ trợ. Chỉ sửa parser; không đổi API hoặc luồng. `git diff --check` pass; chưa chạy test/build.

@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { PATH_TECHNICIAN } from "@/routes/path";
 import {
   BuybackCaseList,
   BuybackDetailPanel,
@@ -7,9 +8,9 @@ import {
 import { useBuybackWorkflowController } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
 
-export function BuybackTechnicianScreen() {
-  const listHref = "/technician/tasks";
-  const workflow = useBuybackWorkflowController({ role: "technician", listHref });
+export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
+  const listHref = PATH_TECHNICIAN.TASK_BUYBACK_ASSESSMENT;
+  const workflow = useBuybackWorkflowController({ role: "technician", initialCaseId: caseId, listHref });
   const { caseData } = workflow;
   const isAssignedInspection = Boolean(
     caseData
@@ -24,10 +25,12 @@ export function BuybackTechnicianScreen() {
   return (
     <BuybackWorkflowLayout
       title="Đánh giá máy thu mua"
-      description="Danh sách chỉ gồm hồ sơ buyback được Dolores giao cho tài khoản Technician hiện tại."
-      back={workflow.detailId ? { label: "Danh sách công việc", fallbackHref: listHref } : null}
-      actionBarBackHref={listHref}
-      actionBarBackLabel="Về công việc"
+      description={caseId
+        ? "Ghi nhận tình trạng và giá trị thẩm định cho hồ sơ được giao cho bạn."
+        : "Danh sách chỉ gồm hồ sơ buyback được Dolores giao cho tài khoản Technician hiện tại."}
+      back={caseId ? { label: "Danh sách đánh giá", fallbackHref: listHref } : null}
+      actionBarBackHref={caseId ? listHref : PATH_TECHNICIAN.TASKS}
+      actionBarBackLabel={caseId ? "Về danh sách đánh giá" : "Về công việc"}
     >
       <BuybackCaseList workflow={workflow} />
       <BuybackDetailPanel workflow={workflow}>
@@ -35,10 +38,13 @@ export function BuybackTechnicianScreen() {
           {workflow.isExternalBuyback && caseData.status === "REQUESTED" && !isAssignedInspection ? (
             <p className={styles.notice} role="note">Hồ sơ này chưa được giao cho tài khoản Technician hiện tại.</p>
           ) : null}
+          {caseData.status === "REQUESTED" && isAssignedInspection ? (
+            <p className={styles.notice} role="note">Hồ sơ đang chờ bạn tiếp nhận. Quay lại danh sách đánh giá và nhấn Tiếp nhận để bắt đầu.</p>
+          ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && !isAssignedCollection ? (
             <p className={styles.notice} role="note">Hồ sơ thu máy này chưa được giao cho tài khoản Technician hiện tại.</p>
           ) : null}
-          {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection ? (
+          {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection && !caseData.collectionEvidenceRecorded ? (
             <form className={styles.formPanel} onSubmit={workflow.perform(() => {
               const confirmedSerial = workflow.confirmedCollectionSerial.trim();
               const collectionLocation = workflow.collectionLocation.trim();
@@ -57,15 +63,6 @@ export function BuybackTechnicianScreen() {
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection && caseData.collectionEvidenceRecorded ? <p className={styles.notice} role="status">Đã ghi nhận bằng chứng thu máy. Moderator phụ trách sẽ xác nhận tiếp nhận trong Dolores.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "PAID" && caseData.refurbishmentTechnicianId !== workflow.ownerId ? <p className={styles.notice} role="note">Hồ sơ chưa được giao tân trang cho tài khoản Technician hiện tại.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "REFURBISHING" && !workflow.canCompleteRefurbishment ? <p className={styles.notice} role="note">Chỉ Technician được giao tân trang mới có thể ghi kết quả cho hồ sơ này.</p> : null}
-          {caseData.status === "REQUESTED" && isAssignedInspection ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
-              const key = workflow.operationKey("inspection-start", caseData.id);
-              workflow.startInspection.mutate({ id: caseData.id, reason: "Bắt đầu kiểm tra máy theo hồ sơ thu mua.", idempotencyKey: key, correlationId: key });
-            })}>
-              <h3 className={styles.sectionTitle}>Bắt đầu kiểm tra máy</h3>
-              <ButtonBar type="submit" disabled={workflow.startInspection.isPending}>Bắt đầu kiểm tra</ButtonBar>
-            </form>
-          ) : null}
           {caseData.status === "INSPECTION_PENDING" ? (
             <form className={styles.formPanel} onSubmit={workflow.perform(() => {
               const inspection = {

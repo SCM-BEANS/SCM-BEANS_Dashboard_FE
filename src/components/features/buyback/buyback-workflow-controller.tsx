@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { contractsApi } from "@/apis/contracts.api";
@@ -20,13 +21,15 @@ export type BuybackWorkflowOptions = {
 };
 
 export function useBuybackWorkflowController({ role, initialCaseId, listHref, operatorRole, showCreateForm = true }: BuybackWorkflowOptions) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const idempotencyKeys = useRef(new Map<string, { key: string; fingerprint: string }>());
   const paymentProofFingerprints = useRef(new WeakMap<File, string>());
   const subject = authScopedQuerySubject(role === "operator" ? operatorRole ?? role : role.toUpperCase());
   const isModeratorRoute = role === "operator" && operatorRole === "MODERATOR";
   const ownerId = getAuthenticatedSubjectId();
-  const [selectedCaseId, setSelectedCaseId] = useState(initialCaseId ?? "");
+  const routeCaseId = typeof router.query.caseId === "string" ? router.query.caseId : "";
+  const [selectedCaseId, setSelectedCaseId] = useState(initialCaseId ?? routeCaseId);
   const [page, setPage] = useState(0);
   const [proofPage, setProofPage] = useState(0);
   const [createConfirmed, setCreateConfirmed] = useState(false);
@@ -63,10 +66,16 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const [qaReason, setQaReason] = useState("");
   const [qaPassed, setQaPassed] = useState(true);
 
+  useEffect(() => {
+    if (initialCaseId || !router.isReady) return;
+    setSelectedCaseId(routeCaseId);
+  }, [initialCaseId, routeCaseId, router.isReady]);
+
   const list = useQuery({
     queryKey: ["dolores", role, "buybacks", subject, page],
     queryFn: ({ signal }) => buybacksApi.list({ page, size: 20 }, signal),
-    enabled: !(isModeratorRoute && Boolean(initialCaseId)),
+    enabled: !(isModeratorRoute && Boolean(initialCaseId))
+      && !(role === "technician" && Boolean(initialCaseId)),
     retry: false,
   });
   const detailId = isModeratorRoute ? initialCaseId ?? "" : selectedCaseId || initialCaseId || "";
@@ -259,7 +268,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       page: assignmentPage,
       size: 20,
     }, signal),
-    enabled: Boolean(assignmentRole),
+    enabled: Boolean(assignmentRole && assignmentRole !== "COLLECTION_TECHNICIAN"),
     retry: false,
   });
   const eligibleAssignees = (assignmentProfiles.data?.items ?? []).filter((profile) =>
@@ -316,8 +325,9 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     mutationFn: (input: Parameters<typeof buybacksApi.assignCollection>[1] & { id: string }) => {
       const { id, ...request } = input;
       const technicianId = ProfileIdSchema.parse(input.technicianId);
-      const eligible = canAssignCollection && eligibleAssignees.some((profile) => profile.idaasUserId === technicianId);
-      if (!eligible) throw new Error("Chỉ Moderator phụ trách mới được giao Technician thu máy đang hoạt động và đã xác minh email.");
+      const reusingInspectionTechnician = caseData?.inspectionTechnicianId === technicianId;
+      const eligible = canAssignCollection && (reusingInspectionTechnician || eligibleAssignees.some((profile) => profile.idaasUserId === technicianId));
+      if (!eligible) throw new Error("Chỉ Moderator phụ trách mới được dùng Technician kiểm tra đã giao hoặc chọn Technician thu máy đủ điều kiện.");
       return buybacksApi.assignCollection(id, { ...request, technicianId });
     },
     onSuccess: (_, input) => {
@@ -467,7 +477,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const commonError = [assignInspection, assignCollection, assignRefurbishment, assignModerator, decideOwnerPrice, cancelBuyback, startInspection, submitInspection, decideValuation, createPayment, submitProof, reviewProof, requestCollection, recordCollectionEvidence, confirmCollection, startRefurbishment, completeRefurbishment, registerMachine, decideQa, downloadProof].find((mutation) => mutation.isError);
   const backHref = listHref ?? "/dashboard/buyback";
   const createFormOpen = role === "owner" && showCreateForm && !detailId;
-  const showList = !createFormOpen && !(isModeratorRoute && Boolean(detailId));
+  const showList = !createFormOpen && !(isModeratorRoute && Boolean(detailId))
+    && !(role === "technician" && Boolean(initialCaseId));
   const setAssignmentSearchAndReset = (value: string) => {
     setAssignmentSearch(value);
     setAssignmentPage(0);

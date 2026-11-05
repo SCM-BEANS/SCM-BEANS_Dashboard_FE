@@ -7,7 +7,7 @@ export const buybackStatusLabels: Record<BuybackStatus, string> = {
   APPROVED: "Đã duyệt giá",
   PAYMENT_PENDING: "Chờ thanh toán",
   PAID: "Đã thanh toán",
-  COLLECTION_PENDING: "Chờ thu máy",
+  COLLECTION_PENDING: "Chờ phân công thu máy",
   COLLECTED: "Đã nhận máy",
   REFURBISHING: "Đang tân trang",
   QA_PENDING: "Chờ kiểm định",
@@ -17,6 +17,17 @@ export const buybackStatusLabels: Record<BuybackStatus, string> = {
   REJECTED: "Đã từ chối",
   CANCELLED: "Đã hủy",
 };
+
+export function buybackPaymentProofStatusLabel(status: string) {
+  switch (status) {
+    case "SUBMITTED": return "Chờ Owner xác nhận";
+    case "APPROVED": return "Đã duyệt (luồng cũ)";
+    case "REJECTED": return "Từ chối (luồng cũ)";
+    case "OWNER_CONFIRMED": return "Owner xác nhận đã nhận tiền";
+    case "OWNER_NOT_RECEIVED": return "Owner báo chưa nhận tiền";
+    default: return status;
+  }
+}
 
 export function formatBuybackMoney(value: number | null | undefined, currency: string) {
   if (value == null) return "—";

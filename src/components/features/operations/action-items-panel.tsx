@@ -2,10 +2,13 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardApi } from "@/apis/dashboard.api";
+import { buybacksApi } from "@/apis/buybacks.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { DashboardTimeBucketSchema, type TDashboardActionItem } from "@/schema/dashboard.schema";
@@ -13,6 +16,14 @@ import styles from "./action-items-panel.module.css";
 
 type ActionItemsRole = "ADMIN" | "MODERATOR" | "OWNER" | "TECHNICIAN";
 type TimeBucket = "ALL" | "TODAY" | "UPCOMING" | "OVERDUE" | "UNSCHEDULED";
+type OwnerPaymentReceiptDecision = {
+  actionKey: string;
+  caseId: string;
+  proofId: string;
+  received: boolean;
+  idempotencyKey: string;
+  correlationId: string;
+};
 
 function ownerCustodyAcknowledgementTarget(item: TDashboardActionItem): { caseId: string; eventId: string } | undefined {
   if (item.actionType !== "OWNER_HANDOVER_ACK" || item.resourceType !== "MAINTENANCE_CUSTODY_EVENT") return undefined;
@@ -29,6 +40,25 @@ function ownerCustodyAcknowledgementTarget(item: TDashboardActionItem): { caseId
     return { caseId: match[1], eventId: match[2] ?? item.resourceId };
   }
   return undefined;
+}
+
+function ownerPaymentReceiptTarget(item: TDashboardActionItem): { caseId: string; proofId: string; href: string } | undefined {
+  if (item.actionType !== "BUYBACK_OWNER_RECEIPT" || item.resourceType !== "BUYBACK_PAYMENT_PROOF") return undefined;
+  const action = item.availableActions.find((candidate) => candidate.code === "RESPOND_BUYBACK_PAYMENT_RECEIPT");
+  const expectedActionPath = `/api/v1/buybacks/payment-proofs/${item.resourceId}/owner-receipt`;
+  if (!action || action.method !== "POST" || action.path !== expectedActionPath) return undefined;
+  try {
+    const detailPath = new URL(item.detailPath, "http://dashboard.local").pathname;
+    const match = /^\/api\/v1\/buybacks\/([0-9a-f-]{36})\/?$/i.exec(detailPath);
+    if (!match) return undefined;
+    return {
+      caseId: match[1],
+      proofId: item.resourceId,
+      href: `${PATH_CUSTOMER.BUYBACK}?caseId=${encodeURIComponent(match[1])}`,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 const bucketOptions: { value: TimeBucket; label: string }[] = [
@@ -136,6 +166,7 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
   const [page, setPage] = useState(0);
   const [openAcknowledgement, setOpenAcknowledgement] = useState<Record<string, boolean>>({});
   const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
+  const [paymentReceiptDecision, setPaymentReceiptDecision] = useState<OwnerPaymentReceiptDecision | null>(null);
   const queryClient = useQueryClient();
   const parsedBucket = bucket === "ALL" ? undefined : DashboardTimeBucketSchema.parse(bucket);
   const items = useQuery({
@@ -157,6 +188,31 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
       await queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow"] });
     },
   });
+  const respondToOwnerPaymentReceipt = useMutation({
+    mutationFn: (input: OwnerPaymentReceiptDecision) => {
+      if (role !== "OWNER") throw new Error("Chỉ Owner mới có thể phản hồi khoản thanh toán buyback.");
+      return buybacksApi.respondToOwnerPaymentReceipt(input.proofId, {
+        received: input.received,
+        idempotencyKey: input.idempotencyKey,
+        correlationId: input.correlationId,
+      });
+    },
+    onSuccess: () => setPaymentReceiptDecision(null),
+    onSettled: async (_proof, _error, input) => {
+      const subject = authScopedQuerySubject("OWNER");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dolores", "dashboard", "action-items"] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "owner", "buyback", subject, input.caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "owner", "buyback-payment-proofs", subject, input.caseId] }),
+        queryClient.invalidateQueries({ queryKey: ["dolores", "owner", "buybacks", subject] }),
+      ]);
+    },
+  });
+  const openPaymentReceiptDialog = (actionKey: string, caseId: string, proofId: string, received: boolean) => {
+    respondToOwnerPaymentReceipt.reset();
+    const key = createIdempotencyKey();
+    setPaymentReceiptDecision({ actionKey, caseId, proofId, received, idempotencyKey: key, correlationId: key });
+  };
   const columns: readonly DataTableColumn<TDashboardActionItem>[] = [
     {
       key: "work",
@@ -175,6 +231,26 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
       key: "action",
       header: "Thao tác",
       render: (item) => {
+        const paymentReceiptTarget = role === "OWNER" ? ownerPaymentReceiptTarget(item) : undefined;
+        if (paymentReceiptTarget) {
+          return (
+            <div className={styles.acknowledgementForm}>
+              <Link className={styles.openLink} href={paymentReceiptTarget.href}>Xem hồ sơ và chứng từ</Link>
+              <div className={styles.acknowledgementActions}>
+                <ButtonBar
+                  type="button"
+                  disabled={respondToOwnerPaymentReceipt.isPending}
+                  onClick={() => openPaymentReceiptDialog(item.actionKey, paymentReceiptTarget.caseId, paymentReceiptTarget.proofId, true)}
+                >Đã nhận tiền</ButtonBar>
+                <ButtonBar
+                  type="button"
+                  disabled={respondToOwnerPaymentReceipt.isPending}
+                  onClick={() => openPaymentReceiptDialog(item.actionKey, paymentReceiptTarget.caseId, paymentReceiptTarget.proofId, false)}
+                >Chưa nhận được tiền</ButtonBar>
+              </div>
+            </div>
+          );
+        }
         const acknowledgementTarget = role === "OWNER" ? ownerCustodyAcknowledgementTarget(item) : undefined;
         if (acknowledgementTarget) {
           const acknowledgement = acknowledgementTexts[item.actionKey] ?? "";
@@ -277,6 +353,33 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
           </ul>
         </details>
       )}
+      {paymentReceiptDecision ? (
+        <NotificationDialog
+          variant="confirm"
+          eyebrow="Xác nhận thanh toán thu mua"
+          title={paymentReceiptDecision.received ? "Bạn đã nhận được tiền?" : "Bạn chưa nhận được tiền?"}
+          description={paymentReceiptDecision.received
+            ? "Xác nhận để ghi nhận khoản thanh toán đã nhận. Hồ sơ sẽ chuyển sang bước tân trang."
+            : "Gửi phản hồi để Moderator kiểm tra giao dịch và cập nhật chứng từ. Hồ sơ sẽ tiếp tục chờ xử lý thanh toán."
+          }
+          primaryAction={{
+            label: paymentReceiptDecision.received ? "Xác nhận đã nhận tiền" : "Gửi báo chưa nhận tiền",
+            pending: respondToOwnerPaymentReceipt.isPending,
+            pendingLabel: "Đang gửi phản hồi…",
+            disabled: respondToOwnerPaymentReceipt.isPending,
+            onClick: () => respondToOwnerPaymentReceipt.mutate(paymentReceiptDecision),
+          }}
+          secondaryAction={{
+            label: "Quay lại",
+            disabled: respondToOwnerPaymentReceipt.isPending,
+            onClick: () => { setPaymentReceiptDecision(null); respondToOwnerPaymentReceipt.reset(); },
+          }}
+          onClose={() => { if (!respondToOwnerPaymentReceipt.isPending) { setPaymentReceiptDecision(null); respondToOwnerPaymentReceipt.reset(); } }}
+          closeOnEscape={!respondToOwnerPaymentReceipt.isPending}
+        >
+          {respondToOwnerPaymentReceipt.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(respondToOwnerPaymentReceipt.error)}</p> : null}
+        </NotificationDialog>
+      ) : null}
     </section>
   );
 }

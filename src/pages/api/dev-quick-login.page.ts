@@ -39,9 +39,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),
     });
-    const body = await upstream.text();
+    let body = await upstream.text();
     const contentType = upstream.headers.get("content-type");
     if (contentType) res.setHeader("Content-Type", contentType);
+    const cookies = upstream.headers.getSetCookie();
+    if (cookies.length) res.setHeader("Set-Cookie", cookies);
+
+    let genericErrorBody = false;
+    try {
+      const payload: unknown = JSON.parse(body);
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new Error("Invalid authentication response");
+      }
+      const { refresh_token: _refreshToken, ...publicPayload } = payload as Record<string, unknown>;
+      body = JSON.stringify(publicPayload);
+    } catch {
+      if (upstream.ok) {
+        res.setHeader("Cache-Control", "no-store");
+        return res.status(502).json({ error: "Invalid IDaaS authentication response" });
+      }
+      body = JSON.stringify({ error: "Quick login failed" });
+      genericErrorBody = true;
+    }
+
+    if (genericErrorBody) res.setHeader("Content-Type", "application/json");
     return res.status(upstream.status).send(body);
   } catch {
     return res.status(502).json({ message: "Could not reach the configured IDAAS API" });

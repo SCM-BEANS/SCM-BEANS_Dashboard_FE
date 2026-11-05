@@ -1,5 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
-import { formatBuybackMoney } from "./buyback-formatters";
+import { buybackPaymentProofStatusLabel, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import {
   BuybackCaseList,
   BuybackCreatePanel,
@@ -13,6 +13,8 @@ import styles from "../repair-workflow/repair-workflow.module.css";
 export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreateForm = true }: { listHref?: string; showCreateForm?: boolean }) {
   const workflow = useBuybackWorkflowController({ role: "owner", listHref, showCreateForm });
   const { caseData } = workflow;
+  const hasSubmittedPaymentProof = workflow.paymentProofs.data?.items.some((proof) => proof.status === "SUBMITTED") ?? false;
+  const hasUnreceivedPaymentProof = workflow.paymentProofs.data?.items.some((proof) => proof.status === "OWNER_NOT_RECEIVED") ?? false;
 
   return (
     <BuybackWorkflowLayout
@@ -27,7 +29,7 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
           {workflow.ownerDecisionAvailable ? (
             <div className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Quyết định giá thu mua</h3>
-              <p className={styles.formHint}>Giá được duyệt: {formatBuybackMoney(caseData.approvedPrice ?? caseData.proposedPrice, caseData.currency)}. Nếu chấp nhận, Dolores sẽ báo cho Moderator để điều phối thu máy; bạn không cần tạo khoản thanh toán.</p>
+              <p className={styles.formHint}>Giá được duyệt: {formatBuybackMoney(caseData.approvedPrice, caseData.currency)}. Nếu chấp nhận, Dolores sẽ báo cho Moderator để điều phối thu máy; bạn không cần tạo khoản thanh toán.</p>
               <label className={styles.formField}>
                 <span>Lý do chấp nhận hoặc từ chối</span>
                 <textarea required maxLength={2000} value={workflow.ownerDecisionReason} onChange={(event) => workflow.setOwnerDecisionReason(event.target.value)} />
@@ -46,12 +48,20 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
               </div>
             </div>
           ) : null}
-          {workflow.isExternalBuyback && caseData.ownerAccepted === true ? <p className={styles.notice} role="status">Bạn đã chấp nhận giá {formatBuybackMoney(caseData.acceptedPrice, caseData.currency)}. Dolores đang điều phối việc thu máy.</p> : null}
+          {workflow.isExternalBuyback && caseData.ownerAccepted === true ? <p className={styles.notice} role="status">Bạn đã chấp nhận giá {formatBuybackMoney(caseData.approvedPrice, caseData.currency)}. Dolores đang điều phối việc thu máy.</p> : null}
           {workflow.isExternalBuyback && caseData.ownerAccepted === false && caseData.ownerDecisionReason ? <p className={styles.notice} role="status">Bạn đã từ chối giá: {caseData.ownerDecisionReason}</p> : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" ? <p className={styles.notice} role="status">Dolores đang điều phối Technician thu máy. Bạn có thể theo dõi trạng thái tại hồ sơ này.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTED" ? <p className={styles.notice} role="status">Dolores đã xác nhận nhận máy và đang xử lý khoản thanh toán.</p> : null}
-          {workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? <p className={styles.notice} role="status">Dolores đang xét chứng từ thanh toán. Trạng thái sẽ cập nhật tại đây sau khi duyệt.</p> : null}
-          {workflow.isExternalBuyback && caseData.status === "PAID" ? <p className={styles.notice} role="status">Khoản thanh toán đã được Dolores duyệt.</p> : null}
+          {workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? (
+            <p className={styles.notice} role="status">
+              {hasSubmittedPaymentProof
+                ? "Đã có chứng từ thanh toán. Vui lòng xem chứng từ bên dưới rồi phản hồi ở mục Công việc cần xử lý trên bảng điều khiển."
+                : hasUnreceivedPaymentProof
+                  ? "Bạn đã báo chưa nhận được tiền. Moderator đã được thông báo và cần kiểm tra, cập nhật chứng từ thanh toán."
+                  : "Đang chờ Moderator/Admin tải chứng từ thanh toán lên. Bạn sẽ được thông báo khi cần phản hồi về khoản tiền."}
+            </p>
+          ) : null}
+          {workflow.isExternalBuyback && caseData.status === "PAID" ? <p className={styles.notice} role="status">Bạn đã xác nhận nhận khoản thanh toán. Hồ sơ đang tiếp tục sang bước tân trang.</p> : null}
 
           {!workflow.isExternalBuyback && caseData.status === "APPROVED" ? (
             <form className={styles.formPanel} onSubmit={workflow.perform(() => {
@@ -89,10 +99,11 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
               <div className={styles.detailGrid}>
                 {workflow.paymentProofs.data.items.map((proof) => (
                   <div className={styles.detailItem} key={proof.id}>
-                    <strong>{proof.status}</strong>
+                    <strong>{buybackPaymentProofStatusLabel(proof.status)}</strong>
                     <span>{formatBuybackMoney(proof.amount, proof.currency ?? caseData.currency)}</span>
-                    <span>{proof.originalFilename} · gửi lúc {proof.submittedAt}</span>
+                    <span>{proof.originalFilename} · gửi lúc {formatBuybackDateTime(proof.submittedAt)}</span>
                     {proof.reviewReason ? <span>Lý do xét duyệt: {proof.reviewReason}</span> : null}
+                    {proof.ownerRespondedAt ? <span>Owner phản hồi lúc {formatBuybackDateTime(proof.ownerRespondedAt)}</span> : null}
                     <ButtonBar type="button" disabled={workflow.downloadProof.isPending} onClick={() => workflow.downloadProof.mutate({ id: proof.id, filename: proof.originalFilename })}>Tải chứng từ riêng tư</ButtonBar>
                   </div>
                 ))}

@@ -13,6 +13,7 @@ import {
   BuybackInspectionSchema,
   BuybackMachineRegistrationRequestSchema,
   BuybackOwnerDecisionRequestSchema,
+  BuybackOwnerPaymentReceiptRequestSchema,
   BuybackPaymentProofReviewRequestSchema,
   BuybackPaymentProofSchema,
   BuybackPaymentRequestSchema,
@@ -32,6 +33,7 @@ import {
   type BuybackInspectionRequest,
   type BuybackMachineRegistrationRequest,
   type BuybackOwnerDecisionRequest,
+  type BuybackOwnerPaymentReceiptRequest,
   type BuybackPaymentProofReviewRequest,
   type BuybackPaymentRequest,
   type BuybackPickupEvidenceRequest,
@@ -235,6 +237,17 @@ export const buybacksApi =  {
   async reviewPaymentProof(proofId: string, input: BuybackPaymentProofReviewRequest) {
     const validProofId = z.string().uuid().parse(proofId);
     const response = await axiosClient.post<unknown>(`${proofPath(validProofId)}/review`, BuybackPaymentProofReviewRequestSchema.parse(withoutResourceId(input, "proofId")), { baseURL: DOLORES_API_BASE_URL });
+    const proof = BuybackPaymentProofSchema.parse(response.data);
+    if (proof.id !== validProofId) throw new Error("Dolores returned a different payment proof than requested.");
+    return proof;
+  },
+  async respondToOwnerPaymentReceipt(proofId: string, input: BuybackOwnerPaymentReceiptRequest) {
+    const validProofId = z.string().uuid().parse(proofId);
+    const response = await axiosClient.post<unknown>(
+      `${proofPath(validProofId)}/owner-receipt`,
+      BuybackOwnerPaymentReceiptRequestSchema.parse(input),
+      { baseURL: DOLORES_API_BASE_URL },
+    );
     const proof = BuybackPaymentProofSchema.parse(response.data);
     if (proof.id !== validProofId) throw new Error("Dolores returned a different payment proof than requested.");
     return proof;

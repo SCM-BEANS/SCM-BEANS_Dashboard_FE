@@ -25,6 +25,10 @@ const statusFields = {
 export const BuybackCaseSummarySchema = z.object({
   ...statusFields,
   workflowVersion: z.number().int().nullish(),
+  responsibleModeratorId: optionalId,
+  inspectionTechnicianId: optionalId,
+  collectionTechnicianId: optionalId,
+  refurbishmentTechnicianId: optionalId,
   assetSerial: optionalText,
   proposedPrice: z.number().finite().nullish(),
   acceptedPrice: z.number().finite().nullish(),
@@ -51,7 +55,7 @@ export const BuybackRefurbishmentSchema = z.object({
   id: z.string().uuid(),
   ownerId: z.string().uuid(),
   buybackCaseId: BuybackIdSchema,
-  machineId: z.string().uuid(),
+  machineId: optionalId,
   status: z.string(),
   workPerformed: optionalText,
   partsAndCost: z.number().finite().nullish(),
@@ -195,7 +199,14 @@ export const BuybackPaymentProofSchema = z.object({
   reviewedBy: optionalText,
   reviewedAt: optionalText,
   reviewReason: optionalText,
+  ownerRespondedBy: optionalText,
+  ownerRespondedAt: optionalText,
 }).passthrough();
+export const BuybackOwnerPaymentReceiptRequestSchema = z.object({
+  received: z.boolean(),
+  idempotencyKey: z.string().trim().min(1).max(128),
+  correlationId: z.string().trim().min(1).max(128),
+}).strict();
 export const BuybackPaymentProofReviewRequestSchema = z.object({
   approved: z.boolean(),
   reason: z.string().trim().min(1).max(2000),
@@ -252,6 +263,8 @@ export type BuybackAssignTechnicianRequest = z.infer<typeof BuybackAssignTechnic
 export type BuybackInspectionRequest = z.infer<typeof BuybackInspectionRequestSchema>;
 export type BuybackValuationRequest = z.infer<typeof BuybackValuationRequestSchema>;
 export type BuybackPaymentRequest = z.infer<typeof BuybackPaymentRequestSchema>;
+export type BuybackPaymentProof = z.infer<typeof BuybackPaymentProofSchema>;
+export type BuybackOwnerPaymentReceiptRequest = z.infer<typeof BuybackOwnerPaymentReceiptRequestSchema>;
 export type BuybackPaymentProofReviewRequest = z.infer<typeof BuybackPaymentProofReviewRequestSchema>;
 export type BuybackRefurbishmentStartRequest = z.infer<typeof BuybackRefurbishmentStartRequestSchema>;
 export type BuybackRefurbishmentCompleteRequest = z.infer<typeof BuybackRefurbishmentCompleteRequestSchema>;
