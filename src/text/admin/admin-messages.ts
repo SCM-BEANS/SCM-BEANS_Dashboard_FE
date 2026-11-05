@@ -13,6 +13,7 @@ export const ADMIN_MESSAGES = {
     MENU: "Menu & công thức",
     REPORTS: "Báo cáo vận hành",
     INVOICES: "Hóa đơn & đối soát",
+    COFFEE_PACKAGES: "Gói cà phê",
     BUYBACKS: "Thu mua máy",
     NOTIFICATIONS: "Thông báo",
     MORE: "Khác",

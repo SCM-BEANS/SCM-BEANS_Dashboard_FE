@@ -18,6 +18,7 @@ import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 import { RepairCaseSchema } from "@/schema/machines.schema";
 import { MachineModelIdSchema } from "@/schema/machine-models.schema";
+import { CoffeePackageOrderIdSchema } from "@/schema/coffee-packages.schema";
 
 
 export const HOME_NAVIGATION_LINKS =  [
@@ -100,6 +101,7 @@ export const ADMIN_NAVIGATION_LINKS =  [
     ICON: "Utensils"
   },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.INVOICES, HREF: PATH_ADMIN.INVOICES, ICON: "Receipt" },
+  { LABEL: ADMIN_MESSAGES.NAVIGATION.COFFEE_PACKAGES, HREF: PATH_ADMIN.COFFEE_PACKAGES, ICON: "Coffee" },
   { LABEL: ADMIN_MESSAGES.NAVIGATION.BUYBACKS, HREF: PATH_ADMIN.BUYBACKS, ICON: "Package" },
    {
     LABEL: ADMIN_MESSAGES.NAVIGATION.REPORTS,
@@ -126,6 +128,7 @@ export const ADMIN_ENABLED_PATHS = new Set<string>([
   PATH_ADMIN.IOT,
   PATH_ADMIN.MENU,
   PATH_ADMIN.INVOICES,
+  PATH_ADMIN.COFFEE_PACKAGES,
   PATH_ADMIN.BUYBACKS,
   PATH_ADMIN.REPORTS,
   PATH_ADMIN.NOTIFICATIONS,
@@ -152,6 +155,7 @@ export const MODERATOR_NAVIGATION_LINKS =  [
     HREF: PATH_MODERATOR.INVOICES,
     ICON: "FileText"
   },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.COFFEE_PACKAGES, HREF: PATH_MODERATOR.COFFEE_PACKAGES, ICON: "Coffee" },
    {
     LABEL: MODERATOR_MESSAGES.NAVIGATION.MACHINES,
     HREF: PATH_MODERATOR.MACHINES,
@@ -217,6 +221,7 @@ export const CUSTOMER_NAVIGATION_LINKS =  [
     HREF: PATH_CUSTOMER.INVOICES,
     ICON: "FileText"
   },
+  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.COFFEE_PACKAGES, HREF: PATH_CUSTOMER.COFFEE_PACKAGES, ICON: "Coffee" },
    {
     LABEL: CUSTOMER_MESSAGES.NAVIGATION.SUPPORT,
     HREF: PATH_CUSTOMER.SUPPORT,
@@ -278,6 +283,7 @@ const customerStaticSections =  [
   "machines/history",
   "locations",
   "invoices",
+  "coffee-packages",
   "invoices/payment",
   "invoices/shortfall",
   "invoices/refund",
@@ -368,6 +374,7 @@ export function isSupportedCustomerSection(section: string): boolean {
     const [group, id] = segments;
     if (group === "contracts") return ContractIdSchema.safeParse(id).success;
     if (group === "machines") return MachineIdSchema.safeParse(id).success;
+    if (group === "coffee-packages") return CoffeePackageOrderIdSchema.safeParse(id).success;
     if (group === "invoices") {
       return InvoiceIdSchema.safeParse(id).success || /^\d{4}-(?:0[1-9]|1[0-2])$/.test(id);
     }
@@ -441,6 +448,10 @@ function staticPaths(group: Record<string, string | ((value: string) => string)>
 }
 
 const moderatorDynamicSections =  [
+  {
+    base: PATH_MODERATOR.COFFEE_PACKAGES,
+    segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  },
    {
     base: PATH_MODERATOR.INVOICES,
     segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i

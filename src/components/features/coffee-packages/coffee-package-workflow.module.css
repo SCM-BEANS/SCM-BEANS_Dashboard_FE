@@ -1,0 +1,414 @@
+.screen {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  color: #352e2c;
+  min-width: 0;
+}
+
+.heading,
+.panelHeading,
+.actionRow,
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detailHeading {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.detailHeading h1,
+.detailHeading p {
+  margin: 0;
+}
+
+.detailHeading h1 {
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+}
+
+.detailHeading p {
+  color: #746b67;
+  line-height: 1.5;
+}
+
+.heading h1,
+.panel h2,
+.subpanel h3,
+.reviewBox h4 {
+  margin: 0;
+}
+
+.heading p,
+.panelHeading p,
+.subpanel > p,
+.reviewBox p {
+  margin: 6px 0 0;
+  color: #746b67;
+  line-height: 1.5;
+}
+
+.heading h1 {
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+}
+
+.panel,
+.subpanel,
+.selectedPackage,
+.reviewBox,
+.permissionNotice {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e7ded8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+}
+
+.panelHeading {
+  flex-wrap: wrap;
+}
+
+.panelHeading > span {
+  color: #746b67;
+  font-size: 0.9rem;
+}
+
+.panelHeading h2,
+.panelHeading h3 {
+  margin: 0;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid #e7ded8;
+}
+
+.tabs button {
+  padding: 10px 14px;
+  border: 1px solid #e7ded8;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #f7f4f2;
+  color: #544b48;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tabs .activeTab {
+  background: #fff;
+  color: #b7192a;
+  font-weight: 700;
+}
+
+.tabs button:focus-visible,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 3px solid rgb(183 25 42 / 16%);
+  outline-offset: 2px;
+}
+
+.form,
+.subpanel {
+  display: grid;
+  gap: 14px;
+}
+
+.formGrid,
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  color: #544b48;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #ded3cd;
+  border-radius: 7px;
+  background: #fff;
+  color: #352e2c;
+  font: inherit;
+  font-weight: 400;
+}
+
+.field textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #b7192a;
+  outline: 3px solid rgb(183 25 42 / 12%);
+}
+
+.selectedPackage,
+.reviewBox {
+  display: grid;
+  gap: 8px;
+  background: #fbf9f8;
+}
+
+.selectedPackage p {
+  margin: 0;
+  color: #746b67;
+}
+
+.selectedPackage strong {
+  color: #352e2c;
+  font-size: 1.1rem;
+}
+
+.selectedPackage span,
+.hint {
+  color: #746b67;
+  line-height: 1.5;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #544b48;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e7ded8;
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #eee7e2;
+  vertical-align: top;
+}
+
+.table th {
+  background: #f7f4f2;
+  color: #625955;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.table td,
+.table th {
+  line-height: 1.45;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table td {
+  overflow-wrap: anywhere;
+}
+
+.selectedRow td {
+  background: #fcf2f2;
+}
+
+.buttonCell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 140px;
+}
+
+.numeric {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: #746b67;
+  font-size: 0.88rem;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 3px 8px;
+  border: 1px solid #e6ddd7;
+  border-radius: 6px;
+  background: #f8f5f3;
+  color: #514743;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.details > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #eee7e2;
+  border-radius: 7px;
+  background: #fcfbfa;
+}
+
+.details dt {
+  margin-bottom: 5px;
+  color: #746b67;
+  font-size: 0.87rem;
+}
+
+.details dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.87rem;
+  overflow-wrap: anywhere;
+}
+
+.pagination {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  color: #746b67;
+}
+
+.notice,
+.successNotice,
+.errorNotice {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #e7ded8;
+  border-radius: 7px;
+  line-height: 1.5;
+}
+
+.notice {
+  background: #faf8f7;
+  color: #625955;
+}
+
+.permissionNotice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  background: #fbf9f8;
+}
+
+.permissionNotice h3 {
+  margin: 0;
+}
+
+.permissionNotice p {
+  margin: 5px 0 0;
+  color: #746b67;
+  line-height: 1.5;
+}
+
+.permissionNotice > :last-child {
+  grid-column: 1 / -1;
+}
+
+.successNotice {
+  border-color: #b7dcc4;
+  background: #f1faf4;
+  color: #27623b;
+}
+
+.errorNotice {
+  border-color: #edbfc3;
+  background: #fff6f6;
+  color: #a51e2b;
+}
+
+.reviewBox {
+  border-color: #edc9cd;
+  background: #fffafa;
+}
+
+@media (max-width: 800px) {
+  .screen {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .panel,
+  .subpanel,
+  .permissionNotice {
+    padding: 15px;
+  }
+
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .heading,
+  .panelHeading {
+    align-items: flex-start;
+  }
+
+  .heading {
+    flex-direction: column;
+  }
+
+  .formGrid,
+  .actionGrid,
+  .details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .permissionNotice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .permissionNotice > :last-child {
+    grid-column: auto;
+  }
+
+  .table {
+    min-width: 700px;
+  }
+}

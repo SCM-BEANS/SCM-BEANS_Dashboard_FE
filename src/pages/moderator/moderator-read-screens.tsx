@@ -20,6 +20,7 @@ const ModeratorTechnicalScreen = lazy(() => import("./technical/technical-screen
 const ModeratorInvoicesScreen = lazy(() => import("./invoices/invoices-screen").then((module) => ({ default: module.ModeratorInvoicesScreen })));
 const ModeratorRecipesScreen = lazy(() => import("./menu/recipes-screen").then((module) => ({ default: module.ModeratorRecipesScreen })));
 const ModeratorBuybackScreen = lazy(() => import("./buyback/buyback-screen").then((module) => ({ default: module.ModeratorBuybackScreen })));
+const CoffeePackageOperatorScreen = lazy(() => import("@/components/features/coffee-packages/coffee-package-operator-screen").then((module) => ({ default: module.CoffeePackageOperatorScreen })));
 
 function ScreenLoading() {
   return (
@@ -44,6 +45,9 @@ function loadScreen(screen: ReactNode) {
 }
 
 export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
+  if (sectionPath === "coffee-packages") {
+    return loadScreen(<CoffeePackageOperatorScreen role="MODERATOR" />);
+  }
   const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(sectionPath);
   if (contractInstallationRequest) {
     return loadScreen(<ContractInstallationRequestScreen contractId={contractInstallationRequest[1]} />);

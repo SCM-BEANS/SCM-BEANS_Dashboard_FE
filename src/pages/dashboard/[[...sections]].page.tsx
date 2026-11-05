@@ -5,6 +5,8 @@ import { CustomerReadScreen } from "./read/customer-read-screen";
 import { getCustomerScreenDescriptor } from "./read/customer-read-descriptor";
 import { CustomerWorkflowScreen } from "./workflows/customer-workflow-screen";
 import { getCustomerWorkflowDescriptor } from "./workflows/customer-workflow-descriptor";
+import { CoffeePackageOwnerScreen } from "@/components/features/coffee-packages/coffee-package-owner-screen";
+import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 
 interface CustomerPageProps {
   sectionPath: string;
@@ -30,10 +32,13 @@ export default function CustomerRoutePage({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const workflow = getCustomerWorkflowDescriptor(sectionPath);
   const readScreen = getCustomerScreenDescriptor(sectionPath);
+  const isCoffeePackages = sectionPath === "coffee-packages";
 
   return (
-    <CustomerShell pageTitle={workflow?.title ?? readScreen.title}>
-      {workflow
+    <CustomerShell pageTitle={isCoffeePackages ? CUSTOMER_MESSAGES.NAVIGATION.COFFEE_PACKAGES : workflow?.title ?? readScreen.title}>
+      {isCoffeePackages
+        ? <CoffeePackageOwnerScreen />
+        : workflow
         ? <CustomerWorkflowScreen sectionPath={sectionPath} />
         : <CustomerReadScreen sectionPath={sectionPath} />}
     </CustomerShell>

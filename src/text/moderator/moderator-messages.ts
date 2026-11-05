@@ -26,6 +26,7 @@ export const MODERATOR_MESSAGES =  {
     CONTRACTS: "Hợp đồng",
     CUSTOMERS: "Tài khoản khách",
     INVOICES: "Hóa đơn",
+    COFFEE_PACKAGES: "Gói cà phê",
     MACHINES: "Máy & tồn kho",
     LOCATIONS: "Địa điểm",
     IOT: "Giám sát Smart IoT",

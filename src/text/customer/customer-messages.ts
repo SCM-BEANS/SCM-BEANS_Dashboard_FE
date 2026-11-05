@@ -8,6 +8,7 @@ export const CUSTOMER_MESSAGES = {
     LOCATIONS: "Địa điểm của tôi",
     MENU: "Menu của tôi",
     INVOICES: "Hóa đơn",
+    COFFEE_PACKAGES: "Gói cà phê",
     SUPPORT: "Yêu cầu hỗ trợ",
     MAINTENANCE: "Lịch bảo trì",
     BUYBACK: "Thu mua máy cũ",
