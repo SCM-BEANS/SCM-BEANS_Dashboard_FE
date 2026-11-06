@@ -42,7 +42,7 @@ function formatPointTime(value: string) {
   const timestamp = Date.parse(value);
   return Number.isNaN(timestamp)
     ? value
-    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(timestamp);
+    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(timestamp);
 }
 
 export function TelemetryHistoryPanel({
@@ -55,6 +55,8 @@ export function TelemetryHistoryPanel({
   hasMore,
   loadingMore,
   onLoadMore,
+  selectedField: controlledField,
+  onFieldChange,
 }: {
   range: TelemetryRange | null;
   onRangeChange: (range: TelemetryRange) => void;
@@ -65,6 +67,8 @@ export function TelemetryHistoryPanel({
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  selectedField?: string;
+  onFieldChange?: (field: string) => void;
 }) {
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
@@ -83,13 +87,16 @@ export function TelemetryHistoryPanel({
     [points],
   );
   const fields = useMemo(() => [...new Set(orderedPoints.map((point) => point.field))].sort(), [orderedPoints]);
-  const field = fields.includes(selectedField) ? selectedField : fields[0] ?? "";
+  const preferredField = controlledField ?? selectedField;
+  const field = fields.includes(preferredField) ? preferredField : fields[0] ?? "";
   const numericPoints = orderedPoints.filter((point) => point.field === field && typeof point.value === "number" && Number.isFinite(point.value));
   const chartSource = numericPoints.slice(-500);
   const chartMin = chartSource.reduce((minimum, point) => Math.min(minimum, point.value as number), Number.POSITIVE_INFINITY);
   const chartMax = chartSource.reduce((maximum, point) => Math.max(maximum, point.value as number), Number.NEGATIVE_INFINITY);
-  const chartPoints = chartSource.map((point, index) => {
-    const x = chartSource.length === 1 ? 500 : (index / (chartSource.length - 1)) * 1000;
+  const chartStart = chartSource.length ? Date.parse(chartSource[0]!.timestamp) : 0;
+  const chartEnd = chartSource.length ? Date.parse(chartSource[chartSource.length - 1]!.timestamp) : 0;
+  const chartPoints = chartSource.map((point) => {
+    const x = chartEnd === chartStart ? 500 : ((Date.parse(point.timestamp) - chartStart) / (chartEnd - chartStart)) * 1000;
     const y = chartMax === chartMin ? 100 : 180 - (((point.value as number) - chartMin) / (chartMax - chartMin)) * 160;
     return `${x},${y}`;
   }).join(" ");
@@ -107,6 +114,10 @@ export function TelemetryHistoryPanel({
     const to = fromDateTimeLocal(toInput);
     if (!from || !to || Date.parse(from) >= Date.parse(to)) {
       setRangeError("Ngày bắt đầu phải sớm hơn ngày kết thúc.");
+      return;
+    }
+    if (Date.parse(to) - Date.parse(from) > 30 * 86_400_000) {
+      setRangeError("Khoảng dữ liệu tối đa 30 ngày.");
       return;
     }
     setActivePreset("custom");
@@ -132,8 +143,9 @@ export function TelemetryHistoryPanel({
       {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Thử lại</button> : null}</div> : null}
       {!loading && !error && orderedPoints.length === 0 && range ? <p role="status">Không có dữ liệu telemetry trong khoảng đã chọn.</p> : null}
       {orderedPoints.length > 0 ? <>
+        <p className={styles.telemetryRangeCaption}>Dữ liệu đã tải: {orderedPoints.length.toLocaleString("vi-VN")} điểm · {formatPointTime(orderedPoints[0]!.timestamp)} – {formatPointTime(orderedPoints[orderedPoints.length - 1]!.timestamp)} (giờ Việt Nam){hasMore ? " · còn dữ liệu chưa tải" : ""}.</p>
         {fields.length > 0 ? <label className={styles.telemetryFieldSelector}>Trường dữ liệu
-          <select value={field} onChange={(event) => setSelectedField(event.target.value)}>
+          <select value={field} onChange={(event) => { setSelectedField(event.target.value); onFieldChange?.(event.target.value); }}>
             {fields.map((fieldName) => <option key={fieldName} value={fieldName}>{fieldName}</option>)}
           </select>
         </label> : null}

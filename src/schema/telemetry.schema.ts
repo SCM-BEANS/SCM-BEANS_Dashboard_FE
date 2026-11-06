@@ -30,15 +30,22 @@ export const MachineHeartbeatSchema = z.object({
   healthReportedAt: dateTimeSchema.nullish(),
   healthDeviceReportedAt: dateTimeSchema.nullish(),
   health: HeartbeatHealthSchema.nullish(),
+  brewState: z.string().nullish(),
+  sequenceNumber: countSchema.safe().nullish(),
+  // @JsonRawValue in BE may return any JSON value, not just a JSON string.
+  metricsJson: z.unknown().optional(),
 }).passthrough();
 
 export const TelemetryPointsParamsSchema = z.object({
   from: dateTimeSchema,
   to: dateTimeSchema,
-  limit: z.number().int().min(1).max(1000).default(100),
+  limit: z.number().int().min(1).max(500).default(100),
   offset: z.number().int().min(0).max(100_000).default(0),
 }).refine((range) => Date.parse(range.from) < Date.parse(range.to), {
   message: "Telemetry start must be before its end.",
+  path: ["to"],
+}).refine((range) => Date.parse(range.to) - Date.parse(range.from) <= 30 * 86_400_000, {
+  message: "Khoảng dữ liệu telemetry tối đa 30 ngày.",
   path: ["to"],
 });
 
