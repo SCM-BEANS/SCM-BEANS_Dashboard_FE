@@ -1,0 +1,107 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #e9e2dc;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.heading,
+.sectionHeading,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading h2,
+.sectionHeading h3 {
+  margin: 0;
+}
+
+.heading p,
+.sectionHeading p,
+.notice {
+  margin: 6px 0 0;
+  color: #706561;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tableSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pagination p {
+  margin: 0;
+  color: #706561;
+}
+
+.dialogField {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.dialogField label {
+  font-weight: 600;
+}
+
+.dialogField select,
+.dialogField textarea {
+  width: 100%;
+  border: 1px solid #cfc5be;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.dialogField textarea {
+  resize: vertical;
+}
+
+.counter {
+  justify-self: end;
+  color: #706561;
+  font-size: 12px;
+}
+
+.dialogError {
+  margin: 12px 0 0;
+  color: #a32626;
+}
+
+.successNotice {
+  margin: 8px 0 0;
+  color: #27613b;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .statGrid {
+    grid-template-columns: 1fr;
+  }
+}

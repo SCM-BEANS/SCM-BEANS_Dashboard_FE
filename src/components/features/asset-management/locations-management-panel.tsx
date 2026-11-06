@@ -5,11 +5,13 @@ import { useRouter } from "next/router";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { LocationCreateSchema, type LocationCreate } from "@/schema/locations.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
+import { PATH_CUSTOMER, PATH_MODERATOR } from "@/routes/path";
 import { loadProfilePage, nextProfilePage } from "./asset-management-data";
 import styles from "./asset-management.module.css";
 
@@ -29,7 +31,8 @@ export function LocationsManagementPanel({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [selectedOwnerId, setSelectedOwnerId] = useState("");
+  const initialOwnerId = typeof router.query.ownerId === "string" ? router.query.ownerId : "";
+  const [selectedOwnerId, setSelectedOwnerId] = useState(initialOwnerId);
   const [form, setForm] = useState<LocationCreate>(emptyForm);
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -190,8 +193,19 @@ export function LocationsManagementPanel({
             { key: "name", header: "Tên địa điểm", render: (location) => <strong>{location.name}</strong> },
             { key: "address", header: "Địa chỉ", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
             { key: "machines", header: "Số máy", render: (location) => location.machineCount ?? "—" },
-            { key: "status", header: "Trạng thái", render: (location) => location.active === false ? "Ngừng hoạt động" : "Hoạt động" },
+            { key: "status", header: "Trạng thái", render: (location) => location.active == null ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> },
             { key: "id", header: "UUID", render: (location) => <span className={styles.code}><TruncatedId value={location.id} /></span> },
+            { key: "actions", header: "", render: (location) => <ButtonBar
+              type="button"
+              onClick={() => void router.push({
+                pathname: router.pathname,
+                query: {
+                  ...router.query,
+                  id: location.id,
+                  ...(mode === "moderator" && activeOwnerId ? { ownerId: activeOwnerId } : {}),
+                },
+              }, undefined, { shallow: true })}
+            >Chi tiết</ButtonBar> },
           ]}
         />}
         {locations.hasNextPage && <div className={styles.actions}>

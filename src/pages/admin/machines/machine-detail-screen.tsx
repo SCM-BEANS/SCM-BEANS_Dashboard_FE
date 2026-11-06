@@ -18,6 +18,7 @@ import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -175,6 +176,7 @@ function MachineDetailContent() {
         <ButtonBar type="button" onClick={beginEditing}>{T.MACHINES.EDIT}</ButtonBar>
         <ButtonBar type="button" onClick={() => { setMachineActionError(""); setConfirmDelete(true); }}>Xóa máy</ButtonBar>
       </> : null)}
+      {showRefresh && machine.data?.ownerId && <TransferMachineAction machine={machine.data} />}
       {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching || maintenanceTickets.isFetching || machineModel.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
     </ActionBar>
   );
@@ -287,7 +289,7 @@ function MachineDetailContent() {
                   <div><span>{T.MACHINES.TENANT_ID}</span><strong><TruncatedId value={device.tenantId} /></strong></div>
                   <div><span>{T.MACHINES.OWNER_TYPE}</span><strong>{device.ownerType ?? "—"}</strong></div>
                   <div><span>{T.MACHINES.REGION}</span><strong>{device.region ?? "—"}</strong></div>
-                  <div><span>{T.MACHINES.LOCATION}</span><strong>{machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? <TruncatedId value={device.locationId} /> : machineLocation.data?.name ?? <TruncatedId value={device.locationId} />}</strong></div>
+                  <div><span>{T.MACHINES.LOCATION}</span><strong>{!device.locationId ? "Kho" : machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? <TruncatedId value={device.locationId} /> : machineLocation.data?.name ?? <TruncatedId value={device.locationId} />}</strong></div>
                   <div><span>{T.MACHINES.LOCATION_ID}</span><strong><TruncatedId value={device.locationId} /></strong></div>
                   <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
                   <div><span>{T.MACHINES.CONTRACT_PERIOD}</span><strong>{device.contractStartDate || device.contractEndDate ? formatDate(device.contractStartDate) + " – " + formatDate(device.contractEndDate) : "—"}</strong></div>

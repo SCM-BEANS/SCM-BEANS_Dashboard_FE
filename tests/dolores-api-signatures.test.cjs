@@ -6,7 +6,7 @@ const ts = require('typescript');
 
 const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
-  'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'create', 'assignMachine'] },
+  'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'getStats', 'listMachines', 'transferMachine', 'create', 'assignMachine'] },
   'technician-assignments.api.ts': { technicianAssignmentsApi: ['assign', 'revoke'] },
   'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
   'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'createMaintenanceTicket', 'updateMaintenanceTicketDetails', 'recordMaintenanceTicketOverdueReview', 'unassignMaintenanceTicket', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MachineSchema } from "@/schema/machines.schema";
 
 export const LocationIdSchema = z.string().uuid();
 export const LocationSchema = z.object({
@@ -41,11 +42,49 @@ export const LocationCreateSchema = z.object({
   phoneNumber: z.string().trim().optional(),
 });
 export const LocationUpdateSchema = LocationCreateSchema;
+export const LocationStatsResponseSchema = z.object({
+  locationId: LocationIdSchema,
+  locationName: z.string(),
+  ownerId: z.string().uuid(),
+  ownerName: z.string().nullish(),
+  totalMachines: z.number().int().nonnegative(),
+  onlineMachines: z.number().int().nonnegative(),
+  offlineMachines: z.number().int().nonnegative(),
+  todayCupsBrewed: z.number().int().nonnegative(),
+  weeklyCupsBrewed: z.number().int().nonnegative(),
+  averageWastagePct: z.number().nullable(),
+}).passthrough();
+
+export const LocationMachinePageParamsSchema = z.object({
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+}).strict();
+
+export const SpringPageSchema = <T extends z.ZodTypeAny>(contentItemSchema: T) => z.object({
+  content: z.array(contentItemSchema),
+  number: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  totalElements: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+  last: z.boolean(),
+}).passthrough();
+
+export const LocationMachinePageSchema = SpringPageSchema(MachineSchema);
+
+export const MachineTransferRequestSchema = z.object({
+  targetLocationId: LocationIdSchema,
+  reason: z.string().trim().max(500).optional(),
+}).strict();
+
 export type Location = z.infer<typeof LocationSchema>;
 export type LocationListResponse = z.infer<typeof LocationListSchema>;
 export type LocationListPageParams = z.input<typeof LocationListPageParamsSchema>;
 export type LocationCreate = z.infer<typeof LocationCreateSchema>;
 export type LocationUpdate = z.infer<typeof LocationUpdateSchema>;
+export type LocationStatsResponse = z.infer<typeof LocationStatsResponseSchema>;
+export type LocationMachinePage = z.infer<typeof LocationMachinePageSchema>;
+export type LocationMachinePageParams = z.input<typeof LocationMachinePageParamsSchema>;
+export type MachineTransferRequest = z.infer<typeof MachineTransferRequestSchema>;
 
 export function unwrapLocations(response: LocationListResponse): Location[] {
   if (Array.isArray(response)) return response;

@@ -17,6 +17,7 @@ import { ADMIN_OPERATIONS_MESSAGES as ADMIN_T } from "@/text/admin/admin-operati
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { adminStyles } from "@/pages/admin/admin-shell";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import { moderatorStyles } from "../moderator-shell";
 import { MachineMaintenanceTicketTable } from "./machine-maintenance-ticket-table";
 
@@ -296,6 +297,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
           { label: ADMIN_T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
           { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
         ]}>
+        {device.ownerId && <TransferMachineAction machine={device} />}
 
         <div className={adminStyles.machineInventoryGroup}>
           <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
@@ -326,7 +328,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                     <Field label={ADMIN_T.MACHINES.TENANT_ID} value={device.tenantId ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.OWNER_TYPE} value={device.ownerType ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.REGION} value={device.region ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.LOCATION} value={locationScopeMismatch ? device.locationId ?? "—" : location.data?.name ?? device.locationId ?? "—"} />
+                    <Field label={ADMIN_T.MACHINES.LOCATION} value={!device.locationId ? "Kho" : locationScopeMismatch ? device.locationId : location.data?.name ?? device.locationId} />
                     <Field label={ADMIN_T.MACHINES.LOCATION_ID} value={device.locationId ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.DEPLOYED_AT} value={formatDate(device.deployedAt)} />
                     <Field label={ADMIN_T.MACHINES.CONTRACT_PERIOD} value={device.contractStartDate || device.contractEndDate ? `${formatDateOnly(device.contractStartDate)} – ${formatDateOnly(device.contractEndDate)}` : "—"} />

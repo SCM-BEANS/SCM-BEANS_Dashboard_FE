@@ -12,7 +12,13 @@ function loadTypescript(relativePath, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
   const module = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    if (id === '@/schema/machines.schema' && relativePath.endsWith('src/schema/locations.schema.ts')) {
+      return loadTypescript('src/schema/machines.schema.ts');
+    }
+    return require(id);
+  };
   new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
   return module.exports;
 }
@@ -93,6 +99,74 @@ test('location detail uses UUID endpoint and rejects an identity mismatch', asyn
   await assert.rejects(locationsApi.getById('S-018'));
   assert.equal(calls.length, 2);
   assert.equal(calls[0].url, `/locations/${locationId}`);
+});
+
+test('location stats and Spring machine pages validate identity and preserve paging parameters', async () => {
+  const locationSchemas = loadTypescript('src/schema/locations.schema.ts', {
+    '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
+  });
+  const machineSchemas = loadTypescript('src/schema/machines.schema.ts');
+  const machineId = '00000000-0000-4000-8000-000000000004';
+  const targetLocationId = '00000000-0000-4000-8000-000000000005';
+  const stats = {
+    locationId, locationName: 'Store A', ownerId, ownerName: 'Owner A', totalMachines: 2,
+    onlineMachines: 1, offlineMachines: 1, todayCupsBrewed: 24, weeklyCupsBrewed: 130, averageWastagePct: 2.5,
+  };
+  const page = {
+    content: [{ id: machineId, ownerId, locationId, serialNumber: 'TEST-01', status: 'IN_WAREHOUSE', machineType: 'CONVENTIONAL' }],
+    number: 1, size: 10, totalElements: 11, totalPages: 2, last: false, first: false,
+    pageable: { pageNumber: 1, pageSize: 10 },
+  };
+  const transferred = { id: machineId, ownerId, locationId: targetLocationId, serialNumber: 'TEST-01', status: 'IN_WAREHOUSE' };
+  const responses = [stats, page, transferred];
+  const calls = [];
+  const axiosClient = {
+    get: async (url, config) => { calls.push({ method: 'GET', url, config }); return { data: responses.shift() }; },
+    post: async (url, data, config) => { calls.push({ method: 'POST', url, data, config }); return { data: responses.shift() }; },
+  };
+  const { locationsApi } = loadTypescript('src/apis/locations.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/locations.schema': locationSchemas,
+    '@/schema/machines.schema': machineSchemas,
+  });
+  const signal = new AbortController().signal;
+
+  assert.deepEqual(await locationsApi.getStats(locationId, signal), stats);
+  assert.deepEqual(await locationsApi.listMachines(locationId, { page: 1, size: 10 }, signal), page);
+  assert.deepEqual(await locationsApi.transferMachine(machineId, { targetLocationId, reason: 'Move to the front counter.' }), transferred);
+  assert.deepEqual(calls, [
+    { method: 'GET', url: `/locations/${locationId}/stats`, config: { baseURL: '/api/dolores/v1', signal } },
+    { method: 'GET', url: `/locations/${locationId}/machines`, config: { baseURL: '/api/dolores/v1', params: { page: 1, size: 10 }, signal } },
+    { method: 'POST', url: `/locations/machines/${machineId}/transfer`, data: { targetLocationId, reason: 'Move to the front counter.' }, config: { baseURL: '/api/dolores/v1' } },
+  ]);
+});
+
+test('location stats, machine pages, and transfers reject mismatched or invalid identities', async () => {
+  const locationSchemas = loadTypescript('src/schema/locations.schema.ts', {
+    '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
+  });
+  const machineSchemas = loadTypescript('src/schema/machines.schema.ts');
+  let response = { locationId: '00000000-0000-4000-8000-000000000099', locationName: 'Wrong', ownerId, ownerName: null, totalMachines: 0, onlineMachines: 0, offlineMachines: 0, todayCupsBrewed: 0, weeklyCupsBrewed: 0, averageWastagePct: null };
+  let calls = 0;
+  const axiosClient = {
+    get: async () => { calls += 1; return { data: response }; },
+    post: async () => { calls += 1; return { data: response }; },
+  };
+  const { locationsApi } = loadTypescript('src/apis/locations.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/locations.schema': locationSchemas,
+    '@/schema/machines.schema': machineSchemas,
+  });
+
+  await assert.rejects(locationsApi.getStats(locationId), /different location/);
+  response = {
+    content: [{ id: '00000000-0000-4000-8000-000000000004', locationId: '00000000-0000-4000-8000-000000000099' }],
+    number: 0, size: 10, totalElements: 1, totalPages: 1, last: true,
+  };
+  await assert.rejects(locationsApi.listMachines(locationId, { page: 0, size: 10 }), /outside the requested location/);
+  await assert.rejects(locationsApi.transferMachine('not-a-machine', { targetLocationId: locationId }));
+  await assert.rejects(locationsApi.transferMachine('00000000-0000-4000-8000-000000000004', { targetLocationId: 'not-a-location' }));
+  assert.equal(calls, 2);
 });
 
 test('location pages use owner scope and backend paging headers', async () => {

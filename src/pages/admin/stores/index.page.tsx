@@ -15,6 +15,8 @@ import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { profilesApi } from "@/apis/profiles.api";
 import type { AdminUser } from "@/schema/admin-users.schema";
 import { LocationIdSchema, type LocationCreate } from "@/schema/locations.schema";
+import { LocationDetailPanel } from "@/components/features/locations/location-detail-panel";
+import { PATH_ADMIN } from "@/routes/path";
 import { ProfileIdSchema, type Profile } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
@@ -198,16 +200,23 @@ function StoresContent() {
       {detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
       {ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
-      {detail.data && !ownerMismatch && <section className={styles.panel}><h2>{T.STORES.DETAIL}</h2><div className={styles.operationsGrid}>
-        <div><span>{T.STORES.NAME}</span><strong>{detail.data.name}</strong></div>
-        <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? <TruncatedId value={detail.data.ownerId} />}</strong></div>
-        <div><span>{T.STORES.ADDRESS}</span><strong>{detail.data.address || "—"}</strong></div>
-        <div><span>{T.STORES.CITY}</span><strong>{detail.data.city || "—"}</strong></div>
-        <div><span>{T.STORES.CONTACT}</span><strong>{detail.data.contactPerson || "—"}</strong></div>
-        <div><span>{T.STORES.PHONE}</span><strong>{detail.data.phoneNumber || "—"}</strong></div>
-        <div><span>Trạng thái</span><strong>{detail.data.active == null ? "—" : <StatusBadge status={detail.data.active ? "ACTIVE" : "INACTIVE"}>{detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge>}</strong></div>
-        <div><span>Mã cửa hàng</span><strong><TruncatedId value={detail.data.id} /></strong></div>
-      </div></section>}
+      {detail.data && !ownerMismatch && <>
+        <section className={styles.panel}><h2>{T.STORES.DETAIL}</h2><div className={styles.operationsGrid}>
+          <div><span>{T.STORES.NAME}</span><strong>{detail.data.name}</strong></div>
+          <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? <TruncatedId value={detail.data.ownerId} />}</strong></div>
+          <div><span>{T.STORES.ADDRESS}</span><strong>{detail.data.address || "—"}</strong></div>
+          <div><span>{T.STORES.CITY}</span><strong>{detail.data.city || "—"}</strong></div>
+          <div><span>{T.STORES.CONTACT}</span><strong>{detail.data.contactPerson || "—"}</strong></div>
+          <div><span>{T.STORES.PHONE}</span><strong>{detail.data.phoneNumber || "—"}</strong></div>
+          <div><span>Trạng thái</span><strong>{detail.data.active == null ? "—" : <StatusBadge status={detail.data.active ? "ACTIVE" : "INACTIVE"}>{detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge>}</strong></div>
+          <div><span>Mã cửa hàng</span><strong><TruncatedId value={detail.data.id} /></strong></div>
+        </div></section>
+        <LocationDetailPanel
+          locationId={detail.data.id}
+          machineDetailHref={(machineId) => PATH_ADMIN.MACHINE_DETAIL(machineId)}
+          tableVariant="operations"
+        />
+      </>}
     </>}
 
     {view !== "detail" && view !== "create" && <section className={styles.panel}>

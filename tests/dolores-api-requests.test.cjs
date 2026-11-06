@@ -111,6 +111,13 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['locations', 'list', [{ ownerId: ids.profile }, signal], [location], 'GET', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile }, signal }],
     ['locations', 'listByTenant', [ids.tenant, signal], [{ id: ids.location, tenantId: ids.tenant }], 'GET', '/locations', { baseURL: '/api/dolores/v1', params: { tenantId: ids.tenant, activeOnly: false }, signal }],
     ['locations', 'getById', [ids.location, signal], location, 'GET', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1', signal }],
+    ['locations', 'getStats', [ids.location, signal], { locationId: ids.location }, 'GET', `/locations/${ids.location}/stats`, { baseURL: '/api/dolores/v1', signal }],
+    ['locations', 'listMachines', [ids.location, { page: 2, size: 10 }, signal], {
+      content: [{ id: ids.machine, locationId: ids.location }], number: 2, size: 10, totalElements: 21, totalPages: 3, last: false,
+    }, 'GET', `/locations/${ids.location}/machines`, { baseURL: '/api/dolores/v1', params: { page: 2, size: 10 }, signal }],
+    ['locations', 'transferMachine', [ids.machine, { targetLocationId: ids.location, reason: 'Move to the front counter.' }], {
+      id: ids.machine, locationId: ids.location,
+    }, 'POST', `/locations/machines/${ids.machine}/transfer`, { baseURL: '/api/dolores/v1' }, { targetLocationId: ids.location, reason: 'Move to the front counter.' }],
     ['locations', 'create', [ids.profile, { name: 'Test store', city: 'Test City' }], location, 'POST', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile } }, { name: 'Test store', city: 'Test City' }],
     ['contracts', 'list', [signal], [], 'GET', '/contracts', { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],

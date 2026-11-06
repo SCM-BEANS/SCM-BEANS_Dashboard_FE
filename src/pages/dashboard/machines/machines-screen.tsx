@@ -15,6 +15,7 @@ import type { BackButtonDestination } from "@/components/navigation/back-button"
 import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -160,7 +161,9 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
                   <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
                   <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
+                  <DetailItem label="Điểm bán" value={detail.data.locationId ? detail.data.locationId : "Kho"} />
                 </dl>
+                {detail.data.ownerId && <TransferMachineAction machine={detail.data} />}
                 <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
                   Xem dữ liệu vận hành
                 </Link>
