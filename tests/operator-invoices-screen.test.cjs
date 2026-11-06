@@ -86,6 +86,10 @@ function makeScreen(queryResults) {
     '@/routes/path': loadTypescript('src/routes/path.ts'),
     '@/text/billing/billing-messages': loadTypescript('src/text/billing/billing-messages.ts'),
     '@/components/table/data-table': { DataTable },
+    '@/components/table/table-filters': { TableFilters: ({ children }) => React.createElement('div', null, children) },
+    '@/components/status-badge/status-badge': { StatusBadge: ({ children }) => React.createElement('span', null, children) },
+    '@/components/truncated-id/truncated-id': { TruncatedId: ({ value }) => React.createElement('span', null, value ?? '—') },
+    './invoice-refund-panel': { InvoiceRefundPanel: () => React.createElement('section', { 'aria-label': 'Hoàn khoản thanh toán dư' }) },
     '@/components/notification-dialog/notification-dialog': {
       NotificationDialog: ({ title, children }) => React.createElement('dialog', null, title, children),
     },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RefundStatusSchema } from "./billing.schema";
 
 export const TerminationCaseIdSchema = z.string().uuid();
 export const TerminationCaseTypeSchema = z.enum(["NORMAL", "EARLY", "VIOLATION"]);
@@ -34,6 +35,9 @@ export const TerminationCaseResponseSchema = z.object({
   inspectionTicketId: z.string().uuid().nullish(),
   inspectionDecision: z.string().nullish(),
   settlementId: z.string().uuid().nullish(),
+  depositRefundAmount: z.number().finite().nonnegative().nullish(),
+  refundId: z.string().uuid().nullish(),
+  refundStatus: RefundStatusSchema.nullish(),
   approvedBy: z.string().nullish(),
   approvedAt: z.string().nullish(),
   completedAt: z.string().nullish(),

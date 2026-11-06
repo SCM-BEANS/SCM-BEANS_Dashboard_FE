@@ -8,6 +8,7 @@ import { ModeratorPageHeading } from "../moderator-page-heading";
 import { moderatorStyles as styles } from "../moderator-shell";
 import { amountText, billingPeriodText, invoiceStatusText, QueryFeedback } from "./invoice-shared";
 import { PaymentProofList } from "./payment-proof-list";
+import { InvoiceRefundPanel } from "@/components/features/billing/invoice-refund-panel";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -196,6 +197,7 @@ export function ModeratorInvoiceDetailScreen({ invoiceId }: { invoiceId: string 
       <QueryFeedback query={invoice} loadingMessage={messages.LOADING_INVOICE} />
       {invoice.data && !invoice.isError && <>
         <InvoiceDetails invoice={invoice.data} />
+        <InvoiceRefundPanel key={invoiceId} invoice={{ ...invoice.data, ownerId: invoice.data.ownerId ?? invoice.data.tenantId }} role="MODERATOR" />
         <InvoiceStatusActions invoice={invoice.data} />
         <QueryFeedback query={lineItems} loadingMessage={messages.LOADING_INVOICE_LINE_ITEMS} />
         {lineItems.data && !lineItems.isError && <InvoiceLineItems items={lineItems.data} invoice={invoice.data} />}

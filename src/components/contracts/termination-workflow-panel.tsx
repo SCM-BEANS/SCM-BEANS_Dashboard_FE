@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { billingApi } from "@/apis/billing.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
-import { getApiErrorMessage } from "@/lib/api-errors";
+import { getBillingWorkflowErrorMessage as getApiErrorMessage } from "@/lib/api-errors";
 import type { TerminationCaseStatus } from "@/schema/termination-cases.schema";
 import type { RecallWorkOrderStatus } from "@/schema/recall-work-orders.schema";
-import type { RefundStatus } from "@/schema/billing.schema";
+import { RefundWorkflowPanel, useRefundDetail } from "@/components/features/billing/refund-workflow-panel";
 import styles from "./termination-workflow-panel.module.css";
 
 type Props = {
@@ -17,6 +16,7 @@ type Props = {
   role: "ADMIN" | "MODERATOR" | "OWNER";
   contractId: string;
   caseId?: string | null;
+  contractStatus?: string | null;
 };
 
 function correlationId(prefix: string) {
@@ -32,7 +32,7 @@ function formatDateTime(value?: string | null) {
 }
 
 function formatVnd(value: number) {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 }).format(value);
 }
 
 const caseStatusLabels: Record<TerminationCaseStatus, string> = {
@@ -58,20 +58,11 @@ const recallStatusLabels: Record<RecallWorkOrderStatus, string> = {
   CANCELLED: "Đã hủy",
 };
 
-const refundStatusLabels: Record<RefundStatus, string> = {
-  REQUESTED: "Chờ Owner xác nhận khoản hoàn",
-  TENANT_CONFIRMED: "Owner đã xác nhận, chờ Admin duyệt",
-  APPROVED: "Đã duyệt, chờ tải chứng từ chuyển khoản",
-  SUBMITTED: "Đã gửi chứng từ, chờ Owner xác nhận tiền nhận",
-  COMPLETED: "Đã hoàn tất khoản hoàn",
-  DISPUTED: "Có chênh lệch hoặc chưa nhận được tiền",
-};
-
 function ErrorNotice({ error }: { error: unknown }) {
   return error ? <p className={styles.error} role="alert">{getApiErrorMessage(error, "mutation")}</p> : null;
 }
 
-export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Props) {
+export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contractStatus }: Props) {
   const queryClient = useQueryClient();
   const [selectedRecallId, setSelectedRecallId] = useState("");
   const [technicianId, setTechnicianId] = useState("");
@@ -88,10 +79,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
   const [penaltyAmount, setPenaltyAmount] = useState("0");
   const [outstandingAmount, setOutstandingAmount] = useState("0");
   const [settlementEvidenceReference, setSettlementEvidenceReference] = useState("");
-  const [refundEvidenceFile, setRefundEvidenceFile] = useState<File | null>(null);
-  const [refundReceivedAmount, setRefundReceivedAmount] = useState("");
-  const [refundReceived, setRefundReceived] = useState(true);
-  const [refundReceiptNote, setRefundReceiptNote] = useState("");
+  const settlementAttempts = useRef(new Map<string, { idempotencyKey: string; correlationId: string }>());
 
   const recallOrders = useQuery({
     queryKey: ["dolores", "recall-work-orders", "contract", contractId],
@@ -109,7 +97,11 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
   const resolvedCaseId = caseId ?? selectedRecallSummary?.terminationCaseId ?? "";
   const terminationCase = useQuery({
     queryKey: ["dolores", "termination-cases", "id", resolvedCaseId],
-    queryFn: ({ signal }) => terminationCasesApi.getById(resolvedCaseId, signal),
+    queryFn: async ({ signal }) => {
+      const result = await terminationCasesApi.getById(resolvedCaseId, signal);
+      if (result.contractId !== contractId) throw new Error("Hồ sơ chấm dứt không thuộc hợp đồng đang xem.");
+      return result;
+    },
     enabled: Boolean(resolvedCaseId),
     retry: false,
   });
@@ -166,17 +158,25 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
     && Number.isFinite(parsedOutstandingAmount) && parsedOutstandingAmount >= 0
     && !settlementRuleError,
   );
-  const refundAmount = caseData?.depositRefundAmount ?? 0;
-  const refundComplete = caseData?.status !== "APPROVED"
-    ? true
-    : caseData.depositRefundAmount === 0
-      ? !caseData.refundId
-      : Boolean(caseData.depositRefundAmount != null && caseData.refundId && caseData.refundStatus === "COMPLETED");
-  const parsedRefundReceivedAmount = Number(refundReceivedAmount);
-  const canRecordRefundReceipt = caseData?.depositRefundAmount != null
-    && refundReceivedAmount.trim().length > 0
-    && Number.isFinite(parsedRefundReceivedAmount)
-    && parsedRefundReceivedAmount >= 0;
+  const refundContext = { ownerId: caseData?.ownerId ?? "", contractId, terminationCaseId: resolvedCaseId, kind: "DEPOSIT" as const };
+  const refund = useRefundDetail(caseData?.refundId ?? "", role, refundContext);
+  const inspectionResolved = Boolean(inspectionTicket.data
+    && inspectionTicket.data.id === inspectionTicketId
+    && inspectionTicket.data.contractId === contractId
+    && inspectionTicket.data.machineId === caseData?.machineId
+    && inspectionTicket.data.terminationCaseId === resolvedCaseId
+    && inspectionTicket.data.status === "RESOLVED" && inspectionTicket.data.completedAt
+    && !inspectionTicket.isError);
+  const handoverReady = Boolean(caseData?.handoverEvidenceReference
+    && recallOrder.data?.terminationCaseId === resolvedCaseId
+    && recallOrder.data.status === "RECEIVED_AT_DEPOT" && !recallOrder.isError);
+  const refundComplete = caseData?.depositRefundAmount === 0
+    ? !caseData.refundId
+    : Boolean(caseData?.depositRefundAmount != null && caseData.refundId && !refund.isError
+      && refund.data?.status === "COMPLETED" && refund.data.amount === caseData.depositRefundAmount);
+  const canComplete = Boolean(caseData?.status === "APPROVED" && caseData.settlementId
+    && contractStatus === "ACTIVE" && inspectionResolved && handoverReady && refundComplete);
+
 
   useEffect(() => {
     const firstId = contractRecallOrders[0]?.id;
@@ -218,45 +218,19 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
     onSuccess: () => refresh(),
   });
   const settleCase = useMutation({
-    mutationFn: () => terminationCasesApi.settle(resolvedCaseId, {
-      decision: settlementDecision,
-      damageAmount: parsedDamageAmount,
-      penaltyAmount: parsedPenaltyAmount,
-      outstandingAmount: parsedOutstandingAmount,
-      evidenceReference: settlementEvidenceReference.trim(),
-      idempotencyKey: correlationId("termination-settlement-idempotency"),
-      correlationId: correlationId("termination-settlement"),
-    }),
-    onSuccess: () => refresh(),
-  });
-  const confirmRefund = useMutation({
-    mutationFn: () => billingApi.confirmRefund(caseData?.refundId ?? ""),
-    onSuccess: () => refresh(),
-  });
-  const approveRefund = useMutation({
-    mutationFn: () => billingApi.approveRefund(caseData?.refundId ?? ""),
-    onSuccess: () => refresh(),
-  });
-  const submitRefundEvidence = useMutation({
     mutationFn: () => {
-      if (!refundEvidenceFile) throw new Error("Chọn chứng từ chuyển khoản trước khi gửi.");
-      return billingApi.submitRefundTransferEvidence(caseData?.refundId ?? "", refundEvidenceFile);
+      const payload = { decision: settlementDecision, damageAmount: parsedDamageAmount,
+        penaltyAmount: parsedPenaltyAmount, outstandingAmount: parsedOutstandingAmount,
+        evidenceReference: settlementEvidenceReference.trim() };
+      const signature = JSON.stringify({ caseId: resolvedCaseId, ...payload });
+      const attempt = settlementAttempts.current.get(signature) ?? {
+        idempotencyKey: correlationId("termination-settlement-idempotency"), correlationId: correlationId("termination-settlement"),
+      };
+      settlementAttempts.current.set(signature, attempt);
+      return terminationCasesApi.settle(resolvedCaseId, { ...payload, ...attempt });
     },
-    onSuccess: async () => {
-      setRefundEvidenceFile(null);
-      await refresh();
-    },
-  });
-  const recordRefundReceipt = useMutation({
-    mutationFn: () => billingApi.recordRefundReceipt(caseData?.refundId ?? "", {
-      receivedAmount: Number(refundReceivedAmount),
-      received: refundReceived,
-      ...(refundReceiptNote.trim() ? { note: refundReceiptNote.trim() } : {}),
-    }),
-    onSuccess: async () => {
-      setRefundReceiptNote("");
-      await refresh();
-    },
+    onSuccess: () => refresh(),
+    onError: () => refresh(),
   });
   const assignRecall = useMutation({
     mutationFn: () => recallWorkOrdersApi.assign(recallId, {
@@ -320,7 +294,10 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
             ? "Theo dõi hồ sơ, điều phối thu hồi và kiểm tra máy theo trạng thái backend."
             : "Theo dõi lịch thu hồi và xác nhận tình trạng máy khi bàn giao cho kỹ thuật viên."}</p>
         </div>
-        {caseData ? <span className={styles.status}>{caseStatusLabels[caseData.status]}</span> : null}
+        <div className={styles.actions}>
+          {caseData ? <span className={styles.status}>{caseStatusLabels[caseData.status]}</span> : null}
+          <ButtonBar type="button" disabled={terminationCase.isFetching || recallOrders.isFetching || recallOrder.isFetching || inspectionTicket.isFetching || refund.isFetching} onClick={() => { void refresh(); if (caseData?.refundId) void refund.refetch(); }}>Làm mới hồ sơ</ButtonBar>
+        </div>
       </div>
 
       {mode === "operator" && !resolvedCaseId ? <p className={styles.notice}>Chưa có mã hồ sơ chấm dứt được liên kết với trang này. Tạo hồ sơ từ thao tác hợp đồng để bắt đầu quy trình.</p> : null}
@@ -350,7 +327,8 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
               {caseData.status === "APPROVED" ? (
                 <>
                   <p className={styles.notice}>Hồ sơ đã được duyệt. Hoàn tất sẽ chấm dứt hợp đồng và cập nhật máy về kho.</p>
-                  <ButtonBar type="button" disabled={!refundComplete || completeCase.isPending} onClick={() => completeCase.mutate()}>{completeCase.isPending ? "Đang hoàn tất…" : "Hoàn tất chấm dứt hợp đồng"}</ButtonBar>
+                  {!canComplete ? <p className={styles.notice}>Chưa đủ điều kiện hoàn tất: cần bàn giao hợp lệ, phiếu kiểm tra đã hoàn tất, quyết toán đã lưu và khoản hoàn cọc (nếu có) đã được khách hàng xác nhận nhận đủ.</p> : null}
+                  <ButtonBar type="button" disabled={!canComplete || completeCase.isPending} onClick={() => completeCase.mutate()}>{completeCase.isPending ? "Đang hoàn tất…" : "Hoàn tất chấm dứt hợp đồng"}</ButtonBar>
                 </>
               ) : null}
               {beginRecovery.isError ? <ErrorNotice error={beginRecovery.error} /> : null}
@@ -363,7 +341,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
             <div className={styles.step}>
               <h3>Tạo phiếu kiểm tra máy</h3>
               <p>Chỉ tạo sau khi biên nhận nhận máy tại kho đã được duyệt.</p>
-              <ButtonBar type="button" disabled={createInspectionTicket.isPending} onClick={() => createInspectionTicket.mutate()}>
+              <ButtonBar type="button" disabled={recallOrder.data?.status !== "RECEIVED_AT_DEPOT" || recallOrder.isError || createInspectionTicket.isPending} onClick={() => createInspectionTicket.mutate()}>
                 {createInspectionTicket.isPending ? "Đang tạo phiếu…" : "Tạo phiếu kiểm tra"}
               </ButtonBar>
               {createInspectionTicket.isError ? <ErrorNotice error={createInspectionTicket.error} /> : null}
@@ -423,88 +401,42 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
                   <input value={settlementEvidenceReference} maxLength={2000} onChange={(event) => setSettlementEvidenceReference(event.target.value)} placeholder="Nhập mã tham chiếu đã lưu trong hệ thống" />
                 </label>
               </div>
+              {!inspectionResolved || !handoverReady ? <p className={styles.notice}>Chờ xác nhận biên nhận kho, bàn giao và phiếu kiểm tra đã hoàn tất trước khi quyết toán.</p> : null}
               {settlementRuleError ? <p className={styles.error} role="alert">{settlementRuleError}</p> : null}
               <p className={styles.notice}>
                 Quy tắc: hợp đồng kết thúc đúng hạn không tính tiền phạt; chấm dứt sớm hoặc do vi phạm cần ghi nhận tiền phạt lớn hơn 0. Không ghi nhận hư hỏng thì chi phí hư hỏng phải bằng 0.
               </p>
-              <ButtonBar type="button" disabled={!canSubmitSettlement || settleCase.isPending} onClick={() => settleCase.mutate()}>
+              <ButtonBar type="button" disabled={!canSubmitSettlement || !inspectionResolved || !handoverReady || settleCase.isPending} onClick={() => settleCase.mutate()}>
                 {settleCase.isPending ? "Đang gửi quyết toán…" : "Ghi nhận quyết toán"}
               </ButtonBar>
               {settleCase.isError ? <ErrorNotice error={settleCase.error} /> : null}
             </div>
           ) : null}
 
-          {(caseData.settlementId || caseData.status === "APPROVED" || caseData.status === "COMPLETED") ? (
             <div className={styles.step}>
               <h3>Hoàn tiền cọc</h3>
+              {!caseData.settlementId && caseData.status !== "APPROVED" && caseData.status !== "COMPLETED" ? (
+                <p className={styles.notice} role="status">{caseData.status === "REJECTED"
+                  ? "Hồ sơ chấm dứt đã bị từ chối; chưa phát sinh khoản hoàn cọc từ hồ sơ này."
+                  : caseData.status === "SETTLEMENT_PENDING"
+                    ? "Đang chờ quyết toán. Sau khi Admin hoặc Moderator ghi nhận quyết toán, hệ thống sẽ xác định số cọc còn phải hoàn và tạo khoản hoàn nếu có."
+                    : "Khoản hoàn cọc được xác định sau khi thu hồi máy, hoàn tất kiểm tra và ghi nhận quyết toán."}</p>
+              ) : <>
               <p>Khoản dự kiến hoàn: <strong>{caseData.depositRefundAmount == null ? "Chưa nhận được số tiền hoàn từ API" : formatVnd(caseData.depositRefundAmount)}</strong></p>
               {caseData.depositRefundAmount === 0 && !caseData.refundId ? (
                 <p className={styles.success}>Không phát sinh khoản hoàn cọc. Có thể tiếp tục bước hoàn tất chấm dứt hợp đồng.</p>
               ) : caseData.refundId ? (
                 <>
-                  <dl className={styles.summary}>
-                    <div><dt>Mã khoản hoàn</dt><dd>{caseData.refundId}</dd></div>
-                    <div><dt>Trạng thái</dt><dd>{caseData.refundStatus ? refundStatusLabels[caseData.refundStatus] : "Đang chờ cập nhật trạng thái"}</dd></div>
-                  </dl>
-                  {caseData.depositRefundAmount == null ? <p className={styles.error} role="alert">API chưa trả số tiền hoàn cọc nên chưa thể xác nhận chính xác số tiền thực nhận.</p> : null}
-                  {mode === "owner" && caseData.depositRefundAmount != null && caseData.refundStatus === "REQUESTED" ? (
-                    <ButtonBar type="button" disabled={confirmRefund.isPending} onClick={() => confirmRefund.mutate()}>
-                      {confirmRefund.isPending ? "Đang xác nhận…" : "Xác nhận khoản hoàn cọc"}
-                    </ButtonBar>
-                  ) : null}
-                  {role === "ADMIN" && caseData.depositRefundAmount != null && caseData.refundStatus === "TENANT_CONFIRMED" ? (
-                    <ButtonBar type="button" disabled={approveRefund.isPending} onClick={() => approveRefund.mutate()}>
-                      {approveRefund.isPending ? "Đang duyệt…" : "Admin duyệt khoản hoàn"}
-                    </ButtonBar>
-                  ) : null}
-                  {mode === "operator" && caseData.depositRefundAmount != null && caseData.refundStatus === "APPROVED" ? (
-                    <div className={styles.formGrid}>
-                      <label className={styles.fullWidth}>Chứng từ chuyển khoản
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={(event) => setRefundEvidenceFile(event.target.files?.[0] ?? null)} />
-                      </label>
-                      <ButtonBar type="button" disabled={!refundEvidenceFile || submitRefundEvidence.isPending} onClick={() => submitRefundEvidence.mutate()}>
-                        {submitRefundEvidence.isPending ? "Đang gửi chứng từ…" : "Gửi chứng từ chuyển khoản"}
-                      </ButtonBar>
-                    </div>
-                  ) : null}
-                  {mode === "owner" && caseData.refundStatus === "SUBMITTED" ? (
-                    <div className={styles.step}>
-                      <h4>Xác nhận tiền hoàn thực nhận</h4>
-                      <div className={styles.formGrid}>
-                        <label>Số tiền đã nhận (VND)
-                          <input type="number" min="0" step="1" value={refundReceivedAmount} onChange={(event) => setRefundReceivedAmount(event.target.value)} />
-                        </label>
-                        <label>Bạn đã nhận tiền chưa?
-                          <select value={refundReceived ? "yes" : "no"} onChange={(event) => setRefundReceived(event.target.value === "yes")}>
-                            <option value="yes">Đã nhận</option>
-                            <option value="no">Chưa nhận / có vấn đề</option>
-                          </select>
-                        </label>
-                        <label className={styles.fullWidth}>Ghi chú (không bắt buộc)
-                          <textarea value={refundReceiptNote} maxLength={2000} onChange={(event) => setRefundReceiptNote(event.target.value)} />
-                        </label>
-                      </div>
-                      {caseData.depositRefundAmount != null && refundReceived && parsedRefundReceivedAmount !== refundAmount ? (
-                        <p className={styles.notice}>Số tiền nhập khác khoản dự kiến hoàn; backend sẽ ghi nhận tranh chấp và chưa cho phép hoàn tất hợp đồng.</p>
-                      ) : null}
-                      <ButtonBar type="button" disabled={!canRecordRefundReceipt || recordRefundReceipt.isPending} onClick={() => recordRefundReceipt.mutate()}>
-                        {recordRefundReceipt.isPending ? "Đang gửi xác nhận…" : "Gửi xác nhận tiền hoàn"}
-                      </ButtonBar>
-                    </div>
-                  ) : null}
-                  {caseData.refundStatus === "DISPUTED" ? <p className={styles.error} role="alert">Khoản hoàn đang có tranh chấp. Hợp đồng chưa thể hoàn tất cho đến khi khoản tiền được xử lý.</p> : null}
-                  {confirmRefund.isError ? <ErrorNotice error={confirmRefund.error} /> : null}
-                  {approveRefund.isError ? <ErrorNotice error={approveRefund.error} /> : null}
-                  {submitRefundEvidence.isError ? <ErrorNotice error={submitRefundEvidence.error} /> : null}
-                  {recordRefundReceipt.isError ? <ErrorNotice error={recordRefundReceipt.error} /> : null}
+                  <RefundWorkflowPanel key={caseData.refundId} refundId={caseData.refundId} role={role} context={refundContext} onChanged={() => refresh()} />
                 </>
               ) : caseData.depositRefundAmount == null ? (
                 <p className={styles.error} role="alert">Không thể xác nhận điều kiện hoàn tất vì API chưa trả số tiền hoàn cọc.</p>
               ) : caseData.depositRefundAmount > 0 ? (
                 <p className={styles.error} role="alert">API trả số tiền cần hoàn nhưng chưa trả mã khoản hoàn. Hãy làm mới hồ sơ hoặc kiểm tra trạng thái với backend.</p>
               ) : null}
+              {role === "MODERATOR" && caseData.refundId && caseData.refundStatus === "REQUESTED" ? <p className={styles.notice}>Đang chờ khách hàng xác nhận yêu cầu hoàn cọc. Sau đó Admin duyệt, rồi nhân viên vận hành mới gửi chứng từ chuyển khoản.</p> : null}
+              </>}
             </div>
-          ) : null}
 
           {caseData.status === "SETTLEMENT_PENDING" && mode === "owner" ? (
             <div className={styles.step} role="status">
@@ -560,11 +492,12 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId }: Pro
             {mode === "operator" && recallData.status === "RECEIPT_REVIEW_PENDING" ? (
               <div className={styles.step}>
                 <h3>Duyệt nhận máy tại kho</h3>
-                <label>Lý do nếu từ chối<textarea value={receiptReason} maxLength={1000} onChange={(event) => setReceiptReason(event.target.value)} placeholder="Bắt buộc nhập lý do khi từ chối" /></label>
+                <label>Lý do đối chiếu biên nhận<textarea value={receiptReason} maxLength={1000} onChange={(event) => setReceiptReason(event.target.value)} placeholder="Ghi kết quả kiểm tra máy và chứng từ" /></label>
                 <div className={styles.actions}>
-                  <ButtonBar type="button" disabled={reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(true)}>Xác nhận đã nhận máy</ButtonBar>
-                  <ButtonBar type="button" disabled={!receiptReason.trim() || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(false)}>Từ chối biên nhận</ButtonBar>
+                  <ButtonBar type="button" disabled={!receiptReason.trim() || recallData.depotSubmittedBy === refund.subject || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(true)}>Xác nhận đã nhận máy</ButtonBar>
+                  <ButtonBar type="button" disabled={!receiptReason.trim() || recallData.depotSubmittedBy === refund.subject || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(false)}>Từ chối biên nhận</ButtonBar>
                 </div>
+                {recallData.depotSubmittedBy === refund.subject ? <p className={styles.notice}>Người gửi biên nhận không được tự xét duyệt. Cần nhân viên khác kiểm tra.</p> : null}
                 {reviewReceipt.isError ? <ErrorNotice error={reviewReceipt.error} /> : null}
               </div>
             ) : null}

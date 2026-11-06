@@ -145,8 +145,106 @@ export const RefundStatusSchema = z.enum([
   "APPROVED",
   "SUBMITTED",
   "COMPLETED",
+  "REJECTED",
+  "FAILED",
   "DISPUTED",
 ]);
+
+const refundMetadata = {
+  ownerName: z.string().nullish(),
+  depositLedgerEntryId: z.string().uuid().nullish(),
+  approvalRequiredRole: z.enum(["ADMIN", "MODERATOR"]).optional(),
+  reason: z.string().optional(),
+  requestedBy: z.string().optional(),
+  ownerConfirmedBy: z.string().nullish(),
+  ownerConfirmedAt: optionalText,
+  approvedBy: z.string().nullish(),
+  approvedAt: optionalText,
+  submittedBy: z.string().nullish(),
+  submittedAt: optionalText,
+  completedBy: z.string().nullish(),
+  completedAt: optionalText,
+  ownerReceiptConfirmedBy: z.string().nullish(),
+  ownerReceiptConfirmedAt: optionalText,
+  ownerReceivedAmount: z.number().finite().nonnegative().nullish(),
+  ownerReceiptNote: optionalText,
+  failureReason: optionalText,
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+};
+
+export const RefundDetailSchema = z.object({
+  id: RefundIdSchema,
+  ownerId: z.string().uuid(),
+  contractId: z.string().uuid().nullable(),
+  invoiceId: InvoiceIdSchema.nullable(),
+  terminationCaseId: z.string().uuid().nullable(),
+  refundKind: z.enum(["DEPOSIT", "OVERPAYMENT", "ORDINARY"]),
+  amount: z.number().finite().positive(),
+  currency: z.literal("VND"),
+  status: RefundStatusSchema,
+  requestedAt: z.string(),
+  ...refundMetadata,
+}).strict();
+
+export const RefundRequestResponseSchema = RefundDetailSchema.extend({
+  approvalRequiredRole: z.enum(["ADMIN", "MODERATOR"]),
+  reason: z.string(),
+  requestedBy: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const RefundCreateRequestSchema = z.object({
+  ownerId: z.string().uuid(),
+  contractId: z.string().uuid().nullish(),
+  invoiceId: InvoiceIdSchema.nullish(),
+  depositLedgerEntryId: z.string().uuid().nullish(),
+  refundKind: z.enum(["DEPOSIT", "OVERPAYMENT"]),
+  amount: z.number().finite().positive(),
+  currency: z.literal("VND"),
+  reason: z.string().trim().min(1).max(2000),
+  idempotencyKey: z.string().trim().min(1).max(128),
+}).strict().superRefine((value, context) => {
+  const field = value.refundKind === "DEPOSIT" ? "contractId" : "invoiceId";
+  if (!value[field]) context.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: `${field} is required for this refund source.` });
+});
+
+export const RefundReasonRequestSchema = z.object({ reason: z.string().trim().min(1).max(2000) }).strict();
+export const RefundOverdueParamsSchema = z.object({ ownerId: z.string().uuid().optional(), ...pageFields }).strict();
+export const RefundPayoutEvidenceSchema = z.object({
+  id: z.string().uuid(),
+  originalFilename: z.string(),
+  contentType: z.enum(["application/pdf", "image/jpeg", "image/png"]),
+  sizeBytes: z.number().int().positive(),
+  sha256: z.string(),
+  uploadedBy: z.string(),
+  uploadedAt: z.string(),
+}).strict();
+
+export const DepositSettlementResponseSchema = z.object({
+  ownerId: z.string().uuid(),
+  contractId: z.string().uuid(),
+  refundableBalance: z.number().finite().nonnegative(),
+  receivableAmount: z.number().finite().nonnegative(),
+  entries: z.array(z.object({
+    id: z.string().uuid(), ownerId: z.string().uuid(), contractId: z.string().uuid(),
+    entryType: z.string(), amount: z.number().finite(), refundableBalanceAfter: z.number().finite().nonnegative(),
+    currency: z.literal("VND"), reason: z.string().nullish(), actorId: z.string(), occurredAt: z.string(),
+  }).strict()),
+}).strict();
+export const DepositReserveRequestSchema = z.object({ idempotencyKey: z.string().trim().min(1).max(128) }).strict();
+export const DepositReleaseRequestSchema = DepositReserveRequestSchema.extend({ reason: z.string().trim().min(1).max(2000) });
+export const DepositDamageRequestSchema = z.object({
+  damageAmount: z.number().finite().nonnegative(), evidenceReference: z.string().trim().min(1),
+  maintenanceTicketId: z.string().uuid().optional(), decision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
+  notes: z.string().max(2000).optional(),
+}).strict().refine((value) => value.decision !== "NO_DAMAGE" || value.damageAmount === 0, { path: ["damageAmount"], message: "NO_DAMAGE requires zero damage amount." });
+
+export type RefundDetail = z.infer<typeof RefundDetailSchema>;
+export type RefundCreateRequest = z.infer<typeof RefundCreateRequestSchema>;
+export type RefundOverdueParams = z.input<typeof RefundOverdueParamsSchema>;
+export type RefundPayoutEvidence = z.infer<typeof RefundPayoutEvidenceSchema>;
 
 export const RefundReceiptRequestSchema = z.object({
   receivedAmount: z.number().finite().nonnegative(),

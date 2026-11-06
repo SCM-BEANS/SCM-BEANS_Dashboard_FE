@@ -40,12 +40,12 @@ const proof = {
   reviewReason: null,
 };
 
-function loadTypescript(relativePath, mocks = {}) {
+function loadTypescript(relativePath, mocks = {}, extraSource = '') {
   const fileName = join(__dirname, '..', relativePath);
-  const source = readFileSync(fileName, 'utf8');
+  const source = readFileSync(fileName, 'utf8') + extraSource;
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
   });
   const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
   const loaded = { exports: {} };
@@ -55,10 +55,154 @@ function loadTypescript(relativePath, mocks = {}) {
 
 const billingSchemas = loadTypescript('src/schema/billing.schema.ts');
 
+test('deposit collection conflicts explain the prerequisite without suggesting blind retries', () => {
+  const { getBillingWorkflowErrorMessage } = loadTypescript('src/lib/api-errors.ts', {
+    '@/constants/messages': loadTypescript('src/constants/messages.ts'),
+  });
+  for (const message of [
+    'A verified DEPOSIT collection is required before reserving the Contract deposit',
+    'A verified DEPOSIT collection is required for this Refund',
+  ]) {
+    const error = { isAxiosError: true, response: { status: 409, data: { message, correlationId: 'deposit-trace' } } };
+    const text = getBillingWorkflowErrorMessage(error, 'mutation');
+    assert.match(text, /Chưa xác minh được khoản tiền cọc/);
+    assert.match(text, /đối soát đủ số dư hóa đơn/);
+    assert.match(text, /deposit-trace/);
+    assert.doesNotMatch(text, /Hãy tải lại rồi thử lại|A verified DEPOSIT/);
+  }
+  assert.match(getBillingWorkflowErrorMessage({ isAxiosError: true, response: { status: 409, data: { message: 'Other conflict' } } }, 'mutation'), /Other conflict/);
+});
+
+test('termination deposit lookup supports aggregated invoices and keeps reads and invoice links in each role scope', async () => {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const paths = loadTypescript('src/routes/path.ts');
+  for (const role of ['OWNER', 'ADMIN', 'MODERATOR']) {
+    let stateIndex = 0;
+    const state = [true, '2026-10', '2026-10', 0, ids.invoice, 1];
+    const queries = [];
+    const calls = [];
+    const aggregatedInvoice = { ...invoice, contractId: null, status: 'PAID' };
+    const line = { id: ids.line, invoiceId: ids.invoice, ownerId: ids.owner, contractId: ids.contract, serviceCode: 'DEPOSIT', amount: 500000, description: 'Correct contract deposit' };
+    let invoiceResponse = { items: [aggregatedInvoice], page: 0, hasNext: true };
+    const api = {
+      listInvoicesPage: async (params) => { calls.push(['invoices', params]); return invoiceResponse; },
+      listInvoiceLineItemsPage: async (id, params) => { calls.push(['lines', id, params]); return { items: [line], page: 1, hasNext: false }; },
+    };
+    const mocks = {
+      react: { ...React, useState: () => [state[stateIndex++], () => {}] },
+      'next/router': {},
+      'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children), __esModule: true },
+      '@tanstack/react-query': { useQuery: (config) => {
+        queries.push(config);
+        return { isSuccess: true, data: config.queryKey[1] === 'deposit-collection' ? invoiceResponse : { items: [line, { ...line, id: uuid(60), contractId: uuid(61), description: 'Other contract deposit' }, { ...line, id: uuid(62), ownerId: uuid(63), description: 'Other owner deposit' }], hasNext: false } };
+      } },
+      '@/apis/contracts.api': {}, '@/apis/billing.api': { billingApi: api }, '@/apis/recall-work-orders.api': {},
+      '@/components/button/button-bar': { ButtonBar: ({ children, ...props }) => React.createElement('button', props, children) },
+      '@/components/contracts/termination-workflow-panel': {}, '@/components/navigation/back-button-heading': {}, '@/components/notification-dialog/notification-dialog': {},
+      '@/components/table/data-table': { DataTable: ({ children }) => React.createElement('table', null, React.createElement('tbody', null, children)) },
+      '@/components/features/repair-workflow/repair-workflow-query-identity': { querySubject: (role) => `${role}:test-user` },
+      '@/lib/api-errors': {}, '@/schema/termination-cases.schema': {}, '@/schema/contracts.schema': {},
+      '@/routes/path': paths, '@/text/admin/admin-operations-messages': {},
+      './contract-termination-screen.module.css': {},
+    };
+    const { DepositCollectionSection } = loadTypescript('src/pages/contracts/termination/contract-termination-screen.tsx', mocks, '\nexport { DepositCollectionSection };');
+    const markup = renderToStaticMarkup(React.createElement(DepositCollectionSection, { contractId: ids.contract, ownerId: ids.owner, depositAmount: 500000, startDate: '2026-10-01', role }));
+    assert.match(markup, /Correct contract deposit/);
+    assert.doesNotMatch(markup, /Other contract deposit|Other owner deposit/);
+    assert.match(markup, /đây chưa phải xác nhận cọc đủ điều kiện hoàn/);
+    const detail = role === 'OWNER' ? paths.PATH_CUSTOMER.INVOICE_DETAIL(ids.invoice) : role === 'ADMIN' ? paths.PATH_ADMIN.INVOICE_DETAIL(ids.invoice) : paths.PATH_MODERATOR.INVOICE_DETAIL(ids.invoice);
+    assert.ok(markup.includes(`href="${detail}"`));
+    await queries[0].queryFn({}); await queries[1].queryFn({});
+    assert.deepEqual(calls[0][1], { ...(role === 'OWNER' ? {} : { ownerId: ids.owner }), type: 'RENTAL', period: '2026-10', page: 0, size: 50 });
+    assert.deepEqual(calls[1], ['lines', ids.invoice, { page: 1, size: 100 }]);
+    invoiceResponse = { ...invoiceResponse, items: [{ ...aggregatedInvoice, ownerId: uuid(99) }] };
+    await assert.rejects(queries[0].queryFn({}), /không khớp khách hàng/);
+  }
+});
+
+const refund = {
+  id: uuid(20), terminationCaseId: null, ownerId: ids.owner, ownerName: null,
+  contractId: ids.contract, invoiceId: ids.invoice, depositLedgerEntryId: null,
+  refundKind: 'OVERPAYMENT', amount: 150000, currency: 'VND', status: 'REQUESTED',
+  approvalRequiredRole: 'MODERATOR', reason: 'Excess payment', requestedBy: ids.owner,
+  requestedAt: '2026-11-06T10:30:00', createdAt: '2026-11-06T10:30:00', updatedAt: '2026-11-06T10:30:00',
+};
+
+test('refund schemas accept all lifecycle states and reject unsupported financial requests', () => {
+  for (const status of ['REQUESTED', 'TENANT_CONFIRMED', 'APPROVED', 'SUBMITTED', 'COMPLETED', 'REJECTED', 'FAILED', 'DISPUTED']) {
+    assert.equal(billingSchemas.RefundDetailSchema.parse({ ...refund, status }).status, status);
+  }
+  const input = { ownerId: ids.owner, invoiceId: ids.invoice, refundKind: 'OVERPAYMENT', amount: 150000, currency: 'VND', reason: 'Excess payment', idempotencyKey: 'stable-key' };
+  assert.equal(billingSchemas.RefundCreateRequestSchema.safeParse(input).success, true);
+  for (const change of [{ amount: 0 }, { amount: -1 }, { currency: 'USD' }, { reason: ' ' }, { invoiceId: undefined }, { refundKind: 'ORDINARY' }, { refundKind: 'DEPOSIT' }, { correlationId: 'not-in-create-dto' }]) {
+    assert.equal(billingSchemas.RefundCreateRequestSchema.safeParse({ ...input, ...change }).success, false);
+  }
+  assert.equal(billingSchemas.RefundReceiptRequestSchema.safeParse({ received: false, receivedAmount: 0 }).success, true);
+  assert.equal(billingSchemas.RefundReceiptRequestSchema.safeParse({ received: true, receivedAmount: -1 }).success, false);
+});
+
+test('refund create and read validate financial identity and keep caller idempotency on retry', async () => {
+  const calls = [];
+  let response = refund;
+  const api = loadBillingApi({
+    post: async (...args) => { calls.push(args); return { data: response }; },
+    get: async (...args) => { calls.push(args); return { data: response }; },
+  });
+  const input = { ownerId: ids.owner, contractId: ids.contract, invoiceId: ids.invoice, refundKind: 'OVERPAYMENT', amount: 150000, currency: 'VND', reason: 'Excess payment', idempotencyKey: 'stable-key' };
+  await api.createRefund(input); await api.createRefund(input);
+  assert.equal(calls[0][0], '/billing/refunds');
+  assert.equal(calls[0][1].idempotencyKey, calls[1][1].idempotencyKey);
+  assert.equal(Object.hasOwn(calls[0][1], 'correlationId'), false);
+  await api.getRefund(refund.id);
+  assert.equal(calls[2][0], `/billing/refunds/${refund.id}`);
+  assert.equal(calls[2][1].headers['Cache-Control'], 'no-store');
+  response = { ...refund, id: uuid(21) };
+  await assert.rejects(api.getRefund(refund.id), /different Refund/);
+  response = { ...refund, ownerId: uuid(99) };
+  await assert.rejects(api.createRefund(input), /different payment source/);
+});
+
+test('refund actions use receipt instead of retired complete and reopen sends the stable header', async () => {
+  const calls = [];
+  const api = loadBillingApi({ post: async (...args) => { calls.push(args); return { data: refund }; } });
+  await api.confirmRefund(refund.id);
+  await api.approveRefund(refund.id);
+  await api.rejectRefund(refund.id, 'Incorrect source');
+  await api.failRefund(refund.id, 'Transfer failed');
+  await api.reopenRefund(refund.id, 'Recheck account', 'reopen-stable');
+  await api.recordRefundReceipt(refund.id, { received: false, receivedAmount: 100000, note: 'Not enough' });
+  assert.deepEqual(calls.map(([url]) => url), ['confirm', 'approve', 'reject', 'fail', 'reopen', 'receipt'].map((action) => `/billing/refunds/${refund.id}/${action}`));
+  assert.equal(calls[0][1], undefined);
+  assert.equal(calls[1][1], undefined);
+  assert.equal(calls[4][2].headers['Idempotency-Key'], 'reopen-stable');
+  assert.deepEqual(calls[5][1], { received: false, receivedAmount: 100000, note: 'Not enough' });
+});
+
+test('refund evidence is private multipart and overdue results honor scope and pagination', async () => {
+  const calls = [];
+  const evidence = { id: uuid(22), originalFilename: 'payout.pdf', contentType: 'application/pdf', sizeBytes: 6, sha256: 'a'.repeat(64), uploadedBy: uuid(23), uploadedAt: '2026-11-06T10:30:00' };
+  const api = loadBillingApi({
+    post: async (...args) => { calls.push(args); return { data: evidence }; },
+    get: async (...args) => { calls.push(args); return args[0].endsWith('/overdue') ? { data: [refund], headers: { 'x-page': '2', 'x-page-size': '50', 'x-has-next': 'true' } } : { data: new Blob(['private']) }; },
+  });
+  const file = new File([Buffer.from('%PDF-1')], 'payout.pdf', { type: 'application/pdf' });
+  assert.equal((await api.submitRefundTransferEvidence(refund.id, file)).id, evidence.id);
+  assert.equal(calls[0][1] instanceof FormData, true);
+  assert.equal(calls[0][1].get('file').name, 'payout.pdf');
+  assert.equal(await api.downloadRefundEvidence(refund.id, evidence.id) instanceof Blob, true);
+  assert.equal(calls[1][0], `/billing/refunds/${refund.id}/evidence/${evidence.id}`);
+  assert.equal(calls[1][1].responseType, 'blob');
+  const page = await api.listOverdueRefunds({ ownerId: ids.owner, page: 2, size: 50 });
+  assert.deepEqual([page.page, page.size, page.hasNext], [2, 50, true]);
+  await assert.rejects(api.listOverdueRefunds({ ownerId: uuid(99) }), /outside.*scope/);
+});
+
 function loadBillingApi(axiosClient) {
   return loadTypescript('src/apis/billing.api.ts', {
     '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
     '@/schema/billing.schema': billingSchemas,
+    '@/schema/contracts.schema': { ContractIdSchema: require('zod').z.string().uuid() },
   }).billingApi;
 }
 

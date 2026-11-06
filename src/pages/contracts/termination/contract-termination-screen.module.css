@@ -20,6 +20,20 @@
 .error { border-color: #edb8bc; background: #fff7f7; color: #9a301d; }
 .error p { margin: 0 0 10px; }
 .success { border-color: #b9d8c3; background: #f5fbf6; color: #356b49; }
+.depositHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.depositHeading h2 { margin-bottom: 8px; }
+.depositDescription { margin: 0; color: #706561; font-size: 14px; line-height: 1.6; }
+.depositContent { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.depositFilters, .depositActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.depositFilters { align-items: flex-end; }
+.depositFilters label { display: flex; flex-direction: column; gap: 6px; color: #706561; font-size: 13px; }
+.depositFilters input { min-height: 44px; padding: 10px 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
+.depositFilters input:focus-visible, .invoiceLink:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+.depositActions { color: #706561; font-size: 13px; }
+.depositLines { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid #e9e2dc; }
+.depositLines h3 { margin: 0; color: #302927; font-size: 16px; }
+.invoiceLink { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid #e9e2dc; border-radius: 10px; color: #302927; text-decoration: none; font-size: 14px; font-weight: 600; }
+.invoiceLink:hover { background: #faf8f6; }
 
 @media (max-width: 720px) {
   .page { gap: 16px; padding: 20px 16px 100px; }

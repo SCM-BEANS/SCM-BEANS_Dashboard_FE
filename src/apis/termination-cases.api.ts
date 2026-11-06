@@ -14,8 +14,6 @@ import {
   type TerminationSettlementRequest,
 } from "@/schema/termination-workflow.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
-import { TerminationCaseRequestSchema, TerminationCaseResponseSchema, type TerminationCaseRequest } from "@/schema/termination-cases.schema";
-
 
 const casePath = (id: string) => `/termination-cases/${encodeURIComponent(TerminationCaseIdSchema.parse(id))}`;
 

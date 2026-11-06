@@ -10,6 +10,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { InvoiceRefundPanel } from "@/components/features/billing/invoice-refund-panel";
 import { DASHBOARD_BUSINESS_TIME_ZONE, DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { PATH_ADMIN } from "@/routes/path";
@@ -383,6 +384,7 @@ function ReportContent() {
                 />
               )}
             </section>
+            <InvoiceRefundPanel key={selectedInvoice.id} invoice={selectedInvoice} role="ADMIN" />
             <div className={styles.pageActions}>
               <ButtonBar href={returnHref}>Về báo cáo</ButtonBar>
             </div>

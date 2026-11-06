@@ -1,0 +1,28 @@
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; color: #302927; }
+.panel h2, .panel h3, .panel h4, .panel p { margin: 0; }
+.panel h2, .panel h3 { font-size: 18px; }
+.panel h4 { font-size: 15px; }
+.heading, .actions, .lookup { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.actions { justify-content: flex-start; }
+.grid, .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+.summary > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.summary dt, .hint { color: #706561; font-size: 13px; line-height: 1.5; }
+.summary dd { margin: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+.form { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid #eee8e3; }
+.panel label { display: flex; flex-direction: column; gap: 7px; min-width: 0; color: #514843; font-size: 14px; }
+.panel input, .panel select, .panel textarea { box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; font: inherit; }
+.panel textarea { min-height: 90px; resize: vertical; }
+.panel input:focus-visible, .panel select:focus-visible, .panel textarea:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+.wide { grid-column: 1 / -1; }
+.lookup { align-items: flex-end; justify-content: flex-start; }
+.lookup label { flex: 1 1 260px; }
+.notice, .error, .success { padding: 12px 14px; border: 1px solid #e9e2dc; border-radius: 8px; background: #faf8f6; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.error { color: #a31d29; border-color: #efc2c2; background: #fff7f7; }
+.success { color: #28633d; border-color: #c5dfcf; background: #f3faf5; }
+.panel summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.queue { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.queue button { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding: 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; text-align: left; font: inherit; cursor: pointer; }
+.queue button:hover { background: #faf5f4; }
+.queue button:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+@media (max-width: 640px) { .panel { padding: 16px; } .grid, .summary { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
+@media (prefers-reduced-motion: no-preference) { .queue button { transition: background-color 150ms ease; } }

@@ -7,6 +7,7 @@ import { DetailItem, formatDate, formatMoney, QueryFeedback, statusLabel } from 
 import { InvoiceLineItems, InvoicePaymentProofs } from "./invoice-detail-sections";
 import { PaymentProofForm } from "./payment-proof-form";
 import styles from "../customer-shell.module.css";
+import { InvoiceRefundPanel } from "@/components/features/billing/invoice-refund-panel";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 const workflowMessages = CUSTOMER_MESSAGES.WORKFLOWS;
@@ -47,6 +48,7 @@ export function InvoiceDetailScreen({ invoiceId, back }: { invoiceId: string; ba
             <DetailItem label={messages.FIELD_DUE_DATE} value={formatDate(detail.data.dueDate)} />
             <DetailItem label={messages.FIELD_PAID_AT} value={formatDate(detail.data.paidAt)} />
           </dl>
+          <InvoiceRefundPanel key={invoiceId} invoice={detail.data} role="OWNER" />
           <InvoiceLineItems
             items={lineItems.data}
             currency={detail.data.currency}

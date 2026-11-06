@@ -14,6 +14,7 @@ import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
 import { BILLING_MESSAGES as messages } from "@/text/billing/billing-messages";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
 import styles from "./operator-invoices-screen.module.css";
+import { InvoiceRefundPanel } from "./invoice-refund-panel";
 
 type OperatorRole = "admin" | "moderator";
 type InvoiceFilters = {
@@ -386,6 +387,7 @@ function InvoiceDetail({ invoiceId, role }: { invoiceId: string; role: OperatorR
         </dl>
       </section>
 
+      <InvoiceRefundPanel key={`${role}:${record.id}`} invoice={{ ...record, ownerId: record.ownerId ?? record.tenantId }} role={role === "admin" ? "ADMIN" : "MODERATOR"} />
       <section className={styles.panel} aria-labelledby="operator-invoice-lines">
         <h2 id="operator-invoice-lines">{messages.LINE_ITEMS}</h2>
         <InlineQueryState

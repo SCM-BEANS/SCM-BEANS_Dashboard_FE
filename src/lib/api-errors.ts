@@ -6,6 +6,24 @@ export const API_ERROR_MESSAGES = APP_MESSAGES.API_ERROR;
 
 export type ApiErrorIntent = "read" | "mutation" | "login" | "mfa";
 
+export function getBillingWorkflowErrorMessage(error: unknown, intent: ApiErrorIntent = "read"): string {
+  if (!axios.isAxiosError(error)) return error instanceof Error && !(error instanceof ZodError) ? error.message : getApiErrorMessage(error, intent);
+  const body: unknown = error.response?.data;
+  const detail = body && typeof body === "object" ? body as Record<string, unknown> : {};
+  const trace = typeof detail.correlationId === "string" ? ` · Mã tra cứu: ${detail.correlationId}` : "";
+  if (error.response?.status === 503 && detail.error === "FEATURE_DISABLED") {
+    return "Môi trường hiện tại chưa bật chức năng hoàn tiền. Vui lòng liên hệ bộ phận vận hành." + trace;
+  }
+  if (error.response?.status === 409 && typeof detail.message === "string"
+    && /^A verified DEPOSIT collection is required (before reserving the Contract deposit|for this Refund)$/.test(detail.message)) {
+    return "Chưa xác minh được khoản tiền cọc đã thu của hợp đồng. Hãy kiểm tra dòng tiền cọc trong hóa đơn và đối soát đủ số dư hóa đơn trước khi tiếp tục. Nếu thiếu dòng tiền cọc hoặc dữ liệu bị trùng, cần bộ phận vận hành kiểm tra." + trace;
+  }
+  if ([400, 409, 422].includes(error.response?.status ?? 0) && typeof detail.message === "string") {
+    return getApiErrorMessage(error, intent) + " " + detail.message + trace;
+  }
+  return getApiErrorMessage(error, intent) + trace;
+}
+
 export function getRecipeApiErrorDetails(error: unknown) {
   const response = axios.isAxiosError(error) ? error.response : undefined;
   let body: unknown = response?.data;

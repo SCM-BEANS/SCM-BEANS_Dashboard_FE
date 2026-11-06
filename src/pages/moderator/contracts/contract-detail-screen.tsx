@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { DataTable } from "@/components/table/data-table";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 
@@ -519,7 +519,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
           </section>}
         </>}
       </div>
-      {contract.data && <ActionBar label="Thao tác hợp đồng">
+      {contract.data && <ActionBarConfig>
         <ButtonBar href={PATH_MODERATOR.CONTRACT_TERMINATION(contract.data.id)}>Chấm dứt hợp đồng</ButtonBar>
         {contract.data.status === "ACTIVE" && (lifecycleView === "amend" ? <>
           <ButtonBar type="submit" form="moderator-contract-policy-amend-form" disabled={busy || !policySnapshot}>Xác nhận nội dung sửa đổi</ButtonBar>
@@ -533,7 +533,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
         </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
         {contract.data.machineId && <ButtonBar type="button" disabled={machineHistory.isFetching} onClick={() => setShowMachineHistory((current) => !current)}>{showMachineHistory ? "Ẩn lịch sử máy" : "Lịch sử theo máy"}</ButtonBar>}
         <ButtonBar type="button" disabled={contract.isFetching || expiry.isFetching || policyHistory.isFetching || documents.isFetching || machineHistory.isFetching || installationWorkOrders.isFetching} onClick={() => { void Promise.all([contract.refetch(), expiry.refetch(), policyHistory.refetch(), documents.refetch(), ...(showMachineHistory ? [machineHistory.refetch()] : []), ...(contract.data?.status === "ACTIVE" ? [installationWorkOrders.refetch()] : [])]); }}>Làm mới dữ liệu</ButtonBar>
-      </ActionBar>}
+      </ActionBarConfig>}
       {(pendingPolicy || pendingContinuation) && <NotificationDialog
         variant="confirm"
         title={pendingPolicy ? "Xác nhận điều chỉnh chính sách?" : "Tạo hợp đồng tiếp nối dạng nháp?"}
