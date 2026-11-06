@@ -325,9 +325,9 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         </> : null}
         {menu.isError ? <p role="alert">{getRecipeApiErrorMessage(menu.error)}</p> : null}
         {!owner && menuAction === "create" ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu" aria-busy={changeMenu.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
-          <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : menuAction === "create" ? "Menu mới" : "Đổi tên menu"}</h3>
-          {menuAction !== "delete" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Cà phê truyền thống" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ xóa được khi menu không còn công thức.</p>}
-          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || (menuAction !== "delete" && !menuName.trim())}>{changeMenu.isPending ? "Đang lưu…" : menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
+          <h3>Menu mới</h3>
+          <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Cà phê truyền thống" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label>
+          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || !menuName.trim()}>{changeMenu.isPending ? "Đang lưu…" : "Tạo menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
         </form> : null}
       </section> : null}
       {mode !== "view" || detailOnly || operatorScreen !== "menus" ? <section className={styles.recipeMenuPanel}>
