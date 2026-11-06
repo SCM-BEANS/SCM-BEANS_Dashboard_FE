@@ -8,7 +8,7 @@ const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
   'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'create', 'assignMachine'] },
   'technician-assignments.api.ts': { technicianAssignmentsApi: ['assign', 'revoke'] },
-  'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'listByTenant', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
+  'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
   'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
   'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'acknowledgeAlert', 'markAllAsRead', 'markAsRead'] },
@@ -17,9 +17,8 @@ const contracts = {
   'billing.api.ts': { billingApi: ['listInvoices', 'listInvoicesPage', 'listOperatorInvoicesPage', 'getInvoice', 'listInvoiceLineItems', 'listInvoiceLineItemsPage', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'listPaymentProofsPage', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent'] },
   'buybacks.api.ts': { buybacksApi: ['list', 'getById', 'create', 'startInspection', 'submitInspection', 'decideValuation', 'createPayment', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent', 'requestCollection', 'confirmCollection', 'startRefurbishment', 'completeRefurbishment', 'decideQa', 'cancel', 'listInspections', 'listRefurbishments', 'listQaDecisions'] },
   'replacement-assignments.api.ts': { replacementAssignmentsApi: ['create', 'getById', 'activate', 'release', 'cancel'] },
-  'tenants.api.ts': { tenantsApi: ['list', 'getById'] },
   'installation-work-orders.api.ts': { installationWorkOrdersApi: ['create', 'listByOwner', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
-  'dashboard.api.ts': { dashboardApi: ['getOverview', 'getDailyMachineCupUsage', 'getActionItems'] },
+  'dashboard.api.ts': { dashboardApi: ['getOverview', 'getActionItems'] },
 };
 
 function apiObject(sourceFile, apiName) {

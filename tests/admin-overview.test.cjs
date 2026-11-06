@@ -471,7 +471,6 @@ test("shared operational overview offers calendar presets, explains aggregate sc
   assert.ok(/trong kỳ|period/i.test(source), "financial labels should identify the reporting period");
   assert.doesNotMatch(source, /amountIssued\s*\?\?\s*0|amountCollected\s*\?\?\s*0/);
   assert.doesNotMatch(source, /totalPayg|paygTotal/i);
-  assert.doesNotMatch(source, /getDailyMachineCupUsage|daily-cups\/machines/);
   assert.doesNotMatch(source, /cupsInSelectedPeriod\s*\/|amountCollected\s*\/\s*\w*machine/i);
 });
 

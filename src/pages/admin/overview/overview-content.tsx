@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
-import { Fragment, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays } from "lucide-react";
 import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
-import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DashboardDateRangeSchema, DASHBOARD_BUSINESS_TIME_ZONE } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
@@ -133,7 +132,6 @@ function AdminOverview() {
   const [appliedRange, setAppliedRange] = useState<DateRange | null>(null);
   const [activeQuickRange, setActiveQuickRange] = useState<QuickRange | null>(null);
   const [rangeError, setRangeError] = useState("");
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -166,14 +164,6 @@ function AdminOverview() {
   });
   const metrics = overview.data?.operationalMetrics;
   const days = metrics?.dailyAcceptedCupUsage ?? [];
-  const machineUsage = useQuery({
-    queryKey: ["dolores", "dashboard", "daily-machine-cups", selectedDate],
-    queryFn: ({ signal }) => {
-      if (!selectedDate) throw new Error("Chưa chọn ngày cần xem.");
-      return dashboardApi.getDailyMachineCupUsage(selectedDate, signal);
-    },
-    enabled: Boolean(selectedDate),
-  });
   const vnd = overview.data?.financialMetrics?.find(
     (item) => item.currency?.toUpperCase() === "VND",
   );
@@ -191,7 +181,6 @@ function AdminOverview() {
     setAppliedRange(range);
     setActiveQuickRange(key);
     setRangeError("");
-    setSelectedDate(null);
   };
 
   const applyCustomRange = (event: FormEvent<HTMLFormElement>) => {
@@ -219,7 +208,6 @@ function AdminOverview() {
     setFromDateInput(formatDateOnly(parsed.data.fromDate));
     setToDateInput(formatDateOnly(parsed.data.toDate));
     setActiveQuickRange(null);
-    setSelectedDate(null);
   };
 
   return (
@@ -408,79 +396,13 @@ function AdminOverview() {
                   headerVariant="admin"
                   variant="standard"
                   className={`${styles.adminTable} ${styles.overviewDailyTable}`}
-                  headers={["Chọn", ADMIN_MESSAGES.OVERVIEW.DATE, ADMIN_MESSAGES.OVERVIEW.CUP_COUNT]}
+                  headers={[ADMIN_MESSAGES.OVERVIEW.DATE, ADMIN_MESSAGES.OVERVIEW.CUP_COUNT]}
                 >
                   {days.map((day, index) => (
-                    <Fragment key={`${day.date ?? "unknown"}-${index}`}>
-                      <tr>
-                        <td>
-                          {day.date && (
-                            <label className={styles.overviewDayCheckLabel}>
-                              <input
-                                className={styles.overviewDayCheckbox}
-                                type="checkbox"
-                                checked={selectedDate === day.date}
-                                aria-label={`Xem chi tiết số ly theo máy ngày ${formatDateOnly(day.date)}`}
-                                onChange={(event) => setSelectedDate(event.target.checked ? day.date ?? null : null)}
-                              />
-                            </label>
-                          )}
-                        </td>
-                        <td>{formatDateOnly(day.date)}</td>
-                        <td>{day.cups == null ? "Chưa có dữ liệu" : count(day.cups)}</td>
-                      </tr>
-                      {selectedDate === day.date && day.date && (
-                        <tr className={styles.overviewBreakdownRow}>
-                          <td colSpan={3}>
-                            <div className={styles.overviewMachineBreakdown} aria-labelledby="machine-cups-title">
-                              <div className={styles.overviewBreakdownHeading}>
-                                <div>
-                                  <h3 id="machine-cups-title">Số ly theo máy · {formatDateOnly(day.date)}</h3>
-                                  <p className={styles.panelSubtitle}>Máy có ghi nhận ly hợp lệ trong ngày đã chọn.</p>
-                                </div>
-                                <button type="button" onClick={() => setSelectedDate(null)}>Đóng chi tiết</button>
-                              </div>
-                              <p className={styles.overviewBreakdownTotal}>
-                                Tổng của ngày: <strong>{count(day.cups)}</strong> ly hợp lệ
-                              </p>
-                              {machineUsage.isPending && <p role="status">Đang tải sản lượng theo máy…</p>}
-                              {machineUsage.isError && (
-                                <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
-                                  <p>{getApiErrorMessage(machineUsage.error)}</p>
-                                  <button type="button" onClick={() => void machineUsage.refetch()}>
-                                    Thử tải lại
-                                  </button>
-                                </div>
-                              )}
-                              {machineUsage.data && machineUsage.data.length === 0 && (
-                                <p className={styles.emptyText}>Không có máy nào ghi nhận ly hợp lệ trong ngày này.</p>
-                              )}
-                              {machineUsage.data && machineUsage.data.length > 0 && (
-                                <div className={styles.overviewMachineRows}>
-                                  <DataTable
-                                    headerVariant="admin"
-                                    variant="standard"
-                                    className={styles.adminTable}
-                                    rows={machineUsage.data}
-                                    rowKey={(machine) => machine.machineId}
-                                    columns={[
-                                      { key: "machine", header: "Máy", render: (machine) => machine.serialNumber || <TruncatedId value={machine.machineId} /> },
-                                      { key: "region", header: "Khu vực", render: (machine) => machine.region || "—" },
-                                      {
-                                        key: "cups",
-                                        header: "Số ly hợp lệ",
-                                        render: (machine) => count(machine.cups),
-                                        cellProps: () => ({ className: styles.overviewMachineCupCell }),
-                                      },
-                                    ]}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
+                    <tr key={`${day.date ?? "unknown"}-${index}`}>
+                      <td>{formatDateOnly(day.date)}</td>
+                      <td>{day.cups == null ? "Chưa có dữ liệu" : count(day.cups)}</td>
+                    </tr>
                   ))}
               </DataTable>
             ) : (

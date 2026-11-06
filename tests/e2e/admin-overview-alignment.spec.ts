@@ -39,10 +39,6 @@ function dateInputValue(isoDate: string) {
   return `${day}/${month}/${year}`;
 }
 
-function displayDate(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString("vi-VN", { timeZone: "UTC" });
-}
-
 async function textCenterOffset(locator: import("@playwright/test").Locator) {
   return locator.evaluate((element) => {
     const range = document.createRange();
@@ -71,7 +67,7 @@ test("Admin daily cup values align with their column heading on mobile and deskt
   const heading = page.getByRole("columnheader", { name: "Số ly hợp lệ" });
   await expect(heading).toBeVisible();
   const dailyTable = page.locator("table").filter({ has: heading });
-  const cupCells = dailyTable.locator("tbody tr td:nth-child(3)");
+  const cupCells = dailyTable.locator("tbody tr td:nth-child(2)");
   await expect(cupCells).toHaveText(["0", "12"]);
 
   for (const width of [375, 1440]) {
@@ -85,7 +81,7 @@ test("Admin daily cup values align with their column heading on mobile and deskt
   }
 });
 
-test("Admin can filter accepted cups, open reports and inspect daily machine totals", async ({ page, context }) => {
+test("Admin can filter accepted cups and open reports", async ({ page, context }) => {
   const payload = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await context.addCookies([{
     name: "access_token",
@@ -118,16 +114,6 @@ test("Admin can filter accepted cups, open reports and inspect daily machine tot
       }),
     });
   });
-  await page.route("**/api/dolores/v1/dashboard/daily-cups/machines*", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify([
-        { machineId: "8a6aa914-1085-44e7-8705-3b02f30befc5", serialNumber: "DL-001", region: "Hồ Chí Minh", cups: 580 },
-        { machineId: "80f8ecba-9222-4311-ab5d-a7be46fc079f", serialNumber: "DL-002", region: "Hà Nội", cups: 420 },
-      ]),
-    }),
-  );
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/admin");
@@ -148,15 +134,4 @@ test("Admin can filter accepted cups, open reports and inspect daily machine tot
     "href",
     `${"/admin/reports"}?fromDate=${yesterday}&toDate=${today}`,
   );
-
-  await page.getByRole("checkbox", { name: `Xem chi tiết số ly theo máy ngày ${displayDate(today)}` }).check();
-  await expect(page.getByRole("heading", { name: `Số ly theo máy · ${displayDate(today)}` })).toBeVisible();
-  const machineTable = page.getByRole("heading", { name: `Số ly theo máy · ${displayDate(today)}` })
-    .locator("xpath=ancestor::tr")
-    .getByRole("table");
-  await expect(machineTable).toHaveCount(1);
-  await expect(machineTable).toContainText("DL-001");
-  await expect(machineTable).toContainText("580");
-  await expect(machineTable).toContainText("DL-002");
-  await expect(machineTable).toContainText("420");
 });

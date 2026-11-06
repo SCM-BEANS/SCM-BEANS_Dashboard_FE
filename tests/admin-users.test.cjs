@@ -135,21 +135,3 @@ test("admin account API uses IDaaS paths and validates every response", async ()
   assert.equal(calls[6].data.status, "ACTIVE");
   await assert.rejects(adminUsersApi.getById("not-a-uuid"));
 });
-
-test("tenant lookup stays on the Dolores base URL", async () => {
-  const schemas = loadModule("src/schema/tenants.schema.ts");
-  const calls = [];
-  const { tenantsApi } = loadModule("src/apis/tenants.api.ts", {
-    "@/lib/http": {
-      DOLORES_API_BASE_URL: "/api/dolores/v1",
-      axiosClient: { get: async (url, config) => {
-        calls.push({ url, config });
-        return { data: [{ id: tenantId, name: "Test Tenant" }] };
-      } },
-    },
-    "@/schema/tenants.schema": schemas,
-  });
-  const signal = new AbortController().signal;
-  assert.equal((await tenantsApi.list(signal))[0].name, "Test Tenant");
-  assert.deepEqual(calls, [{ url: "/tenants", config: { baseURL: "/api/dolores/v1", signal } }]);
-});

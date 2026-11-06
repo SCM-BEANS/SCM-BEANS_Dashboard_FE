@@ -69,7 +69,6 @@ const schemaMocks = {
   "@/schema/profiles.schema": loadModule("src/schema/profiles.schema.ts"),
   "@/schema/locations.schema": loadModule("src/schema/locations.schema.ts"),
   "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
-  "@/schema/tenants.schema": loadModule("src/schema/tenants.schema.ts"),
 };
 function loadAdminStoresPage(mocks = {}) {
   return loadModule("src/pages/admin/stores/index.page.tsx", {
@@ -82,7 +81,6 @@ function loadAdminStoresPage(mocks = {}) {
     "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
     "@/components/table/data-table": { DataTable: () => null },
     "@/components/notification-dialog/notification-dialog": { NotificationDialog: () => null },
-    "@/apis/tenants.api": { tenantsApi: {} },
     "../admin-back-destination": { getStoresBackDestination: () => null },
     "../admin-shell": { AdminShell: () => null, adminStyles: {} },
     "next/router": { useRouter: () => ({}) },

@@ -76,7 +76,6 @@ function renderScreen(sectionPath, states = {}, mutationState = {}, notification
     },
     "@/apis/contracts.api": {
       contractsApi: {
-        listByTenant: async () => [],
         getModeratorById: async () => undefined,
         getDocuments: async () => [],
       },
@@ -102,14 +101,8 @@ function renderScreen(sectionPath, states = {}, mutationState = {}, notification
         ...notificationApiOverrides,
       },
     },
-    "@/apis/tenants.api": {
-      tenantsApi: { list: async () => [], getById: async () => undefined },
-    },
     "@/schema/contracts.schema": {
       ContractIdSchema: { safeParse: (value) => ({ success: /^[0-9a-f-]{36}$/i.test(value) }) },
-    },
-    "@/schema/tenants.schema": {
-      TenantIdSchema: { safeParse: (value) => ({ success: /^[0-9a-f-]{36}$/i.test(value) }) },
     },
     "next/link": ({ href, children }) => React.createElement("a", { href }, children),
     "@/routes/path": {

@@ -30,7 +30,6 @@ const otherTenantId = '00000000-0000-4000-8000-000000000102';
 const workOrderId = '00000000-0000-4000-8000-000000000211';
 const checklistId = '00000000-0000-4000-8000-000000000311';
 const locationId = '00000000-0000-4000-8000-000000000711';
-const tenant = { id: tenantId, name: 'Tenant kiểm thử', type: 'contract_owner' };
 const machine = {
   id: machineId,
   tenantId,
@@ -83,7 +82,6 @@ function loadOperational(queryResults = {}, infiniteResult, apiOverrides = {}) {
     '@/schema/locations.schema': loadTypescript('src/schema/locations.schema.ts'),
     '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
     '@/schema/installation-work-orders.schema': loadTypescript('src/schema/installation-work-orders.schema.ts'),
-    '@/schema/tenants.schema': loadTypescript('src/schema/tenants.schema.ts'),
     '@/schema/telemetry.schema': loadTypescript('src/schema/telemetry.schema.ts', {
       '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
     }),
@@ -103,7 +101,6 @@ function loadOperational(queryResults = {}, infiniteResult, apiOverrides = {}) {
       },
     },
     '@/apis/telemetry.api': { telemetryApi: { getLatestHeartbeat: async () => ({ machineId, status: 'ONLINE' }), listMachinePoints: async () => [] }, TELEMETRY_POINTS_PAGE_SIZE: 100 },
-    '@/apis/tenants.api': { tenantsApi: { list: async () => [tenant] } },
     '@/routes/path': loadTypescript('src/routes/path.ts'),
     '@/text/moderator/moderator-messages': loadTypescript('src/text/moderator/moderator-messages.ts'),
     './moderator-shell': { moderatorStyles: styles },
@@ -408,10 +405,8 @@ test('shared read-screen dispatcher classifies Phase 3 paths for lazy operationa
     '@/apis/dashboard.api': { dashboardApi: {} },
     '@/apis/contracts.api': { contractsApi: {} },
     '@/apis/notifications.api': { notificationsApi: {} },
-    '@/apis/tenants.api': { tenantsApi: {} },
     '@/routes/path': path,
     '@/schema/contracts.schema': loadTypescript('src/schema/contracts.schema.ts'),
-    '@/schema/tenants.schema': loadTypescript('src/schema/tenants.schema.ts'),
     './moderator-shell': { moderatorStyles: styles },
     '@/text/moderator/moderator-messages': messages,
   });

@@ -50,7 +50,6 @@ const document = {
   uploadedBy: null,
   archivedAt: null,
 };
-const tenant = { id: tenantId, name: 'Khách kiểm thử', type: 'contract_owner', billingExempt: false };
 
 function createAxiosClient(responseQueue) {
   const calls = [];
@@ -63,12 +62,11 @@ function createAxiosClient(responseQueue) {
   return { axiosClient, calls };
 }
 
-function loadContractsApi(responses, contractSchemas, tenantSchemas) {
+function loadContractsApi(responses, contractSchemas) {
   const { axiosClient, calls } = createAxiosClient(responses);
   const module = loadTypescript('src/apis/contracts.api.ts', {
     '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
     '@/schema/contracts.schema': contractSchemas,
-    '@/schema/tenants.schema': tenantSchemas,
   });
   return { api: module.contractsApi, calls };
 }
@@ -83,36 +81,27 @@ test('Admin owner contract schema and Moderator tenant contract schema remain se
   assert.equal(contractSchemas.ContractDocumentsSchema.parse([document])[0].originalFilename, 'signed.pdf');
 });
 
-test('Moderator contract reads use only tenant-scoped, canonical GET endpoints', async () => {
+test('Moderator contract detail reads use canonical GET endpoints', async () => {
   const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
-  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
   const { api, calls } = loadContractsApi([
-    [moderatorContract],
     moderatorContract,
     [document],
-    [{ ...moderatorContract, tenantId: '00000000-0000-4000-8000-000000000102' }],
-  ], contractSchemas, tenantSchemas);
+  ], contractSchemas);
 
-  assert.equal((await api.listByTenant(tenantId))[0].id, contractId);
   assert.equal((await api.getModeratorById(contractId)).tenantId, tenantId);
   assert.equal((await api.getDocuments(contractId))[0].contractId, contractId);
-  await assert.rejects(api.listByTenant(tenantId), /outside the requested tenant scope/);
-  await assert.rejects(api.listByTenant('not-a-uuid'));
   await assert.rejects(api.getModeratorById('C-204'));
 
   assert.deepEqual(calls.map(({ method, url }) => method + ' ' + url), [
-    'GET /contracts/tenant/' + tenantId,
     'GET /contracts/' + contractId,
     'GET /contracts/' + contractId + '/documents',
-    'GET /contracts/tenant/' + tenantId,
   ]);
   assert.ok(calls.every(({ config }) => config.baseURL === '/api/dolores/v1'));
 });
 
 test('existing Admin contract list and detail methods retain the ownerId contract', async () => {
   const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
-  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
-  const { api, calls } = loadContractsApi([[ownerContract], ownerContract], contractSchemas, tenantSchemas);
+  const { api, calls } = loadContractsApi([[ownerContract], ownerContract], contractSchemas);
 
   assert.equal((await api.list())[0].ownerId, tenantId);
   assert.equal((await api.getById(contractId)).ownerId, tenantId);
@@ -120,24 +109,4 @@ test('existing Admin contract list and detail methods retain the ownerId contrac
     'GET /contracts',
     'GET /contracts/' + contractId,
   ]);
-});
-
-test('tenant API validates UUID detail and confirms response identity', async () => {
-  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
-  const { axiosClient, calls } = createAxiosClient([[tenant], tenant, { ...tenant, id: '00000000-0000-4000-8000-000000000102' }]);
-  const { tenantsApi } = loadTypescript('src/apis/tenants.api.ts', {
-    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
-    '@/schema/tenants.schema': tenantSchemas,
-  });
-
-  assert.equal((await tenantsApi.list())[0].id, tenantId);
-  assert.equal((await tenantsApi.getById(tenantId)).name, 'Khách kiểm thử');
-  await assert.rejects(tenantsApi.getById('nguyen-minh-anh'));
-  await assert.rejects(tenantsApi.getById(tenantId), /does not match the requested ID/);
-  assert.deepEqual(calls.map(({ method, url }) => method + ' ' + url), [
-    'GET /tenants',
-    'GET /tenants/' + tenantId,
-    'GET /tenants/' + tenantId,
-  ]);
-  assert.ok(calls.every(({ config }) => config.baseURL === '/api/dolores/v1'));
 });

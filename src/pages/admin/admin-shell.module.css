@@ -61,13 +61,9 @@
 .machineInventoryTable :global(td:nth-child(4)) { width: 25%; }
 .overviewDailyTable :global(table) { min-width: 0; table-layout: fixed; }
 .overviewDailyTable :global(thead th:first-child),
-.overviewDailyTable :global(tbody td:first-child) { width: 72px; }
+.overviewDailyTable :global(tbody td:first-child) { width: 56%; }
 .overviewDailyTable :global(thead th:nth-child(2)),
-.overviewDailyTable :global(tbody td:nth-child(2)) { width: 44%; }
-.overviewDailyTable :global(thead th:nth-child(3)),
-.overviewDailyTable :global(tbody td:nth-child(3)) { text-align: center; }
-.overviewDailyTable :global(tbody tr:has(input:checked) td) { background: #fdf7f6; }
-.overviewDailyTable :global(tbody td:first-child) { width: 72px; text-align: center; }
+.overviewDailyTable :global(tbody td:nth-child(2)) { width: 44%; text-align: center; }
 .overviewCupMetricFooter { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: auto; }
 .overviewCupMetricFooter small { display: flex; min-width: 0; flex-direction: column; gap: 3px; color: #706561; font-size: 12px; line-height: 1.4; }
 .overviewCupMetricFooter small strong { display: block; overflow-wrap: anywhere; color: #302927; font-size: 12px; font-weight: 600; }
@@ -96,27 +92,6 @@
 .overviewAppliedRange { margin: 0; color: #706561; font-size: 13px; line-height: 1.5; }
 .overviewAppliedRange strong { color: #302927; }
 .overviewRangeControls .accountInlineWarning { margin: 0; }
-.overviewDayCheckLabel { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; cursor: pointer; }
-.overviewDayCheckbox { width: 18px; height: 18px; margin: 0; accent-color: #b81724; vertical-align: middle; cursor: pointer; }
-.overviewBreakdownRow :global(td) { padding: 0 !important; text-align: left !important; }
-.overviewBreakdownRow:hover :global(td) { background: white !important; }
-.overviewMachineBreakdown { margin: 8px; padding: 16px; border: 1px solid #eee8e3; border-radius: 12px; background: white; }
-.overviewBreakdownHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.overviewBreakdownHeading h3 { margin: 0 0 6px; color: #302927; font-size: 16px; line-height: 1.4; }
-.overviewBreakdownHeading .panelSubtitle { margin-bottom: 0; }
-.overviewBreakdownHeading button { min-height: 44px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: white; color: #514843; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.overviewBreakdownHeading button:hover { background: #f7f5f3; }
-.overviewBreakdownTotal { margin: 14px 0 10px; color: #706561; font-size: 14px; }
-.overviewBreakdownTotal strong { color: #302927; font-size: 20px; }
-.overviewMachineRows { max-height: 360px; overflow: auto; border: 1px solid #eee8e3; border-radius: 8px; }
-.overviewMachineRows :global(table) { min-width: 0; table-layout: fixed; }
-.overviewMachineRows :global(th:nth-child(1)),
-.overviewMachineRows :global(td:nth-child(1)) { width: 30%; }
-.overviewMachineRows :global(th:nth-child(2)),
-.overviewMachineRows :global(td:nth-child(2)) { width: 42%; }
-.overviewMachineRows :global(thead th:nth-child(3)),
-.overviewMachineRows :global(tbody td:nth-child(3)) { width: 28%; text-align: center; }
-.overviewMachineCupCell { text-align: center !important; }
 @media (hover: hover) {
   .adminTable :global(tbody tr:hover td) { background: #fdf9f8; }
 }
@@ -334,7 +309,6 @@
   .overviewRangeForm { display: grid; grid-template-columns: 1fr 1fr; }
   .overviewRangeField { min-width: 0; }
   .overviewApplyRange { grid-column: 1 / -1; }
-  .overviewBreakdownHeading { align-items: stretch; flex-direction: column; }
   .panel { padding: 18px 16px; }
   .reportFilterPanel { padding: 16px; }
   .reportQuickRanges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }

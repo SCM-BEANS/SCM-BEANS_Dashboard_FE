@@ -67,7 +67,6 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
   const machine = { id: ids.machine };
   const notification = { id: ids.notification, read: true };
   const recipe = { id: ids.recipe };
-  const tenant = { id: ids.tenant, name: 'Test tenant' };
   const invoice = { id: ids.invoice };
   const workOrder = { id: ids.workOrder, tenantId: ids.tenant };
   const workOrderDetails = { workOrder: { id: ids.workOrder } };
@@ -93,7 +92,6 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     recipes: loadApi('src/apis/recipes.api.ts', axiosClient).recipesApi,
     billing: loadApi('src/apis/billing.api.ts', axiosClient).billingApi,
     buybacks: loadApi('src/apis/buybacks.api.ts', axiosClient).buybacksApi,
-    tenants: loadApi('src/apis/tenants.api.ts', axiosClient).tenantsApi,
     workOrders: loadApi('src/apis/installation-work-orders.api.ts', axiosClient).installationWorkOrdersApi,
     dashboard: loadApi('src/apis/dashboard.api.ts', axiosClient).dashboardApi,
   };
@@ -109,7 +107,6 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['locations', 'getById', [ids.location, signal], location, 'GET', `/locations/${ids.location}`, { baseURL: '/api/dolores/v1', signal }],
     ['locations', 'create', [ids.profile, { name: 'Test store', city: 'Test City' }], location, 'POST', '/locations', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile } }, { name: 'Test store', city: 'Test City' }],
     ['contracts', 'list', [signal], [], 'GET', '/contracts', { baseURL: '/api/dolores/v1', signal }],
-    ['contracts', 'listByTenant', [ids.tenant, signal], [contract], 'GET', `/contracts/tenant/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getModeratorById', [ids.contract, signal], contract, 'GET', `/contracts/${ids.contract}`, { baseURL: '/api/dolores/v1', signal }],
     ['contracts', 'getExpiry', [ids.contract, signal], {}, 'GET', `/contracts/${ids.contract}/expiry-status`, { baseURL: '/api/dolores/v1', signal }],
@@ -136,8 +133,6 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
     ['billing', 'listPaymentProofs', [ids.invoice, signal], [], 'GET', `/billing/invoices/${ids.invoice}/payment-proofs`, { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal }],
     ['billing', 'downloadPaymentProofContent', [ids.proof, signal], blob, 'GET', `/billing/payment-proofs/${ids.proof}/content`, { baseURL: '/api/dolores/v1', headers: { Accept: '*/*' }, responseType: 'blob', signal }],
     ['buybacks', 'getById', [ids.buyback, signal], { id: ids.buyback }, 'GET', `/buybacks/${ids.buyback}`, { baseURL: '/api/dolores/v1', signal }],
-    ['tenants', 'list', [signal], [tenant], 'GET', '/tenants', { baseURL: '/api/dolores/v1', signal }],
-    ['tenants', 'getById', [ids.tenant, signal], tenant, 'GET', `/tenants/${ids.tenant}`, { baseURL: '/api/dolores/v1', signal }],
     ['workOrders', 'listByOwner', [ids.profile, signal], [{ id: ids.workOrder, ownerId: ids.profile }], 'GET', '/installation-work-orders', { baseURL: '/api/dolores/v1', params: { ownerId: ids.profile }, signal }],
     ['workOrders', 'getById', [ids.workOrder, signal], workOrderDetails, 'GET', `/installation-work-orders/${ids.workOrder}`, { baseURL: '/api/dolores/v1', signal }],
     ['dashboard', 'getOverview', [signal, '2026-10-01', '2026-10-07'], {}, 'GET', '/dashboard/overview', { baseURL: '/api/dolores/v1', signal, params: { fromDate: '2026-10-01', toDate: '2026-10-07' } }],

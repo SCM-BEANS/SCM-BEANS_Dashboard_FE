@@ -3,10 +3,9 @@ import {
   ContractDocumentsSchema, ContractExpirySchema, ContractIdSchema,
   ActivateContractRequestSchema, CreateContractRequestSchema, CreateContractResponseSchema,
   type ActivateContractRequest, type CreateContractRequest,
-  ContractListSchema, ContractSchema, ModeratorContractListSchema, ModeratorContractSchema,
+  ContractListSchema, ContractSchema, ModeratorContractSchema,
 } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
-import { TenantIdSchema } from "@/schema/tenants.schema";
 import { ContractDocumentSchema, ContractExpiryDecisionRequestSchema, ContractContinuationRequestSchema, ContractPolicyAmendmentRequestSchema, ContractPolicyHistorySchema, TerminationCaseRequestSchema, TerminationCaseResponseSchema, type ContractContinuationRequest, type ContractExpiryDecisionRequest, type ContractPolicyAmendmentRequest, type TerminationCaseRequest } from "@/schema/contracts.schema";
 
 
@@ -29,18 +28,6 @@ export const contractsApi =  {
       signal,
     });
     return ContractListSchema.parse(response.data);
-  },
-  async listByTenant(tenantId: string, signal?: AbortSignal) {
-    const validTenantId = TenantIdSchema.parse(tenantId);
-    const response = await axiosClient.get<unknown>(
-      `/contracts/tenant/${encodeURIComponent(validTenantId)}`,
-      { baseURL: DOLORES_API_BASE_URL, signal },
-    );
-    const contracts = ModeratorContractListSchema.parse(response.data);
-    if (contracts.some((contract) => contract.tenantId !== validTenantId)) {
-      throw new Error("Dolores returned a contract outside the requested tenant scope");
-    }
-    return contracts;
   },
   async getById(id: string, signal?: AbortSignal) {
     const response = await axiosClient.get<unknown>(contractPath(id), { baseURL: DOLORES_API_BASE_URL, signal });

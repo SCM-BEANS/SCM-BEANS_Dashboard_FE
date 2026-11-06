@@ -83,7 +83,6 @@ function loadModeratorReadScreen(queryResults, apiOverrides = {}) {
   const styles = new Proxy({}, { get: (_target, property) => String(property) });
   const path = loadTypescript('src/routes/path.ts');
   const messages = loadTypescript('src/text/moderator/moderator-messages.ts');
-  const tenantSchemas = loadTypescript('src/schema/tenants.schema.ts');
   const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
   const module = loadTypescript('src/pages/moderator/moderator-read-screens.tsx', {
     '@tanstack/react-query': { useQuery },
@@ -94,7 +93,6 @@ function loadModeratorReadScreen(queryResults, apiOverrides = {}) {
     '@/apis/dashboard.api': { dashboardApi: { getOverview: async () => undefined } },
     '@/apis/contracts.api': {
       contractsApi: {
-        listByTenant: async () => [],
         getModeratorById: async () => contract,
         getDocuments: async () => [],
         ...apiOverrides.contractsApi,
@@ -103,12 +101,8 @@ function loadModeratorReadScreen(queryResults, apiOverrides = {}) {
     '@/apis/notifications.api': {
       notificationsApi: { list: async () => [], unreadCount: async () => ({ unreadCount: 0 }), listAlerts: async () => [] },
     },
-    '@/apis/tenants.api': {
-      tenantsApi: { list: async () => [], getById: async () => tenant, ...apiOverrides.tenantsApi },
-    },
     '@/routes/path': path,
     '@/schema/contracts.schema': contractSchemas,
-    '@/schema/tenants.schema': tenantSchemas,
     './moderator-shell': { moderatorStyles: styles },
     '@/text/moderator/moderator-messages': messages,
     zod: { ZodError },
@@ -188,36 +182,6 @@ test('contract list renders tenant-scoped API records and partial errors are not
 
   const empty = renderModerator('contracts', [query([tenant]), query({ contracts: [], failedTenants: [] })]);
   assert.match(empty.html, /Dolores không trả về hợp đồng nào/);
-});
-
-test('contract fan-out is bounded to five requests and retains failed tenant identity', async () => {
-  const tenants = Array.from({ length: 8 }, (_value, index) => ({
-    id: '00000000-0000-4000-8000-' + String(index + 100).padStart(12, '0'),
-    name: 'Tenant ' + index,
-    type: 'contract_owner',
-    billingExempt: false,
-  }));
-  let active = 0;
-  let maxActive = 0;
-  const { queryOptions } = renderModerator('contracts', [
-    query(tenants),
-    query(undefined, { data: undefined, isPending: true }),
-  ], {
-    contractsApi: {
-      listByTenant: async (id) => {
-        active += 1;
-        maxActive = Math.max(maxActive, active);
-        await new Promise((resolve) => setTimeout(resolve, 2));
-        active -= 1;
-        if (id === tenants[3].id) throw { response: { status: 503 } };
-        return [{ ...contract, id: contractId, tenantId: id }];
-      },
-    },
-  });
-  const result = await queryOptions[1].queryFn({ signal: new AbortController().signal });
-  assert.equal(maxActive, 5);
-  assert.equal(result.contracts.length, 7);
-  assert.deepEqual(result.failedTenants.map(({ tenant: failedTenant }) => failedTenant.id), [tenants[3].id]);
 });
 
 test('contract detail renders read-only metadata and handles empty, forbidden, and stale IDs', () => {

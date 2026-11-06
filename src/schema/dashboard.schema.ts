@@ -37,17 +37,6 @@ const DailyCupUsageSchema = z.object({
   cups: nonnegativeCount.nullish(),
 });
 
-export const DailyMachineCupUsageSchema = z.object({
-  machineId: z.string().uuid(),
-  serialNumber: z.string().nullish(),
-  region: z.string().nullish(),
-  cups: nonnegativeCount,
-});
-export const DailyMachineCupUsageListSchema = z.array(DailyMachineCupUsageSchema);
-
-
-
-
 export const DashboardActionItemsQuerySchema = z.object({
   actionType: z.string().optional(),
   resourceType: z.string().optional(),
@@ -197,4 +186,3 @@ export type TDashboardActionItemsPage = z.infer<typeof DashboardActionItemsPageS
 export type TDashboardActionItemsFilter = z.input<typeof DashboardActionItemsFilterSchema>;
 
 export type TDashboardOverview = z.infer<typeof DashboardOverviewSchema>;
-export type TDailyMachineCupUsage = z.infer<typeof DailyMachineCupUsageSchema>;
