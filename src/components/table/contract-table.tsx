@@ -8,9 +8,11 @@ interface ContractTableProps {
   contractHref: (contractId: string) => string;
   draftStatusHref?: (contractId: string) => string;
   headerVariant?: "admin";
+  ownerName?: (ownerId: string) => string;
+  ownerHeader?: string;
 }
 
-export function ContractTable({ contracts, contractHref, draftStatusHref, headerVariant }: ContractTableProps) {
+export function ContractTable({ contracts, contractHref, draftStatusHref, headerVariant, ownerName, ownerHeader }: ContractTableProps) {
   return (
     <DataTable
       variant="moderator"
@@ -25,7 +27,11 @@ export function ContractTable({ contracts, contractHref, draftStatusHref, header
             <TextLinkButton href={contractHref(contract.id)}>{contract.id}</TextLinkButton>
           ),
         },
-        { key: "owner", header: CONTRACT_TABLE_HEADERS.owner, render: (contract) => contract.ownerId },
+        {
+          key: "owner",
+          header: ownerName ? ownerHeader ?? "Owner" : CONTRACT_TABLE_HEADERS.owner,
+          render: (contract) => ownerName ? ownerName(contract.ownerId) : contract.ownerId,
+        },
         {
           key: "period",
           header: CONTRACT_TABLE_HEADERS.period,

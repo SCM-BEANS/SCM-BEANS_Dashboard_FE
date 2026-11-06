@@ -210,7 +210,10 @@ function ContractsContent() {
     }
     void router.push({ pathname: "/admin/contracts", query }, undefined, { shallow: true });
   };
-  const ownerName = (id: string) => owners.data?.find((item) => item.idaasUserId === id)?.fullName ?? `${T.COMMON.OWNER} ${id.slice(0, 8)}`;
+  const ownerName = (id: string) => {
+    if (owners.isPending) return T.COMMON.LOADING;
+    return owners.data?.find((item) => item.idaasUserId === id)?.fullName ?? "—";
+  };
   const pageTitle = view === "create"
     ? T.CONTRACTS.CREATE_TITLE
     : isInstallationRequest
@@ -252,6 +255,8 @@ function ContractsContent() {
       {contracts.data && contracts.data.length > 0 && <ContractTable
         contracts={contracts.data}
         headerVariant="admin"
+        ownerHeader={T.COMMON.OWNER}
+        ownerName={ownerName}
         contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
         draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
       />}
@@ -268,7 +273,7 @@ function ContractsContent() {
       {contract.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contract.error)}</p><ButtonBar type="button" onClick={() => void contract.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contract.data && <>
         <section className={styles.panel}><h2>{T.CONTRACTS.DETAIL}</h2><div className={styles.operationsGrid}>
-          <div><span>Mã hợp đồng</span><strong>{contract.data.id}</strong></div><div><span>{T.COMMON.OWNER}</span><strong>{ownerName(contract.data.ownerId)} · {contract.data.ownerId}</strong></div>
+          <div><span>Mã hợp đồng</span><strong>{contract.data.id}</strong></div><div><span>{T.COMMON.OWNER}</span><strong>{ownerName(contract.data.ownerId)}</strong></div>
           <div><span>Mã máy</span><strong>{contract.data.machineId ?? T.CONTRACTS.NO_MACHINE}</strong></div><div><span>Trạng thái</span><strong>{status(contract.data.status)}</strong></div>
           <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div><div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
           <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div><div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>

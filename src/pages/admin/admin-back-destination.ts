@@ -19,19 +19,11 @@ function listHref(pathname: string, query: RouterQuery, keys: string[]): string 
   return search ? `${pathname}?${search}` : pathname;
 }
 
-export function getBusinessesBackDestination(query: RouterQuery): BackButtonDestination | null {
-  if (firstString(query.view) !== "detail") return null;
-  return {
-    label: T.BUSINESSES.BACK_TO_LIST,
-    fallbackHref: listHref(PATH_ADMIN.BUSINESSES, query, ["q", "status", "page"]),
-  };
-}
-
 export function getStoresBackDestination(query: RouterQuery): BackButtonDestination | null {
   if (!["create", "detail"].includes(firstString(query.view))) return null;
   return {
     label: T.STORES.BACK_TO_LIST,
-    fallbackHref: listHref(PATH_ADMIN.STORES, query, ["ownerId"]),
+    fallbackHref: listHref(PATH_ADMIN.STORES, query, ["ownerId", "q"]),
   };
 }
 

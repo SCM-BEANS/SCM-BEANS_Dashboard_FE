@@ -127,7 +127,6 @@ const adminMessages = {
   NAVIGATION: {
     OVERVIEW: "Tổng quan",
     USERS: "Tài khoản",
-    BUSINESSES: "Khách hàng",
     STORES: "Cửa hàng",
     CONTRACTS: "Hợp đồng",
     MACHINES: "Máy",

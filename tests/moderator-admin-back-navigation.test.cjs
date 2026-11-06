@@ -99,32 +99,21 @@ test("moderator page heading uses the shared back control once before the title 
   assert.doesNotMatch(shell, /return\s*<ButtonBar href=\{currentSection\.HREF\}>\{actionMessages\.BACK_TO_SECTION\}/);
 });
 
-test("admin business and store deep-link fallbacks retain list filters and owner scope", () => {
-  const { getBusinessesBackDestination, getStoresBackDestination } = loadTypeScriptModule("src/pages/admin/admin-back-destination.ts", {
+test("admin store deep-link fallbacks retain owner scope", () => {
+  const { getStoresBackDestination } = loadTypeScriptModule("src/pages/admin/admin-back-destination.ts", {
     "@/routes/path": { PATH_ADMIN },
     "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES: adminMessages },
   });
-
-  const businessDestination = getBusinessesBackDestination({
-    view: "detail", id: "owner-12", q: "hạt cà phê", status: "ACTIVE", page: "3", contractPage: "2",
-  });
-  const businessQuery = new URLSearchParams({ q: "hạt cà phê", status: "ACTIVE", page: "3" }).toString();
-  assert.equal(businessDestination.fallbackHref, `${PATH_ADMIN.BUSINESSES}?${businessQuery}`);
-  assert.equal(getBusinessesBackDestination({ view: "list", q: "owner" }), null);
-
   const storeDestination = getStoresBackDestination({ view: "detail", id: "store-7", ownerId: "owner-12" });
   assert.equal(storeDestination.fallbackHref, `${PATH_ADMIN.STORES}?ownerId=owner-12`);
   assert.equal(getStoresBackDestination({ view: "create", ownerId: "owner-12" }).fallbackHref, `${PATH_ADMIN.STORES}?ownerId=owner-12`);
   assert.equal(getStoresBackDestination({ view: "list", ownerId: "owner-12" }), null);
 });
 
-test("admin business/store detail headings and machine detail use shared back control without replacing useful actions", () => {
-  const businesses = source("src/pages/admin/businesses/index.page.tsx");
+test("admin store detail headings and machine detail use shared back control without replacing useful actions", () => {
   const stores = source("src/pages/admin/stores/index.page.tsx");
   const machine = source("src/pages/admin/machines/[machineId].page.tsx");
 
-  assert.match(businesses, /<BackButtonHeading[\s\S]*getBusinessesBackDestination/);
-  assert.doesNotMatch(businesses, /<ButtonBar[^>]*onClick=\{\(\)\s*=>\s*navigate\(\{ q:/);
   assert.match(stores, /<BackButtonHeading[\s\S]*getStoresBackDestination/);
   assert.doesNotMatch(stores, /<ButtonBar[^>]*>Về danh sách<\/ButtonBar>/);
   assert.match(machine, /<BackButtonHeading[\s\S]*getMachineDetailBackDestination/);

@@ -320,7 +320,15 @@ export function TechnicalOperationsScreen({
   });
 
   if (isUnsupportedWrite) {
-    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button><p className={styles.pendingNotice} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p></div>;
+    return (
+      <div className={styles.pageContent}>
+        <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
+        {routes.role === "moderator" && <>
+          <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
+          <p className={styles.pendingNotice} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
+        </>}
+      </div>
+    );
   }
 
   if (isMaintenanceRequestAssignment) {
@@ -375,8 +383,10 @@ export function TechnicalOperationsScreen({
   return (
     <div className={styles.pageContent}>
       <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
-      <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
-      <p className={styles.formHint} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
+      {routes.role === "moderator" && <>
+        <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
+        <p className={styles.formHint} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
+      </>}
       {triageFeedback && (
         <p className={styles.pendingNotice} role={triageFeedback.type === "error" ? "alert" : "status"}>
           {triageFeedback.message}

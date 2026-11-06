@@ -1,19 +1,16 @@
 export const ADMIN_OPERATIONS_MESSAGES = {
   COMMON: {
     LOADING: "Đang tải dữ liệu…", RETRY: "Thử lại", EMPTY: "Chưa có dữ liệu.",
+    PREVIOUS: "Trước", NEXT: "Sau", PAGE: "Trang",
     INVALID_OWNER_ID: "Mã chủ sở hữu không hợp lệ.",
     OWNER: "Chủ sở hữu", OWNER_ID: "Mã chủ sở hữu", NAME: "Họ tên", EMAIL: "Email",
   },
-  BUSINESSES: {
-    TITLE: "Khách hàng", DESCRIPTION: "Hồ sơ Owner lấy từ Dolores.", SEARCH: "Tìm theo tên, email hoặc số điện thoại",
-    STATUS: "Trạng thái", ROLE: "Vai trò", CREATED: "Ngày tạo", DETAIL: "Thông tin khách hàng",
-    CONTRACTS: "Hợp đồng của khách hàng", VIEW_STORES: "Xem cửa hàng",
-    PREVIOUS: "Trước", NEXT: "Sau", PAGE: "Trang", BACK_TO_LIST: "Về danh sách",
-  },
   STORES: {
-    TITLE: "Cửa hàng", DESCRIPTION: "Địa điểm thuộc các Owner trong phạm vi tài khoản.",
+    TITLE: "Cửa hàng", LIST_TITLE: "Danh sách cửa hàng", DESCRIPTION: "Địa điểm thuộc các Owner trong phạm vi tài khoản.",
     BACK_TO_LIST: "Về danh sách",
     CREATE: "Tạo cửa hàng", DETAIL: "Thông tin cửa hàng", OWNER: "Owner phụ trách", ALL_OWNERS: "Mọi Owner",
+    SEARCH_LABEL: "Tìm cửa hàng", SEARCH_PLACEHOLDER: "Tìm tên cửa hàng, địa chỉ hoặc Owner", SEARCH_BUTTON: "Tìm kiếm",
+    NO_MATCH: "Không tìm thấy cửa hàng phù hợp với bộ lọc.",
     NAME: "Tên cửa hàng", ADDRESS: "Địa chỉ", CITY: "Thành phố", CONTACT: "Người liên hệ",
     PHONE: "Số điện thoại", ACTIVE: "Hoạt động", INACTIVE: "Ngừng hoạt động",
     SAVE: "Lưu cửa hàng", CANCEL: "Hủy", CONFIRM_TITLE: "Xác nhận tạo cửa hàng",

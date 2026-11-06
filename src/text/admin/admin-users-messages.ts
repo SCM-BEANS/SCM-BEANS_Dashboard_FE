@@ -1,7 +1,6 @@
 export const ADMIN_USERS_MESSAGES = {
   LIST: {
     TITLE: "Tài khoản toàn hệ thống",
-    DESCRIPTION: "Quản lý tài khoản IDaaS theo vai trò, trạng thái và tenant.",
     PANEL: "Danh sách tài khoản",
     SEARCH: "Tìm tên hoặc email",
     SEARCH_LABEL: "Tìm theo họ tên hoặc email",
@@ -11,7 +10,6 @@ export const ADMIN_USERS_MESSAGES = {
     CREATE: "Tạo tài khoản",
     LOADING: "Đang tải danh sách tài khoản…",
     EMPTY: "Không tìm thấy tài khoản phù hợp.",
-    TENANT_ERROR: "Không tải được tên tenant; mã tenant vẫn được hiển thị.",
     PREVIOUS: "Trước",
     NEXT: "Sau",
     PAGE_SIZE: "Mỗi trang",
@@ -27,8 +25,6 @@ export const ADMIN_USERS_MESSAGES = {
     EMAIL: "Email đăng nhập",
     ROLE: "Vai trò",
     TENANT: "Tenant được gán",
-    TENANT_PLACEHOLDER: "Chọn tenant",
-    TENANT_UNAVAILABLE: "Không tải được danh sách tenant.",
     SELECT_ROLE: "Chọn vai trò",
     TENANT_UNASSIGNED: "Chưa gán tenant",
     GLOBAL_SCOPE: "Toàn hệ thống",

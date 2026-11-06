@@ -64,7 +64,6 @@ const roleMatrix = [
     expectedLabels: [
       "Tổng quan",
       "Tài khoản",
-      "Khách hàng",
       "Cửa hàng",
       "Hợp đồng",
       "Máy & tồn kho",
@@ -80,7 +79,6 @@ const roleMatrix = [
     expectedHrefs: [
       paths.PATH_ADMIN.ROOT,
       paths.PATH_ADMIN.USERS,
-      paths.PATH_ADMIN.BUSINESSES,
       paths.PATH_ADMIN.STORES,
       paths.PATH_ADMIN.CONTRACTS,
       paths.PATH_ADMIN.MACHINES,

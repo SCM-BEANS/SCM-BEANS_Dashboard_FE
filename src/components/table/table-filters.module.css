@@ -1,0 +1,88 @@
+.filters {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.filters > input,
+.filters > select {
+  width: 170px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: white;
+  color: #302927;
+  font: inherit;
+  font-size: 14px;
+}
+
+.filters > input {
+  width: 100%;
+  flex: 1;
+}
+
+.filters > select {
+  flex: 0 0 170px;
+}
+
+.filters button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: white;
+  color: #302927;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filters button:hover {
+  background: #f7f5f3;
+}
+
+.filters input:focus-visible,
+.filters select:focus-visible,
+.filters button:focus-visible {
+  border-color: #b81724;
+  outline: 3px solid #b8172433;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1023px) {
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters input {
+    grid-column: 1 / -1;
+  }
+
+  .filters select {
+    width: 100%;
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .filters input {
+    grid-column: auto;
+  }
+}

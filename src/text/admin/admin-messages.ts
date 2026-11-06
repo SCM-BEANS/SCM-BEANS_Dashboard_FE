@@ -4,7 +4,6 @@ export const ADMIN_MESSAGES = {
   NAVIGATION: {
     OVERVIEW: "Tổng quan",
     USERS: "Tài khoản",
-    BUSINESSES: "Khách hàng",
     STORES: "Cửa hàng",
     CONTRACTS: "Hợp đồng",
     MACHINES: "Máy & tồn kho",
@@ -17,7 +16,6 @@ export const ADMIN_MESSAGES = {
     BUYBACKS: "Thu mua máy",
     NOTIFICATIONS: "Thông báo",
     MORE: "Khác",
-    PENDING: "Trang này sẽ được chuyển ở giai đoạn tiếp theo.",
   },
   OVERVIEW: {
     TITLE: "Tổng quan vận hành",

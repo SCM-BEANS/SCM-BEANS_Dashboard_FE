@@ -195,8 +195,8 @@ function IoTContent() {
           ]}
         />}
         <div className={styles.operationsPagination}>
-          <span>{T.BUSINESSES.PAGE} {page + 1} / {owners.data.totalPages || 1}</span>
-          <div><button className={styles.accountSecondaryButton} type="button" disabled={page <= 0} onClick={() => navigate({ page: page - 1 })}>{T.BUSINESSES.PREVIOUS}</button><button className={styles.accountSecondaryButton} type="button" disabled={page >= maxPage} onClick={() => navigate({ page: page + 1 })}>{T.BUSINESSES.NEXT}</button></div>
+          <span>{T.COMMON.PAGE} {page + 1} / {owners.data.totalPages || 1}</span>
+          <div><button className={styles.accountSecondaryButton} type="button" disabled={page <= 0} onClick={() => navigate({ page: page - 1 })}>{T.COMMON.PREVIOUS}</button><button className={styles.accountSecondaryButton} type="button" disabled={page >= maxPage} onClick={() => navigate({ page: page + 1 })}>{T.COMMON.NEXT}</button></div>
         </div>
       </section>}
     </div>

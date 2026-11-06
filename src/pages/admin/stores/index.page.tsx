@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
@@ -45,9 +46,8 @@ export async function loadOwnerUsers(signal?: AbortSignal): Promise<AdminUser[]>
   return pages.flatMap((page) => page.items);
 }
 
-export async function loadOwnerLocations(signal?: AbortSignal, selectedOwnerId?: string): Promise<OwnerLocations> {
-  const allOwners = await loadOwners(signal);
-  const owners = selectedOwnerId ? allOwners.filter((owner) => owner.idaasUserId === selectedOwnerId) : allOwners;
+export async function loadOwnerLocations(signal?: AbortSignal): Promise<OwnerLocations> {
+  const owners = await loadOwners(signal);
   const locations: OwnerLocations["locations"] = [];
   const failed: string[] = [];
   for (let index = 0; index < owners.length; index += 5) {
@@ -80,13 +80,16 @@ function StoresContent() {
   const view = queryValue(router.query.view) || "list";
   const locationId = queryValue(router.query.id);
   const initialOwnerId = queryValue(router.query.ownerId);
+  const search = queryValue(router.query.q).trim().slice(0, 100);
+  const [searchDraft, setSearchDraft] = useState(search);
+  useEffect(() => setSearchDraft(search), [search]);
   const [form, setForm] = useState<StoreForm>({ ...emptyForm, ownerId: initialOwnerId });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [createdStore, setCreatedStore] = useState<{ name: string; ownerName: string } | null>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
-  const listing = useQuery({ queryKey: ["dolores", "admin-stores", initialOwnerId], queryFn: ({ signal }) => loadOwnerLocations(signal, initialOwnerId || undefined), enabled: view === "list" });
+  const listing = useQuery({ queryKey: ["dolores", "admin-stores"], queryFn: ({ signal }) => loadOwnerLocations(signal), enabled: view === "list" });
   const owners = useQuery({ queryKey: ["idaas", "admin-users", "owner-options"], queryFn: ({ signal }) => loadOwnerUsers(signal), enabled: view === "create" });
   const detail = useQuery({
     queryKey: ["dolores", "location", locationId],
@@ -112,7 +115,10 @@ function StoresContent() {
       });
       setForm(emptyForm);
       void Promise.allSettled([queryClient.invalidateQueries({ queryKey: ["dolores", "admin-stores"] })]);
-      void router.push({ pathname: "/admin/stores", query: initialOwnerId ? { ownerId: initialOwnerId } : {} }, undefined, { shallow: true });
+      void router.push({
+        pathname: "/admin/stores",
+        query: { ...(initialOwnerId ? { ownerId: initialOwnerId } : {}), ...(search ? { q: search } : {}) },
+      }, undefined, { shallow: true });
     },
     onError: (error: unknown) => {
       if (error instanceof LocationOwnerMismatchError) {
@@ -131,6 +137,16 @@ function StoresContent() {
     },
   });
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/stores", query }, undefined, { shallow: true });
+  const updateFilters = (ownerId: string, query: string) => {
+    const next: Record<string, string> = {};
+    if (ownerId) next.ownerId = ownerId;
+    if (query) next.q = query;
+    navigate(Object.keys(next).length ? next : undefined);
+  };
+  const submitFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updateFilters(initialOwnerId, searchDraft.trim().slice(0, 100));
+  };
   const submit = (event: FormEvent) => { event.preventDefault(); setRequestError(""); setConfirmOpen(true); };
   const setField = <K extends keyof StoreForm>(key: K, value: StoreForm[K]) => setForm((current) => ({ ...current, [key]: value }));
   const closeConfirmation = () => {
@@ -140,6 +156,14 @@ function StoresContent() {
   const selectedOwner = detailOwner.data;
   const responseOwnerId = detail.data?.ownerId;
   const ownerMismatch = Boolean(initialOwnerId && responseOwnerId && initialOwnerId !== responseOwnerId);
+  const normalizedSearch = search.toLocaleLowerCase("vi-VN");
+  const visibleLocations = listing.data?.locations.filter(({ owner, location }) => {
+    if (initialOwnerId && owner.idaasUserId !== initialOwnerId) return false;
+    if (!normalizedSearch) return true;
+    return [location.name, location.address, location.city, owner.fullName]
+      .filter(Boolean)
+      .some((value) => value?.toLocaleLowerCase("vi-VN").includes(normalizedSearch) ?? false);
+  }) ?? [];
   const title = view === "create" ? "Tạo cửa hàng" : view === "detail" ? detail.data?.name ?? T.STORES.DETAIL : T.STORES.TITLE;
 
   return <>
@@ -151,11 +175,6 @@ function StoresContent() {
       className={styles.pageHeading}
       back={getStoresBackDestination(router.query)}
     />
-    {view === "list" && <div className={styles.pageActions}>
-      <label>{T.STORES.OWNER}<select value={initialOwnerId} onChange={(event) => navigate(event.target.value ? { ownerId: event.target.value } : undefined)}>
-        <option value="">{T.STORES.ALL_OWNERS}</option>{listing.data?.owners.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName}</option>)}
-      </select></label>
-    </div>}
     {view === "create" && <form id="store-create-form" className={styles.panel} onSubmit={submit}>
       <h2>Thông tin cửa hàng</h2>
       <div className={styles.operationsGrid}>
@@ -189,28 +208,48 @@ function StoresContent() {
       </div></section>}
     </>}
 
-    {view !== "detail" && view !== "create" && <>
-      {listing.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+    {view !== "detail" && view !== "create" && <section className={styles.panel}>
+      <h2>{T.STORES.LIST_TITLE}</h2>
+      <TableFilters
+        search={{
+          ariaLabel: T.STORES.SEARCH_LABEL,
+          maxLength: 100,
+          placeholder: T.STORES.SEARCH_PLACEHOLDER,
+          value: searchDraft,
+          onChange: setSearchDraft,
+        }}
+        selects={[{
+          id: "store-owner-filter",
+          ariaLabel: T.STORES.OWNER,
+          value: initialOwnerId,
+          options: [
+            { value: "", label: T.STORES.ALL_OWNERS },
+            ...(listing.data?.owners ?? []).map((owner) => ({ value: owner.idaasUserId, label: owner.fullName })),
+          ],
+          onChange: (ownerId) => updateFilters(ownerId, search),
+        }]}
+        submitLabel={T.STORES.SEARCH_BUTTON}
+        onSubmit={submitFilters}
+      />
+      {listing.isPending && <p role="status">{T.COMMON.LOADING}</p>}
       {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(listing.error)}</p><button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
       {listing.data && <>
         {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
-        <section className={styles.panel}><h2>{listing.data.locations.length} cửa hàng</h2>
-          {listing.data.locations.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
-            rows={listing.data.locations}
-            rowKey={({ location }) => location.id}
-            columns={[
-              { key: "name", header: T.STORES.NAME, render: ({ location }) => location.name },
-              { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
-              { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
-              { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
-              { key: "actions", header: "", render: ({ owner, location }) => (
-                <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId })}>Chi tiết</button>
-              ) },
-            ]}
-          />}
-        </section>
+        {visibleLocations.length === 0 ? <p className={styles.emptyText}>{search || initialOwnerId ? T.STORES.NO_MATCH : T.COMMON.EMPTY}</p> : <DataTable
+          rows={visibleLocations}
+          rowKey={({ location }) => location.id}
+          columns={[
+            { key: "name", header: T.STORES.NAME, render: ({ location }) => location.name },
+            { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
+            { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
+            { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
+            { key: "actions", header: "", render: ({ owner, location }) => (
+              <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId, ...(search ? { q: search } : {}) })}>Chi tiết</button>
+            ) },
+          ]}
+        />}
       </>}
-    </>}
+    </section>}
 
     {confirmOpen && <NotificationDialog
       variant="confirm"
@@ -238,11 +277,18 @@ function StoresContent() {
   </div>
   {view === "list" && (
     <ActionBarConfig>
-      <ButtonBar type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}) }); }}>{T.STORES.CREATE}</ButtonBar>
+      <ButtonBar type="button" onClick={() => { setBlockResubmit(false); setRequestError(""); setForm({ ...emptyForm, ownerId: initialOwnerId }); navigate({ view: "create", ...(initialOwnerId ? { ownerId: initialOwnerId } : {}), ...(search ? { q: search } : {}) }); }}>{T.STORES.CREATE}</ButtonBar>
     </ActionBarConfig>
   )}
   {view === "create" && <ActionBarConfig>
     <ButtonBar ref={saveButtonRef} type="submit" form="store-create-form" disabled={owners.isError || create.isPending || blockResubmit}>{T.STORES.SAVE}</ButtonBar>
+    <ButtonBar
+      type="button"
+      disabled={create.isPending}
+      onClick={() => navigate({ ...(initialOwnerId ? { ownerId: initialOwnerId } : {}), ...(search ? { q: search } : {}) })}
+    >
+      {T.STORES.CANCEL}
+    </ButtonBar>
   </ActionBarConfig>}
   {view === "detail" && <ActionBarConfig>
     <ButtonBar type="button" disabled title={T.STORES.EDIT_UNAVAILABLE}>Chỉnh sửa</ButtonBar>

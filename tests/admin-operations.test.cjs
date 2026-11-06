@@ -107,61 +107,6 @@ test("profile API lists, details, contracts, and history with the Dolores base U
   await assert.rejects(profilesApi.getById("invalid-id"));
 });
 
-test("businesses page delegates Owner, search, status, and pagination filters to IDaaS", async () => {
-  const React = require("react");
-  const { renderToStaticMarkup } = require("react-dom/server");
-  const adminUserSchemas = loadModule("src/schema/admin-users.schema.ts");
-  const { ADMIN_OPERATIONS_MESSAGES } = loadModule("src/text/admin/admin-operations-messages.ts");
-  const ownerUser = {
-    id: ownerId,
-    name: "TEST_DATA IDaaS Owner",
-    email: "owner@example.invalid",
-    roles: ["owner"],
-    tenant_id: null,
-    status: "ACTIVE",
-    email_verified: true,
-    created_at: "2026-10-23T00:00:00Z",
-    updated_at: "2026-10-23T00:00:00Z",
-  };
-  const listResponse = { items: [ownerUser], page: 2, page_size: 20, total: 41 };
-  const listCalls = [];
-  const queryOptions = [];
-  const { default: AdminBusinessesPage } = loadModule("src/pages/admin/businesses.page.tsx", {
-    "next/router": { useRouter: () => ({
-      isReady: true,
-      query: { q: "owner", status: "ACTIVE", page: "2" },
-      push: () => {},
-    }) },
-    "@tanstack/react-query": { useQuery: (options) => {
-      queryOptions.push(options);
-      if (options.queryKey[0] === "idaas" && options.queryKey[2] === "businesses") {
-        return { data: listResponse, isPending: false, isError: false, refetch: () => {} };
-      }
-      return { data: undefined, isPending: true, isError: false, refetch: () => {} };
-    } },
-    "@/apis/admin-users.api": { adminUsersApi: {
-      list: async (params) => { listCalls.push(params); return listResponse; },
-      getById: async () => ownerUser,
-    } },
-    "@/apis/profiles.api": { profilesApi: { getContracts: async () => page([]) } },
-    "@/schema/admin-users.schema": adminUserSchemas,
-    "@/routes/path": { PATH_ADMIN: { STORES: "/admin/stores", USERS: "/admin/users" } },
-    "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES },
-    "./admin-shell": {
-      AdminShell: ({ children }) => children,
-      adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
-    },
-  });
-
-  const html = renderToStaticMarkup(React.createElement(AdminBusinessesPage));
-  const listQuery = queryOptions.find((options) => options.queryKey[0] === "idaas" && options.queryKey[2] === "businesses");
-  assert.equal(listQuery.enabled, true);
-  await listQuery.queryFn({ signal: new AbortController().signal });
-  assert.deepEqual(listCalls, [{ role: "owner", q: "owner", status: "ACTIVE", page: 2, page_size: 20 }]);
-  assert.match(html, /TEST_DATA IDaaS Owner/);
-  assert.match(html, /41 khách hàng/);
-});
-
 test("locations API scopes list and create by the verified Owner UUID", async () => {
   const { client, calls } = clientFor((url, config) => url === "/locations" && config.method === "POST" ? location : url === "/locations" ? [location] : location);
   client.post = async (url, data, config = {}) => { calls.push({ method: "POST", url, data, config }); return { data: location }; };

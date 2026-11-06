@@ -4,10 +4,10 @@ Tài liệu này kiểm kê phần Admin trong frontend hiện tại để làm 
 
 ## 1. Tóm tắt
 
-- Có 9 mục điều hướng Admin: Tổng quan, Doanh nghiệp, Cửa hàng, Hợp đồng, Máy & kho, IoT, Menu, Báo cáo và Thông báo. Màn chi tiết máy nằm dưới Máy & kho.
+- Thông tin Owner trước đây nằm ở trang Doanh nghiệp được xem cùng các tài khoản tại `/admin/users`; Cửa hàng vẫn là màn hình riêng. Màn chi tiết máy nằm dưới Máy & kho.
 - Luồng Admin dùng hai dịch vụ: IDaaS cho đăng nhập và danh sách/chi tiết tài khoản; Dolores cho nghiệp vụ vận hành.
-- Các trang có API đang dùng: tổng quan, danh sách Owner, cửa hàng, hợp đồng, máy/mẫu máy, dữ liệu IoT, menu toàn cục, báo cáo và thông báo/cảnh báo.
-- Trang Doanh nghiệp hiện chỉ đọc danh sách và chi tiết Owner. Các API sửa, vô hiệu hóa, cấp lại mật khẩu tạm đã có wrapper nhưng chưa có nút/luồng Admin gọi chúng.
+- Các trang có API đang dùng: tổng quan, tài khoản, cửa hàng, hợp đồng, máy/mẫu máy, dữ liệu IoT, menu toàn cục, báo cáo và thông báo/cảnh báo.
+- Trang tài khoản hiện đọc danh sách và chi tiết, tạo tài khoản; các API sửa, vô hiệu hóa, cấp lại mật khẩu tạm có wrapper nhưng chưa có luồng Admin tương ứng.
 - Các thao tác chưa thấy ở Admin gồm: sửa/xóa hợp đồng, sửa/xóa máy, chỉnh sửa mẫu máy, acknowledge cảnh báo và quản lý tài khoản Admin.
 
 ## 2. Cấu trúc và quyền truy cập
@@ -17,7 +17,7 @@ Tài liệu này kiểm kê phần Admin trong frontend hiện tại để làm 
 | Màn hình | Route |
 | --- | --- |
 | Tổng quan | `/admin` |
-| Doanh nghiệp / Owner | `/admin/businesses` |
+| Tài khoản | `/admin/users` |
 | Cửa hàng | `/admin/stores` |
 | Hợp đồng | `/admin/contracts` |
 | Danh sách máy, mẫu máy, tạo mới | `/admin/machines` |
@@ -81,12 +81,12 @@ Trong các bảng dưới đây, endpoint được ghi tương đối theo base 
 
 Response được kiểm tra bằng `DashboardOverviewSchema`. Màn hình hiển thị `totalOwners`, `cupsInSelectedPeriod`, `openMaintenanceTickets`, `openInstallationWorkOrders`, dữ liệu `dailyAcceptedCupUsage` và các chỉ số tài chính theo currency. Dữ liệu thiếu được hiển thị bằng dấu gạch ngang hoặc trạng thái trống.
 
-### 4.2 Doanh nghiệp / tài khoản Owner
+### 4.2 Tài khoản / Owner
 
 | Method | Base | Endpoint | Cách dùng / điều kiện |
 | --- | --- | --- | --- |
-| GET | IDaaS | `/admin/users` | Danh sách Owner, `role=owner`, `page` bắt đầu từ 1, `page_size=20`; có thể gửi `q` và `status=ACTIVE\|DISABLED`. |
-| GET | IDaaS | `/admin/users/{userId}` | Chi tiết Owner; chỉ gọi khi `view=detail` và `userId` là UUID hợp lệ. |
+| GET | IDaaS | `/admin/users` | Danh sách tài khoản theo vai trò và trạng thái, `page` bắt đầu từ 1, `page_size=20`; có thể gửi `q`, `role` và `status=ACTIVE\|DISABLED`. |
+| GET | IDaaS | `/admin/users/{userId}` | Chi tiết tài khoản; chỉ gọi khi `view=detail` và `userId` là UUID hợp lệ. |
 | POST | IDaaS | `/admin/users` | Tạo tài khoản Admin Users từ `view=create`; gửi `name`, `email`, `role`, xác nhận trước khi gọi và hiện mật khẩu tạm một lần khi thành công. |
 | GET | Dolores | `/profiles/{idaasUserId}/contracts` | Hợp đồng của Owner trong màn chi tiết; gọi sau khi chi tiết tài khoản tải thành công, `page` bắt đầu từ 0, `size=20`. |
 
@@ -104,7 +104,7 @@ Schema cập nhật tài khoản chỉ chấp nhận `status=ACTIVE`; vô hiệu
 | --- | --- | --- | --- |
 | GET | Dolores | `/profiles?role=OWNER&page={page}&size=100` | Lấy danh sách Owner theo các trang; trang cửa hàng tải tối đa 5 trang song song mỗi lượt để tổng hợp cửa hàng. |
 | GET | IDaaS | `/admin/users?role=owner&page={page}&page_size=100` | Lấy danh sách Owner cho dropdown tạo cửa hàng. |
-| GET | Dolores | `/locations?ownerId={ownerId}` | Đọc địa điểm của từng Owner; các request chạy theo nhóm tối đa 5 Owner. Có thể lọc bằng `ownerId` trên màn danh sách. |
+| GET | Dolores | `/locations?ownerId={ownerId}` | Tải cửa hàng của tất cả Owner; các request chạy theo nhóm tối đa 5 Owner. Bộ lọc Owner trên màn danh sách áp dụng trên dữ liệu đã tải, không gọi lại API. |
 | GET | Dolores | `/locations/{locationId}` | Chi tiết địa điểm; chỉ gọi khi route chứa UUID hợp lệ. |
 | GET | Dolores | `/profiles/{idaasUserId}` | Lấy Owner gắn với địa điểm ở màn chi tiết. |
 | POST | Dolores | `/locations?ownerId={ownerId}` | Tạo cửa hàng cho Owner đã chọn. |

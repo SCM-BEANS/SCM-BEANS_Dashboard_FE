@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Package,
   Receipt,
-  Store,
   Users,
   Utensils,
   Wrench,
@@ -19,12 +18,10 @@ import { getActiveNavigationItem } from "@/components/sidebar/navigation-route";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_ENABLED_PATHS, ADMIN_NAVIGATION_LINKS } from "@/routes/routes";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-import styles from "../admin-shell.module.css";
 
 const NAV_ICONS = {
   LayoutDashboard,
   Users,
-  Store,
   Building2,
   FileText,
   Package,
@@ -49,7 +46,6 @@ export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS
     href: item.HREF,
     icon: NAV_ICONS[item.ICON],
     enabled: ADMIN_ENABLED_PATHS.has(item.HREF),
-    title: ADMIN_ENABLED_PATHS.has(item.HREF) ? undefined : ADMIN_MESSAGES.NAVIGATION.PENDING,
   }));
 
 export function getCurrentAdminSection(pathname: string): NavigationItem {
@@ -69,7 +65,6 @@ export function AdminSidebarMenu({ loggingOut, onLogout }: { loggingOut: boolean
       rootHref={PATH_ADMIN.ROOT}
       navigationLabel={"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}
       items={ADMIN_SIDEBAR_ITEMS}
-      footer={<p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>}
       logout={{
         label: ADMIN_MESSAGES.AUTH.LOGOUT,
         pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT,

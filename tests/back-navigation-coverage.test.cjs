@@ -42,8 +42,6 @@ function count(sourceText, pattern) {
 test("admin route inventory maps every nested detail and create view to an internal parent", () => {
   const destinations = loadAdminBackDestinations();
   const cases = [
-    ["businesses detail", destinations.getBusinessesBackDestination({ view: "detail", q: "owner", status: "ACTIVE", page: "3" }), `${PATH_ADMIN.BUSINESSES}?q=owner&status=ACTIVE&page=3`],
-    ["businesses list", destinations.getBusinessesBackDestination({ q: "owner" }), null],
     ["stores detail", destinations.getStoresBackDestination({ view: "detail", ownerId: "owner-12" }), `${PATH_ADMIN.STORES}?ownerId=owner-12`],
     ["stores create", destinations.getStoresBackDestination({ view: "create", ownerId: "owner-12" }), `${PATH_ADMIN.STORES}?ownerId=owner-12`],
     ["stores list", destinations.getStoresBackDestination({ view: "list" }), null],
@@ -74,7 +72,6 @@ test("admin route inventory maps every nested detail and create view to an inter
 
 test("each admin create/detail page renders one shared heading back control and removes duplicate parent actions", () => {
   const routeScreens = [
-    ["src/pages/admin/businesses/index.page.tsx", "getBusinessesBackDestination", 1],
     ["src/pages/admin/stores/index.page.tsx", "getStoresBackDestination", 1],
     ["src/pages/admin/machines/index.page.tsx", "getMachinesBackDestination", 1],
     ["src/pages/admin/contracts/index.page.tsx", "getContractsBackDestination", 1],

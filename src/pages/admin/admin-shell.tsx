@@ -113,7 +113,6 @@ export function AdminShell({
                 pending: loggingOut,
                 onLogout: handleLogout,
               }}
-              footer={<p className={styles.sidebarFootnote}>{ADMIN_MESSAGES.NAVIGATION.PENDING}</p>}
             />
           </header>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>
