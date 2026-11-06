@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { Bell, Coffee, FileText, LayoutDashboard, MapPin, Package, Utensils, Wrench } from "lucide-react";
+import { Bell, Coffee, FileText, LayoutDashboard, MapPin, Package, Settings, Utensils, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -24,6 +24,7 @@ const NAV_ICONS = {
   LayoutDashboard,
   MapPin,
   Package,
+  Settings,
   Utensils,
   Wrench,
 } as const;
@@ -125,13 +126,13 @@ export function CustomerShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} />
             <MobileNavigation
               items={CUSTOMER_SIDEBAR_ITEMS}
               pathname={pathname}

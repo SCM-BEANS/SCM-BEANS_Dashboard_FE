@@ -9,6 +9,7 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { DASHBOARD_BUSINESS_TIME_ZONE, DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { PATH_ADMIN } from "@/routes/path";
@@ -327,9 +328,9 @@ function ReportContent() {
               <h2>Thông tin hóa đơn thuê</h2>
               <dl className={styles.reportInvoiceDetailGrid}>
                 {[
-                  { label: "Mã hóa đơn", value: selectedInvoice.id },
-                  { label: "Owner ID", value: selectedInvoice.ownerId },
-                  { label: "Hợp đồng", value: selectedInvoice.contractId ?? "—" },
+                  { label: "Mã hóa đơn", value: <TruncatedId value={selectedInvoice.id} /> },
+                  { label: "Owner ID", value: <TruncatedId value={selectedInvoice.ownerId} /> },
+                  { label: "Hợp đồng", value: <TruncatedId value={selectedInvoice.contractId} /> },
                   { label: "Loại hóa đơn", value: invoiceTypeLabel(selectedInvoice.type) },
                   { label: "Kỳ hóa đơn", value: selectedInvoice.period },
                   { label: "Số tiền", value: displayAmount(selectedInvoice.amount, selectedInvoice.currency) },
@@ -607,10 +608,10 @@ function ReportContent() {
               rows={rentalInvoices}
               rowKey={(invoice) => invoice.id}
               columns={[
-                { key: "invoice-id", header: "Mã hóa đơn", render: (invoice) => <span className={styles.reportInvoiceId}>{invoice.id}</span> },
+                { key: "invoice-id", header: "Mã hóa đơn", render: (invoice) => <span className={styles.reportInvoiceId}><TruncatedId value={invoice.id} /></span> },
                 { key: "period", header: ADMIN_MESSAGES.REPORTS.INVOICE_PERIOD, render: (invoice) => invoice.period },
-                { key: "owner", header: ADMIN_MESSAGES.REPORTS.OWNER_ID, render: (invoice) => invoice.ownerId },
-                { key: "contract", header: ADMIN_MESSAGES.REPORTS.CONTRACT_ID, render: (invoice) => invoice.contractId ?? "—" },
+                { key: "owner", header: ADMIN_MESSAGES.REPORTS.OWNER_ID, render: (invoice) => <TruncatedId value={invoice.ownerId} /> },
+                { key: "contract", header: ADMIN_MESSAGES.REPORTS.CONTRACT_ID, render: (invoice) => <TruncatedId value={invoice.contractId} /> },
                 { key: "amount", header: ADMIN_MESSAGES.REPORTS.AMOUNT, render: (invoice) => displayAmount(invoice.amount, invoice.currency) },
                 {
                   key: "status",

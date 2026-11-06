@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { Bell, ClipboardCheck, Coffee, Package, Wrench } from "lucide-react";
+import { Bell, ClipboardCheck, Coffee, Package, Settings, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -22,6 +22,7 @@ const NAV_ICONS = {
   ClipboardCheck,
   Coffee,
   Package,
+  Settings,
   Wrench,
 } as const;
 
@@ -122,13 +123,13 @@ export function TechnicianShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{TECHNICIAN_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} />
             <MobileNavigation
               items={TECHNICIAN_SIDEBAR_ITEMS}
               pathname={pathname}

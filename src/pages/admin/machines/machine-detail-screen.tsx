@@ -16,6 +16,7 @@ import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -224,7 +225,7 @@ function MachineDetailContent() {
       <BackButtonHeading
         title={`${T.MACHINES.DETAIL} · ${device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}`}
         titleId="admin-machine-detail-title"
-        description={device.id}
+        description={<TruncatedId value={device.id} />}
         className={styles.pageHeading}
         back={getMachineDetailBackDestination(router.query)}
       />
@@ -274,19 +275,19 @@ function MachineDetailContent() {
               <section className={styles.machineProfileGroup}>
                 <h3>Nhận diện máy</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.MACHINE_ID}</span><strong>{device.id}</strong></div>
+                  <div><span>{T.MACHINES.MACHINE_ID}</span><strong><TruncatedId value={device.id} /></strong></div>
                   <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
                 </div>
               </section>
               <section className={styles.machineProfileGroup}>
                 <h3>Phân bổ và hợp đồng</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.OWNER_ID}</span><strong>{device.ownerId ?? "—"}</strong></div>
-                  <div><span>{T.MACHINES.TENANT_ID}</span><strong>{device.tenantId ?? "—"}</strong></div>
+                  <div><span>{T.MACHINES.OWNER_ID}</span><strong><TruncatedId value={device.ownerId} /></strong></div>
+                  <div><span>{T.MACHINES.TENANT_ID}</span><strong><TruncatedId value={device.tenantId} /></strong></div>
                   <div><span>{T.MACHINES.OWNER_TYPE}</span><strong>{device.ownerType ?? "—"}</strong></div>
                   <div><span>{T.MACHINES.REGION}</span><strong>{device.region ?? "—"}</strong></div>
-                  <div><span>{T.MACHINES.LOCATION}</span><strong>{machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? device.locationId ?? "—" : machineLocation.data?.name ?? device.locationId ?? "—"}</strong></div>
-                  <div><span>{T.MACHINES.LOCATION_ID}</span><strong>{device.locationId ?? "—"}</strong></div>
+                  <div><span>{T.MACHINES.LOCATION}</span><strong>{machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? <TruncatedId value={device.locationId} /> : machineLocation.data?.name ?? <TruncatedId value={device.locationId} />}</strong></div>
+                  <div><span>{T.MACHINES.LOCATION_ID}</span><strong><TruncatedId value={device.locationId} /></strong></div>
                   <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
                   <div><span>{T.MACHINES.CONTRACT_PERIOD}</span><strong>{device.contractStartDate || device.contractEndDate ? formatDate(device.contractStartDate) + " – " + formatDate(device.contractEndDate) : "—"}</strong></div>
                   <div><span>{T.MACHINES.MONTHLY_RENTAL_FEE}</span><strong>{device.monthlyRentalFee == null ? "—" : formatNumber(device.monthlyRentalFee) + " ₫/tháng"}</strong></div>
@@ -376,11 +377,11 @@ function MachineDetailContent() {
           rows={maintenanceTickets.data}
           rowKey={(ticket, index) => ticket.id ?? `${ticket.machineId}-${index}`}
           columns={[
-            { key: "ticket-id", header: T.MACHINES.TICKET_ID, render: (ticket) => ticket.id ?? "—" },
-            { key: "machine-id", header: T.MACHINES.MACHINE_ID, render: (ticket) => ticket.machineId ?? "—" },
+            { key: "ticket-id", header: T.MACHINES.TICKET_ID, render: (ticket) => <TruncatedId value={ticket.id} /> },
+            { key: "machine-id", header: T.MACHINES.MACHINE_ID, render: (ticket) => <TruncatedId value={ticket.machineId} /> },
             { key: "status", header: T.MACHINES.STATUS, render: (ticket) => ticket.status ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : "—" },
             { key: "scheduled", header: T.MACHINES.SCHEDULED, render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline, true) },
-            { key: "technician", header: T.MACHINES.TECHNICIAN, render: (ticket) => ticket.assignedTechnicianId ?? ticket.assignedTo ?? "—" },
+            { key: "technician", header: T.MACHINES.TECHNICIAN, render: (ticket) => ticket.assignedTechnicianId ? <TruncatedId value={ticket.assignedTechnicianId} /> : ticket.assignedTo ?? "—" },
             { key: "result", header: T.MACHINES.DIAGNOSIS, render: (ticket) => ticket.resolutionResult ?? ticket.diagnosis ?? ticket.notes ?? "—" },
             { key: "completed", header: T.MACHINES.COMPLETED, render: (ticket) => formatDate(ticket.completedAt, true) },
           ]}

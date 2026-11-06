@@ -1,6 +1,6 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { Bell, X } from "lucide-react";
+import { Bell, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
@@ -18,6 +18,7 @@ interface NotificationInboxProps {
   title?: string;
   description?: string;
   viewAllHref?: string;
+  settingsHref?: string;
   back?: BackButtonDestination | null;
   showOwnerId?: boolean;
   onRefreshExtra?: () => Promise<unknown>;
@@ -52,6 +53,7 @@ export function NotificationInbox({
   title,
   description,
   viewAllHref,
+  settingsHref,
   back = null,
   showOwnerId = false,
   onRefreshExtra,
@@ -93,19 +95,31 @@ export function NotificationInbox({
     const unreadTotal = unreadCount.data?.unreadCount ?? 0;
     return (
       <div className={styles.bellContainer}>
-        <button
-          className={styles.bellButton}
-          type="button"
-          aria-label={`${messages.LIST_TITLE}: ${unreadTotal} ${messages.UNREAD.toLocaleLowerCase()}`}
-          aria-expanded={bellOpen}
-          aria-controls={`notification-popover-${scope}`}
-          onClick={() => setBellOpen((open) => !open)}
-        >
-          <Bell aria-hidden="true" size={20} />
-          {unreadTotal > 0 && (
-            <span className={styles.bellBadge} aria-hidden="true">{unreadTotal > 99 ? "99+" : unreadTotal}</span>
-          )}
-        </button>
+        <div className={styles.bellActions}>
+          <button
+            className={styles.bellButton}
+            type="button"
+            aria-label={`${messages.LIST_TITLE}: ${unreadTotal} ${messages.UNREAD.toLocaleLowerCase()}`}
+            aria-expanded={bellOpen}
+            aria-controls={`notification-popover-${scope}`}
+            onClick={() => setBellOpen((open) => !open)}
+          >
+            <Bell aria-hidden="true" size={20} />
+            {unreadTotal > 0 && (
+              <span className={styles.bellBadge} aria-hidden="true">{unreadTotal > 99 ? "99+" : unreadTotal}</span>
+            )}
+          </button>
+          {(settingsHref || viewAllHref) ? (
+            <Link
+              className={styles.settingsButton}
+              href={settingsHref ?? viewAllHref!}
+              aria-label={settingsHref ? "Cài đặt hồ sơ" : "Quản lý thông báo"}
+              title={settingsHref ? "Cài đặt hồ sơ" : "Quản lý thông báo"}
+            >
+              <Settings aria-hidden="true" size={20} />
+            </Link>
+          ) : null}
+        </div>
         {bellOpen && (
           <section
             className={styles.popover}

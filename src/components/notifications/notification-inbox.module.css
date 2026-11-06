@@ -271,6 +271,12 @@
   flex: 0 0 auto;
 }
 
+.bellActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .bellButton {
   position: relative;
   display: grid;
@@ -287,6 +293,28 @@
 
 .bellButton:hover {
   background: #f8f6f3;
+}
+
+.settingsButton {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #302927;
+  text-decoration: none;
+}
+
+.settingsButton:hover {
+  background: #f8f6f3;
+}
+
+.settingsButton:focus-visible {
+  outline: 3px solid #b81724;
+  outline-offset: 3px;
 }
 
 .bellBadge {

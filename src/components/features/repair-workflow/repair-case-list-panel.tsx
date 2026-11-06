@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { RepairCaseSummary } from "@/schema/machines.schema";
@@ -55,12 +56,12 @@ export function RepairCaseListPanel({
       key: "case-id",
       header: M.CASE_ID,
       render: (repairCase) => (
-        <TextLinkButton href={detailHref(repairCase.id)}>{repairCase.id}</TextLinkButton>
+        <TextLinkButton href={detailHref(repairCase.id)}><TruncatedId value={repairCase.id} /></TextLinkButton>
       ),
     },
-    { key: "request-id", header: M.REQUEST_ID, render: (repairCase) => repairCase.maintenanceRequestId },
-    ...(showOwner ? [{ key: "owner", header: M.OWNER, render: (repairCase: RepairCaseSummary) => repairCase.ownerId }] : []),
-    { key: "machine", header: M.MACHINE, render: (repairCase) => repairCase.primaryMachineId },
+    { key: "request-id", header: M.REQUEST_ID, render: (repairCase) => <TruncatedId value={repairCase.maintenanceRequestId} /> },
+    ...(showOwner ? [{ key: "owner", header: M.OWNER, render: (repairCase: RepairCaseSummary) => <TruncatedId value={repairCase.ownerId} /> }] : []),
+    { key: "machine", header: M.MACHINE, render: (repairCase) => <TruncatedId value={repairCase.primaryMachineId} /> },
     { key: "status", header: M.STATUS, render: (repairCase) => statusLabel(repairCase.status) },
     { key: "updated-at", header: M.UPDATED_AT, render: (repairCase) => formatDateTime(repairCase.updatedAt) },
   ];

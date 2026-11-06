@@ -51,6 +51,7 @@ export const PATH_ADMIN =  {
   BUYBACKS: `${ADMIN_ROOT}/buybacks`,
   INVOICE_DETAIL: (id: string) => `${ADMIN_ROOT}/invoices/${encodeURIComponent(id)}`,
   NOTIFICATIONS: `${ADMIN_ROOT}/notifications`,
+  SETTINGS: `${ADMIN_ROOT}/settings`,
   CONTRACT_DETAIL: (id: string) => `${ADMIN_ROOT}/contracts?view=detail&id=${encodeURIComponent(id)}`,
   CONTRACT_TERMINATION: (id: string) => `${ADMIN_ROOT}/contracts/${encodeURIComponent(id)}/termination`,
   MACHINE_OPERATIONAL_OVERVIEW: (id: string) => `${ADMIN_ROOT}/machines/${encodeURIComponent(id)}/operations`,
@@ -137,6 +138,7 @@ export const PATH_MODERATOR =  {
   BUYBACK_DOCUMENTS: MODERATOR_ROOT + "/buyback/documents",
   BUYBACK_REFURBISHMENT: MODERATOR_ROOT + "/buyback/refurbishment",
   NOTIFICATIONS: MODERATOR_ROOT + "/notifications",
+  SETTINGS: MODERATOR_ROOT + "/settings",
   NOTIFICATION_ALERTS: MODERATOR_ROOT + "/notifications/alerts",
   CONTRACT_TERMINATION: (id: string) => MODERATOR_ROOT + "/contracts/" + encodeURIComponent(id) + "/termination",
   MACHINE_MODELS: MODERATOR_ROOT + "/machines/models",
@@ -200,6 +202,7 @@ export const PATH_CUSTOMER =  {
   BUYBACK_DOCUMENTS_CONFIRMED: `${CUSTOMER_ROOT}/buyback/documents/confirmed`,
   BUYBACK_ISSUE: `${CUSTOMER_ROOT}/buyback/issue`,
   NOTIFICATIONS: `${CUSTOMER_ROOT}/notifications`,
+  SETTINGS: `${CUSTOMER_ROOT}/settings`,
   CONTRACT_TERMINATION: (id: string) => `${CUSTOMER_ROOT}/contracts/${encodeURIComponent(id)}/termination`,
   MACHINE_OPERATIONAL_OVERVIEW: (id: string) => `${CUSTOMER_ROOT}/machines/${encodeURIComponent(id)}/operations`
 } as const;
@@ -227,5 +230,6 @@ export const PATH_TECHNICIAN =  {
   MACHINE_CHECK_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/machine-check/${encodeURIComponent(id)}`,
   HISTORY: `${TECHNICIAN_ROOT}/history`,
   MACHINE_HISTORY_DETAIL: (id: string) => `${TECHNICIAN_ROOT}/history/${encodeURIComponent(id)}`,
-  NOTIFICATIONS: `${TECHNICIAN_ROOT}/notifications`
+  NOTIFICATIONS: `${TECHNICIAN_ROOT}/notifications`,
+  SETTINGS: `${TECHNICIAN_ROOT}/settings`
 } as const;

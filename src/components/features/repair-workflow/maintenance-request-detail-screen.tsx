@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { machinesApi } from "@/apis/machines.api";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -48,7 +49,7 @@ function scheduleLabel(request: MaintenanceRequest): string {
   return formatDate(request.scheduledDueAt);
 }
 
-function DetailValue({ label, value, code = false }: { label: string; value: string; code?: boolean }) {
+function DetailValue({ label, value, code = false }: { label: string; value: ReactNode; code?: boolean }) {
   return (
     <div className={styles.detailItem}>
       <dt>{label}</dt>
@@ -61,11 +62,11 @@ function MaintenanceRequestDetails({ request }: { request: MaintenanceRequest })
   return (
     <>
       <dl className={styles.detailGrid}>
-        <DetailValue label={messages.TECHNICAL_ID} value={request.id} code />
+        <DetailValue label={messages.TECHNICAL_ID} value={<TruncatedId value={request.id} />} code />
         <DetailValue label={messages.TECHNICAL_TYPE} value={typeLabel(request)} />
-        <DetailValue label={messages.TECHNICAL_OWNER} value={request.ownerId ?? "—"} code />
-        <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={request.contractId ?? "—"} code />
-        <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={request.machineId} code />
+        <DetailValue label={messages.TECHNICAL_OWNER} value={<TruncatedId value={request.ownerId} />} code />
+        <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={<TruncatedId value={request.contractId} />} code />
+        <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={request.machineId} />} code />
         <DetailValue label={messages.TECHNICAL_SCHEDULED} value={scheduleLabel(request)} />
         <DetailValue label={messages.TECHNICAL_STATUS} value={statusLabels[request.status]} />
         <DetailValue label={messages.TECHNICAL_TICKET} value={request.maintenanceTicketId ?? "—"} code />

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import {
@@ -159,10 +160,10 @@ export function DirectReplacementAssignmentPanel({
           ) : null}
           {displayedAssignment ? (
             <dl className={styles.details}>
-              <div><dt>Mã assignment</dt><dd>{displayedAssignment.id}</dd></div>
+              <div><dt>Mã assignment</dt><dd><TruncatedId value={displayedAssignment.id} /></dd></div>
               <div><dt>Trạng thái</dt><dd>{displayedAssignment.status}</dd></div>
-              <div><dt>Máy chính</dt><dd>{displayedAssignment.primaryMachineId}</dd></div>
-              <div><dt>Máy thay thế</dt><dd>{displayedAssignment.replacementMachineId}</dd></div>
+              <div><dt>Máy chính</dt><dd><TruncatedId value={displayedAssignment.primaryMachineId} /></dd></div>
+              <div><dt>Máy thay thế</dt><dd><TruncatedId value={displayedAssignment.replacementMachineId} /></dd></div>
               <div><dt>Khoảng thời gian</dt><dd>{displayedAssignment.startAt} – {displayedAssignment.endAt}</dd></div>
             </dl>
           ) : null}

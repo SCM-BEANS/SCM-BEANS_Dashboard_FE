@@ -89,7 +89,7 @@ export function AdminShell({
               rootLabel={ADMIN_MESSAGES.ROLE}
               currentLabel={currentSection.LABEL}
             />
-            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
+            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} settingsHref={PATH_ADMIN.SETTINGS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_ADMIN.ROOT}>
@@ -98,7 +98,7 @@ export function AdminShell({
             <span className={styles.mobileHeaderStatus}>
               {currentSection.LABEL}
             </span>
-            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
+            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} settingsHref={PATH_ADMIN.SETTINGS} />
             <MobileNavigation
               items={ADMIN_SIDEBAR_ITEMS}
               pathname={router.asPath || router.pathname}

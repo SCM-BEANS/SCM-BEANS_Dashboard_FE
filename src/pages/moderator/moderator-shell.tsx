@@ -8,6 +8,7 @@ import {
   FileText,
   LayoutDashboard,
   Package,
+  Settings,
   Users,
   Utensils,
   Wrench,
@@ -42,6 +43,7 @@ const NAV_ICONS = {
   LayoutDashboard,
   MapPin,
   Package,
+  Settings,
   Users,
   Utensils,
   Wrench,
@@ -187,13 +189,13 @@ export function ModeratorShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             {renderBreadcrumb()}
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} />
             <MobileNavigation
               items={MODERATOR_SIDEBAR_ITEMS}
               pathname={pathname}

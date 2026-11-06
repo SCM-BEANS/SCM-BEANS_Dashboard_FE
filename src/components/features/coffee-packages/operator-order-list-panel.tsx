@@ -1,5 +1,6 @@
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -27,8 +28,8 @@ export function OperatorOrderListPanel({
             <thead><tr><th>Đơn hàng</th><th>Owner / hợp đồng</th><th>Gói cà phê</th><th className={styles.numeric}>Số lượng</th><th className={styles.numeric}>Thành tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th /></tr></thead>
             <tbody>{workflow.orders.data.items.map((order) => (
               <tr key={order.id} className={workflow.selectedOrderId === order.id ? styles.selectedRow : undefined}>
-                <td className={styles.code}>{order.id.slice(0, 8).toUpperCase()}</td>
-                <td><span className={styles.code}>{order.ownerId?.slice(0, 8).toUpperCase() ?? "—"}</span><br /><span className={styles.muted}>HĐ {order.contractId?.slice(0, 8).toUpperCase() ?? "—"}</span></td>
+                <td className={styles.code}><TruncatedId value={order.id} /></td>
+                <td><span className={styles.code}><TruncatedId value={order.ownerId} /></span><br /><span className={styles.muted}>HĐ <TruncatedId value={order.contractId} /></span></td>
                 <td>{order.packageName ?? order.packageCode ?? "—"}</td>
                 <td className={styles.numeric}>{order.quantity ?? "—"}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</td>

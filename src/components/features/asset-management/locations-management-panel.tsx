@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { LocationCreateSchema, type LocationCreate } from "@/schema/locations.schema";
@@ -190,7 +191,7 @@ export function LocationsManagementPanel({
             { key: "address", header: "Địa chỉ", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
             { key: "machines", header: "Số máy", render: (location) => location.machineCount ?? "—" },
             { key: "status", header: "Trạng thái", render: (location) => location.active === false ? "Ngừng hoạt động" : "Hoạt động" },
-            { key: "id", header: "UUID", render: (location) => <span className={styles.code}>{location.id}</span> },
+            { key: "id", header: "UUID", render: (location) => <span className={styles.code}><TruncatedId value={location.id} /></span> },
           ]}
         />}
         {locations.hasNextPage && <div className={styles.actions}>

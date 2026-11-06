@@ -22,6 +22,19 @@ export const profilesApi = {
     });
     return ProfilePageSchema.parse(response.data);
   },
+  async getCurrent(signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>("/profiles/me", {
+      baseURL: DOLORES_API_BASE_URL, signal,
+    });
+    return ProfileSchema.parse(response.data);
+  },
+  async updateCurrentContactInfo(input: UpdateProfileContactRequest) {
+    const request = UpdateProfileContactRequestSchema.parse(input);
+    const response = await axiosClient.put<unknown>("/profiles/me/contact-info", request, {
+      baseURL: DOLORES_API_BASE_URL,
+    });
+    return ProfileSchema.parse(response.data);
+  },
   async getById(id: string, signal?: AbortSignal) {
     const validId = ProfileIdSchema.parse(id);
     const response = await axiosClient.get<unknown>(profilePath(validId), { baseURL: DOLORES_API_BASE_URL, signal });

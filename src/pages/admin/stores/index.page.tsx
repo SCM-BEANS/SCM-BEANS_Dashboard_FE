@@ -6,6 +6,7 @@ import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
@@ -199,13 +200,13 @@ function StoresContent() {
       {ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
       {detail.data && !ownerMismatch && <section className={styles.panel}><h2>{T.STORES.DETAIL}</h2><div className={styles.operationsGrid}>
         <div><span>{T.STORES.NAME}</span><strong>{detail.data.name}</strong></div>
-        <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? (detail.data.ownerId ?? "—")}</strong></div>
+        <div><span>{T.STORES.OWNER}</span><strong>{selectedOwner?.fullName ?? <TruncatedId value={detail.data.ownerId} />}</strong></div>
         <div><span>{T.STORES.ADDRESS}</span><strong>{detail.data.address || "—"}</strong></div>
         <div><span>{T.STORES.CITY}</span><strong>{detail.data.city || "—"}</strong></div>
         <div><span>{T.STORES.CONTACT}</span><strong>{detail.data.contactPerson || "—"}</strong></div>
         <div><span>{T.STORES.PHONE}</span><strong>{detail.data.phoneNumber || "—"}</strong></div>
         <div><span>Trạng thái</span><strong>{detail.data.active == null ? "—" : <StatusBadge status={detail.data.active ? "ACTIVE" : "INACTIVE"}>{detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge>}</strong></div>
-        <div><span>Mã cửa hàng</span><strong>{detail.data.id}</strong></div>
+        <div><span>Mã cửa hàng</span><strong><TruncatedId value={detail.data.id} /></strong></div>
       </div></section>}
     </>}
 

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 
 import Link from "next/link";
 
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 
@@ -110,11 +111,11 @@ function PageHeading({ title, description }: { title: string; description: strin
   return <BackButtonHeading title={title} titleId="technical-operations-heading" description={description} className={styles.pageHeading} back={null} />;
 }
 
-function ActionLink({ href, children }: { href: string; children: string }) {
+function ActionLink({ href, children }: { href: string; children: ReactNode }) {
   return <Link className={styles.tableLink} href={href}>{children}</Link>;
 }
 
-function DetailValue({ label, value, code = false }: { label: string; value: string | number; code?: boolean }) {
+function DetailValue({ label, value, code = false }: { label: string; value: ReactNode; code?: boolean }) {
   return (
     <div className={styles.detailItem}>
       <dt>{label}</dt>
@@ -139,9 +140,9 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role }:
     >
       {visibleTickets.map((ticket, index) => (
         <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-          <td className={styles.codeValue}>{ticket.id ?? "—"}</td>
+          <td className={styles.codeValue}>{ticket.id ? <TruncatedId value={ticket.id} /> : "—"}</td>
           <td>{ticket.machineId
-            ? <ActionLink href={machineDetailHref(ticket.machineId)}>{ticket.machineId}</ActionLink>
+            ? <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
             : "—"}</td>
           <td>{ticket.status
             ? role === "admin" ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : ticket.status
@@ -175,7 +176,7 @@ function MaintenanceRequestTable({
     {
       key: "id",
       header: messages.TECHNICAL_ID,
-      render: (request) => <TextLinkButton href={routes.requestDetail(request.id)}>{request.id}</TextLinkButton>,
+      render: (request) => <TextLinkButton href={routes.requestDetail(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
     },
     { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => requestTypeLabel(request.requestType) },
     ...(role === "admin" ? [{
@@ -187,7 +188,7 @@ function MaintenanceRequestTable({
       key: "owner",
       header: messages.TECHNICAL_OWNER,
       cellProps: () => ({ className: styles.codeValue }),
-      render: (request) => request.ownerId ?? "—",
+      render: (request) => <TruncatedId value={request.ownerId} />,
     },
     { key: "updated", header: messages.TECHNICAL_UPDATED, render: (request) => formatDate(request.updatedAt ?? request.createdAt) },
     {
@@ -243,13 +244,13 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
   const workOrder = details.workOrder;
   return <>
     <dl className={styles.detailGrid}>
-      <DetailValue label={messages.TECHNICAL_ID} value={workOrder.id} code />
+      <DetailValue label={messages.TECHNICAL_ID} value={<TruncatedId value={workOrder.id} />} code />
       <DetailValue label={messages.TECHNICAL_STATUS} value={workOrder.status} />
-      <DetailValue label={messages.TECHNICAL_TENANT} value={workOrder.ownerId} code />
-      <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={workOrder.contractId} code />
-      <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={workOrder.machineId} code />
+      <DetailValue label={messages.TECHNICAL_TENANT} value={<TruncatedId value={workOrder.ownerId} />} code />
+      <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={<TruncatedId value={workOrder.contractId} />} code />
+      <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={workOrder.machineId} />} code />
       <DetailValue label={messages.MACHINE_TYPE} value={workOrder.machineType} />
-      <DetailValue label={messages.TECHNICAL_ASSIGNEE} value={workOrder.assignedTechnicianId ?? "—"} code />
+      <DetailValue label={messages.TECHNICAL_ASSIGNEE} value={<TruncatedId value={workOrder.assignedTechnicianId} />} code />
       <DetailValue label={messages.TECHNICAL_SCHEDULED} value={formatDate(workOrder.scheduledFor)} />
       <DetailValue label={messages.TECHNICAL_STARTED} value={formatDate(workOrder.startedAt)} />
       <DetailValue label={messages.TECHNICAL_COMPLETED} value={formatDate(workOrder.completedAt)} />

@@ -14,6 +14,7 @@ export const CUSTOMER_MESSAGES = {
     BUYBACK: "Thu mua máy cũ",
     RECALLS: "Thu hồi máy",
     NOTIFICATIONS: "Thông báo",
+    SETTINGS: "Cài đặt",
     NAVIGATION_LABEL: "Điều hướng Khách hàng",
     ALL_PAGES_LABEL: "Tất cả trang Khách hàng",
     OPEN_MENU: "Mở menu điều hướng",

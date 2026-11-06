@@ -7,6 +7,7 @@ import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } from "@/schema/buybacks.schema";
@@ -208,12 +209,12 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     {
       key: "case-id",
       header: "Mã hồ sơ",
-      render: (item) => <TextLinkButton href={caseDetailsHref(item.id)}>{item.id}</TextLinkButton>,
+      render: (item) => <TextLinkButton href={caseDetailsHref(item.id)}><TruncatedId value={item.id} /></TextLinkButton>,
     },
     {
       key: "machine",
       header: "Thiết bị",
-      render: (item) => item.machineSerialNumber ?? item.assetSerial ?? (item.machineId ? `Máy ${item.machineId}` : "Chờ kiểm tra"),
+      render: (item) => item.machineSerialNumber ?? item.assetSerial ?? (item.machineId ? <>Máy <TruncatedId value={item.machineId} /></> : "Chờ kiểm tra"),
     },
     {
       key: "price",
@@ -434,7 +435,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
           onClose={closeAcceptanceDialog}
           closeOnEscape={!workflow.startInspection.isPending}
         >
-          <p className={styles.formHint}>Mã hồ sơ: <span className={styles.codeValue}>{acceptanceCase.id}</span></p>
+          <p className={styles.formHint}>Mã hồ sơ: <span className={styles.codeValue}><TruncatedId value={acceptanceCase.id} /></span></p>
           {workflow.startInspection.isError ? <BuybackErrorNotice error={workflow.startInspection.error} /> : null}
         </NotificationDialog>
       ) : null}
@@ -597,7 +598,7 @@ export function BuybackCaseSummary({ caseData, role }: { caseData: BuybackCase; 
 
   return (
     <dl className={styles.detailGrid}>
-      <div className={styles.detailItem}><dt>Mã hồ sơ</dt><dd className={styles.codeValue}>{caseData.id}</dd></div>
+      <div className={styles.detailItem}><dt>Mã hồ sơ</dt><dd className={styles.codeValue}><TruncatedId value={caseData.id} /></dd></div>
       {isExternalBuyback ? <>
         <div className={styles.detailItem}><dt>Máy thu mua</dt><dd>{caseData.machineModelName ?? caseData.assetModelLabel ?? "Đang chờ Technician kiểm tra"}</dd></div>
         {caseData.machineSerialNumber ?? caseData.assetSerial ? <div className={styles.detailItem}><dt>Số serial</dt><dd className={styles.codeValue}>{caseData.machineSerialNumber ?? caseData.assetSerial}</dd></div> : null}
@@ -610,9 +611,9 @@ export function BuybackCaseSummary({ caseData, role }: { caseData: BuybackCase; 
           <div className={styles.detailItem}><dt>Giá đã được duyệt</dt><dd>{formatBuybackMoney(caseData.approvedPrice, caseData.currency)}</dd></div>
           <div className={styles.detailItem}><dt>Giá được Owner chấp nhận</dt><dd>{formatBuybackMoney(caseData.acceptedPrice, caseData.currency)}</dd></div>
         </>}
-        {caseData.registeredMachineId ? <div className={styles.detailItem}><dt>Mã máy Dolores</dt><dd className={styles.codeValue}>{caseData.registeredMachineId}</dd></div> : null}
+        {caseData.registeredMachineId ? <div className={styles.detailItem}><dt>Mã máy Dolores</dt><dd className={styles.codeValue}><TruncatedId value={caseData.registeredMachineId} /></dd></div> : null}
       </> : <>
-        <div className={styles.detailItem}><dt>Hợp đồng / máy</dt><dd className={styles.codeValue}>{caseData.contractId ?? "—"}<br />{caseData.machineId ?? "—"}</dd></div>
+        <div className={styles.detailItem}><dt>Hợp đồng / máy</dt><dd className={styles.codeValue}><TruncatedId value={caseData.contractId} /><br /><TruncatedId value={caseData.machineId} /></dd></div>
         {role === "owner" ? (
           <div className={styles.detailItem}><dt>Giá đã duyệt</dt><dd>{formatBuybackMoney(caseData.approvedPrice, caseData.currency)}</dd></div>
         ) : <>

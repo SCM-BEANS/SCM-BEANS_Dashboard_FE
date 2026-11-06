@@ -1,0 +1,394 @@
+.pageContent {
+  display: flex;
+  width: min(100%, 1440px);
+  min-height: 100%;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 32px 112px;
+  margin: 0 auto;
+}
+
+.pageHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pageHeading h1 {
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.4;
+}
+
+.pageHeading p {
+  margin: 6px 0 0;
+  color: #706561;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.profileCard {
+  overflow: hidden;
+  border: 1px solid #e9e2dc;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgb(48 41 39 / 4%);
+}
+
+.profileHero {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 30px 32px;
+  background: linear-gradient(115deg, #fff 0%, #fcf7f5 100%);
+  border-bottom: 1px solid #eee8e4;
+}
+
+.avatar {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  place-items: center;
+  border: 4px solid #f7e9e7;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #bd343b, #8e2028);
+  box-shadow: 0 5px 14px rgb(142 32 40 / 20%);
+  color: #fff;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.identity h2 {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: #302927;
+  font-size: 25px;
+  line-height: 1.3;
+}
+
+.identityEmail {
+  overflow-wrap: anywhere;
+  margin: 5px 0 14px;
+  color: #706561;
+  font-size: 15px;
+}
+
+.identityBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.roleBadge,
+.verifiedBadge,
+.unverifiedBadge {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.roleBadge {
+  border-color: #f0d7d5;
+  background: #fbefee;
+  color: #9d2930;
+}
+
+.verifiedBadge {
+  border-color: #cfe3d5;
+  background: #edf7f0;
+  color: #28633d;
+}
+
+.unverifiedBadge {
+  border-color: #ead9b6;
+  background: #fff7e8;
+  color: #77541c;
+}
+
+.profileSections {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding: 28px 32px 32px;
+}
+
+.detailSection {
+  min-width: 0;
+}
+
+.sectionHeading {
+  margin-bottom: 7px;
+}
+
+.sectionHeading h3 {
+  margin: 0;
+  color: #302927;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.sectionHeading p {
+  margin: 4px 0 0;
+  color: #837873;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+  margin: 0;
+}
+
+.detailItem {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 17px 0;
+  border-bottom: 1px solid #f0ebe7;
+}
+
+.detailIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid #eee5e0;
+  border-radius: 12px;
+  background: #faf6f3;
+  color: #9f3539;
+}
+
+.detailItem dt {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+  margin: 0;
+  color: #837873;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.detailItem dd {
+  overflow-wrap: anywhere;
+  margin: 0 0 0 53px;
+  color: #302927;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.phoneValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.editPhoneButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a92d34;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.editPhoneButton:hover {
+  color: #842129;
+  text-decoration: underline;
+}
+
+.phoneForm {
+  display: grid;
+  width: min(100%, 360px);
+  gap: 8px;
+}
+
+.phoneForm input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #dcd3cd;
+  border-radius: 9px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  font-size: 14px;
+}
+
+.phoneForm input:focus-visible {
+  border-color: #b81724;
+  outline: 3px solid rgb(184 23 36 / 14%);
+  outline-offset: 1px;
+}
+
+.phoneHelp,
+.phoneError,
+.phoneSuccess {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.phoneHelp {
+  color: #837873;
+}
+
+.phoneError {
+  color: #a1242b;
+}
+
+.phoneSuccess {
+  color: #28633d;
+}
+
+.phoneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.savePhoneButton,
+.cancelPhoneButton {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.savePhoneButton {
+  border-color: #a92d34;
+  background: #a92d34;
+  color: #fff;
+}
+
+.savePhoneButton:hover:not(:disabled) {
+  border-color: #842129;
+  background: #842129;
+}
+
+.cancelPhoneButton:hover:not(:disabled) {
+  background: #f7f5f3;
+}
+
+.savePhoneButton:disabled,
+.cancelPhoneButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.phoneActions :focus-visible,
+.editPhoneButton:focus-visible {
+  outline: 3px solid rgb(184 23 36 / 20%);
+  outline-offset: 2px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.loading {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #706561;
+}
+
+.notice {
+  padding: 20px 24px;
+  background: #fff8f3;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.notice p {
+  margin: 0 0 12px;
+}
+
+@media (max-width: 760px) {
+  .pageContent {
+    padding: 22px 16px 88px;
+  }
+
+  .profileHero {
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px 20px;
+  }
+
+  .avatar {
+    width: 70px;
+    height: 70px;
+    flex-basis: 70px;
+    font-size: 21px;
+  }
+
+  .identity h2 {
+    font-size: 21px;
+  }
+
+  .profileSections {
+    gap: 24px;
+    padding: 24px 20px;
+  }
+
+  .detailGrid {
+    column-gap: 24px;
+  }
+}
+
+@media (max-width: 540px) {
+  .profileHero {
+    flex-direction: column;
+  }
+
+  .detailGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detailItem {
+    padding: 14px 0;
+  }
+}

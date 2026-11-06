@@ -11,6 +11,7 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
@@ -125,7 +126,7 @@ function IoTContent() {
             <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.STORES}</span><strong>{locations.isError ? "—" : locations.isPending ? "…" : count(ownerLocations.length)}</strong></article>
             <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.MACHINES}</span><strong>{machines.isError ? "—" : machines.isPending ? "…" : count(ownerMachines.length)}</strong></article>
             <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.SMART_CONTRACTS}</span><strong>{contracts.isError ? "—" : contracts.isPending ? "…" : count(activeSmartContracts.length)}</strong></article>
-            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.OWNER}</span><strong>{profile.data.idaasUserId.slice(0, 8).toUpperCase()}</strong></article>
+            <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.IOT.OWNER}</span><strong><TruncatedId value={profile.data.idaasUserId} /></strong></article>
           </div>
           {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
           {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><button type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</button></div>}
@@ -160,7 +161,7 @@ function IoTContent() {
               rows={ownerMachines}
               rowKey={(machine) => machine.id}
               columns={[
-                { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? machine.id },
+                { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? <TruncatedId value={machine.id} /> },
                 { key: "type", header: T.IOT.MACHINE_TYPE_CONTRACT, render: (machine) => machineTypeFor(machine.id, ownerContracts) },
                 { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ? <StatusBadge status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</StatusBadge> : "—" },
                 { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
@@ -201,7 +202,7 @@ function IoTContent() {
           columns={[
             { key: "name", header: T.COMMON.NAME, render: (owner) => owner.fullName || "—" },
             { key: "email", header: T.COMMON.EMAIL, render: (owner) => owner.email || "—" },
-            { key: "id", header: T.MACHINES.OWNER_ID, align: "center", render: (owner) => owner.idaasUserId.slice(0, 8).toUpperCase(), cellProps: (owner) => ({ title: owner.idaasUserId }) },
+            { key: "id", header: T.MACHINES.OWNER_ID, align: "center", render: (owner) => <TruncatedId value={owner.idaasUserId} /> },
             { key: "machines", header: T.IOT.MACHINES, align: "center", render: (owner) => machines.isError ? "—" : machines.isPending ? "…" : count(allMachines.filter((machine) => machine.ownerId === owner.idaasUserId).length) },
             { key: "contracts", header: T.IOT.SMART_CONTRACTS, align: "center", render: (owner) => contracts.isError ? "—" : contracts.isPending ? "…" : count(allContracts.filter((contract) => contract.ownerId === owner.idaasUserId && contract.status === "ACTIVE" && contract.machineTypeSnapshot === "SMART_IOT").length) },
             { key: "actions", header: T.IOT.VIEW_OWNER, render: (owner) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ ownerId: owner.idaasUserId, page })}>{T.IOT.VIEW_OWNER}</button> },

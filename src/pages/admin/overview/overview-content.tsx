@@ -8,6 +8,7 @@ import { dashboardApi } from "@/apis/dashboard.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DashboardDateRangeSchema, DASHBOARD_BUSINESS_TIME_ZONE } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
@@ -463,7 +464,7 @@ function AdminOverview() {
                                     rows={machineUsage.data}
                                     rowKey={(machine) => machine.machineId}
                                     columns={[
-                                      { key: "machine", header: "Máy", render: (machine) => machine.serialNumber || machine.machineId },
+                                      { key: "machine", header: "Máy", render: (machine) => machine.serialNumber || <TruncatedId value={machine.machineId} /> },
                                       { key: "region", header: "Khu vực", render: (machine) => machine.region || "—" },
                                       {
                                         key: "cups",

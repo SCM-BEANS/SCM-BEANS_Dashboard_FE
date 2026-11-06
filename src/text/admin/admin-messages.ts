@@ -15,6 +15,7 @@ export const ADMIN_MESSAGES = {
     COFFEE_PACKAGES: "Gói cà phê",
     BUYBACKS: "Thu mua máy",
     NOTIFICATIONS: "Thông báo",
+    SETTINGS: "Cài đặt",
     MORE: "Khác",
   },
   OVERVIEW: {

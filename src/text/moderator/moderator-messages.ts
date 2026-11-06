@@ -33,7 +33,8 @@ export const MODERATOR_MESSAGES =  {
     TECHNICAL_REQUESTS: "Yêu cầu kỹ thuật",
     MACHINE_HISTORY: "Lịch sử máy",
     BUYBACK: "Thu mua máy cũ",
-    NOTIFICATIONS: "Thông báo"
+    NOTIFICATIONS: "Thông báo",
+    SETTINGS: "Cài đặt"
   },
   AUTH: {
     LOGOUT: "\u0110\u0103ng xu\u1ea5t",

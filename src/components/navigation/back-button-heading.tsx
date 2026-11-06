@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { BackButton, type BackButtonDestination } from "./back-button";
 
 export type BackButtonHeadingProps = {
   title: string;
   titleId: string;
-  description?: string;
+  description?: ReactNode;
   className?: string;
   back: BackButtonDestination | null;
 };

@@ -6,6 +6,7 @@ export const TECHNICIAN_MESSAGES = {
     MACHINE_CHECK: "Check máy",
     HISTORY: "Lịch sử máy",
     NOTIFICATIONS: "Thông báo",
+    SETTINGS: "Cài đặt",
     NAVIGATION_LABEL: "Điều hướng Technician",
     ALL_PAGES_LABEL: "Tất cả trang Technician",
     OPEN_MENU: "Mở menu điều hướng",

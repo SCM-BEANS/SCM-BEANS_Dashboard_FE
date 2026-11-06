@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -60,7 +61,7 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
             <thead><tr><th>Chứng từ</th><th>Hóa đơn</th><th className={styles.numeric}>Đã khai báo</th><th>Trạng thái</th><th>Gửi lúc</th><th /></tr></thead>
             <tbody>{workflow.exceptions.data.items.map((item) => (
               <tr key={item.id} className={selectedProofId === item.id ? styles.selectedRow : undefined}>
-                <td>{item.originalFilename ?? item.id}</td>
+                <td>{item.originalFilename ?? <TruncatedId value={item.id} />}</td>
                 <td className={styles.code}>{item.invoiceId}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, "VND")}</td>
                 <td><StatusBadge status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>

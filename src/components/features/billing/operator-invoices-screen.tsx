@@ -6,6 +6,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { billingApi } from "@/apis/billing.api";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { InvoiceIdSchema, type ModeratorInvoice, type PaymentProof } from "@/schema/billing.schema";
@@ -263,8 +264,8 @@ function InvoiceList({
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
-            { key: "owner", header: messages.OWNER, render: (invoice) => invoice.ownerId ?? invoice.tenantId ?? "—" },
-            { key: "contract", header: messages.CONTRACT, render: (invoice) => invoice.contractId ?? "—" },
+            { key: "owner", header: messages.OWNER, render: (invoice) => <TruncatedId value={invoice.ownerId ?? invoice.tenantId} /> },
+            { key: "contract", header: messages.CONTRACT, render: (invoice) => <TruncatedId value={invoice.contractId} /> },
             { key: "period", header: messages.PERIOD, render: (invoice) => invoice.period },
             { key: "type", header: messages.TYPE, render: (invoice) => messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type },
             { key: "amount", header: messages.AMOUNT, render: (invoice) => amountText(invoice.amount, invoice.currency) },
@@ -373,9 +374,9 @@ function InvoiceDetail({ invoiceId, role }: { invoiceId: string; role: OperatorR
       </Link>
       <section className={styles.panel}>
         <dl className={styles.detailGrid}>
-          <div><dt>{messages.INVOICE_ID}</dt><dd>{record.id}</dd></div>
-          <div><dt>{messages.OWNER}</dt><dd>{record.ownerId ?? record.tenantId ?? "—"}</dd></div>
-          <div><dt>{messages.CONTRACT}</dt><dd>{record.contractId ?? "—"}</dd></div>
+          <div><dt>{messages.INVOICE_ID}</dt><dd><TruncatedId value={record.id} /></dd></div>
+          <div><dt>{messages.OWNER}</dt><dd><TruncatedId value={record.ownerId ?? record.tenantId} /></dd></div>
+          <div><dt>{messages.CONTRACT}</dt><dd><TruncatedId value={record.contractId} /></dd></div>
           <div><dt>{messages.PERIOD}</dt><dd>{record.period}</dd></div>
           <div><dt>{messages.TYPE}</dt><dd>{messages.INVOICE_TYPES[record.type as keyof typeof messages.INVOICE_TYPES] ?? record.type}</dd></div>
           <div><dt>{messages.AMOUNT}</dt><dd>{amountText(record.amount, record.currency)}</dd></div>

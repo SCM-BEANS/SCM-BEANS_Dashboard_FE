@@ -6,6 +6,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -167,7 +168,7 @@ export function AdminUserDetailView({
           </form>
           {currentRole === "owner" && <section className={styles.panel} aria-labelledby="owner-profile-verification-title">
             <h2 id="owner-profile-verification-title">Xác minh hồ sơ Owner trong Dolores</h2>
-            <p>Tra cứu bằng cùng UUID IDaaS được API tạo tài khoản trả về: <code>{user.id}</code>.</p>
+            <p>Tra cứu bằng cùng UUID IDaaS được API tạo tài khoản trả về: <code><TruncatedId value={user.id} /></code>.</p>
             {doloresProfile.isPending && <p role="status">Đang tải hồ sơ Dolores…</p>}
             {doloresProfile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
               <p>{getApiErrorMessage(doloresProfile.error)}</p>
@@ -175,7 +176,7 @@ export function AdminUserDetailView({
               <button className={styles.accountSecondaryButton} type="button" disabled={doloresProfile.isFetching} onClick={() => void doloresProfile.refetch()}>{T.COMMON.RETRY}</button>
             </div>}
             {doloresProfile.data && <div className={styles.accountFormGrid}>
-              <div><span>UUID IDaaS</span><strong>{doloresProfile.data.idaasUserId}</strong></div>
+              <div><span>UUID IDaaS</span><strong><TruncatedId value={doloresProfile.data.idaasUserId} /></strong></div>
               <div><span>Email</span><strong>{doloresProfile.data.email || "—"}</strong></div>
               <div><span>Vai trò Dolores</span><strong>{doloresProfile.data.roles.join(", ") || "—"}</strong></div>
               <div><span>Trạng thái hồ sơ</span><strong>{doloresProfile.data.status}</strong></div>
@@ -194,8 +195,8 @@ export function AdminUserDetailView({
                 rowKey={(contract) => contract.contractId ?? contract.id ?? `${contract.machineId}-${contract.startDate}`}
                 emptyMessage="Owner chưa có hợp đồng."
                 columns={[
-                  { key: "contract", header: "UUID hợp đồng", render: (contract) => contract.contractId ?? contract.id ?? "—" },
-                  { key: "machine", header: "UUID máy", render: (contract) => contract.machineId ?? "—" },
+                  { key: "contract", header: "UUID hợp đồng", render: (contract) => <TruncatedId value={contract.contractId ?? contract.id} /> },
+                  { key: "machine", header: "UUID máy", render: (contract) => <TruncatedId value={contract.machineId} /> },
                   { key: "status", header: "Trạng thái", render: (contract) => contract.status ?? "—" },
                   { key: "dates", header: "Thời hạn", render: (contract) => `${contract.startDate ?? "—"} – ${contract.endDate ?? "—"}` },
                 ]}

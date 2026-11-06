@@ -1,5 +1,6 @@
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { type Contract } from "@/schema/contracts.schema";
 import { CONTRACT_TABLE_HEADERS } from "@/components/table/constants/contract-table.constants";
 import { DataTable } from "./data-table";
@@ -25,13 +26,13 @@ export function ContractTable({ contracts, contractHref, draftStatusHref, header
           key: "contract",
           header: CONTRACT_TABLE_HEADERS.contract,
           render: (contract) => (
-            <TextLinkButton href={contractHref(contract.id)}>{contract.id}</TextLinkButton>
+            <TextLinkButton href={contractHref(contract.id)}><TruncatedId value={contract.id} /></TextLinkButton>
           ),
         },
         {
           key: "owner",
           header: ownerName ? ownerHeader ?? "Owner" : CONTRACT_TABLE_HEADERS.owner,
-          render: (contract) => ownerName ? ownerName(contract.ownerId) : contract.ownerId,
+          render: (contract) => ownerName ? ownerName(contract.ownerId) : <TruncatedId value={contract.ownerId} />,
         },
         {
           key: "period",
