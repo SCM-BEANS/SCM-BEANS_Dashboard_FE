@@ -164,6 +164,13 @@ export const coffeePackagesApi = {
   async acknowledgeWaitingStock(id: string) {
     await axiosClient.post(`${orderPath(id)}/waiting-stock/acknowledge`, undefined, { baseURL: DOLORES_API_BASE_URL });
   },
+  async confirmOrderReceived(id: string) {
+    const orderId = CoffeePackageOrderIdSchema.parse(id);
+    const response = await axiosClient.post<unknown>(`${orderPath(orderId)}/confirm-received`, undefined, { baseURL: DOLORES_API_BASE_URL });
+    const fulfillment = CoffeePackageFulfillmentSchema.parse(response.data);
+    if (fulfillment.orderId !== orderId) throw new Error("Dolores returned fulfillment for a different order.");
+    return fulfillment;
+  },
   async handover(id: string, input: { method: "SELF_PICKUP" | "COMPANY_DELIVERY_EXTERNAL"; recipient: string; quantity: number; expiryChecked: true }) {
     const body = CoffeePackageHandoverRequestSchema.parse(input);
     await axiosClient.post(`${orderPath(id)}/handover`, body, { baseURL: DOLORES_API_BASE_URL });

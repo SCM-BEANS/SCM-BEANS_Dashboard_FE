@@ -58,6 +58,12 @@ function verifyWorkOrder(value: unknown, workOrderId: string) {
 }
 
 export const recallWorkOrdersApi = {
+  async legacyReview(id: string, input: { decision: "PICKUP_REQUIRED" | "VERIFY_ALREADY_AT_DEPOT"; technicianId?: string; reason: string; correlationId: string }) {
+    const validId = RecallWorkOrderIdSchema.parse(id);
+    const request = z.object({ decision: z.enum(["PICKUP_REQUIRED", "VERIFY_ALREADY_AT_DEPOT"]), technicianId: z.string().uuid().optional(), reason: z.string().trim().min(1), correlationId: z.string().trim().min(1) }).strict().refine(value => value.decision !== "VERIFY_ALREADY_AT_DEPOT" || !!value.technicianId).parse(input);
+    const response = await axiosClient.post<unknown>(`${workOrderPath(validId)}/legacy-review`, request, { baseURL: DOLORES_API_BASE_URL });
+    return verifyWorkOrder(response.data, validId);
+  },
   async list(input: RecallWorkOrderListParams = {}, signal?: AbortSignal) {
     const params = RecallWorkOrderListParamsSchema.parse(input);
     const response = await axiosClient.get<unknown>("/recall-work-orders", {

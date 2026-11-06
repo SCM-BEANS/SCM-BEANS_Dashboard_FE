@@ -5,6 +5,7 @@ import {
   type ActivateContractRequest, type CreateContractRequest,
   ContractListSchema, ContractSchema, ModeratorContractSchema,
 } from "@/schema/contracts.schema";
+import { MachineIdSchema } from "@/schema/machines.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ContractDocumentSchema, ContractExpiryDecisionRequestSchema, ContractContinuationRequestSchema, ContractPolicyAmendmentRequestSchema, ContractPolicyHistorySchema, TerminationCaseRequestSchema, TerminationCaseResponseSchema, type ContractContinuationRequest, type ContractExpiryDecisionRequest, type ContractPolicyAmendmentRequest, type TerminationCaseRequest } from "@/schema/contracts.schema";
 
@@ -64,12 +65,18 @@ export const contractsApi =  {
       baseURL: DOLORES_API_BASE_URL,
     });
   },
-  async getMachineHistory(machineId: string, signal?: AbortSignal) {
-    const validId = ContractIdSchema.parse(machineId);
-    const response = await axiosClient.get<unknown>(`/contracts/machine/${encodeURIComponent(validId)}/history`, {
-      baseURL: DOLORES_API_BASE_URL, signal,
-    });
-    return ContractListSchema.parse(response.data);
+  async listByMachine(machineId: string, params: { status?: "DRAFT" | "ACTIVE" | "TERMINATED"; page: number; size: number }, signal?: AbortSignal) {
+    const id = MachineIdSchema.parse(machineId);
+    try {
+      const response = await axiosClient.get<unknown>(`/contracts/machine/${encodeURIComponent(id)}`, { baseURL: DOLORES_API_BASE_URL, params, signal });
+      return { items: ContractListSchema.parse(response.data), hasNext: String(response.headers["x-has-next"]) === "true" };
+    } catch (error) {
+      if ((error as { response?: { status?: number } }).response?.status === 404) return { items: [], hasNext: false };
+      throw error;
+    }
+  },
+  getMachineHistory(machineId: string, signal?: AbortSignal) {
+    return contractsApi.listByMachine(machineId, { page: 0, size: 100 }, signal).then((result) => result.items);
   },
   async downloadDocument(contractId: string, documentId: string, signal?: AbortSignal) {
     const contract = ContractIdSchema.parse(contractId);

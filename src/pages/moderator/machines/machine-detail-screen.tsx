@@ -1,3 +1,4 @@
+import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
@@ -434,6 +435,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
         />}
 
         <MachineManagementActions key={device.id} machine={device} />
+        {machineId && <MachineContractHistory machineId={machineId} role="MODERATOR" />}
         </MachineDetailView>
       </>}
     </div>

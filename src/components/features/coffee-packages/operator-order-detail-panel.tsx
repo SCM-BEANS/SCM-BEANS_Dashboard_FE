@@ -23,6 +23,7 @@ export function OperatorOrderDetailPanel({ workflow }: { workflow: CoffeePackage
       {order ? (
         <>
           <dl className={styles.details}>
+            {order.ownerReceivedAt ? <div><dt>Xác nhận nhận hàng</dt><dd>{formatCoffeePackageDateTime(order.ownerReceivedAt)}</dd></div> : null}
             <div><dt>Trạng thái</dt><dd><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></dd></div>
             <div><dt>Owner</dt><dd className={styles.code}>{order.ownerId ?? "—"}</dd></div>
             <div><dt>Hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>

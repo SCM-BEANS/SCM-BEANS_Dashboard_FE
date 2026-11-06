@@ -43,6 +43,7 @@ export const CoffeePackageOrderSchema = z.object({
   unitPrice: optionalMoney,
   usageDays: z.number().int().positive().nullish(),
   quantity: z.number().int().positive().nullish(),
+  ownerReceivedAt: optionalText,
   status: z.string().trim().min(1),
   amount: optionalMoney,
   total: optionalMoney,
@@ -184,6 +185,7 @@ export const CoffeePackageFulfillmentSchema = z.object({
   handedOverAt: optionalText,
   expiryCheckedBy: optionalText,
   expiryCheckedAt: optionalText,
+  ownerReceivedAt: optionalText,
 }).passthrough();
 
 export const CoffeePackageCancellationSchema = z.object({

@@ -1,3 +1,4 @@
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { profilesApi } from "@/apis/profiles.api";
@@ -14,6 +15,7 @@ import styles from "../repair-workflow/repair-workflow.module.css";
 type Role = "owner" | "technician" | "operator";
 type Props = { role: Role; queryScopeRole?: "ADMIN" | "MODERATOR"; contractId?: string; workOrderId?: string; onOpen?: (id: string) => void; backHref?: string };
 
+const recallLabels: Record<string, string> = { UNASSIGNED: "Chưa phân công", ASSIGNED: "Đã phân công", SCHEDULED: "Đã lên lịch", PICKUP_IN_PROGRESS: "Đang thu hồi", OWNER_ACK_PENDING: "Chờ chủ sở hữu xác nhận", CUSTODY_VERIFICATION_PENDING: "Chờ xác minh tại kho", RECEIPT_REVIEW_PENDING: "Chờ duyệt nhận kho", RECEIVED_AT_DEPOT: "Đã nhận tại kho", LEGACY_REVIEW_REQUIRED: "Cần rà soát hồ sơ cũ", CANCELLED: "Đã hủy" };
 function correlationId() { return createIdempotencyKey(); }
 
 function localDateTime(value?: string | null) {
@@ -44,6 +46,10 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [conditionNotes, setConditionNotes] = useState("");
   const [depotLocation, setDepotLocation] = useState("");
+  const [legacyOpen, setLegacyOpen] = useState(false);
+  const [legacyDecision, setLegacyDecision] = useState<"PICKUP_REQUIRED" | "VERIFY_ALREADY_AT_DEPOT">("PICKUP_REQUIRED");
+  const [legacyReason, setLegacyReason] = useState("");
+  const [legacyCorrelation, setLegacyCorrelation] = useState("");
   const [decisionReason, setDecisionReason] = useState("");
 
   const id = workOrderId ?? selectedId;
@@ -101,6 +107,11 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   const assign = useMutation({
     mutationFn: () => recallWorkOrdersApi.assign(id, { technicianId, scheduledPickupAt: scheduledPickupAt || undefined, correlationId: correlationId() }),
     ...commonMutationOptions,
+  });
+  const legacyReview = useMutation({
+    mutationFn: () => recallWorkOrdersApi.legacyReview(id, { decision: legacyDecision, ...(legacyDecision === "VERIFY_ALREADY_AT_DEPOT" ? { technicianId } : {}), reason: legacyReason, correlationId: legacyCorrelation }),
+    ...commonMutationOptions,
+    onSuccess: () => setLegacyOpen(false),
   });
   const startPickup = useMutation({
     mutationFn: () => recallWorkOrdersApi.startPickup(id, correlationId()),
@@ -170,7 +181,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           {list.data?.content.length === 0 && !list.isError ? <p className={styles.notice} role="status">Không có lệnh thu hồi trong phạm vi tài khoản.</p> : null}
           {list.data?.content.map((item) => (
             <article className={styles.detailItem} key={item.id}>
-              <h2>{item.status}</h2>
+              <h2>{recallLabels[item.status] ?? item.status}</h2>
               <dl className={styles.detailGrid}>
                 <div className={styles.detailItem}><dt>Mã lệnh</dt><dd className={styles.codeValue}>{item.id}</dd></div>
                 <div className={styles.detailItem}><dt>Hồ sơ kết thúc</dt><dd className={styles.codeValue}>{item.terminationCaseId}</dd></div>
@@ -221,7 +232,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
       <section className={styles.panel} aria-labelledby="recall-detail-title">
         {refreshButton}
         <dl className={styles.detailGrid}>
-          <div className={styles.detailItem}><dt>Trạng thái thu hồi</dt><dd>{currentWorkOrder.status}</dd></div>
+          <div className={styles.detailItem}><dt>Trạng thái thu hồi</dt><dd>{recallLabels[currentWorkOrder.status] ?? currentWorkOrder.status}</dd></div>
           <div className={styles.detailItem}><dt>Mã lệnh thu hồi</dt><dd className={styles.codeValue}>{currentWorkOrder.id}</dd></div>
           <div className={styles.detailItem}><dt>Mã hồ sơ kết thúc</dt><dd className={styles.codeValue}>{currentWorkOrder.terminationCaseId}</dd></div>
           <div className={styles.detailItem}><dt>Hợp đồng</dt><dd className={styles.codeValue}>{currentWorkOrder.contractId}</dd></div>
@@ -229,6 +240,13 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           <div className={styles.detailItem}><dt>Kỹ thuật viên</dt><dd>{currentWorkOrder.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
           <div className={styles.detailItem}><dt>Ngày nhận đã duyệt</dt><dd>{localDateTime(currentWorkOrder.depotReceivedAt)}</dd></div>
         </dl>
+
+        {role === "operator" && currentWorkOrder.status === "LEGACY_REVIEW_REQUIRED" ? <ButtonBar type="button" onClick={() => { setLegacyDecision("PICKUP_REQUIRED"); setLegacyReason(""); setTechnicianId(""); setLegacyCorrelation(globalThis.crypto.randomUUID()); setLegacyOpen(true); }}>Rà soát lệnh thu hồi</ButtonBar> : null}
+        {legacyOpen ? <NotificationDialog variant="confirm" title="Rà soát lệnh thu hồi" onClose={() => setLegacyOpen(false)} primaryAction={{ label: "Xác nhận", onClick: () => legacyReview.mutate(), disabled: !legacyReason.trim() || (legacyDecision === "VERIFY_ALREADY_AT_DEPOT" && !technicianId), pending: legacyReview.isPending }} secondaryAction={{ label: "Hủy", onClick: () => setLegacyOpen(false), disabled: legacyReview.isPending }}>
+          <fieldset><legend>Quyết định</legend><label><input type="radio" name="legacyDecision" checked={legacyDecision === "PICKUP_REQUIRED"} onChange={() => setLegacyDecision("PICKUP_REQUIRED")} /> Cần thu hồi: đưa lệnh về trạng thái chưa phân công.</label><label><input type="radio" name="legacyDecision" checked={legacyDecision === "VERIFY_ALREADY_AT_DEPOT"} onChange={() => setLegacyDecision("VERIFY_ALREADY_AT_DEPOT")} /> Máy đã ở kho: xác minh và phân công kỹ thuật viên để chờ chủ sở hữu xác nhận.</label></fieldset>
+          {legacyDecision === "VERIFY_ALREADY_AT_DEPOT" ? <><label>Tìm kỹ thuật viên<input value={technicianSearch} onChange={event => { setTechnicianPage(0); setTechnicianSearch(event.target.value); }} /></label><label>Kỹ thuật viên<select required value={technicianId} onChange={event => setTechnicianId(event.target.value)}><option value="">Chọn kỹ thuật viên</option>{technicians.data?.items.filter(profile => profile.status === "ACTIVE" && profile.emailVerified && profile.roles.some(value => value.toUpperCase() === "TECHNICIAN")).map(profile => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}</select></label>{technicians.isError ? <p role="alert">{getApiErrorMessage(technicians.error)}</p> : null}{technicians.data && technicians.data.totalPages > 1 ? <div><ButtonBar type="button" disabled={technicianPage <= 0} onClick={() => setTechnicianPage(technicianPage - 1)}>Trước</ButtonBar><span>Trang {technicianPage + 1} / {technicians.data.totalPages}</span><ButtonBar type="button" disabled={technicianPage + 1 >= technicians.data.totalPages} onClick={() => setTechnicianPage(technicianPage + 1)}>Sau</ButtonBar></div> : null}</> : null}
+          <label>Lý do<textarea required maxLength={2000} value={legacyReason} onChange={event => setLegacyReason(event.target.value)} /></label>{legacyReview.isError ? <p role="alert">{getApiErrorMessage(legacyReview.error)}</p> : null}
+        </NotificationDialog> : null}
 
         {role === "operator" && ["UNASSIGNED", "ASSIGNED", "SCHEDULED"].includes(currentWorkOrder.status) ? (
           <form className={styles.assignmentForm} onSubmit={(event) => { event.preventDefault(); if (technicianId) assign.mutate(); }}>

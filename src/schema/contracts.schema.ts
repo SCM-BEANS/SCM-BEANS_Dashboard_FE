@@ -53,7 +53,7 @@ export const ActivateContractRequestSchema = z.object({
 export const CreateContractResponseSchema = z.object({ id: ContractIdSchema }).passthrough();
 
 export const ContractSchema = z.object({
-  id: ContractIdSchema, ownerId: z.string().uuid(), machineId: z.string().uuid().nullish(),
+  id: ContractIdSchema, ownerId: z.string().uuid(), ownerName: z.string().nullish(), machineId: z.string().uuid().nullish(),
   startDate: z.string().nullish(), endDate: z.string().nullish(), terms: z.string().nullish(),
   termsSnapshot: z.string().nullish(),
   status: z.enum(["DRAFT", "ACTIVE", "TERMINATED"]),

@@ -1,3 +1,4 @@
+import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
@@ -206,6 +207,7 @@ export function TechnicianMachineDetailScreen() {
         <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-profile-title">
           <h2 id="technician-machine-profile-title">{T.MACHINE_CHECK.TABLE_TITLE}</h2>
           <MachineDetailFields machine={device} />
+          <MachineContractHistory machineId={machineId} role="TECHNICIAN" />
           {device.status !== "IN_WAREHOUSE" ? (
             <p className={styles.pendingNotice} role="status">
               Chỉ xác nhận sẵn sàng cho máy đang ở trạng thái Trong kho. Máy hiện tại không đủ điều kiện.

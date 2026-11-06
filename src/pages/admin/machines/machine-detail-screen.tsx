@@ -1,3 +1,4 @@
+import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -424,7 +425,8 @@ function MachineDetailContent() {
         <h2>{T.MACHINES.HEARTBEAT}</h2>
         <p className={styles.emptyText}>{device.machineType === "CONVENTIONAL" ? "Máy thường không có heartbeat hoặc telemetry IoT." : "Chưa truy vấn heartbeat vì backend chưa xác nhận loại máy là Smart IoT."}</p>
       </section>}
-      </MachineDetailView>
+      {machineId && <MachineContractHistory machineId={machineId} role="ADMIN" />}
+        </MachineDetailView>
     </div>
     {confirmDelete && <NotificationDialog
       variant="confirm"

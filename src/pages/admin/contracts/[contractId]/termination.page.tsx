@@ -1,3 +1,4 @@
+import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { ContractTerminationScreen } from "@/pages/contracts/termination/contract-termination-screen";
 import { AdminShell } from "@/pages/admin/admin-shell";
@@ -20,6 +21,7 @@ export default function AdminContractTerminationPage({ contractId }: InferGetSer
         role="ADMIN"
         backHref={PATH_ADMIN.CONTRACT_DETAIL(contractId)}
       />
+      <RecallWorkOrdersScreen contractId={contractId} role="operator" queryScopeRole="ADMIN" />
     </AdminShell>
   );
 }

@@ -1,3 +1,4 @@
+import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
@@ -12,7 +13,6 @@ import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import machineStyles from "@/components/machines/machines.module.css";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
-import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
@@ -68,11 +68,6 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   const schedule = useQuery({
     queryKey: ["owner-machine-maintenance-schedule", machineId],
     queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId!, signal),
-    enabled: Boolean(machineId),
-  });
-  const contractHistory = useQuery({
-    queryKey: ["owner-machine-contract-history", machineId],
-    queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId!, signal),
     enabled: Boolean(machineId),
   });
   const maintenanceRequests = useQuery({
@@ -168,20 +163,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   Xem dữ liệu vận hành
                 </Link>
               </section>
-              <section className={styles.dataPanel} aria-labelledby="owner-machine-history-contracts">
-                <h2 id="owner-machine-history-contracts">Lịch sử hợp đồng</h2>
-                {contractHistory.isPending ? <p className={styles.loadingNotice} role="status">Đang tải lịch sử hợp đồng…</p> : null}
-                {contractHistory.isError ? <p className={styles.errorNotice} role="alert">Không tải được lịch sử hợp đồng của máy.</p> : null}
-                {contractHistory.data?.length ? contractHistory.data.map((contract) => (
-                  <article className={styles.recordCard} key={contract.id}>
-                    <div>
-                      <h3>{statusLabel(contract.status)}</h3>
-                      <p>{formatDate(contract.startDate)} – {formatDate(contract.endDate)}</p>
-                    </div>
-                    <Link className={styles.secondaryLink} href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)}>Xem hợp đồng</Link>
-                  </article>
-                )) : contractHistory.isSuccess ? <p className={styles.emptyNotice}>Chưa có lịch sử hợp đồng.</p> : null}
-              </section>
+              <MachineContractHistory machineId={machineId!} role="OWNER" />
               <section className={styles.dataPanel} aria-labelledby="owner-machine-history-maintenance">
                 <h2 id="owner-machine-history-maintenance">Bảo trì và hỗ trợ</h2>
                 {schedule.isError || maintenanceTickets.isError || maintenanceRequests.isError ? (

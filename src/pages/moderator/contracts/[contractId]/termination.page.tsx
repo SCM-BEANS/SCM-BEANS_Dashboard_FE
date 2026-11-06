@@ -1,3 +1,4 @@
+import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { ContractTerminationScreen } from "@/pages/contracts/termination/contract-termination-screen";
 import { ModeratorShell } from "@/pages/moderator/moderator-shell";
@@ -21,6 +22,7 @@ export default function ModeratorContractTerminationPage({ contractId }: InferGe
         role="MODERATOR"
         backHref={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}
       />
+      <RecallWorkOrdersScreen contractId={contractId} role="operator" queryScopeRole="MODERATOR" />
     </ModeratorShell>
   );
 }
