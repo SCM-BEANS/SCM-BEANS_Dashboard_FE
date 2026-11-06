@@ -196,17 +196,13 @@ function MachineList({
         rowKey={(machine) => machine.id}
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
         columns={[
-          { key: "id", header: ADMIN_T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={adminStyles.machineInventoryLink} href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.id.slice(0, 8).toUpperCase()}</Link>, cellProps: (machine) => ({ title: machine.id }) },
-          { key: "serial", header: ADMIN_T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
-          { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machineStatusLabel(machine.status) },
-          { key: "connection", header: "Kết nối", render: (machine) => {
+          { key: "serial", header: ADMIN_T.MACHINES.SERIAL, align: "center", render: (machine) => <Link className={adminStyles.machineInventoryLink} href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`} title={machine.serialNumber ?? machine.id}>{machine.serialNumber ?? "—"}</Link> },
+          { key: "status", header: ADMIN_T.MACHINES.STATUS, align: "center", render: (machine) => machineStatusLabel(machine.status) },
+          { key: "connection", header: "Kết nối", align: "center", render: (machine) => {
             if (machine.machineType !== "SMART_IOT") return "—";
             return <MachineConnectionBadge state="permission-denied" />;
           } },
-          { key: "owner", header: ADMIN_T.MACHINES.OWNER_ID, align: "center", render: (machine) => machine.ownerId ? machine.ownerId.slice(0, 8).toUpperCase() : "—", cellProps: (machine) => ({ title: machine.ownerId ?? undefined }) },
-          { key: "region", header: ADMIN_T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-          { key: "deployed-at", header: ADMIN_T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDateOnly(machine.deployedAt) },
         ]}
       />
     </div>
