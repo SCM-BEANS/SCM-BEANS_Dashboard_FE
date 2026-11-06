@@ -16,7 +16,9 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { ContractTable } from "@/components/table/contract-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
 import { ActionBar } from "@/components/action-bar/action-bar";
@@ -69,6 +71,12 @@ function ContractsContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createdContractId, setCreatedContractId] = useState("");
+  const [contractSearchDraft, setContractSearchDraft] = useState("");
+  const [contractStatusDraft, setContractStatusDraft] = useState("");
+  const [contractTypeDraft, setContractTypeDraft] = useState("");
+  const [contractSearch, setContractSearch] = useState("");
+  const [contractStatusFilter, setContractStatusFilter] = useState("");
+  const [contractTypeFilter, setContractTypeFilter] = useState("");
   const [lifecycleView, setLifecycleView] = useState<"amend" | "continue" | null>(null);
   const [policySnapshot, setPolicySnapshot] = useState<ContractPolicyDraft | null>(null);
   const [policyReason, setPolicyReason] = useState("");
@@ -214,6 +222,21 @@ function ContractsContent() {
     if (owners.isPending) return T.COMMON.LOADING;
     return owners.data?.find((item) => item.idaasUserId === id)?.fullName ?? "—";
   };
+  const filteredContracts = (contracts.data ?? []).filter((item) => {
+    const searchValue = contractSearch.trim().toLocaleLowerCase();
+    const searchableText = [item.id, item.ownerId, ownerName(item.ownerId), item.machineTypeSnapshot ?? ""]
+      .join(" ")
+      .toLocaleLowerCase();
+    return (!searchValue || searchableText.includes(searchValue))
+      && (!contractStatusFilter || item.status === contractStatusFilter)
+      && (!contractTypeFilter || item.machineTypeSnapshot === contractTypeFilter);
+  });
+  const submitContractFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setContractSearch(contractSearchDraft.trim());
+    setContractStatusFilter(contractStatusDraft);
+    setContractTypeFilter(contractTypeDraft);
+  };
   const pageTitle = view === "create"
     ? T.CONTRACTS.CREATE_TITLE
     : isInstallationRequest
@@ -248,19 +271,57 @@ function ContractsContent() {
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
     />
-    {isContractList && <>
-      {contracts.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+    {isContractList && <section className={styles.panel} aria-labelledby="admin-contract-list-panel-title">
+      <h2 id="admin-contract-list-panel-title">Danh sách hợp đồng</h2>
+      <TableFilters
+        search={{
+          ariaLabel: "Tìm hợp đồng",
+          maxLength: 100,
+          placeholder: "Tìm mã hợp đồng, Owner hoặc loại máy",
+          value: contractSearchDraft,
+          onChange: setContractSearchDraft,
+        }}
+        selects={[
+          {
+            id: "contract-status-filter",
+            ariaLabel: "Lọc hợp đồng theo trạng thái",
+            value: contractStatusDraft,
+            options: [
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "ACTIVE", label: T.CONTRACTS.ACTIVE },
+              { value: "DRAFT", label: T.CONTRACTS.DRAFT },
+              { value: "TERMINATED", label: T.CONTRACTS.TERMINATED },
+            ],
+            onChange: setContractStatusDraft,
+          },
+          {
+            id: "contract-machine-type-filter",
+            ariaLabel: "Lọc hợp đồng theo loại máy",
+            value: contractTypeDraft,
+            options: [
+              { value: "", label: "Tất cả loại máy" },
+              { value: "CONVENTIONAL", label: T.MACHINES.CONVENTIONAL },
+              { value: "SMART_IOT", label: T.MACHINES.SMART },
+            ],
+            onChange: setContractTypeDraft,
+          },
+        ]}
+        submitLabel="Tìm kiếm"
+        onSubmit={submitContractFilters}
+      />
+      {contracts.isPending && <p role="status">{T.COMMON.LOADING}</p>}
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-      {contracts.data?.length === 0 && !contracts.isError && <p className={styles.pendingNotice} role="status">{T.COMMON.EMPTY}</p>}
-      {contracts.data && contracts.data.length > 0 && <ContractTable
-        contracts={contracts.data}
+      {contracts.data?.length === 0 && !contracts.isError && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+      {contracts.data && contracts.data.length > 0 && filteredContracts.length === 0 && <p className={styles.emptyText}>Không tìm thấy hợp đồng phù hợp bộ lọc.</p>}
+      {filteredContracts.length > 0 && <ContractTable
+        contracts={filteredContracts}
         headerVariant="admin"
         ownerHeader={T.COMMON.OWNER}
         ownerName={ownerName}
         contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
         draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
       />}
-    </>}
+    </section>}
     {view === "create" && <ContractCreateForm
       onCreated={(id) => {
         setCreatedContractId(id);
@@ -274,7 +335,7 @@ function ContractsContent() {
       {contract.data && <>
         <section className={styles.panel}><h2>{T.CONTRACTS.DETAIL}</h2><div className={styles.operationsGrid}>
           <div><span>Mã hợp đồng</span><strong>{contract.data.id}</strong></div><div><span>{T.COMMON.OWNER}</span><strong>{ownerName(contract.data.ownerId)}</strong></div>
-          <div><span>Mã máy</span><strong>{contract.data.machineId ?? T.CONTRACTS.NO_MACHINE}</strong></div><div><span>Trạng thái</span><strong>{status(contract.data.status)}</strong></div>
+          <div><span>Mã máy</span><strong>{contract.data.machineId ?? T.CONTRACTS.NO_MACHINE}</strong></div><div><span>Trạng thái</span><strong><StatusBadge status={contract.data.status}>{status(contract.data.status)}</StatusBadge></strong></div>
           <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div><div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
           <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div><div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>
           <div><span>Tiền cọc</span><strong>{money(contract.data.depositAmount)}</strong></div><div><span>Phí lắp đặt</span><strong>{money(contract.data.installationFee)}</strong></div>
@@ -402,7 +463,7 @@ function ContractsContent() {
           { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}>{item.id.slice(0, 8).toUpperCase()}</button> },
           { key: "owner", header: T.COMMON.OWNER, render: (item) => ownerName(item.ownerId) },
           { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
-          { key: "status", header: "Trạng thái", render: (item) => status(item.status) },
+          { key: "status", header: "Trạng thái", render: (item) => <StatusBadge status={item.status}>{status(item.status)}</StatusBadge> },
         ]}
       />}</section>}
     </>}

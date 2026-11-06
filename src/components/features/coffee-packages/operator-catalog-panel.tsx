@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackage, CoffeePackageUpsertRequest } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -117,7 +118,7 @@ export function OperatorCatalogPanel({
                   <td>{item.description || "—"}</td>
                   <td className={styles.numeric}>{formatCoffeePackageMoney(item.unitPrice, item.currency)}</td>
                   <td className={styles.numeric}>{item.usageDays ?? "—"}</td>
-                  <td><span className={styles.status}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</span></td>
+                  <td><StatusBadge status={active ? "ACTIVE" : "INACTIVE"}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</StatusBadge></td>
                   {isAdmin ? (
                     <td className={styles.buttonCell}>
                       <ButtonBar type="button" onClick={() => editPackage(item)}>Sửa</ButtonBar>

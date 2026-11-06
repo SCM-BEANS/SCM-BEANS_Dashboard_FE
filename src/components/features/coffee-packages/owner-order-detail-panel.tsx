@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -29,7 +30,7 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
       {order ? (
         <>
           <dl className={styles.details}>
-            <div><dt>Trạng thái đơn</dt><dd><span className={styles.status}>{coffeePackageStatusLabel(order.status)}</span></dd></div>
+            <div><dt>Trạng thái đơn</dt><dd><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></dd></div>
             <div><dt>Gói cà phê</dt><dd>{order.packageName ?? order.packageCode ?? "—"}</dd></div>
             <div><dt>Mã gói</dt><dd>{order.packageCode ?? order.packageId ?? "—"}</dd></div>
             <div><dt>Hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>

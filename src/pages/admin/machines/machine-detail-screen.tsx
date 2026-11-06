@@ -15,6 +15,7 @@ import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -228,7 +229,7 @@ function MachineDetailContent() {
         back={getMachineDetailBackDestination(router.query)}
       />
       <MachineDetailView summary={[
-        { label: T.MACHINES.STATUS, value: device.status ? STATUS_LABELS[device.status] ?? device.status : "—" },
+        { label: T.MACHINES.STATUS, value: device.status ? <StatusBadge status={device.status}>{STATUS_LABELS[device.status] ?? device.status}</StatusBadge> : "—" },
         { label: T.MACHINES.MACHINE_TYPE, value: machineTypeLabel },
         { label: T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
         { label: T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
@@ -377,7 +378,7 @@ function MachineDetailContent() {
           columns={[
             { key: "ticket-id", header: T.MACHINES.TICKET_ID, render: (ticket) => ticket.id ?? "—" },
             { key: "machine-id", header: T.MACHINES.MACHINE_ID, render: (ticket) => ticket.machineId ?? "—" },
-            { key: "status", header: T.MACHINES.STATUS, render: (ticket) => ticket.status ?? "—" },
+            { key: "status", header: T.MACHINES.STATUS, render: (ticket) => ticket.status ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : "—" },
             { key: "scheduled", header: T.MACHINES.SCHEDULED, render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline, true) },
             { key: "technician", header: T.MACHINES.TECHNICIAN, render: (ticket) => ticket.assignedTechnicianId ?? ticket.assignedTo ?? "—" },
             { key: "result", header: T.MACHINES.DIAGNOSIS, render: (ticket) => ticket.resolutionResult ?? ticket.diagnosis ?? ticket.notes ?? "—" },

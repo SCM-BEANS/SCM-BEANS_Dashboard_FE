@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { billingApi } from "@/apis/billing.api";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { InvoiceIdSchema, type ModeratorInvoice, type PaymentProof } from "@/schema/billing.schema";
@@ -100,13 +102,16 @@ function InlineQueryState({
 }
 
 function InvoiceFilters({
+  role,
   onApply,
   disabled,
 }: {
+  role: OperatorRole;
   onApply: (filters: InvoiceFilters) => void;
   disabled: boolean;
 }) {
   const [draft, setDraft] = useState<InvoiceFilters>({ ownerId: "", period: "", status: "", type: "" });
+  const [searchDraft, setSearchDraft] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -116,7 +121,57 @@ function InvoiceFilters({
   function clear() {
     const empty: InvoiceFilters = { ownerId: "", period: "", status: "", type: "" };
     setDraft(empty);
+    setSearchDraft("");
     onApply(empty);
+  }
+
+  if (role === "admin") {
+    return (
+      <TableFilters
+        search={{
+          ariaLabel: "Tìm hóa đơn theo Owner ID hoặc kỳ hóa đơn",
+          maxLength: 36,
+          placeholder: "Tìm Owner ID hoặc kỳ hóa đơn (yyyy-MM)",
+          value: searchDraft,
+          onChange: setSearchDraft,
+        }}
+        selects={[
+          {
+            id: "operator-invoice-type-filter",
+            ariaLabel: messages.TYPE_FILTER,
+            value: draft.type,
+            options: [
+              { value: "", label: messages.ALL_TYPES },
+              ...Object.entries(messages.INVOICE_TYPES).map(([value, label]) => ({ value, label })),
+            ],
+            onChange: (value) => setDraft((current) => ({ ...current, type: value as InvoiceFilters["type"] })),
+          },
+          {
+            id: "operator-invoice-status-filter",
+            ariaLabel: messages.STATUS_FILTER,
+            value: draft.status,
+            options: [
+              { value: "", label: messages.ALL_STATUSES },
+              ...Object.entries(messages.INVOICE_STATUSES).map(([value, label]) => ({ value, label })),
+            ],
+            onChange: (value) => setDraft((current) => ({ ...current, status: value as InvoiceFilters["status"] })),
+          },
+        ]}
+        submitLabel="Tìm kiếm"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = searchDraft.trim();
+          const isPeriod = /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+          onApply({
+            ...draft,
+            ownerId: value && !isPeriod ? value : "",
+            period: isPeriod ? value : "",
+          });
+        }}
+        disabled={disabled}
+        reset={{ label: messages.CLEAR_FILTERS, onClick: clear }}
+      />
+    );
   }
 
   return (
@@ -164,9 +219,13 @@ function InvoiceFilters({
 function InvoiceList({
   role,
   filters,
+  onApplyFilters,
+  invalidFilterMessage,
 }: {
   role: OperatorRole;
   filters: InvoiceFilters;
+  onApplyFilters: (filters: InvoiceFilters) => void;
+  invalidFilterMessage: string;
 }) {
   const [page, setPage] = useState(0);
   const subject = querySubject(role);
@@ -186,7 +245,10 @@ function InvoiceList({
   useEffect(() => setPage(0), [filters]);
 
   return (
-    <section className={styles.panel} aria-label={messages.TITLE}>
+    <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
+      <h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2>
+      {role === "admin" ? <InvoiceFilters role={role} onApply={onApplyFilters} disabled={query.isFetching} /> : null}
+      {role === "admin" && invalidFilterMessage ? <p className={`${styles.notice} ${styles.error}`} role="alert">{invalidFilterMessage}</p> : null}
       <InlineQueryState
         pending={query.isPending}
         error={query.isError ? query.error : null}
@@ -206,7 +268,7 @@ function InvoiceList({
             { key: "period", header: messages.PERIOD, render: (invoice) => invoice.period },
             { key: "type", header: messages.TYPE, render: (invoice) => messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type },
             { key: "amount", header: messages.AMOUNT, render: (invoice) => amountText(invoice.amount, invoice.currency) },
-            { key: "status", header: messages.STATUS, render: (invoice) => invoiceStatus(invoice.status) },
+            { key: "status", header: messages.STATUS, render: (invoice) => <StatusBadge status={invoice.status}>{invoiceStatus(invoice.status)}</StatusBadge> },
             {
               key: "detail",
               header: messages.VIEW_DETAILS,
@@ -317,7 +379,7 @@ function InvoiceDetail({ invoiceId, role }: { invoiceId: string; role: OperatorR
           <div><dt>{messages.PERIOD}</dt><dd>{record.period}</dd></div>
           <div><dt>{messages.TYPE}</dt><dd>{messages.INVOICE_TYPES[record.type as keyof typeof messages.INVOICE_TYPES] ?? record.type}</dd></div>
           <div><dt>{messages.AMOUNT}</dt><dd>{amountText(record.amount, record.currency)}</dd></div>
-          <div><dt>{messages.STATUS}</dt><dd>{invoiceStatus(record.status)}</dd></div>
+          <div><dt>{messages.STATUS}</dt><dd><StatusBadge status={record.status}>{invoiceStatus(record.status)}</StatusBadge></dd></div>
           <div><dt>{messages.DUE_DATE}</dt><dd>{dateText(record.dueDate)}</dd></div>
           <div><dt>{messages.PAID_AT}</dt><dd>{dateTimeText(record.paidAt)}</dd></div>
         </dl>
@@ -367,7 +429,7 @@ function InvoiceDetail({ invoiceId, role }: { invoiceId: string; role: OperatorR
             rowKey={(proof) => proof.id}
             columns={[
               { key: "file", header: messages.PROOF_FILENAME, render: (proof) => <span className={styles.breakText}>{proof.originalFilename}</span> },
-              { key: "status", header: messages.STATUS, render: (proof) => messages.PROOF_STATUSES[proof.status] },
+              { key: "status", header: messages.STATUS, render: (proof) => <StatusBadge status={proof.status}>{messages.PROOF_STATUSES[proof.status]}</StatusBadge> },
               { key: "submitted", header: messages.SUBMITTED_AT, render: (proof) => dateTimeText(proof.submittedAt) },
               { key: "payment", header: messages.PAYMENT_ID, render: (proof) => <span className={styles.breakText}>{proof.paymentId}</span> },
               { key: "size", header: messages.PROOF_SIZE, render: (proof) => `${new Intl.NumberFormat("vi-VN").format(proof.sizeBytes)} bytes` },
@@ -453,6 +515,15 @@ export function OperatorInvoicesScreen({
   const [invalidFilterMessage, setInvalidFilterMessage] = useState("");
   const validInvoiceId = invoiceId && InvoiceIdSchema.safeParse(invoiceId).success ? invoiceId : undefined;
 
+  function applyInvoiceFilters(next: InvoiceFilters) {
+    if (next.ownerId.trim() && !InvoiceIdSchema.safeParse(next.ownerId.trim()).success) {
+      setInvalidFilterMessage("Owner ID phải là UUID hợp lệ.");
+      return;
+    }
+    setInvalidFilterMessage("");
+    setFilters({ ...next, ownerId: next.ownerId.trim() });
+  }
+
   return (
     <div className={styles.screen}>
       {showHeading ? (
@@ -464,22 +535,15 @@ export function OperatorInvoicesScreen({
       {validInvoiceId ? <InvoiceDetail key={validInvoiceId} invoiceId={validInvoiceId} role={role} /> :
         invalidInvoiceId ? <p className={styles.notice} role="alert">{messages.INVALID_INVOICE_ID}</p> : (
           <>
-            <InvoiceFilters
-              disabled={false}
-              onApply={(next) => {
-                if (next.ownerId.trim() && !InvoiceIdSchema.safeParse(next.ownerId.trim()).success) {
-                  setInvalidFilterMessage("Owner ID phải là UUID hợp lệ.");
-                  return;
-                }
-                setInvalidFilterMessage("");
-                setFilters({ ...next, ownerId: next.ownerId.trim() });
-              }}
-            />
-            {invalidFilterMessage ? <p className={`${styles.notice} ${styles.error}`} role="alert">{invalidFilterMessage}</p> : null}
+            {role === "moderator" ? <>
+              <InvoiceFilters role={role} disabled={false} onApply={applyInvoiceFilters} />
+              {invalidFilterMessage ? <p className={`${styles.notice} ${styles.error}`} role="alert">{invalidFilterMessage}</p> : null}
+            </> : null}
             <InvoiceList
-              key={`${filters.ownerId}|${filters.period}|${filters.status}|${filters.type}`}
               role={role}
               filters={filters}
+              onApplyFilters={applyInvoiceFilters}
+              invalidFilterMessage={invalidFilterMessage}
             />
           </>
         )}

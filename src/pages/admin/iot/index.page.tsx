@@ -10,6 +10,7 @@ import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
@@ -19,6 +20,18 @@ import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getIotBackDestination } from "../admin-back-destination";
 
 const PAGE_SIZE = 20;
+
+const MACHINE_STATUS_LABELS: Record<string, string> = {
+  IN_WAREHOUSE: "Trong kho",
+  PENDING_ACTIVATION: "Chờ kích hoạt",
+  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
+  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
+  UNDER_MAINTENANCE: "Đang bảo trì",
+  REFURBISHING: "Đang tân trang",
+  PENDING_QA: "Chờ kiểm định",
+  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
+  RETIRED: "Đã ngừng sử dụng",
+};
 
 function count(value: number | undefined): string {
   return value === undefined ? "—" : new Intl.NumberFormat("vi-VN").format(value);
@@ -129,7 +142,7 @@ function IoTContent() {
                 { key: "name", header: T.STORES.NAME, render: (location) => location.name },
                 { key: "address", header: T.STORES.ADDRESS, render: (location) => location.address ?? "—" },
                 { key: "city", header: T.STORES.CITY, render: (location) => location.city ?? "—" },
-                { key: "status", header: T.MACHINES.STATUS, render: (location) => location.active === undefined ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
+                { key: "status", header: T.MACHINES.STATUS, render: (location) => location.active === undefined ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge> },
               ]}
             />}
           </section>
@@ -149,7 +162,7 @@ function IoTContent() {
               columns={[
                 { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? machine.id },
                 { key: "type", header: T.IOT.MACHINE_TYPE_CONTRACT, render: (machine) => machineTypeFor(machine.id, ownerContracts) },
-                { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ?? "—" },
+                { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ? <StatusBadge status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</StatusBadge> : "—" },
                 { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
                 { key: "deployed", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—" },
                 { key: "actions", header: T.MACHINES.OPEN_DETAIL, render: (machine) => <Link className={styles.accountTextButton} href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{T.MACHINES.OPEN_DETAIL}</Link> },

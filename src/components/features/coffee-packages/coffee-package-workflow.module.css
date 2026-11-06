@@ -261,19 +261,6 @@
   font-size: 0.88rem;
 }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 25px;
-  padding: 3px 8px;
-  border: 1px solid #e6ddd7;
-  border-radius: 6px;
-  background: #f8f5f3;
-  color: #514743;
-  font-size: 0.86rem;
-  white-space: nowrap;
-}
-
 .details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

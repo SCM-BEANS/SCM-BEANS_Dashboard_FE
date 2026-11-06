@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -29,7 +30,7 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
         <>
           <dl className={styles.details}>
             <div><dt>Số tiền hoàn</dt><dd>{formatCoffeePackageMoney(refund.amount, refund.currency ?? "VND")}</dd></div>
-            <div><dt>Trạng thái</dt><dd><span className={styles.status}>{coffeePackageStatusLabel(refund.status)}</span></dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
             <div><dt>Lý do</dt><dd>{refund.reason ?? "—"}</dd></div>
             <div><dt>Đã xác nhận nhận tiền</dt><dd>{formatCoffeePackageDateTime(refund.ownerConfirmedAt)}</dd></div>
           </dl>
@@ -40,7 +41,7 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
                 <tbody>{attempts.map((attempt) => (
                   <tr key={attempt.id}>
                     <td>{attempt.attemptNumber}</td><td className={styles.numeric}>{formatCoffeePackageMoney(attempt.amount, attempt.currency ?? "VND")}</td>
-                    <td>{attempt.bankReference ?? "—"}</td><td><span className={styles.status}>{coffeePackageStatusLabel(attempt.status)}</span></td>
+                    <td>{attempt.bankReference ?? "—"}</td><td><StatusBadge status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
                     <td>{formatCoffeePackageDateTime(attempt.createdAt)}</td>
                     <td><ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PAYOUT", refundId: attempt.refundId, attemptNumber: attempt.attemptNumber })}>Tải chứng từ</ButtonBar></td>
                   </tr>

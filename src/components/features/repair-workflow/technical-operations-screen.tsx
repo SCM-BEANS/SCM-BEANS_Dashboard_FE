@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 
 import Link from "next/link";
 
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 
@@ -29,6 +30,8 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
+import type { MaintenanceRequestListParams } from "@/apis/maintenance-requests.api";
 
 import styles from "./repair-workflow.module.css";
 
@@ -65,6 +68,21 @@ function ticketNotes(ticket: MaintenanceTicket): string | null | undefined {
 
 function requestTypeLabel(requestType: MaintenanceRequest["requestType"]): string {
   return requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì định kỳ";
+}
+
+function maintenanceRequestStatusLabel(status: MaintenanceRequest["status"]): string {
+  const labels: Record<MaintenanceRequest["status"], string> = {
+    REQUESTED: "Mới yêu cầu",
+    TRIAGED: "Đã phân loại",
+    RESCHEDULE_REQUESTED: "Yêu cầu đổi lịch",
+    CONFIRMED: "Đã xác nhận",
+    IN_PROGRESS: "Đang thực hiện",
+    COMPLETED: "Hoàn tất",
+    CLOSED: "Đã đóng",
+    OVERDUE_REVIEW: "Chờ xử lý quá hạn",
+    CANCELLED: "Đã hủy",
+  };
+  return labels[status];
 }
 
 function QueryFeedback({
@@ -125,7 +143,9 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role }:
           <td>{ticket.machineId
             ? <ActionLink href={machineDetailHref(ticket.machineId)}>{ticket.machineId}</ActionLink>
             : "—"}</td>
-          <td>{ticket.status ?? "—"}</td>
+          <td>{ticket.status
+            ? role === "admin" ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : ticket.status
+            : "—"}</td>
           <td>{formatDate(ticketDate(ticket))}</td>
           <td>{ticketNotes(ticket) ?? "—"}</td>
         </tr>
@@ -158,6 +178,11 @@ function MaintenanceRequestTable({
       render: (request) => <TextLinkButton href={routes.requestDetail(request.id)}>{request.id}</TextLinkButton>,
     },
     { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => requestTypeLabel(request.requestType) },
+    ...(role === "admin" ? [{
+      key: "status",
+      header: messages.TECHNICAL_STATUS,
+      render: (request: MaintenanceRequest) => <StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge>,
+    }] : []),
     {
       key: "owner",
       header: messages.TECHNICAL_OWNER,
@@ -277,6 +302,10 @@ export function TechnicalOperationsScreen({
   const shouldLoadHistory = isMachineHistory && (!historyMachineId || validHistoryMachineId);
   const [ticketPage, setTicketPage] = useState(0);
   const [requestPage, setRequestPage] = useState(0);
+  const [requestSearchDraft, setRequestSearchDraft] = useState("");
+  const [requestStatusDraft, setRequestStatusDraft] = useState<MaintenanceRequest["status"] | "">("");
+  const [requestTypeDraft, setRequestTypeDraft] = useState<MaintenanceRequest["requestType"] | "">("");
+  const [requestFilters, setRequestFilters] = useState<MaintenanceRequestListParams>({});
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets", querySubject(routes.role), historyMachineId, ticketPage, 50],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({
@@ -288,8 +317,8 @@ export function TechnicalOperationsScreen({
     retry: false,
   });
   const maintenanceRequests = useQuery({
-    queryKey: ["dolores", "maintenance-requests", querySubject(routes.role), requestPage, 50],
-    queryFn: ({ signal }) => maintenanceRequestsApi.listPage({ page: requestPage, size: 50 }, signal),
+    queryKey: ["dolores", "maintenance-requests", querySubject(routes.role), requestFilters, requestPage, 50],
+    queryFn: ({ signal }) => maintenanceRequestsApi.listPage({ page: requestPage, size: 50, ...requestFilters }, signal),
     enabled: isTechnicalRequestList,
     retry: false,
   });
@@ -318,6 +347,16 @@ export function TechnicalOperationsScreen({
       setTriageFeedback({ type: "error", message: getApiErrorMessage(error) });
     },
   });
+  const submitRequestFilters = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const ownerId = requestSearchDraft.trim();
+    setRequestFilters({
+      ...(ownerId ? { ownerId } : {}),
+      ...(requestStatusDraft ? { status: requestStatusDraft } : {}),
+      ...(requestTypeDraft ? { requestType: requestTypeDraft } : {}),
+    });
+    setRequestPage(0);
+  };
 
   if (isUnsupportedWrite) {
     return (
@@ -367,7 +406,7 @@ export function TechnicalOperationsScreen({
   const listReady = !maintenanceRequests.isPending;
   const requestList = listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length > 0 ? (
     <>
-      <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>
+      {routes.role === "moderator" && <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>}
       <MaintenanceRequestTable
         requests={maintenanceRequests.data.items}
         onTriage={triage.mutate}
@@ -392,14 +431,63 @@ export function TechnicalOperationsScreen({
           {triageFeedback.message}
         </p>
       )}
-      <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
-      {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-      {routes.role === "admin" && requestList ? (
-        <section className={styles.panel} aria-labelledby="technical-request-list-title">{requestList}</section>
-      ) : requestList}
-      {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
-        <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
-      ) : null}
+      {routes.role === "admin" ? (
+        <section className={styles.panel} aria-labelledby="technical-request-list-title">
+          <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>
+          <TableFilters
+            search={{
+              ariaLabel: "Tìm theo Owner ID",
+              maxLength: 36,
+              placeholder: "Tìm Owner ID",
+              value: requestSearchDraft,
+              onChange: setRequestSearchDraft,
+            }}
+            selects={[
+              {
+                id: "technical-request-type-filter",
+                ariaLabel: "Lọc yêu cầu theo loại",
+                value: requestTypeDraft,
+                options: [
+                  { value: "", label: "Tất cả loại yêu cầu" },
+                  { value: "REPAIR", label: "Sửa chữa" },
+                  { value: "PREVENTIVE", label: "Bảo trì định kỳ" },
+                ],
+                onChange: (value) => setRequestTypeDraft(value as MaintenanceRequest["requestType"] | ""),
+              },
+              {
+                id: "technical-request-status-filter",
+                ariaLabel: "Lọc yêu cầu theo trạng thái",
+                value: requestStatusDraft,
+                options: [
+                  { value: "", label: "Tất cả trạng thái" },
+                  ...([
+                    "REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS",
+                    "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED",
+                  ] as const).map((status) => ({ value: status, label: maintenanceRequestStatusLabel(status) })),
+                ],
+                onChange: (value) => setRequestStatusDraft(value as MaintenanceRequest["status"] | ""),
+              },
+            ]}
+            submitLabel="Tìm kiếm"
+            onSubmit={submitRequestFilters}
+          />
+          <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
+          {requestList}
+          {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+          {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
+            <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
+          ) : null}
+        </section>
+      ) : (
+        <>
+          <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
+          {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+          {requestList}
+          {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
+            <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
+          ) : null}
+        </>
+      )}
       {routes.role === "moderator" ? (
         <RepairCaseListPanel
           role={routes.role}

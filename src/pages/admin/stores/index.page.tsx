@@ -5,6 +5,7 @@ import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
@@ -203,7 +204,7 @@ function StoresContent() {
         <div><span>{T.STORES.CITY}</span><strong>{detail.data.city || "—"}</strong></div>
         <div><span>{T.STORES.CONTACT}</span><strong>{detail.data.contactPerson || "—"}</strong></div>
         <div><span>{T.STORES.PHONE}</span><strong>{detail.data.phoneNumber || "—"}</strong></div>
-        <div><span>Trạng thái</span><strong>{detail.data.active == null ? "—" : detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</strong></div>
+        <div><span>Trạng thái</span><strong>{detail.data.active == null ? "—" : <StatusBadge status={detail.data.active ? "ACTIVE" : "INACTIVE"}>{detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge>}</strong></div>
         <div><span>Mã cửa hàng</span><strong>{detail.data.id}</strong></div>
       </div></section>}
     </>}
@@ -242,7 +243,7 @@ function StoresContent() {
             { key: "name", header: T.STORES.NAME, render: ({ location }) => location.name },
             { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
             { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
-            { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE },
+            { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge> },
             { key: "actions", header: "", render: ({ owner, location }) => (
               <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId, ...(search ? { q: search } : {}) })}>Chi tiết</button>
             ) },

@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
 import styles from "./coffee-package-workflow.module.css";
@@ -28,7 +29,7 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
                 <td className={styles.code}>{order.contractId?.slice(0, 8).toUpperCase() ?? "—"}</td>
                 <td className={styles.numeric}>{order.quantity ?? "—"}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(order.status)}</span></td>
+                <td><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></td>
                 <td>{formatCoffeePackageDateTime(order.createdAt)}</td>
                 <td><ButtonBar type="button" onClick={() => onOpenOrder(order.id)}>Xem đơn</ButtonBar></td>
               </tr>

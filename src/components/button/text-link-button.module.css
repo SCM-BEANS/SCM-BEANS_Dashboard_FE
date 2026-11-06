@@ -2,13 +2,12 @@
 .link:visited {
   color: #302927;
   font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .link:hover {
   color: #302927;
-  text-decoration-thickness: 2px;
+  text-decoration: none;
 }
 
 .link:focus-visible {

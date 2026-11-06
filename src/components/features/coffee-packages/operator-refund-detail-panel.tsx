@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -60,7 +61,7 @@ export function OperatorRefundDetailPanel({
       {refund ? (
         <>
           <dl className={styles.details}>
-            <div><dt>Trạng thái</dt><dd><span className={styles.status}>{coffeePackageStatusLabel(refund.status)}</span></dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
             <div><dt>Số tiền hoàn</dt><dd>{formatCoffeePackageMoney(refund.amount, refund.currency ?? "VND")}</dd></div>
             <div><dt>Đơn hàng</dt><dd className={styles.code}>{refund.orderId ?? "—"}</dd></div>
             <div><dt>Hóa đơn</dt><dd className={styles.code}>{refund.invoiceId ?? "—"}</dd></div>

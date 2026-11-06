@@ -4,6 +4,7 @@ import { machineModelsApi } from "@/apis/machine-models.api";
 import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
@@ -111,7 +112,9 @@ export function MachineModelDetail({
           <div><span>{T.MACHINE_MODELS.MANUFACTURER}</span><strong>{machineModel.manufacturer}</strong></div>
           <div><span>{T.MACHINE_MODELS.DISPLAY_NAME}</span><strong>{machineModel.displayName}</strong></div>
           <div><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineModel.machineType === "SMART_IOT" ? `${T.MACHINES.SMART} (SMART_IOT)` : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)`}</strong></div>
-          <div><span>{T.MACHINES.STATUS}</span><strong>{machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</strong></div>
+          <div><span>{T.MACHINES.STATUS}</span><strong>{role === "admin"
+            ? <StatusBadge status={machineModel.active ? "ACTIVE" : "INACTIVE"}>{machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</StatusBadge>
+            : machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</strong></div>
           <div><span>{T.MACHINE_MODELS.CREATED_AT}</span><strong>{formatDateTime(machineModel.createdAt)}</strong></div>
           <div><span>{T.MACHINE_MODELS.UPDATED_AT}</span><strong>{formatDateTime(machineModel.updatedAt)}</strong></div>
           <div className={styles.machineModelSpecifications}>

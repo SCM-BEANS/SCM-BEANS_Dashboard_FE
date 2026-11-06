@@ -53,6 +53,11 @@
   background: #f7f5f3;
 }
 
+.filters button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
 .filters input:focus-visible,
 .filters select:focus-visible,
 .filters button:focus-visible {

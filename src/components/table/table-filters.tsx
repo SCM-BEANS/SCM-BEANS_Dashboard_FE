@@ -25,9 +25,14 @@ export type TableFiltersProps = {
   selects?: readonly TableFilterSelect[];
   submitLabel: string;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  disabled?: boolean;
+  reset?: {
+    label: string;
+    onClick: () => void;
+  };
 };
 
-export function TableFilters({ search, selects = [], submitLabel, onSubmit }: TableFiltersProps) {
+export function TableFilters({ search, selects = [], submitLabel, onSubmit, disabled = false, reset }: TableFiltersProps) {
   return (
     <form className={styles.filters} onSubmit={onSubmit}>
       <input
@@ -35,6 +40,7 @@ export function TableFilters({ search, selects = [], submitLabel, onSubmit }: Ta
         maxLength={search.maxLength}
         placeholder={search.placeholder}
         value={search.value}
+        disabled={disabled}
         onChange={(event) => search.onChange(event.target.value)}
       />
       {selects.map((select) => (
@@ -42,6 +48,7 @@ export function TableFilters({ search, selects = [], submitLabel, onSubmit }: Ta
           key={select.id}
           aria-label={select.ariaLabel}
           value={select.value}
+          disabled={disabled}
           onChange={(event) => select.onChange(event.target.value)}
         >
           {select.options.map((option) => (
@@ -49,7 +56,8 @@ export function TableFilters({ search, selects = [], submitLabel, onSubmit }: Ta
           ))}
         </select>
       ))}
-      <button type="submit">{submitLabel}</button>
+      <button type="submit" disabled={disabled}>{submitLabel}</button>
+      {reset && <button type="button" disabled={disabled} onClick={reset.onClick}>{reset.label}</button>}
     </form>
   );
 }

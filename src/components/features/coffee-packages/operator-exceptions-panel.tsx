@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -62,7 +63,7 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
                 <td>{item.originalFilename ?? item.id}</td>
                 <td className={styles.code}>{item.invoiceId}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, "VND")}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(item.status)}</span></td>
+                <td><StatusBadge status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
                 <td>{formatCoffeePackageDateTime(item.submittedAt)}</td>
                 <td className={styles.buttonCell}>
                   <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PROOF", proofId: item.id, filename: item.originalFilename ?? "chung-tu-thanh-toan" })}>Tải chứng từ</ButtonBar>

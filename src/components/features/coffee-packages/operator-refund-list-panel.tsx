@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -26,7 +27,7 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
                 <td className={styles.code}>{item.id.slice(0, 8).toUpperCase()}</td>
                 <td className={styles.code}>{item.ownerId ?? "—"}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, item.currency ?? "VND")}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(item.status)}</span></td>
+                <td><StatusBadge status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
                 <td>{formatCoffeePackageDateTime(item.createdAt)}</td>
                 <td><ButtonBar type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar></td>
               </tr>

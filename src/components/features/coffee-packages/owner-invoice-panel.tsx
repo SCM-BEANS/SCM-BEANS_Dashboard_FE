@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -30,7 +31,7 @@ export function OwnerInvoicePanel({ workflow }: { workflow: CoffeePackageWorkflo
       </div>
       <dl className={styles.details}>
         <div><dt>Số tiền cần thanh toán</dt><dd>{formatCoffeePackageMoney(invoice.approvedAmount ?? invoice.total, invoice.currency ?? "VND")}</dd></div>
-        <div><dt>Trạng thái hóa đơn</dt><dd><span className={styles.status}>{coffeePackageStatusLabel(invoice.status)}</span></dd></div>
+        <div><dt>Trạng thái hóa đơn</dt><dd><StatusBadge status={invoice.status}>{coffeePackageStatusLabel(invoice.status)}</StatusBadge></dd></div>
         <div><dt>Hạn thanh toán</dt><dd>{formatCoffeePackageDateTime(invoice.dueAt)}</dd></div>
         <div><dt>Đã thanh toán lúc</dt><dd>{formatCoffeePackageDateTime(invoice.paidAt)}</dd></div>
       </dl>
@@ -57,7 +58,7 @@ export function OwnerInvoicePanel({ workflow }: { workflow: CoffeePackageWorkflo
               <tr key={proof.id}>
                 <td>{proof.originalFilename ?? "Chứng từ thanh toán"}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(proof.amount, invoice.currency ?? "VND")}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(proof.status)}</span></td>
+                <td><StatusBadge status={proof.status}>{coffeePackageStatusLabel(proof.status)}</StatusBadge></td>
                 <td>{formatCoffeePackageDateTime(proof.submittedAt)}</td>
                 <td>{proof.reviewReason ?? proof.dispositionReason ?? "Đang chờ đối soát"}</td>
                 <td><ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PROOF", proofId: proof.id, filename: proof.originalFilename ?? "chung-tu-goi-ca-phe" })}>Tải chứng từ</ButtonBar></td>

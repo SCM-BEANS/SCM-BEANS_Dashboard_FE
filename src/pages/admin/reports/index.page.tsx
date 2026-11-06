@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DASHBOARD_BUSINESS_TIME_ZONE, DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { PATH_ADMIN } from "@/routes/path";
@@ -135,15 +136,6 @@ function invoiceStatusLabel(status: string): string {
     case "OVERDUE": return "Quá hạn";
     case "CANCELLED": return "Đã hủy";
     default: return status;
-  }
-}
-
-function invoiceStatusClass(status: string): string {
-  switch (status.toUpperCase()) {
-    case "PAID": return "reportStatusPaid";
-    case "OVERDUE": return "reportStatusOverdue";
-    case "CANCELLED": return "reportStatusCancelled";
-    default: return "reportStatusPending";
   }
 }
 
@@ -344,9 +336,7 @@ function ReportContent() {
                   {
                     label: "Trạng thái",
                     value: (
-                      <span className={[styles.reportStatus, styles[invoiceStatusClass(selectedInvoice.status)]].join(" ")}>
-                        {invoiceStatusLabel(selectedInvoice.status)}
-                      </span>
+                      <StatusBadge status={selectedInvoice.status}>{invoiceStatusLabel(selectedInvoice.status)}</StatusBadge>
                     ),
                   },
                   { label: "Hạn thanh toán", value: formatDateOnly(selectedInvoice.dueDate) },
@@ -626,9 +616,7 @@ function ReportContent() {
                   key: "status",
                   header: ADMIN_MESSAGES.REPORTS.STATUS,
                   render: (invoice) => (
-                    <span className={[styles.reportStatus, styles[invoiceStatusClass(invoice.status)]].join(" ")}>
-                      {invoiceStatusLabel(invoice.status)}
-                    </span>
+                    <StatusBadge status={invoice.status}>{invoiceStatusLabel(invoice.status)}</StatusBadge>
                   ),
                 },
                 { key: "created", header: ADMIN_MESSAGES.REPORTS.CREATED, render: (invoice) => formatDateTime(invoice.createdAt) },

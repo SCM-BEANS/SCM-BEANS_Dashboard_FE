@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { AdminUserCreateView } from "@/components/features/admin-users/admin-user-create-view";
@@ -25,6 +27,17 @@ function queryValue(value: string | string[] | undefined): string {
 function positiveNumber(value: string, fallback: number): number {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function userDetailHref(userId: string, query: Record<string, string | string[] | undefined>): string {
+  const params = new URLSearchParams();
+  for (const key of ["page", "q", "role", "status"]) {
+    const value = queryValue(query[key]);
+    if (value) params.set(key, value);
+  }
+  params.set("view", "detail");
+  params.set("id", userId);
+  return `${PATH_ADMIN.USERS}?${params.toString()}`;
 }
 
 function AdminUsersContent() {
@@ -137,23 +150,16 @@ function AdminUsersContent() {
                   rows={users.data.items}
                   rowKey={(entry) => entry.id}
                   columns={[
-                    { key: "name", header: T.FORM.NAME, render: (entry) => <strong>{entry.name}</strong> },
+                    { key: "name", header: T.FORM.NAME, render: (entry) => (
+                      <TextLinkButton href={userDetailHref(entry.id, router.query)}>{entry.name}</TextLinkButton>
+                    ) },
                     { key: "email", header: T.FORM.EMAIL, render: (entry) => entry.email },
                     { key: "role", header: T.FORM.ROLE, render: (entry) => {
                       const role = getAdminUserRole(entry);
                       return role ? ADMIN_USER_ROLE_LABELS[role] : entry.roles.join(", ");
                     } },
-                    { key: "tenant", header: T.FORM.TENANT, render: (entry) => {
-                      const role = getAdminUserRole(entry);
-                      return entry.tenant_id
-                        ? entry.tenant_id
-                        : role === "owner" ? T.FORM.TENANT_UNASSIGNED : T.FORM.GLOBAL_SCOPE;
-                    } },
-                    { key: "status", header: T.FORM.STATUS, render: (entry) => entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED },
-                    { key: "detail", header: "", render: (entry) => (
-                      <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: entry.id, contractPage: null })}>
-                        {T.LIST.DETAIL}
-                      </button>
+                    { key: "status", header: T.FORM.STATUS, render: (entry) => (
+                      <StatusBadge status={entry.status}>{entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</StatusBadge>
                     ) },
                   ]}
                 />

@@ -1,4 +1,5 @@
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { type Contract } from "@/schema/contracts.schema";
 import { CONTRACT_TABLE_HEADERS } from "@/components/table/constants/contract-table.constants";
 import { DataTable } from "./data-table";
@@ -40,9 +41,14 @@ export function ContractTable({ contracts, contractHref, draftStatusHref, header
         {
           key: "status",
           header: CONTRACT_TABLE_HEADERS.status,
-          render: (contract) => contract.status === "DRAFT" && draftStatusHref
-            ? <TextLinkButton href={draftStatusHref(contract.id)}>{contract.status}</TextLinkButton>
-            : contract.status,
+          render: (contract) => {
+            const label = headerVariant === "admin"
+              ? <StatusBadge status={contract.status}>{contract.status}</StatusBadge>
+              : contract.status;
+            return contract.status === "DRAFT" && draftStatusHref
+              ? <TextLinkButton href={draftStatusHref(contract.id)}>{label}</TextLinkButton>
+              : label;
+          },
         },
         {
           key: "type",

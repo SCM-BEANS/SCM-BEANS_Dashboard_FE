@@ -6,6 +6,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import {
@@ -156,7 +157,7 @@ export function AdminUserDetailView({
                   {roleOptions}
                 </select>
               </label>
-              <div><span>{T.FORM.STATUS}</span><strong>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</strong></div>
+              <div><span>{T.FORM.STATUS}</span><strong><StatusBadge status={user.status}>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</StatusBadge></strong></div>
               <div><span>{T.FORM.VERIFIED}</span><strong>{user.email_verified ? T.FORM.YES : T.FORM.NO}</strong></div>
               <div><span>{T.FORM.CREATED}</span><strong>{formatAdminUserDate(user.created_at)}</strong></div>
               <div><span>{T.FORM.UPDATED}</span><strong>{formatAdminUserDate(user.updated_at)}</strong></div>

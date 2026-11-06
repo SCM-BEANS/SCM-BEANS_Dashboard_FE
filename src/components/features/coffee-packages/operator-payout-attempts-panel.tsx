@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageRefund } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -41,7 +42,7 @@ export function OperatorPayoutAttemptsPanel({
                 <td>{attempt.attemptNumber}</td>
                 <td>{attempt.bankReference ?? "—"}</td>
                 <td>{formatCoffeePackageDateTime(attempt.createdAt)}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(attempt.status)}</span></td>
+                <td><StatusBadge status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
                 <td className={styles.buttonCell}>
                   <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PAYOUT", refundId: refund.id, attemptNumber: attempt.attemptNumber })}>Tải chứng từ</ButtonBar>
                   {refund.status === "PAYOUT_RECORDED" && attempt.status === "RECORDED" && attempt.attemptNumber === refund.payoutAttempt ? <ButtonBar type="button" disabled={workflow.pending} onClick={() => setFailedAttemptNumber(attempt.attemptNumber)}>Ghi nhận thất bại</ButtonBar> : null}

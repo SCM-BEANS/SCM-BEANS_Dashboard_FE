@@ -4,7 +4,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { billingApi } from "@/apis/billing.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import {
@@ -72,13 +74,6 @@ function statusText(status: string): string {
   return labels[status] ?? status;
 }
 
-function statusClass(status: string): string {
-  if (status === "PAID") return pageStyles.approved;
-  if (status === "OVERDUE") return pageStyles.overdue;
-  if (status === "PENDING" || status === "UNPAID") return pageStyles.pending;
-  return "";
-}
-
 function typeText(type: string): string {
   if (type === "RENTAL") return "Thuê máy";
   if (type === "REPAIR") return "Sửa chữa";
@@ -109,7 +104,9 @@ type InvoiceFilters = Pick<InvoiceListParams, "ownerId" | "status" | "type" | "p
 export function AdminInvoiceListScreen() {
   const router = useRouter();
   const [page, setPage] = useState(0);
-  const [draftFilters, setDraftFilters] = useState({ ownerId: "", status: "", type: "", period: "" });
+  const [searchDraft, setSearchDraft] = useState("");
+  const [statusDraft, setStatusDraft] = useState("");
+  const [typeDraft, setTypeDraft] = useState("");
   const [filters, setFilters] = useState<InvoiceFilters>({});
   const [filterError, setFilterError] = useState("");
 
@@ -128,11 +125,12 @@ export function AdminInvoiceListScreen() {
 
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const searchValue = searchDraft.trim();
+    const isPeriod = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchValue);
     const candidate = {
-      ...(draftFilters.ownerId.trim() ? { ownerId: draftFilters.ownerId.trim() } : {}),
-      ...(draftFilters.status ? { status: draftFilters.status } : {}),
-      ...(draftFilters.type ? { type: draftFilters.type } : {}),
-      ...(draftFilters.period.trim() ? { period: draftFilters.period.trim() } : {}),
+      ...(searchValue ? isPeriod ? { period: searchValue } : { ownerId: searchValue } : {}),
+      ...(statusDraft ? { status: statusDraft } : {}),
+      ...(typeDraft ? { type: typeDraft } : {}),
       page: 0,
       size: INVOICE_PAGE_SIZE,
     };
@@ -158,55 +156,52 @@ export function AdminInvoiceListScreen() {
           <h1>Hóa đơn & đối soát</h1>
         </header>
 
-        <section className={pageStyles.filterPanel} aria-labelledby="admin-invoice-filters-title">
-          <h2 id="admin-invoice-filters-title">Lọc hóa đơn</h2>
-          <form onSubmit={applyFilters}>
-            <div className={pageStyles.filterGrid}>
-              <div className={pageStyles.field}>
-                <label htmlFor="invoice-owner-filter">Owner ID</label>
-                <input id="invoice-owner-filter" value={draftFilters.ownerId} onChange={(event) => setDraftFilters({ ...draftFilters, ownerId: event.target.value })} placeholder="UUID Owner" />
-              </div>
-              <div className={pageStyles.field}>
-                <label htmlFor="invoice-status-filter">Trạng thái</label>
-                <select id="invoice-status-filter" value={draftFilters.status} onChange={(event) => setDraftFilters({ ...draftFilters, status: event.target.value })}>
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="DRAFT">Bản nháp</option>
-                  <option value="PENDING">Chờ xử lý</option>
-                  <option value="UNPAID">Chưa thanh toán</option>
-                  <option value="PAID">Đã thanh toán</option>
-                  <option value="OVERDUE">Quá hạn</option>
-                  <option value="CANCELLED">Đã hủy</option>
-                </select>
-              </div>
-              <div className={pageStyles.field}>
-                <label htmlFor="invoice-type-filter">Loại hóa đơn</label>
-                <select id="invoice-type-filter" value={draftFilters.type} onChange={(event) => setDraftFilters({ ...draftFilters, type: event.target.value })}>
-                  <option value="">Tất cả loại</option>
-                  <option value="RENTAL">Thuê máy</option>
-                  <option value="REPAIR">Sửa chữa</option>
-                  <option value="SUPPLY">Vật tư</option>
-                </select>
-              </div>
-              <div className={pageStyles.field}>
-                <label htmlFor="invoice-period-filter">Kỳ hóa đơn</label>
-                <input id="invoice-period-filter" value={draftFilters.period} onChange={(event) => setDraftFilters({ ...draftFilters, period: event.target.value })} placeholder="yyyy-MM" inputMode="numeric" />
-              </div>
-            </div>
-            <div className={pageStyles.filterActions}>
-              <ButtonBar type="submit">Áp dụng bộ lọc</ButtonBar>
-              <ButtonBar type="button" onClick={() => {
-                setDraftFilters({ ownerId: "", status: "", type: "", period: "" });
-                setFilters({});
-                setFilterError("");
-                setPage(0);
-              }}>Xóa bộ lọc</ButtonBar>
-            </div>
-          </form>
-          {filterError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{filterError}</p>}
-        </section>
-
         <section className={pageStyles.billingPanel} aria-labelledby="admin-invoice-list-title">
           <h2 id="admin-invoice-list-title">Danh sách hóa đơn</h2>
+
+          <div className={pageStyles.filterControls}>
+            <TableFilters
+              search={{
+                ariaLabel: "Tìm hóa đơn theo Owner ID hoặc kỳ",
+                maxLength: 36,
+                placeholder: "Tìm Owner ID hoặc kỳ hóa đơn (yyyy-MM)",
+                value: searchDraft,
+                onChange: setSearchDraft,
+              }}
+              selects={[
+                {
+                  id: "invoice-type-filter",
+                  ariaLabel: "Lọc theo loại hóa đơn",
+                  value: typeDraft,
+                  options: [
+                    { value: "", label: "Tất cả loại hóa đơn" },
+                    { value: "RENTAL", label: "Thuê máy" },
+                    { value: "REPAIR", label: "Sửa chữa" },
+                    { value: "SUPPLY", label: "Vật tư" },
+                  ],
+                  onChange: setTypeDraft,
+                },
+                {
+                  id: "invoice-status-filter",
+                  ariaLabel: "Lọc theo trạng thái hóa đơn",
+                  value: statusDraft,
+                  options: [
+                    { value: "", label: "Tất cả trạng thái" },
+                    { value: "DRAFT", label: "Bản nháp" },
+                    { value: "PENDING", label: "Chờ xử lý" },
+                    { value: "UNPAID", label: "Chưa thanh toán" },
+                    { value: "PAID", label: "Đã thanh toán" },
+                    { value: "OVERDUE", label: "Quá hạn" },
+                    { value: "CANCELLED", label: "Đã hủy" },
+                  ],
+                  onChange: setStatusDraft,
+                },
+              ]}
+              submitLabel="Tìm kiếm"
+              onSubmit={applyFilters}
+            />
+            {filterError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{filterError}</p>}
+          </div>
 
           {invoices.isPending && <p role="status">Đang tải danh sách hóa đơn…</p>}
           {invoices.isError && <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">
@@ -229,7 +224,7 @@ export function AdminInvoiceListScreen() {
                     { key: "type", header: "Loại", render: (invoice) => typeText(invoice.type) },
                     { key: "amount", header: "Số tiền", align: "right", render: (invoice) => <span className={pageStyles.noWrap}>{amountText(invoice.amount, invoice.currency)}</span> },
                     { key: "due", header: "Hạn thanh toán", render: (invoice) => <span className={pageStyles.noWrap}>{compactDateText(invoice.dueDate)}</span> },
-                    { key: "status", header: "Trạng thái", render: (invoice) => <span className={[pageStyles.statusBadge, statusClass(invoice.status)].join(" ")}>{statusText(invoice.status)}</span> },
+                    { key: "status", header: "Trạng thái", render: (invoice) => <StatusBadge status={invoice.status}>{statusText(invoice.status)}</StatusBadge> },
                     { key: "actions", header: "Thao tác", render: (invoice) => <div className={pageStyles.invoiceRowActions}>
                       <ButtonBar href={PATH_ADMIN.INVOICE_DETAIL(invoice.id)}>Chi tiết</ButtonBar>
                       <ButtonBar type="button" disabled={createPdfExport.isPending || !invoice.ownerId} onClick={() => { if (invoice.ownerId) createPdfExport.mutate({ invoiceId: invoice.id, ownerId: invoice.ownerId }); }}>
@@ -337,7 +332,7 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
           rowKey={(proof) => proof.id}
           columns={[
             { key: "file", header: "Tệp chứng từ", render: (proof) => <><strong>{proof.originalFilename}</strong><p className={pageStyles.rowHint}>{proof.contentType} · {amountFormatter.format(proof.sizeBytes)} bytes</p></> },
-            { key: "status", header: "Trạng thái", render: (proof) => <span className={[pageStyles.statusBadge, pageStyles[proof.status.toLowerCase()]].join(" ")}>{proofStatusText(proof.status)}</span> },
+            { key: "status", header: "Trạng thái", render: (proof) => <StatusBadge status={proof.status}>{proofStatusText(proof.status)}</StatusBadge> },
             { key: "submitted", header: "Đã gửi lúc", render: (proof) => dateTimeText(proof.submittedAt) },
             { key: "reviewed", header: "Đã xử lý lúc", render: (proof) => dateTimeText(proof.reviewedAt) },
             {
@@ -458,7 +453,7 @@ export function AdminInvoiceDetailScreen({ invoiceId, routerReady }: { invoiceId
                       <InvoiceDetailField label="Loại hóa đơn">{typeText(item.type)}</InvoiceDetailField>
                       <InvoiceDetailField label="Kỳ hóa đơn">{item.period}</InvoiceDetailField>
                       <InvoiceDetailField label="Số tiền">{amountText(item.amount, item.currency)}</InvoiceDetailField>
-                      <InvoiceDetailField label="Trạng thái"><span className={[pageStyles.statusBadge, statusClass(item.status)].join(" ")}>{statusText(item.status)}</span></InvoiceDetailField>
+                      <InvoiceDetailField label="Trạng thái"><StatusBadge status={item.status}>{statusText(item.status)}</StatusBadge></InvoiceDetailField>
                       <InvoiceDetailField label="Hạn thanh toán">{dateText(item.dueDate)}</InvoiceDetailField>
                       <InvoiceDetailField label="Bắt đầu kỳ">{dateText(item.billingPeriodStart)}</InvoiceDetailField>
                       <InvoiceDetailField label="Kết thúc kỳ">{dateText(item.billingPeriodEnd)}</InvoiceDetailField>
@@ -524,7 +519,7 @@ export function AdminInvoiceExportJobScreen({ jobId, routerReady }: { jobId: str
                   <dl className={pageStyles.detailGrid}>
                     <InvoiceDetailField label="Mã yêu cầu">{job.data.id}</InvoiceDetailField>
                     <InvoiceDetailField label="Định dạng">{job.data.format ?? "—"}</InvoiceDetailField>
-                    <InvoiceDetailField label="Trạng thái"><span className={[pageStyles.statusBadge, statusClass(job.data.status)].join(" ")}>{job.data.status === "QUEUED" ? "Đang chờ" : job.data.status === "PROCESSING" ? "Đang xử lý" : job.data.status === "COMPLETED" ? "Hoàn tất" : "Thất bại"}</span></InvoiceDetailField>
+                    <InvoiceDetailField label="Trạng thái"><StatusBadge status={job.data.status}>{job.data.status === "QUEUED" ? "Đang chờ" : job.data.status === "PROCESSING" ? "Đang xử lý" : job.data.status === "COMPLETED" ? "Hoàn tất" : "Thất bại"}</StatusBadge></InvoiceDetailField>
                     <InvoiceDetailField label="Số hóa đơn">{job.data.invoiceCount ?? "—"}</InvoiceDetailField>
                     <InvoiceDetailField label="Tạo lúc">{dateTimeText(job.data.createdAt)}</InvoiceDetailField>
                     <InvoiceDetailField label="Hoàn tất lúc">{dateTimeText(job.data.completedAt)}</InvoiceDetailField>

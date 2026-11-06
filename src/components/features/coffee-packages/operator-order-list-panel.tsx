@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -31,7 +32,7 @@ export function OperatorOrderListPanel({
                 <td>{order.packageName ?? order.packageCode ?? "—"}</td>
                 <td className={styles.numeric}>{order.quantity ?? "—"}</td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</td>
-                <td><span className={styles.status}>{coffeePackageStatusLabel(order.status)}</span></td>
+                <td><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></td>
                 <td>{formatCoffeePackageDateTime(order.createdAt)}</td>
                 <td><ButtonBar type="button" onClick={() => onOpenOrder(order.id)}>Mở đơn</ButtonBar></td>
               </tr>

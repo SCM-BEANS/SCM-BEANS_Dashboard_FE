@@ -197,11 +197,6 @@
 .reportInvoiceDetailField dt { color: #706561; font-size: 13px; line-height: 1.4; }
 .reportInvoiceDetailField dd { margin: 0; overflow-wrap: anywhere; color: #302927; font-size: 14px; font-weight: 600; line-height: 1.45; }
 .reportInvoiceHint { display: none; margin: 0 0 8px; color: #706561; font-size: 12px; line-height: 1.4; }
-.reportStatus { display: inline-flex; min-height: 28px; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-.reportStatusPaid { background: #e8f4ec; color: #246b3a; }
-.reportStatusOverdue { background: #fdebea; color: #a01520; }
-.reportStatusCancelled { background: #f0eeec; color: #706561; }
-.reportStatusPending { background: #fff2e6; color: #80512b; }
 
 .accountPageContent { padding-bottom: 116px; }
 .accountFormGrid input, .accountFormGrid select {
