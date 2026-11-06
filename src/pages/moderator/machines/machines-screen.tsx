@@ -23,6 +23,9 @@ import { DataTable } from "@/components/table/data-table";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { ButtonBar } from "@/components/button/button-bar";
 import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
 import { CreateMachineModelForm } from "@/pages/admin/machines/create-machine-model-form";
 import { MachineModelDetail } from "@/pages/admin/machines/machine-model-detail";
@@ -197,7 +200,7 @@ function MachineList({
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
         columns={[
           { key: "serial", header: ADMIN_T.MACHINES.SERIAL, align: "center", render: (machine) => <Link className={adminStyles.machineInventoryLink} href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`} title={machine.serialNumber ?? machine.id}>{machine.serialNumber ?? "—"}</Link> },
-          { key: "status", header: ADMIN_T.MACHINES.STATUS, align: "center", render: (machine) => machineStatusLabel(machine.status) },
+          { key: "status", header: ADMIN_T.MACHINES.STATUS, align: "center", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> : "—" },
           { key: "connection", header: "Kết nối", align: "center", render: (machine) => {
             if (machine.machineType !== "SMART_IOT") return "—";
             return <MachineConnectionBadge state="permission-denied" />;
@@ -355,6 +358,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     return numberFormat.format(statuses.reduce((sum, status) => sum + (counts[status] ?? 0), 0));
   };
   return (
+    <>
     <div className={styles.pageContent}>
       <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />
       <MachineListView label={title} summary={!isMachineModelsView ? <>
@@ -365,7 +369,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
           <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
         </div>
         <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
-      </> : null} controls={!isMachineModelsView ? <MachineStatusFilter statusFilter={statusFilter} onChange={selectStatus} /> : null}>
+      </> : null}>
       <div className={adminStyles.machineInventoryGroup}>
         <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Danh sách máy và loại máy">
           <button type="button" role="tab" aria-selected={!isMachineModelsView} className={`${adminStyles.machineViewTab} ${!isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINES)}>{ADMIN_T.MACHINES.TITLE}</button>
@@ -378,6 +382,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
               ? machineModels.data && <span>{machineModels.data.length} {ADMIN_T.MACHINE_MODELS.COUNT}</span>
               : inventory.data && <span className={adminStyles.machineFilterCount} aria-live="polite">{numberFormat.format(inventoryCount)} / {numberFormat.format(inventory.data.length)} máy</span>}
           </div>
+          {!isMachineModelsView && <MachineStatusFilter statusFilter={statusFilter} onChange={selectStatus} />}
           {isMachineModelsView ? <>
             <QueryFeedback query={machineModels} loadingMessage={messages.LOADING_MACHINES} />
             {machineModels.data?.length === 0 && <p className={styles.formHint}>{ADMIN_T.COMMON.EMPTY}</p>}
@@ -414,5 +419,26 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       </div>
       </MachineListView>
     </div>
+    {!isCreateView && !isMachineModelDetail && (
+      <ActionBarConfig>
+        <ButtonBar href={PATH_MODERATOR.NEW_MACHINE}>{ADMIN_T.MACHINES.CREATE}</ButtonBar>
+        <ButtonBar href={PATH_MODERATOR.NEW_MACHINE_MODEL}>{ADMIN_T.MACHINE_MODELS.CREATE}</ButtonBar>
+        <ButtonBar href={PATH_MODERATOR.IOT}>{ADMIN_T.MACHINES.VIEW_IOT}</ButtonBar>
+        <ButtonBar
+          type="button"
+          disabled={isMachineModelsView ? machineModels.isFetching : inventory.isFetching || inventorySummary.isFetching}
+          onClick={() => {
+            if (isMachineModelsView) {
+              void machineModels.refetch();
+              return;
+            }
+            void Promise.all([inventory.refetch(), inventorySummary.refetch()]);
+          }}
+        >
+          {ADMIN_T.COMMON.RETRY}
+        </ButtonBar>
+      </ActionBarConfig>
+    )}
+    </>
   );
 }
