@@ -463,6 +463,7 @@ export const RepairCaseReplacementAssignmentRequestSchema = z.object({
 
 export const RepairWorkStartRequestSchema = z.object({
   workScope: z.string().trim().min(1).max(2000),
+  emergencyAuthorizationId: z.string().uuid().optional(),
 }).strict();
 
 export const RepairCaseListParamsSchema = z.object({
@@ -638,3 +639,20 @@ export type RepairWorkCompletionRequest = z.infer<typeof RepairWorkCompletionReq
 export type RepairFallbackDecisionRequest = z.infer<typeof RepairFallbackDecisionRequestSchema>;
 
 export type RepairCustodyEventRequest = z.infer<typeof RepairCustodyEventRequestSchema>;
+
+export const FallbackOfferRequestSchema = z.object({
+  replacementMachineId: MachineIdSchema,
+  startAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  endAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+export const EmergencyAuthorizationRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(2000),
+  workScope: z.string().trim().min(1).max(2000),
+}).strict();
+export const EmergencyAuthorizationResponseSchema = EmergencyAuthorizationRequestSchema.extend({
+  id: z.string().uuid(), repairCaseId: RepairCaseIdSchema, authorizedBy: z.string().uuid(),
+  actorRole: z.string(), authorizedAt: dateTimeSchema, consumedAt: dateTimeSchema.nullish(), consumedBy: z.string().uuid().nullish(),
+}).passthrough();
+export type FallbackOfferRequest = z.infer<typeof FallbackOfferRequestSchema>;
+export type EmergencyAuthorizationRequest = z.infer<typeof EmergencyAuthorizationRequestSchema>;

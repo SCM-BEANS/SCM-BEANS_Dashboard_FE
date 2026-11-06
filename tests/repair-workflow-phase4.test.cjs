@@ -83,5 +83,5 @@ test("Technician diagnosis, start, and completion are gated in the ordered workf
   assert.match(source, /<WorkflowStep title=\{M\.PROCESS_START_REPAIR\}/);
   assert.match(source, /<WorkflowStep title=\{M\.PROCESS_COMPLETE_REPAIR\}/);
   assert.doesNotMatch(source, /aria-label=\{M\.TECHNICIAN_ACTIONS\}/);
-  assert.doesNotMatch(source, /emergencyAuthorizationId:/);
+  assert.match(source, /emergencyAuthorizationId:/);
 });

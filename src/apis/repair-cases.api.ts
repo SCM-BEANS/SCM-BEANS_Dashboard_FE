@@ -1,3 +1,4 @@
+import { FallbackOfferRequestSchema, EmergencyAuthorizationRequestSchema, EmergencyAuthorizationResponseSchema, type FallbackOfferRequest, type EmergencyAuthorizationRequest } from "@/schema/machines.schema";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   MaintenanceRequestIdSchema,
@@ -258,6 +259,22 @@ export const repairCasesApi =  {
       throw new Error("Dolores did not confirm completion for the expected RepairCase ticket.");
     }
     return ticket;
+  },
+  async offerFallback(id: string, input: FallbackOfferRequest) {
+    const caseId = RepairCaseIdSchema.parse(id);
+    const request = FallbackOfferRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/replacement-offers`, request, { baseURL: DOLORES_API_BASE_URL });
+    const event = RepairCaseTimelinePageSchema.shape.content.element.parse(response.data);
+    if (event.repairCaseId !== caseId || event.relatedMachineId !== request.replacementMachineId) throw new Error("Dolores returned an offer for a different repair case or machine.");
+    return event;
+  },
+  async authorizeEmergencyWork(id: string, input: EmergencyAuthorizationRequest) {
+    const caseId = RepairCaseIdSchema.parse(id);
+    const request = EmergencyAuthorizationRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/emergency-work-authorizations`, request, { baseURL: DOLORES_API_BASE_URL });
+    const authorization = EmergencyAuthorizationResponseSchema.parse(response.data);
+    if (authorization.repairCaseId !== caseId) throw new Error("Dolores returned an authorization for a different repair case.");
+    return authorization;
   },
   async decideFallback(id: string, input: RepairFallbackDecisionRequest) {
     const caseId = RepairCaseSchema.shape.id.parse(id);

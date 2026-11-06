@@ -1,3 +1,6 @@
+import axios from "axios";
+import { useRepairCaseCostDispute } from "./use-repair-case-cost-dispute";
+import { ReplacementActions } from "./replacement-actions";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { repairCasesApi } from "@/apis/repair-cases.api";
@@ -136,6 +139,7 @@ export function RepairCaseDetailScreen({
   const validCaseId = RepairCaseIdSchema.safeParse(caseId).success;
   const queryClient = useQueryClient();
   const subject = querySubject(role);
+  const [emergencyAuthorizationId, setEmergencyAuthorizationId] = useState("");
   const [timelinePage, setTimelinePage] = useState(0);
   const [custodyPage, setCustodyPage] = useState(0);
   const [receiveMachineNotes, setReceiveMachineNotes] = useState<Record<string, string>>({});
@@ -184,9 +188,14 @@ export function RepairCaseDetailScreen({
   const releaseEvidenceReference = releaseEvidenceReferences[caseId] ?? "";
   const releaseConfirmationOpen = releaseConfirmationDialogs[caseId] ?? false;
   const setWorkScope = (value: string) => setWorkScopes((current) => ({ ...current, [caseId]: value }));
+  const dispute = useRepairCaseCostDispute(caseId);
+  const selectedAuthorization = dispute.authorizations.find(item => item.authorizationId === emergencyAuthorizationId);
+  const workError = (error: unknown) => dispute.isDisputed && axios.isAxiosError(error) && error.response?.status === 409 ? "Ủy quyền này đã được sử dụng hoặc không khớp phạm vi công việc." : getApiErrorMessage(error);
   const invalidateWorkflowQueries = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow"] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "repair-cases", caseId, "timeline", "all"] }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "repair-cost-reviews"] }),
       queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-requests"] }),
       queryClient.invalidateQueries({ queryKey: ["dolores", "dashboard", "action-items"] }),
       queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
@@ -276,7 +285,7 @@ export function RepairCaseDetailScreen({
     onSettled: invalidateWorkflowQueries,
   });
   const startRepairWork = useMutation({
-    mutationFn: ({ expectedTicketId, workScope }: { expectedTicketId: string; workScope: string }) => {
+    mutationFn: ({ expectedTicketId, workScope, authorizationId }: { expectedTicketId: string; workScope: string; authorizationId?: string }) => {
       if (
         role !== "technician" || !isAssignedTechnician ||
         repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
@@ -286,7 +295,9 @@ export function RepairCaseDetailScreen({
         assignment.data?.status !== "ACTIVE" || assignment.data.repairCaseId !== caseId ||
         !replacementDeliveryAcknowledged
       ) throw new Error(M.TECHNICIAN_START_STATUS_CHANGED);
-      return repairCasesApi.startWork(caseId, expectedTicketId, { workScope });
+      return authorizationId
+        ? repairCasesApi.startWork(caseId, expectedTicketId, { workScope, emergencyAuthorizationId: authorizationId })
+        : repairCasesApi.startWork(caseId, expectedTicketId, { workScope });
     },
     onSettled: invalidateWorkflowQueries,
   });
@@ -632,8 +643,8 @@ export function RepairCaseDetailScreen({
   };
   const submitStartWork = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validCaseId || !canStartWork || !ticket.data?.id || !workScope.trim() || startRepairWork.isPending || startRepairWork.isSuccess) return;
-    startRepairWork.mutate({ expectedTicketId: ticket.data.id, workScope: workScope.trim() });
+    if (!validCaseId || !canStartWork || !ticket.data?.id || !workScope.trim() || (dispute.isDisputed && !selectedAuthorization) || dispute.isLoading || dispute.isError || startRepairWork.isPending || startRepairWork.isSuccess) return;
+    startRepairWork.mutate({ expectedTicketId: ticket.data.id, workScope: dispute.isDisputed ? selectedAuthorization!.workScope : workScope.trim(), authorizationId: dispute.isDisputed ? selectedAuthorization?.authorizationId : undefined });
   };
   const submitDiagnosis = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -649,12 +660,12 @@ export function RepairCaseDetailScreen({
     event.preventDefault();
     const diagnosis = ticketDiagnosis;
     const result = resolutionResult.trim();
-    const scope = completionWorkScope.trim();
+    const scope = dispute.isDisputed ? selectedAuthorization?.workScope ?? "" : completionWorkScope.trim();
     const evidenceReferences = completionEvidenceReferenceText.split(/\r?\n/).map((reference) => reference.trim()).filter(Boolean);
     const notes = completionNote.trim();
     if (
       !validCaseId || !canCompleteWork || !ticket.data?.id || !diagnosis || !result || !scope || evidenceReferences.length === 0 ||
-      completeRepairWork.isPending || completeRepairWork.isSuccess
+      dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || completeRepairWork.isPending || completeRepairWork.isSuccess
     ) return;
     completeRepairWork.mutate({
       expectedTicketId: ticket.data.id,
@@ -664,6 +675,7 @@ export function RepairCaseDetailScreen({
         workScope: scope,
         evidenceReferences,
         ...(notes ? { notes } : {}),
+        ...(dispute.isDisputed && selectedAuthorization ? { emergencyAuthorizationId: selectedAuthorization.authorizationId } : {}),
       },
     });
   };
@@ -808,6 +820,8 @@ export function RepairCaseDetailScreen({
       {repairCase.isError ? <QueryError label={M.CASE_NOT_FOUND} error={repairCase.error} onRetry={() => void repairCase.refetch()} /> : null}
       {repairCase.data ? (
         <>
+          {(role === "admin" || role === "moderator") && <ReplacementActions repairCase={repairCase.data} refresh={invalidateWorkflowQueries} />}
+          {(role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician)) && dispute.authorizations.length > 0 && <section><h3>Ủy quyền khẩn cấp</h3>{dispute.authorizations.map(item => <p key={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {({ ADMIN: "Quản trị viên", MODERATOR: "Điều phối viên" } as Record<string, string>)[item.actorRole] ?? item.actorRole} · Lý do: {item.reason || "—"} · Phạm vi công việc: {item.workScope}</p>)}</section>}
           <section className={styles.panel} aria-label="Thông tin hồ sơ">
             <SectionHeading title="Thông tin hồ sơ" description="Trạng thái do hệ thống Dolores trả về." />
             <dl className={styles.detailGrid}>
@@ -1066,9 +1080,11 @@ export function RepairCaseDetailScreen({
                   <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
                 ) : canStartWork ? (
                   <form className={styles.assignmentForm} onSubmit={submitStartWork}>
+                    {dispute.isDisputed && <label className={styles.formField}>Ủy quyền xử lý khẩn cấp<select value={emergencyAuthorizationId} onChange={event => { const id = event.target.value; setEmergencyAuthorizationId(id); const scope = dispute.authorizations.find(item => item.authorizationId === id)?.workScope ?? ""; setWorkScope(scope); setCompletionWorkScopes(current => ({ ...current, [caseId]: scope })); }}><option value="">Chọn ủy quyền</option>{dispute.authorizations.map(item => <option key={item.authorizationId} value={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {item.workScope}</option>)}</select></label>}
                     <label className={styles.formField} htmlFor={`repair-work-scope-${caseId}`}>
                       <span>{M.TECHNICIAN_WORK_SCOPE}</span>
                       <textarea
+                        readOnly={dispute.isDisputed}
                         id={`repair-work-scope-${caseId}`}
                         maxLength={2000}
                         disabled={isRefreshing || startRepairWork.isSuccess}
@@ -1078,10 +1094,10 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     {startRepairWork.isError ? (
-                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(startRepairWork.error)}</p>
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(startRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <ButtonBar type="submit" disabled={!workScope.trim() || isRefreshing || startRepairWork.isSuccess}>
+                    <ButtonBar type="submit" disabled={!workScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || isRefreshing || startRepairWork.isSuccess}>
                       {startRepairWork.isPending ? M.TECHNICIAN_START_WORKING : M.TECHNICIAN_START_WORK}
                     </ButtonBar>
                   </form>
@@ -1107,10 +1123,12 @@ export function RepairCaseDetailScreen({
                   <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
                 ) : canCompleteWork ? (
                   <form className={styles.assignmentForm} onSubmit={submitCompleteWork}>
+                    {dispute.isDisputed && <label className={styles.formField}>Ủy quyền xử lý khẩn cấp<select value={emergencyAuthorizationId} onChange={event => { const id = event.target.value; setEmergencyAuthorizationId(id); const scope = dispute.authorizations.find(item => item.authorizationId === id)?.workScope ?? ""; setWorkScope(scope); setCompletionWorkScopes(current => ({ ...current, [caseId]: scope })); }}><option value="">Chọn ủy quyền</option>{dispute.authorizations.map(item => <option key={item.authorizationId} value={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {item.workScope}</option>)}</select></label>}
                     <p className={styles.notice} role="note"><strong>{M.TECHNICIAN_RECORDED_DIAGNOSIS}:</strong> {ticketDiagnosis}</p>
                     <label className={styles.formField} htmlFor={`repair-completion-scope-${caseId}`}>
                       <span>{M.TECHNICIAN_WORK_SCOPE}</span>
                       <textarea
+                        readOnly={dispute.isDisputed}
                         id={`repair-completion-scope-${caseId}`}
                         maxLength={2000}
                         disabled={isRefreshing || completeRepairWork.isSuccess}
@@ -1152,12 +1170,12 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     {completeRepairWork.isError ? (
-                      <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(completeRepairWork.error)}</p>
+                      <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(completeRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
                     <ButtonBar
                       type="submit"
-                      disabled={!completionWorkScope.trim() || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess}
+                      disabled={!completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess}
                     >
                       {completeRepairWork.isPending ? M.TECHNICIAN_COMPLETION_SUBMITTING : M.TECHNICIAN_COMPLETION_SUBMIT}
                     </ButtonBar>
@@ -1366,6 +1384,7 @@ export function RepairCaseDetailScreen({
                   <li className={styles.timelineItem} key={event.id}>
                     <strong>{maintenanceCustodyEventLabel(event.eventType)}</strong>
                     <p>{timelineDetails(event.reason, event.details)}</p>
+                    {event.eventType === "EMERGENCY_WORK_AUTHORIZED" && <p>Phạm vi và mã cho phép: {event.details}</p>}
                     <span>{formatDateTime(event.occurredAt)} · {event.actorRole}{event.actorId ? ` · ${event.actorId}` : ""}</span>
                   </li>
                 ))}
