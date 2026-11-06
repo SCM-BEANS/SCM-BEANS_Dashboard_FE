@@ -10,9 +10,54 @@ import {
   InstallationWorkOrderListSchema,
   InstallationWorkOrderRecordSchema,
   InstallationWorkOrderOwnerIdSchema,
+  InstallationWorkOrderPageParamsSchema,
+  InstallationWorkOrderChecklistItemSchema,
+  InstallationWorkOrderEvidenceMetadataSchema,
   type CreateInstallationWorkOrderRequest,
+  type InstallationWorkOrderPageParams,
 } from "@/schema/installation-work-orders.schema";
 import { FailInstallationWorkOrderRequestSchema, InstallationAccessoryRequestSchema, InstallationChecklistResultRequestSchema, InstallationChecklistResultResponseSchema, AssignInstallationWorkOrderRequestSchema, RescheduleInstallationWorkOrderRequestSchema, CancelInstallationWorkOrderRequestSchema, InstallationWorkOrderAccessorySchema, type InstallationWorkOrderSummary, type FailInstallationWorkOrderRequest, type InstallationAccessoryRequest, type InstallationChecklistResultRequest, type AssignInstallationWorkOrderRequest, type RescheduleInstallationWorkOrderRequest, type CancelInstallationWorkOrderRequest } from "@/schema/installation-work-orders.schema";
+
+type InstallationWorkOrderPage<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
+function paginationHeader(headers: unknown, name: string): unknown {
+  if (!headers || typeof headers !== "object") return undefined;
+  const candidate = headers as Record<string, unknown> & { get?: (header: string) => unknown };
+  return candidate.get?.(name) ?? candidate[name.toLowerCase()] ?? candidate[name];
+}
+
+function numberHeader(headers: unknown, name: string, fallback: number, minimum: number, maximum?: number): number {
+  const raw = paginationHeader(headers, name);
+  if (raw == null || raw === "") return fallback;
+  const value = Number(raw);
+  return Number.isSafeInteger(value)
+    && value >= minimum
+    && (maximum === undefined || value <= maximum)
+    ? value
+    : fallback;
+}
+
+function pagedItems<T>(
+  items: T[],
+  headers: unknown,
+  requestedPage: number,
+  requestedSize: number,
+): InstallationWorkOrderPage<T> {
+  const hasNextHeader = paginationHeader(headers, "X-Has-Next");
+  return {
+    items,
+    page: numberHeader(headers, "X-Page", requestedPage, 0),
+    size: numberHeader(headers, "X-Page-Size", requestedSize, 1, 100),
+    hasNext: hasNextHeader === undefined
+      ? items.length === requestedSize
+      : String(hasNextHeader).toLowerCase() === "true",
+  };
+}
 
 
 export class InstallationWorkOrderIdentityMismatchError extends Error {
@@ -71,6 +116,48 @@ export const installationWorkOrdersApi =  {
       throw new InstallationWorkOrderIdentityMismatchError();
     }
     return details;
+  },
+  async listChecklistItems(id: string, input: InstallationWorkOrderPageParams = {}, signal?: AbortSignal) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const params = InstallationWorkOrderPageParamsSchema.parse({
+      page: input.page ?? 0,
+      size: input.size ?? 50,
+    });
+    const response = await axiosClient.get<unknown>(`${workOrderPath(workOrderId)}/checklist-items`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InstallationWorkOrderChecklistItemSchema.array().parse(response.data);
+    return pagedItems(items, response.headers, params.page, params.size);
+  },
+  async listAccessories(id: string, input: InstallationWorkOrderPageParams = {}, signal?: AbortSignal) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const params = InstallationWorkOrderPageParamsSchema.parse({
+      page: input.page ?? 0,
+      size: input.size ?? 50,
+    });
+    const response = await axiosClient.get<unknown>(`${workOrderPath(workOrderId)}/accessories`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InstallationWorkOrderAccessorySchema.array().parse(response.data);
+    return pagedItems(items, response.headers, params.page, params.size);
+  },
+  async listEvidence(id: string, input: InstallationWorkOrderPageParams = {}, signal?: AbortSignal) {
+    const workOrderId = InstallationWorkOrderIdSchema.parse(id);
+    const params = InstallationWorkOrderPageParamsSchema.parse({
+      page: input.page ?? 0,
+      size: input.size ?? 50,
+    });
+    const response = await axiosClient.get<unknown>(`${workOrderPath(workOrderId)}/evidence`, {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const items = InstallationWorkOrderEvidenceMetadataSchema.array().parse(response.data);
+    return pagedItems(items, response.headers, params.page, params.size);
   },
   async start(id: string) {
     const workOrderId = InstallationWorkOrderIdSchema.parse(id);

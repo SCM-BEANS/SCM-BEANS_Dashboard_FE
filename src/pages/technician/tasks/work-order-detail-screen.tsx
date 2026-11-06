@@ -8,6 +8,7 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -804,7 +805,10 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
         delete next[input.checklistItemId];
         return next;
       });
-      await refreshWorkOrder();
+      await Promise.all([
+        refreshWorkOrder(),
+        queryClient.invalidateQueries({ queryKey: installationWorkOrderRecordsQueryPrefix(workOrderId, "checklist") }),
+      ]);
     },
     onError: refreshWorkOrder,
   });
@@ -820,7 +824,10 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
       setAccessoryQuantity("1");
       setAccessorySerialNumber("");
       setAccessoryNotes("");
-      await refreshWorkOrder();
+      await Promise.all([
+        refreshWorkOrder(),
+        queryClient.invalidateQueries({ queryKey: installationWorkOrderRecordsQueryPrefix(workOrderId, "accessories") }),
+      ]);
     },
     onError: refreshWorkOrder,
   });
@@ -837,7 +844,10 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     onSuccess: async () => {
       setSelectedFile(null);
       if (fileInput.current) fileInput.current.value = "";
-      await refreshWorkOrder();
+      await Promise.all([
+        refreshWorkOrder(),
+        queryClient.invalidateQueries({ queryKey: installationWorkOrderRecordsQueryPrefix(workOrderId, "evidence") }),
+      ]);
     },
     onError: refreshWorkOrder,
   });
@@ -861,6 +871,140 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
   const workOrder = detailData?.workOrder;
   const evidenceCount = detailData?.evidenceCount ?? detailData?.evidence.length ?? 0;
   const canComplete = Boolean(workOrder?.status === "IN_PROGRESS" && evidenceCount > 0 && handoverRecipient.trim());
+  const renderChecklistActions = workOrder?.status === "IN_PROGRESS"
+    ? (item: InstallationWorkOrderDetails["checklistItems"][number]) => {
+      const edit = checklistEdits[item.id];
+      const result = edit?.result ?? (item.result === "PENDING" ? "" : item.result);
+      const notes = edit?.notes ?? item.notes ?? "";
+      const changed = result !== item.result || notes !== (item.notes ?? "");
+      return (
+        <div className={styles.checklistActions}>
+          <select
+            className={styles.tableControl}
+            aria-label={`Kết quả ${item.label}`}
+            disabled={updateChecklist.isPending}
+            value={result}
+            onChange={(event) => setChecklistEdits((current) => ({
+              ...current,
+              [item.id]: {
+                result: event.target.value as ChecklistEdit["result"],
+                notes: current[item.id]?.notes ?? item.notes ?? "",
+              },
+            }))}
+          >
+            <option value="">Chọn kết quả</option>
+            <option value="PASSED">Đạt</option>
+            <option value="FAILED">Không đạt</option>
+            <option value="NOT_APPLICABLE">Không áp dụng</option>
+          </select>
+          <input
+            className={styles.tableControl}
+            aria-label={`Ghi chú ${item.label}`}
+            maxLength={4000}
+            value={notes}
+            disabled={updateChecklist.isPending}
+            onChange={(event) => setChecklistEdits((current) => ({
+              ...current,
+              [item.id]: {
+                result: current[item.id]?.result ?? (item.result === "PENDING" ? "" : item.result),
+                notes: event.target.value,
+              },
+            }))}
+          />
+          <ButtonBar
+            type="button"
+            disabled={!result || !changed || updateChecklist.isPending}
+            onClick={() => result && updateChecklist.mutate({
+              checklistItemId: item.id,
+              result: result as ChecklistResult,
+              notes: notes.trim(),
+            })}
+          >
+            {updateChecklist.isPending ? "Đang lưu…" : "Lưu"}
+          </ButtonBar>
+        </div>
+      );
+    }
+    : undefined;
+  const accessoryActions = workOrder?.status === "IN_PROGRESS" ? (
+    <>
+      <div className={styles.formGrid}>
+        <label className={styles.formField} htmlFor="work-order-accessory-name">
+          <span>Tên phụ kiện</span>
+          <input id="work-order-accessory-name" maxLength={160} value={accessoryName} onChange={(event) => setAccessoryName(event.target.value)} />
+        </label>
+        <label className={styles.formField} htmlFor="work-order-accessory-quantity">
+          <span>Số lượng</span>
+          <input id="work-order-accessory-quantity" type="number" min="1" step="1" value={accessoryQuantity} onChange={(event) => setAccessoryQuantity(event.target.value)} />
+        </label>
+        <label className={styles.formField} htmlFor="work-order-accessory-serial">
+          <span>Số sê-ri (nếu có)</span>
+          <input id="work-order-accessory-serial" maxLength={128} value={accessorySerialNumber} onChange={(event) => setAccessorySerialNumber(event.target.value)} />
+        </label>
+        <label className={styles.formField} htmlFor="work-order-accessory-notes">
+          <span>Ghi chú (nếu có)</span>
+          <input id="work-order-accessory-notes" maxLength={4000} value={accessoryNotes} onChange={(event) => setAccessoryNotes(event.target.value)} />
+        </label>
+      </div>
+      {addAccessory.isError && <p className={styles.error} role="alert">{getApiErrorMessage(addAccessory.error, "mutation")}</p>}
+      <ButtonBar
+        type="button"
+        disabled={!accessoryName.trim() || !Number.isInteger(Number(accessoryQuantity)) || Number(accessoryQuantity) < 1 || addAccessory.isPending}
+        onClick={() => addAccessory.mutate()}
+      >
+        {addAccessory.isPending ? "Đang lưu phụ kiện…" : "Ghi nhận phụ kiện"}
+      </ButtonBar>
+    </>
+  ) : undefined;
+  const renderEvidenceActions = (item: InstallationWorkOrderDetails["evidence"][number]) => (
+    <div className={styles.evidenceActions}>
+      <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void viewEvidence(item)}>
+        {evidenceAction?.id === item.id && evidenceAction.action === "view" ? "Đang mở…" : "Xem"}
+      </ButtonBar>
+      <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void downloadEvidence(item)}>
+        {evidenceAction?.id === item.id && evidenceAction.action === "download" ? "Đang tải…" : "Tải xuống"}
+      </ButtonBar>
+    </div>
+  );
+  const evidenceActions = workOrder?.status === "IN_PROGRESS" ? (
+    <>
+      <p className={styles.hint}>Tải ít nhất một tệp PDF, JPEG hoặc PNG, dung lượng tối đa 20 MB. Tệp được lưu riêng tư.</p>
+      <div className={styles.uploadRow}>
+        <label className={styles.fileField} htmlFor="work-order-evidence-file">
+          <span>Chọn chứng từ</span>
+          <input
+            ref={fileInput}
+            id="work-order-evidence-file"
+            type="file"
+            accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+            disabled={uploadEvidence.isPending}
+            onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
+          />
+        </label>
+        {selectedFile && <span className={styles.fileName}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</span>}
+        <ButtonBar
+          type="button"
+          disabled={!selectedFile || Boolean(evidenceError) || uploadEvidence.isPending}
+          onClick={() => selectedFile && uploadEvidence.mutate(selectedFile)}
+        >
+          {uploadEvidence.isPending ? "Đang tải chứng từ…" : "Tải chứng từ"}
+        </ButtonBar>
+      </div>
+      {evidenceError && <p className={styles.error} role="alert">{evidenceError}</p>}
+      {uploadEvidence.isError && <p className={styles.error} role="alert">{getApiErrorMessage(uploadEvidence.error, "mutation")}</p>}
+    </>
+  ) : undefined;
+  const checklistMessage = workOrder ? (
+    <>
+      <p className={styles.hint}>
+        {workOrder.status === "IN_PROGRESS"
+          ? "Chọn kết quả cho từng mục rồi lưu. Không thể gửi trạng thái Chờ xử lý. Checklist không thay thế chứng từ bàn giao."
+          : "Checklist chỉ có thể cập nhật khi lệnh đang được xử lý."}
+      </p>
+      {updateChecklist.isError && <p className={styles.error} role="alert">{getApiErrorMessage(updateChecklist.error, "mutation")}</p>}
+      {updateChecklist.isSuccess && <p className={styles.success} role="status">Đã lưu kết quả checklist.</p>}
+    </>
+  ) : undefined;
 
   const handleFileChange = (file: File | null) => {
     setEvidenceError("");
@@ -989,83 +1133,6 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
             )}
 
             {workOrder.status === "IN_PROGRESS" && (
-              <section className={styles.panel} aria-labelledby="work-order-failure-title">
-                <h2 id="work-order-failure-title">Báo lắp đặt không thành công</h2>
-                <p className={styles.hint}>Ghi rõ lý do để Moderator có thể điều phối bước tiếp theo.</p>
-                <label className={styles.formField} htmlFor="work-order-failure-reason">
-                  <span>Lý do</span>
-                  <textarea
-                    id="work-order-failure-reason"
-                    maxLength={4000}
-                    rows={3}
-                    value={failureReason}
-                    onChange={(event) => setFailureReason(event.target.value)}
-                  />
-                </label>
-                {fail.isError && <p className={styles.error} role="alert">{getApiErrorMessage(fail.error, "mutation")}</p>}
-                <ButtonBar
-                  type="button"
-                  disabled={!failureReason.trim() || fail.isPending || start.isPending || complete.isPending}
-                  onClick={() => fail.mutate()}
-                >
-                  {fail.isPending ? "Đang gửi báo cáo…" : "Gửi báo cáo thất bại"}
-                </ButtonBar>
-              </section>
-            )}
-
-            {workOrder.status === "IN_PROGRESS" && (
-              <>
-                <section className={styles.panel} aria-labelledby="work-order-evidence-title">
-                  <h2 id="work-order-evidence-title">Minh chứng bàn giao ({evidenceCount})</h2>
-                  <p className={styles.hint}>Tải ít nhất một tệp PDF, JPEG hoặc PNG, dung lượng tối đa 20 MB. Tệp được lưu riêng tư.</p>
-                  {detailData.evidence.length > 0 && (
-                    <DataTable
-                      variant="moderator"
-                      className={styles.evidenceTable}
-                      rows={detailData.evidence}
-                      rowKey={(item) => item.id}
-                      columns={[
-                        { key: "filename", header: "Tệp", render: (item) => item.originalFilename },
-                        { key: "type", header: "Định dạng", render: (item) => item.contentType ?? "—" },
-                        { key: "size", header: "Dung lượng", render: (item) => formatFileSize(item.sizeBytes) },
-                        { key: "uploaded", header: "Ngày tải", render: (item) => formatDateTime(item.uploadedAt) },
-                        { key: "actions", header: "Thao tác", cellProps: () => ({ style: { width: 188, minWidth: 188, whiteSpace: "nowrap" } }), render: (item) => <div className={styles.evidenceActions}>
-                          <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void viewEvidence(item)}>
-                            {evidenceAction?.id === item.id && evidenceAction.action === "view" ? "Đang mở…" : "Xem"}
-                          </ButtonBar>
-                          <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void downloadEvidence(item)}>
-                            {evidenceAction?.id === item.id && evidenceAction.action === "download" ? "Đang tải…" : "Tải xuống"}
-                          </ButtonBar>
-                        </div> },
-                      ]}
-                    />
-                  )}
-                  {evidenceActionError && <p className={styles.error} role="alert">{evidenceActionError}</p>}
-                  <div className={styles.uploadRow}>
-                    <label className={styles.fileField} htmlFor="work-order-evidence-file">
-                      <span>Chọn minh chứng</span>
-                      <input
-                        ref={fileInput}
-                        id="work-order-evidence-file"
-                        type="file"
-                        accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
-                        disabled={uploadEvidence.isPending}
-                        onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                    {selectedFile && <span className={styles.fileName}>{selectedFile.name} · {formatFileSize(selectedFile.size)}</span>}
-                    <ButtonBar
-                      type="button"
-                      disabled={!selectedFile || Boolean(evidenceError) || uploadEvidence.isPending}
-                      onClick={() => selectedFile && uploadEvidence.mutate(selectedFile)}
-                    >
-                      {uploadEvidence.isPending ? "Đang tải minh chứng…" : "Tải minh chứng"}
-                    </ButtonBar>
-                  </div>
-                  {evidenceError && <p className={styles.error} role="alert">{evidenceError}</p>}
-                  {uploadEvidence.isError && <p className={styles.error} role="alert">{getApiErrorMessage(uploadEvidence.error, "mutation")}</p>}
-                </section>
-
                 <section className={styles.panel} aria-labelledby="work-order-complete-title">
                   <h2 id="work-order-complete-title">Hoàn tất bàn giao</h2>
                   <p className={styles.hint}>Checklist không bắt buộc. Cần ít nhất một minh chứng đã tải lên và tên người nhận bàn giao.</p>
@@ -1087,7 +1154,6 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                     {complete.isPending ? "Đang hoàn tất…" : "Xác nhận hoàn tất bàn giao"}
                   </ButtonBar>
                 </section>
-              </>
             )}
 
             {workOrder.status === "COMPLETED" && (
@@ -1102,147 +1168,15 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
               <p className={styles.notice} role="status">Lệnh lắp đặt đã kết thúc với trạng thái {statusLabels[workOrder.status]}.</p>
             )}
 
-            <section className={styles.panel} aria-labelledby="work-order-checklist-title">
-              <h2 id="work-order-checklist-title">Checklist tham khảo ({detailData.checklistItemCount ?? detailData.checklistItems.length})</h2>
-              <p className={styles.hint}>
-                {workOrder.status === "IN_PROGRESS"
-                  ? "Chọn kết quả cho từng mục rồi lưu. Không thể gửi trạng thái Chờ xử lý. Checklist không thay thế minh chứng bàn giao."
-                  : "Checklist chỉ có thể cập nhật khi lệnh đang được xử lý."}
-              </p>
-              {updateChecklist.isError && <p className={styles.error} role="alert">{getApiErrorMessage(updateChecklist.error, "mutation")}</p>}
-              {updateChecklist.isSuccess && <p className={styles.success} role="status">Đã lưu kết quả checklist.</p>}
-              <DataTable
-                variant="moderator"
-                rows={detailData.checklistItems}
-                rowKey={(item) => item.id}
-                emptyMessage="Không có mục checklist cho lệnh này."
-                columns={[
-                  { key: "code", header: "Mã mục", render: (item) => item.itemCode },
-                  { key: "label", header: "Nội dung", render: (item) => item.label },
-                  { key: "required", header: "Bắt buộc", render: (item) => item.required ? "Có" : "Không" },
-                  {
-                    key: "result",
-                    header: "Kết quả",
-                    render: (item) => {
-                      const edit = checklistEdits[item.id];
-                      const result = edit?.result ?? (item.result === "PENDING" ? "" : item.result);
-                      return workOrder.status === "IN_PROGRESS" ? (
-                        <select
-                          className={styles.tableControl}
-                          aria-label={`Kết quả ${item.label}`}
-                          disabled={updateChecklist.isPending}
-                          value={result}
-                          onChange={(event) => setChecklistEdits((current) => ({
-                            ...current,
-                            [item.id]: {
-                              result: event.target.value as ChecklistEdit["result"],
-                              notes: current[item.id]?.notes ?? item.notes ?? "",
-                            },
-                          }))}
-                        >
-                          <option value="">Chọn kết quả</option>
-                          <option value="PASSED">Đạt</option>
-                          <option value="FAILED">Không đạt</option>
-                          <option value="NOT_APPLICABLE">Không áp dụng</option>
-                        </select>
-                      ) : item.result;
-                    },
-                  },
-                  {
-                    key: "notes",
-                    header: "Ghi chú",
-                    render: (item) => workOrder.status === "IN_PROGRESS" ? (
-                      <input
-                        className={styles.tableControl}
-                        aria-label={`Ghi chú ${item.label}`}
-                        maxLength={4000}
-                        value={checklistEdits[item.id]?.notes ?? item.notes ?? ""}
-                        disabled={updateChecklist.isPending}
-                        onChange={(event) => setChecklistEdits((current) => ({
-                          ...current,
-                          [item.id]: {
-                            result: current[item.id]?.result ?? (item.result === "PENDING" ? "" : item.result),
-                            notes: event.target.value,
-                          },
-                        }))}
-                      />
-                    ) : item.notes ?? "—",
-                  },
-                  ...(workOrder.status === "IN_PROGRESS" ? [{
-                    key: "save",
-                    header: "",
-                    render: (item: InstallationWorkOrderDetails["checklistItems"][number]) => {
-                      const edit = checklistEdits[item.id];
-                      const result = edit?.result ?? (item.result === "PENDING" ? "" : item.result);
-                      const notes = edit?.notes ?? item.notes ?? "";
-                      const changed = result !== item.result || notes !== (item.notes ?? "");
-                      return (
-                        <ButtonBar
-                          type="button"
-                          disabled={!result || !changed || updateChecklist.isPending}
-                          onClick={() => result && updateChecklist.mutate({
-                            checklistItemId: item.id,
-                            result: result as ChecklistResult,
-                            notes: notes.trim(),
-                          })}
-                        >
-                          {updateChecklist.isPending ? "Đang lưu…" : "Lưu"}
-                        </ButtonBar>
-                      );
-                    },
-                  }] : []),
-                ]}
-              />
-            </section>
-
-            {(detailData.accessories.length > 0 || workOrder.status === "IN_PROGRESS") && (
-              <section className={styles.panel} aria-labelledby="work-order-accessories-title">
-                <h2 id="work-order-accessories-title">Phụ kiện đã ghi nhận</h2>
-                {detailData.accessories.length ? (
-                  <DataTable
-                    variant="moderator"
-                    rows={detailData.accessories}
-                    rowKey={(item) => item.id}
-                    columns={[
-                      { key: "name", header: "Phụ kiện", render: (item) => item.accessoryName },
-                      { key: "quantity", header: "Số lượng", render: (item) => item.quantity },
-                      { key: "serial", header: "Số sê-ri", render: (item) => item.serialNumber ?? "—" },
-                      { key: "notes", header: "Ghi chú", render: (item) => item.notes ?? "—" },
-                    ]}
-                  />
-                ) : <p className={styles.hint}>Chưa ghi nhận phụ kiện.</p>}
-                {workOrder.status === "IN_PROGRESS" && (
-                  <>
-                    <div className={styles.formGrid}>
-                      <label className={styles.formField} htmlFor="work-order-accessory-name">
-                        <span>Tên phụ kiện</span>
-                        <input id="work-order-accessory-name" maxLength={160} value={accessoryName} onChange={(event) => setAccessoryName(event.target.value)} />
-                      </label>
-                      <label className={styles.formField} htmlFor="work-order-accessory-quantity">
-                        <span>Số lượng</span>
-                        <input id="work-order-accessory-quantity" type="number" min="1" step="1" value={accessoryQuantity} onChange={(event) => setAccessoryQuantity(event.target.value)} />
-                      </label>
-                      <label className={styles.formField} htmlFor="work-order-accessory-serial">
-                        <span>Số sê-ri (nếu có)</span>
-                        <input id="work-order-accessory-serial" maxLength={128} value={accessorySerialNumber} onChange={(event) => setAccessorySerialNumber(event.target.value)} />
-                      </label>
-                      <label className={styles.formField} htmlFor="work-order-accessory-notes">
-                        <span>Ghi chú (nếu có)</span>
-                        <input id="work-order-accessory-notes" maxLength={4000} value={accessoryNotes} onChange={(event) => setAccessoryNotes(event.target.value)} />
-                      </label>
-                    </div>
-                    {addAccessory.isError && <p className={styles.error} role="alert">{getApiErrorMessage(addAccessory.error, "mutation")}</p>}
-                    <ButtonBar
-                      type="button"
-                      disabled={!accessoryName.trim() || !Number.isInteger(Number(accessoryQuantity)) || Number(accessoryQuantity) < 1 || addAccessory.isPending}
-                      onClick={() => addAccessory.mutate()}
-                    >
-                      {addAccessory.isPending ? "Đang lưu phụ kiện…" : "Ghi nhận phụ kiện"}
-                    </ButtonBar>
-                  </>
-                )}
-              </section>
-            )}
+            <InstallationWorkOrderRecords
+              workOrderId={workOrderId}
+              renderChecklistActions={renderChecklistActions}
+              checklistMessage={checklistMessage}
+              accessoryActions={accessoryActions}
+              renderEvidenceActions={renderEvidenceActions}
+              evidenceMessage={evidenceActionError ? <p className={styles.error} role="alert">{evidenceActionError}</p> : undefined}
+              evidenceActions={evidenceActions}
+            />
           </>
         )}
       </section>

@@ -18,8 +18,8 @@ Process per module: Claude writes `plans/module-XX-*.md` → Codex implements (g
 |---|---|---|---|---|
 | 0 | Remove 4 FE calls missing in BE | – | remove-nonexistent-be-apis.md | Done (0cffd35) |
 | 0b | Fix pre-existing build type error | – | fix-build-recipe-menu-create-form.md | Done (90a868b) |
-| 1 | Maintenance tickets + requests | 8 | module-01-maintenance.md | Codex running |
-| 2 | Installation work orders (accessories, checklist-items, evidence) | 3 | module-02-installation.md | Plan ready |
-| 3 | Locations (machines in store, stats, transfer machine) | 3 | module-03-locations.md | Plan ready |
+| 1 | Maintenance tickets + requests | 8 | module-01-maintenance.md | Done |
+| 2 | Installation work orders (accessories, checklist-items, evidence) | 3 | module-02-installation.md | Done |
+| 3 | Locations (machines in store, stats, transfer machine) | 3 | module-03-locations.md | Codex running |
 | 4 | Repair case replacement (emergency work auth, fallback replacement offers) | 2 | module-04-repair-replacement.md | Plan ready |
 | 5 | Contract history by machine, coffee order confirm-received, recall legacy review | 3 | module-05-lifecycle.md | Plan ready |

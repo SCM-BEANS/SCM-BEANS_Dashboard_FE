@@ -18,7 +18,7 @@ const contracts = {
   'billing.api.ts': { billingApi: ['listInvoices', 'listInvoicesPage', 'listOperatorInvoicesPage', 'getInvoice', 'listInvoiceLineItems', 'listInvoiceLineItemsPage', 'listModeratorInvoices', 'getModeratorInvoice', 'listPaymentProofs', 'listPaymentProofsPage', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent'] },
   'buybacks.api.ts': { buybacksApi: ['list', 'getById', 'create', 'startInspection', 'submitInspection', 'decideValuation', 'createPayment', 'submitPaymentProof', 'reviewPaymentProof', 'downloadPaymentProofContent', 'requestCollection', 'confirmCollection', 'startRefurbishment', 'completeRefurbishment', 'decideQa', 'cancel', 'listInspections', 'listRefurbishments', 'listQaDecisions'] },
   'replacement-assignments.api.ts': { replacementAssignmentsApi: ['create', 'getById', 'activate', 'release', 'cancel'] },
-  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['create', 'listByOwner', 'listAssigned', 'getById', 'start', 'uploadEvidence', 'complete'] },
+  'installation-work-orders.api.ts': { installationWorkOrdersApi: ['create', 'listByOwner', 'listAssigned', 'getById', 'listChecklistItems', 'listAccessories', 'listEvidence', 'start', 'uploadEvidence', 'complete'] },
   'dashboard.api.ts': { dashboardApi: ['getOverview', 'getActionItems'] },
 };
 
@@ -131,5 +131,21 @@ test('module 1 maintenance API mutations use the shared client and validate thei
         assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName);
       }
     }
+  }
+});
+
+test('installation work-order record APIs expose schema-validated paged reads', () => {
+  const filePath = join(__dirname, '..', 'src', 'apis', 'installation-work-orders.api.ts');
+  const source = readFileSync(filePath, 'utf8');
+  const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const members = apiObject(sourceFile, 'installationWorkOrdersApi');
+  const methodNames = ['listChecklistItems', 'listAccessories', 'listEvidence'];
+
+  for (const methodName of methodNames) {
+    const member = members.find((item) => item.name?.getText(sourceFile) === methodName);
+    const fn = member && memberFunction(member);
+    assert.ok(fn, `installationWorkOrdersApi.${methodName} is exposed`);
+    assert.ok(fn.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword), `${methodName} is async`);
+    assertMethodUsesValidatedSharedHttp(fn, sourceFile, 'installationWorkOrdersApi', methodName);
   }
 });

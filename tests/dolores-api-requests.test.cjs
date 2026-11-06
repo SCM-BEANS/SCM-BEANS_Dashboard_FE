@@ -20,6 +20,10 @@ const schemas = new Proxy({ shape: { id: passthrough, ownerId: passthrough } }, 
     if (name === 'BILLING_DEFAULT_PAGE_SIZE') return 50;
     if (name === 'InvoiceListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
     if (name === 'InvoiceLineItemListParamsSchema' || name === 'PaymentProofListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
+    if (name === 'InstallationWorkOrderPageParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
+    if (['InstallationWorkOrderChecklistItemSchema', 'InstallationWorkOrderAccessorySchema', 'InstallationWorkOrderEvidenceMetadataSchema'].includes(name)) {
+      return require('zod').z.object({}).passthrough();
+    }
     if (name === 'LocationListParamsSchema') return { ...passthrough, shape: { ownerId: passthrough } };
     return passthrough;
   },
@@ -154,6 +158,41 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
 
   assert.equal(calls.length, operations.length);
   assert.ok(calls.every((call) => !/^https?:\/\//i.test(call.url)), 'Dolores requests must use relative paths');
+});
+
+test('installation work-order record reads use bounded pagination headers and preserve request cancellation', async () => {
+  const signal = new AbortController().signal;
+  const checklistItem = { id: uuid('21'), itemCode: 'POWER', label: 'Kiểm tra nguồn điện', required: true, displayOrder: 1, result: 'PENDING' };
+  const accessory = { id: uuid('22'), accessoryName: 'Bộ lọc nước', quantity: 1, serialNumber: null, notes: null };
+  const evidence = { id: uuid('23'), originalFilename: 'handover.pdf', contentType: 'application/pdf', sizeBytes: 1024, sha256: 'abc123' };
+  const responses = [
+    { data: [checklistItem], headers: { 'x-page': '1', 'x-page-size': '20', 'x-has-next': 'true' } },
+    { data: [accessory], headers: { get: (name) => ({ 'X-Page': '0', 'X-Page-Size': '20', 'X-Has-Next': 'false' })[name] } },
+    { data: [evidence], headers: { 'x-page': '0', 'x-page-size': '50', 'x-has-next': 'false' } },
+  ];
+  const calls = [];
+  const axiosClient = {
+    get: async (url, config) => {
+      calls.push({ url, config });
+      return responses.shift();
+    },
+  };
+  const api = loadApi('src/apis/installation-work-orders.api.ts', axiosClient).installationWorkOrdersApi;
+
+  assert.deepEqual(await api.listChecklistItems(ids.workOrder, { page: 1, size: 20 }, signal), {
+    items: [checklistItem], page: 1, size: 20, hasNext: true,
+  });
+  assert.deepEqual(await api.listAccessories(ids.workOrder, { page: 0, size: 20 }, signal), {
+    items: [accessory], page: 0, size: 20, hasNext: false,
+  });
+  assert.deepEqual(await api.listEvidence(ids.workOrder, {}, signal), {
+    items: [evidence], page: 0, size: 50, hasNext: false,
+  });
+  assert.deepEqual(calls, [
+    { url: `/installation-work-orders/${ids.workOrder}/checklist-items`, config: { baseURL: '/api/dolores/v1', params: { page: 1, size: 20 }, signal } },
+    { url: `/installation-work-orders/${ids.workOrder}/accessories`, config: { baseURL: '/api/dolores/v1', params: { page: 0, size: 20 }, signal } },
+    { url: `/installation-work-orders/${ids.workOrder}/evidence`, config: { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal } },
+  ]);
 });
 
 test('module 1 maintenance mutations preserve methods, routes, response identities, and request bodies', async () => {

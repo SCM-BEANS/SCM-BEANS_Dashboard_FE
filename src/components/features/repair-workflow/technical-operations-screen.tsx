@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { InstallationWorkOrderRecords } from "@/components/features/installation/installation-work-order-records";
 
 import { machinesApi } from "@/apis/machines.api";
 
@@ -226,12 +227,12 @@ function MaintenanceRequestTable({
   );
 }
 
-function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails }) {
+function WorkOrderDetail({ details, role }: { details: InstallationWorkOrderDetails; role: TechnicalScreenRoutes["role"] }) {
   const workOrder = details.workOrder;
   return <>
     <dl className={styles.detailGrid}>
       <DetailValue label={messages.TECHNICAL_ID} value={<TruncatedId value={workOrder.id} />} code />
-      <DetailValue label={messages.TECHNICAL_STATUS} value={workOrder.status} />
+      <DetailValue label={messages.TECHNICAL_STATUS} value={<StatusBadge status={workOrder.status}>{workOrder.status}</StatusBadge>} />
       <DetailValue label={messages.TECHNICAL_TENANT} value={<TruncatedId value={workOrder.ownerId} />} code />
       <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={<TruncatedId value={workOrder.contractId} />} code />
       <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={workOrder.machineId} />} code />
@@ -243,24 +244,7 @@ function WorkOrderDetail({ details }: { details: InstallationWorkOrderDetails })
       <DetailValue label={messages.TECHNICAL_RECIPIENT} value={workOrder.handoverRecipient ?? "—"} />
       <DetailValue label={messages.TECHNICAL_FAILURE_REASON} value={workOrder.failureReason ?? "—"} />
     </dl>
-    <section>
-      <h2 className={styles.sectionTitle}>{messages.TECHNICAL_CHECKLIST} ({details.checklistItems.length})</h2>
-      <DataTable variant="moderator" headers={[messages.TECHNICAL_ITEM_CODE, messages.TECHNICAL_ITEM_LABEL, messages.TECHNICAL_REQUIRED, messages.TECHNICAL_RESULT, messages.TECHNICAL_NOTES_LABEL]} emptyMessage={details.checklistItems.length === 0 ? messages.TECHNICAL_CHECKLIST_EMPTY : undefined}>
-        {details.checklistItems.map((item) => <tr key={item.id}><td>{item.itemCode}</td><td>{item.label}</td><td>{item.required ? "Có" : "Không"}</td><td>{item.result}</td><td>{item.notes ?? "—"}</td></tr>)}
-      </DataTable>
-    </section>
-    <section>
-      <h2 className={styles.sectionTitle}>{messages.TECHNICAL_ACCESSORIES} ({details.accessories.length})</h2>
-      <DataTable variant="moderator" headers={[messages.TECHNICAL_ACCESSORY_NAME, messages.TECHNICAL_QUANTITY, messages.TECHNICAL_SERIAL, messages.TECHNICAL_NOTES_LABEL]} emptyMessage={details.accessories.length === 0 ? messages.TECHNICAL_ACCESSORIES_EMPTY : undefined}>
-        {details.accessories.map((item) => <tr key={item.id}><td>{item.accessoryName}</td><td>{item.quantity}</td><td>{item.serialNumber ?? "—"}</td><td>{item.notes ?? "—"}</td></tr>)}
-      </DataTable>
-    </section>
-    <section>
-      <h2 className={styles.sectionTitle}>{messages.TECHNICAL_EVIDENCE} ({details.evidence.length})</h2>
-      <DataTable variant="moderator" headers={[messages.TECHNICAL_FILENAME, messages.TECHNICAL_CONTENT_TYPE, messages.TECHNICAL_SIZE, messages.TECHNICAL_SHA256, messages.TECHNICAL_UPLOADED_AT]} emptyMessage={details.evidence.length === 0 ? messages.TECHNICAL_EVIDENCE_EMPTY : undefined} minWidth={760}>
-        {details.evidence.map((item) => <tr key={item.id}><td>{item.originalFilename}</td><td>{item.contentType ?? "—"}</td><td>{numberFormat.format(item.sizeBytes)} bytes</td><td className={styles.codeValue}>{item.sha256 ?? "—"}</td><td>{formatDate(item.uploadedAt)}</td></tr>)}
-      </DataTable>
-    </section>
+    {role === "moderator" && <InstallationWorkOrderRecords workOrderId={workOrder.id} />}
   </>;
 }
 
@@ -380,7 +364,7 @@ export function TechnicalOperationsScreen({
 
   if (isDetail) {
     if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
-    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />{detail.data && !detail.isError && <WorkOrderDetail details={detail.data} />}</div>;
+    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />{detail.data && !detail.isError && <WorkOrderDetail details={detail.data} role={routes.role} />}</div>;
   }
 
   if (isMachineHistory) {

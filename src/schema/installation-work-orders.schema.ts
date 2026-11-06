@@ -3,6 +3,13 @@ import { z } from "zod";
 const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
 
+export const InstallationWorkOrderPageParamsSchema = z.object({
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(50),
+}).strict();
+
+export type InstallationWorkOrderPageParams = z.input<typeof InstallationWorkOrderPageParamsSchema>;
+
 export const InstallationWorkOrderIdSchema = uuidSchema;
 export const InstallationWorkOrderOwnerIdSchema = uuidSchema;
 
