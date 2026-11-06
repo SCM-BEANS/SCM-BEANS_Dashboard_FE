@@ -60,7 +60,7 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
     <ButtonBar disabled={busy || page === 0} onClick={() => change(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={busy || !hasNext} onClick={() => change(page + 1)}>Trang sau</ButtonBar>
   </nav>;
   return <section className={styles.recipeMenuPanel}>
-    <div className={styles.panelHeading}><div><h2>Đồng bộ công thức với máy</h2><p>Lưu thư viện và máy áp dụng là hai bước khác nhau. Chỉ xác nhận đã áp dụng khi phiên bản và mã nội dung máy gửi về khớp yêu cầu.</p></div>
+    <div className={styles.panelHeading}><div><h2>Đồng bộ công thức với máy</h2></div>
       <ButtonBar disabled={!canRead || current.isFetching || history.isFetching} onClick={() => { void current.refetch(); void history.refetch(); }}>Làm mới</ButtonBar></div>
     <form className={styles.recipeMenuToolbar} onSubmit={submitSearch}>
       <label className={styles.formField}><span>Tìm máy theo serial</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><ButtonBar type="submit" disabled={busy}>Tìm kiếm</ButtonBar>
@@ -73,10 +73,9 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
       </select></label> : <p className={styles.recipeMenuEmpty}>Chưa có máy phù hợp trong phạm vi tài khoản.</p>}
       {pageControls(machinePage, machines.data.hasNext, (page) => { setMachinePage(page); setSelectedMachine(""); setHistoryPage(0); sync.reset(); replay.reset(); }, "Danh sách máy đồng bộ")}
     </> : null}
-    {machine && !machine.ownerId ? <p className={styles.notice}>{role === "ADMIN" ? "Máy chưa có Owner trực tiếp. Hệ thống sẽ kiểm tra Owner hiệu lực khi Admin gửi yêu cầu đồng bộ." : "Máy chưa được gắn Owner trực tiếp. Hãy liên hệ vận hành để kiểm tra quyền đồng bộ; hợp đồng đang hoạt động chưa đủ để cấp quyền API này."}</p> : null}
+    {machine && !machine.ownerId && role !== "ADMIN" ? <p className={styles.notice}>Máy chưa được gắn Owner trực tiếp. Hãy liên hệ vận hành để kiểm tra quyền đồng bộ; hợp đồng đang hoạt động chưa đủ để cấp quyền API này.</p> : null}
     {machine ? <div className={styles.recipeMenuActions}>
       <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !canRead || (role === "OWNER" && !machine.ownerId) || isStatus(current.error, 403)} onClick={() => { replay.reset(); sync.mutate(machineId); }}>{sync.isPending ? "Đang gửi…" : "Yêu cầu đồng bộ lại"}</ButtonBar>
-      <span className={styles.recipeMenuMeta}>Hệ thống tự gửi khi công thức thay đổi. Bạn có thể yêu cầu gửi lại nếu cần.</span>
     </div> : null}
     {(sync.isSuccess && sync.variables === machineId) || (replay.isSuccess && replay.variables.machineId === machineId) ? <p className={styles.recipeMenuSuccess} role="status">Đã tiếp nhận yêu cầu. Máy cần kết nối và xác nhận áp dụng; chưa thể coi là đồng bộ xong.</p> : null}
     {sync.isError || replay.isError ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(sync.error ?? replay.error, "mutation")}</p> : null}

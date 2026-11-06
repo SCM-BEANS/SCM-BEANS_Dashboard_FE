@@ -27,9 +27,9 @@ export const RecipeProcedureSchema = z.array(z.string().trim().min(1)).min(1).su
   }
   if (!seen.has("DOSE") || !seen.has("EXTRACT")) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Cần nhập lượng cà phê và lượng nước chiết xuất." });
 });
-export function buildRecipeProcedure(draft: RecipeProcedureDraft): string[] {
+export function buildRecipeProcedure(draft: RecipeProcedureDraft, dryTamp?: string | null): string[] {
   return RecipeProcedureSchema.parse(RECIPE_DIRECTIVES.flatMap((key) => {
-    if (key === "DRYTAMP") return ["DRYTAMP:100"];
+    if (key === "DRYTAMP") return dryTamp === null ? [] : [`DRYTAMP:${dryTamp ?? "100"}`];
     const value = draft[key].trim();
     return value ? [key + ":" + value] : [];
   }));

@@ -35,7 +35,6 @@ export function RecipeProcedureFields({ value, onChange, prefix, disabled = fals
   return <div className={styles.recipeMenuProcedure}>
     <fieldset className={styles.recipeMenuEditorGroup} disabled={disabled}>
       <legend>Thông số pha bắt buộc</legend>
-      <p className={styles.recipeMenuMeta}>Nhập lượng cà phê và lượng nước cho một lần pha. Dấu * là trường cần điền.</p>
       {renderFields(["DOSE", "EXTRACT"])}
     </fieldset>
     <details className={styles.recipeMenuDisclosure}>

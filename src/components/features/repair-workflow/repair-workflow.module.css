@@ -428,7 +428,6 @@
   flex-wrap: wrap;
   gap: 6px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #e9e2dc;
 }
 
 .recipeMenuTabs button {
@@ -518,12 +517,6 @@
   text-align: center;
 }
 
-.recipeMenuCaption {
-  margin: -4px 0 0;
-  color: #625954;
-  font-size: 13px;
-}
-
 .recipeMenuEmpty {
   padding: 14px 16px;
   margin: 0;
@@ -533,6 +526,55 @@
   color: #514843;
   font-size: 14px;
   line-height: 1.55;
+}
+
+.recipeMenuTableScroll {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.recipeMenuTable {
+  width: 100%;
+  min-width: 560px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: #302927;
+  font-size: 14px;
+}
+
+.recipeMenuTable th,
+.recipeMenuTable td {
+  padding: 14px;
+  border-bottom: 1px solid #eee8e3;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.recipeMenuTable thead th {
+  background: #f7f4f2;
+  color: #625954;
+  font-weight: 600;
+}
+
+.recipeMenuTable tbody th {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.recipeMenuTable tbody tr:last-child > * { border-bottom: 0; }
+.recipeMenuTable tbody tr[data-selected="true"] { background: #fdf6f6; }
+.recipeMenuTable tbody tr:hover { background: #fcfaf9; }
+.recipeMenuTable tbody tr[data-selected="true"]:hover { background: #fdf6f6; }
+.recipeMenuTable tbody tr[data-clickable="true"] { cursor: pointer; }
+.recipeMenuTable tbody tr[data-clickable="true"]:focus-visible { outline: 2px solid #302927; outline-offset: -2px; }
+.recipeMenuTable button { white-space: nowrap; }
+
+.recipeMenuTable :focus-visible {
+  outline: 2px solid #302927;
+  outline-offset: 2px;
 }
 
 .recipeMenuList {
@@ -710,6 +752,26 @@
 
 .recipeMenuDetailGrid > div {
   min-width: 0;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.recipeMenuDetailGrid > div > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #625954;
+  font-size: 13px;
+}
+
+.recipeMenuDetailGrid > div > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #302927;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .recipeMenuFormGrid {
@@ -739,6 +801,32 @@
   border: 1px solid #e9e2dc;
   border-radius: 8px;
   background: #fff;
+}
+
+.recipeMenuEditSection {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.recipeMenuEditSectionHeading {
+  display: grid;
+  gap: 4px;
+}
+
+.recipeMenuEditSectionHeading h4 {
+  margin: 0;
+  color: #302927;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.recipeMenuEditor > .panelHeading p {
+  margin-top: 6px;
 }
 
 fieldset.recipeMenuEditorGroup {
@@ -1029,7 +1117,7 @@ fieldset.recipeMenuEditorGroup {
 /* Recipe workspaces share the existing Dolores cards, controls and palette. */
 .recipeMenuWorkspace {
   display: grid;
-  grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 24px;
   min-width: 0;
@@ -1058,16 +1146,17 @@ fieldset.recipeMenuEditorGroup {
 .recipeMenuPreview { padding: 12px 14px; margin: 0; border: 1px solid #e9e2dc; border-radius: 6px; color: #514843; background: #faf8f6; font-size: 14px; line-height: 1.6; }
 .recipeMenuConfirmation { display: flex; align-items: flex-start; gap: 10px; color: #514843; font-size: 14px; line-height: 1.6; cursor: pointer; }
 .recipeMenuConfirmation input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: #b81724; }
-.recipeMenuEditorFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; border-top: 1px solid #e9e2dc; }
-.recipeMenuEditorFooter > p { flex: 1 1 240px; max-width: 55ch; color: #625954; font-size: 13px; line-height: 1.6; margin: 0; }
+.recipeMenuEditorFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 0; border-top: 0; }
 .recipeMenuPanel form[aria-busy="true"] { cursor: progress; }
 @media (max-width: 1100px) {
   .recipeMenuWorkspace { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
+  .recipeMenuTable { min-width: 500px; }
+  .recipeMenuTable th,
+  .recipeMenuTable td { padding: 12px 10px; }
   .recipeMenuBrowser .recipeMenuToolbar { grid-template-columns: minmax(0, 1fr); }
   .recipeMenuEditorFooter { align-items: stretch; }
-  .recipeMenuEditorFooter > p { flex-basis: 100%; }
   .recipeMenuBrowser .recipeMenuItem > button > .recipeMenuMeta { font-size: 12px; }
 }
 
