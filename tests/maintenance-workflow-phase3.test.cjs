@@ -11,7 +11,9 @@ const ids = {
   technician: "00000000-0000-4000-8000-000000000004",
 };
 const passthrough = { parse: (value) => value };
-const schemas = new Proxy({}, { get: () => passthrough });
+const schemas = new Proxy({}, {
+  get: (_target, name) => name === "MaintenanceRequestSchema" ? { shape: { id: passthrough } } : passthrough,
+});
 
 function loadApi(relativePath, axiosClient) {
   const fileName = join(__dirname, "..", relativePath);
@@ -194,6 +196,50 @@ test("private evidence schemas reject public URLs and unsafe ticket parts values
     evidenceReferences: ["http://example.invalid/evidence"],
   }).success, false);
   assert.equal(machines.MaintenanceTicketPartsRequestSchema.safeParse({ partsCost: -1 }).success, false);
+});
+
+test("module 1 maintenance schemas validate versioned ticket edits, review reasons, and custody evidence", () => {
+  const machines = loadSchema("src/schema/machines.schema.ts");
+  const validId = ids.request;
+  assert.equal(machines.CreateOnDemandMaintenanceTicketRequestSchema.safeParse({ alertLevel: "Warning" }).success, true);
+  assert.equal(machines.CreateOnDemandMaintenanceTicketRequestSchema.safeParse({ alertLevel: "x".repeat(51) }).success, false);
+  assert.equal(machines.MaintenanceTicketDetailsPatchRequestSchema.safeParse({
+    expectedVersion: 3,
+    scheduledDueAt: null,
+    actionableInstructions: null,
+  }).success, true);
+  assert.equal(machines.MaintenanceTicketDetailsPatchRequestSchema.safeParse({
+    expectedVersion: 3,
+    scheduledDueAt: "2026-11-10T09:30:00",
+  }).success, true);
+  assert.equal(machines.MaintenanceTicketDetailsPatchRequestSchema.safeParse({
+    expectedVersion: 3,
+    scheduledDueAt: "2026-11-10T09:30:00Z",
+  }).success, false);
+  assert.equal(machines.MaintenanceTicketDetailsPatchRequestSchema.safeParse({ alertLevel: "Critical" }).success, false);
+  assert.equal(machines.MaintenanceRequestOverdueReviewRequestSchema.safeParse({ reason: "Đã liên hệ Owner" }).success, true);
+  assert.equal(machines.MaintenanceClosureExceptionRequestSchema.safeParse({ reason: " " }).success, false);
+  assert.equal(machines.MaintenanceCustodyEventCreateRequestSchema.safeParse({
+    eventType: "PRIMARY_COLLECTED",
+    machineId: validId,
+    conditionNotes: "Vỏ máy còn nguyên",
+    evidenceReference: "private/custody/primary-1",
+    acknowledgementUnavailableReason: "Owner chưa thể phản hồi",
+  }).success, true);
+  assert.equal(machines.MaintenanceCustodyEventCreateRequestSchema.safeParse({
+    eventType: "PRIMARY_COLLECTED",
+    machineId: validId,
+    conditionNotes: "Vỏ máy còn nguyên",
+    evidenceReference: "https://example.invalid/evidence",
+  }).success, false);
+  assert.equal(machines.MaintenanceRequestDetailsSchema.safeParse({
+    id: validId,
+    requestType: "PREVENTIVE",
+    machineId: validId,
+    status: "CONFIRMED",
+    windowStart: "2026-11-01",
+    windowEnd: "2026-11-05",
+  }).success, true);
 });
 
 test("role screens keep installation work orders separate and gate evidence-dependent finish and cost actions", () => {

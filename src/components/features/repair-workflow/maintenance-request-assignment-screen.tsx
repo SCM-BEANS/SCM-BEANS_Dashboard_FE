@@ -13,6 +13,8 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import styles from "./repair-workflow.module.css";
 import { RepairWorkflowPagination } from "./repair-workflow-pagination";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { maintenanceRequestStatusLabel, maintenanceTicketStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 const TECHNICIAN_PAGE_SIZE = 20;
@@ -224,7 +226,7 @@ export function MaintenanceRequestAssignmentScreen({
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REQUEST_STATUS}</dt>
-              <dd>{request.status}</dd>
+              <dd><StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_CASE_STATUS}</dt>
@@ -236,7 +238,9 @@ export function MaintenanceRequestAssignmentScreen({
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_TICKET_STATUS}</dt>
-              <dd>{ticketQuery.data?.status ?? (ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—")}</dd>
+              <dd>{ticketQuery.data?.status
+                ? <StatusBadge status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</StatusBadge>
+                : ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—"}</dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_ASSIGNEE}</dt>
@@ -274,7 +278,7 @@ export function MaintenanceRequestAssignmentScreen({
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REQUEST_STATUS}</dt>
-              <dd>{request.status}</dd>
+              <dd><StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REPLACEMENT_STATUS}</dt>
@@ -282,7 +286,9 @@ export function MaintenanceRequestAssignmentScreen({
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_TICKET_STATUS}</dt>
-              <dd>{ticketQuery.data?.status ?? (ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—")}</dd>
+              <dd>{ticketQuery.data?.status
+                ? <StatusBadge status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</StatusBadge>
+                : ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—"}</dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_ASSIGNEE}</dt>

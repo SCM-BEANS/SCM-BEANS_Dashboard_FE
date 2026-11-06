@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { MaintenanceCustodyStepper } from "@/components/features/repair-workflow/maintenance-custody-stepper";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MaintenanceTicketIdSchema, type MaintenanceTicket } from "@/schema/machines.schema";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
+import { maintenanceTicketStatusLabel } from "./maintenance-status-labels";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import styles from "./technician-maintenance-ticket-screen.module.css";
 
@@ -99,7 +102,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
           <dl className={styles.detailGrid}>
             <div><dt>Mã ticket</dt><dd className={styles.code}>{ticket.id ?? "—"}</dd></div>
             <div><dt>Thiết bị</dt><dd className={styles.code}>{ticket.machineId ?? "—"}</dd></div>
-            <div><dt>Trạng thái</dt><dd>{ticket.status ?? "—"}</dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
             <div><dt>Nguồn</dt><dd>{ticket.source ?? "—"}</dd></div>
             <div><dt>Lịch dự kiến</dt><dd>{formatDateTime(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline)}</dd></div>
             <div><dt>Kỹ thuật viên được giao</dt><dd className={styles.code}>{ticket.assignedTechnicianId ?? "—"}</dd></div>
@@ -142,6 +145,9 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
               <button className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Gửi đề xuất chi phí</button>
               <p className={styles.hint} id="maintenance-evidence-block">Cần API lưu trữ minh chứng riêng tư được liên kết với ticket.</p>
             </div>
+          ) : null}
+          {ticket.maintenanceRequestId ? (
+            <MaintenanceCustodyStepper requestId={ticket.maintenanceRequestId} role="technician" initialTicket={ticket} />
           ) : null}
         </>
       ) : null}

@@ -1,0 +1,158 @@
+.stepper {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border: 1px solid #d8e0eb;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, #fbfdff, #f4f8fc);
+}
+
+.heading h2,
+.eventForm h3 {
+  margin: 0;
+  color: #163451;
+}
+
+.heading p,
+.hint {
+  margin: 0.35rem 0 0;
+  color: #586c84;
+}
+
+.steps {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid #d7e0eb;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.steps .recordedStep {
+  border-color: #a6cfba;
+  background: #f5fbf7;
+}
+
+.steps .currentStep {
+  border-color: #8eb6df;
+  box-shadow: 0 0 0 2px rgb(71 131 187 / 10%);
+}
+
+.stepHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.stepNumber {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8eef6;
+  color: #294869;
+  font-weight: 750;
+}
+
+.recordedStep .stepNumber {
+  background: #dff1e5;
+  color: #276a3e;
+}
+
+.stepHeading h3 {
+  margin: 0;
+  color: #243a54;
+  font-size: 0.95rem;
+}
+
+.stepHeading p {
+  margin: 0.25rem 0 0;
+  color: #586c84;
+  overflow-wrap: anywhere;
+}
+
+.eventForm,
+.ackForm {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #d8e0eb;
+}
+
+.eventForm label,
+.ackForm label {
+  color: #263a53;
+  font-weight: 650;
+}
+
+.eventForm input,
+.eventForm textarea,
+.ackForm textarea {
+  width: min(100%, 42rem);
+  min-height: 2.7rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #c7d1df;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #16233a;
+  font: inherit;
+}
+
+.eventForm textarea,
+.ackForm textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.eventForm input:focus-visible,
+.eventForm textarea:focus-visible,
+.ackForm textarea:focus-visible {
+  outline: 3px solid rgb(47 111 237 / 28%);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 0.83rem;
+}
+
+.notice,
+.errorNotice,
+.complete {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.6rem;
+  color: #40536c;
+}
+
+.notice {
+  background: #edf4fb;
+}
+
+.errorNotice {
+  background: #fff0f0;
+  color: #a12727;
+}
+
+.complete {
+  background: #eff8f1;
+  color: #276a3e;
+}
+
+@media (max-width: 560px) {
+  .eventForm > button,
+  .ackForm > button {
+    width: 100%;
+  }
+}

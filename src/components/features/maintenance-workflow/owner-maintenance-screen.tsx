@@ -5,24 +5,17 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { RepairWorkflowPagination } from "@/components/features/repair-workflow/repair-workflow-pagination";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
+import { MaintenanceCustodyStepper } from "@/components/features/repair-workflow/maintenance-custody-stepper";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MaintenanceRequestIdSchema, type MaintenanceRequest } from "@/schema/machines.schema";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
+import { maintenanceRequestDetailQueryKey } from "@/components/features/repair-workflow/maintenance-request-query-keys";
 import { PATH_CUSTOMER } from "@/routes/path";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { maintenanceRequestStatusLabel } from "./maintenance-status-labels";
 import styles from "./owner-maintenance-screen.module.css";
 
 const PAGE_SIZE = 50;
-const statusLabels: Record<MaintenanceRequest["status"], string> = {
-  REQUESTED: "Chờ xác nhận",
-  TRIAGED: "Đang xem xét",
-  RESCHEDULE_REQUESTED: "Chờ xác nhận lịch mới",
-  CONFIRMED: "Đã xác nhận",
-  IN_PROGRESS: "Đang thực hiện",
-  COMPLETED: "Đã hoàn tất",
-  CLOSED: "Đã đóng",
-  OVERDUE_REVIEW: "Chờ xem xét quá hạn",
-  CANCELLED: "Đã hủy",
-};
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "—";
@@ -45,7 +38,7 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
   const [appointmentAt, setAppointmentAt] = useState("");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const validId = MaintenanceRequestIdSchema.safeParse(requestId).success;
-  const queryKey = ["dolores", "owner-maintenance", querySubject("owner"), requestId] as const;
+  const queryKey = maintenanceRequestDetailQueryKey("owner", requestId);
   const requestQuery = useQuery({
     queryKey,
     queryFn: ({ signal }) => maintenanceRequestsApi.getById(requestId, signal),
@@ -103,7 +96,7 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
             <div><dt>Mã yêu cầu</dt><dd className={styles.code}>{request.id}</dd></div>
             <div><dt>Loại yêu cầu</dt><dd>{requestTypeLabel(request)}</dd></div>
             <div><dt>Thiết bị</dt><dd className={styles.code}>{request.machineId}</dd></div>
-            <div><dt>Trạng thái</dt><dd>{statusLabels[request.status]}</dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd></div>
             <div><dt>Lịch bắt đầu</dt><dd>{formatDateTime(request.windowStart ?? request.scheduledDueAt)}</dd></div>
             <div><dt>Lịch kết thúc</dt><dd>{formatDateTime(request.windowEnd)}</dd></div>
             <div><dt>Lịch đã xác nhận</dt><dd>{formatDateTime(request.confirmedAppointmentAt)}</dd></div>
@@ -127,6 +120,9 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
                 {confirm.isPending ? "Đang xác nhận…" : "Xác nhận lịch bảo trì"}
               </button>
             </form>
+          ) : null}
+          {request.requestType === "PREVENTIVE" ? (
+            <MaintenanceCustodyStepper requestId={request.id} role="owner" initialRequest={request} />
           ) : null}
         </>
       ) : null}
@@ -173,7 +169,7 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
             columns={[
               { key: "id", header: "Mã yêu cầu", render: (request) => <Link className={styles.link} href={PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>{request.id}</Link> },
               { key: "machine", header: "Thiết bị", render: (request) => <span className={styles.code}>{request.machineId}</span> },
-              { key: "status", header: "Trạng thái", render: (request) => statusLabels[request.status] },
+              { key: "status", header: "Trạng thái", render: (request) => <StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge> },
               { key: "appointment", header: "Lịch hẹn", render: (request) => formatDateTime(request.confirmedAppointmentAt ?? request.requestedAppointmentAt ?? request.scheduledDueAt) },
               { key: "updated", header: "Cập nhật", render: (request) => formatDateTime(request.updatedAt ?? request.createdAt) },
             ]}

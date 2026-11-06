@@ -22,6 +22,7 @@ import {
   type RepairWorkCompletionRequest,
 } from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
+import { maintenanceCustodyEventLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import styles from "./repair-workflow.module.css";
 
@@ -99,16 +100,6 @@ function WorkflowStep({
       {children}
     </li>
   );
-}
-
-function eventLabel(eventType: string): string {
-  const labels: Record<string, string> = {
-    PRIMARY_COLLECTED: "Nhận máy chính",
-    REPLACEMENT_DELIVERED: "Giao máy thay thế",
-    REPLACEMENT_COLLECTED: "Thu máy thay thế",
-    PRIMARY_RETURNED: "Trả máy chính",
-  };
-  return labels[eventType] ?? eventType.replaceAll("_", " ");
 }
 
 function timelineDetails(reason: string | null | undefined, details: string | null | undefined): string {
@@ -1373,7 +1364,7 @@ export function RepairCaseDetailScreen({
               <ol className={styles.timeline} aria-label={M.TIMELINE_TITLE}>
                 {timeline.data.content.map((event) => (
                   <li className={styles.timelineItem} key={event.id}>
-                    <strong>{event.eventType.replaceAll("_", " ")}</strong>
+                    <strong>{maintenanceCustodyEventLabel(event.eventType)}</strong>
                     <p>{timelineDetails(event.reason, event.details)}</p>
                     <span>{formatDateTime(event.occurredAt)} · {event.actorRole}{event.actorId ? ` · ${event.actorId}` : ""}</span>
                   </li>
@@ -1399,7 +1390,7 @@ export function RepairCaseDetailScreen({
               <ol className={styles.timeline} aria-label={M.CUSTODY_TITLE}>
                 {custody.data.items.map((event) => (
                   <li className={styles.timelineItem} key={event.id}>
-                    <strong>{eventLabel(event.eventType)}</strong>
+                    <strong>{maintenanceCustodyEventLabel(event.eventType)}</strong>
                     <p>{event.conditionNotes || "—"}</p>
                     <span>{formatDateTime(event.occurredAt)} · {event.actorRole} · {event.machineId}</span>
                     <span className={event.ownerAcknowledgedAt ? styles.acknowledged : styles.waitingAcknowledgment}>

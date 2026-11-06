@@ -9,12 +9,14 @@ const ids = {
   tenant: uuid('1'), invoice: uuid('2'), proof: uuid('3'), buyback: uuid('4'),
   contract: uuid('5'), machine: uuid('6'), document: uuid('7'), workOrder: uuid('8'),
   location: uuid('9'), notification: uuid('10'), recipe: uuid('11'), profile: uuid('12'),
+  request: uuid('13'), ticket: uuid('14'), assignment: uuid('15'), custodyEvent: uuid('16'), repairCase: uuid('17'),
 };
 const passthrough = { parse: (value) => value, safeParse: (value) => ({ success: true, data: value }) };
-const schemas = new Proxy({ shape: { ownerId: passthrough } }, {
+const schemas = new Proxy({ shape: { id: passthrough, ownerId: passthrough } }, {
   get(target, name) {
     if (name === 'unwrapLocations') return (value) => value;
     if (name === 'shape') return target.shape;
+    if (name === 'MaintenanceRequestSchema') return { shape: { id: passthrough } };
     if (name === 'BILLING_DEFAULT_PAGE_SIZE') return 50;
     if (name === 'InvoiceListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
     if (name === 'InvoiceLineItemListParamsSchema' || name === 'PaymentProofListParamsSchema') return { ...passthrough, parse: (value = {}) => ({ page: 0, size: 50, ...value }) };
@@ -152,6 +154,72 @@ test('current domain APIs preserve HTTP methods, URLs, scope parameters, signals
 
   assert.equal(calls.length, operations.length);
   assert.ok(calls.every((call) => !/^https?:\/\//i.test(call.url)), 'Dolores requests must use relative paths');
+});
+
+test('module 1 maintenance mutations preserve methods, routes, response identities, and request bodies', async () => {
+  const calls = [];
+  const responses = [
+    { id: ids.ticket, machineId: ids.machine, status: 'PENDING' },
+    { id: ids.ticket, status: 'PENDING', version: 5 },
+    { id: ids.ticket, status: 'PENDING', overdueReviewedAt: '2026-11-02T09:00:00' },
+    { id: ids.ticket, status: 'PENDING' },
+    { id: ids.request, status: 'OVERDUE_REVIEW', overdueReviewedAt: '2026-11-02T09:00:00' },
+    { id: ids.request, replacementAssignmentId: ids.assignment },
+    { id: ids.custodyEvent, maintenanceRequestId: ids.request, repairCaseId: ids.repairCase, eventType: 'PRIMARY_COLLECTED', machineId: ids.machine },
+    { id: ids.request, status: 'CLOSED' },
+  ];
+  const axiosClient = {
+    post: async (url, data, config) => {
+      calls.push({ method: 'POST', url, data, config });
+      return { data: responses.shift() };
+    },
+    patch: async (url, data, config) => {
+      calls.push({ method: 'PATCH', url, data, config });
+      return { data: responses.shift() };
+    },
+    put: async (url, data, config) => {
+      calls.push({ method: 'PUT', url, data, config });
+      return { data: responses.shift() };
+    },
+  };
+  const machinesApi = loadApi('src/apis/machines.api.ts', axiosClient).machinesApi;
+  const requestsApi = loadApi('src/apis/maintenance-requests.api.ts', axiosClient).maintenanceRequestsApi;
+
+  await machinesApi.createMaintenanceTicket(ids.machine, { alertLevel: 'Warning' });
+  await machinesApi.updateMaintenanceTicketDetails(ids.ticket, {
+    expectedVersion: 4,
+    scheduledDueAt: null,
+    alertLevel: 'Critical',
+  });
+  await machinesApi.recordMaintenanceTicketOverdueReview(ids.ticket, { reason: 'Đã lên lịch lại' });
+  await machinesApi.unassignMaintenanceTicket(ids.ticket);
+  await requestsApi.recordOverdueReview(ids.request, { reason: 'Đã liên hệ chủ máy' });
+  await requestsApi.linkReplacementAssignment(ids.request, ids.assignment);
+  await requestsApi.recordCustodyEvent(ids.request, {
+    eventType: 'PRIMARY_COLLECTED',
+    machineId: ids.machine,
+    conditionNotes: 'Vỏ máy còn nguyên',
+    evidenceReference: 'private/custody/primary-1',
+    acknowledgementUnavailableReason: 'Owner chưa thể phản hồi tại thời điểm bàn giao',
+  });
+  await requestsApi.recordClosureException(ids.request, { reason: 'Đã xác nhận trả máy qua biên bản' });
+
+  assert.deepEqual(calls, [
+    { method: 'POST', url: `/machines/${ids.machine}/maintenance-tickets`, data: { alertLevel: 'Warning' }, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'PATCH', url: `/maintenance-tickets/${ids.ticket}/details`, data: { expectedVersion: 4, scheduledDueAt: null, alertLevel: 'Critical' }, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'POST', url: `/maintenance-tickets/${ids.ticket}/overdue-review`, data: { reason: 'Đã lên lịch lại' }, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'POST', url: `/maintenance-tickets/${ids.ticket}/unassign`, data: undefined, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'POST', url: `/maintenance-requests/${ids.request}/overdue-review`, data: { reason: 'Đã liên hệ chủ máy' }, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'PUT', url: `/maintenance-requests/${ids.request}/replacement-assignment/${ids.assignment}`, data: undefined, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'POST', url: `/maintenance-requests/${ids.request}/custody-events`, data: {
+      eventType: 'PRIMARY_COLLECTED',
+      machineId: ids.machine,
+      conditionNotes: 'Vỏ máy còn nguyên',
+      evidenceReference: 'private/custody/primary-1',
+      acknowledgementUnavailableReason: 'Owner chưa thể phản hồi tại thời điểm bàn giao',
+    }, config: { baseURL: '/api/dolores/v1' } },
+    { method: 'POST', url: `/maintenance-requests/${ids.request}/closure-exception`, data: { reason: 'Đã xác nhận trả máy qua biên bản' }, config: { baseURL: '/api/dolores/v1' } },
+  ]);
 });
 
 test('repair workflow reads use bounded pagination, request filters, and validated detail identities', async () => {

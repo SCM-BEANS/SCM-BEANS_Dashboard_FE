@@ -7,26 +7,20 @@ import { machinesApi } from "@/apis/machines.api";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { MaintenanceRequestIdSchema, type MaintenanceRequest } from "@/schema/machines.schema";
+import { MaintenanceRequestIdSchema, type MaintenanceRequest, type MaintenanceRequestDetails } from "@/schema/machines.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
+import { maintenanceTicketDetailQueryKey } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MaintenanceRequestActions, MaintenanceRequestTicketDetail } from "./maintenance-request-actions";
+import { MaintenanceCustodyStepper } from "./maintenance-custody-stepper";
+import { maintenanceRequestDetailQueryKey } from "./maintenance-request-query-keys";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { RepairWorkflowPagination } from "@/components/features/repair-workflow/repair-workflow-pagination";
 import styles from "./repair-workflow.module.css";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { maintenanceRequestStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
-
-const statusLabels: Record<MaintenanceRequest["status"], string> = {
-  REQUESTED: "Đã gửi",
-  TRIAGED: "Đang xem xét",
-  RESCHEDULE_REQUESTED: "Đã yêu cầu đổi lịch",
-  CONFIRMED: "Đã xác nhận",
-  IN_PROGRESS: "Đang xử lý",
-  COMPLETED: "Đã hoàn tất",
-  CLOSED: "Đã đóng",
-  OVERDUE_REVIEW: "Chờ xem xét quá hạn",
-  CANCELLED: "Đã hủy",
-};
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -68,7 +62,7 @@ function MaintenanceRequestDetails({ request }: { request: MaintenanceRequest })
         <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={<TruncatedId value={request.contractId} />} code />
         <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={request.machineId} />} code />
         <DetailValue label={messages.TECHNICAL_SCHEDULED} value={scheduleLabel(request)} />
-        <DetailValue label={messages.TECHNICAL_STATUS} value={statusLabels[request.status]} />
+        <DetailValue label={messages.TECHNICAL_STATUS} value={<StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge>} />
         <DetailValue label={messages.TECHNICAL_TICKET} value={request.maintenanceTicketId ?? "—"} code />
         <DetailValue label="Mã phân công máy thay thế" value={request.replacementAssignmentId ?? "—"} code />
         <DetailValue label={messages.TECHNICAL_DATE} value={formatDate(request.createdAt)} />
@@ -103,7 +97,7 @@ export function MaintenanceRequestDetailScreen({
   const [technicianPage, setTechnicianPage] = useState(0);
   const [operatorFeedback, setOperatorFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const requestQuery = useQuery({
-    queryKey: ["dolores", "repair-workflow", querySubject(role), "request", id],
+    queryKey: maintenanceRequestDetailQueryKey(role, id),
     queryFn: ({ signal }) => maintenanceRequestsApi.getById(id, signal),
     enabled: validId,
     retry: false,
@@ -117,7 +111,7 @@ export function MaintenanceRequestDetailScreen({
     return () => window.clearTimeout(timeoutId);
   }, [technicianSearchInput]);
   const ticketQuery = useQuery({
-    queryKey: ["dolores", "repair-workflow", querySubject(role), "ticket", request?.maintenanceTicketId],
+    queryKey: maintenanceTicketDetailQueryKey(request?.maintenanceTicketId ?? ""),
     queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(request!.maintenanceTicketId!, signal),
     enabled: Boolean(request?.maintenanceTicketId),
     retry: false,
@@ -135,7 +129,7 @@ export function MaintenanceRequestDetailScreen({
     onSuccess: async (ticket) => {
       setOperatorFeedback({ kind: "success", text: "Đã tạo phiếu bảo trì. Mã ticket: " + ticket.id });
       await Promise.all([
-        queryClient.setQueryData(["dolores", "repair-workflow", querySubject(role), "ticket", ticket.id], ticket),
+        queryClient.setQueryData(maintenanceTicketDetailQueryKey(ticket.id!), ticket),
         queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow", querySubject(role), "request", id] }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-tickets"] }),
@@ -167,7 +161,7 @@ export function MaintenanceRequestDetailScreen({
     onSuccess: async () => {
       setOperatorFeedback({ kind: "success", text: "Đã giao ticket cho kỹ thuật viên." });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["dolores", "repair-workflow", querySubject(role), "ticket", ticketQuery.data?.id] }),
+        queryClient.invalidateQueries({ queryKey: maintenanceTicketDetailQueryKey(ticketQuery.data?.id ?? "") }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-tickets"] }),
       ]);
@@ -270,6 +264,16 @@ export function MaintenanceRequestDetailScreen({
           ) : <p>{messages.TECHNICAL_ASSIGNMENT_ADMIN_REQUIRED}</p> : null}
         </section>
       ) : null}
+      {ticketQuery.data?.id && request ? <MaintenanceRequestTicketDetail ticketId={ticketQuery.data.id} role={role} /> : null}
+      {request && <MaintenanceRequestActions request={request as MaintenanceRequestDetails} role={role} />}
+      {request?.requestType === "PREVENTIVE" && (
+        <MaintenanceCustodyStepper
+          requestId={request.id}
+          role={role}
+          initialRequest={request as MaintenanceRequestDetails}
+          initialTicket={ticketQuery.data}
+        />
+      )}
       {ticketQuery.isSuccess && !ticketQuery.data && request?.maintenanceTicketId ? (
         <p className={styles.pendingNotice} role="status">Ticket liên kết chưa có phản hồi chi tiết.</p>
       ) : null}

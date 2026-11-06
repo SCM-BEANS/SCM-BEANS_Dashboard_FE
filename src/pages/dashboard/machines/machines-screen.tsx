@@ -14,6 +14,7 @@ import machineStyles from "@/components/machines/machines.module.css";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
+import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -199,6 +200,12 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                     </div>
                   </article>
                 ))}
+                {machineId && detail.data && <MachineMaintenanceTicketActions
+                  machineId={machineId}
+                  tickets={maintenanceTickets.data ?? []}
+                  role="OWNER"
+                  onRefresh={() => maintenanceTickets.refetch()}
+                />}
                 {maintenanceRequests.data?.map((request) => (
                   <article className={styles.recordCard} key={request.id}>
                     <div>

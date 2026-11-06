@@ -23,6 +23,7 @@ import { MaintenanceRequestDetailScreen } from "./maintenance-request-detail-scr
 import { MaintenanceRequestAssignmentScreen } from "./maintenance-request-assignment-screen";
 import { RepairCostReviewScreen } from "@/components/features/maintenance-workflow/repair-cost-review-screen";
 import { MachineIdSchema, type MaintenanceRequest, type MaintenanceTicket } from "@/schema/machines.schema";
+import { maintenanceRequestStatusLabel, maintenanceTicketStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 
 import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 
@@ -69,21 +70,6 @@ function ticketNotes(ticket: MaintenanceTicket): string | null | undefined {
 
 function requestTypeLabel(requestType: MaintenanceRequest["requestType"]): string {
   return requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì định kỳ";
-}
-
-function maintenanceRequestStatusLabel(status: MaintenanceRequest["status"]): string {
-  const labels: Record<MaintenanceRequest["status"], string> = {
-    REQUESTED: "Mới yêu cầu",
-    TRIAGED: "Đã phân loại",
-    RESCHEDULE_REQUESTED: "Yêu cầu đổi lịch",
-    CONFIRMED: "Đã xác nhận",
-    IN_PROGRESS: "Đang thực hiện",
-    COMPLETED: "Hoàn tất",
-    CLOSED: "Đã đóng",
-    OVERDUE_REVIEW: "Chờ xử lý quá hạn",
-    CANCELLED: "Đã hủy",
-  };
-  return labels[status];
 }
 
 function QueryFeedback({
@@ -145,7 +131,7 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role }:
             ? <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
             : "—"}</td>
           <td>{ticket.status
-            ? role === "admin" ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : ticket.status
+            ? <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
             : "—"}</td>
           <td>{formatDate(ticketDate(ticket))}</td>
           <td>{ticketNotes(ticket) ?? "—"}</td>

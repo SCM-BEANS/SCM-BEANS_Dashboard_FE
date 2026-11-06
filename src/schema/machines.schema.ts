@@ -199,6 +199,32 @@ export const MaintenanceTicketResolutionRequestSchema = z.object({
   notes: z.string().trim().max(4000).optional(),
 }).strict();
 
+export const CreateOnDemandMaintenanceTicketRequestSchema = z.object({
+  alertLevel: z.string().trim().min(1).max(50).optional(),
+  createdBy: z.string().trim().min(1).optional(),
+}).strict();
+
+export const MaintenanceTicketDetailsPatchRequestSchema = z.object({
+  expectedVersion: z.number().int().nonnegative(),
+  scheduledDueAt: z.string().datetime({ local: true })
+    .refine((value) => !/(?:Z|[+-]\d{2}:\d{2})$/i.test(value), "Timestamp must use local time.")
+    .nullable().optional(),
+  alertLevel: z.string().trim().min(1).max(50).optional(),
+  actionableInstructions: z.string().max(4000).nullable().optional(),
+}).strict();
+
+export const MaintenanceTicketOverdueReviewRequestSchema = z.object({
+  reason: z.string().trim().min(1),
+}).strict();
+
+export const MaintenanceRequestOverdueReviewRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+
+export const MaintenanceClosureExceptionRequestSchema = z.object({
+  reason: z.string().trim().min(1).max(1000),
+}).strict();
+
 export const MaintenanceRequestSchema = z.object({
   id: MaintenanceRequestIdSchema,
   requestType: z.enum(["PREVENTIVE", "REPAIR"]),
@@ -207,10 +233,18 @@ export const MaintenanceRequestSchema = z.object({
   machineId: MachineIdSchema,
   issueDescription: z.string().nullish(),
   scheduledDueAt: dateTimeSchema.nullish(),
-  windowStart: dateTimeSchema.nullish(),
-  windowEnd: dateTimeSchema.nullish(),
+  windowStart: dateSchema.nullish(),
+  windowEnd: dateSchema.nullish(),
   requestedAppointmentAt: dateTimeSchema.nullish(),
   confirmedAppointmentAt: dateTimeSchema.nullish(),
+  serviceStartedAt: dateTimeSchema.nullish(),
+  completedAt: dateTimeSchema.nullish(),
+  closedAt: dateTimeSchema.nullish(),
+  reportedAt: dateTimeSchema.nullish(),
+  requestedBy: z.string().uuid().nullish(),
+  confirmedBy: z.string().uuid().nullish(),
+  confirmedByRole: z.string().nullish(),
+  exceptionReason: z.string().nullish(),
   status: z.enum([
     "REQUESTED",
     "TRIAGED",
@@ -225,6 +259,13 @@ export const MaintenanceRequestSchema = z.object({
   technicianId: z.string().uuid().nullish(),
   maintenanceTicketId: z.string().uuid().nullish(),
   replacementAssignmentId: z.string().uuid().nullish(),
+  overdueReviewedAt: dateTimeSchema.nullish(),
+  overdueReviewedBy: z.string().uuid().nullish(),
+  overdueReviewedByRole: z.string().nullish(),
+  overdueReviewReason: z.string().nullish(),
+  closureExceptionReason: z.string().nullish(),
+  closedBy: z.string().uuid().nullish(),
+  closedByRole: z.string().nullish(),
   createdAt: dateTimeSchema.nullish(),
   updatedAt: dateTimeSchema.nullish(),
 }).passthrough();
@@ -313,11 +354,17 @@ export const RepairCaseTimelinePageSchema = z.object({
   empty: z.boolean(),
 }).passthrough();
 
+export const MaintenanceCustodyEventTypeSchema = z.enum([
+  "PRIMARY_COLLECTED",
+  "REPLACEMENT_DELIVERED",
+  "REPLACEMENT_COLLECTED",
+  "PRIMARY_RETURNED",
+]);
 export const MaintenanceCustodyEventSchema = z.object({
   id: z.string().uuid(),
   maintenanceRequestId: MaintenanceRequestIdSchema,
   repairCaseId: RepairCaseIdSchema,
-  eventType: z.string(),
+  eventType: MaintenanceCustodyEventTypeSchema,
   machineId: MachineIdSchema,
   actorId: z.string().uuid().nullish(),
   actorRole: z.string(),
@@ -332,18 +379,13 @@ export const MaintenanceCustodyEventSchema = z.object({
 
 export const MaintenanceCustodyEventListSchema = z.array(MaintenanceCustodyEventSchema);
 export const MaintenanceCustodyEventIdSchema = z.string().uuid();
-export const MaintenanceCustodyEventTypeSchema = z.enum([
-  "PRIMARY_COLLECTED",
-  "REPLACEMENT_DELIVERED",
-  "REPLACEMENT_COLLECTED",
-  "PRIMARY_RETURNED",
-]);
 export const MaintenanceCustodyEventCreateRequestSchema = z.object({
   eventType: MaintenanceCustodyEventTypeSchema,
   machineId: MachineIdSchema,
   conditionNotes: z.string().trim().min(1).max(2000),
   evidenceReference: z.string().trim().min(1).max(512)
     .refine((value) => !/^https?:\/\//i.test(value) && !/[\r\n]/.test(value), "Evidence must be a private storage reference."),
+  acknowledgementUnavailableReason: z.string().trim().min(1).max(1000).optional(),
 }).strict();
 export const PrimaryCollectionRequestSchema = MaintenanceCustodyEventCreateRequestSchema
   .extend({ eventType: z.literal("PRIMARY_COLLECTED") });
@@ -356,6 +398,7 @@ export const ReplacementAssignmentSchema = z.object({
   ownerId: z.string().uuid(),
   contractId: z.string().uuid(),
   repairCaseId: RepairCaseIdSchema.nullish(),
+  maintenanceRequestId: MaintenanceRequestIdSchema.nullish(),
   primaryMachineId: MachineIdSchema,
   replacementMachineId: MachineIdSchema,
   status: z.string(),
@@ -440,12 +483,18 @@ export type RepairIntakeRequest = z.infer<typeof RepairIntakeRequestSchema>;
 export type MaintenanceRequest = z.infer<typeof MaintenanceRequestSchema>;
 export type MaintenanceRequestDetails = z.infer<typeof MaintenanceRequestDetailsSchema>;
 export type MaintenanceTicketAssignmentParams = z.infer<typeof MaintenanceTicketAssignmentParamsSchema>;
+export type CreateOnDemandMaintenanceTicketRequest = z.infer<typeof CreateOnDemandMaintenanceTicketRequestSchema>;
+export type MaintenanceTicketDetailsPatchRequest = z.infer<typeof MaintenanceTicketDetailsPatchRequestSchema>;
+export type MaintenanceTicketOverdueReviewRequest = z.infer<typeof MaintenanceTicketOverdueReviewRequestSchema>;
+export type MaintenanceRequestOverdueReviewRequest = z.infer<typeof MaintenanceRequestOverdueReviewRequestSchema>;
+export type MaintenanceClosureExceptionRequest = z.infer<typeof MaintenanceClosureExceptionRequestSchema>;
 export type RepairCase = z.infer<typeof RepairCaseSchema>;
 export type RepairCaseSummary = z.infer<typeof RepairCaseSummarySchema>;
 export type RepairCaseReference = z.infer<typeof RepairCaseReferenceSchema>;
 export type RepairCaseTimelineEvent = z.infer<typeof RepairCaseTimelineEventSchema>;
 export type RepairCaseTimelinePage = z.infer<typeof RepairCaseTimelinePageSchema>;
 export type MaintenanceCustodyEvent = z.infer<typeof MaintenanceCustodyEventSchema>;
+export type MaintenanceCustodyEventType = z.infer<typeof MaintenanceCustodyEventTypeSchema>;
 export type MaintenanceCustodyEventCreateRequest = z.infer<typeof MaintenanceCustodyEventCreateRequestSchema>;
 export type PrimaryCollectionRequest = z.infer<typeof PrimaryCollectionRequestSchema>;
 export type MaintenanceCustodyAcknowledgementRequest = z.infer<typeof MaintenanceCustodyAcknowledgementRequestSchema>;
@@ -468,6 +517,7 @@ export type CreateMachineRequest = z.infer<typeof CreateMachineRequestSchema>;
 export type InventorySummary = z.infer<typeof InventorySummarySchema>;
 export type MaintenanceSchedule = z.infer<typeof MaintenanceScheduleSchema>;
 export type MaintenanceTicket = z.infer<typeof MaintenanceTicketSchema>;
+export type MaintenanceTicketDetails = z.infer<typeof MaintenanceTicketDetailsSchema>;
 
 
 export const MachineTypeMappingRequestSchema = z.object({

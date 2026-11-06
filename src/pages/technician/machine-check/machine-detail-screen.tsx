@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
+import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -90,6 +91,12 @@ export function TechnicianMachineDetailScreen() {
     queryKey: machineQueryKey,
     queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
     enabled: validId,
+  });
+  const maintenanceTickets = useQuery({
+    queryKey: ["dolores", "technician", "machine-tickets", machineId],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId, page: 0, size: 100 }, signal),
+    enabled: validId && Boolean(machine.data),
+    retry: false,
   });
   const statusUpdate = useMutation({
     mutationFn: () => {
@@ -204,6 +211,23 @@ export function TechnicianMachineDetailScreen() {
               Chỉ xác nhận sẵn sàng cho máy đang ở trạng thái Trong kho. Máy hiện tại không đủ điều kiện.
             </p>
           ) : null}
+        </section>
+        <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-tickets-title">
+          <h2 id="technician-machine-tickets-title">Phiếu bảo trì</h2>
+          {maintenanceTickets.isPending && <p className={styles.pendingNotice} role="status">Đang tải phiếu bảo trì…</p>}
+          {maintenanceTickets.isError && (
+            <div className={styles.machineCheckError} role="alert">
+              <p>{getApiErrorMessage(maintenanceTickets.error)}</p>
+              <button className={styles.machineCheckRetry} type="button" onClick={() => void maintenanceTickets.refetch()}>Thử lại</button>
+            </div>
+          )}
+          {maintenanceTickets.isSuccess && maintenanceTickets.data.length === 0 && <p className={styles.pendingNotice}>Chưa có phiếu bảo trì cho máy này.</p>}
+          <MachineMaintenanceTicketActions
+            machineId={machineId}
+            tickets={maintenanceTickets.data ?? []}
+            role="TECHNICIAN"
+            onRefresh={() => maintenanceTickets.refetch()}
+          />
         </section>
       </section>
       {actionBar(true)}

@@ -17,6 +17,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -372,6 +373,12 @@ function MachineDetailContent() {
         {maintenanceTickets.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
         {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}
         {maintenanceTickets.data && maintenanceTickets.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+        {machine.data && <MachineMaintenanceTicketActions
+          machineId={machineId}
+          tickets={maintenanceTickets.data ?? []}
+          role="ADMIN"
+          onRefresh={() => maintenanceTickets.refetch()}
+        />}
         {maintenanceTickets.data && maintenanceTickets.data.length > 0 && <DataTable
           headerVariant="admin"
           rows={maintenanceTickets.data}

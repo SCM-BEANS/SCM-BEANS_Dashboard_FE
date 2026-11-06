@@ -1,16 +1,24 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   MaintenanceAppointmentRequestSchema,
+  MaintenanceClosureExceptionRequestSchema,
+  MaintenanceCustodyEventCreateRequestSchema,
+  MaintenanceCustodyEventIdSchema,
+  MaintenanceCustodyEventSchema,
   MaintenanceRequestDetailsSchema,
   MaintenanceRequestIdSchema,
   MaintenanceRequestListSchema,
+  MaintenanceRequestOverdueReviewRequestSchema,
   MaintenanceScheduleExceptionRequestSchema,
   MaintenanceTicketSchema,
+  ReplacementAssignmentIdSchema,
   type MaintenanceRequest,
+  type MaintenanceCustodyEventCreateRequest,
+  type MaintenanceRequestOverdueReviewRequest,
+  type MaintenanceClosureExceptionRequest,
 } from "@/schema/machines.schema";
 import { MaintenanceCustodyAcknowledgementRequestSchema, MaintenanceCustodyEventListSchema, MaintenanceRequestSchema, MachineIdSchema, type MaintenanceAppointmentRequest, type MaintenanceCustodyAcknowledgementRequest } from "@/schema/machines.schema";
 const requestPath = (id: string) => `/maintenance-requests/${encodeURIComponent(MaintenanceRequestSchema.shape.id.parse(id))}`;
-const custodyEventIdSchema = MaintenanceRequestSchema.shape.id;
 
 
 type BoundedPage<T> = { items: T[]; page: number; size: number; hasNext: boolean };
@@ -81,6 +89,58 @@ export const maintenanceRequestsApi =  {
     }
     return request;
   },
+  async recordOverdueReview(requestId: string, input: MaintenanceRequestOverdueReviewRequest) {
+    const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
+    const requestBody = MaintenanceRequestOverdueReviewRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${requestPath(validRequestId)}/overdue-review`,
+      requestBody,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const request = MaintenanceRequestDetailsSchema.parse(response.data);
+    if (request.id !== validRequestId) throw new Error("Dolores returned a different maintenance request after overdue review.");
+    return request;
+  },
+  async linkReplacementAssignment(requestId: string, assignmentId: string) {
+    const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
+    const validAssignmentId = ReplacementAssignmentIdSchema.parse(assignmentId);
+    const response = await axiosClient.put<unknown>(
+      `${requestPath(validRequestId)}/replacement-assignment/${encodeURIComponent(validAssignmentId)}`,
+      undefined,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const request = MaintenanceRequestDetailsSchema.parse(response.data);
+    if (request.id !== validRequestId || request.replacementAssignmentId !== validAssignmentId) {
+      throw new Error("Dolores did not confirm the replacement assignment for this maintenance request.");
+    }
+    return request;
+  },
+  async recordCustodyEvent(requestId: string, input: MaintenanceCustodyEventCreateRequest) {
+    const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
+    const requestBody = MaintenanceCustodyEventCreateRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${requestPath(validRequestId)}/custody-events`,
+      requestBody,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const event = MaintenanceCustodyEventSchema.parse(response.data);
+    if (event.maintenanceRequestId !== validRequestId) {
+      throw new Error("Dolores returned a custody event for a different maintenance request.");
+    }
+    return event;
+  },
+  async recordClosureException(requestId: string, input: MaintenanceClosureExceptionRequest) {
+    const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
+    const requestBody = MaintenanceClosureExceptionRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${requestPath(validRequestId)}/closure-exception`,
+      requestBody,
+      { baseURL: DOLORES_API_BASE_URL },
+    );
+    const request = MaintenanceRequestDetailsSchema.parse(response.data);
+    if (request.id !== validRequestId) throw new Error("Dolores returned a different maintenance request after closure.");
+    return request;
+  },
   async createWorkOrder(requestId: string, input?: { appointmentAt: string; reason: string }) {
     const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
     const body = input === undefined ? undefined : MaintenanceScheduleExceptionRequestSchema.parse(input);
@@ -132,7 +192,7 @@ export const maintenanceRequestsApi =  {
     return result;
   },
   async acknowledgeCustodyEvent(id: string, input: MaintenanceCustodyAcknowledgementRequest) {
-    const eventId = custodyEventIdSchema.parse(id);
+    const eventId = MaintenanceCustodyEventIdSchema.parse(id);
     const request = MaintenanceCustodyAcknowledgementRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>(
       `/maintenance-requests/custody-events/${encodeURIComponent(eventId)}/acknowledge`,

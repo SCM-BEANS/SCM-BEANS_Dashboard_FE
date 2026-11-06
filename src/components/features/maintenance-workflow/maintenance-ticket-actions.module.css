@@ -1,0 +1,159 @@
+.machineActions {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.ticketLinks,
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ticketLink {
+  min-height: 2.65rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #c8d1df;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #183653;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ticketLink:hover {
+  border-color: #517baa;
+  background: #f4f8fc;
+}
+
+.detailPanel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid #d8e0eb;
+  border-radius: 0.9rem;
+  background: #fbfcfe;
+}
+
+.panelHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelHeading h3 {
+  margin: 0;
+  color: #152b45;
+  font-size: 1.05rem;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.detailGrid > div {
+  min-width: 0;
+}
+
+.detailGrid dt {
+  color: #5a6d86;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.detailGrid dd {
+  overflow-wrap: anywhere;
+  margin: 0.25rem 0 0;
+  color: #1b2f49;
+}
+
+.form {
+  display: grid;
+  gap: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #d8e0eb;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.85rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.field label {
+  color: #263a53;
+  font-weight: 650;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 2.7rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #c8d1df;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #16233a;
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.ticketLink:focus-visible {
+  outline: 3px solid rgb(47 111 237 / 28%);
+  outline-offset: 2px;
+}
+
+.counter {
+  justify-self: end;
+  color: #61718a;
+  font-size: 0.8rem;
+}
+
+.notice,
+.error {
+  margin: 0;
+  color: #40536c;
+}
+
+.error {
+  color: #a12727;
+}
+
+.errorBlock {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  color: #a12727;
+}
+
+@media (max-width: 560px) {
+  .detailPanel {
+    padding: 0.85rem;
+  }
+
+  .actionRow > * {
+    flex: 1 1 100%;
+  }
+}

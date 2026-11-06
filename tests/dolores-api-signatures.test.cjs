@@ -9,7 +9,8 @@ const contracts = {
   'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'create', 'assignMachine'] },
   'technician-assignments.api.ts': { technicianAssignmentsApi: ['assign', 'revoke'] },
   'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
-  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },
+  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'createMaintenanceTicket', 'updateMaintenanceTicketDetails', 'recordMaintenanceTicketOverdueReview', 'unassignMaintenanceTicket', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },
+  'maintenance-requests.api.ts': { maintenanceRequestsApi: ['list', 'listPage', 'getById', 'confirm', 'recordOverdueReview', 'linkReplacementAssignment', 'recordCustodyEvent', 'recordClosureException', 'createWorkOrder', 'listByMachine', 'getCustodyEvents', 'reschedule', 'acknowledgeCustodyEvent'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
   'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'acknowledgeAlert', 'markAllAsRead', 'markAsRead'] },
   'recipes.api.ts': { recipesApi: ['listGlobalSummaries', 'listGlobal', 'getGlobalById', 'publishGlobal', 'listLocal', 'getLocalById', 'upsertLocal', 'deleteLocal', 'requestSync', 'getSyncStatus', 'getSyncHistory'] },
@@ -99,6 +100,34 @@ test('domain API modules expose typed methods over the shared client with parsed
         for (const parameter of fn.parameters) {
           assert.ok(parameter.type || parameter.initializer, `${apiName}.${methodName} parameter ${parameter.name.getText(sourceFile)} must have a type or inferable default`);
         }
+        assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName);
+      }
+    }
+  }
+});
+
+test('module 1 maintenance API mutations use the shared client and validate their responses', () => {
+  const apiDirectory = join(__dirname, '..', 'src', 'apis');
+  const expected = {
+    'machines.api.ts': {
+      machinesApi: ['createMaintenanceTicket', 'updateMaintenanceTicketDetails', 'recordMaintenanceTicketOverdueReview', 'unassignMaintenanceTicket'],
+    },
+    'maintenance-requests.api.ts': {
+      maintenanceRequestsApi: ['recordOverdueReview', 'linkReplacementAssignment', 'recordCustodyEvent', 'recordClosureException'],
+    },
+  };
+
+  for (const [fileName, apis] of Object.entries(expected)) {
+    const filePath = join(apiDirectory, fileName);
+    const source = readFileSync(filePath, 'utf8');
+    const sourceFile = ts.createSourceFile(filePath, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const [apiName, methodNames] of Object.entries(apis)) {
+      const members = apiObject(sourceFile, apiName);
+      for (const methodName of methodNames) {
+        const member = members.find((item) => item.name?.getText(sourceFile) === methodName);
+        const fn = member && memberFunction(member);
+        assert.ok(fn, `${apiName}.${methodName} is exposed`);
+        assert.ok(fn.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword), `${apiName}.${methodName} is async`);
         assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName);
       }
     }

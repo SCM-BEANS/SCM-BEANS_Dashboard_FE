@@ -1,0 +1,36 @@
+.field {
+  display: grid;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+
+.field label {
+  font-weight: 650;
+}
+
+.field textarea {
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #c8d1df;
+  border-radius: 0.65rem;
+  color: #16233a;
+  font: inherit;
+  resize: vertical;
+}
+
+.field textarea:focus-visible {
+  outline: 3px solid rgb(47 111 237 / 28%);
+  outline-offset: 2px;
+}
+
+.counter {
+  justify-self: end;
+  color: #61718a;
+  font-size: 0.8rem;
+}
+
+.error {
+  margin: 0;
+  color: #a12727;
+}

@@ -16,6 +16,7 @@ import { MachineIdSchema, MachineTypeSchema, type Machine } from "@/schema/machi
 import { ADMIN_OPERATIONS_MESSAGES as ADMIN_T } from "@/text/admin/admin-operations-messages";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { adminStyles } from "@/pages/admin/admin-shell";
+import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { moderatorStyles } from "../moderator-shell";
 import { MachineMaintenanceTicketTable } from "./machine-maintenance-ticket-table";
 
@@ -414,6 +415,12 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
           </div>
           <QueryFeedback query={tickets} loadingMessage={messages.LOADING_MACHINE_TICKETS} />
           {tickets.data && !tickets.isError && tickets.data.length === 0 && <p className={adminStyles.emptyText}>{ADMIN_T.COMMON.EMPTY}</p>}
+          {device && <MachineMaintenanceTicketActions
+            machineId={machineId}
+            tickets={tickets.data ?? []}
+            role="MODERATOR"
+            onRefresh={() => tickets.refetch()}
+          />}
           {tickets.data && !tickets.isError && tickets.data.length > 0 && <MachineMaintenanceTicketTable tickets={tickets.data} machineId={machineId} />}
         </section>
 
