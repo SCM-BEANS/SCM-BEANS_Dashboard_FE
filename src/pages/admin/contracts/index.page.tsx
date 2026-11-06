@@ -22,7 +22,7 @@ import { ContractTable } from "@/components/table/contract-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
-import { ActionBar } from "@/components/action-bar/action-bar";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { PATH_ADMIN } from "@/routes/path";
 import { ContractInstallationRequestScreen } from "@/pages/moderator/contracts/contract-installation-request-screen";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
@@ -469,11 +469,11 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  {isContractList && <ActionBar>
+  {isContractList && <ActionBarConfig>
         <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
         <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-  </ActionBar>}
-  {view === "detail" && contract.data && <ActionBar>
+  </ActionBarConfig>}
+  {view === "detail" && contract.data && <ActionBarConfig>
     {contract.data.machineId && <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>}
     <ButtonBar href={PATH_ADMIN.CONTRACT_TERMINATION(contract.data.id)}>Chấm dứt hợp đồng</ButtonBar>
     {contract.data.status === "ACTIVE" && (lifecycleView === "amend" ? <>
@@ -486,7 +486,7 @@ function ContractsContent() {
       <ButtonBar type="submit" form="contract-continuation-form" disabled={continueContract.isPending}>Tạo bản nháp tiếp nối</ButtonBar>
       <ButtonBar type="button" onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
     </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
-  </ActionBar>}
+  </ActionBarConfig>}
   {isContractList && createdContractId && (
     <NotificationDialog
       variant="success"
