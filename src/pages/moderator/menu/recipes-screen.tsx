@@ -13,7 +13,7 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
 
   return (
     <div className={styles.pageContent}>
-      <ModeratorPageHeading title="Menu & công thức dùng chung" description="Quản lý thư viện menu, tạo và cập nhật quy trình pha dùng chung của Dolores." />
+      <ModeratorPageHeading title="Global Menu & công thức" description="Quản lý menu dùng chung và các công thức pha chế của Dolores." />
       {!isList && !validId ? (
         <p className={styles.pendingNotice} role="status">{messages.INVALID_RECIPE_ID}</p>
       ) : (

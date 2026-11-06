@@ -147,8 +147,6 @@ export function ModeratorShell({
         return <ButtonBar href={PATH_MODERATOR.NEW_CUSTOMER}>{actionMessages.CREATE_CUSTOMER}</ButtonBar>;
       case PATH_MODERATOR.INVOICES:
         return disabledAction(actionMessages.RECONCILE_INVOICE);
-      case PATH_MODERATOR.MACHINES:
-        return <ButtonBar href={PATH_MODERATOR.MACHINE_HISTORY}>{actionMessages.MACHINE_HISTORY}</ButtonBar>;
       case PATH_MODERATOR.IOT:
         return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
       case PATH_MODERATOR.TECHNICAL_REQUESTS:
@@ -217,7 +215,7 @@ export function ModeratorShell({
           </div>
           <ActionBarLayout label={actionMessages.LABEL}>
             <main className={styles.main}>{children}</main>
-            {isSectionList && currentSection.HREF !== PATH_MODERATOR.MENU && (
+            {isSectionList && currentSection.HREF !== PATH_MODERATOR.MENU && currentSection.HREF !== PATH_MODERATOR.MACHINES && (
               <ActionBarConfig>{renderActions()}</ActionBarConfig>
             )}
           </ActionBarLayout>

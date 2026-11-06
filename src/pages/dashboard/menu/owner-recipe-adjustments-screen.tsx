@@ -181,7 +181,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
       {feedback ? <p className={styles.notice} role="status">{feedback}</p> : null}
       {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
       {mode === "view" ? <section className={styles.recipeMenuPanel}>
-        <div className={styles.panelHeading}><div><h2>Menu của tôi</h2><p>Chỉ tài khoản của bạn được quản lý các menu riêng này.</p></div><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(""); setMenuAction("create"); }}>Tạo menu</ButtonBar></div>
+        <div className={styles.panelHeading}><div><h2>Menu của tôi</h2></div><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(""); setMenuAction("create"); }}>Tạo menu</ButtonBar></div>
         <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setSelectedMenuId(""); setRecipePage(0); setMenuQ(menuSearch); setMenuPage(0); }}>
           <label className={styles.formField}><span>Tìm menu</span><input placeholder="Nhập tên menu…" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} /></label><ButtonBar type="submit" disabled={busy}>Tìm kiếm</ButtonBar>
         </form>
@@ -203,7 +203,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         </form> : null}
       </section> : null}
       <section className={styles.recipeMenuPanel}>
-        <div className={styles.panelHeading}><div><h2>{mode === "create" ? "Thêm món riêng" : mode === "edit" ? "Chỉnh sửa công thức riêng" : "Công thức riêng"}</h2><p>{mode === "view" ? "Chọn món để xem chi tiết, hoặc thêm món mới vào menu của bạn." : "Điền thông tin và kiểm tra trước khi lưu."}</p></div>{mode === "view" ? <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !canCreate} onClick={openCreate}>Tạo công thức riêng</ButtonBar> : null}</div>
+        <div className={styles.panelHeading}><div><h2>{mode === "create" ? "Thêm món riêng" : mode === "edit" ? "Chỉnh sửa công thức riêng" : "Công thức riêng"}</h2>{mode !== "view" ? <p>Điền thông tin và kiểm tra trước khi lưu.</p> : null}</div>{mode === "view" ? <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !canCreate} onClick={openCreate}>Tạo công thức riêng</ButtonBar> : null}</div>
         <div className={styles.recipeMenuWorkspace} data-editing={mode !== "view"}>
         {mode === "view" ? <div className={styles.recipeMenuBrowser}>
         {menuId ? <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setRecipeQ(recipeSearch); setRecipePage(0); }}>
@@ -255,7 +255,6 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         </div>
       </section>
       {mode === "view" ? <details className={styles.recipeMenuDisclosure}><summary>Định lượng đã lưu trước đây</summary>
-        <p className={styles.recipeMenuMeta}>Mở các điều chỉnh định lượng cũ nếu bạn đã sử dụng trước đây. Các món tự tạo và bản sao nằm trong Menu của tôi ở trên.</p>
         <ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS + "?view=legacy"}>Xem điều chỉnh định lượng cũ</ButtonBar>
       </details> : null}
     </>}

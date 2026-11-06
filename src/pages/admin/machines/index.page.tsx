@@ -12,7 +12,6 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
-import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { DataTable } from "@/components/table/data-table";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
@@ -286,19 +285,15 @@ function MachinesContent() {
                     rowKey={(machine) => machine.id}
                     rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
                     columns={[
-                      { key: "id", header: T.MACHINES.MACHINE_ID, align: "center", render: (machine) => <Link className={styles.machineInventoryLink} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.id}><TruncatedId value={machine.id} /></Link> },
-                      { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? "—" },
-                      { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ? <StatusBadge status={machine.status}>{statusLabel(machine.status)}</StatusBadge> : "—" },
-                      { key: "connection", header: "Kết nối", render: (machine) => {
+                      { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => <Link className={styles.machineInventoryLink} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.serialNumber ?? machine.id}>{machine.serialNumber ?? "—"}</Link> },
+                      { key: "status", header: T.MACHINES.STATUS, align: "center", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{statusLabel(machine.status)}</StatusBadge> : "—" },
+                      { key: "connection", header: "Kết nối", align: "center", render: (machine) => {
                         if (machine.machineType !== "SMART_IOT") return "—";
                         const query = heartbeatByMachineId.get(machine.id);
                         const state: MachineConnectionState = query?.isError ? "error" : query?.isPending ? "loading" : query?.data?.status ?? "not-requested";
                         return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
                       } },
-                      { key: "owner", header: T.MACHINES.OWNER_ID, align: "center", render: (machine) => <TruncatedId value={machine.ownerId} /> },
-                      { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
                       { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-                      { key: "deployed-at", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => formatDate(machine.deployedAt) },
                     ]}
                   />
                 </div>
