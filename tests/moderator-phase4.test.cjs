@@ -1,13 +1,14 @@
 const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
+const { readFileSync, existsSync } = require('node:fs');
+const { join, resolve, dirname } = require('node:path');
 const test = require('node:test');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const ts = require('typescript');
 
-function loadTypescript(relativePath, mocks = {}) {
-  const fileName = join(__dirname, '..', relativePath);
+function loadTypescript(relativePath, mocks = {}, resolveAliases = false, cache = new Map()) {
+  const fileName = resolve(__dirname, '..', relativePath);
+  if (cache.has(fileName)) return cache.get(fileName).exports;
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
@@ -19,7 +20,17 @@ function loadTypescript(relativePath, mocks = {}) {
     },
   });
   const loadedModule = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  cache.set(fileName, loadedModule);
+  const mockedRequire = (id) => {
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (resolveAliases && (id.startsWith('@/') || id.startsWith('.'))) {
+      const base = id.startsWith('@/') ? join(__dirname, '..', 'src', id.slice(2)) : resolve(dirname(fileName), id);
+      const dependency = [base + '.ts', base + '.tsx'].find(existsSync);
+      if (!dependency) throw new Error('Unresolved test import: ' + id);
+      return loadTypescript(dependency, mocks, true, cache);
+    }
+    return require(id);
+  };
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loadedModule.exports, loadedModule);
   return loadedModule.exports;
 }
@@ -65,8 +76,9 @@ const proof = {
 const recipe = {
   id: recipeId,
   name: 'API Espresso',
-  steps: ['GRIND:8s', 'BREW:25s'],
-  dosageBounds: ['bean:6:12', 'water:30:50'],
+  steps: ['DOSE:18', 'TAMP:100', 'HOLDTAMP:50', 'EXTRACT:36', 'DRYTAMP:100'],
+  revision: 4,
+  menuId: '00000000-0000-0000-0000-000000000090',
 };
 const buybackCase = {
   id: buybackId,
@@ -291,24 +303,52 @@ test('invoice detail renders proof metadata and never exposes private object key
   assert.equal(invalid.options[2].enabled, false);
 });
 
-test('global recipes are read-only; list and detail show Dolores values', () => {
-  const listKey = JSON.stringify(['dolores', 'moderator', 'recipes', 'global']);
-  const detailKey = JSON.stringify(['dolores', 'moderator', 'recipes', 'global', recipeId]);
-  const list = loadScreen('ModeratorRecipesScreen', { [listKey]: query([recipe]) });
-  const listHtml = list.html({ sectionPath: 'menu' });
-  assert.match(listHtml, /API Espresso/);
-  assert.match(listHtml, new RegExp('/moderator/menu/' + recipeId));
-  assert.doesNotMatch(listHtml, /<button/);
-
-  const detail = loadScreen('ModeratorRecipesScreen', { [detailKey]: query(recipe) });
-  const detailHtml = detail.html({ sectionPath: 'menu/' + recipeId });
-  assert.match(detailHtml, /GRIND:8s/);
-  assert.match(detailHtml, /bean:6:12/);
-  assert.equal(detail.options[1].enabled, true);
-
-  const invalid = loadScreen('ModeratorRecipesScreen');
-  assert.match(invalid.html({ sectionPath: 'menu/add' }), /không phải UUID hợp lệ/i);
-  assert.equal(invalid.options[1].enabled, false);
+test('Moderator global management shows current list/detail and permits global writes without Owner or device access', async () => {
+  const options = [];
+  const mutations = [];
+  const calls = [];
+  const { steps, ...summary } = recipe;
+  const menus = { content: [{ id: recipe.menuId, name: 'Default menu', createdAt: '2026-11-05T08:00:00Z' }], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true };
+  const api = {
+    listGlobalPage: async (...args) => { calls.push(['list', ...args]); return { items: [summary], page: 0, hasNext: false }; },
+    getGlobalById: async (...args) => { calls.push(['detail', ...args]); return recipe; },
+    updateGlobal: async (...args) => { calls.push(['update', ...args]); return recipe; },
+  };
+  const { ModeratorRecipesScreen } = loadTypescript('src/pages/moderator/menu/recipes-screen.tsx', {
+    'next/router': { useRouter: () => ({ push: async () => true }) },
+    '@/apis/recipes.api': { recipesApi: api },
+    '@/apis/recipe-menus.api': { recipeMenusApi: { listGlobal: async () => menus } },
+    '@/components/button/button-bar': { ButtonBar: ({ children, ...props }) => React.createElement('button', props, children) },
+    '@/components/navigation/back-button-heading': { BackButtonHeading: () => null },
+    '@/lib/query-subject': { authScopedQuerySubject: (role) => 'test:' + role },
+    '@/lib/api-errors': { getRecipeApiErrorDetails: () => ({}), getRecipeApiErrorMessage: () => 'API error' },
+    '../moderator-shell': { moderatorStyles: {} },
+    '../moderator-page-heading': { ModeratorPageHeading: ({ title }) => React.createElement('h1', null, title) },
+    './legacy-recipe-overrides': { LegacyRecipeOverrides: () => { throw new Error('Moderator must not mount legacy overrides'); } },
+    './recipe-sync-panel': { RecipeSyncPanel: () => { throw new Error('Moderator must not mount sync'); } },
+    '../repair-workflow/repair-workflow.module.css': {},
+    '@tanstack/react-query': {
+      useQuery: (queryOptions) => {
+        options.push(queryOptions);
+        const data = queryOptions.enabled === false ? undefined : queryOptions.queryKey[1] === 'recipe-menus'
+          ? menus : queryOptions.queryKey[2] === 'global-detail' ? recipe : { items: [summary], page: 0, hasNext: false };
+        return query(data);
+      },
+      useMutation: (config) => { mutations.push(config); return { isPending: false, mutate: () => {} }; },
+      useQueryClient: () => ({ invalidateQueries: async () => {} }),
+    },
+  }, true);
+  const html = renderToStaticMarkup(React.createElement(ModeratorRecipesScreen, { sectionPath: 'menu/' + recipeId }));
+  for (const label of ['API Espresso', 'Phiên bản 4', 'Tạo công thức', 'Chỉnh sửa', 'Xóa công thức', 'Tạo menu', 'Lượng cà phê', 'Nước chiết xuất']) assert.ok(html.includes(label), label);
+  assert.doesNotMatch(html, /Điều chỉnh cũ|Theo dõi đồng bộ|Lưu bản sao riêng|dosageBounds/);
+  const signal = new AbortController().signal;
+  for (const option of options.filter((item) => item.enabled !== false)) await option.queryFn({ signal });
+  assert.deepEqual(calls, [['list', 0, 20, signal, ''], ['detail', recipeId, signal]]);
+  assert.equal(options.find((item) => item.queryKey[2] === 'local').enabled, false);
+  assert.ok(mutations.every((item) => item.retry === false), 'mutations must not automatically repeat');
+  const payload = { name: recipe.name, procedure: steps };
+  await mutations[0].mutationFn({ payload, id: recipeId, target: recipe.menuId });
+  assert.deepEqual(calls.at(-1), ['update', recipeId, payload]);
 });
 
 test('buyback list is unavailable and only a valid UUID detail can query Dolores', () => {

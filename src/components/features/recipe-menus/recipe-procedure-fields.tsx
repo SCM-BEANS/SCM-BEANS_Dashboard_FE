@@ -23,20 +23,34 @@ const groups: { title: string; description: string; fields: { key: keyof RecipeP
 export function RecipeProcedureFields({ value, onChange, prefix, disabled = false }: {
   value: RecipeProcedureDraft; onChange: (value: RecipeProcedureDraft) => void; prefix: string; disabled?: boolean;
 }) {
-  return <div className={styles.recipeMenuEditor}>
-    {groups.map((group) => <fieldset key={group.title} className={styles.recipeMenuEditorGroup} disabled={disabled}>
-      <legend>{group.title}</legend>
-      <p className={styles.recipeMenuMeta}>{group.description}</p>
-      <div className={styles.recipeMenuFormGrid}>
-        {group.fields.map((field) => <label key={field.key} className={styles.formField} htmlFor={prefix + "-" + field.key}>
-          <span>{field.label} ({field.unit}){field.required ? " *" : ""}</span>
-          <input id={prefix + "-" + field.key} type="number" inputMode={field.integer ? "numeric" : "decimal"}
-            required={field.required} min={field.min} step={field.integer ? "1" : "0.1"} value={value[field.key]}
-            onChange={(event) => onChange({ ...value, [field.key]: event.target.value })} />
-        </label>)}
-      </div>
-    </fieldset>)}
-    <p className={styles.recipeMenuMeta}>Mặc định mức nén 100, giữ nén 50; bước kết thúc chiết xuất cố định DRYTAMP:100. Chọn thông số phù hợp với mẫu máy trước khi lưu.</p>
+  const renderFields = (keys: (keyof RecipeProcedureDraft)[]) => <div className={styles.recipeMenuFormGrid}>
+    {groups.flatMap((group) => group.fields).filter((field) => keys.includes(field.key)).map((field) => <label key={field.key} className={styles.formField} htmlFor={prefix + "-" + field.key}>
+      <span>{field.label} ({field.unit}){field.required ? " *" : ""}</span>
+      <input id={prefix + "-" + field.key} type="number" inputMode={field.integer ? "numeric" : "decimal"}
+        required={field.required} min={field.min} step={field.integer ? "1" : "0.1"} value={value[field.key]}
+        placeholder={field.key === "DOSE" ? "Ví dụ: 18" : field.key === "EXTRACT" ? "Ví dụ: 36" : "Không sử dụng"}
+        onChange={(event) => onChange({ ...value, [field.key]: event.target.value })} />
+    </label>)}
+  </div>;
+  return <div className={styles.recipeMenuProcedure}>
+    <fieldset className={styles.recipeMenuEditorGroup} disabled={disabled}>
+      <legend>Thông số pha bắt buộc</legend>
+      <p className={styles.recipeMenuMeta}>Nhập lượng cà phê và lượng nước cho một lần pha. Dấu * là trường cần điền.</p>
+      {renderFields(["DOSE", "EXTRACT"])}
+    </fieldset>
+    <details className={styles.recipeMenuDisclosure}>
+      <summary>Thông số nâng cao · nén, ủ, nước bổ sung và sữa</summary>
+      <p className={styles.recipeMenuMeta}>Chỉ thay đổi khi cần. Mức nén mặc định 100, giữ nén 50; các ô nước và sữa có thể để trống.</p>
+      {groups.map((group) => {
+        const keys = group.fields.filter((field) => !field.required).map((field) => field.key);
+        return <fieldset key={group.title} className={styles.recipeMenuEditorGroup} disabled={disabled}>
+          <legend>{group.title === "Chiết xuất chính" ? "Nén cà phê" : group.title}</legend>
+          <p className={styles.recipeMenuMeta}>{group.title === "Chiết xuất chính" ? "Giữ thông số mặc định nếu chưa cần điều chỉnh mức nén." : group.description}</p>
+          {renderFields(keys)}
+        </fieldset>;
+      })}
+    </details>
+    <p className={styles.recipeMenuPreview} aria-live="polite">Một lần pha: <strong>{value.DOSE || "—"} g cà phê</strong> · <strong>{value.EXTRACT || "—"} ml nước chiết xuất</strong></p>
   </div>;
 }
 

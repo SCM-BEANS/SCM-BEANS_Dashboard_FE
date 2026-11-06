@@ -71,7 +71,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
     : undefined;
 
   if (sectionPath === "menu/adjustments" || sectionPath === "menu/add-dish") {
-    return <OwnerRecipeAdjustmentsScreen />;
+    return <OwnerRecipeAdjustmentsScreen creating={sectionPath === "menu/add-dish"} />;
   }
   if (sectionPath === "menu/sync" || sectionPath === "menu/sent" || sectionPath === "menu/applied") {
     return <OwnerRecipeSyncScreen />;

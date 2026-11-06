@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
+const { readFileSync, existsSync } = require('node:fs');
+const { join, dirname, resolve } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
 const React = require('react');
@@ -12,8 +12,9 @@ const contractId = '00000000-0000-4000-8000-000000000103';
 const recipe = {
   id: recipeId,
   name: 'Standard Espresso',
-  steps: ['GRIND:8s', 'TAMP:12kg', 'BREW:25s'],
-  dosageBounds: ['bean:6:12', 'water:30:50'],
+  steps: ['DOSE:18', 'TAMP:100', 'HOLDTAMP:50', 'EXTRACT:36', 'DRYTAMP:100'],
+  revision: 2,
+  menuId: '00000000-0000-0000-0000-000000000090',
 };
 const moderatorInvoice = {
   id: '00000000-0000-4000-8000-000000000104',
@@ -26,8 +27,9 @@ const moderatorInvoice = {
   currency: 'VND',
 };
 
-function loadTypescript(relativePath, mocks = {}) {
-  const fileName = join(__dirname, '..', relativePath);
+function loadTypescript(relativePath, mocks = {}, resolveAliases = false, cache = new Map()) {
+  const fileName = resolve(__dirname, '..', relativePath);
+  if (cache.has(fileName)) return cache.get(fileName).exports;
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
@@ -38,8 +40,18 @@ function loadTypescript(relativePath, mocks = {}) {
       jsx: ts.JsxEmit.ReactJSX,
     },
   });
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (resolveAliases && (id.startsWith('@/') || id.startsWith('.'))) {
+      const base = id.startsWith('@/') ? join(__dirname, '..', 'src', id.slice(2)) : resolve(dirname(fileName), id);
+      const dependency = [base + '.ts', base + '.tsx'].find(existsSync);
+      if (!dependency) throw new Error('Unresolved test import: ' + id);
+      return loadTypescript(dependency, mocks, true, cache);
+    }
+    return require(id);
+  };
   const loaded = { exports: {} };
+  cache.set(fileName, loaded);
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports;
 }
@@ -48,18 +60,23 @@ const recipeSchemas = loadTypescript('src/schema/recipes.schema.ts');
 const billingSchemas = loadTypescript('src/schema/billing.schema.ts');
 const dashboardSchemas = loadTypescript('src/schema/dashboard.schema.ts');
 
-test('global recipe schemas validate canonical IDs and non-empty publish instructions', () => {
+test('global recipe schemas validate the current five-field DTO and native procedure requests', () => {
   assert.deepEqual(recipeSchemas.GlobalRecipesSchema.parse([recipe]), [recipe]);
+  const { steps, ...summary } = recipe;
+  assert.deepEqual(recipeSchemas.GlobalRecipeSummariesSchema.parse([summary]), [summary]);
   assert.equal(recipeSchemas.GlobalRecipeSchema.safeParse({ ...recipe, id: 'not-a-uuid' }).success, false);
-  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({
-    name: 'Empty recipe', steps: [], dosageBounds: ['water:30:50'],
-  }).success, false);
-  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({
-    name: 'Valid recipe', steps: ['BREW:25s'], dosageBounds: ['water:30:50'],
-  }).success, true);
+  for (const field of ['revision', 'menuId', 'steps']) {
+    const missing = { ...recipe }; delete missing[field];
+    assert.equal(recipeSchemas.GlobalRecipeSchema.safeParse(missing).success, false, field + ' is required');
+  }
+  assert.equal(recipeSchemas.GlobalRecipeSchema.safeParse({ ...recipe, dosageBounds: [] }).success, false);
+  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({ name: 'Empty recipe', procedure: [] }).success, false);
+  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({ name: 'Missing extraction', procedure: ['DOSE:18'] }).success, false);
+  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({ name: recipe.name, procedure: steps }).success, true);
+  assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({ name: recipe.name, steps, dosageBounds: [] }).success, false);
 });
 
-test('recipe API uses only the global list, detail, and publish routes', async () => {
+test('recipe API separates paginated summaries, five-field details and native DSL publish', async () => {
   const calls = [];
   let responseData;
   const axiosClient = {
@@ -69,22 +86,26 @@ test('recipe API uses only the global list, detail, and publish routes', async (
   const { recipesApi } = loadTypescript('src/apis/recipes.api.ts', {
     '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
     '@/schema/recipes.schema': recipeSchemas,
-  });
+  }, true);
   const signal = new AbortController().signal;
-  const publishRequest = { name: recipe.name, steps: recipe.steps, dosageBounds: recipe.dosageBounds };
+  const publishRequest = { name: recipe.name, procedure: recipe.steps };
+  const { steps, ...summary } = recipe;
 
-  responseData = [recipe];
-  assert.deepEqual(await recipesApi.listGlobal(signal), [recipe]);
+  responseData = [summary];
+  assert.deepEqual(await recipesApi.listGlobal(signal), [summary]);
   responseData = recipe;
   assert.deepEqual(await recipesApi.getGlobalById(recipeId, signal), recipe);
   assert.deepEqual(await recipesApi.publishGlobal(publishRequest), recipe);
 
   assert.deepEqual(calls.map(({ method, url, config, data }) => [method, url, config, data]), [
-    ['GET', '/recipes/global', { baseURL: '/api/dolores/v1', signal }, undefined],
+    ['GET', '/recipes/global', { baseURL: '/api/dolores/v1', params: { page: 0, size: 50 }, signal }, undefined],
     ['GET', `/recipes/global/${recipeId}`, { baseURL: '/api/dolores/v1', signal }, undefined],
     ['POST', '/recipes/global', { baseURL: '/api/dolores/v1' }, publishRequest],
   ]);
   await assert.rejects(recipesApi.getGlobalById('not-a-uuid'));
+  assert.equal(calls.length, 3, 'invalid IDs must not issue an HTTP request');
+  responseData = { ...recipe, id: tenantId };
+  await assert.rejects(recipesApi.getGlobalById(recipeId), /different global recipe/i);
 });
 
 test('billing schemas distinguish Admin owner invoices from Moderator tenant invoices', () => {
@@ -181,30 +202,24 @@ test('reports page isolates query keys by URL date range and passes the range to
   ]);
 });
 
-test('Moderator recipe catalog remains read-only and does not expose the Admin publish mutation', () => {
-  let publishCalls = 0;
-  const readOnlyText = new Proxy({}, { get: (_target, key) => String(key) });
-  const { ModeratorRecipesScreen } = loadTypescript('src/pages/moderator/moderator-finance-catalog-screens.tsx', {
-    '@tanstack/react-query': { useQuery: () => ({ data: [recipe], isPending: false, isError: false, isFetching: false, refetch: async () => {} }) },
-    '@/apis/recipes.api': { recipesApi: {
-      listGlobal: async () => [recipe], getGlobalById: async () => recipe,
-      publishGlobal: async () => { publishCalls += 1; return recipe; },
-    } },
-    '@/apis/billing.api': { billingApi: {} },
-    '@/apis/buybacks.api': { buybacksApi: {} },
-    '@/routes/path': { PATH_MODERATOR: {
-      MENU: '/moderator/menu',
-      MENU_RECIPE_DETAIL: (id) => `/moderator/menu/${encodeURIComponent(id)}`,
-    } },
+test('Moderator menu route delegates valid IDs to shared management with Moderator permissions', () => {
+  const delegated = [];
+  const { ModeratorRecipesScreen } = loadTypescript('src/pages/moderator/menu/recipes-screen.tsx', {
+    '@/components/features/recipe-menus/recipe-menus-screen': {
+      RecipeManagementScreen: (props) => { delegated.push(props); return React.createElement('div', null, 'shared recipe management'); },
+    },
     '@/schema/recipes.schema': recipeSchemas,
-    '@/schema/billing.schema': billingSchemas,
-    '@/schema/buybacks.schema': { BuybackIdSchema: { safeParse: () => ({ success: false }) } },
-    '@/text/moderator/moderator-messages': { MODERATOR_MESSAGES: { READ_SCREENS: readOnlyText } },
-    './moderator-shell': { moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }) },
+    '@/text/moderator/moderator-messages': { MODERATOR_MESSAGES: { READ_SCREENS: { INVALID_RECIPE_ID: 'Invalid recipe UUID' } } },
+    '../moderator-shell': { moderatorStyles: {} },
+    '../moderator-page-heading': { ModeratorPageHeading: ({ title }) => React.createElement('h1', null, title) },
   });
-  const html = renderToStaticMarkup(React.createElement(ModeratorRecipesScreen, { sectionPath: 'menu' }));
-  assert.match(html, /RECIPE_READ_ONLY/);
-  assert.match(html, /Standard Espresso/);
-  assert.doesNotMatch(html, /publish|phát hành|xóa/i);
-  assert.equal(publishCalls, 0);
+  const render = (sectionPath) => renderToStaticMarkup(React.createElement(ModeratorRecipesScreen, { sectionPath }));
+  assert.match(render('menu'), /shared recipe management/);
+  assert.deepEqual(delegated.pop(), { role: 'operator', operatorRole: 'MODERATOR', showHeading: false, initialGlobalRecipeId: undefined });
+  assert.match(render('menu/' + recipeId), /shared recipe management/);
+  assert.equal(delegated.pop().initialGlobalRecipeId, recipeId);
+  for (const path of ['menu/add', 'menu/not-a-uuid']) {
+    assert.match(render(path), /Invalid recipe UUID/);
+    assert.equal(delegated.length, 0, 'invalid routes must not mount management or start recipe queries');
+  }
 });

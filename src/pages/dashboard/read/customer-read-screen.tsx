@@ -14,7 +14,6 @@ import { ContractsScreen } from "../contracts/contracts-screen";
 import { MachinesScreen } from "../machines/machines-screen";
 import { CustomerMachineOperationalOverviewScreen } from "../machines/machine-operational-overview-screen";
 import { MenuScreen } from "../menu/menu-screen";
-import { RecipeManagementScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { InvoicesScreen } from "../invoices/invoices-screen";
 import { LocationsScreen } from "../locations/locations-screen";
 import { MachineRegistrationScreen } from "../machines/machine-registration-screen";
@@ -65,7 +64,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
   if (sectionPath === "menu") return <MenuScreen />;
   const recipeDetailMatch = /^menu\/([^/]+)$/.exec(sectionPath);
   if (recipeDetailMatch && GlobalRecipeIdSchema.safeParse(recipeDetailMatch[1]).success) {
-    return <RecipeManagementScreen role="owner" initialGlobalRecipeId={recipeDetailMatch[1]} />;
+    return <MenuScreen initialGlobalRecipeId={recipeDetailMatch[1]} />;
   }
   if (
     sectionPath === "invoices" ||

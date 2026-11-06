@@ -6,6 +6,7 @@ import { getCustomerScreenDescriptor } from "./read/customer-read-descriptor";
 import { CustomerWorkflowScreen } from "./workflows/customer-workflow-screen";
 import { getCustomerWorkflowDescriptor } from "./workflows/customer-workflow-descriptor";
 import { CoffeePackageOwnerScreen } from "@/components/features/coffee-packages/coffee-package-owner-screen";
+import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 
 interface CustomerPageProps {
@@ -19,6 +20,14 @@ export const getServerSideProps: GetServerSideProps<CustomerPageProps> = async (
     : typeof sections === "string"
       ? sections
       : "";
+
+  const menuAliases: Record<string, string> = {
+    "menu/sent": PATH_CUSTOMER.MENU_SYNC,
+    "menu/applied": PATH_CUSTOMER.MENU_SYNC,
+    "menu/espresso": PATH_CUSTOMER.MENU_ADJUSTMENTS,
+    "menu/fresh-milk": PATH_CUSTOMER.MENU_ADJUSTMENTS,
+  };
+  if (menuAliases[sectionPath]) return { redirect: { destination: menuAliases[sectionPath], permanent: false } };
 
   if (!isSupportedCustomerSection(sectionPath)) {
     return { notFound: true };

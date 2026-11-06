@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const { readFileSync, existsSync } = require("node:fs");
+const { join, resolve, dirname } = require("node:path");
 const test = require("node:test");
 const ts = require("typescript");
 const React = require("react");
@@ -16,13 +16,13 @@ const machineId = "f1000000-0000-4000-8000-000000000106";
 const recipe = {
   id: recipeId,
   name: "TEST_DATA House Espresso",
-  steps: ["GRIND:8s", "BREW:25s"],
-  dosageBounds: ["bean:6:12", "water:30:50"],
+  steps: ["DOSE:18", "TAMP:100", "HOLDTAMP:50", "EXTRACT:36", "DRYTAMP:100"],
+  revision: 3,
+  menuId: "00000000-0000-0000-0000-000000000090",
 };
 const publishInput = {
   name: recipe.name,
-  steps: recipe.steps,
-  dosageBounds: recipe.dosageBounds,
+  procedure: recipe.steps,
 };
 const notification = {
   id: notificationId,
@@ -74,8 +74,9 @@ const alert = {
   ts: "2026-10-23T08:00:00Z",
 };
 
-function loadModule(relativePath, mocks = {}) {
-  const fileName = join(root, relativePath);
+function loadModule(relativePath, mocks = {}, resolveAliases = false, cache = new Map()) {
+  const fileName = resolve(root, relativePath);
+  if (cache.has(fileName)) return cache.get(fileName).exports;
   const source = readFileSync(fileName, "utf8");
   const { outputText } = ts.transpileModule(source, {
     fileName,
@@ -87,8 +88,17 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) =>
-    Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  cache.set(fileName, loaded);
+  const mockedRequire = (id) => {
+    if (Object.hasOwn(mocks, id)) return mocks[id];
+    if (resolveAliases && (id.startsWith("@/") || id.startsWith("."))) {
+      const base = id.startsWith("@/") ? join(root, "src", id.slice(2)) : resolve(dirname(fileName), id);
+      const dependency = [base + ".ts", base + ".tsx"].find(existsSync);
+      if (!dependency) throw new Error("Unresolved test import: " + id);
+      return loadModule(dependency, mocks, true, cache);
+    }
+    return require(id);
+  };
   new Function("require", "module", "exports", outputText)(
     mockedRequire,
     loaded,
@@ -138,26 +148,26 @@ function renderPage(Page) {
   return renderToStaticMarkup(React.createElement(Page));
 }
 
-test("recipe APIs validate payloads and use only global list, detail, and publish routes", async () => {
+test("recipe APIs publish native DSL and validate paginated global summaries and detail identity", async () => {
   const recipeSchemas = loadModule("src/schema/recipes.schema.ts");
   assert.equal(recipeSchemas.GlobalRecipesSchema.parse([recipe])[0].id, recipeId);
   assert.equal(recipeSchemas.GlobalRecipeSchema.safeParse({ ...recipe, id: "invalid" }).success, false);
   assert.equal(recipeSchemas.RecipePublishRequestSchema.safeParse({
     ...publishInput,
-    steps: [],
+    procedure: [],
   }).success, false);
 
-  const { client, calls } = clientFor((method, url, data) => {
-    if (method === "POST") return { ...recipe, ...data };
-    return url === "/recipes/global" ? [recipe] : recipe;
+  const { steps, ...summary } = recipe;
+  const { client, calls } = clientFor((_method, url) => {
+    return url === "/recipes/global" && _method === "GET" ? [summary] : recipe;
   });
   const { recipesApi } = loadModule("src/apis/recipes.api.ts", {
     "@/lib/http": httpMock(client),
     "@/schema/recipes.schema": recipeSchemas,
-  });
+  }, true);
   const signal = new AbortController().signal;
 
-  assert.deepEqual(await recipesApi.listGlobal(signal), [recipe]);
+  assert.deepEqual(await recipesApi.listGlobal(signal), [summary]);
   assert.deepEqual(await recipesApi.getGlobalById(recipeId, signal), recipe);
   assert.deepEqual(await recipesApi.publishGlobal(publishInput), recipe);
   assert.deepEqual(calls.map(({ method, url }) => [method, url]), [
@@ -167,8 +177,11 @@ test("recipe APIs validate payloads and use only global list, detail, and publis
   ]);
   assert.equal(calls[0].config.baseURL, "/api/dolores/v1");
   assert.equal(calls[0].config.signal, signal);
+  assert.deepEqual(calls[0].config.params, { page: 0, size: 50 });
   assert.deepEqual(calls[2].data, publishInput);
   await assert.rejects(recipesApi.getGlobalById("invalid"));
+  await assert.rejects(recipesApi.publishGlobal({ name: recipe.name, steps, dosageBounds: [] }));
+  assert.equal(calls.length, 3, "invalid UUIDs and legacy write payloads must fail before HTTP");
 });
 
 test("billing and notification schemas accept nullable legacy invoice scope fields and reject malformed responses", async () => {
@@ -258,29 +271,49 @@ test("dashboard range validation enforces paired dates, calendar dates, and a ma
   assert.equal(calls.length, 1);
 });
 
-test("menu page shows the read-only recipe detail and explicit global publish confirmation flow", () => {
-  const recipeSchemas = loadModule("src/schema/recipes.schema.ts");
-  const messages = loadModule("src/text/admin/admin-messages.ts").ADMIN_MESSAGES;
-  const Page = loadModule("src/pages/admin/menu.page.tsx", {
-    ...adminShellMocks,
-    "@/apis/recipes.api": { recipesApi: {} },
-    "@/schema/recipes.schema": recipeSchemas,
-    "@/text/admin/admin-messages": { ADMIN_MESSAGES: messages },
-    "@tanstack/react-query": {
-      useQuery: ({ queryKey }) => queryKey.length === 3
-        ? { data: [recipe], isPending: false, isError: false, refetch: () => {} }
-        : { data: recipe, isPending: false, isError: false, refetch: () => {} },
-      useMutation: () => ({ isPending: false, isError: false, mutate: () => {} }),
+test("Admin menu route renders shared global management with current DTO and role actions", async () => {
+  const queries = [];
+  const reads = [];
+  const writes = [];
+  const { steps, ...summary } = recipe;
+  const envelope = { content: [{ id: recipe.menuId, name: 'Default menu', createdAt: '2026-11-05T08:00:00Z' }], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true };
+  const Page = loadModule("src/pages/admin/menu/index.page.tsx", {
+    '../admin-shell': { AdminShell: ({ children }) => React.createElement('main', { 'data-admin-shell': true }, children) },
+    'next/router': { useRouter: () => ({ push: async () => true }) },
+    '@/apis/recipes.api': { recipesApi: {
+      listGlobalPage: async (...args) => { reads.push(['list', ...args]); return { items: [summary], page: 0, size: 20, hasNext: false }; },
+      getGlobalById: async (...args) => { reads.push(['detail', ...args]); return recipe; },
+      publishGlobal: async (input) => { writes.push(input); return recipe; },
+    } },
+    '@/apis/recipe-menus.api': { recipeMenusApi: { listGlobal: async () => envelope } },
+    '@/components/button/button-bar': { ButtonBar },
+    '@/components/navigation/back-button-heading': { BackButtonHeading: ({ title, description }) => React.createElement('header', null, title, description) },
+    '@/lib/query-subject': { authScopedQuerySubject: (role) => 'test:' + role },
+    '@/lib/api-errors': { getRecipeApiErrorMessage: () => 'API error', getRecipeApiErrorDetails: () => ({}) },
+    './legacy-recipe-overrides': { LegacyRecipeOverrides: () => { throw new Error('Inactive legacy view must not mount'); } },
+    './recipe-sync-panel': { RecipeSyncPanel: () => { throw new Error('Inactive sync view must not mount'); } },
+    '../repair-workflow/repair-workflow.module.css': classNames,
+    '@tanstack/react-query': {
+      useQuery: (options) => {
+        queries.push(options);
+        const data = options.enabled === false ? undefined : options.queryKey[1] === 'recipe-menus'
+          ? envelope : options.queryKey[2] === 'global-detail' ? recipe : { items: [summary], page: 0, size: 20, hasNext: false };
+        return { data, isPending: false, isError: false, refetch: async () => {} };
+      },
+      useMutation: () => ({ isPending: false, mutate: () => { throw new Error('Rendering must not write'); } }),
       useQueryClient: () => ({ invalidateQueries: async () => {} }),
     },
-  }).default;
+  }, true).default;
   const markup = renderPage(Page);
-
-  assert.match(markup, /TEST_DATA House Espresso/);
-  assert.match(markup, /Chỉnh sửa chưa được hỗ trợ/);
-  assert.match(markup, /Phát hành toàn cục/);
-  assert.doesNotMatch(markup, /xóa công thức|gửi menu riêng xuống máy/);
-  assert.doesNotMatch(markup, /role="alertdialog"/);
+  assert.match(markup, /data-admin-shell="true"/);
+  for (const label of ['TEST_DATA House Espresso', 'Phiên bản 3', 'Tạo menu', 'Tạo công thức', 'Chỉnh sửa', 'Xóa công thức', 'Theo dõi đồng bộ', 'Điều chỉnh cũ']) assert.ok(markup.includes(label), label);
+  assert.match(markup, /chưa phản ánh quy trình vừa cập nhật/);
+  assert.doesNotMatch(markup, /dosageBounds|Chỉnh sửa chưa được hỗ trợ|Phát hành toàn cục/);
+  const signal = new AbortController().signal;
+  for (const options of queries.filter((item) => item.enabled !== false)) await options.queryFn({ signal });
+  assert.deepEqual(reads, [['list', 0, 20, signal, ''], ['detail', recipeId, signal]]);
+  assert.equal(queries.find((item) => item.queryKey[2] === 'local').enabled, false, 'Admin must not request Owner menus');
+  assert.equal(writes.length, 0, 'loading the page must not publish a recipe');
 });
 
 test("reports page displays aggregate dashboard finance and full rental rows without deriving a total", async () => {
