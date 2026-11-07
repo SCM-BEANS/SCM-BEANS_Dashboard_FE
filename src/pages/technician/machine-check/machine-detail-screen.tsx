@@ -1,13 +1,21 @@
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
+import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
+import { createTelemetryRange, TelemetryHistoryPanel } from "@/components/machines/telemetry-history-panel";
+import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import { MachineIdSchema, type Machine } from "@/schema/machines.schema";
+import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
 import styles from "../technician-shell.module.css";
@@ -84,13 +92,20 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
 export function TechnicianMachineDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const subject = authScopedQuerySubject("TECHNICIAN");
+  const pageVisible = usePageVisibility();
+  const [defaultRange] = useState(() => createTelemetryRange("24h"));
+  const rangeResult = useMemo(() => TelemetryPointsParamsSchema.safeParse(router.query.telemetryFrom || router.query.telemetryTo ? { from: router.query.telemetryFrom, to: router.query.telemetryTo } : defaultRange), [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
+  const telemetryRange = rangeResult.success ? rangeResult.data : null;
+  const setTelemetryRange = (range: { from: string; to: string }) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: range.from, telemetryTo: range.to } }, undefined, { shallow: true }); };
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
-  const machineQueryKey = ["dolores", "machines", "technician-detail", machineId] as const;
+  const authenticated = Boolean(getAuthenticatedSubjectId());
+  const machineQueryKey = ["dolores", "machines", "technician-detail", subject, machineId] as const;
   const machine = useQuery({
     queryKey: machineQueryKey,
     queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    enabled: validId,
+    enabled: validId && authenticated, retry: false,
   });
   const maintenanceTickets = useQuery({
     queryKey: ["dolores", "technician", "machine-tickets", machineId],
@@ -98,6 +113,21 @@ export function TechnicianMachineDetailScreen() {
     enabled: validId && Boolean(machine.data),
     retry: false,
   });
+  const smartIot = validId && authenticated && machine.isSuccess && machine.data?.machineType === "SMART_IOT";
+  const heartbeat = useQuery({
+    queryKey: ["technician-machine-heartbeat", subject, machineId],
+    queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
+    enabled: smartIot && pageVisible, retry: false,
+    refetchInterval: smartIot && pageVisible ? 5_000 : false, refetchIntervalInBackground: false,
+  });
+  const points = useInfiniteQuery({
+    queryKey: ["technician-machine-telemetry", subject, machineId, telemetryRange],
+    queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, telemetryRange!, pageParam, signal),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && pages.length * TELEMETRY_POINTS_PAGE_SIZE <= 100_000 ? pages.length * TELEMETRY_POINTS_PAGE_SIZE : undefined,
+    enabled: smartIot && pageVisible && Boolean(telemetryRange), retry: false,
+  });
+  const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
   const statusUpdate = useMutation({
     mutationFn: () => {
       return machinesApi.markReady(machineId, { reason: T.MACHINE_CHECK.STATUS_UPDATE_REASON });
@@ -216,6 +246,12 @@ export function TechnicianMachineDetailScreen() {
             onRefresh={() => maintenanceTickets.refetch()}
           />
         </section>
+        {smartIot ? <>
+          <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
+          <SmartIotPanel title="Lịch sử thông số">
+            <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
+          </SmartIotPanel>
+        </> : null}
       </section>
       {actionBar()}
     </TechnicianShell>

@@ -260,8 +260,48 @@
                           "verification_command":  "Manual route walkthrough: direct-load, refresh, Back/Forward, and query-string cases show the expected active item, module breadcrumb, and expanded group at 360, 768, 1023, and 1024px.",
                           "notes":  "Covers stories: P1 module context, P1 deep-link navigation",
                           "priority":  "P1"
+                      },
+                      {
+                          "id": "phase-01-api-contracts-and-role-scope",
+                          "title": "API contracts và role scope",
+                          "status": "passing",
+                          "evidence": "TDD red 6/20 -> green 21/21; code review APPROVED; lint 0 errors. Full Node suite 192/284 pass with 92 baseline failures; tsc same 4 baseline errors. Live OpenAPI verified, authenticated scope unverified. Awaiting human approval for Phase 02.",
+                          "user_visible_behavior": "Owner Analytics, cleaning và offline review dùng schema, thời gian và quyền đã xác minh trước khi nối UI.",
+                          "verification_command": "Adapter contract tests; verify VN date bounds, role scope, response identity and pagination; lint/tsc baseline delta.",
+                          "notes": "Covers stories: CT-01, CT-03, CT-04, CT-05, CT-06. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-02-owner-analytics-and-cleaning",
+                          "title": "Owner analytics và lịch sử vệ sinh",
+                          "status": "passing",
+                          "evidence": "TDD red confirmed; Node targeted 25/25; Playwright 6/6 across 390/768/1023/1024/1440; review APPROVED after Owner contract permission fix. Full Node 196/288 with same 92 baseline failures; tsc same 4 baseline errors; lint 0 errors. Authenticated server scope unverified. Awaiting Phase03 human approval.",
+                          "user_visible_behavior": "Owner xem số ly theo máy, lịch sử pha và vệ sinh trong ba tab có bộ lọc URL.",
+                          "verification_command": "Owner list/detail/operations E2E; refresh/Back/Forward; cleaning page2 and budget unknown states; no cleaning5s polling.",
+                          "notes": "Covers stories: CT-01, CT-02, CT-03, CT-04, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-03-monitoring-and-offline-review",
+                          "title": "Monitoring và Offline Review",
+                          "status": "passing",
+                          "evidence": "TDD offline 4 RED -> 11/11 green; telemetry/Owner/offline targeted 33/33; Playwright 10/10 including cross-role 5 viewports, Owner readonly, Moderator zero telemetry, one POST and 409 draft preservation, Admin deep-link/Back. Review APPROVED after mutation-error fix. Lint 0 errors/3 old warnings; full Node 204/296 with 92 failures (matches recorded baseline count; names not compared); tsc 4 baseline errors. Authenticated server scope unverified; awaiting Phase04 approval.",
+                          "user_visible_behavior": "Admin/Owner/Technician xem kết nối theo quyền; Moderator không gọi telemetry; Admin/Moderator xử lý offline review, Owner chỉ xem.",
+                          "verification_command": "Telemetry request-role matrix, offline decision request/409/timeout tests, timestamp charts and no billing mutations.",
+                          "notes": "Covers stories: CT-05, CT-06, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-04-cleaning-telemetry-validation",
+                          "title": "Cleaning & Telemetry cross-role validation",
+                          "status": "passing",
+                          "evidence": "Feature Node 33/33; Playwright 22/22 including subject/machine/filter pending reads, Technician403, timeout one POST/draft, keyboard/mobile, 100-machine visible-row budget and hidden polling without cleaning repeats. Code review APPROVED. Lint 0 errors/3 old warnings; tsc 4 baseline errors; production build blocked by old validator. Full Node 204/296 with 92 recorded failures. OpenAPI public GET verified; real role/grant/cross-Owner scope UNVERIFIED. FE validation complete, not production release validation.",
+                          "user_visible_behavior": "Bốn role giữ route, quyền, trạng thái và giao diện đúng ở desktop/mobile; live gaps được ghi rõ.",
+                          "verification_command": "node --test tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx playwright test tests/e2e/machine-operational-overview.spec.ts; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; git diff --check; authenticated GET role validation.",
+                          "notes": "Covers stories: CT-01, CT-02, CT-03, CT-04, CT-05, CT-06, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
+                          "priority": "P1"
                       }
                   ],
-        "Count":  26
+        "Count":  30
     }
 ]

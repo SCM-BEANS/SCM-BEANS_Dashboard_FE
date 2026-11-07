@@ -66,3 +66,4 @@ Các trang thuộc cùng một nghiệp vụ hiện nằm rải rác trong danh 
 - `Máy của tôi` là điểm vào hiện có cho trạng thái/giám sát máy của Owner; Admin và Moderator dùng route IoT hiện có.
 - Mục `Việc được giao` của Technician gồm nhiều loại công việc nên không xếp toàn bộ vào module Bảo trì & Kho máy.
 - Người dùng đã xác nhận: Hóa đơn trùng href của Admin chỉ hiện một mục; Việc được giao của Technician giữ riêng; Máy của tôi của Owner thuộc Vận hành.
+http://localhost:3000/admin/contracts?view=detail&id=912abc99-2bb9-4608-afde-ad54a24b3752

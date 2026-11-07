@@ -88,12 +88,13 @@ test("recall evidence rejects unsupported MIME and file signature mismatch befor
   assert.equal(called, false);
 });
 
-test("termination inspection uses backend responsibility enum and private evidence remains a gate", () => {
+test("active termination workflow uses backend responsibility and recall evidence endpoints", () => {
   const schemaSource = readFileSync(join(__dirname, "../src/schema/termination-workflow.schema.ts"), "utf8");
-  const screenSource = readFileSync(join(__dirname, "../src/components/features/contract-termination/contract-termination-panel.tsx"), "utf8");
+  const screenSource = readFileSync(join(__dirname, "../src/components/contracts/termination-workflow-panel.tsx"), "utf8");
   const recallSource = readFileSync(join(__dirname, "../src/components/features/contract-termination/recall-work-orders-screen.tsx"), "utf8");
   assert.match(schemaSource, /responsibility:\s*z\.enum\(\["TENANT", "COMPANY", "UNKNOWN"\]\)/);
-  assert.match(screenSource, /Maintenance Ticket hiện chưa có API upload\/đọc evidence/);
+  assert.match(screenSource, /machinesApi\.getMaintenanceTicketById/);
+  assert.match(screenSource, /settlementEvidenceReference/);
   assert.match(recallSource, /recallWorkOrdersApi\.uploadEvidence/);
   assert.match(recallSource, /recallWorkOrdersApi\.downloadEvidence/);
   assert.doesNotMatch(recallSource, /terminationCasesApi\.recordHandover/);

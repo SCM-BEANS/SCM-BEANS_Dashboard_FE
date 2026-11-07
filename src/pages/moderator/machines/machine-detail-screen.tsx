@@ -431,8 +431,8 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
         {device.machineType === "SMART_IOT" && <SmartIotPanel
           title={ADMIN_T.MACHINES.TELEMETRY}
           state="permission-denied"
-          stateMessage="Swagger hiện chưa cấp quyền tra cứu Telemetry points cho Moderator."
-        />}
+          stateMessage="Tài khoản điều phối chưa được cấp quyền xem kết nối trực tiếp và thông số máy."
+        ><Link className={adminStyles.accountSecondaryButton} href={`${PATH_MODERATOR.IOT}?machineId=${encodeURIComponent(machineId)}`}>Xem hồ sơ mất kết nối</Link></SmartIotPanel>}
 
         <MachineManagementActions key={device.id} machine={device} />
         {machineId && <MachineContractHistory machineId={machineId} role="MODERATOR" />}

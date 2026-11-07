@@ -7,6 +7,8 @@ import { machineModelsApi } from "@/apis/machine-models.api";
 import { locationsApi } from "@/apis/locations.api";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
+import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
@@ -58,7 +60,12 @@ function MachineDetailContent() {
   const isPageVisible = usePageVisibility();
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
-  const [range, setRange] = useState<TelemetryRange | null>(null);
+  const subject = authScopedQuerySubject("ADMIN");
+  const authenticated = Boolean(getAuthenticatedSubjectId());
+  const [defaultRange] = useState(() => createTelemetryRange("24h"));
+  const rangeResult = useMemo(() => TelemetryPointsParamsSchema.safeParse(router.query.telemetryFrom || router.query.telemetryTo ? { from: router.query.telemetryFrom, to: router.query.telemetryTo } : defaultRange), [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
+  const range = rangeResult.success ? rangeResult.data : null;
+  const setRange = (next: TelemetryRange) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: next.from, telemetryTo: next.to } }, undefined, { shallow: true }); };
   const [detailTab, setDetailTab] = useState<"profile" | "machine-type">("profile");
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -129,9 +136,6 @@ function MachineDetailContent() {
     onError: (error: unknown) => setMachineActionError(getApiErrorMessage(error, "mutation")),
   });
   const isSmartIot = machine.data?.machineType === "SMART_IOT";
-  useEffect(() => {
-    if (isSmartIot && range === null) setRange(createTelemetryRange("24h"));
-  }, [isSmartIot, range]);
   const beginEditing = () => {
     setDetailTab("profile");
     setLocationDraft(machine.data?.locationId ?? "");
@@ -139,15 +143,15 @@ function MachineDetailContent() {
     setMachineActionError("");
   };
   const heartbeat = useQuery({
-    queryKey: ["dolores", "admin", "telemetry", "heartbeat", machineId],
+    queryKey: ["dolores", "admin", "telemetry", "heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
-    enabled: validId && isSmartIot && isPageVisible,
+    enabled: validId && authenticated && machine.isSuccess && isSmartIot && isPageVisible,
     retry: false,
     refetchInterval: isPageVisible ? 5_000 : false,
     refetchIntervalInBackground: false,
   });
   const points = useInfiniteQuery({
-    queryKey: ["dolores", "telemetry", "points", machineId, range?.from, range?.to],
+    queryKey: ["dolores", "telemetry", "points", subject, machineId, range?.from, range?.to],
     queryFn: ({ signal, pageParam }) => {
       if (!range) throw new Error("A telemetry time range is required.");
       return telemetryApi.listMachinePoints(machineId, range, pageParam, signal);
@@ -157,7 +161,7 @@ function MachineDetailContent() {
       const nextOffset = allPages.length * TELEMETRY_POINTS_PAGE_SIZE;
       return lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && nextOffset <= 100_000 ? nextOffset : undefined;
     },
-    enabled: validId && isSmartIot && range !== null,
+    enabled: validId && authenticated && machine.isSuccess && isSmartIot && isPageVisible && range !== null,
     retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flatMap((page) => page) ?? [], [points.data]);
@@ -424,10 +428,12 @@ function MachineDetailContent() {
           <TelemetryHistoryPanel
             range={range}
             onRangeChange={setRange}
+            selectedField={typeof router.query.field === "string" ? router.query.field : undefined}
+            onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }}
             points={telemetryPoints}
             loading={points.isPending && Boolean(range)}
-            error={points.isError ? getApiErrorMessage(points.error) : undefined}
-            onRetry={() => void points.refetch()}
+            error={!range ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined}
+            onRetry={range ? () => void points.refetch() : undefined}
             hasMore={points.hasNextPage}
             loadingMore={points.isFetchingNextPage}
             onLoadMore={() => void points.fetchNextPage()}

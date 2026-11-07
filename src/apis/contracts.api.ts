@@ -75,8 +75,12 @@ export const contractsApi =  {
       throw error;
     }
   },
-  getMachineHistory(machineId: string, signal?: AbortSignal) {
-    return contractsApi.listByMachine(machineId, { page: 0, size: 100 }, signal).then((result) => result.items);
+  async getMachineHistory(machineId: string, signal?: AbortSignal, status?: "ACTIVE") {
+    const validId = ContractIdSchema.parse(machineId);
+    const response = await axiosClient.get<unknown>(`/contracts/machine/${encodeURIComponent(validId)}/history`, {
+      baseURL: DOLORES_API_BASE_URL, signal, ...(status ? { params: { status } } : {}),
+    });
+    return ContractListSchema.parse(response.data);
   },
   async downloadDocument(contractId: string, documentId: string, signal?: AbortSignal) {
     const contract = ContractIdSchema.parse(contractId);

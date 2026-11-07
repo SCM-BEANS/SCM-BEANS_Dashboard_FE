@@ -7,9 +7,8 @@ const ts = require('typescript');
 const contracts = {
   'profiles.api.ts': { profilesApi: ['list', 'getById', 'getHistory', 'getContracts'] },
   'locations.api.ts': { locationsApi: ['list', 'listPage', 'listByTenant', 'getById', 'getStats', 'listMachines', 'transferMachine', 'create', 'assignMachine'] },
-  'technician-assignments.api.ts': { technicianAssignmentsApi: ['assign', 'revoke'] },
   'contracts.api.ts': { contractsApi: ['create', 'list', 'listByOwner', 'getById', 'getModeratorById', 'getExpiry', 'getDocuments', 'activate', 'getMachineHistory', 'downloadDocument'] },
-  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'createMaintenanceTicket', 'updateMaintenanceTicketDetails', 'recordMaintenanceTicketOverdueReview', 'unassignMaintenanceTicket', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake'] },
+  'machines.api.ts': { machinesApi: ['create', 'list', 'listRentalCandidates', 'getById', 'markReady', 'getInventorySummary', 'getMaintenanceSchedule', 'listMaintenanceTickets', 'listMaintenanceTicketsPage', 'getMaintenanceTicketById', 'createMaintenanceTicket', 'updateMaintenanceTicketDetails', 'recordMaintenanceTicketOverdueReview', 'unassignMaintenanceTicket', 'assignMaintenanceTicket', 'updateMaintenanceTicketStatus', 'recordMaintenanceTicketParts', 'resolveMaintenanceTicket', 'createRepairIntake', 'assignTechnician', 'unassignTechnician'] },
   'maintenance-requests.api.ts': { maintenanceRequestsApi: ['list', 'listPage', 'getById', 'confirm', 'recordOverdueReview', 'linkReplacementAssignment', 'recordCustodyEvent', 'recordClosureException', 'createWorkOrder', 'listByMachine', 'getCustodyEvents', 'reschedule', 'acknowledgeCustodyEvent'] },
   'telemetry.api.ts': { telemetryApi: ['getLatestHeartbeat', 'listMachinePoints'] },
   'notifications.api.ts': { notificationsApi: ['list', 'unreadCount', 'listAlerts', 'acknowledgeAlert', 'markAllAsRead', 'markAsRead'] },
@@ -65,12 +64,11 @@ function assertMethodUsesValidatedSharedHttp(fn, sourceFile, apiName, methodName
   const isBlob = bodyText.includes('responseType: "blob"');
   const isCommandWithoutConsumedResponse =
     (apiName === 'contractsApi' && methodName === 'activate') ||
-    (apiName === 'machinesApi' && ['markReady', 'assignMaintenanceTicket'].includes(methodName)) ||
+    (apiName === 'machinesApi' && ['markReady', 'assignMaintenanceTicket', 'assignTechnician', 'unassignTechnician'].includes(methodName)) ||
     (apiName === 'notificationsApi' && methodName === 'markAllAsRead') ||
     (apiName === 'notificationsApi' && methodName === 'acknowledgeAlert') ||
     (apiName === 'recipesApi' && methodName === 'deleteLocal') ||
-    (apiName === 'recipeMenusApi' && ['deleteGlobal', 'deleteLocal', 'deleteLocalRecipe'].includes(methodName)) ||
-    (apiName === 'technicianAssignmentsApi' && methodName === 'revoke');
+    (apiName === 'recipeMenusApi' && ['deleteGlobal', 'deleteLocal', 'deleteLocalRecipe'].includes(methodName));
   if (isBlob) {
     assert.match(bodyText, /response\.data/, `${apiName}.${methodName} should return the requested file data`);
   } else if (!isCommandWithoutConsumedResponse) {

@@ -18,13 +18,14 @@ export function createTelemetryRange(preset: TelemetryRangePreset, now = new Dat
 function toDateTimeLocal(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const pad = (part: number) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 
 function fromDateTimeLocal(value: string) {
   if (!value) return null;
-  const date = new Date(value);
+  const date = new Date(`${value}:00+07:00`);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
@@ -42,7 +43,15 @@ function formatPointTime(value: string) {
   const timestamp = Date.parse(value);
   return Number.isNaN(timestamp)
     ? value
-    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(timestamp);
+    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(timestamp);
+}
+
+function formatAxisValue(value: number) {
+  const magnitude = Math.abs(value);
+  return new Intl.NumberFormat("vi-VN", {
+    maximumSignificantDigits: 6,
+    notation: magnitude !== 0 && (magnitude < 0.001 || magnitude >= 1_000_000) ? "scientific" : "standard",
+  }).format(value);
 }
 
 export function TelemetryHistoryPanel({
@@ -55,6 +64,8 @@ export function TelemetryHistoryPanel({
   hasMore,
   loadingMore,
   onLoadMore,
+  selectedField: controlledField,
+  onFieldChange,
 }: {
   range: TelemetryRange | null;
   onRangeChange: (range: TelemetryRange) => void;
@@ -65,17 +76,23 @@ export function TelemetryHistoryPanel({
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  selectedField?: string;
+  onFieldChange?: (field: string) => void;
 }) {
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
   const [selectedField, setSelectedField] = useState("");
   const [rangeError, setRangeError] = useState("");
-  const [activePreset, setActivePreset] = useState<TelemetryRangePreset | "custom" | null>("24h");
+  const [editingRange, setEditingRange] = useState(false);
+  const [view, setView] = useState<"chart" | "table">("chart");
+  const duration = range ? Date.parse(range.to) - Date.parse(range.from) : 0;
+  const activePreset = editingRange ? "custom" : duration === 86_400_000 ? "24h" : duration === 7 * 86_400_000 ? "7d" : duration === 30 * 86_400_000 ? "30d" : "custom";
 
   useEffect(() => {
     if (!range) return;
     setFromInput(toDateTimeLocal(range.from));
     setToInput(toDateTimeLocal(range.to));
+    setEditingRange(false);
   }, [range]);
 
   const orderedPoints = useMemo(
@@ -83,20 +100,24 @@ export function TelemetryHistoryPanel({
     [points],
   );
   const fields = useMemo(() => [...new Set(orderedPoints.map((point) => point.field))].sort(), [orderedPoints]);
-  const field = fields.includes(selectedField) ? selectedField : fields[0] ?? "";
+  const preferredField = controlledField ?? selectedField;
+  const field = fields.includes(preferredField) ? preferredField : fields[0] ?? "";
   const numericPoints = orderedPoints.filter((point) => point.field === field && typeof point.value === "number" && Number.isFinite(point.value));
   const chartSource = numericPoints.slice(-500);
   const chartMin = chartSource.reduce((minimum, point) => Math.min(minimum, point.value as number), Number.POSITIVE_INFINITY);
   const chartMax = chartSource.reduce((maximum, point) => Math.max(maximum, point.value as number), Number.NEGATIVE_INFINITY);
-  const chartPoints = chartSource.map((point, index) => {
-    const x = chartSource.length === 1 ? 500 : (index / (chartSource.length - 1)) * 1000;
+  const chartStart = chartSource.length ? Date.parse(chartSource[0]!.timestamp) : 0;
+  const chartEnd = chartSource.length ? Date.parse(chartSource[chartSource.length - 1]!.timestamp) : 0;
+  const chartCoordinates = chartSource.map((point) => {
+    const x = chartEnd === chartStart ? 500 : ((Date.parse(point.timestamp) - chartStart) / (chartEnd - chartStart)) * 1000;
     const y = chartMax === chartMin ? 100 : 180 - (((point.value as number) - chartMin) / (chartMax - chartMin)) * 160;
-    return `${x},${y}`;
-  }).join(" ");
+    return { x, y };
+  });
+  const chartPoints = chartCoordinates.map(({ x, y }) => `${x},${y}`).join(" ");
 
   const selectPreset = (preset: TelemetryRangePreset) => {
     const nextRange = createTelemetryRange(preset);
-    setActivePreset(preset);
+    setEditingRange(false);
     setRangeError("");
     onRangeChange(nextRange);
   };
@@ -109,7 +130,11 @@ export function TelemetryHistoryPanel({
       setRangeError("Ngày bắt đầu phải sớm hơn ngày kết thúc.");
       return;
     }
-    setActivePreset("custom");
+    if (Date.parse(to) - Date.parse(from) > 30 * 86_400_000) {
+      setRangeError("Khoảng dữ liệu tối đa 30 ngày.");
+      return;
+    }
+    setEditingRange(false);
     setRangeError("");
     onRangeChange({ from, to });
   };
@@ -122,35 +147,46 @@ export function TelemetryHistoryPanel({
         <button type="button" aria-pressed={activePreset === "30d"} onClick={() => selectPreset("30d")}>30 ngày</button>
       </div>
       <form className={styles.telemetryRangeForm} onSubmit={submitCustomRange}>
-        <label>Từ ngày và giờ<input type="datetime-local" required value={fromInput} onChange={(event) => { setFromInput(event.target.value); setActivePreset("custom"); }} /></label>
-        <label>Đến ngày và giờ<input type="datetime-local" required value={toInput} onChange={(event) => { setToInput(event.target.value); setActivePreset("custom"); }} /></label>
+        <label>Từ ngày và giờ (UTC+7)<input type="datetime-local" required value={fromInput} onChange={(event) => { setFromInput(event.target.value); setEditingRange(true); }} /></label>
+        <label>Đến ngày và giờ (UTC+7)<input type="datetime-local" required value={toInput} onChange={(event) => { setToInput(event.target.value); setEditingRange(true); }} /></label>
         <button type="submit">Áp dụng khoảng thời gian</button>
       </form>
       {rangeError ? <p className={styles.telemetryRangeError} role="alert">{rangeError}</p> : null}
       {range ? <p className={styles.telemetryRangeCaption}>Dữ liệu từ {formatPointTime(range.from)} đến {formatPointTime(range.to)} · tối đa 100 điểm mỗi lần tải.</p> : null}
-      {loading ? <p role="status">Đang tải dữ liệu telemetry…</p> : null}
+      {loading ? <p role="status">Đang tải lịch sử thông số…</p> : null}
       {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Thử lại</button> : null}</div> : null}
-      {!loading && !error && orderedPoints.length === 0 && range ? <p role="status">Không có dữ liệu telemetry trong khoảng đã chọn.</p> : null}
+      {!loading && !error && orderedPoints.length === 0 && range ? <p className={styles.monitoringEmpty} role="status">Chưa có thông số trong khoảng thời gian này.</p> : null}
       {orderedPoints.length > 0 ? <>
-        {fields.length > 0 ? <label className={styles.telemetryFieldSelector}>Trường dữ liệu
-          <select value={field} onChange={(event) => setSelectedField(event.target.value)}>
+        <p className={styles.telemetryRangeCaption}>Dữ liệu đã tải: {orderedPoints.length.toLocaleString("vi-VN")} điểm · {formatPointTime(orderedPoints[0]!.timestamp)} – {formatPointTime(orderedPoints[orderedPoints.length - 1]!.timestamp)} (giờ Việt Nam){hasMore ? " · còn dữ liệu chưa tải" : ""}.</p>
+        <div className={styles.monitoringChartToolbar}>
+        {fields.length > 0 ? <label className={styles.telemetryFieldSelector}>Thông số đang xem
+          <select value={field} onChange={(event) => { setSelectedField(event.target.value); onFieldChange?.(event.target.value); }}>
             {fields.map((fieldName) => <option key={fieldName} value={fieldName}>{fieldName}</option>)}
           </select>
         </label> : null}
-        {numericPoints.length > 0 ? <figure className={styles.telemetryChart}>
+        <div className={styles.telemetryRangePresets} role="group" aria-label="Cách xem thông số"><button type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</button><button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</button></div>
+        </div>
+        {view === "chart" && numericPoints.length > 0 ? <>
+        <dl className={styles.monitoringMetricStrip}>
+          <div><dt>Gần nhất trong dữ liệu đã tải</dt><dd>{formatPointValue(numericPoints[numericPoints.length - 1]!.value)}</dd></div>
+          <div><dt>Thấp nhất · biểu đồ</dt><dd>{formatPointValue(chartMin)}</dd></div>
+          <div><dt>Cao nhất · biểu đồ</dt><dd>{formatPointValue(chartMax)}</dd></div>
+        </dl>
+        <figure className={styles.telemetryChart}>
           <figcaption>Giá trị số theo thời gian · {field}{numericPoints.length > chartSource.length ? " · 500 điểm mới nhất" : ""}</figcaption>
-          <svg viewBox="0 0 1000 200" role="img" aria-label={`Biểu đồ ${field} theo thời gian`} preserveAspectRatio="none">
-            <line x1="0" y1="180" x2="1000" y2="180" />
+          <svg viewBox="-85 0 1100 205" role="img" aria-label={`Biểu đồ ${field} theo thời gian`}>
+            {[20, 100, 180].map((y, index) => <g key={y}><line x1="0" y1={y} x2="1000" y2={y} /><text x="-12" y={y + 4} textAnchor="end">{formatAxisValue(chartMax === chartMin ? chartMin : chartMax - index * (chartMax - chartMin) / 2)}</text></g>)}
             {chartSource.length === 1
               ? <circle cx="500" cy="100" r="6" />
               : <polyline points={chartPoints} />}
+            {chartSource.length > 1 ? chartSource.map((point, index) => <circle key={`${point.timestamp}-${index}`} cx={chartCoordinates[index]!.x} cy={chartCoordinates[index]!.y} r="4" aria-label={`${formatPointTime(point.timestamp)}: ${formatPointValue(point.value)}`}><title>{`${formatPointTime(point.timestamp)} · ${formatPointValue(point.value)}`}</title></circle>) : null}
           </svg>
           <div><span>{formatPointTime(chartSource[0]!.timestamp)}</span><span>{formatPointTime(chartSource[chartSource.length - 1]!.timestamp)}</span></div>
-        </figure> : <p role="status">Trường này không có giá trị số để vẽ biểu đồ.</p>}
-        <p className={styles.telemetryRecordsLabel}>Bản ghi theo thời gian</p>
+        </figure></> : view === "chart" ? <p className={styles.monitoringEmpty} role="status">Thông số này không phải dữ liệu số. Chọn Bảng dữ liệu để xem nội dung.</p> : null}
+        {view === "table" ? <><p className={styles.telemetryRecordsLabel}>Bản ghi theo thời gian · {field}</p>
         <DataTable
           headerVariant="admin"
-          rows={orderedPoints}
+          rows={orderedPoints.filter((point) => point.field === field)}
           rowKey={(point, index) => `${point.timestamp}-${point.field}-${index}`}
           columns={[
             { key: "time", header: "Thời điểm", render: (point) => formatPointTime(point.timestamp) },
@@ -158,7 +194,7 @@ export function TelemetryHistoryPanel({
             { key: "value", header: "Giá trị", render: (point) => formatPointValue(point.value) },
             { key: "sub-state", header: "Trạng thái", render: (point) => point.subState ?? "—" },
           ]}
-        />
+        /></> : null}
         {hasMore && onLoadMore ? <button type="button" className={styles.telemetryLoadMore} disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Đang tải…" : "Tải thêm dữ liệu"}</button> : null}
       </> : null}
     </div>

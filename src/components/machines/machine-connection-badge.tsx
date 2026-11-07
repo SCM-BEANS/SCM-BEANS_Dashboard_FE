@@ -9,7 +9,7 @@ const labels: Record<MachineConnectionState, string> = {
   loading: "Đang tải",
   error: "Không tải được",
   "not-requested": "Chưa tải",
-  "permission-denied": "No access",
+  "permission-denied": "Chưa có quyền xem",
 };
 
 export function MachineConnectionBadge({

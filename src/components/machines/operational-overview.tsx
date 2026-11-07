@@ -8,6 +8,28 @@ import {
 import styles from "./machines.module.css";
 
 export type OperationalDateRange = { fromDate: string; toDate: string };
+
+export function MachineMonitoringHeader({ machineLabel, machineId, backHref, tabs, activeTab, onTabChange, idPrefix = "monitoring" }: {
+  machineLabel?: string; machineId: string; backHref: string;
+  tabs: readonly { value: string; label: string }[]; activeTab: string;
+  onTabChange: (tab: string) => void; idPrefix?: string;
+}) {
+  return <>
+    <div className={styles.operationalOverviewBack}><Link href={backHref}>← Về hồ sơ máy</Link></div>
+    <header className={styles.operationalOverviewHeading}>
+      <h1 id="machine-operational-overview-title">Giám sát vận hành</h1>
+      <p className={styles.monitoringIdentity}><strong>{machineLabel ?? "Máy đang xem"}</strong><span title={machineId}>{machineId.slice(0, 8).toUpperCase()}</span></p>
+    </header>
+    <div className={styles.ownerOperationsTabs} role="tablist" aria-label="Dữ liệu vận hành máy">
+      {tabs.map((tab, index) => <button key={tab.value} id={`${idPrefix}-tab-${tab.value}`} role="tab" type="button" tabIndex={activeTab === tab.value ? 0 : -1} aria-selected={activeTab === tab.value} aria-controls={`${idPrefix}-content`} onClick={() => onTabChange(tab.value)} onKeyDown={(event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        onTabChange(tabs[next].value); document.getElementById(`${idPrefix}-tab-${tabs[next].value}`)?.focus();
+      }}>{tab.label}</button>)}
+    </div>
+  </>;
+}
 type CalendarPreset = "TODAY" | "YESTERDAY" | "THIS_WEEK" | "LAST_WEEK" | "LAST_30_DAYS" | "THIS_MONTH";
 
 const calendarPresets: { key: CalendarPreset; label: string }[] = [

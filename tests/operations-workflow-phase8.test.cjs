@@ -92,16 +92,16 @@ test("operational UI scopes queries, uses mapped role routes and never navigates
   assert.match(notificationInbox, /authScopedQuerySubject\(roleScope\)/);
 });
 
-test("authorized heartbeat cards refresh and Moderator telemetry remains disabled until backend role scope is aligned", () => {
-  const panel = readFileSync(join(__dirname, "../src/components/features/operations/machine-heartbeat-panel.tsx"), "utf8");
+test("authorized machine screens use the shared heartbeat panel and Moderator telemetry remains gated", () => {
+  const panel = readFileSync(join(__dirname, "../src/components/machines/machine-heartbeat-panel.tsx"), "utf8");
   const admin = readFileSync(join(__dirname, "../src/pages/admin/machines/machine-detail-screen.tsx"), "utf8");
   const moderator = readFileSync(join(__dirname, "../src/pages/moderator/iot/iot-screen.tsx"), "utf8");
-  const points = readFileSync(join(__dirname, "../src/components/features/operations/machine-telemetry-points-panel.tsx"), "utf8");
-  assert.match(panel, /refetchInterval: 5_000/);
-  assert.match(admin, /refetchInterval: isSmartIot \? 5_000 : false/);
+  assert.match(panel, /Kết nối hiện tại/);
+  assert.match(admin, /MachineHeartbeatPanel/);
+  assert.match(admin, /refetchInterval: isPageVisible \? 5_000 : false/);
+  assert.match(admin, /telemetryApi\.listMachinePoints/);
+  assert.match(admin, /TELEMETRY_POINTS_PAGE_SIZE/);
+  assert.match(admin, /enabled: validId && authenticated && machine\.isSuccess && isSmartIot && isPageVisible && range !== null/);
   assert.match(moderator, /IOT_MODERATOR_TELEMETRY_UNAVAILABLE/);
   assert.doesNotMatch(moderator, /telemetryApi\.(?:getLatestHeartbeat|listMachinePoints)/);
-  assert.match(points, /TELEMETRY_POINTS_PAGE_SIZE/);
-  assert.match(points, /enabled: Boolean\(range\)/);
-  assert.match(points, /authScopedQuerySubject\(role\)/);
 });

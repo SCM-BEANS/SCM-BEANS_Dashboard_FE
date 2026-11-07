@@ -9,7 +9,7 @@ function loadTypescript(relativePath, mocks = {}) {
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
   });
   const mockModule = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
@@ -43,6 +43,24 @@ test('telemetry schemas validate explicit increasing ranges and preserve flexibl
   assert.equal(schema.TelemetryPointListSchema.safeParse(null).success, false);
   assert.equal(schema.TelemetryPointsParamsSchema.safeParse({ ...range, limit: 100, offset: 0 }).success, true);
   assert.equal(schema.TelemetryPointsParamsSchema.safeParse({ from: range.to, to: range.from, limit: 100, offset: 0 }).success, false);
+});
+
+test('telemetry bounds cap pages at 500 and reject ranges longer than thirty days', () => {
+  const { TelemetryPointsParamsSchema } = loadTelemetrySchema();
+  const thirtyDays = { from: '2026-10-01T00:00:00Z', to: '2026-10-31T00:00:00Z', limit: 500, offset: 100000 };
+  assert.equal(TelemetryPointsParamsSchema.safeParse(thirtyDays).success, true);
+  assert.equal(TelemetryPointsParamsSchema.safeParse({ ...thirtyDays, limit: 501 }).success, false);
+  assert.equal(TelemetryPointsParamsSchema.safeParse({ ...thirtyDays, to: '2026-10-31T00:00:01Z' }).success, false);
+  assert.equal(TelemetryPointsParamsSchema.safeParse({ ...thirtyDays, offset: 100001 }).success, false);
+});
+
+test('heartbeat lifecycle fields are typed while zero health and nullable state remain valid', () => {
+  const { MachineHeartbeatSchema } = loadTelemetrySchema();
+  const value = { machineId, status: 'OFFLINE', brewState: 'BREWING', sequenceNumber: 0, metricsJson: { temperature: 0 }, health: { ramUsedMb: 0, wifiRssiDbm: 0 } };
+  assert.deepEqual(MachineHeartbeatSchema.parse(value), value);
+  assert.equal(MachineHeartbeatSchema.safeParse({ ...value, sequenceNumber: 'zero' }).success, false);
+  assert.equal(MachineHeartbeatSchema.safeParse({ ...value, brewState: 12 }).success, false);
+  assert.equal(MachineHeartbeatSchema.safeParse({ ...value, brewState: null, sequenceNumber: null, health: null }).success, true);
 });
 
 test('telemetry API sends a bounded page request with the selected machine UUID and range', async () => {
@@ -87,9 +105,9 @@ test('telemetry API rejects invalid machine IDs, reversed ranges, and mismatched
   assert.equal(calls, 2);
 });
 
-test('Owner and Admin machine details provide 24h, 7d, 30d and validated custom telemetry ranges', () => {
+test('Owner operations and Admin machine detail provide 24h, 7d, 30d and validated custom telemetry ranges', () => {
   const screens = [
-    'src/pages/dashboard/machines/machines-screen.tsx',
+    'src/pages/dashboard/machines/machine-operational-overview-screen.tsx',
     'src/pages/admin/machines/machine-detail-screen.tsx',
   ];
   for (const screen of screens) {
@@ -108,7 +126,7 @@ test('Owner and Admin machine details provide 24h, 7d, 30d and validated custom 
 test('Owner and Admin telemetry history exposes returned fields, charts numeric values, and records nonnumeric points by timestamp', () => {
   const root = join(__dirname, '..');
   const screenSources = [
-    'src/pages/dashboard/machines/machines-screen.tsx',
+    'src/pages/dashboard/machines/machine-operational-overview-screen.tsx',
     'src/pages/admin/machines/machine-detail-screen.tsx',
   ].map((path) => readFileSync(join(root, path), 'utf8')).join('\n');
   const presentationSources = require('node:fs').readdirSync(join(root, 'src/components/machines'))
@@ -126,7 +144,7 @@ test('Owner and Admin telemetry history exposes returned fields, charts numeric 
 test('telemetry detail requests 100-point pages and loads later offsets only from an explicit action', () => {
   const root = join(__dirname, '..');
   for (const screen of [
-    'src/pages/dashboard/machines/machines-screen.tsx',
+    'src/pages/dashboard/machines/machine-operational-overview-screen.tsx',
     'src/pages/admin/machines/machine-detail-screen.tsx',
   ]) {
     const source = readFileSync(join(root, screen), 'utf8');
@@ -136,4 +154,58 @@ test('telemetry detail requests 100-point pages and loads later offsets only fro
     assert.ok(/getNextPageParam/.test(source), `${screen} should advance offsets by page after user action`);
   }
   assert.equal(loadTelemetrySchema().TelemetryPointsParamsSchema.parse({ ...range, limit: 100, offset: 0 }).limit, 100);
+});
+
+function renderTelemetryPanel(props) {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const { TelemetryHistoryPanel } = loadTypescript('src/components/machines/telemetry-history-panel.tsx', {
+    '@/components/table/data-table': { DataTable: () => React.createElement('div', null, 'records') },
+    './machines.module.css': { default: {} },
+  });
+  return renderToStaticMarkup(React.createElement(TelemetryHistoryPanel, { range, onRangeChange() {}, loading: false, ...props }));
+}
+
+test('telemetry chart spaces irregular observations by actual timestamp and discloses partial coverage', () => {
+  const points = [0, 1, 10].map((minute, index) => ({ machineId, field: 'temperature', value: index, timestamp: new Date(Date.UTC(2026, 10, 1, 0, minute)).toISOString() }));
+  const html = renderTelemetryPanel({ points, hasMore: true, onLoadMore() {} });
+  assert.match(html, /points="0,180 100,100 1000,20"/);
+  assert.match(html, /Dữ liệu đã tải/);
+  assert.match(html, /còn dữ liệu chưa tải/);
+});
+
+test('telemetry axis preserves tiny nonzero values instead of labelling them all zero', () => {
+  const points = [0.0000001, 0.0000002].map((value, index) => ({ machineId, field: 'sensor', value, timestamp: new Date(Date.UTC(2026, 10, 1, 0, index)).toISOString() }));
+  const html = renderTelemetryPanel({ points });
+  assert.match(html, /1E-7/);
+  assert.match(html, /2E-7/);
+  assert.match(html, /1e-7/);
+});
+
+test('heartbeat shows zero health as historical separately from current connection and explicit Vietnam time', () => {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const { MachineHeartbeatPanel } = loadTypescript('src/components/machines/machine-heartbeat-panel.tsx', {
+    './machine-connection-badge': { MachineConnectionBadge: ({ state }) => React.createElement('span', null, state) },
+    './smart-iot-panel': { SmartIotPanel: ({ children }) => React.createElement('section', null, children) },
+    './machines.module.css': { default: {} },
+  });
+  const html = renderToStaticMarkup(React.createElement(MachineHeartbeatPanel, {
+    title: 'Machine', heartbeat: { machineId, status: 'OFFLINE', evaluatedAt: '2026-11-01T00:00:00Z', healthReportedAt: '2026-10-31T00:00:00Z', health: { ramUsedMb: 0, ramTotalMb: 0, wifiRssiDbm: 0 } },
+  }));
+  assert.match(html, /Sức khỏe ghi nhận gần nhất/);
+  assert.match(html, /không phản ánh tình trạng hiện tại/);
+  assert.match(html, /07:00/);
+  assert.match(html, /0.*0.*MB/);
+  assert.match(html, /Giờ Việt Nam/);
+});
+
+test('Technician monitoring waits for authenticated Smart IoT lookup and contains no offline review calls', () => {
+  const source = readFileSync(join(__dirname, '..', 'src/pages/technician/machine-check/machine-detail-screen.tsx'), 'utf8');
+  assert.match(source, /authScopedQuerySubject\("TECHNICIAN"\)/);
+  assert.match(source, /telemetryApi\.getLatestHeartbeat/);
+  assert.match(source, /telemetryApi\.listMachinePoints/);
+  assert.match(source, /machine\.data\?\.machineType === "SMART_IOT"/);
+  assert.match(source, /refetchIntervalInBackground: false/);
+  assert.doesNotMatch(source, /offlineViolationReviewsApi/);
 });

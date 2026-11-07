@@ -1,12 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useState } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
+import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
+import { ButtonBar } from "@/components/button/button-bar";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 
 import { locationsApi } from "@/apis/locations.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
-import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { PATH_MODERATOR } from "@/routes/path";
+import machineStyles from "@/components/machines/machines.module.css";
 
 import { profilesApi } from "@/apis/profiles.api";
 
@@ -199,6 +207,8 @@ function LocationRow({ owner, location }: { owner: Profile; location: Location }
 }
 
 export function ModeratorIoTScreen({ path }: { path: string }) {
+  const router = useRouter();
+  const subject = authScopedQuerySubject("MODERATOR");
   const isLocationsView = path === "iot/customer";
   const owners = useQuery({
     queryKey: ["dolores", "moderator", "owner-profiles"],
@@ -214,20 +224,32 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     retry: false,
   });
   const inventory = useQuery({
-    queryKey: ["dolores", "machines"],
+    queryKey: ["dolores", "machines", subject],
     queryFn: ({ signal }) => machinesApi.list(signal),
     enabled: !isLocationsView,
     retry: false,
   });
-  const [selectedMachineId, setSelectedMachineId] = useState("");
+  const selectedMachineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validSelectedId = MachineIdSchema.safeParse(selectedMachineId).success;
+  const reviewView = router.query.view === "reviews" || Boolean(selectedMachineId) || typeof router.query.reviewId === "string" || typeof router.query.reviewStatus === "string";
   const selectedMachine = useQuery({
-    queryKey: ["dolores", "machines", "id", selectedMachineId],
+    queryKey: ["dolores", "machines", "id", subject, selectedMachineId],
     queryFn: ({ signal }) => machinesApi.getById(selectedMachineId, signal),
     enabled: !isLocationsView && Boolean(selectedMachineId) && validSelectedId,
     retry: false,
   });
-  const smartIotVerified = selectedMachine.data?.machineType === "SMART_IOT";
+  let reviewState: ReturnType<typeof readOfflineReviewQuery> | undefined;
+  let reviewFilterError: string | undefined;
+  try { reviewState = readOfflineReviewQuery(router.query); } catch { reviewFilterError = "Bộ lọc rà soát không hợp lệ. Hãy đặt lại bộ lọc để tiếp tục."; }
+  const reviewContext = reviewState?.params.machineId ? { machineId: reviewState.params.machineId } : {};
+  const reviewsEnabled = !isLocationsView && router.isReady && Boolean(getAuthenticatedSubjectId()) && Boolean(reviewState) && reviewView;
+  const reviews = useQuery({ queryKey: ["offline-reviews", subject, reviewState?.params], queryFn: ({ signal }) => offlineViolationReviewsApi.listPage(reviewState!.params, signal), enabled: reviewsEnabled, retry: false });
+  const reviewDetail = useQuery({ queryKey: ["offline-review", subject, reviewState?.reviewId, reviewContext], queryFn: ({ signal }) => offlineViolationReviewsApi.getById(reviewState!.reviewId!, signal, reviewContext), enabled: reviewsEnabled && Boolean(reviewState?.reviewId), retry: false });
+  const navigateReview = (patch: Record<string, string | undefined>) => {
+    const query = { ...router.query };
+    for (const [key, value] of Object.entries(patch)) { if (!value) delete query[key]; else query[key] = value; }
+    void router.push({ pathname: router.pathname, query }, undefined, { shallow: true });
+  };
 
   if (isLocationsView) {
     return (
@@ -246,37 +268,29 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   }
 
   const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
-  return (
-    <div className={styles.pageContent}>
-      <PageHeading title={messages.IOT_TITLE} description={messages.IOT_DESCRIPTION} />
-      <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
-      {inventory.data && !inventory.isError && <>
-        <section className={styles.formPanel}>
-          <label className={styles.formField} htmlFor="moderator-iot-machine">
-            {messages.IOT_SELECT_MACHINE}
-            <select
-              id="moderator-iot-machine"
-              value={selectedMachineId}
-              onChange={(event) => {
-                setSelectedMachineId(event.target.value);
-              }}
-            >
-              <option value="">{messages.IOT_SELECT_MACHINE_HINT}</option>
-              {smartMachines.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber ?? machine.id} · {machine.id}</option>)}
-            </select>
-          </label>
-          {smartMachines.length === 0 && <p className={styles.formHint}>{messages.IOT_NO_SMART}</p>}
-          {selectedMachineId && <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} />}
-          {selectedMachine.data && !selectedMachine.isError && !smartIotVerified && <p className={styles.partialNotice} role="status">{messages.IOT_NOT_SMART}</p>}
-          {smartIotVerified && <>
-            <SmartIotPanel
-              title={messages.IOT_TELEMETRY}
-              state="permission-denied"
-              stateMessage="Moderator role does not have permission to view machine telemetry."
-            />
-          </>}
-        </section>
-      </>}
-    </div>
-  );
+  const statusLabels: Record<string, string> = { IN_WAREHOUSE: "Trong kho", PENDING_ACTIVATION: "Chờ kích hoạt", DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng", DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng", UNDER_MAINTENANCE: "Đang bảo trì", REFURBISHING: "Đang tân trang", PENDING_QA: "Chờ kiểm định", AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê", RETIRED: "Đã ngừng sử dụng" };
+  return <div className={styles.pageContent}>
+    <PageHeading title="Giám sát máy" description="Chọn máy để xem các lần mất kết nối và theo dõi xử lý." />
+    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
+    <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
+    {!reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
+      <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2><ButtonBar disabled={inventory.isFetching} onClick={() => void inventory.refetch()}>Làm mới</ButtonBar></div>
+      <DataTable headerVariant="admin" rows={smartMachines} rowKey={(machine) => machine.id} emptyMessage="Chưa có máy Smart IoT trong danh sách." columns={[
+        { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
+        { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{statusLabels[machine.status] ?? machine.status}</StatusBadge> : "—" },
+        { key: "open", header: "Giám sát", render: (machine) => <ButtonBar href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
+      ]} />
+    </section> : null}
+    {reviewView ? <>
+      {inventory.isSuccess ? <section className={styles.formPanel}><label className={styles.formField} htmlFor="moderator-iot-machine">Máy cần theo dõi<select id="moderator-iot-machine" value={selectedMachineId} onChange={(event) => navigateReview({ machineId: event.target.value, reviewId: undefined, reviewPage: undefined })}><option value="">Tất cả máy</option>{smartMachines.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</option>)}</select></label>{selectedMachineId ? <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} /> : null}</section> : null}
+      {reviewFilterError ? <div className={styles.partialNotice} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigateReview({ machineId: undefined, reviewId: undefined, reviewPage: undefined, reviewStatus: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel
+        machineLabels={Object.fromEntries(smartMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))} page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={reviewState?.params.machineId} canDecide
+        loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
+        error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}
+        onFilterChange={(status) => navigateReview({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigateReview({ reviewPage: String(page), reviewId: undefined })} onSelect={(id) => navigateReview({ reviewId: id })}
+        onRefresh={() => { if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }}
+        onDecide={async (id, body) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, reviewContext); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), reviewDetail.refetch()]); } }}
+      />}
+    </> : null}
+  </div>;
 }
