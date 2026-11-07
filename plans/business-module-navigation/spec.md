@@ -10,7 +10,7 @@ Các trang thuộc cùng một nghiệp vụ hiện nằm rải rác trong danh 
 ## User Stories
 
 - **[P1]** Là Admin hoặc Moderator, tôi muốn mở các nhóm “Vận hành” và “Bảo trì & Kho máy” để tìm nhanh hợp đồng, hóa đơn, giám sát Smart IoT, yêu cầu kỹ thuật và kho máy.
-  Accepted when: các mục hiện có được đặt trong đúng nhóm theo role; chọn một mục con vẫn mở đúng route hiện tại.
+  Accepted when: các mục hiện có được đặt trong đúng nhóm theo role; chọn một mục con vẫn mở đúng route                                                    hiện tại.
 
 - **[P1]** Là người dùng ở bất kỳ role nào, tôi muốn thấy role, module và trang hiện tại trên breadcrumb để biết mình đang thao tác trong khu vực nào.
   Accepted when: trang có ánh xạ module hiển thị đủ ba cấp ở header desktop và breadcrumb mobile; URL lồng sâu vẫn nhận đúng module của trang cha.

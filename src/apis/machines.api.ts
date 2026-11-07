@@ -2,6 +2,10 @@ import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
   InventorySummarySchema,
   MachineIdSchema,
+  CleaningComplianceParamsSchema,
+  MachineCleaningComplianceSchema,
+  MachineDeviceIdentityRequestSchema,
+  MachineDeviceIdentitySchema,
   MachineInventorySchema,
   RentalCandidatePageSchema,
   MachineSchema,
@@ -77,6 +81,19 @@ function responseHeader(headers: unknown, key: string): string | undefined {
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
 export const machinesApi =  {
+  async provisionDeviceIdentity(id: string, input: { deviceId: string }) {
+    const machineId = MachineIdSchema.parse(id);
+    const request = MachineDeviceIdentityRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(`${machinePath(machineId)}/telemetry-device-identity`, request, { baseURL: DOLORES_API_BASE_URL });
+    if (response.status !== 201) throw new Error("Device identity registration was not confirmed with HTTP 201.");
+    const identity = MachineDeviceIdentitySchema.parse(response.data);
+    if (identity.machineId !== machineId || identity.deviceId !== request.deviceId || identity.status !== "ACTIVE") throw new MachineIdentityMismatchError();
+    return identity;
+  },
+  async revokeDeviceIdentity(id: string) {
+    const response = await axiosClient.delete(`${machinePath(id)}/telemetry-device-identity`, { baseURL: DOLORES_API_BASE_URL });
+    if (response.status !== 204) throw new Error("Device identity revocation was not confirmed with HTTP 204.");
+  },
   async create(input: CreateMachineRequest) {
     const request = CreateMachineRequestSchema.parse(input);
     const response = await axiosClient.post<unknown>("/machines", request, { baseURL: DOLORES_API_BASE_URL });
@@ -141,6 +158,16 @@ export const machinesApi =  {
       signal,
     });
     return MaintenanceScheduleSchema.parse(response.data);
+  },
+  async getCleaningCompliance(id: string, days = 30, signal?: AbortSignal) {
+    const machineId = MachineIdSchema.parse(id);
+    const params = CleaningComplianceParamsSchema.parse({ days });
+    const response = await axiosClient.get<unknown>(`${machinePath(machineId)}/cleaning-compliance`, {
+      baseURL: DOLORES_API_BASE_URL, params, signal,
+    });
+    const compliance = MachineCleaningComplianceSchema.parse(response.data);
+    if (compliance.machine_id !== machineId) throw new MachineIdentityMismatchError();
+    return compliance;
   },
   async listMaintenanceTickets(input: MaintenanceTicketListParams = {}, signal?: AbortSignal) {
     const params = MaintenanceTicketListParamsSchema.parse(input);

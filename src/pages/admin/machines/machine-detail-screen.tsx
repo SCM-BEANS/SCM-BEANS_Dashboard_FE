@@ -2,9 +2,12 @@ import { MachineContractHistory } from "@/components/machines/machine-contract-h
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { locationsApi } from "@/apis/locations.api";
+import { machineCertificatesApi } from "@/apis/machine-certificates.api";
+import { MachineCertificatesPanel } from "@/components/machines/machine-certificates-panel";
+import type { MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
@@ -54,6 +57,87 @@ function formatNumber(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : new Intl.NumberFormat("vi-VN").format(value);
 }
 
+function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string; subject: string }) {
+  const [status, setStatus] = useState<MachineCertificateStatus | "">("");
+  const [pageNumber, setPageNumber] = useState(0);
+  const [selected, setSelected] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [issueBlocked, setIssueBlocked] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+  const pending = useRef(false);
+  const controller = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const current = new AbortController();
+    controller.current = current;
+    return () => current.abort();
+  }, []);
+  const list = useQuery({
+    queryKey: ["machine-certificates", "ADMIN", subject, machineId, status, pageNumber],
+    queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
+    retry: false,
+  });
+  const detail = useQuery({
+    queryKey: ["machine-certificates", "ADMIN", subject, machineId, "detail", selected],
+    queryFn: ({ signal }) => machineCertificatesApi.getById(machineId, selected, signal),
+    enabled: Boolean(selected), retry: false,
+  });
+  const run = async (action: () => Promise<void>, issuance = false) => {
+    if (pending.current) return;
+    pending.current = true; setBusy(true); setActionError(""); setNotice("");
+    try { await action(); }
+    catch (error) {
+      if (controller.current?.signal.aborted) return;
+      setActionError(getApiErrorMessage(error, "mutation"));
+      if (issuance) { setIssueBlocked(true); await list.refetch(); }
+    } finally { pending.current = false; if (!controller.current?.signal.aborted) setBusy(false); }
+  };
+  return <>
+    <SmartIotPanel title="Định danh thiết bị">
+      <form className={styles.machineEditForm} onSubmit={(event) => {
+        event.preventDefault();
+        void run(async () => {
+          await machinesApi.provisionDeviceIdentity(machineId, { deviceId });
+          if (!controller.current?.signal.aborted) setNotice("Đã đăng ký định danh thiết bị.");
+        });
+      }}>
+        <label>Mã thiết bị<input required maxLength={255} value={deviceId} disabled={busy} onChange={(event) => setDeviceId(event.target.value)} /></label>
+        <ButtonBar type="submit" disabled={busy || !deviceId.trim()}>Đăng ký định danh</ButtonBar>
+      </form>
+      <p>Chưa thể đọc lại mã thiết bị đã lưu. Vui lòng kiểm tra với bộ phận vận hành trước khi đăng ký.</p>
+    </SmartIotPanel>
+    <MachineCertificatesPanel page={list.data} detail={detail.data} status={status} pageNumber={pageNumber}
+      selectedCertificateId={selected} loading={list.isFetching} detailLoading={Boolean(selected) && detail.isFetching}
+      error={list.isError ? getApiErrorMessage(list.error) : undefined}
+      detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
+      actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !list.isSuccess}
+      onSelect={(id) => { if (id === selected) void detail.refetch(); else setSelected(id); }} onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelected(""); }}
+      onPageChange={(next) => { setPageNumber(next); setSelected(""); }}
+      onRefresh={() => { void run(async () => { const result = await list.refetch(); if (result.isSuccess) setIssueBlocked(false); }); }}
+      onIssue={() => { if (!issueBlocked) void run(async () => {
+        const issued = await machineCertificatesApi.issue(machineId);
+        if (controller.current?.signal.aborted) return;
+        setSelected(issued.id); setNotice("Đã phát hành chứng chỉ."); await list.refetch();
+      }, true); }}
+      onDelete={(id) => { void run(async () => {
+        await machineCertificatesApi.delete(machineId, id);
+        if (controller.current?.signal.aborted) return;
+        if (selected === id) setSelected("");
+        setNotice("Đã xóa chứng chỉ."); await list.refetch();
+      }); }}
+      onDownload={(id, format) => { void run(async () => {
+        const bundle = await machineCertificatesApi.download(machineId, id, format, controller.current?.signal);
+        if (controller.current?.signal.aborted) return;
+        const url = URL.createObjectURL(bundle.blob);
+        try {
+          const anchor = document.createElement("a"); anchor.href = url; anchor.download = bundle.filename;
+          document.body.appendChild(anchor); anchor.click(); anchor.remove();
+        } finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
+      }); }} />
+  </>;
+}
+
 function MachineDetailContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -66,7 +150,7 @@ function MachineDetailContent() {
   const rangeResult = useMemo(() => TelemetryPointsParamsSchema.safeParse(router.query.telemetryFrom || router.query.telemetryTo ? { from: router.query.telemetryFrom, to: router.query.telemetryTo } : defaultRange), [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
   const range = rangeResult.success ? rangeResult.data : null;
   const setRange = (next: TelemetryRange) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: next.from, telemetryTo: next.to } }, undefined, { shallow: true }); };
-  const [detailTab, setDetailTab] = useState<"profile" | "machine-type">("profile");
+  const [detailTab, setDetailTab] = useState<"profile" | "machine-type" | "connection">("profile");
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [serialDraft, setSerialDraft] = useState("");
@@ -75,9 +159,9 @@ function MachineDetailContent() {
   const [machineActionError, setMachineActionError] = useState("");
 
   const machine = useQuery({
-    queryKey: ["dolores", "machines", "detail", machineId],
+    queryKey: ["dolores", "machines", "detail", machineId, subject],
     queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    enabled: validId,
+    enabled: validId && authenticated,
   });
   const machineModelId = machine.data?.modelId ?? "";
   const machineModel = useQuery({
@@ -118,7 +202,7 @@ function MachineDetailContent() {
   const updateMachine = useMutation({
     mutationFn: (input: Parameters<typeof machinesApi.update>[1]) => machinesApi.update(machineId, input),
     onSuccess: async (updated) => {
-      queryClient.setQueryData(["dolores", "machines", "detail", machineId], updated);
+      queryClient.setQueryData(["dolores", "machines", "detail", machineId, subject], updated);
       await queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] });
       await queryClient.invalidateQueries({ queryKey: ["dolores", "locations"] });
       setEditing(false);
@@ -285,8 +369,14 @@ function MachineDetailContent() {
           >
             {T.MACHINES.MACHINE_TYPE}
           </button>
+          <button id="machine-connection-tab" type="button" role="tab" aria-selected={detailTab === "connection"}
+            aria-controls="machine-connection-panel" disabled={editing}
+            className={`${styles.machineViewTab} ${detailTab === "connection" ? styles.machineViewTabActive : ""}`}
+            onClick={() => setDetailTab("connection")}>Thiết lập kết nối</button>
         </div>
-        {detailTab === "profile" ? (
+        {detailTab === "connection" ? <div id="machine-connection-panel" role="tabpanel" aria-labelledby="machine-connection-tab">
+          <AdminMachineConnectionSetup key={`${subject}:${machineId}`} machineId={machineId} subject={subject} />
+        </div> : detailTab === "profile" ? (
           <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
             <div className={styles.machineInventoryHeading}>
               <h2>{T.MACHINES.DETAIL}</h2>

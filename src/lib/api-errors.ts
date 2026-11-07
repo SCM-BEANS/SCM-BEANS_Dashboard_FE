@@ -93,6 +93,9 @@ export function getApiErrorMessage(error: unknown, intent: ApiErrorIntent = "rea
   if (!axios.isAxiosError(error)) return API_ERROR_MESSAGES.GENERIC;
 
   const response = error.response;
+  if (response?.status === 503 && response.data?.error === "CERTIFICATE_BACKEND_MODE_REQUIRED") {
+    return "Chưa chọn môi trường cấp chứng chỉ. Cần cấu hình BACKEND_API_MODE thành local hoặc remote và khởi động lại ứng dụng.";
+  }
   if (!response || response.status >= 500) {
     return intent === "mutation"
       ? API_ERROR_MESSAGES.UNCERTAIN_MUTATION

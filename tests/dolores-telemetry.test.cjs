@@ -209,3 +209,93 @@ test('Technician monitoring waits for authenticated Smart IoT lookup and contain
   assert.match(source, /refetchIntervalInBackground: false/);
   assert.doesNotMatch(source, /offlineViolationReviewsApi/);
 });
+
+function complianceSample(overrides = {}) {
+  return {
+    machine_id: machineId,
+    evaluated_days: 30,
+    compliant_days: 0,
+    missing_startup_days: 30,
+    missing_closing_days: 30,
+    compliance_percentage: 0,
+    flagged_dates: ['2026-11-01'],
+    ...overrides,
+  };
+}
+
+function loadComplianceApi(axiosClient) {
+  return loadTypescript('src/apis/machines.api.ts', {
+    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
+    '@/schema/machines.schema': loadTypescript('src/schema/machines.schema.ts'),
+    '@/schema/profiles.schema': loadTypescript('src/schema/profiles.schema.ts'),
+  }).machinesApi;
+}
+
+test('cleaning compliance schemas preserve server zero and reject malformed required SLA fields', () => {
+  const { MachineCleaningComplianceSchema: schema } = loadTypescript('src/schema/machines.schema.ts');
+  const sample = complianceSample();
+  assert.deepEqual(schema.parse(sample), sample);
+  assert.equal(schema.safeParse(complianceSample({ evaluated_days: 0, missing_startup_days: 0, missing_closing_days: 0, flagged_dates: [] })).success, false);
+  for (const key of Object.keys(sample)) {
+    const missing = { ...sample };
+    delete missing[key];
+    assert.equal(schema.safeParse(missing).success, false, `${key} is required`);
+  }
+  for (const patch of [
+    { machine_id: 'TEST12' }, { evaluated_days: -1 }, { compliant_days: -1 },
+    { missing_startup_days: -1 }, { missing_closing_days: -1 },
+    { compliant_days: 1.5 }, { compliance_percentage: -0.1 },
+    { compliance_percentage: 100.1 }, { compliance_percentage: '0' },
+    { flagged_dates: ['2026-02-30'] }, { flagged_dates: ['yesterday'] },
+  ]) assert.equal(schema.safeParse(complianceSample(patch)).success, false, JSON.stringify(patch));
+});
+
+test('cleaning compliance days default to thirty and accept positive int32 without an invented short cap', () => {
+  const { CleaningComplianceParamsSchema: schema } = loadTypescript('src/schema/machines.schema.ts');
+  assert.deepEqual(schema.parse({}), { days: 30 });
+  for (const days of [1, 7, 30, 365, 2147483647]) assert.equal(schema.safeParse({ days }).success, true);
+  for (const days of [0, -1, 1.5, '30', null, 2147483648]) assert.equal(schema.safeParse({ days }).success, false);
+});
+
+test('cleaning compliance API forwards machine UUID, days and abort signal without deriving SLA from history', async () => {
+  const calls = [];
+  const sample = complianceSample({ evaluated_days: 7 });
+  const api = loadComplianceApi({ get: async (url, config) => { calls.push({ url, config }); return { data: sample }; } });
+  const signal = new AbortController().signal;
+  assert.deepEqual(await api.getCleaningCompliance(machineId, 7, signal), sample);
+  await api.getCleaningCompliance(machineId);
+  assert.deepEqual(calls, [
+    { url: `/machines/${machineId}/cleaning-compliance`, config: { baseURL: '/api/dolores/v1', params: { days: 7 }, signal } },
+    { url: `/machines/${machineId}/cleaning-compliance`, config: { baseURL: '/api/dolores/v1', params: { days: 30 }, signal: undefined } },
+  ]);
+});
+
+test('cleaning compliance rejects invalid inputs before HTTP and mismatched machine responses before display', async () => {
+  let calls = 0;
+  const api = loadComplianceApi({ get: async () => { calls += 1; return { data: complianceSample({ machine_id: otherMachineId }) }; } });
+  await assert.rejects(api.getCleaningCompliance('TEST12', 30));
+  await assert.rejects(api.getCleaningCompliance(machineId, 0));
+  assert.equal(calls, 0);
+  await assert.rejects(api.getCleaningCompliance(machineId, 30));
+  assert.equal(calls, 1);
+});
+
+test('cleaning compliance preserves the server evaluated period when a longer requested period is clamped', async () => {
+  const sample = complianceSample({ evaluated_days: 90 });
+  const calls = [];
+  const api = loadComplianceApi({ get: async (url, config) => { calls.push({ url, config }); return { data: sample }; } });
+  assert.deepEqual(await api.getCleaningCompliance(machineId, 365), sample);
+  assert.equal(calls[0].config.params.days, 365);
+  assert.equal(calls.length, 1);
+});
+
+test('cleaning compliance API propagates forbidden, unavailable and cancelled requests without retries or fallback', async () => {
+  const abort = new Error('Aborted');
+  abort.name = 'AbortError';
+  for (const error of [{ response: { status: 403 } }, { response: { status: 503 } }, abort]) {
+    let calls = 0;
+    const api = loadComplianceApi({ get: async () => { calls += 1; throw error; } });
+    await assert.rejects(api.getCleaningCompliance(machineId, 30, new AbortController().signal), (actual) => actual === error);
+    assert.equal(calls, 1);
+  }
+});

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   getBackendApiSelection,
+  getExplicitBackendApiSelection,
   preferLocalBackendApis,
 } from "@/lib/server/backend-api-selection";
 
@@ -122,17 +123,19 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  res.setHeader("Cache-Control", "no-store");
   const segments = getPath(req);
   if (!segments) {
     res.status(400).json({ error: "Invalid API path" });
     return;
   }
 
+  const certificateRequest = segments[0] === "machines" && segments.length >= 3 && segments[2] === "certificates";
   let selection: Awaited<ReturnType<typeof getBackendApiSelection>>;
   try {
-    selection = await getBackendApiSelection();
+    selection = certificateRequest ? getExplicitBackendApiSelection() : await getBackendApiSelection();
   } catch {
-    res.status(500).json({ error: "Invalid Dolores API configuration" });
+    res.status(certificateRequest ? 503 : 500).json({ error: certificateRequest ? "CERTIFICATE_BACKEND_MODE_REQUIRED" : "Invalid Dolores API configuration" });
     return;
   }
 
@@ -158,7 +161,7 @@ export default async function handler(
       body,
     );
   } catch {
-    if (selection.mode !== "remote") {
+    if (certificateRequest || selection.mode !== "remote") {
       res.status(502).json({ error: "Dolores API is unavailable" });
       return;
     }

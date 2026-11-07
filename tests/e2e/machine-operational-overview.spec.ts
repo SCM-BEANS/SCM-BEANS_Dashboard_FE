@@ -103,6 +103,10 @@ async function installMockApi(page: Page, role: RoleCase, requests: string[], op
       body = machine;
     } else if (path === `/machines/${machineId}/maintenance-schedule`) {
       body = { nextPreventiveMaintenanceAt: null, cupsServedSinceLastDescale: 18 };
+    } else if (path === `/machines/${machineId}/cleaning-compliance`) {
+      const days = Number(url.searchParams.get("days") ?? 30);
+      body = { machine_id: machineId, evaluated_days: days, compliant_days: days,
+        missing_startup_days: 0, missing_closing_days: 0, compliance_percentage: 100, flagged_dates: [] };
     } else if (path === "/contracts" || path === `/contracts/machine/${machineId}/history`) {
       body = [{ id: "f1000000-0000-4000-8000-000000000005", ownerId, machineId, status: "ACTIVE", startDate: "2026-01-01", endDate: "2027-01-01" }];
     } else if (path === "/owner/cup-count") {
@@ -199,9 +203,14 @@ test.describe("machine operational overview cross-role presentation", () => {
       if (role.claim === "owner") {
         await page.goto(`${role.operationsPath}?tab=connection`);
         await expect.poll(() => requests.some((request) => request.includes("/telemetry-query/machines/") && request.split("?", 1)[0].endsWith("/points"))).toBe(true);
+      } else if (role.claim === "moderator") {
+        expect(requests.some((request) => request.includes("/heartbeats/latest"))).toBe(false);
+        await page.goto(`${role.operationsPath}?tab=connection`);
+        await expect(page.getByRole("heading", { name: "Kết nối & sức khỏe máy", exact: true })).toBeVisible();
+        await expect.poll(() => requests.some((request) => request.includes("/heartbeats/latest"))).toBe(true);
       }
       const heartbeatRequested = requests.some((request) => request.includes("/heartbeats/latest"));
-      expect(heartbeatRequested).toBe(role.claim !== "moderator");
+      expect(heartbeatRequested).toBe(true);
       if (role.claim === "owner") {
         const cupRequest = requests.find((request) => request.startsWith("/owner/cup-count?"));
         expect(cupRequest).toBeTruthy();
@@ -552,6 +561,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ }).first()).toBeVisible();
     await expect(page.getByText("Mất kết nối", { exact: true })).toHaveCount(0);
     expect(requests.some((path) => path.startsWith("/owner/") || path.includes("offline-violation-reviews"))).toBe(false);
+    expect(requests.some((path) => path.includes("/cleaning-compliance"))).toBe(false);
   });
 
   test("rapid decision clicks and a timeout send one POST and preserve the draft for verification", async ({ page, context }) => {
@@ -683,5 +693,147 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); document.dispatchEvent(new Event("visibilitychange")); });
     await page.clock.runFor(6_000);
     await expect.poll(heartbeatCount).toBeGreaterThan(hiddenCount);
+  });
+});
+
+test.describe("Machine provisioning Phase 01", () => {
+  test("Owner SLA period is independent of history filters and defaults to thirty days", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    await page.goto(`${ownerOperationsPath}?tab=cleaning&${fixedDates}`);
+    const panel = page.getByRole("region", { name: "Tuân thủ vệ sinh", exact: true });
+    await expect(panel.getByText("100%", { exact: true })).toBeVisible();
+    const complianceRequests = () => requests.filter((path) => path.includes("/cleaning-compliance?"));
+    expect(complianceRequests()).toHaveLength(1);
+    const params = new URLSearchParams(complianceRequests()[0].split("?", 2)[1]);
+    expect([...params.entries()]).toEqual([["days", "30"]]);
+    await page.getByLabel("Loại vệ sinh", { exact: true }).selectOption("CLOSING");
+    await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
+    await expect.poll(() => requests.some((path) => path.startsWith("/owner/cleaning-records?") && path.includes("cleaningType=CLOSING"))).toBe(true);
+    expect(complianceRequests()).toHaveLength(1);
+    await panel.getByLabel("Khoảng đánh giá vệ sinh", { exact: true }).selectOption("7");
+    await expect.poll(() => complianceRequests().some((path) => path.endsWith("days=7"))).toBe(true);
+    expect(complianceRequests().every((path) => !/[?&](from|to|ownerId)=/.test(path))).toBe(true);
+    await page.reload();
+    await expect(panel.getByRole("heading", { name: "Tuân thủ vệ sinh", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, 1280, "Owner cleaning compliance");
+  });
+
+  test("Admin loads SLA only from the cleaning view without Owner Analytics calls", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[1], requests);
+    await page.goto(roleCases[1].operationsPath);
+    await expect(page.getByRole("heading", { name: "Kết nối & sức khỏe máy", exact: true })).toBeVisible();
+    expect(requests.some((path) => path.includes("/cleaning-compliance"))).toBe(false);
+    await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
+    const panel = page.getByRole("region", { name: "Tuân thủ vệ sinh", exact: true });
+    await expect(panel.getByText("100%", { exact: true })).toBeVisible();
+    await panel.getByLabel("Khoảng đánh giá vệ sinh", { exact: true }).selectOption("90");
+    await expect.poll(() => requests.some((path) => path.includes("/cleaning-compliance?days=90"))).toBe(true);
+    expect(requests.some((path) => path.startsWith("/owner/"))).toBe(false);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expectNoHorizontalOverflow(page, 390, "Admin cleaning compliance");
+  });
+
+  test("Owner SLA displays actual zero and does not replace service failure with zero", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    let unavailable = false;
+    await page.route("**/api/dolores/v1/machines/*/cleaning-compliance?**", async (route) => {
+      const days = Number(new URL(route.request().url()).searchParams.get("days") ?? 30);
+      const body = unavailable ? { message: "Compliance unavailable" } : {
+        machine_id: machineId, evaluated_days: days, compliant_days: 0,
+        missing_startup_days: days, missing_closing_days: days, compliance_percentage: 0, flagged_dates: ["2026-11-06"],
+      };
+      await route.fulfill({ status: unavailable ? 503 : 200, contentType: "application/json", body: JSON.stringify(body) });
+    });
+    await page.goto(`${ownerOperationsPath}?tab=cleaning&${fixedDates}`);
+    const panel = page.getByRole("region", { name: "Tuân thủ vệ sinh", exact: true });
+    await expect(panel.getByText("0%", { exact: true })).toBeVisible();
+    unavailable = true;
+    await panel.getByLabel("Khoảng đánh giá vệ sinh", { exact: true }).selectOption("7");
+    await expect(panel.getByRole("alert")).toBeVisible();
+    await expect(panel.getByText("0%", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Lịch sử vệ sinh", exact: true })).toBeVisible();
+  });
+
+  test("pending SLA from a previous Owner is never displayed after account change", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    let releaseOld: () => void = () => {};
+    const gate = new Promise<void>((resolve) => { releaseOld = resolve; });
+    let started = false, settled = false, switched = false;
+    await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => {
+      await route.fulfill({ status: switched ? 403 : 200, contentType: "application/json", body: JSON.stringify(switched ? { message: "Forbidden" } : machine) });
+    });
+    await page.route("**/api/dolores/v1/machines/*/cleaning-compliance?**", async (route) => {
+      started = true;
+      await gate;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        machine_id: machineId, evaluated_days: 30, compliant_days: 27,
+        missing_startup_days: 2, missing_closing_days: 1, compliance_percentage: 90, flagged_dates: ["2026-10-01"],
+      }) }).catch(() => {});
+      settled = true;
+    });
+    await page.goto(`${ownerOperationsPath}?tab=cleaning&${fixedDates}`);
+    await expect.poll(() => started).toBe(true);
+    switched = true;
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner", "f4000000-0000-4000-8000-000000000001"), domain: "127.0.0.1", path: "/" }]);
+    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `${ownerOperationsPath}?tab=cleaning&${fixedDates}&account=second`);
+    await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ }).first()).toBeVisible();
+    releaseOld();
+    await expect.poll(() => settled).toBe(true);
+    await expect(page.getByRole("region", { name: "Tuân thủ vệ sinh", exact: true })).toHaveCount(0);
+    await expect(page.getByText("90%", { exact: true })).toHaveCount(0);
+  });
+
+  test("Moderator polls heartbeat only in connection tab and pauses when hidden", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+    await page.clock.install();
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[2], requests);
+    await installOfflineMock(page, requests);
+    await page.goto(`${roleCases[2].operationsPath}?tab=reviews&reviewId=${offlineReviewId}&keep=existing`);
+    await expect(page.getByRole("heading", { name: "Chi tiết rà soát", exact: true })).toBeVisible();
+    expect(requests.some((path) => path.includes("/heartbeats/latest"))).toBe(false);
+    await page.getByRole("tab", { name: "Kết nối", exact: true }).click();
+    await expect(page.getByText("Đang kết nối", { exact: true }).first()).toBeVisible();
+    const heartbeatCount = () => requests.filter((path) => path.includes("/heartbeats/latest")).length;
+    const initial = heartbeatCount();
+    await page.clock.runFor(6_000);
+    await expect.poll(heartbeatCount).toBeGreaterThan(initial);
+    await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" }); document.dispatchEvent(new Event("visibilitychange")); });
+    const hidden = heartbeatCount();
+    await page.clock.runFor(11_000);
+    expect(heartbeatCount()).toBe(hidden);
+    expect(requests.some((path) => path.includes("/points") || path.includes("/cleaning-compliance") || path.startsWith("/owner/"))).toBe(false);
+    await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); document.dispatchEvent(new Event("visibilitychange")); });
+    await page.getByRole("tab", { name: "Mất kết nối", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Chi tiết rà soát", exact: true })).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("keep")).toBe("existing");
+    const reviewCount = heartbeatCount();
+    await page.clock.runFor(6_000);
+    expect(heartbeatCount()).toBe(reviewCount);
+  });
+
+  test("Moderator stops heartbeat polling after permission denial", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+    await page.clock.install();
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[2], requests);
+    let deniedCalls = 0;
+    await page.route("**/api/dolores/v1/telemetry-query/**/heartbeats/latest", async (route) => {
+      deniedCalls += 1;
+      await route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ message: "Grant expired" }) });
+    });
+    await page.goto(`${roleCases[2].operationsPath}?tab=connection`);
+    await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ })).toBeVisible();
+    expect(deniedCalls).toBe(1);
+    await page.clock.runFor(11_000);
+    expect(deniedCalls).toBe(1);
   });
 });

@@ -300,8 +300,48 @@
                           "verification_command": "node --test tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx playwright test tests/e2e/machine-operational-overview.spec.ts; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; git diff --check; authenticated GET role validation.",
                           "notes": "Covers stories: CT-01, CT-02, CT-03, CT-04, CT-05, CT-06, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
                           "priority": "P1"
+                      },
+                      {
+                          "id": "phase-01-cleaning-compliance-and-heartbeat",
+                          "title": "Cleaning compliance and Moderator heartbeat",
+                          "status": "passing",
+                          "evidence": "Node: 29/29 telemetry and Owner Analytics; Playwright monitoring: 31/31; TypeScript passes; lint 0 errors/3 existing warnings; production build passes in ignored .next-cleaning-review. TDD red/green: 6 SLA contracts and denied heartbeat polling. Independent review APPROVED. Authenticated live permissions UNVERIFIED; Technician SLA deferred due to inspected backend SecurityConfig. Historical admin-machines-iot: same 10 failures on HEAD and working source.",
+                          "user_visible_behavior": "Server-calculated cleaning SLA and scoped Moderator heartbeat in existing machine views.",
+                          "verification_command": "Acceptance and scenario anchors in plans/machine-provisioning-monitoring/phase-01-cleaning-compliance-and-heartbeat.md; targeted Node/E2E, lint, TypeScript and recorded live verification.",
+                          "notes": "Covers stories: MP-01, MP-02, MP-07. Plan: plans/machine-provisioning-monitoring/plan.md; new source/test paths require separate approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-02-device-identity-and-certificates",
+                          "title": "Device identity and certificate lifecycle",
+                          "status": "active",
+                          "evidence": "Enabled certificates: Node46/46, E2E35/35, tsc/lint/build pass. G1 identity readback and live certificate scope pending.",
+                          "user_visible_behavior": "Admin identity setup and scoped Admin/Technician certificate lifecycle with private downloads restricted to the selected backend.",
+                          "verification_command": "Acceptance and scenario anchors in plans/machine-provisioning-monitoring/phase-02-device-identity-and-certificates.md; targeted Node/E2E, lint, TypeScript and recorded live verification.",
+                          "notes": "Covers stories: MP-03, MP-04, MP-07. Plan: plans/machine-provisioning-monitoring/plan.md; new source/test paths require separate approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-03-machine-active-menu",
+                          "title": "Machine active menu selection",
+                          "status": "active",
+                          "evidence": "Public OpenAPI rechecked 2026-11-07: G2 readback/operator candidate source pending. Existing recipe menu contracts17/17 pass; no unsupported UI enabled.",
+                          "user_visible_behavior": "Readback-backed eligible Owner menu selection and truthful machine sync status; operator flow gated on authorized list.",
+                          "verification_command": "Acceptance and scenario anchors in plans/machine-provisioning-monitoring/phase-03-machine-active-menu.md; targeted Node/E2E, lint, TypeScript and recorded live verification.",
+                          "notes": "Covers stories: MP-05, MP-06, MP-07. Plan: plans/machine-provisioning-monitoring/plan.md; new source/test paths require separate approval.",
+                          "priority": "P1"
+                      },
+                      {
+                          "id": "phase-04-validation-and-live-gateway-readiness",
+                          "title": "Cross-role validation and live gateway readiness",
+                          "status": "not_started",
+                          "evidence": "",
+                          "user_visible_behavior": "Verified enabled REST flows and explicit readiness or missing contracts for browser live telemetry and commands.",
+                          "verification_command": "Acceptance and scenario anchors in plans/machine-provisioning-monitoring/phase-04-validation-and-live-gateway-readiness.md; targeted Node/E2E, lint, TypeScript and recorded live verification.",
+                          "notes": "Covers stories: MP-01 through MP-08. Plan: plans/machine-provisioning-monitoring/plan.md; new source/test paths require separate approval.",
+                          "priority": "P1"
                       }
                   ],
-        "Count":  30
+        "Count":  34
     }
 ]

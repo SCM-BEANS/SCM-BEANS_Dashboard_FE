@@ -1,6 +1,9 @@
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { machineCertificatesApi } from "@/apis/machine-certificates.api";
+import { MachineCertificatesPanel } from "@/components/machines/machine-certificates-panel";
+import type { MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -87,6 +90,92 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
       ))}
     </div>
   );
+}
+
+function TechnicianMachineCertificates({ machineId, subject }: { machineId: string; subject: string }) {
+  const [status, setStatus] = useState<MachineCertificateStatus | "">("");
+  const [pageNumber, setPageNumber] = useState(0);
+  const [selectedCertificateId, setSelectedCertificateId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [issueBlocked, setIssueBlocked] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
+  const locked = useRef(false);
+  const alive = useRef(true);
+  const downloadController = useRef<AbortController | null>(null);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; downloadController.current?.abort(); };
+  }, []);
+  const certificates = useQuery({
+    queryKey: ["machine-certificates", "TECHNICIAN", subject, machineId, status, pageNumber],
+    queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
+    retry: false,
+  });
+  const detail = useQuery({
+    queryKey: ["machine-certificates", "TECHNICIAN", subject, machineId, "detail", selectedCertificateId],
+    queryFn: ({ signal }) => machineCertificatesApi.getById(machineId, selectedCertificateId, signal),
+    enabled: Boolean(selectedCertificateId), retry: false,
+  });
+  async function refresh() {
+    if (locked.current) return;
+    const result = await certificates.refetch();
+    if (alive.current && result.isSuccess) { setIssueBlocked(false); setActionError(""); }
+  }
+  async function act(action: "issue" | "delete" | "download", id = "", format: "zip" | "json" = "zip") {
+    if (locked.current || action === "issue" && (issueBlocked || !certificates.isSuccess)) return;
+    locked.current = true; setBusy(true); setActionError(""); setNotice("");
+    try {
+      if (action === "issue") {
+        const issued = await machineCertificatesApi.issue(machineId);
+        if (!alive.current) return;
+        setSelectedCertificateId(issued.id);
+        setNotice("Đã phát hành chứng chỉ kết nối.");
+        await certificates.refetch();
+      } else if (action === "delete") {
+        await machineCertificatesApi.delete(machineId, id);
+        if (!alive.current) return;
+        if (selectedCertificateId === id) setSelectedCertificateId("");
+        setNotice("Đã xóa chứng chỉ khỏi hệ thống.");
+        await certificates.refetch();
+      } else {
+        const controller = new AbortController();
+        downloadController.current = controller;
+        const bundle = await machineCertificatesApi.download(machineId, id, format, controller.signal);
+        if (!alive.current || controller.signal.aborted) return;
+        const url = URL.createObjectURL(bundle.blob);
+        const anchor = document.createElement("a");
+        try {
+          anchor.href = url; anchor.download = bundle.filename;
+          document.body.appendChild(anchor); anchor.click();
+        } finally { anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 0); }
+      }
+    } catch (error) {
+      if (!alive.current) return;
+      setActionError(getApiErrorMessage(error, "mutation"));
+      if (action === "issue") {
+        setIssueBlocked(true);
+        setNotice("Chưa xác nhận được kết quả phát hành. Hãy kiểm tra danh sách và bấm Làm mới trước khi thử lại.");
+        await certificates.refetch();
+      }
+    } finally {
+      locked.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
+  return <MachineCertificatesPanel
+    page={certificates.data} detail={detail.isError ? undefined : detail.data}
+    status={status} pageNumber={pageNumber} selectedCertificateId={selectedCertificateId}
+    loading={certificates.isPending} detailLoading={Boolean(selectedCertificateId) && detail.isPending}
+    error={certificates.isError ? getApiErrorMessage(certificates.error) : undefined}
+    detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
+    actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !certificates.isSuccess}
+    onIssue={() => void act("issue")} onSelect={(id) => { if (id === selectedCertificateId) void detail.refetch(); else setSelectedCertificateId(id); }}
+    onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelectedCertificateId(""); }}
+    onPageChange={(next) => { setPageNumber(next); setSelectedCertificateId(""); }}
+    onRefresh={() => void refresh()} onDownload={(id, format) => void act("download", id, format)}
+    onDelete={(id) => void act("delete", id)}
+  />;
 }
 
 export function TechnicianMachineDetailScreen() {
@@ -246,6 +335,7 @@ export function TechnicianMachineDetailScreen() {
             onRefresh={() => maintenanceTickets.refetch()}
           />
         </section>
+        <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} />
         {smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Lịch sử thông số">

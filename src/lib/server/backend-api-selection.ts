@@ -89,6 +89,16 @@ function createSelection(
   };
 }
 
+export function getExplicitBackendApiSelection(): BackendApiSelection {
+  const mode = process.env.BACKEND_API_MODE?.trim().toLowerCase();
+  const urls = getConfiguredUrls();
+  if (mode === "local") return createSelection("local", urls);
+  if (mode === "remote" && urls.remoteIdaasBaseUrl && urls.remoteDoloresBaseUrl) {
+    return createSelection("remote", urls);
+  }
+  throw new Error("Certificate operations require BACKEND_API_MODE=local or remote with configured backend URLs.");
+}
+
 export async function getBackendApiSelection(): Promise<BackendApiSelection> {
   const urls = getConfiguredUrls();
 

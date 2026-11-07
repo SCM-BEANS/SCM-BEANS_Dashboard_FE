@@ -10,12 +10,13 @@ import { contractsApi } from "@/apis/contracts.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
 import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
 import { OwnerAnalyticsCalendarRangeSchema, OwnerBrewRecordsParamsSchema, OwnerCleaningRecordsParamsSchema, type OwnerAnalyticsContext } from "@/schema/owner-analytics.schema";
-import { MachineIdSchema } from "@/schema/machines.schema";
+import { CleaningComplianceParamsSchema, MachineIdSchema } from "@/schema/machines.schema";
 import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -42,6 +43,8 @@ function readQuery(query: Record<string, string | string[] | undefined>, today: 
   };
   const tab = scalar("tab", "brewing");
   if (!tabs.some((item) => item.value === tab)) throw new Error("Mục dữ liệu không hợp lệ.");
+  const daysInput = scalar("complianceDays", "30");
+  const complianceDays = CleaningComplianceParamsSchema.parse({ days: /^\d+$/.test(daysInput) ? Number(daysInput) : NaN }).days;
   const fromDate = scalar("fromDate", shiftDay(today, -6)), toDate = scalar("toDate", today);
   const range = OwnerAnalyticsCalendarRangeSchema.parse({ fromDate, toDate });
   const recipeName = scalar("recipeName").trim(), cleaningType = scalar("cleaningType"), cleaningStatus = scalar("cleaningStatus");
@@ -50,7 +53,7 @@ function readQuery(query: Record<string, string | string[] | undefined>, today: 
   const telemetryFrom = scalar("telemetryFrom"), telemetryTo = scalar("telemetryTo");
   if (Boolean(telemetryFrom) !== Boolean(telemetryTo)) throw new Error("Cần chọn đủ khoảng thời gian thông số.");
   const telemetry = TelemetryPointsParamsSchema.parse(telemetryFrom ? { from: telemetryFrom, to: telemetryTo } : defaultTelemetryRange);
-  return { tab: tab as Tab, fromDate, toDate, range, brewing, cleaning, telemetry, field: scalar("field") };
+  return { tab: tab as Tab, fromDate, toDate, range, brewing, cleaning, complianceDays, telemetry, field: scalar("field") };
 }
 
 function AnalyticsFilters({ fromDate, toDate, tab, recipeName, cleaningType, cleaningStatus, onApply }: {
@@ -107,6 +110,12 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const contracts = useQuery({ queryKey: ["owner-machine-active-contract", subject, machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal, "ACTIVE"), enabled: ready && machine.isSuccess, retry: false });
   const activeContract = contracts.data?.find((record) => record.machineId === machineId && record.status === "ACTIVE" && (!machine.data?.ownerId || record.ownerId === machine.data.ownerId));
   const smartIot = machine.data?.machineType === "SMART_IOT";
+  const complianceEnabled = ready && machine.isSuccess && smartIot && state?.tab === "cleaning";
+  const compliance = useQuery({
+    queryKey: ["machine-cleaning-compliance", subject, machineId, state?.complianceDays],
+    queryFn: ({ signal }) => machinesApi.getCleaningCompliance(machineId, state!.complianceDays, signal),
+    enabled: complianceEnabled, retry: false, refetchOnWindowFocus: false,
+  });
   const reviewsEnabled = ready && machine.isSuccess && smartIot && state?.tab === "connection" && Boolean(reviewState);
   const reviews = useQuery({ queryKey: ["offline-reviews", subject, reviewState?.params], queryFn: ({ signal }) => offlineViolationReviewsApi.listPage(reviewState!.params, signal), enabled: reviewsEnabled, retry: false });
   const reviewDetail = useQuery({ queryKey: ["offline-review", subject, reviewState?.reviewId, machineId], queryFn: ({ signal }) => offlineViolationReviewsApi.getById(reviewState!.reviewId!, signal, { machineId }), enabled: reviewsEnabled && Boolean(reviewState?.reviewId), retry: false });
@@ -133,10 +142,11 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const changeTab = (tab: Tab) => navigate({ tab, ...(tab === "connection" && !router.query.telemetryFrom ? { telemetryFrom: state?.telemetry.from ?? defaultTelemetryRange.from, telemetryTo: state?.telemetry.to ?? defaultTelemetryRange.to } : {}) });
   const refresh = () => {
     if (!ready || !state) return;
+    if (complianceEnabled) void compliance.refetch();
     if (state.tab === "connection" && smartIot) { void heartbeat.refetch(); void points.refetch(); if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }
     else if (analyticsEnabled) { if (state.tab === "brewing") { void cupCount.refetch(); void brew.refetch(); } else void cleaning.refetch(); }
   };
-  const pending = cupCount.isFetching || brew.isFetching || cleaning.isFetching || heartbeat.isFetching || points.isFetching;
+  const pending = cupCount.isFetching || brew.isFetching || cleaning.isFetching || compliance.isFetching || heartbeat.isFetching || points.isFetching;
 
   return <div className={shellStyles.pageContent}>
     <div className={styles.operationalOverview}>
@@ -145,8 +155,9 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
       {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
       {!router.isReady || machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
       {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
-      {parsed.error && router.isReady ? <div className={styles.operationalOverviewError} role="alert"><p>{parsed.error}</p><ButtonBar onClick={() => navigate({ tab: "brewing", fromDate: today, toDate: today, brewPage: undefined, cleaningPage: undefined, recipeName: undefined, cleaningType: undefined, cleaningStatus: undefined, telemetryFrom: undefined, telemetryTo: undefined, field: undefined })}>Đặt lại bộ lọc</ButtonBar></div> : null}
-      {state && machine.data && !machine.isError ? <div id="owner-operations-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={`owner-operations-tab-${state.tab}`}>
+      {parsed.error && router.isReady ? <div className={styles.operationalOverviewError} role="alert"><p>{parsed.error}</p><ButtonBar onClick={() => navigate({ tab: "brewing", fromDate: today, toDate: today, brewPage: undefined, cleaningPage: undefined, recipeName: undefined, cleaningType: undefined, cleaningStatus: undefined, complianceDays: undefined, telemetryFrom: undefined, telemetryTo: undefined, field: undefined })}>Đặt lại bộ lọc</ButtonBar></div> : null}
+      {state && machine.isSuccess ? <div id="owner-operations-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={`owner-operations-tab-${state.tab}`}>
+        {state.tab === "cleaning" && smartIot ? <MachineCleaningCompliancePanel data={compliance.data} days={state.complianceDays} loading={compliance.isPending} refreshing={compliance.isFetching} error={compliance.isError ? getApiErrorMessage(compliance.error) : undefined} onDaysChange={(days) => navigate({ complianceDays: String(days) })} onRefresh={() => void compliance.refetch()} /> : null}
         {state.tab !== "connection" ? <>
           <section className={styles.operationalOverviewPanel} aria-label="Bộ lọc dữ liệu vận hành">
             <AnalyticsFilters fromDate={state.fromDate} toDate={state.toDate} tab={state.tab} recipeName={state.brewing.recipeName ?? ""} cleaningType={state.cleaning.cleaningType ?? ""} cleaningStatus={state.cleaning.status ?? ""} onApply={navigate} />

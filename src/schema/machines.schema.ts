@@ -2,10 +2,31 @@ import { z } from "zod";
 
 export const MachineIdSchema = z.string().uuid();
 const countSchema = z.number().int().nonnegative();
+export const CleaningComplianceParamsSchema = z.object({
+  days: z.number().int().positive().max(2_147_483_647).default(30),
+}).strict();
+
+export const MachineCleaningComplianceSchema = z.object({
+  machine_id: MachineIdSchema,
+  evaluated_days: countSchema.positive(),
+  compliant_days: countSchema,
+  missing_startup_days: countSchema,
+  missing_closing_days: countSchema,
+  compliance_percentage: z.number().min(0).max(100),
+  flagged_dates: z.array(z.string().date()),
+});
+
+export type MachineCleaningCompliance = z.infer<typeof MachineCleaningComplianceSchema>;
+export const MachineDeviceIdentityRequestSchema = z.object({ deviceId: z.string().trim().min(1).max(255) }).strict();
 const dateTimeSchema = z.union([
   z.string().datetime({ offset: true }),
   z.string().datetime({ local: true }),
 ]);
+export const MachineDeviceIdentitySchema = z.object({
+  id: z.string().uuid(), machineId: MachineIdSchema, deviceId: z.string().min(1).max(255),
+  status: z.enum(["ACTIVE", "REVOKED"]), createdAt: dateTimeSchema,
+  updatedAt: dateTimeSchema.nullish(), revokedAt: dateTimeSchema.nullish(),
+}).strict();
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const MachineStatusSchema = z.enum([
