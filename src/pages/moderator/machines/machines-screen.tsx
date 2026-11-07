@@ -24,7 +24,7 @@ import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
 import { CreateMachineModelForm } from "@/pages/admin/machines/create-machine-model-form";
@@ -420,24 +420,11 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       </MachineListView>
     </div>
     {!isCreateView && !isMachineModelDetail && (
-      <ActionBarConfig>
-        <ButtonBar href={PATH_MODERATOR.NEW_MACHINE}>{ADMIN_T.MACHINES.CREATE}</ButtonBar>
-        <ButtonBar href={PATH_MODERATOR.NEW_MACHINE_MODEL}>{ADMIN_T.MACHINE_MODELS.CREATE}</ButtonBar>
-        <ButtonBar href={PATH_MODERATOR.IOT}>{ADMIN_T.MACHINES.VIEW_IOT}</ButtonBar>
-        <ButtonBar
-          type="button"
-          disabled={isMachineModelsView ? machineModels.isFetching : inventory.isFetching || inventorySummary.isFetching}
-          onClick={() => {
-            if (isMachineModelsView) {
-              void machineModels.refetch();
-              return;
-            }
-            void Promise.all([inventory.refetch(), inventorySummary.refetch()]);
-          }}
-        >
-          {ADMIN_T.COMMON.RETRY}
-        </ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={[
+        { id: "machine-create", label: ADMIN_T.MACHINES.CREATE, variant: "primary", priority: 20, href: PATH_MODERATOR.NEW_MACHINE },
+        { id: "model-create", label: "Tạo dòng máy", variant: "secondary", priority: 10, href: PATH_MODERATOR.NEW_MACHINE_MODEL },
+        { id: "iot", label: ADMIN_T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_MODERATOR.IOT },
+      ]} />
     )}
     </>
   );

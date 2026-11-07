@@ -1,3 +1,4 @@
+import { buildContractDetailActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
@@ -494,82 +495,17 @@ function ContractsContent() {
   </div>
   <PageActions actions={isContractList ? [
     { id: "contracts-create", label: T.CONTRACTS.CREATE, variant: "primary", priority: 20, onClick: () => navigate({ view: "create" }) },
-  ] : view === "detail" && contract.data ? [
-    ...(lifecycleView === "amend" ? [
-      {
-        id: "contract-lifecycle-cancel-amend",
-        label: "Hủy",
-        variant: "secondary" as const,
-        priority: 100,
-        onClick: () => { setLifecycleView(null); setLifecycleError(""); },
-        confirm: policyFormDirty ? { title: "Hủy sửa chính sách?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
-      },
-      {
-        id: "contract-lifecycle-submit-amend",
-        label: "Xác nhận sửa đổi",
-        variant: "primary" as const,
-        priority: 100,
-        type: "submit" as const,
-        form: "contract-policy-amend-form",
-        disabled: amendPolicy.isPending || !contract.data.contractTermsSnapshot,
-        disabledReason: !contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : amendPolicy.isPending ? "Đang cập nhật chính sách." : undefined,
-        pending: amendPolicy.isPending,
-        pendingLabel: "Đang xác nhận sửa đổi",
-      },
-    ] : lifecycleView === "continue" ? [
-      {
-        id: "contract-lifecycle-cancel-continuation",
-        label: "Hủy",
-        variant: "secondary" as const,
-        priority: 100,
-        onClick: () => { setLifecycleView(null); setLifecycleError(""); },
-        confirm: continuationFormDirty ? { title: "Hủy hợp đồng tiếp nối?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
-      },
-      {
-        id: "contract-lifecycle-submit-continuation",
-        label: "Tạo bản nháp tiếp nối",
-        variant: "primary" as const,
-        priority: 100,
-        type: "submit" as const,
-        form: "contract-continuation-form",
-        disabled: continueContract.isPending,
-        disabledReason: continueContract.isPending ? "Đang tạo bản nháp tiếp nối." : undefined,
-        pending: continueContract.isPending,
-        pendingLabel: "Đang tạo bản nháp",
-      },
-    ] : [
-      ...(contract.data.status === "TERMINATED" ? [{
-        id: "contract-lifecycle-continue",
-        label: "Tạo hợp đồng tiếp nối",
-        variant: "primary" as const,
-        priority: 50,
-        onClick: () => { setLifecycleError(""); setLifecycleView("continue"); },
-      }] : []),
-      ...(contract.data.status === "ACTIVE" ? [{
-        id: "contract-lifecycle-amend",
-        label: "Sửa chính sách",
-        variant: "secondary" as const,
-        priority: 10,
-        disabled: !contract.data.contractTermsSnapshot,
-        disabledReason: !contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined,
-        onClick: () => { setLifecycleError(""); setLifecycleView("amend"); },
-      }] : []),
-    ]),
-    ...(!lifecycleView && contract.data.machineId ? [{
-      id: "contract-lifecycle-history",
-      label: "Lịch sử hợp đồng",
-      variant: "secondary" as const,
-      priority: 0,
-      onClick: () => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! }),
-    }] : []),
-    ...(!lifecycleView && contract.data.status === "ACTIVE" ? [{
-      id: "contract-lifecycle-terminate",
-      label: "Chấm dứt hợp đồng",
-      variant: "danger" as const,
-      priority: 0,
-      href: PATH_ADMIN.CONTRACT_TERMINATION(contract.data.id),
-    }] : []),
-  ] : []} />
+  ] : view === "detail" && contract.data ? buildContractDetailActions({
+    status: contract.data.status, machineId: contract.data.machineId, hasSnapshot: Boolean(contract.data.contractTermsSnapshot), lifecycleView,
+    dirty: lifecycleView === "amend" ? policyFormDirty : continuationFormDirty,
+    pending: lifecycleView === "amend" ? amendPolicy.isPending : continueContract.isPending,
+    formId: lifecycleView === "amend" ? "contract-policy-amend-form" : "contract-continuation-form",
+    terminationHref: PATH_ADMIN.CONTRACT_TERMINATION(contract.data.id),
+    onCancel: () => { setLifecycleView(null); setLifecycleError(""); },
+    onAmend: () => { setLifecycleError(""); setLifecycleView("amend"); },
+    onContinue: () => { setLifecycleError(""); setLifecycleView("continue"); },
+    onHistory: () => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! }),
+  }) : []} />
   {isContractList && createdContractId && (
     <NotificationDialog
       variant="success"

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -32,16 +31,11 @@ export function BuybackWorkflowLayout({
 }) {
   return (
     <section className={`${styles.screen} ${styles.pageContent}`} aria-labelledby="buyback-title">
-      {actionBarBackHref ? (
-        <ActionBarConfig>
-          <ButtonBar href={actionBarBackHref}>{actionBarBackLabel}</ButtonBar>
-        </ActionBarConfig>
-      ) : null}
       <BackButtonHeading
         title={title}
         titleId="buyback-title"
         description={description}
-        back={back ?? null}
+        back={back ?? (actionBarBackHref ? { label: actionBarBackLabel, fallbackHref: actionBarBackHref } : null)}
       />
       {children}
     </section>

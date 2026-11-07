@@ -254,3 +254,28 @@ export function buildRecallLegacyReviewActions(input: {
   if (input.role !== "admin" || input.workOrder.status !== "LEGACY_REVIEW_REQUIRED") return [];
   return [{ id: "recall-work-order-legacy-review", label: "Rà soát thu hồi", variant: "primary", priority: 50, onClick: input.onReview }];
 }
+
+export function buildContractDetailActions(input: {
+  status: string; machineId?: string | null; hasSnapshot: boolean; lifecycleView: "amend" | "continue" | null;
+  dirty: boolean; pending: boolean; formId: string; terminationHref: string;
+  onCancel: () => void; onAmend: () => void; onContinue: () => void; onHistory: () => void;
+}): PageAction[] {
+  if (input.lifecycleView) {
+    const amend = input.lifecycleView === "amend";
+    return [
+      { id: `contract-lifecycle-cancel-${input.lifecycleView}`, label: "Hủy", variant: "secondary", priority: 100, onClick: input.onCancel,
+        confirm: input.dirty ? { title: amend ? "Hủy sửa chính sách?" : "Hủy hợp đồng tiếp nối?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined },
+      { id: `contract-lifecycle-submit-${input.lifecycleView}`, label: amend ? "Xác nhận sửa đổi" : "Tạo bản nháp tiếp nối", variant: "primary", priority: 100, type: "submit", form: input.formId,
+        disabled: input.pending || (amend && !input.hasSnapshot), disabledReason: amend && !input.hasSnapshot ? "Hợp đồng chưa có snapshot chính sách" : input.pending ? "Đang xử lý." : undefined,
+        pending: input.pending, pendingLabel: amend ? "Đang xác nhận sửa đổi" : "Đang tạo bản nháp" },
+    ];
+  }
+  const actions: PageAction[] = [];
+  if (input.status === "ACTIVE") {
+    actions.push({ id: "contract-lifecycle-terminate", label: "Chấm dứt hợp đồng", variant: "danger", priority: 0, href: input.terminationHref });
+    actions.push({ id: "contract-lifecycle-amend", label: "Sửa chính sách", variant: "secondary", priority: 10, disabled: !input.hasSnapshot, disabledReason: !input.hasSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined, onClick: input.onAmend });
+  }
+  if (input.status === "TERMINATED") actions.push({ id: "contract-lifecycle-continue", label: "Tạo hợp đồng tiếp nối", variant: "primary", priority: 50, onClick: input.onContinue });
+  if (input.machineId) actions.push({ id: "contract-lifecycle-history", label: "Lịch sử hợp đồng", variant: "secondary", priority: 0, onClick: input.onHistory });
+  return actions;
+}

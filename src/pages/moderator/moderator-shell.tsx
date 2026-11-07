@@ -19,8 +19,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
-import { ActionBarConfig, ActionBarLayout } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ActionBarLayout } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
@@ -127,40 +127,12 @@ export function ModeratorShell({
       currentLabel={currentSection.LABEL}
     />
   );
-  const actionMessages = MODERATOR_MESSAGES.ACTION_BAR;
   const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
-  const disabledAction = (label: string) => (
-    <>
-      <ButtonBar disabled aria-describedby="moderator-action-unavailable">{label}</ButtonBar>
-      <span className={styles.actionHint} id="moderator-action-unavailable" role="note">
-        {actionMessages.WRITE_UNAVAILABLE}
-      </span>
-    </>
-  );
-  const renderActions = () => {
-    switch (currentSection.HREF) {
-      case PATH_MODERATOR.ROOT:
-        return <ButtonBar href={PATH_MODERATOR.INVOICES}>{actionMessages.PENDING_WORK}</ButtonBar>;
-      case PATH_MODERATOR.CONTRACTS:
-        return <ButtonBar href={PATH_MODERATOR.NEW_CONTRACT}>{actionMessages.CREATE_CONTRACT}</ButtonBar>;
-      case PATH_MODERATOR.CUSTOMERS:
-        return <ButtonBar href={PATH_MODERATOR.NEW_CUSTOMER}>{actionMessages.CREATE_CUSTOMER}</ButtonBar>;
-      case PATH_MODERATOR.INVOICES:
-        return disabledAction(actionMessages.RECONCILE_INVOICE);
-      case PATH_MODERATOR.IOT:
-        return <ButtonBar href={PATH_MODERATOR.MACHINES}>{actionMessages.MACHINES}</ButtonBar>;
-      case PATH_MODERATOR.TECHNICAL_REQUESTS:
-        return disabledAction(actionMessages.CREATE_TECHNICAL_REQUEST);
-      case PATH_MODERATOR.MACHINE_HISTORY:
-        return <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUESTS}>{actionMessages.TECHNICAL_REQUESTS}</ButtonBar>;
-      case PATH_MODERATOR.BUYBACK:
-        return disabledAction(actionMessages.CREATE_BUYBACK_REQUEST);
-      case PATH_MODERATOR.NOTIFICATIONS:
-        return <ButtonBar href={PATH_MODERATOR.NOTIFICATION_ALERTS}>{actionMessages.ALERTS}</ButtonBar>;
-      default:
-        return <ButtonBar href={PATH_MODERATOR.ROOT}>{actionMessages.OVERVIEW}</ButtonBar>;
-    }
-  };
+  const actions = !isSectionList ? [] : currentSection.HREF === PATH_MODERATOR.CONTRACTS
+    ? [{ id: "contracts-create", label: "Tạo hợp đồng", variant: "primary" as const, priority: 20, href: PATH_MODERATOR.NEW_CONTRACT }]
+    : currentSection.HREF === PATH_MODERATOR.CUSTOMERS
+      ? [{ id: "customers-create", label: "Tạo khách hàng", variant: "primary" as const, priority: 20, href: PATH_MODERATOR.NEW_CUSTOMER }]
+      : [];
 
   return (
     <>
@@ -213,11 +185,9 @@ export function ModeratorShell({
           <div className={styles.mobileBreadcrumb}>
             {renderBreadcrumb()}
           </div>
-          <ActionBarLayout label={actionMessages.LABEL}>
+          <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
             <main className={styles.main}>{children}</main>
-            {isSectionList && currentSection.HREF !== PATH_MODERATOR.MENU && currentSection.HREF !== PATH_MODERATOR.MACHINES && (
-              <ActionBarConfig>{renderActions()}</ActionBarConfig>
-            )}
+            <PageActions actions={actions} />
           </ActionBarLayout>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -247,11 +247,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
     >
       <BuybackCaseList workflow={workflow} />
       {caseId && caseData && workflow.canCancelExternalBuyback ? (
-        <ActionBarConfig>
-          <ButtonBar type="button" onClick={() => { setCancelReason(""); setCancelDialogOpen(true); }} disabled={workflow.cancelBuyback.isPending}>
-            {workflow.cancelBuyback.isPending ? "Đang hủy yêu cầu…" : "Hủy yêu cầu"}
-          </ButtonBar>
-        </ActionBarConfig>
+        <PageActions actions={[{ id: "buyback-cancel", label: "Hủy yêu cầu thu mua", variant: "danger", priority: 0, pending: workflow.cancelBuyback.isPending, pendingLabel: "Đang hủy…", onClick: () => { setCancelReason(""); setCancelDialogOpen(true); } }]} />
       ) : null}
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>

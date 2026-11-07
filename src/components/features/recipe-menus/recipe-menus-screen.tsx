@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import { recipesApi } from "@/apis/recipes.api";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getRecipeApiErrorDetails, getRecipeApiErrorMessage } from "@/lib/api-errors";
@@ -276,6 +276,11 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   return <div className={showHeading ? styles.pageContent : styles.screen}>
     {showHeading ? <BackButtonHeading title={owner ? "Công thức pha chế" : "Global Menu & công thức"} titleId="recipe-management-title"
       description={owner ? "Khám phá menu Dolores và lưu món yêu thích vào menu riêng." : "Quản lý menu dùng chung và các công thức pha chế của Dolores."} back={null} /> : null}
+    {view === "global" && mode === "view" && (operatorScreen === "recipes" || operatorScreen === "detail" || detailOnly) ? <button type="button" onClick={() => {
+      if (detailOnly && owner) { void router.push(PATH_CUSTOMER.MENU); return; }
+      if (operatorRole === "MODERATOR" && initialGlobalRecipeId) { void router.push(PATH_MODERATOR.MENU); return; }
+      setSelectedId(""); setOperatorScreen(operatorScreen === "detail" ? "recipes" : "menus"); setMode("view");
+    }}>Quay lại</button> : null}
     {showNavigation ? <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
       <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Thư viện dùng chung</button>
       {owner ? <>
@@ -431,19 +436,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         </section> : null}
         </div>
       </section> : null}
-      <ActionBarConfig>
-        {view === "global" && mode === "view" && !detailOnly && operatorScreen === "recipes" ? <>
-          <ButtonBar onClick={() => { setOperatorScreen("menus"); setSelectedId(""); }}>Về danh sách menu</ButtonBar>
-        </> : null}
-        {view === "global" && (detailOnly || (mode === "view" && operatorScreen === "detail")) ? <>
-          <ButtonBar onClick={() => {
-            if (detailOnly && owner) { void router.push(PATH_CUSTOMER.MENU); return; }
-            if (operatorRole === "MODERATOR" && initialGlobalRecipeId) { void router.push(PATH_MODERATOR.MENU); return; }
-            setSelectedId(""); setOperatorScreen("recipes"); setMode("view");
-          }}>{owner ? "Về thư viện Dolores" : "Về danh sách món"}</ButtonBar>
-          {!owner && mode === "view" ? <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !detail.data} onClick={() => openForm(true)}>Chỉnh sửa {detail.data?.name ?? "món"}</ButtonBar> : null}
-        </> : null}
-      </ActionBarConfig>
+      <PageActions actions={view === "global" && (detailOnly || (mode === "view" && operatorScreen === "detail")) && !owner && mode === "view" ? [{ id: "recipe-edit", label: `Chỉnh sửa ${detail.data?.name ?? "món"}`, variant: "primary", priority: 10, disabled: busy || !detail.data, disabledReason: "Đang tải hoặc xử lý công thức.", onClick: () => openForm(true) }] : []} />
     </> : null}
   </div>;
 }

@@ -236,7 +236,7 @@ test("Moderator shell shows section actions only on root lists and overview", ()
   contracts.render();
   const contractsHtml = contracts.render();
   assert.match(contractsHtml, /<footer aria-label="Thao tác Moderator">/);
-  assert.match(contractsHtml, /<a href="\/moderator\/contracts\/new">Tạo hồ sơ hợp đồng<\/a>/);
+  assert.match(contractsHtml, /<a href="\/moderator\/contracts\/new">Tạo hợp đồng<\/a>/);
 
   const detail = moderatorShellHarness({
     pathname: "/moderator/contracts/00000000-0000-4000-8000-000000000000",
@@ -252,5 +252,5 @@ test("Moderator shell shows section actions only on root lists and overview", ()
   });
   overview.render();
   const overviewHtml = overview.render();
-  assert.match(overviewHtml, /<footer aria-label="Thao tác Moderator"><a href="\/moderator\/invoices">Việc cần xử lý<\/a><\/footer>/);
+  assert.doesNotMatch(overviewHtml, /Việc cần xử lý/);
 });

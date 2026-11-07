@@ -4,7 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { DataTable } from "@/components/table/data-table";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildContractDetailActions } from "@/components/action-bar/entity-page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 
@@ -125,6 +126,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [downloadingDocumentId, setDownloadingDocumentId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [lifecycleDirty, setLifecycleDirty] = useState(false);
   const [lifecycleView, setLifecycleView] = useState<"amend" | "continue" | null>(null);
   const [policySnapshot, setPolicySnapshot] = useState<ContractPolicyDraft | null>(null);
   const [policyReason, setPolicyReason] = useState("");
@@ -390,7 +392,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             />}
           </section>
 
-          {lifecycleView === "amend" && <form id="moderator-contract-policy-amend-form" className={adminStyles.panel} onSubmit={submitPolicyAmendment}>
+          {lifecycleView === "amend" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-policy-amend-form" className={adminStyles.panel} onSubmit={submitPolicyAmendment}>
             <h2>Điều chỉnh chính sách</h2>
             {policySnapshot ? <>
               <p className={adminStyles.panelSubtitle}>Chỉnh điều khoản bằng các trường nhập. Chính sách cũ vẫn nằm trong lịch sử; máy chủ ghi nhận phiên bản mới sau khi xác nhận.</p>
@@ -435,7 +437,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             {amendPolicy.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
           </form>}
 
-          {lifecycleView === "continue" && <form id="moderator-contract-continuation-form" className={adminStyles.panel} onSubmit={submitContinuation}>
+          {lifecycleView === "continue" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-continuation-form" className={adminStyles.panel} onSubmit={submitContinuation}>
             <h2>Tạo hợp đồng tiếp nối</h2>
             <p className={adminStyles.panelSubtitle}>Owner, máy và snapshot chính sách được kế thừa từ hợp đồng cũ. Máy chủ kiểm tra điều kiện trước khi tạo hợp đồng mới ở trạng thái nháp.</p>
             <div className={adminStyles.operationsGrid}>
@@ -519,21 +521,15 @@ export function ContractDetailScreen({ id }: { id: string }) {
           </section>}
         </>}
       </div>
-      {contract.data && <ActionBarConfig>
-        <ButtonBar href={PATH_MODERATOR.CONTRACT_TERMINATION(contract.data.id)}>Chấm dứt hợp đồng</ButtonBar>
-        {contract.data.status === "ACTIVE" && (lifecycleView === "amend" ? <>
-          <ButtonBar type="submit" form="moderator-contract-policy-amend-form" disabled={busy || !policySnapshot}>Xác nhận nội dung sửa đổi</ButtonBar>
-          <ButtonBar type="button" disabled={busy} onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
-        </> : <>
-          <ButtonBar type="button" disabled={!contract.data.contractTermsSnapshot} title={!contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách hợp lệ" : undefined} onClick={() => { setLifecycleError(""); setLifecycleView("amend"); }}>Sửa chính sách</ButtonBar>
-        </>)}
-        {contract.data.status === "TERMINATED" && (lifecycleView === "continue" ? <>
-          <ButtonBar type="submit" form="moderator-contract-continuation-form" disabled={busy}>Tạo bản nháp tiếp nối</ButtonBar>
-          <ButtonBar type="button" disabled={busy} onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
-        </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
-        {contract.data.machineId && <ButtonBar type="button" disabled={machineHistory.isFetching} onClick={() => setShowMachineHistory((current) => !current)}>{showMachineHistory ? "Ẩn lịch sử máy" : "Lịch sử theo máy"}</ButtonBar>}
-        <ButtonBar type="button" disabled={contract.isFetching || expiry.isFetching || policyHistory.isFetching || documents.isFetching || machineHistory.isFetching || installationWorkOrders.isFetching} onClick={() => { void Promise.all([contract.refetch(), expiry.refetch(), policyHistory.refetch(), documents.refetch(), ...(showMachineHistory ? [machineHistory.refetch()] : []), ...(contract.data?.status === "ACTIVE" ? [installationWorkOrders.refetch()] : [])]); }}>Làm mới dữ liệu</ButtonBar>
-      </ActionBarConfig>}
+      {contract.data && <PageActions actions={buildContractDetailActions({
+        status: contract.data.status, machineId: contract.data.machineId, hasSnapshot: Boolean(contract.data.contractTermsSnapshot), lifecycleView,
+        dirty: lifecycleDirty, pending: busy, formId: lifecycleView === "amend" ? "moderator-contract-policy-amend-form" : "moderator-contract-continuation-form",
+        terminationHref: PATH_MODERATOR.CONTRACT_TERMINATION(contract.data.id),
+        onCancel: () => { setLifecycleView(null); setLifecycleError(""); setLifecycleDirty(false); },
+        onAmend: () => { setLifecycleError(""); setLifecycleDirty(false); setLifecycleView("amend"); },
+        onContinue: () => { setLifecycleError(""); setLifecycleDirty(false); setLifecycleView("continue"); },
+        onHistory: () => setShowMachineHistory((current) => !current),
+      })} />}
       {(pendingPolicy || pendingContinuation) && <NotificationDialog
         variant="confirm"
         title={pendingPolicy ? "Xác nhận điều chỉnh chính sách?" : "Tạo hợp đồng tiếp nối dạng nháp?"}

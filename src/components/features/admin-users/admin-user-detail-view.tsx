@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { profilesApi } from "@/apis/profiles.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -123,6 +123,7 @@ export function AdminUserDetailView({
   }
 
   const canEdit = Boolean(user && currentRole);
+  const dirty = Boolean(user && (form.name.trim() !== user.name || form.email.trim() !== user.email || form.role !== currentRole || (form.role === "owner" ? form.tenantId || null : null) !== (user.tenant_id ?? null)));
   const roleOptions = (Object.keys(ADMIN_USER_ROLE_LABELS) as AdminUserRole[]).map((role) => (
     <option key={role} value={role}>{ADMIN_USER_ROLE_LABELS[role]}</option>
   ));
@@ -229,10 +230,7 @@ export function AdminUserDetailView({
         </>
       ) : null}
 
-      <ActionBarConfig>
-        <ButtonBar type="submit" form="admin-user-edit-form" disabled={!canEdit || detail.isPending || updateUser.isPending}>{T.FORM.SAVE}</ButtonBar>
-        <ButtonBar type="button" onClick={() => onNavigate({ view: null, id: null, contractPage: null })}>{T.FORM.BACK}</ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={[{ id: "user-save", label: T.FORM.SAVE, variant: "primary", priority: 100, type: "submit", form: "admin-user-edit-form", disabled: !canEdit || !dirty || detail.isPending || updateUser.isPending, disabledReason: !canEdit ? "Không thể chỉnh sửa người dùng này." : !dirty ? "Chưa có thay đổi để lưu." : "Đang lưu thay đổi.", pending: updateUser.isPending, pendingLabel: "Đang lưu…" }]} />
 
       {dialog === "confirm" && pendingUpdate && (
         <NotificationDialog

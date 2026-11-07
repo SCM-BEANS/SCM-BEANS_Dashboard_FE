@@ -2,10 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { AccountCreateForm, type AccountCreateField, type AccountCreateValue } from "@/components/account/account-create-form";
 import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
-import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import {
   AccountCreatedResponseValidationError,
@@ -121,12 +120,10 @@ export function AdminUserCreateView() {
         disabled={createUser.isPending || createConfirmOpen || createRetryBlocked}
       />
 
-      <ActionBarConfig>
-        <ButtonBar type="submit" form="admin-user-create-form" disabled={createUser.isPending || createConfirmOpen || createRetryBlocked}>
-          {createUser.isPending ? "Đang tạo…" : T.LIST.CREATE}
-        </ButtonBar>
-        <ButtonBar href={PATH_ADMIN.USERS}>{T.FORM.CANCEL}</ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={[
+        { id: "user-cancel", label: T.FORM.CANCEL, variant: "secondary", priority: 100, onClick: () => void router.push(PATH_ADMIN.USERS), confirm: Object.values(createForm).some(Boolean) ? { title: "Hủy tạo người dùng?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined },
+        { id: "user-create", label: "Tạo người dùng", variant: "primary", priority: 100, type: "submit", form: "admin-user-create-form", disabled: createUser.isPending || createConfirmOpen || createRetryBlocked || !AdminUserCreateSchema.safeParse(createForm).success, disabledReason: createRetryBlocked ? "Không thể thử lại thao tác này." : createConfirmOpen ? "Đang chờ xác nhận." : "Điền thông tin người dùng hợp lệ.", pending: createUser.isPending, pendingLabel: "Đang tạo…" },
+      ]} />
 
       {createConfirmOpen && (
         <NotificationDialog
