@@ -58,19 +58,20 @@ export function OperatorOrderActionsPanel({
 
   return (
     <div className={styles.actionGrid}>
-      <PageActions actions={["PAID", "WAITING_STOCK"].includes(order.status) ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
+      <PageActions actions={order.status === "PENDING_APPROVAL" ? [
+        { id: "coffee-order-reject", label: "Từ chối đơn", variant: "danger", type: "submit", form: "coffee-order-reject-form", disabled: !orderReason.trim() || workflow.pending, disabledReason: "Nhập lý do từ chối.", pending: workflow.pending },
+        { id: "coffee-order-approve", label: "Duyệt đơn", priority: 50, variant: "primary", type: "submit", form: "coffee-order-approve-form", disabled: !orderNote.trim() || workflow.pending, disabledReason: "Nhập ghi chú duyệt đơn.", pending: workflow.pending },
+      ] : ["PAID", "WAITING_STOCK"].includes(order.status) ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
       {order.status === "PENDING_APPROVAL" ? (
         <>
-          <form className={styles.subpanel} onSubmit={approveOrder}>
+          <form id="coffee-order-approve-form" className={styles.subpanel} onSubmit={approveOrder}>
             <h3>Duyệt đơn</h3>
             <p>Xác nhận đã kiểm tra nguồn cung trước khi duyệt.</p>
             <label className={styles.field}><span>Ghi chú</span><textarea maxLength={2000} value={orderNote} onChange={(event) => setOrderNote(event.target.value)} required /></label>
-            <ButtonBar type="submit" disabled={!orderNote.trim() || workflow.pending}>Duyệt đơn</ButtonBar>
           </form>
-          <form className={styles.subpanel} onSubmit={rejectOrder}>
+          <form id="coffee-order-reject-form" className={styles.subpanel} onSubmit={rejectOrder}>
             <h3>Từ chối đơn</h3>
             <label className={styles.field}><span>Lý do</span><textarea maxLength={2000} value={orderReason} onChange={(event) => setOrderReason(event.target.value)} required /></label>
-            <ButtonBar type="submit" disabled={!orderReason.trim() || workflow.pending}>Từ chối đơn</ButtonBar>
           </form>
         </>
       ) : null}

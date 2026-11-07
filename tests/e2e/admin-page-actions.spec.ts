@@ -249,3 +249,17 @@ test("notifications expose bulk read in the action bar", async ({ page }) => {
   await page.goto("/admin/notifications");
   await expect(pageActionBar(page)).toBeVisible();
 });
+
+
+test("pending coffee order decisions use the action bar", async ({ page }) => {
+  await prepareAdminPage(page);
+  await page.route("**/api/**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/coffee-package-orders/${contractId}`) ? { id: contractId, status: "PENDING_APPROVAL", quantity: 1 } : [] }));
+  await page.goto(`/admin/coffee-packages/${contractId}`);
+  const bar = pageActionBar(page);
+  await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toHaveClass(/primary/);
+  await expect(bar.locator('[data-action-id="coffee-order-reject"]')).toHaveClass(/danger/);
+  await page.getByLabel("Ghi chú", { exact: true }).fill("Đã kiểm tra nguồn cung");
+  await page.getByLabel("Lý do", { exact: true }).fill("Không đủ nguồn cung");
+  await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toBeEnabled();
+  await expect(bar.locator('[data-action-id="coffee-order-reject"]')).toBeEnabled();
+});

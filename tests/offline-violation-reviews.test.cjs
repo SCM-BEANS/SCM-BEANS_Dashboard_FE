@@ -104,6 +104,7 @@ function panelWith(props = {}) {
   const { renderToStaticMarkup } = require('react-dom/server');
   const { OfflineReviewPanel } = loadTypescript('src/components/machines/offline-review-panel.tsx', {
     '@/components/button/button-bar': { ButtonBar: ({ children, ...rest }) => React.createElement('button', rest, children) },
+    '@/components/action-bar/page-actions': { PageActions: ({ actions }) => React.createElement('footer', { 'aria-label': 'Thao tác trang' }, actions.map((action) => React.createElement('button', { key: action.id, type: action.type ?? 'button', disabled: action.disabled }, action.label))) },
     '@/components/table/data-table': { DataTable: ({ rows, columns }) => React.createElement('table', {}, React.createElement('tbody', {}, rows.map(row => React.createElement('tr', { key: row.id }, columns.map(column => React.createElement('td', { key: column.key }, column.render(row))))))) },
     '@/components/notification-dialog/notification-dialog': { NotificationDialog: () => null },
     './machines.module.css': new Proxy({}, { get: (_target, property) => String(property) }),

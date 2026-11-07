@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -59,12 +60,11 @@ function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review:
       {review.decision ? <><div><dt>Kết quả rà soát</dt><dd>{review.decision === "NO_ACTION" ? "Không cần xử lý thêm" : "Tiếp tục theo dõi, xử lý"}</dd></div><div><dt>Nội dung</dt><dd>{review.decisionReason ?? "—"}</dd></div><div><dt>Ghi nhận lúc</dt><dd>{formatTime(review.decidedAt)}</dd></div></> : null}
     </dl>
     <p className={styles.telemetryRangeCaption}>Thời gian giữ theo giờ máy chủ; dữ liệu rà soát không tự áp dụng tiền phạt hoặc công nợ.</p>
-    {canDecide && review.status === "REVIEW_REQUIRED" ? <form className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success) setConfirm(true); }}>
+    {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || pending, disabledReason: "Nhập lý do và mã minh chứng hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success) setConfirm(true); }}>
       <label>Kết quả<select disabled={pending} value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}><option value="FOLLOW_UP">Tiếp tục theo dõi, xử lý</option><option value="NO_ACTION">Không cần xử lý thêm</option></select></label>
       <label>Lý do rà soát<textarea name="reason" required maxLength={2000} value={reason} disabled={pending} onChange={(event) => setReason(event.target.value)} /></label>
       <label>Mã tham chiếu minh chứng riêng tư<input name="evidenceReferences" required maxLength={2000} placeholder="private://…" value={evidence} disabled={pending} onChange={(event) => setEvidence(event.target.value)} /></label>
-      <ButtonBar type="submit" disabled={!draft.success || pending}>Tiếp tục xác nhận</ButtonBar>
-    </form> : null}
+    </form></> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : null}
     {confirm ? <NotificationDialog variant="confirm" title="Ghi nhận kết quả rà soát?" description={reason.trim()} onClose={() => { if (!pending) setConfirm(false); }} closeOnEscape={!pending} primaryAction={{ label: "Xác nhận kết quả", onClick: () => void submit(), pending, pendingLabel: "Đang ghi nhận…", disabled: pending }} secondaryAction={{ label: "Quay lại", disabled: pending, onClick: () => setConfirm(false) }} /> : null}
   </div>;

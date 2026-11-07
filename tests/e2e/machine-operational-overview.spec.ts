@@ -330,7 +330,7 @@ test.describe("Offline review role workflow", () => {
       const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
       await panel.getByLabel("Lý do rà soát").fill("Liên hệ cửa hàng kiểm tra kết nối");
       await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/e2e");
-      await panel.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
+      await page.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
       await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).click();
       await expect.poll(() => posts.length).toBe(1);
       await expect(page.getByRole("alertdialog")).toHaveCount(0);
@@ -567,7 +567,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
     await panel.getByLabel("Lý do rà soát").fill("Kiểm tra sau khi mất mạng");
     await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/timeout");
-    await panel.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
+    await page.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
     await expect.poll(() => posts).toBe(1);
     await expect(page.getByRole("alertdialog").getByRole("button", { name: "Đang ghi nhận…", exact: true })).toBeDisabled();
@@ -591,8 +591,8 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
     await panel.getByLabel("Lý do rà soát").fill("Kiểm tra mạng tại cửa hàng");
     await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/keyboard");
-    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").press("Tab");
-    const continueButton = panel.getByRole("button", { name: "Tiếp tục xác nhận" });
+    const continueButton = page.getByRole("button", { name: "Tiếp tục xác nhận" });
+    await continueButton.focus();
     await expect(continueButton).toBeFocused();
     await continueButton.press("Enter");
     await expect(page.getByRole("alertdialog")).toBeFocused();

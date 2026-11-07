@@ -148,3 +148,23 @@ test("invoice lists expose export and customer creation uses the dock", async ({
   await expectPrimaryPageAction(page, "invoice-status-pending");
   await expect(pageActionBar(page).locator('[data-action-id="invoice-status-cancelled"]')).toBeVisible();
 });
+
+
+test("selected offline review exposes its decision in the dock", async ({ page }) => {
+  await prepareModeratorPage(page);
+  const claims = Buffer.from(JSON.stringify({ roles: ["moderator"], sub: ownerId })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  const review = { id: contractId, ownerId, contractId, machineId, policyVersionId: modelId, policyVersion: 1, offlineLimitMinutes: 60, status: "REVIEW_REQUIRED", source: "VALKEY_HEARTBEAT_TTL", detectedAt: "2026-11-06T08:30:00", lastObservedAt: "2026-11-06T09:40:00", observedOfflineSince: "2026-11-06T08:30:00", observedOfflineUntil: null, reviewRequiredAt: "2026-11-06T09:30:00", decision: null, reviewerId: null, reviewerRole: null, decisionReason: null, evidenceReferences: null, decidedAt: null };
+  await page.route("**/api/dolores/v1/offline-violation-reviews**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(contractId) ? review : [review], headers: { "X-Page": "0", "X-Page-Size": "50", "X-Has-Next": "false" } }));
+  await page.goto("/moderator/iot");
+  await expect(pageActionBar(page)).toBeHidden();
+  await page.getByRole("button", { name: "Mất kết nối" }).click();
+  await page.getByRole("button", { name: "Xem hồ sơ" }).click();
+  const action = pageActionBar(page).locator('[data-action-id="offline-review-decide"]');
+  await expect(action).toBeDisabled();
+  await page.getByLabel("Lý do rà soát").fill("Kiểm tra kết nối");
+  await page.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://review");
+  await expect(action).toBeEnabled();
+  await action.click();
+  await expect(page.getByRole("alertdialog")).toBeVisible();
+});
