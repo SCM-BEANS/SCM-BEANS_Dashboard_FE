@@ -385,9 +385,6 @@ function ReportContent() {
               )}
             </section>
             <InvoiceRefundPanel key={selectedInvoice.id} invoice={selectedInvoice} role="ADMIN" />
-            <div className={styles.pageActions}>
-              <ButtonBar href={returnHref}>Về báo cáo</ButtonBar>
-            </div>
           </>
         ) : null}
       </div>

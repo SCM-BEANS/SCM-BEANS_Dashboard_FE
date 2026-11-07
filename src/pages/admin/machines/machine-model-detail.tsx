@@ -1,13 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
-import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { CreateMachineModelRequestSchema, type CreateMachineModelRequest } from "@/schema/machine-models.schema";
 import { adminStyles as styles } from "../admin-shell";
@@ -33,7 +30,6 @@ export function MachineModelDetail({
     ? ["admin", "machine-models"]
     : ["dolores", "machine-models"];
   const [editing, setEditing] = useState(false);
-  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [form, setForm] = useState<CreateMachineModelRequest>({
     modelCode: "", manufacturer: "", displayName: "", machineType: "CONVENTIONAL", specifications: {},
   });
@@ -71,13 +67,13 @@ export function MachineModelDetail({
     onSuccess: async (updated) => {
       queryClient.setQueryData(modelDetailQueryKey, updated);
       await queryClient.invalidateQueries({ queryKey: modelListQueryKey });
-      setConfirmDeactivate(false);
     },
     onError: (error: unknown) => setFormError(getApiErrorMessage(error, "mutation")),
   });
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (update.isPending) return;
     let specifications: unknown;
     try { specifications = JSON.parse(specificationsText); }
     catch { setFormError(T.MACHINE_MODELS.SPECIFICATIONS_INVALID); return; }
@@ -85,6 +81,49 @@ export function MachineModelDetail({
     if (!parsed.success) { setFormError(T.MACHINE_MODELS.CREATE_INVALID); return; }
     setFormError("");
     update.mutate(parsed.data);
+  };
+
+  const parsedSpecifications = (() => {
+    try { return { value: JSON.parse(specificationsText) as unknown, invalidJson: false }; }
+    catch { return { value: null, invalidJson: true }; }
+  })();
+  const parsedForm = CreateMachineModelRequestSchema.safeParse({ ...form, specifications: parsedSpecifications.value });
+  const formValid = !parsedSpecifications.invalidJson && parsedForm.success;
+  const formDirty = Boolean(machineModel && (
+    JSON.stringify(form) !== JSON.stringify({
+      modelCode: machineModel.modelCode,
+      manufacturer: machineModel.manufacturer,
+      displayName: machineModel.displayName,
+      machineType: machineModel.machineType,
+      specifications: machineModel.specifications,
+    })
+    || specificationsText !== JSON.stringify(machineModel.specifications, null, 2)
+  ));
+  const beginEditing = () => {
+    if (!machineModel) return;
+    setForm({
+      modelCode: machineModel.modelCode,
+      manufacturer: machineModel.manufacturer,
+      displayName: machineModel.displayName,
+      machineType: machineModel.machineType,
+      specifications: machineModel.specifications,
+    });
+    setSpecificationsText(JSON.stringify(machineModel.specifications, null, 2));
+    setFormError("");
+    setEditing(true);
+  };
+  const cancelEditing = () => {
+    if (!machineModel) return;
+    setForm({
+      modelCode: machineModel.modelCode,
+      manufacturer: machineModel.manufacturer,
+      displayName: machineModel.displayName,
+      machineType: machineModel.machineType,
+      specifications: machineModel.specifications,
+    });
+    setSpecificationsText(JSON.stringify(machineModel.specifications, null, 2));
+    setFormError("");
+    setEditing(false);
   };
 
   if (!modelId || (machineModels.data && !machineModel)) {
@@ -138,25 +177,42 @@ export function MachineModelDetail({
         {formError && <p className={styles.operationsNotice} role="alert">{formError}</p>}
       </form>}
       {formError && !editing && <p className={styles.operationsNotice} role="alert">{formError}</p>}
-      <ActionBar>
-        {editing ? <>
-          <ButtonBar type="submit" form="machine-model-edit-form" disabled={update.isPending}>{update.isPending ? "Đang lưu…" : "Lưu thay đổi"}</ButtonBar>
-          <ButtonBar type="button" disabled={update.isPending} onClick={() => { setEditing(false); setFormError(""); }}>Hủy</ButtonBar>
-        </> : <>
-          {machineModel.active && <ButtonBar type="button" onClick={() => setEditing(true)}>Chỉnh sửa</ButtonBar>}
-          {machineModel.active && <ButtonBar type="button" onClick={() => setConfirmDeactivate(true)}>Ngừng kích hoạt</ButtonBar>}
-        </>}
-        <ButtonBar href={role === "admin" ? `${PATH_ADMIN.MACHINES}?view=types` : PATH_MODERATOR.MACHINE_MODELS}>{T.MACHINE_MODELS.BACK}</ButtonBar>
-      </ActionBar>
-      {confirmDeactivate && <NotificationDialog
-        variant="confirm"
-        title="Ngừng kích hoạt mẫu máy?"
-        description="Mẫu máy sẽ được giữ trong lịch sử và không còn dùng để đăng ký máy mới."
-        primaryAction={{ label: "Ngừng kích hoạt", pending: deactivate.isPending, pendingLabel: "Đang cập nhật…", onClick: () => deactivate.mutate() }}
-        secondaryAction={{ label: "Hủy", disabled: deactivate.isPending, onClick: () => setConfirmDeactivate(false) }}
-        onClose={() => { if (!deactivate.isPending) setConfirmDeactivate(false); }}
-        closeOnEscape={!deactivate.isPending}
-      />}
+      <PageActions actions={editing ? [
+        {
+          id: "machine-model-edit-cancel",
+          label: "Hủy",
+          variant: "secondary",
+          priority: 100,
+          disabled: update.isPending,
+          disabledReason: update.isPending ? "Đang lưu thay đổi mẫu máy." : undefined,
+          onClick: cancelEditing,
+          confirm: formDirty ? { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
+        },
+        {
+          id: "machine-model-edit-submit",
+          label: update.isPending ? "Đang lưu…" : "Lưu thay đổi",
+          variant: "primary",
+          priority: 100,
+          type: "submit",
+          form: "machine-model-edit-form",
+          disabled: update.isPending || !formValid,
+          disabledReason: update.isPending ? "Đang lưu thay đổi mẫu máy." : !formValid ? parsedSpecifications.invalidJson ? T.MACHINE_MODELS.SPECIFICATIONS_INVALID : T.MACHINE_MODELS.CREATE_INVALID : undefined,
+          pending: update.isPending,
+          pendingLabel: "Đang lưu…",
+        },
+      ] : machineModel.active ? [
+        { id: "machine-model-edit-open", label: "Chỉnh sửa", variant: "primary", priority: 10, onClick: beginEditing },
+        {
+          id: "machine-model-deactivate",
+          label: "Ngừng kích hoạt",
+          variant: "danger",
+          priority: 0,
+          pending: deactivate.isPending,
+          pendingLabel: "Đang cập nhật…",
+          onClick: () => deactivate.mutate(),
+          confirm: { title: "Ngừng kích hoạt mẫu máy?", description: "Mẫu máy sẽ được giữ trong lịch sử và không còn dùng để đăng ký máy mới.", confirmLabel: "Ngừng kích hoạt" },
+        },
+      ] : []} />
     </>
   );
 }

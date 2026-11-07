@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateMachineModelRequestSchema, type CreateMachineModelRequest } from "@/schema/machine-models.schema";
 import { MachineTypeSchema } from "@/schema/machines.schema";
@@ -103,6 +102,31 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
     create.mutate(result.data);
   };
 
+  const validation = (() => {
+    let specifications: unknown = {};
+    if (form.specifications.trim()) {
+      try { specifications = JSON.parse(form.specifications); }
+      catch { return { valid: false, reason: T.MACHINE_MODELS.SPECIFICATIONS_INVALID }; }
+    }
+    if (specifications === null || typeof specifications !== "object" || Array.isArray(specifications)) {
+      return { valid: false, reason: T.MACHINE_MODELS.SPECIFICATIONS_INVALID };
+    }
+    const result = CreateMachineModelRequestSchema.safeParse({
+      modelCode: form.modelCode,
+      manufacturer: form.manufacturer,
+      displayName: form.displayName,
+      machineType: form.machineType,
+      specifications: specifications as Record<string, unknown>,
+    });
+    return { valid: result.success, reason: result.success ? undefined : T.MACHINE_MODELS.CREATE_INVALID };
+  })();
+  const formDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+  const saveDisabledReason = create.isPending
+    ? "Đang tạo mẫu máy."
+    : blockResubmit
+      ? "Kiểm tra danh sách mẫu máy trước khi gửi lại."
+      : validation.reason;
+
   return (
     <>
       <form id="machine-model-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
@@ -141,12 +165,30 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
         </div>
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       </form>
-      <ActionBarConfig>
-        <ButtonBar type="button" onClick={onCancel}>{T.MACHINE_MODELS.CANCEL}</ButtonBar>
-        <ButtonBar type="submit" form="machine-model-create-form" disabled={create.isPending || blockResubmit}>
-          {create.isPending ? T.MACHINE_MODELS.CREATING : T.MACHINE_MODELS.CREATE_SUBMIT}
-        </ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={[
+        {
+          id: "machine-model-create-cancel",
+          label: T.MACHINE_MODELS.CANCEL,
+          variant: "secondary",
+          priority: 100,
+          disabled: create.isPending,
+          disabledReason: create.isPending ? "Đang tạo mẫu máy." : undefined,
+          onClick: onCancel,
+          confirm: formDirty ? { title: "Hủy tạo mẫu máy?", description: "Thông tin mẫu máy chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
+        },
+        {
+          id: "machine-model-create-submit",
+          label: create.isPending ? T.MACHINE_MODELS.CREATING : T.MACHINE_MODELS.CREATE_SUBMIT,
+          variant: "primary",
+          priority: 100,
+          type: "submit",
+          form: "machine-model-create-form",
+          disabled: !validation.valid || create.isPending || blockResubmit,
+          disabledReason: saveDisabledReason,
+          pending: create.isPending,
+          pendingLabel: T.MACHINE_MODELS.CREATING,
+        },
+      ]} />
     </>
   );
 }

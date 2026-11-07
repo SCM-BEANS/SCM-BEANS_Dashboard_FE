@@ -7,7 +7,6 @@ import { locationsApi } from "@/apis/locations.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { PATH_ADMIN } from "@/routes/path";
-import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -16,7 +15,6 @@ import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getIotBackDestination } from "../admin-back-destination";
 
@@ -173,10 +171,6 @@ function IoTContent() {
           </SmartIotPanel>
         </>}
       </div>
-      <ActionBarConfig>
-        <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
-        <ButtonBar type="button" disabled={profile.isFetching || machines.isFetching || contracts.isFetching || locations.isFetching} onClick={() => { void Promise.all([profile.refetch(), machines.refetch(), contracts.refetch(), locations.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-      </ActionBarConfig>
     </AdminShell>;
   }
 
@@ -214,10 +208,6 @@ function IoTContent() {
         </div>
       </section>}
     </div>
-    <ActionBarConfig>
-      <ButtonBar href={PATH_ADMIN.MACHINES}>{T.MACHINES.TITLE}</ButtonBar>
-      <ButtonBar type="button" disabled={owners.isFetching || machines.isFetching || contracts.isFetching} onClick={() => { void Promise.all([owners.refetch(), machines.refetch(), contracts.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-    </ActionBarConfig>
   </AdminShell>;
 }
 

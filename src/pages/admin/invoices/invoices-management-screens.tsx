@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { billingApi } from "@/apis/billing.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -209,6 +210,11 @@ export function AdminInvoiceListScreen() {
             <ButtonBar type="button" onClick={() => void invoices.refetch()}>Thử lại</ButtonBar>
           </div>}
           {createPdfExport.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(createPdfExport.error, "mutation")}</p>}
+          <div className={pageStyles.actionGroup}>
+            <ButtonBar type="button" disabled={invoices.isFetching || createPdfExport.isPending} onClick={() => void invoices.refetch()}>
+              {invoices.isFetching ? "Đang tải…" : "Làm mới"}
+            </ButtonBar>
+          </div>
 
           {invoices.data && (
             <>
@@ -238,9 +244,6 @@ export function AdminInvoiceListScreen() {
                 <ButtonBar type="button" disabled={page === 0 || invoices.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trang trước</ButtonBar>
                 <span>Trang {invoices.data.page + 1}</span>
                 <ButtonBar type="button" disabled={!invoices.data.hasNext || invoices.isFetching} onClick={() => setPage((current) => current + 1)}>Trang sau</ButtonBar>
-                <ButtonBar type="button" disabled={invoices.isFetching || createPdfExport.isPending} onClick={() => void invoices.refetch()}>
-                  {invoices.isFetching ? "Đang tải…" : "Làm mới"}
-                </ButtonBar>
               </div>
             </>
           )}
@@ -273,19 +276,30 @@ function InvoiceStatusActions({ invoice }: { invoice: Invoice }) {
   });
 
   if (targets.length === 0) return null;
+  const actions = targets.map((status) => ({
+    id: `invoice-status-${status.toLowerCase()}`,
+    label: status === "PENDING" ? "Gửi hóa đơn" : status === "OVERDUE" ? "Đánh dấu quá hạn" : "Hủy hóa đơn",
+    variant: status === "CANCELLED" ? "danger" as const : "primary" as const,
+    priority: status === "CANCELLED" ? 0 : 50,
+    pending: changeStatus.isPending && changeStatus.variables === status,
+    pendingLabel: "Đang cập nhật…",
+    onClick: () => changeStatus.mutate(status),
+    confirm: status === "CANCELLED" ? {
+      title: "Hủy hóa đơn?",
+      description: "Hóa đơn sẽ được đánh dấu đã hủy.",
+      confirmLabel: "Hủy hóa đơn",
+    } : undefined,
+  }));
   return (
-    <section className={pageStyles.billingPanel} aria-labelledby="admin-invoice-status-title">
-      <h2 id="admin-invoice-status-title">Cập nhật trạng thái hóa đơn</h2>
-      <p className={pageStyles.hint}>Chỉ các chuyển trạng thái hợp lệ mới được cung cấp. Việc duyệt chứng từ thanh toán được thực hiện ở mục riêng bên dưới.</p>
-      <div className={pageStyles.actionGroup}>
-        {targets.map((status) => <ButtonBar key={status} type="button" disabled={changeStatus.isPending} onClick={() => {
-          if (status === "CANCELLED" && !window.confirm("Bạn có chắc muốn hủy hóa đơn này?")) return;
-          changeStatus.mutate(status);
-        }}>{changeStatus.isPending && changeStatus.variables === status ? "Đang cập nhật…" : statusText(status)}</ButtonBar>)}
-      </div>
-      {changeStatus.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(changeStatus.error, "mutation")}</p>}
-      {changeStatus.isSuccess && <p className={[pageStyles.inlineNotice, pageStyles.successNotice].join(" ")} role="status">Đã cập nhật trạng thái hóa đơn.</p>}
-    </section>
+    <>
+      <PageActions actions={actions} />
+      <section className={pageStyles.billingPanel} aria-labelledby="admin-invoice-status-title">
+        <h2 id="admin-invoice-status-title">Cập nhật trạng thái hóa đơn</h2>
+        <p className={pageStyles.hint}>Chỉ các chuyển trạng thái hợp lệ mới được cung cấp. Việc duyệt chứng từ thanh toán được thực hiện ở mục riêng bên dưới.</p>
+        {changeStatus.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(changeStatus.error, "mutation")}</p>}
+        {changeStatus.isSuccess && <p className={[pageStyles.inlineNotice, pageStyles.successNotice].join(" ")} role="status">Đã cập nhật trạng thái hóa đơn.</p>}
+      </section>
+    </>
   );
 }
 
@@ -526,11 +540,30 @@ export function AdminInvoiceExportJobScreen({ jobId, routerReady }: { jobId: str
                   </dl>
                   {job.data.status === "FAILED" && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{job.data.message || job.data.errorCode || "Không thể tạo file xuất."}</p>}
                   {download.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(download.error)}</p>}
-                  <div className={pageStyles.actionGroup}>
-                    <ButtonBar type="button" disabled={job.isFetching} onClick={() => void job.refetch()}>{job.isFetching ? "Đang cập nhật…" : "Cập nhật trạng thái"}</ButtonBar>
-                    <ButtonBar type="button" disabled={job.data.status !== "COMPLETED" || download.isPending} onClick={() => download.mutate()}>{download.isPending ? "Đang tải file…" : "Tải file hóa đơn"}</ButtonBar>
-                    <ButtonBar href={PATH_ADMIN.INVOICES}>Danh sách hóa đơn</ButtonBar>
-                  </div>
+                  <PageActions actions={[
+                    {
+                      id: "invoice-export-download",
+                      label: "Tải file hóa đơn",
+                      variant: "primary",
+                      priority: 50,
+                      disabled: job.data.status !== "COMPLETED" || download.isPending,
+                      disabledReason: job.data.status !== "COMPLETED" ? "File chưa sẵn sàng" : download.isPending ? "Đang tải file hóa đơn." : undefined,
+                      pending: download.isPending,
+                      pendingLabel: "Đang tải file…",
+                      onClick: () => download.mutate(),
+                    },
+                    {
+                      id: "invoice-export-refresh-status",
+                      label: job.isFetching ? "Đang cập nhật…" : "Cập nhật trạng thái",
+                      variant: "secondary",
+                      priority: 0,
+                      disabled: job.isFetching,
+                      disabledReason: job.isFetching ? "Đang cập nhật trạng thái xuất file." : undefined,
+                      pending: job.isFetching,
+                      pendingLabel: "Đang cập nhật…",
+                      onClick: () => void job.refetch(),
+                    },
+                  ]} />
                   {(job.data.status === "QUEUED" || job.data.status === "PROCESSING") && <p className={pageStyles.rowHint} role="status">Trang tự kiểm tra tiến trình mỗi 3 giây.</p>}
                 </section> : null}
       </div>

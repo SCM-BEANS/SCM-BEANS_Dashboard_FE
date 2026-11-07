@@ -22,7 +22,7 @@ import { ContractTable } from "@/components/table/contract-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { PATH_ADMIN } from "@/routes/path";
 import { ContractInstallationRequestScreen } from "@/pages/moderator/contracts/contract-installation-request-screen";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
@@ -116,6 +116,29 @@ function ContractsContent() {
   const expiry = useQuery({ queryKey: ["dolores", "contract-expiry", contractId], queryFn: ({ signal }) => contractsApi.getExpiry(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const documents = useQuery({ queryKey: ["dolores", "contract-documents", contractId], queryFn: ({ signal }) => contractsApi.getDocuments(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const history = useQuery({ queryKey: ["dolores", "machine-contract-history", machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal), enabled: view === "history" && ContractIdSchema.safeParse(machineId).success });
+  const contractPolicySnapshot = contract.data?.contractTermsSnapshot;
+  const policyDraft = contractPolicySnapshot ? {
+    ...contractPolicySnapshot,
+    maintenanceIntervalMonths: String(contractPolicySnapshot.maintenanceIntervalMonths),
+    maintenanceWindowDays: String(contractPolicySnapshot.maintenanceWindowDays),
+    paymentDueEligibleDays: String(contractPolicySnapshot.paymentDueEligibleDays),
+    offlineLimitMinutes: contractPolicySnapshot.offlineLimitMinutes == null ? "" : String(contractPolicySnapshot.offlineLimitMinutes),
+    buybackMinimumMonths: String(contractPolicySnapshot.buybackMinimumMonths),
+  } : null;
+  const policyFormDirty = Boolean(contract.data && (
+    JSON.stringify(policySnapshot) !== JSON.stringify(policyDraft)
+    || policyReason !== ""
+    || policyEffectiveDate !== (contract.data.endDate ?? new Date().toISOString().slice(0, 10))
+  ));
+  const continuationFormDirty = Boolean(contract.data && (
+    continuationStartDate !== (contract.data.endDate ?? "")
+    || continuationEndDate !== ""
+    || continuationTerms !== (contract.data.terms ?? "")
+    || continuationMonthlyFee !== (contract.data.monthlyRentalFee == null ? "" : String(contract.data.monthlyRentalFee))
+    || continuationDeposit !== (contract.data.depositAmount == null ? "" : String(contract.data.depositAmount))
+    || continuationInstallationFee !== (contract.data.installationFee == null ? "" : String(contract.data.installationFee))
+    || continuationPaygPrice !== (contract.data.paygUnitPrice == null ? "" : String(contract.data.paygUnitPrice))
+  ));
   const download = useMutation({ mutationFn: ({ id, filename }: { id: string; filename: string }) => contractsApi.downloadDocument(contractId, id), onSuccess: (blob, input) => {
     const safeFilename = input.filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180) || "contract-document";
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
@@ -469,24 +492,84 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  {isContractList && <ActionBarConfig>
-        <ButtonBar type="button" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
-        <ButtonBar type="button" disabled={contracts.isFetching || owners.isFetching} onClick={() => { void Promise.all([contracts.refetch(), owners.refetch()]); }}>{T.COMMON.RETRY}</ButtonBar>
-  </ActionBarConfig>}
-  {view === "detail" && contract.data && <ActionBarConfig>
-    {contract.data.machineId && <ButtonBar type="button" onClick={() => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! })}>{T.CONTRACTS.HISTORY}</ButtonBar>}
-    <ButtonBar href={PATH_ADMIN.CONTRACT_TERMINATION(contract.data.id)}>Chấm dứt hợp đồng</ButtonBar>
-    {contract.data.status === "ACTIVE" && (lifecycleView === "amend" ? <>
-      <ButtonBar type="submit" form="contract-policy-amend-form" disabled={amendPolicy.isPending || !contract.data.contractTermsSnapshot}>Xác nhận nội dung sửa đổi</ButtonBar>
-      <ButtonBar type="button" onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
-    </> : <>
-      <ButtonBar type="button" disabled={!contract.data.contractTermsSnapshot} title={!contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined} onClick={() => { setLifecycleError(""); setLifecycleView("amend"); }}>Sửa chính sách</ButtonBar>
-    </>)}
-    {contract.data.status === "TERMINATED" && (lifecycleView === "continue" ? <>
-      <ButtonBar type="submit" form="contract-continuation-form" disabled={continueContract.isPending}>Tạo bản nháp tiếp nối</ButtonBar>
-      <ButtonBar type="button" onClick={() => { setLifecycleView(null); setLifecycleError(""); }}>Đóng biểu mẫu</ButtonBar>
-    </> : <ButtonBar type="button" onClick={() => { setLifecycleError(""); setLifecycleView("continue"); }}>Tạo hợp đồng tiếp nối</ButtonBar>)}
-  </ActionBarConfig>}
+  <PageActions actions={isContractList ? [
+    { id: "contracts-create", label: T.CONTRACTS.CREATE, variant: "primary", priority: 20, onClick: () => navigate({ view: "create" }) },
+  ] : view === "detail" && contract.data ? [
+    ...(lifecycleView === "amend" ? [
+      {
+        id: "contract-lifecycle-cancel-amend",
+        label: "Hủy",
+        variant: "secondary" as const,
+        priority: 100,
+        onClick: () => { setLifecycleView(null); setLifecycleError(""); },
+        confirm: policyFormDirty ? { title: "Hủy sửa chính sách?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
+      },
+      {
+        id: "contract-lifecycle-submit-amend",
+        label: "Xác nhận sửa đổi",
+        variant: "primary" as const,
+        priority: 100,
+        type: "submit" as const,
+        form: "contract-policy-amend-form",
+        disabled: amendPolicy.isPending || !contract.data.contractTermsSnapshot,
+        disabledReason: !contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : amendPolicy.isPending ? "Đang cập nhật chính sách." : undefined,
+        pending: amendPolicy.isPending,
+        pendingLabel: "Đang xác nhận sửa đổi",
+      },
+    ] : lifecycleView === "continue" ? [
+      {
+        id: "contract-lifecycle-cancel-continuation",
+        label: "Hủy",
+        variant: "secondary" as const,
+        priority: 100,
+        onClick: () => { setLifecycleView(null); setLifecycleError(""); },
+        confirm: continuationFormDirty ? { title: "Hủy hợp đồng tiếp nối?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
+      },
+      {
+        id: "contract-lifecycle-submit-continuation",
+        label: "Tạo bản nháp tiếp nối",
+        variant: "primary" as const,
+        priority: 100,
+        type: "submit" as const,
+        form: "contract-continuation-form",
+        disabled: continueContract.isPending,
+        disabledReason: continueContract.isPending ? "Đang tạo bản nháp tiếp nối." : undefined,
+        pending: continueContract.isPending,
+        pendingLabel: "Đang tạo bản nháp",
+      },
+    ] : [
+      ...(contract.data.status === "TERMINATED" ? [{
+        id: "contract-lifecycle-continue",
+        label: "Tạo hợp đồng tiếp nối",
+        variant: "primary" as const,
+        priority: 50,
+        onClick: () => { setLifecycleError(""); setLifecycleView("continue"); },
+      }] : []),
+      ...(contract.data.status === "ACTIVE" ? [{
+        id: "contract-lifecycle-amend",
+        label: "Sửa chính sách",
+        variant: "secondary" as const,
+        priority: 10,
+        disabled: !contract.data.contractTermsSnapshot,
+        disabledReason: !contract.data.contractTermsSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined,
+        onClick: () => { setLifecycleError(""); setLifecycleView("amend"); },
+      }] : []),
+    ]),
+    ...(!lifecycleView && contract.data.machineId ? [{
+      id: "contract-lifecycle-history",
+      label: "Lịch sử hợp đồng",
+      variant: "secondary" as const,
+      priority: 0,
+      onClick: () => navigate({ view: "history", id: contract.data!.id, machineId: contract.data!.machineId! }),
+    }] : []),
+    ...(!lifecycleView && contract.data.status === "ACTIVE" ? [{
+      id: "contract-lifecycle-terminate",
+      label: "Chấm dứt hợp đồng",
+      variant: "danger" as const,
+      priority: 0,
+      href: PATH_ADMIN.CONTRACT_TERMINATION(contract.data.id),
+    }] : []),
+  ] : []} />
   {isContractList && createdContractId && (
     <NotificationDialog
       variant="success"

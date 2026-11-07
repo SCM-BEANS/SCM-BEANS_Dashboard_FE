@@ -41,6 +41,11 @@ function loadModule(relativePath, mocks = {}) {
     if (id === "@/components/action-bar/action-bar") {
       return { ActionBar: ({ children }) => children };
     }
+    if (id === "@/components/action-bar/page-actions") {
+      const React = require("react");
+      return { PageActions: ({ actions }) => React.createElement("div", { "data-page-actions": true }, actions.map((action) =>
+        React.createElement("button", { key: action.id, "data-action-id": action.id, className: action.variant, type: action.type ?? "button", form: action.form, disabled: action.disabled, onClick: action.onClick }, action.label))) };
+    }
     if (id === "@/components/button/button-bar") {
       const React = require("react");
       return { ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
@@ -191,6 +196,11 @@ test("contract create action opens the API-backed request form", () => {
       "@/apis/machines.api": { machinesApi: { list: async () => [] } },
       "@/schema/contracts.schema": contractSchemas,
       "@/text/admin/admin-operations-messages": { ADMIN_OPERATIONS_MESSAGES },
+      "@/components/action-bar/page-actions": { PageActions: ({ actions }) => actions.map((action) => {
+        const button = { ...action, children: action.label };
+        buttons.push(button);
+        return React.createElement("button", { key: action.id, "data-action-id": action.id, className: action.variant, type: action.type ?? "button", form: action.form, disabled: action.disabled, onClick: action.onClick }, action.label);
+      }) },
       "@/components/button/button-bar": { ButtonBar: ({ children, ...props }) => {
         buttons.push({ children, ...props });
         return React.createElement("button", props, children);

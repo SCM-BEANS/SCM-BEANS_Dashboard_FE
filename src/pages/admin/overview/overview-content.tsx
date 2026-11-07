@@ -5,10 +5,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays } from "lucide-react";
 import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 import { dashboardApi } from "@/apis/dashboard.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
-import { ButtonBar } from "@/components/button/button-bar";
 import { DashboardDateRangeSchema, DASHBOARD_BUSINESS_TIME_ZONE } from "@/schema/dashboard.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
@@ -441,11 +440,11 @@ export default function AdminPage() {
   return (
     <AdminShell>
       <AdminOverview />
-      <ActionBarConfig>
-        <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.NAVIGATION.REPORTS}</ButtonBar>
-        <ButtonBar href={PATH_ADMIN.IOT}>{ADMIN_MESSAGES.NAVIGATION.IOT}</ButtonBar>
-        <ButtonBar href={PATH_ADMIN.MACHINES}>{ADMIN_MESSAGES.NAVIGATION.MACHINES}</ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={[
+        { id: "admin-overview-reports", label: ADMIN_MESSAGES.NAVIGATION.REPORTS, variant: "secondary", priority: 0, href: PATH_ADMIN.REPORTS },
+        { id: "admin-overview-iot", label: ADMIN_MESSAGES.NAVIGATION.IOT, variant: "secondary", priority: 0, href: PATH_ADMIN.IOT },
+        { id: "admin-overview-machines", label: ADMIN_MESSAGES.NAVIGATION.MACHINES, variant: "secondary", priority: 0, href: PATH_ADMIN.MACHINES },
+      ]} />
     </AdminShell>
   );
 }

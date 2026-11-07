@@ -2,14 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertAcknowledgementButton } from "@/components/features/operations/alert-acknowledgement-button";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { notificationsApi } from "@/apis/notifications.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
@@ -59,9 +56,6 @@ function NotificationContent() {
           )}
         </section>
       </NotificationInbox>
-      <ActionBarConfig>
-        <ButtonBar href={PATH_ADMIN.REPORTS}>{ADMIN_MESSAGES.REPORTS.TITLE}</ButtonBar>
-      </ActionBarConfig>
     </>
   );
 }

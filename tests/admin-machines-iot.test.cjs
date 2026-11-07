@@ -167,8 +167,9 @@ function pageMocks(apiMocks, router = { isReady: true, query: {} }) {
     "@/components/machines/smart-iot-panel": {
       SmartIotPanel: TestSmartIotPanel,
     },
-    "@/components/action-bar/action-bar": {
-      ActionBar: ({ children }) => React.createElement("div", { "data-action-bar": "true" }, children),
+    "@/components/action-bar/page-actions": {
+      PageActions: ({ actions }) => React.createElement("div", { "data-page-actions": "true" }, actions.map((action) =>
+        React.createElement("button", { key: action.id, "data-action-id": action.id, className: action.variant, type: action.type ?? "button", disabled: action.disabled }, action.label))),
     },
     "./admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },
     "../admin-shell": { AdminShell: ({ children }) => React.createElement("div", null, children), adminStyles: styleMap },
@@ -198,7 +199,8 @@ test("machine inventory page renders loaded rows and a meaningful empty state", 
   client.setQueryData(["dolores", "machines", "inventory"], [inventoryItem]);
   client.setQueryData(["dolores", "machines", "inventory-summary"], { totalMachines: 1, statusCounts: { IN_WAREHOUSE: 1 } });
   const markup = renderPage(Page, client);
-  assert.match(markup, /data-action-bar="true"/);
+  assert.match(markup, /data-page-actions="true"/);
+  assert.match(markup, /data-action-id="admin-machines-create"[^>]*class="primary"/);
   assert.match(markup, /TEST_DATA-MACHINE-01/);
   assert.match(markup, new RegExp(`/admin/machines/${machineId}`));
   assert.match(markup, /Owner ID/);

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { MachineCreateUnexpectedStatusError, machinesApi } from "@/apis/machines.api";
 import { CreateMachineRequestSchema, MachineTypeSchema, type CreateMachineRequest } from "@/schema/machines.schema";
@@ -89,7 +88,16 @@ export function CreateMachineForm({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (create.isPending || assignMachine.isPending || pendingAssignment || blockResubmit) return;
+    if (
+      create.isPending
+      || assignMachine.isPending
+      || pendingAssignment
+      || blockResubmit
+      || machineModels.isPending
+      || machineModels.isError
+      || !machineModels.data?.length
+      || !form.machineModelId
+    ) return;
     setRequestError("");
     const result = CreateMachineRequestSchema.safeParse({
       serialNumber: form.serialNumber,
@@ -104,6 +112,31 @@ export function CreateMachineForm({
     }
     create.mutate({ machineModelId: form.machineModelId, request: result.data });
   };
+
+  const parsedRequest = CreateMachineRequestSchema.safeParse({
+    serialNumber: form.serialNumber,
+    region: form.region.trim() || undefined,
+    machineType: form.machineType,
+    status: "IN_WAREHOUSE",
+    cupsServedSinceLastDescale: 0,
+  });
+  const formDirty = JSON.stringify(form) !== JSON.stringify(initialMachineForm);
+  const saveDisabledReason = create.isPending
+    ? "Đang tạo máy."
+    : blockResubmit
+      ? "Kiểm tra danh sách máy trước khi gửi lại."
+      : machineModels.isPending
+        ? "Đang tải danh sách mẫu máy."
+        : machineModels.isError
+          ? "Không thể tải mẫu máy. Hãy xử lý lỗi trong biểu mẫu trước."
+          : !machineModels.data?.length
+            ? "Cần có mẫu máy trước khi tạo máy."
+            : !form.machineModelId
+              ? "Chọn mẫu máy trước khi tạo máy."
+              : !parsedRequest.success
+                ? T.MACHINES.CREATE_INVALID
+                : undefined;
+  const actionPending = create.isPending || assignMachine.isPending;
 
   return (
     <>
@@ -148,22 +181,40 @@ export function CreateMachineForm({
         {machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
       </form>
-      <ActionBarConfig>
-        <ButtonBar type="button" disabled={create.isPending || assignMachine.isPending} onClick={onCancel}>{T.MACHINE_MODELS.CANCEL}</ButtonBar>
-        {pendingAssignment ? (
-          <ButtonBar type="button" disabled={assignMachine.isPending} onClick={() => assignMachine.mutate(pendingAssignment)}>
-            {assignMachine.isPending ? T.MACHINE_MODELS.ASSIGNING : T.MACHINE_MODELS.RETRY_ASSIGNMENT}
-          </ButtonBar>
-        ) : (
-          <ButtonBar
-            type="submit"
-            form="machine-create-form"
-            disabled={create.isPending || assignMachine.isPending || blockResubmit || machineModels.isPending || machineModels.isError || !machineModels.data?.length || !form.machineModelId}
-          >
-            {create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT}
-          </ButtonBar>
-        )}
-      </ActionBarConfig>
+      <PageActions actions={[
+        {
+          id: "machine-create-cancel",
+          label: T.MACHINE_MODELS.CANCEL,
+          variant: "secondary",
+          priority: 100,
+          disabled: actionPending,
+          disabledReason: actionPending ? "Đang xử lý đăng ký máy." : undefined,
+          onClick: onCancel,
+          confirm: formDirty ? { title: "Hủy tạo máy?", description: "Thông tin máy chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined,
+        },
+        pendingAssignment ? {
+          id: "machine-create-retry-assignment",
+          label: T.MACHINE_MODELS.RETRY_ASSIGNMENT,
+          variant: "primary",
+          priority: 50,
+          disabled: assignMachine.isPending,
+          disabledReason: assignMachine.isPending ? "Đang gán mẫu máy." : undefined,
+          pending: assignMachine.isPending,
+          pendingLabel: T.MACHINE_MODELS.ASSIGNING,
+          onClick: () => assignMachine.mutate(pendingAssignment),
+        } : {
+          id: "machine-create-submit",
+          label: create.isPending ? T.MACHINES.CREATING : T.MACHINES.CREATE_SUBMIT,
+          variant: "primary",
+          priority: 100,
+          type: "submit",
+          form: "machine-create-form",
+          disabled: Boolean(saveDisabledReason) || actionPending,
+          disabledReason: saveDisabledReason ?? (actionPending ? "Đang gán mẫu máy." : undefined),
+          pending: create.isPending,
+          pendingLabel: T.MACHINES.CREATING,
+        },
+      ]} />
     </>
   );
 }

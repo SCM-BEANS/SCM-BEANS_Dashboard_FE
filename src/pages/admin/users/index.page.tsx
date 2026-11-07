@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
@@ -182,10 +181,9 @@ function AdminUsersContent() {
       </div>
 
       {view === "list" && (
-        <ActionBarConfig>
-          <ButtonBar type="button" onClick={() => navigate({ view: "create", id: null, contractPage: null })}>{T.LIST.CREATE}</ButtonBar>
-          <ButtonBar type="button" disabled={users.isFetching} onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
-        </ActionBarConfig>
+        <PageActions actions={[
+          { id: "admin-users-create", label: T.LIST.CREATE, variant: "primary", priority: 20, onClick: () => navigate({ view: "create", id: null, contractPage: null }) },
+        ]} />
       )}
     </>
   );

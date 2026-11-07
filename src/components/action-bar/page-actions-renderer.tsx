@@ -33,7 +33,10 @@ export function PageActionsRenderer({ actions }: { actions: readonly PageAction[
   const others = actions
     .filter((action) => action !== primary)
     .map((action, index) => ({ action, index }))
-    .sort((left, right) => (right.action.priority ?? 0) - (left.action.priority ?? 0) || left.index - right.index)
+    .sort((left, right) => {
+      const dangerOrder = Number(right.action.variant === "danger") - Number(left.action.variant === "danger");
+      return dangerOrder || (right.action.priority ?? 0) - (left.action.priority ?? 0) || left.index - right.index;
+    })
     .map(({ action }) => action);
   const visibleOthers = others.slice(0, mobile ? 0 : Math.max(0, 3 - (primary ? 1 : 0)));
   const overflow = others.slice(visibleOthers.length);

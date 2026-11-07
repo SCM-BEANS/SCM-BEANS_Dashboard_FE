@@ -44,6 +44,11 @@ function adminPageDependencies() {
         ? React.createElement("a", { href, ref, ...props }, children)
         : React.createElement("button", { ref, ...props }, children)),
     },
+    "@/components/action-bar/page-actions": {
+      PageActions: ({ actions }) => React.createElement("div", { "data-action-bar": "true" }, actions.map((action) => action.href
+        ? React.createElement("a", { key: action.id, href: action.href, "data-action-id": action.id, className: action.variant }, action.label)
+        : React.createElement("button", { key: action.id, "data-action-id": action.id, className: action.variant, onClick: action.onClick }, action.label))),
+    },
     "@/routes/path": {
       PATH_ADMIN: {
         REPORTS: "/admin/reports",

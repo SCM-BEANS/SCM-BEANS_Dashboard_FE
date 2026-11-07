@@ -18,7 +18,7 @@ import { MachineConnectionBadge, type MachineConnectionState } from "@/component
 import { staggerHeartbeatRequest, usePageVisibility, useVisibleMachineIds } from "@/components/machines/machine-heartbeat-visibility";
 import { MachineStatusSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachinesBackDestination } from "../admin-back-destination";
 import { CreateMachineForm } from "./create-machine-form";
@@ -189,7 +189,7 @@ function MachinesContent() {
           titleId="admin-machines-title"
           description={isCreateView ? T.MACHINES.CREATE_DESCRIPTION : undefined}
           className={styles.pageHeading}
-          back={isMachineModelDetailView ? null : getMachinesBackDestination(router.query)}
+          back={getMachinesBackDestination(router.query)}
         />
         {isCreateView ? (
           <CreateMachineForm onCancel={() => navigateToMachineView("inventory")} onCreated={handleMachineCreated} />
@@ -304,27 +304,11 @@ function MachinesContent() {
         )}
       </div>
       {isCreateView || isCreateMachineModelView || isMachineModelDetailView ? null : (
-        <ActionBarConfig>
-          <ButtonBar type="button" onClick={navigateToCreate}>{T.MACHINES.CREATE}</ButtonBar>
-          <ButtonBar type="button" onClick={navigateToCreateMachineModel}>{T.MACHINE_MODELS.CREATE}</ButtonBar>
-          <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>
-          <ButtonBar
-            type="button"
-            disabled={isMachineTypesView ? machineModels.isFetching : inventory.isFetching}
-            onClick={() => {
-              if (isMachineTypesView) {
-                void machineModels.refetch();
-              } else {
-                void Promise.all([
-                  inventory.refetch(),
-                  queryClient.invalidateQueries({ queryKey: ["dolores", "machines", "inventory-summary"] }),
-                ]);
-              }
-            }}
-          >
-            {T.COMMON.RETRY}
-          </ButtonBar>
-        </ActionBarConfig>
+        <PageActions actions={[
+          { id: "admin-machines-create", label: T.MACHINES.CREATE, variant: "primary", priority: 20, onClick: navigateToCreate },
+          { id: "admin-machine-models-create", label: T.MACHINE_MODELS.CREATE, variant: "secondary", priority: 10, onClick: navigateToCreateMachineModel },
+          { id: "admin-machines-view-iot", label: T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_ADMIN.IOT },
+        ]} />
       )}
       {successSerialNumber && (
         <NotificationDialog

@@ -89,6 +89,17 @@ test('priority selects the non-primary actions that stay visible before overflow
   assert.match(html, /data-action-id="same-priority-danger"/);
   assert.doesNotMatch(html, /data-action-id="low-secondary"|data-action-id="overflow-secondary"/);
 });
+test('danger actions stay visible before higher-priority secondary actions', () => {
+  const html = renderActions([
+    { id: 'policy', label: 'Edit policy', variant: 'secondary', priority: 10 },
+    { id: 'history', label: 'History', variant: 'secondary', priority: 0 },
+    { id: 'terminate', label: 'Terminate', variant: 'danger', priority: 0 },
+    { id: 'continue', label: 'Continue', variant: 'primary', priority: 50 },
+  ]);
+  assert.ok(html.indexOf('data-action-id="terminate"') < html.indexOf('data-action-id="policy"'));
+  assert.match(html, /Thêm thao tác/);
+  assert.doesNotMatch(html, /data-action-id="history"/);
+});
 test('pending action locks siblings and uses pending label', () => {
   const html = render([{ id: 'p', label: 'Save', pending: true, pendingLabel: 'Saving', variant: 'primary' }, { id: 's', label: 'Edit' }]);
   assert.match(html, /Saving/);
