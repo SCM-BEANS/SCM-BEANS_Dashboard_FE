@@ -32,11 +32,13 @@ export function TransferMachineDialog({
   currentLocationName,
   onClose,
   onSuccess,
+  onPendingChange,
 }: {
   machine: TransferableMachine;
   currentLocationName?: string | null;
   onClose: () => void;
   onSuccess: (targetLocationName: string) => void;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const queryClient = useQueryClient();
   const ownerId = machine.ownerId ?? "";
@@ -67,6 +69,7 @@ export function TransferMachineDialog({
       targetLocationId,
       ...(reason.trim() ? { reason: reason.trim() } : {}),
     }),
+    onMutate: () => onPendingChange(true),
     onSuccess: async (updatedMachine) => {
       const affectedLocationIds = new Set([currentLocationId, updatedMachine.locationId].filter((id): id is string => Boolean(id)));
       await Promise.all([
@@ -83,6 +86,7 @@ export function TransferMachineDialog({
       onSuccess(selectedTarget?.name ?? "địa điểm đích");
     },
     onError: (error: unknown) => setRequestError(transferErrorMessage(error)),
+    onSettled: () => onPendingChange(false),
   });
 
   return (

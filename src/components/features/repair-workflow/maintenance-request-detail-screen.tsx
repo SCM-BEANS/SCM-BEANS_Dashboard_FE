@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildMaintenanceRequestAssignTicketAction, buildMaintenanceRequestCreateTicketAction } from "@/components/action-bar/entity-page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { machinesApi } from "@/apis/machines.api";
@@ -190,22 +192,24 @@ export function MaintenanceRequestDetailScreen({
           <button className={styles.retryButton} type="button" onClick={() => void requestQuery.refetch()}>{messages.RETRY}</button>
         </div>
       )}
+      {request && <PageActions actions={[
+        ...buildMaintenanceRequestCreateTicketAction({ role, request, pending: createWorkOrder.isPending, onCreate: () => createWorkOrder.mutate() }),
+        ...buildMaintenanceRequestAssignTicketAction({
+          role,
+          hasTicket: Boolean(ticketQuery.data?.id),
+          assignedTechnicianId: ticketQuery.data?.assignedTechnicianId,
+          technicianSelected: Boolean(eligibleTechnicians.find((profile) => profile.idaasUserId === technicianId)),
+          pending: assignTechnician.isPending,
+          onAssign: () => assignTechnician.mutate(),
+        }),
+      ]} />}
       {request && !requestQuery.isError && <MaintenanceRequestDetails request={request} />}
       {request?.requestType === "PREVENTIVE" && !request.maintenanceTicketId && (
         <section className={styles.pendingNotice} aria-labelledby="preventive-work-order-title">
           <h2 className={styles.sectionTitle} id="preventive-work-order-title">Lệnh bảo trì định kỳ</h2>
-          {request.status === "CONFIRMED" && request.confirmedAppointmentAt ? (
-            <button
-              className={styles.inlineButton}
-              type="button"
-              disabled={createWorkOrder.isPending}
-              onClick={() => createWorkOrder.mutate()}
-            >
-              {createWorkOrder.isPending ? "Đang tạo phiếu…" : "Tạo phiếu bảo trì"}
-            </button>
-          ) : (
+          {request.status !== "CONFIRMED" || !request.confirmedAppointmentAt ? (
             <p>Chờ Owner xác nhận lịch hẹn trước khi tạo phiếu công việc.</p>
-          )}
+          ) : null}
         </section>
       )}
       {ticketQuery.data && request?.requestType === "PREVENTIVE" ? (
@@ -243,14 +247,6 @@ export function MaintenanceRequestDetailScreen({
                     ))}
                   </select>
                   {eligibleTechnicians.length === 0 ? <p>Không có hồ sơ kỹ thuật viên đủ điều kiện trên trang này.</p> : null}
-                  <button
-                    className={styles.inlineButton}
-                    type="button"
-                    disabled={!technicianId || assignTechnician.isPending}
-                    onClick={() => assignTechnician.mutate()}
-                  >
-                    {assignTechnician.isPending ? "Đang giao việc…" : "Giao cho kỹ thuật viên"}
-                  </button>
                   <RepairWorkflowPagination
                     page={techniciansQuery.data.page}
                     hasNext={techniciansQuery.data.page + 1 < techniciansQuery.data.totalPages}

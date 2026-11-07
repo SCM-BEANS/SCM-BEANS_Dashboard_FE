@@ -6,6 +6,8 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildRecallLegacyReviewActions } from "@/components/action-bar/entity-page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
@@ -229,6 +231,11 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           fallbackHref: backHref ?? (role === "owner" ? "/dashboard/contracts/recall" : role === "operator" ? "/admin/contracts" : "/technician/tasks/retrieval"),
         }}
       />
+      <PageActions actions={buildRecallLegacyReviewActions({
+        role: role === "operator" ? "admin" : role,
+        workOrder: currentWorkOrder,
+        onReview: () => { setLegacyDecision("PICKUP_REQUIRED"); setLegacyReason(""); setTechnicianId(""); setLegacyCorrelation(globalThis.crypto.randomUUID()); setLegacyOpen(true); },
+      }).map((action) => ({ ...action, pending: legacyReview.isPending, pendingLabel: "Đang rà soát" }))} />
       <section className={styles.panel} aria-labelledby="recall-detail-title">
         {refreshButton}
         <dl className={styles.detailGrid}>
@@ -241,7 +248,6 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           <div className={styles.detailItem}><dt>Ngày nhận đã duyệt</dt><dd>{localDateTime(currentWorkOrder.depotReceivedAt)}</dd></div>
         </dl>
 
-        {role === "operator" && currentWorkOrder.status === "LEGACY_REVIEW_REQUIRED" ? <ButtonBar type="button" onClick={() => { setLegacyDecision("PICKUP_REQUIRED"); setLegacyReason(""); setTechnicianId(""); setLegacyCorrelation(globalThis.crypto.randomUUID()); setLegacyOpen(true); }}>Rà soát lệnh thu hồi</ButtonBar> : null}
         {legacyOpen ? <NotificationDialog variant="confirm" title="Rà soát lệnh thu hồi" onClose={() => setLegacyOpen(false)} primaryAction={{ label: "Xác nhận", onClick: () => legacyReview.mutate(), disabled: !legacyReason.trim() || (legacyDecision === "VERIFY_ALREADY_AT_DEPOT" && !technicianId), pending: legacyReview.isPending }} secondaryAction={{ label: "Hủy", onClick: () => setLegacyOpen(false), disabled: legacyReview.isPending }}>
           <fieldset><legend>Quyết định</legend><label><input type="radio" name="legacyDecision" checked={legacyDecision === "PICKUP_REQUIRED"} onChange={() => setLegacyDecision("PICKUP_REQUIRED")} /> Cần thu hồi: đưa lệnh về trạng thái chưa phân công.</label><label><input type="radio" name="legacyDecision" checked={legacyDecision === "VERIFY_ALREADY_AT_DEPOT"} onChange={() => setLegacyDecision("VERIFY_ALREADY_AT_DEPOT")} /> Máy đã ở kho: xác minh và phân công kỹ thuật viên để chờ chủ sở hữu xác nhận.</label></fieldset>
           {legacyDecision === "VERIFY_ALREADY_AT_DEPOT" ? <><label>Tìm kỹ thuật viên<input value={technicianSearch} onChange={event => { setTechnicianPage(0); setTechnicianSearch(event.target.value); }} /></label><label>Kỹ thuật viên<select required value={technicianId} onChange={event => setTechnicianId(event.target.value)}><option value="">Chọn kỹ thuật viên</option>{technicians.data?.items.filter(profile => profile.status === "ACTIVE" && profile.emailVerified && profile.roles.some(value => value.toUpperCase() === "TECHNICIAN")).map(profile => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}</select></label>{technicians.isError ? <p role="alert">{getApiErrorMessage(technicians.error)}</p> : null}{technicians.data && technicians.data.totalPages > 1 ? <div><ButtonBar type="button" disabled={technicianPage <= 0} onClick={() => setTechnicianPage(technicianPage - 1)}>Trước</ButtonBar><span>Trang {technicianPage + 1} / {technicians.data.totalPages}</span><ButtonBar type="button" disabled={technicianPage + 1 >= technicians.data.totalPages} onClick={() => setTechnicianPage(technicianPage + 1)}>Sau</ButtonBar></div> : null}</> : null}

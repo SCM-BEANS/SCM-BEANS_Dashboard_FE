@@ -134,7 +134,7 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
     return [link("Xem công thức pha chế", "/dashboard/menu", "secondary")];
   }
   if (sectionPath.startsWith("machines/")) {
-    return [link("Xem lịch sử bảo trì", "/dashboard/machines/history")];
+    return [link("Xem lịch sử bảo trì", "/dashboard/machines/history", "secondary")];
   }
 
   if (sectionPath === "invoices") {

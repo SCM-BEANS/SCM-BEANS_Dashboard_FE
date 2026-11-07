@@ -158,7 +158,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   <DetailItem label={messages.FIELD_CONTRACT_END} value={formatDate(detail.data.contractEndDate)} />
                   <DetailItem label="Điểm bán" value={detail.data.locationId ? detail.data.locationId : "Kho"} />
                 </dl>
-                {detail.data.ownerId && <TransferMachineAction machine={detail.data} />}
+                {detail.data.ownerId && <TransferMachineAction machine={detail.data} role="owner" pageLevel />}
                 <Link className={styles.secondaryLink} href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
                   Xem dữ liệu vận hành
                 </Link>

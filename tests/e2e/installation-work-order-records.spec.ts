@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { expectNoPageActionLabel } from "./page-actions-test-helpers";
 
 const workOrderId = "f4000000-0000-4000-8000-000000000001";
 const ownerId = "f4000000-0000-4000-8000-000000000002";
@@ -135,6 +136,8 @@ test.describe("installation work-order paged records", () => {
       await expect(page.getByRole("tab", { name: "Chứng từ" })).toBeVisible();
       await expect(page.getByText("Kiểm tra nguồn điện")).toBeVisible();
       await expect(page.getByText("Dữ liệu cũ trong chi tiết")).toHaveCount(0);
+      await expectNoPageActionLabel(page, "Trang sau");
+      await expectNoPageActionLabel(page, "Tải xuống");
 
       await page.getByRole("button", { name: "Trang sau" }).click();
       await expect(page.getByText("Kiểm tra đường nước")).toBeVisible();

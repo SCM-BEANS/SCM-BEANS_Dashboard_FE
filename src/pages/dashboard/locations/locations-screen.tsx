@@ -16,7 +16,7 @@ export function LocationsScreen() {
   return (
     <section className={styles.pageContent} aria-labelledby="customer-locations-title">
       <BackButtonHeading
-        back={null}
+        back={locationId ? { label: "Về danh sách địa điểm", fallbackHref: PATH_CUSTOMER.LOCATIONS } : null}
         title="Địa điểm của tôi"
         titleId="customer-locations-title"
         description="Xem và tạo địa điểm trong phạm vi Owner đang đăng nhập."
@@ -25,7 +25,6 @@ export function LocationsScreen() {
       {!checked ? <p className={styles.loadingNotice} role="status">{messages.LOADING}</p> : ownerId ? locationId ? (
         <LocationDetailPanel
           locationId={locationId}
-          backHref={PATH_CUSTOMER.LOCATIONS}
           machineDetailHref={(machineId) => PATH_CUSTOMER.MACHINE_DETAIL(machineId)}
           tableVariant="customer"
         />

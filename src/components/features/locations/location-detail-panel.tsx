@@ -56,12 +56,10 @@ function MachineConnection({ machine }: { machine: MachineSummary }) {
 
 export function LocationDetailPanel({
   locationId,
-  backHref,
   machineDetailHref,
   tableVariant = "operations",
 }: {
   locationId: string;
-  backHref?: string;
   machineDetailHref: (machineId: string) => string;
   tableVariant?: TableVariant;
 }) {
@@ -110,6 +108,7 @@ export function LocationDetailPanel({
       header: "Thao tác",
       render: (machine: MachineSummary) => <TransferMachineAction
         machine={machine}
+        role={tableVariant === "operations" ? "admin" : tableVariant === "moderator" ? "moderator" : "owner"}
         currentLocationName={statsData?.locationName}
         onOpen={() => setTransferSuccessMessage("")}
         onSuccess={(targetLocationName) => setTransferSuccessMessage(`Đã chuyển máy tới ${targetLocationName}.`)}
@@ -126,7 +125,6 @@ export function LocationDetailPanel({
         <h2 id="location-detail-panel-title">{statsData?.locationName ?? "Chi tiết địa điểm"}</h2>
         {statsData?.ownerName && <p>Owner: {statsData.ownerName}</p>}
       </div>
-      {backHref && <ButtonBar href={backHref}>Về danh sách địa điểm</ButtonBar>}
     </header>
 
     <section aria-labelledby="location-stats-title">

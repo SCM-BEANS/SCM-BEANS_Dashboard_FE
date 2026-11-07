@@ -9,9 +9,6 @@ export function ModeratorLocationsScreen() {
   const router = useRouter();
   const locationId = typeof router.query.id === "string" ? router.query.id : "";
   const ownerId = typeof router.query.ownerId === "string" ? router.query.ownerId : "";
-  const backHref = ownerId
-    ? `${PATH_MODERATOR.LOCATIONS}?ownerId=${encodeURIComponent(ownerId)}`
-    : PATH_MODERATOR.LOCATIONS;
   return (
     <div className={styles.pageContent}>
       <ModeratorPageHeading
@@ -20,7 +17,6 @@ export function ModeratorLocationsScreen() {
       />
       {locationId ? <LocationDetailPanel
         locationId={locationId}
-        backHref={backHref}
         machineDetailHref={(machineId) => PATH_MODERATOR.MACHINE_DETAIL(machineId)}
         tableVariant="moderator"
       /> : <LocationsManagementPanel mode="moderator" ownerId={null} tableVariant="moderator" />}

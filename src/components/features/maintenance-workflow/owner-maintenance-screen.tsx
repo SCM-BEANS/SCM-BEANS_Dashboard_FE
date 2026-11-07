@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildOwnerMaintenanceAppointmentActions } from "@/components/action-bar/entity-page-actions";
 import { DataTable } from "@/components/table/data-table";
 import { RepairWorkflowPagination } from "@/components/features/repair-workflow/repair-workflow-pagination";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
@@ -104,7 +106,9 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
           </dl>
           {request.issueDescription ? <p className={styles.notice}>{request.issueDescription}</p> : null}
           {canConfirm ? (
-            <form className={styles.form} onSubmit={onSubmit}>
+            <>
+            <PageActions actions={buildOwnerMaintenanceAppointmentActions({ role: "owner", request, appointmentAt, pending: confirm.isPending, formId: "maintenance-appointment-form" })} />
+            <form id="maintenance-appointment-form" className={styles.form} onSubmit={onSubmit}>
               <label htmlFor="maintenance-appointment">Chọn thời gian hẹn</label>
               <input
                 id="maintenance-appointment"
@@ -116,10 +120,8 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
                 required
               />
               <p className={styles.hint}>Thời gian phải nằm trong khung bảo trì của hợp đồng.</p>
-              <button className={styles.button} type="submit" disabled={confirm.isPending || !appointmentAt}>
-                {confirm.isPending ? "Đang xác nhận…" : "Xác nhận lịch bảo trì"}
-              </button>
             </form>
+            </>
           ) : null}
           {request.requestType === "PREVENTIVE" ? (
             <MaintenanceCustodyStepper requestId={request.id} role="owner" initialRequest={request} />

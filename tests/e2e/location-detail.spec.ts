@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoPageActionLabel } from "./page-actions-test-helpers";
 
 const ownerId = "f3000000-0000-4000-8000-000000000001";
 const sourceLocationId = "f3000000-0000-4000-8000-000000000002";
@@ -145,6 +146,8 @@ test.describe("location detail and machine transfer", () => {
       const firstMachineRow = page.getByRole("row").filter({ has: page.getByRole("link", { name: "LOC-MACHINE-01" }) });
       await expect(firstMachineRow.getByText("Đang triển khai · Owner cửa hàng")).toBeVisible();
       await expect(firstMachineRow.getByRole("status").getByText("Đang kết nối")).toBeVisible();
+      await expect(firstMachineRow.getByRole("button", { name: "Chuyển điểm bán" })).toBeVisible();
+      await expectNoPageActionLabel(page, "Chuyển điểm bán");
 
       await page.getByRole("button", { name: "Trang sau" }).click();
       await expect(page.getByRole("link", { name: "LOC-MACHINE-11" })).toBeVisible();
@@ -152,7 +155,7 @@ test.describe("location detail and machine transfer", () => {
 
       const initialStatsReads = api.statsReads;
       const initialMachinePageReads = api.machinePageReads;
-      await page.getByRole("button", { name: "Chuyển điểm bán" }).first().click();
+      await firstMachineRow.getByRole("button", { name: "Chuyển điểm bán" }).click();
       await expect(page.getByRole("alertdialog")).toBeVisible();
       const targetSelect = page.getByLabel(/Địa điểm đích/);
       await expect(targetSelect.locator("option", { hasText: "Điểm bán Đang Hoạt động" })).toHaveCount(1);

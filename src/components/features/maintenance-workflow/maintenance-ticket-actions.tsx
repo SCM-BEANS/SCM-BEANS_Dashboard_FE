@@ -1,8 +1,10 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildMaintenanceTicketCreatePageActions, buildMaintenanceTicketDetailActions, type MaintenanceActionRole } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { ReasonDialog } from "@/components/reason-dialog/reason-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -15,7 +17,7 @@ import {
 } from "@/schema/machines.schema";
 import styles from "./maintenance-ticket-actions.module.css";
 
-export type MaintenanceTicketActionRole = "ADMIN" | "MODERATOR" | "OWNER" | "TECHNICIAN";
+export type MaintenanceTicketActionRole = MaintenanceActionRole;
 
 export const maintenanceTicketDetailQueryKey = (ticketId: string) =>
   ["dolores", "maintenance-tickets", "detail", ticketId] as const;
@@ -60,14 +62,16 @@ function MaintenanceTicketDetailsForm({
   ticket,
   pending,
   error,
-  onCancel,
   onSubmit,
+  formId,
+  onDirtyChange,
 }: {
   ticket: MaintenanceTicket;
   pending: boolean;
   error: string;
-  onCancel: () => void;
   onSubmit: (input: MaintenanceTicketDetailsPatchRequest) => void;
+  formId: string;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const dueId = useId();
   const alertId = useId();
@@ -83,6 +87,7 @@ function MaintenanceTicketDetailsForm({
   const instructionsChanged = instructions !== initialInstructions;
   const hasChanges = dueChanged || alertChanged || instructionsChanged;
   const hasVersion = typeof ticket.version === "number" && Number.isInteger(ticket.version) && ticket.version >= 0;
+  useEffect(() => onDirtyChange(hasChanges), [hasChanges, onDirtyChange]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,7 +100,7 @@ function MaintenanceTicketDetailsForm({
   };
 
   return (
-    <form className={styles.form} onSubmit={submit}>
+    <form id={formId} className={styles.form} onSubmit={submit}>
       <div className={styles.formGrid}>
         <div className={styles.field}>
           <label htmlFor={dueId}>Lịch bảo trì dự kiến</label>
@@ -117,10 +122,6 @@ function MaintenanceTicketDetailsForm({
       </div>
       {!hasVersion && <p className={styles.notice} role="status">Phiếu chưa có phiên bản dữ liệu để cập nhật an toàn.</p>}
       {error && <p className={styles.error} role="alert">{error}</p>}
-      <div className={styles.actionRow}>
-        <ButtonBar type="button" disabled={pending} onClick={onCancel}>Hủy</ButtonBar>
-        <ButtonBar type="submit" disabled={!hasChanges || !hasVersion || pending}>{pending ? "Đang lưu…" : "Lưu thay đổi"}</ButtonBar>
-      </div>
     </form>
   );
 }
@@ -129,17 +130,19 @@ function CreateMaintenanceTicketDialog({
   machineId,
   onClose,
   onCreated,
+  onPendingChange,
 }: {
   machineId: string;
   onClose: () => void;
   onCreated: (ticket: MaintenanceTicket) => void;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const [alertLevel, setAlertLevel] = useState("Warning");
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
   const create = useMutation({
     mutationFn: () => machinesApi.createMaintenanceTicket(machineId, { alertLevel }),
-    onMutate: () => setError(""),
+    onMutate: () => { onPendingChange(true); setError(""); },
     onSuccess: async (ticket) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dolores", "maintenance-tickets"] }),
@@ -149,6 +152,7 @@ function CreateMaintenanceTicketDialog({
       onCreated(ticket);
     },
     onError: (cause: unknown) => setError(ticketErrorMessage(cause)),
+    onSettled: () => onPendingChange(false),
   });
 
   return (
@@ -195,6 +199,8 @@ export function MaintenanceTicketDetailsPanel({
   const [showUnassign, setShowUnassign] = useState(false);
   const [actionError, setActionError] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [detailsDirty, setDetailsDirty] = useState(false);
+  const formId = "maintenance-ticket-details-form";
   const ticketQuery = useQuery({
     queryKey: maintenanceTicketDetailQueryKey(ticketId),
     queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(ticketId, signal),
@@ -223,6 +229,7 @@ export function MaintenanceTicketDetailsPanel({
     onSuccess: async (updated) => {
       await refreshRelated(updated);
       setEditing(false);
+      setDetailsDirty(false);
       setFeedback("Đã cập nhật chi tiết phiếu bảo trì.");
     },
     onError: async (cause: unknown) => {
@@ -272,6 +279,21 @@ export function MaintenanceTicketDetailsPanel({
       )}
       {ticket && !ticketQuery.isError && (
         <>
+          {canManage && <PageActions actions={buildMaintenanceTicketDetailActions({
+            role,
+            ticket,
+            editing,
+            dirty: detailsDirty,
+            pending: updateDetails.isPending,
+            overduePending: reviewOverdue.isPending,
+            unassignPending: unassign.isPending,
+            hasVersion: typeof ticket.version === "number" && Number.isInteger(ticket.version) && ticket.version >= 0,
+            formId,
+            onEdit: () => { setActionError(""); setDetailsDirty(false); setEditing(true); },
+            onCancelEdit: () => { setEditing(false); setDetailsDirty(false); },
+            onOverdueReview: () => { setActionError(""); setShowOverdueReview(true); },
+            onUnassign: () => { setActionError(""); setShowUnassign(true); },
+          })} />}
           <dl className={styles.detailGrid}>
             <div><dt>Mã phiếu</dt><dd>{ticket.id}</dd></div>
             <div><dt>Trạng thái</dt><dd><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
@@ -280,26 +302,14 @@ export function MaintenanceTicketDetailsPanel({
             <div><dt>Kỹ thuật viên</dt><dd>{ticket.assignedTo ?? ticket.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
             <div><dt>Hướng dẫn xử lý</dt><dd>{ticket.actionableInstructions || "Chưa có hướng dẫn"}</dd></div>
           </dl>
-          {canManage && (
-            <div className={styles.actionRow}>
-              <ButtonBar type="button" onClick={() => { setActionError(""); setEditing((value) => !value); }}>
-                {editing ? "Đóng biểu mẫu" : "Chỉnh sửa chi tiết"}
-              </ButtonBar>
-              {ticket.overdueReviewRequired === true && !ticket.overdueReviewedAt && (
-                <ButtonBar type="button" onClick={() => { setActionError(""); setShowOverdueReview(true); }}>Đánh giá quá hạn</ButtonBar>
-              )}
-              {ticket.status === "ASSIGNED" && (
-                <ButtonBar type="button" onClick={() => { setActionError(""); setShowUnassign(true); }}>Hủy phân công</ButtonBar>
-              )}
-            </div>
-          )}
           {editing && canManage && (
             <MaintenanceTicketDetailsForm
               key={ticket.id}
               ticket={ticket}
+              formId={formId}
               pending={updateDetails.isPending}
               error={actionError}
-              onCancel={() => setEditing(false)}
+              onDirtyChange={setDetailsDirty}
               onSubmit={(input) => updateDetails.mutate(input)}
             />
           )}
@@ -345,11 +355,12 @@ export function MachineMaintenanceTicketActions({
   onRefresh?: () => unknown;
 }) {
   const [creating, setCreating] = useState(false);
+  const [createPending, setCreatePending] = useState(false);
   const [activeTicketId, setActiveTicketId] = useState("");
 
   return (
     <div className={styles.machineActions}>
-      <ButtonBar type="button" onClick={() => setCreating(true)}>Tạo phiếu bảo trì</ButtonBar>
+      <PageActions actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} />
       {tickets.length > 0 && (
         <nav className={styles.ticketLinks} aria-label="Chi tiết phiếu bảo trì của máy">
           {tickets.map((ticket, index) => ticket.id ? (
@@ -377,6 +388,7 @@ export function MachineMaintenanceTicketActions({
         <CreateMaintenanceTicketDialog
           machineId={machineId}
           onClose={() => setCreating(false)}
+          onPendingChange={setCreatePending}
           onCreated={(ticket) => {
             setCreating(false);
             if (ticket.id) setActiveTicketId(ticket.id);

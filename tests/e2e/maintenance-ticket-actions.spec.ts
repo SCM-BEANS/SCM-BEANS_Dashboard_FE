@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickPageAction, expectNoPageAction, expectNonPrimaryPageAction, expectPageAction, expectPageActionOrder, expectPrimaryPageAction, pageActionBar } from "./page-actions-test-helpers";
 
 const machineId = "f2000000-0000-4000-8000-000000000001";
 const ownerId = "f2000000-0000-4000-8000-000000000002";
@@ -7,8 +8,9 @@ const technicianId = "f2000000-0000-4000-8000-000000000004";
 const assignedTicketId = "f2000000-0000-4000-8000-000000000005";
 const pendingTicketId = "f2100000-0000-4000-8000-000000000006";
 const createdTicketId = "f2200000-0000-4000-8000-000000000007";
+const technicianTicketId = "f2300000-0000-4000-8000-000000000008";
 
-type RoleCase = { label: string; claim: string; machinePath: string };
+type RoleCase = { label: string; claim: string; machinePath: string; subject?: string };
 type MockTicket = {
   id: string;
   machineId: string;
@@ -30,8 +32,8 @@ const roleCases: RoleCase[] = [
   { label: "Moderator", claim: "moderator", machinePath: `/moderator/machines/${machineId}` },
 ];
 
-function tokenFor(role: string) {
-  const claims = Buffer.from(JSON.stringify({ roles: [role] })).toString("base64url");
+function tokenFor(role: string, subject?: string) {
+  const claims = Buffer.from(JSON.stringify({ roles: [role], ...(subject ? { sub: subject } : {}) })).toString("base64url");
   return `header.${claims}.signature`;
 }
 
@@ -127,11 +129,57 @@ async function installMockApi(page: Page) {
 async function openMachine(page: Page, role: RoleCase) {
   await page.context().addCookies([{
     name: "access_token",
-    value: tokenFor(role.claim),
+    value: tokenFor(role.claim, role.subject),
     domain: "127.0.0.1",
     path: "/",
   }]);
   await page.goto(role.machinePath);
+  await expect(page.locator("main h1")).toBeVisible();
+}
+
+async function installTechnicianMockApi(page: Page) {
+  const calls: Array<{ method: string; url: string; body: unknown }> = [];
+  let current = {
+    id: technicianTicketId,
+    machineId,
+    ownerId,
+    contractId,
+    status: "ASSIGNED",
+    alertLevel: "Warning",
+    scheduledDueAt: "2026-11-07T10:00:00",
+    assignedTechnicianId: technicianId,
+    assignedTo: "Ká»¹ thuáº­t viĂªn E2E",
+  };
+  await page.route("**/api/dolores/v1/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname.replace(/^\/api\/dolores\/v1/, "");
+    const method = request.method();
+    const body = request.postData() ? request.postDataJSON() : undefined;
+    if (method === "POST") calls.push({ method, url: `${path}${url.search}`, body });
+    if (method === "GET" && path === `/maintenance-tickets/${technicianTicketId}`) {
+      await route.fulfill({ contentType: "application/json", body: JSON.stringify(current) });
+      return;
+    }
+    if (method === "POST" && path === `/maintenance-tickets/${technicianTicketId}/status`) {
+      current = { ...current, status: url.searchParams.get("status") ?? current.status };
+    }
+    if (method === "POST" && path === `/maintenance-tickets/${technicianTicketId}/parts`) {
+      current = { ...current, ...(body as Record<string, unknown>) };
+    }
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(current) });
+  });
+  return calls;
+}
+
+async function openTechnicianTicket(page: Page) {
+  await page.context().addCookies([{
+    name: "access_token",
+    value: tokenFor("technician", technicianId),
+    domain: "127.0.0.1",
+    path: "/",
+  }]);
+  await page.goto(`/technician/tasks/maintenance-tickets/${technicianTicketId}`);
   await expect(page.locator("main h1")).toBeVisible();
 }
 
@@ -143,7 +191,9 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       const api = await installMockApi(page);
       await openMachine(page, role);
 
-      await page.getByRole("button", { name: "Tạo phiếu bảo trì" }).click();
+      await expectPrimaryPageAction(page, "maintenance-ticket-create");
+      if (role.claim === "admin") await expectNonPrimaryPageAction(page, "machine-edit");
+      await clickPageAction(page, "maintenance-ticket-create");
       await expect(page.getByRole("alertdialog")).toBeVisible();
       await expect(page.getByLabel("Mức cảnh báo")).toHaveValue("Warning");
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
@@ -151,7 +201,7 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       await expect(page.getByRole("row").filter({ has: page.getByRole("cell", { name: createdTicketId, exact: true }) })).toBeVisible();
       await expect(page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${createdTicketId.slice(0, 8)}`) })).toBeVisible();
 
-      await page.getByRole("button", { name: "Tạo phiếu bảo trì" }).click();
+      await clickPageAction(page, "maintenance-ticket-create");
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
       await expect(page.getByRole("alert").getByText("Máy chưa có đúng một hợp đồng đang hiệu lực nên chưa thể tạo phiếu bảo trì.")).toBeVisible();
 
@@ -165,36 +215,38 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       await openMachine(page, role);
 
       await page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${assignedTicketId.slice(0, 8)}`) }).click();
-      await expect(page.getByRole("button", { name: "Đánh giá quá hạn" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Hủy phân công" })).toBeVisible();
+      await expectPageAction(page, "maintenance-ticket-overdue-review");
+      await expectPageAction(page, "maintenance-ticket-unassign");
 
-      await page.getByRole("button", { name: "Chỉnh sửa chi tiết" }).click();
+      await clickPageAction(page, "maintenance-ticket-edit");
+      await expectPrimaryPageAction(page, "maintenance-ticket-save");
       await expect(page.locator('input[type="datetime-local"]')).toHaveValue("2026-11-07T10:00");
       await page.locator('input[type="datetime-local"]').fill("2026-11-10T09:30");
       await page.getByLabel("Mức cảnh báo").selectOption("Critical");
-      await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+      await clickPageAction(page, "maintenance-ticket-save");
       await expect(page.getByText("Đã cập nhật chi tiết phiếu bảo trì.")).toBeVisible();
 
-      await page.getByRole("button", { name: "Chỉnh sửa chi tiết" }).click();
+      await clickPageAction(page, "maintenance-ticket-edit");
       await page.getByLabel("Hướng dẫn xử lý").fill("Giữ nguyên hướng dẫn mới.");
       api.setConflictOnNextPatch();
-      await page.getByRole("button", { name: "Lưu thay đổi" }).click();
+      await clickPageAction(page, "maintenance-ticket-save");
       await expect(page.getByText("Phiếu đã được cập nhật bởi người khác, hãy tải lại.")).toBeVisible();
       await expect(page.getByLabel("Hướng dẫn xử lý")).toBeVisible();
 
-      await page.getByRole("button", { name: "Đóng biểu mẫu" }).click();
-      await page.getByRole("button", { name: "Đánh giá quá hạn" }).click();
+      await clickPageAction(page, "maintenance-ticket-cancel-edit");
+      await page.getByRole("alertdialog").getByRole("button", { name: "Hủy chỉnh sửa", exact: true }).click();
+      await clickPageAction(page, "maintenance-ticket-overdue-review");
       await page.locator("#reason-dialog-input").fill("Đã thống nhất lịch mới với Owner.");
       await page.getByRole("button", { name: "Xác nhận" }).click();
-      await expect(page.getByRole("button", { name: "Đánh giá quá hạn" })).toHaveCount(0);
+      await expectNoPageAction(page, "maintenance-ticket-overdue-review");
 
-      await page.getByRole("button", { name: "Hủy phân công" }).click();
-      await page.getByRole("button", { name: "Hủy phân công" }).last().click();
-      await expect(page.getByRole("button", { name: "Hủy phân công" })).toHaveCount(0);
+      await clickPageAction(page, "maintenance-ticket-unassign");
+      await page.getByRole("alertdialog").getByRole("button", { name: "Hủy phân công", exact: true }).click();
+      await expectNoPageAction(page, "maintenance-ticket-unassign");
 
       await page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${pendingTicketId.slice(0, 8)}`) }).click();
-      await expect(page.getByRole("button", { name: "Đánh giá quá hạn" })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Hủy phân công" })).toHaveCount(0);
+      await expectNoPageAction(page, "maintenance-ticket-overdue-review");
+      await expectNoPageAction(page, "maintenance-ticket-unassign");
 
       const patchCalls = api.calls.filter((call) => call.method === "PATCH");
       expect(patchCalls).toHaveLength(2);
@@ -215,4 +267,34 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       });
     });
   }
+
+  test("Owner sees machine transfer and maintenance ticket creation in the shared footer", async ({ page }) => {
+    await installMockApi(page);
+    await openMachine(page, { label: "Owner", claim: "owner", subject: ownerId, machinePath: `/dashboard/machines/${machineId}` });
+
+    await expectPageAction(page, "machine-transfer-location");
+    await expectPrimaryPageAction(page, "maintenance-ticket-create");
+    await clickPageAction(page, "maintenance-ticket-create");
+    await expect(page.getByRole("alertdialog")).toBeVisible();
+  });
+
+  test("Technician start and save actions are in the shared footer", async ({ page }) => {
+    const calls = await installTechnicianMockApi(page);
+    await openTechnicianTicket(page);
+
+    await expectPageActionOrder(page, ["maintenance-ticket-start-work"]);
+    await expect(page.getByRole("main").getByRole("button", { name: "Bắt đầu công việc", exact: true })).toHaveCount(0);
+    await clickPageAction(page, "maintenance-ticket-start-work");
+    await expect(page.getByRole("status").getByText("Đã bắt đầu thực hiện ticket.")).toBeVisible();
+
+    await expectPageActionOrder(page, ["maintenance-ticket-save-parts"]);
+    const saveParts = pageActionBar(page).locator('[data-action-id="maintenance-ticket-save-parts"]');
+    await expect(saveParts).toBeDisabled();
+    await page.getByLabel("Linh kiện đã thay").fill("Bơm nước");
+    await clickPageAction(page, "maintenance-ticket-save-parts");
+    await expect(page.getByRole("status").getByText("Đã ghi nhận linh kiện và chi phí vật tư.")).toBeVisible();
+
+    expect(calls).toContainEqual({ method: "POST", url: `/maintenance-tickets/${technicianTicketId}/status?status=IN_PROGRESS`, body: undefined });
+    expect(calls).toContainEqual({ method: "POST", url: `/maintenance-tickets/${technicianTicketId}/parts`, body: { partsReplaced: "Bơm nước" } });
+  });
 });

@@ -298,7 +298,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
           { label: ADMIN_T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
           { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
         ]}>
-        {device.ownerId && <TransferMachineAction machine={device} />}
+        {device.ownerId && <TransferMachineAction machine={device} role="moderator" pageLevel />}
 
         <div className={adminStyles.machineInventoryGroup}>
           <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">

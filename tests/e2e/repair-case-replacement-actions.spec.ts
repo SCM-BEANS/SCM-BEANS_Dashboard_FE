@@ -1,5 +1,7 @@
 ﻿import { expect, test } from "@playwright/test";
 
+import { clickPageAction, expectNoPageAction, expectPageAction, expectPageActionOrder } from "./page-actions-test-helpers";
+
 const id = "f3000000-0000-4000-8000-000000000001";
 const machine = "f3000000-0000-4000-8000-000000000002";
 const alternate = "f3000000-0000-4000-8000-000000000003";
@@ -21,7 +23,8 @@ for (const role of ["admin", "moderator"]) {
       await route.fulfill({ status, json: data });
     });
     await page.goto(`/${role}/technical-requests/cases/${id}`);
-    await page.getByRole("button", { name: "Đề xuất máy khác loại" }).click();
+    await expectPageActionOrder(page, ["repair-case-offer-replacement"]);
+    await clickPageAction(page, "repair-case-offer-replacement");
     await expect(page.getByRole("option", { name: "Alternate" })).toHaveCount(1);
     await expect(page.getByRole("option", { name: "Same" })).toHaveCount(0);
     await page.getByLabel("Máy thay thế").selectOption(alternate);
@@ -53,18 +56,22 @@ for (const role of ["admin", "moderator"]) {
         await route.fulfill({ json: data });
       });
       await page.goto(`/${role}/technical-requests/cases/${id}`);
-      const offer = page.getByRole("button", { name: "Đề xuất máy khác loại" });
-      const emergency = page.getByRole("button", { name: "Cho phép xử lý khẩn cấp" });
-      if (scenario.offer) await expect(offer).toBeVisible(); else await expect(offer).toHaveCount(0);
+      const offerId = "repair-case-offer-replacement";
+      const emergencyId = "repair-case-authorize-emergency";
+      if (scenario.offer) {
+        await expectPageActionOrder(page, [offerId]);
+        await expectPageAction(page, offerId);
+      } else await expectNoPageAction(page, offerId);
       if (scenario.emergency) {
-        await expect(emergency).toBeVisible();
-        await emergency.click();
+        await expectPageActionOrder(page, [emergencyId]);
+        await expectPageAction(page, emergencyId);
+        await clickPageAction(page, emergencyId);
         await page.getByLabel("Lý do").fill("Khẩn cấp");
         await page.getByLabel("Phạm vi công việc").fill("Sửa bơm");
         const request = page.waitForRequest(r => r.url().endsWith("/emergency-work-authorizations") && r.method() === "POST");
         await page.getByRole("button", { name: "Xác nhận" }).click();
         expect((await request).postDataJSON()).toEqual({ reason: "Khẩn cấp", workScope: "Sửa bơm" });
-      } else await expect(emergency).toHaveCount(0);
+      } else await expectNoPageAction(page, emergencyId);
     });
   }
 }

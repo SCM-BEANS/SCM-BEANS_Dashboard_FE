@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildTechnicianMaintenanceTicketActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { MaintenanceCustodyStepper } from "@/components/features/repair-workflow/maintenance-custody-stepper";
 import { machinesApi } from "@/apis/machines.api";
@@ -99,6 +101,16 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
       ) : null}
       {ticket ? (
         <>
+          <PageActions actions={buildTechnicianMaintenanceTicketActions({
+            role: "TECHNICIAN",
+            status: ticket.status ?? "",
+            hasRepairCase: Boolean(ticket.repairCaseId),
+            startPending: startWork.isPending,
+            partsPending: recordParts.isPending,
+            partsEntered: Boolean(partsReplaced.trim() || partsCost.trim()),
+            partsFormId: "maintenance-ticket-parts-form",
+            onStart: () => startWork.mutate(),
+          })} />
           <dl className={styles.detailGrid}>
             <div><dt>Mã ticket</dt><dd className={styles.code}>{ticket.id ?? "—"}</dd></div>
             <div><dt>Thiết bị</dt><dd className={styles.code}>{ticket.machineId ?? "—"}</dd></div>
@@ -120,21 +132,15 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
             <section className={styles.panel}>
               <h2>Bắt đầu công việc</h2>
               <p>Trạng thái chuyển sang đang thực hiện sau khi server xác nhận.</p>
-              <button className={styles.button} type="button" disabled={startWork.isPending} onClick={() => startWork.mutate()}>
-                {startWork.isPending ? "Đang cập nhật…" : "Bắt đầu công việc"}
-              </button>
             </section>
           ) : null}
           {canRecordParts ? (
-            <form className={styles.panel} onSubmit={submitParts}>
+            <form id="maintenance-ticket-parts-form" className={styles.panel} onSubmit={submitParts}>
               <h2>Ghi nhận vật tư</h2>
               <label htmlFor="maintenance-parts">Linh kiện đã thay</label>
               <textarea id="maintenance-parts" value={partsReplaced} maxLength={4000} onChange={(event) => setPartsReplaced(event.target.value)} rows={3} />
               <label htmlFor="maintenance-parts-cost">Chi phí vật tư</label>
               <input id="maintenance-parts-cost" type="number" min="0" step="0.01" value={partsCost} onChange={(event) => setPartsCost(event.target.value)} />
-              <button className={styles.button} type="submit" disabled={recordParts.isPending || (!partsReplaced.trim() && !partsCost.trim())}>
-                {recordParts.isPending ? "Đang lưu…" : "Lưu vật tư"}
-              </button>
             </form>
           ) : null}
           {ticket.status === "IN_PROGRESS" && !ticket.repairCaseId ? (

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickPageAction, expectNoPageAction, expectNoPageActionLabel, expectPageAction, expectPageActionOrder } from "./page-actions-test-helpers";
 
 const requestId = "f3000000-0000-4000-8000-000000000001";
 const ticketId = "f3000000-0000-4000-8000-000000000002";
@@ -174,13 +175,14 @@ test.describe("maintenance request actions", () => {
   test("records an overdue review with its required reason", async ({ page }) => {
     const api = await installMockApi(page, { status: "OVERDUE_REVIEW" });
     await openRequest(page);
-    await expect(page.getByRole("button", { name: "Ghi nhận đánh giá quá hạn" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Đóng yêu cầu (ngoại lệ)" })).toHaveCount(0);
+    await expectPageActionOrder(page, ["maintenance-ticket-edit", "maintenance-request-overdue-review"]);
+    await expectPageAction(page, "maintenance-request-overdue-review");
+    await expectNoPageAction(page, "maintenance-request-close-exception");
 
-    await page.getByRole("button", { name: "Ghi nhận đánh giá quá hạn" }).click();
+    await clickPageAction(page, "maintenance-request-overdue-review");
     await page.locator("#reason-dialog-input").fill("Đã thống nhất lịch bảo trì mới với Owner.");
     await page.getByRole("button", { name: "Xác nhận" }).click();
-    await expect(page.getByRole("button", { name: "Ghi nhận đánh giá quá hạn" })).toHaveCount(0);
+    await expectNoPageAction(page, "maintenance-request-overdue-review");
     expect(api.mutations.find((item) => item.url === `/maintenance-requests/${requestId}/overdue-review`)).toEqual({
       method: "POST",
       url: `/maintenance-requests/${requestId}/overdue-review`,
@@ -193,8 +195,9 @@ test.describe("maintenance request actions", () => {
     await openRequest(page);
     await page.getByLabel("Mã phân công máy thay thế").fill(assignmentId);
     await page.getByRole("button", { name: "Kiểm tra phân công" }).click();
-    await expect(page.getByRole("button", { name: "Liên kết phân công này" })).toBeVisible();
-    await page.getByRole("button", { name: "Liên kết phân công này" }).click();
+    await expectPageActionOrder(page, ["maintenance-ticket-unassign", "maintenance-request-link-replacement", "maintenance-ticket-edit"]);
+    await expectPageAction(page, "maintenance-request-link-replacement");
+    await clickPageAction(page, "maintenance-request-link-replacement");
     await page.getByRole("button", { name: "Xác nhận liên kết" }).click();
     await expect(page.getByText(assignmentId)).toBeVisible();
 
@@ -210,6 +213,7 @@ test.describe("maintenance request actions", () => {
     await openRequest(page);
     await expect(page.getByRole("heading", { name: "Bước tiếp theo: Nhận máy chính" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Bước tiếp theo: Bàn giao máy thay thế" })).toHaveCount(0);
+    await expectNoPageActionLabel(page, "Ghi nhận bước bàn giao");
     await expect(page.getByText("Máy được ghi nhận:").locator(".." )).toContainText(machineId.slice(0, 8));
 
     await page.getByLabel("Tình trạng máy").fill("Vỏ máy và phụ kiện đầy đủ.");
@@ -235,16 +239,17 @@ test.describe("maintenance request actions", () => {
   test("shows the audited closure exception only after the primary machine was returned", async ({ page }) => {
     const api = await installMockApi(page, { status: "IN_PROGRESS", replacementLinked: true });
     await openRequest(page);
-    await expect(page.getByRole("button", { name: "Đóng yêu cầu (ngoại lệ)" })).toHaveCount(0);
+    await expectNoPageAction(page, "maintenance-request-close-exception");
 
     api.state.events = [event("PRIMARY_RETURNED")];
     await page.reload();
-    await expect(page.getByRole("button", { name: "Đóng yêu cầu (ngoại lệ)" })).toBeVisible();
-    await page.getByRole("button", { name: "Đóng yêu cầu (ngoại lệ)" }).click();
+    await expectPageActionOrder(page, ["maintenance-request-close-exception", "maintenance-ticket-unassign", "maintenance-ticket-edit"]);
+    await expectPageAction(page, "maintenance-request-close-exception");
+    await clickPageAction(page, "maintenance-request-close-exception");
     await expect(page.getByText("Thao tác này được lưu trong lịch sử kiểm toán.")).toBeVisible();
     await page.locator("#reason-dialog-input").fill("Đã xác nhận ngoại lệ với biên bản bàn giao.");
-    await page.getByRole("button", { name: "Đóng yêu cầu", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Đóng yêu cầu (ngoại lệ)" })).toHaveCount(0);
+    await page.getByRole("alertdialog").getByRole("button", { name: "Đóng yêu cầu", exact: true }).click();
+    await expectNoPageAction(page, "maintenance-request-close-exception");
     expect(api.mutations.find((item) => item.url === `/maintenance-requests/${requestId}/closure-exception`)).toEqual({
       method: "POST",
       url: `/maintenance-requests/${requestId}/closure-exception`,

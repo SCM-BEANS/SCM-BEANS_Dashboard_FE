@@ -4,13 +4,14 @@ import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { useRepairCaseCostDispute } from "./use-repair-case-cost-dispute";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildRepairCaseActions, type OperatorActionRole } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getRecipeApiErrorMessage } from "@/lib/api-errors";
 import type { RepairCase } from "@/schema/machines.schema";
 import styles from "./repair-workflow.module.css";
 
-export function ReplacementActions({ repairCase, refresh }: { repairCase: RepairCase; refresh: () => Promise<void> }) {
+export function ReplacementActions({ repairCase, refresh, role }: { repairCase: RepairCase; refresh: () => Promise<void>; role: Extract<OperatorActionRole, "admin" | "moderator"> }) {
   const [dialog, setDialog] = useState<"offer" | "emergency" | null>(null);
   const [machineId, setMachineId] = useState("");
   const [startAt, setStartAt] = useState("");
@@ -27,11 +28,16 @@ export function ReplacementActions({ repairCase, refresh }: { repairCase: Repair
   const start = startAt || (from ? `${from}T00:00` : "");
   const end = endAt || (to ? `${to}T00:00` : "");
   const eligible = candidates.data?.filter(item => item.machineType && item.machineType !== primary.data?.machineType && item.machineId !== repairCase.primaryMachineId && item.status === "IN_WAREHOUSE") ?? [];
-  const canOffer = ["WAITING_REPLACEMENT", "WAITING_OWNER_DECISION"].includes(repairCase.status);
-  const canAuthorize = ["DIAGNOSIS", "REPAIR_IN_PROGRESS"].includes(repairCase.status) && dispute.isDisputed && dispute.review?.maintenanceTicketId === repairCase.maintenanceTicketId;
   return <>
-    {canOffer && <ButtonBar type="button" onClick={() => { mutation.reset(); setDialog("offer"); }}>Đề xuất máy khác loại</ButtonBar>}
-    {canAuthorize && <ButtonBar type="button" onClick={() => { mutation.reset(); setDialog("emergency"); }}>Cho phép xử lý khẩn cấp</ButtonBar>}
+    <PageActions actions={buildRepairCaseActions({
+      role,
+      repairCase,
+      disputed: dispute.isDisputed,
+      reviewTicketId: dispute.review?.maintenanceTicketId,
+      pending: mutation.isPending,
+      onOffer: () => { mutation.reset(); setDialog("offer"); },
+      onAuthorizeEmergency: () => { mutation.reset(); setDialog("emergency"); },
+    })} />
     {dialog && <NotificationDialog variant="confirm" title={dialog === "offer" ? "Đề xuất máy khác loại" : "Cho phép xử lý khẩn cấp"} description={dialog === "offer" ? "Chọn máy và thời gian trong thời hạn hợp đồng." : "Cho phép công việc trong phạm vi cụ thể khi chi phí đang tranh chấp."} onClose={() => setDialog(null)} primaryAction={{ label: "Xác nhận", pending: mutation.isPending, disabled: mutation.isPending || !reason.trim() || (dialog === "emergency" ? !scope.trim() : !machineId || !start || !end || start >= end || !from || !to || start < `${from}T00:00` || end > `${to}T00:00`), onClick: () => mutation.mutate() }} secondaryAction={{ label: "Hủy", disabled: mutation.isPending, onClick: () => setDialog(null) }}>
       <div className={styles.assignmentForm}>
         {dialog === "offer" && <>

@@ -20,11 +20,11 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
+import { PageActions, type PageAction } from "@/components/action-bar/page-actions";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ActionBar } from "@/components/action-bar/action-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachineDetailBackDestination } from "../admin-back-destination";
@@ -161,26 +161,42 @@ function MachineDetailContent() {
     retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flatMap((page) => page) ?? [], [points.data]);
-  const refresh = () => {
-    void Promise.all([
-      machine.refetch(),
-      schedule.refetch(),
-      maintenanceTickets.refetch(),
-      machineModelId && detailTab === "machine-type" ? machineModel.refetch() : Promise.resolve(),
-      isSmartIot ? heartbeat.refetch() : Promise.resolve(),
-    ]);
+  const actionBar = (showActions: boolean) => {
+    const device = machine.data;
+    const changed = Boolean(device && (serialDraft !== (device.serialNumber ?? "") || regionDraft !== (device.region ?? "") || locationDraft !== (device.locationId ?? "")));
+    const actions: PageAction[] = [];
+    if (validId && device?.machineType === "SMART_IOT") actions.push({ id: "machine-view-iot", label: T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_ADMIN.IOT });
+    if (showActions && device && !editing) {
+      actions.push({ id: "machine-delete", label: "Xóa máy", variant: "danger", priority: 0, pending: deleteMachine.isPending, pendingLabel: "Đang xóa máy", onClick: () => { setMachineActionError(""); setConfirmDelete(true); } });
+      actions.push({ id: "machine-edit", label: T.MACHINES.EDIT, variant: "primary", priority: 10, onClick: beginEditing });
+    }
+    if (showActions && device && editing) {
+      actions.push({
+        id: "machine-cancel-edit",
+        label: T.MACHINES.CANCEL_EDIT,
+        variant: "secondary",
+        priority: 100,
+        onClick: () => { setSerialDraft(device.serialNumber ?? ""); setRegionDraft(device.region ?? ""); setLocationDraft(device.locationId ?? ""); setMachineActionError(""); setEditing(false); },
+        confirm: changed ? { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } : undefined,
+      });
+      actions.push({
+        id: "machine-save-edit",
+        label: T.MACHINES.SAVE_CHANGES,
+        variant: "primary",
+        priority: 100,
+        type: "submit",
+        form: "machine-edit-form",
+        disabled: updateMachine.isPending || !serialDraft.trim() || !device.status,
+        disabledReason: !device.status ? "Máy chưa có trạng thái hiện tại để lưu an toàn." : !serialDraft.trim() ? "Nhập số sê-ri trước khi lưu." : undefined,
+        pending: updateMachine.isPending,
+        pendingLabel: "Đang lưu",
+      });
+    }
+    return <>
+      <PageActions actions={actions} />
+      {showActions && device?.ownerId && <TransferMachineAction machine={device} role="admin" pageLevel />}
+    </>;
   };
-  const actionBar = (showRefresh: boolean) => (
-    <ActionBar>
-      {validId && <ButtonBar href={PATH_ADMIN.IOT}>{T.MACHINES.VIEW_IOT}</ButtonBar>}
-      {showRefresh && machine.data && (!editing ? <>
-        <ButtonBar type="button" onClick={beginEditing}>{T.MACHINES.EDIT}</ButtonBar>
-        <ButtonBar type="button" onClick={() => { setMachineActionError(""); setConfirmDelete(true); }}>Xóa máy</ButtonBar>
-      </> : null)}
-      {showRefresh && machine.data?.ownerId && <TransferMachineAction machine={machine.data} />}
-      {showRefresh && <ButtonBar type="button" disabled={machine.isFetching || schedule.isFetching || heartbeat.isFetching || maintenanceTickets.isFetching || machineModel.isFetching} onClick={refresh}>{T.COMMON.RETRY}</ButtonBar>}
-    </ActionBar>
-  );
   const renderHeading = () => (
     <BackButtonHeading
       title={T.MACHINES.DETAIL}
@@ -217,7 +233,7 @@ function MachineDetailContent() {
   if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
-    <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p></div>
+            <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar type="button" onClick={() => void machine.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>
   </div>{actionBar(true)}</AdminShell>;
   if (!machine.data) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
 
@@ -312,10 +328,6 @@ function MachineDetailContent() {
               {!device.ownerId && <p className={styles.panelSubtitle}>{T.MACHINES.OWNER_REQUIRED}</p>}
               {locations.isPending && device.ownerId && <p className={styles.panelSubtitle} role="status">{T.COMMON.LOADING}</p>}
               {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
-              <div className={styles.operationsButtons}>
-                <button className={styles.accountPrimaryButton} type="submit" disabled={updateMachine.isPending}>{updateMachine.isPending ? T.MACHINES.SAVING : T.MACHINES.SAVE_CHANGES}</button>
-                <button className={styles.accountSecondaryButton} type="button" disabled={updateMachine.isPending} onClick={() => { setEditing(false); setMachineActionError(""); }}>{T.MACHINES.CANCEL_EDIT}</button>
-              </div>
             </form>}
             {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
           </section>

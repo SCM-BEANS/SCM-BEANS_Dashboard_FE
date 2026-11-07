@@ -8,7 +8,6 @@ import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { machinesApi } from "@/apis/machines.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { SectionHeading } from "@/components/heading/section-heading";
@@ -478,13 +477,6 @@ export function RepairCaseDetailScreen({
     onSettled: invalidateWorkflowQueries,
   });
 
-  const refreshAll = async () => {
-    await Promise.all([
-      repairCase.refetch(),
-      ...(repairCase.data ? [request.refetch(), ticket.refetch(), timeline.refetch(), custody.refetch()] : []),
-      ...(replacementAssignmentId ? [assignment.refetch()] : []),
-    ]);
-  };
   const isRefreshing = repairCase.isFetching || request.isFetching || ticket.isFetching || assignment.isFetching || timeline.isFetching || custody.isFetching ||
     acknowledgeCustody.isPending || recordRepairDiagnosis.isPending || startRepairWork.isPending || completeRepairWork.isPending ||
     recordPrimaryCollection.isPending || activateReplacementAssignment.isPending || recordReplacementDelivery.isPending || recordReturnCustodyEvent.isPending ||
@@ -810,17 +802,12 @@ export function RepairCaseDetailScreen({
         description={M.CASE_DETAIL_DESCRIPTION}
         back={{ label: "Quay lại danh sách", fallbackHref: listHref }}
       />
-      <ActionBarConfig>
-        <ButtonBar type="button" disabled={isRefreshing} onClick={() => void refreshAll()}>
-          {isRefreshing ? M.CASE_REFRESHING : M.CASE_REFRESH}
-        </ButtonBar>
-      </ActionBarConfig>
 
       {repairCase.isPending ? <p className={styles.notice} role="status">{M.CASE_LOADING}</p> : null}
       {repairCase.isError ? <QueryError label={M.CASE_NOT_FOUND} error={repairCase.error} onRetry={() => void repairCase.refetch()} /> : null}
       {repairCase.data ? (
         <>
-          {(role === "admin" || role === "moderator") && <ReplacementActions repairCase={repairCase.data} refresh={invalidateWorkflowQueries} />}
+          {(role === "admin" || role === "moderator") && <ReplacementActions repairCase={repairCase.data} refresh={invalidateWorkflowQueries} role={role} />}
           {(role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician)) && dispute.authorizations.length > 0 && <section><h3>Ủy quyền khẩn cấp</h3>{dispute.authorizations.map(item => <p key={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {({ ADMIN: "Quản trị viên", MODERATOR: "Điều phối viên" } as Record<string, string>)[item.actorRole] ?? item.actorRole} · Lý do: {item.reason || "—"} · Phạm vi công việc: {item.workScope}</p>)}</section>}
           <section className={styles.panel} aria-label="Thông tin hồ sơ">
             <SectionHeading title="Thông tin hồ sơ" description="Trạng thái do hệ thống Dolores trả về." />

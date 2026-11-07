@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode, type Ref } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
+import { PageActionsRenderer } from "./page-actions-renderer";
+import { PageActionsRegistry, PageActionsRegistryContext } from "./page-actions-registry";
 import styles from "./action-bar.module.css";
 
 interface ActionBarProps {
@@ -24,6 +26,7 @@ export function ActionBar({
 
 export function ActionBarLayout({ children, label }: { children: ReactNode; label: string }) {
   const [actionsElement, setActionsElement] = useState<HTMLDivElement | null>(null);
+  const [registry] = useState(() => new PageActionsRegistry());
 
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -36,13 +39,20 @@ export function ActionBarLayout({ children, label }: { children: ReactNode; labe
   }, [actionsElement]);
 
   return (
+    <PageActionsRegistryContext.Provider value={registry}>
     <ActionBarSlotContext.Provider value={actionsElement}>
       <div className={styles.layout} data-visible={visible}>
         {children}
-        <ActionBar label={label} actionsRef={setActionsElement} />
+        <ActionBar label={label} actionsRef={setActionsElement}><RegisteredPageActions registry={registry} /></ActionBar>
       </div>
     </ActionBarSlotContext.Provider>
+    </PageActionsRegistryContext.Provider>
   );
+}
+
+function RegisteredPageActions({ registry }: { registry: PageActionsRegistry }) {
+  const actions = useSyncExternalStore(registry.subscribe, registry.getSnapshot, registry.getSnapshot);
+  return <PageActionsRenderer actions={actions} />;
 }
 
 export function ActionBarConfig({ children }: { children: ReactNode }) {

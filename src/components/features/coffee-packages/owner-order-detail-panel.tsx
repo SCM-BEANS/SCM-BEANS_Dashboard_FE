@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { coffeePackagesApi } from "@/apis/coffee-packages.api";
-import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildCoffeeOrderReceiptActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -11,8 +12,7 @@ import styles from "./coffee-package-workflow.module.css";
 import { OwnerInvoicePanel } from "./owner-invoice-panel";
 
 export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWorkflowController }) {
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const confirmReceipt = useMutation({ mutationFn: () => coffeePackagesApi.confirmOrderReceived(workflow.selectedOrderId), onSuccess: async () => { setConfirmOpen(false); await workflow.orderDetail.refetch(); } });
+  const confirmReceipt = useMutation({ mutationFn: () => coffeePackagesApi.confirmOrderReceived(workflow.selectedOrderId), onSuccess: async () => { await workflow.orderDetail.refetch(); } });
   const [cancelReason, setCancelReason] = useState("");
   const order = workflow.selectedOrder;
 
@@ -34,6 +34,7 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
 
       {order ? (
         <>
+          <PageActions actions={buildCoffeeOrderReceiptActions({ role: "owner", order, pending: confirmReceipt.isPending, onConfirm: () => confirmReceipt.mutate() })} />
           <dl className={styles.details}>
             <div><dt>Trạng thái đơn</dt><dd><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></dd></div>
             <div><dt>Gói cà phê</dt><dd>{order.packageName ?? order.packageCode ?? "—"}</dd></div>
@@ -49,8 +50,8 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
             {order.reviewNote ? <div><dt>Ghi chú xử lý</dt><dd>{order.reviewNote}</dd></div> : null}
           </dl>
 
-          {order.ownerReceivedAt ? <p>Đã xác nhận nhận hàng lúc {formatCoffeePackageDateTime(order.ownerReceivedAt)}</p> : order.status === "DELIVERED" ? <ButtonBar type="button" onClick={() => setConfirmOpen(true)}>Xác nhận đã nhận hàng</ButtonBar> : null}
-          {confirmOpen ? <NotificationDialog variant="confirm" title="Xác nhận đã nhận hàng" description="Bạn xác nhận đã nhận đơn hàng này?" onClose={() => setConfirmOpen(false)} primaryAction={{ label: "Xác nhận", onClick: () => confirmReceipt.mutate(), pending: confirmReceipt.isPending }} secondaryAction={{ label: "Hủy", onClick: () => setConfirmOpen(false), disabled: confirmReceipt.isPending }}>{confirmReceipt.isError ? <p role="alert">{getApiErrorMessage(confirmReceipt.error)}</p> : null}</NotificationDialog> : null}
+          {order.ownerReceivedAt ? <p>Đã xác nhận nhận hàng lúc {formatCoffeePackageDateTime(order.ownerReceivedAt)}</p> : null}
+          {confirmReceipt.isError ? <p role="alert">{getApiErrorMessage(confirmReceipt.error)}</p> : null}
           {order.payosQrUrl ? <p className={styles.notice}>Thông tin thanh toán: <a href={order.payosQrUrl} target="_blank" rel="noreferrer">Mở liên kết thanh toán</a>{order.payosQrRef ? ` · ${order.payosQrRef}` : ""}</p> : null}
           {workflow.invoice.isPending || workflow.invoice.isError || workflow.invoice.data ? <OwnerInvoicePanel workflow={workflow} /> : null}
 

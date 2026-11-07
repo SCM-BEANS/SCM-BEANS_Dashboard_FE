@@ -5,6 +5,8 @@ import { machinesApi } from "@/apis/machines.api";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildMaintenanceRequestActions } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { ReasonDialog } from "@/components/reason-dialog/reason-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -128,9 +130,18 @@ export function MaintenanceRequestActions({
   return (
     <section className={styles.pendingNotice} aria-labelledby="maintenance-request-actions-title">
       <h2 className={styles.sectionTitle} id="maintenance-request-actions-title">Thao tác yêu cầu bảo trì</h2>
-      {request.status === "OVERDUE_REVIEW" && !request.overdueReviewedAt && (
-        <ButtonBar type="button" onClick={() => setShowOverdueReview(true)}>Ghi nhận đánh giá quá hạn</ButtonBar>
-      )}
+      <PageActions actions={buildMaintenanceRequestActions({
+        role,
+        request,
+        primaryReturned,
+        candidateReady: Boolean(candidate && !request.replacementAssignmentId),
+        overduePending: overdueReview.isPending,
+        linkPending: linkReplacement.isPending,
+        closePending: closureException.isPending,
+        onOverdueReview: () => setShowOverdueReview(true),
+        onLinkReplacement: () => setShowLinkConfirm(true),
+        onCloseException: () => setShowClosureException(true),
+      })} />
       {request.requestType === "PREVENTIVE" && !request.replacementAssignmentId && (
         <div className={styles.ticketAssignment}>
           <p>Kiểm tra một phân công ACTIVE theo mã để liên kết với yêu cầu này.</p>
@@ -154,13 +165,9 @@ export function MaintenanceRequestActions({
           {candidate && (
             <div>
               <p>Máy thay thế: <code>{candidate.replacementMachineId}</code> · Trạng thái <StatusBadge status={candidate.status}>{maintenanceAssignmentStatusLabel(candidate.status)}</StatusBadge></p>
-              <ButtonBar type="button" onClick={() => setShowLinkConfirm(true)}>Liên kết phân công này</ButtonBar>
             </div>
           )}
         </div>
-      )}
-      {primaryReturned && request.status !== "CLOSED" && (
-        <ButtonBar type="button" onClick={() => setShowClosureException(true)}>Đóng yêu cầu (ngoại lệ)</ButtonBar>
       )}
       {eventsQuery.isError && <p className={styles.errorText} role="alert">{getApiErrorMessage(eventsQuery.error)}</p>}
       {feedback && <p role="status">{feedback}</p>}

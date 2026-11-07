@@ -1,4 +1,6 @@
 ﻿import { test, expect, type Page } from "@playwright/test";
+import { clickPageAction, expectNoPageAction, expectNoPageActionLabel, expectPageActionOrder } from "./page-actions-test-helpers";
+
 const id = "f3000000-0000-4000-8000-000000000001";
 const ownerId = "f3000000-0000-4000-8000-000000000002";
 async function login(page: Page, role: string) {
@@ -30,6 +32,7 @@ for (const role of ["admin", "owner"]) {
     }
     await panel.getByRole("button", { name: "Sau" }).click();
     await expect(panel.getByText("Trang 2")).toBeVisible();
+    await expectNoPageActionLabel(page, "Sau");
     await panel.getByLabel("Trạng thái").selectOption("TERMINATED");
     await expect(panel.getByText("Không có lịch sử hợp đồng.")).toBeVisible();
   });
@@ -43,7 +46,8 @@ test("owner confirms delivered order at the order receipt endpoint", async ({ pa
     return route.fulfill({ status: 404, json: {} });
   });
   await page.goto(`/dashboard/coffee-packages/${id}`);
-  await page.getByRole("button", { name: "Xác nhận đã nhận hàng" }).click();
+  await expectPageActionOrder(page, ["coffee-order-confirm-received"]);
+  await clickPageAction(page, "coffee-order-confirm-received");
   await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận", exact: true }).click();
   await expect(page.getByText(/Đã xác nhận nhận hàng lúc/)).toBeVisible();
   expect(posted).toBe(`/coffee-package-orders/${id}/confirm-received`);
@@ -66,7 +70,8 @@ test("operator legacy review requires technician only for depot verification", a
   });
   await page.goto(`/admin/contracts/${id}/termination`);
   await page.getByRole("button", { name: "Mở chi tiết" }).click();
-  await page.getByRole("button", { name: "Rà soát lệnh thu hồi" }).click();
+  await expectPageActionOrder(page, ["recall-work-order-legacy-review"]);
+  await clickPageAction(page, "recall-work-order-legacy-review");
   const dialog = page.getByRole("alertdialog", { name: "Rà soát lệnh thu hồi" });
   await dialog.getByLabel("Lý do").fill("Kiểm tra hồ sơ");
   await expect(dialog.getByRole("button", { name: "Xác nhận" })).toBeEnabled();
@@ -86,6 +91,6 @@ test("receipt confirmation is hidden before delivery", async ({ page }) => {
   });
   await page.goto(`/dashboard/coffee-packages/${id}`);
   await expect(page.getByRole("button", { name: "Đồng ý chờ hàng" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Xác nhận đã nhận hàng" })).toHaveCount(0);
+  await expectNoPageAction(page, "coffee-order-confirm-received");
 });
 
