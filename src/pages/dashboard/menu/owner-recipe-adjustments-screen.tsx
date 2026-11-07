@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { recipesApi } from "@/apis/recipes.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { OwnerMenuHeader } from "./menu-screen";
 import { OwnerMenuSchema } from "@/schema/recipe-menus.schema";
@@ -38,6 +39,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
   const [menuAction, setMenuAction] = useState<"create" | "rename" | "delete" | null>(null);
   const [menuName, setMenuName] = useState("");
   const [mode, setMode] = useState<"view" | "create" | "edit">(creating ? "create" : "view");
+  const [editorDirty, setEditorDirty] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [imagePath, setImagePath] = useState("");
@@ -83,6 +85,8 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
     setDeleteTarget(null); setEditTargetId(""); setMenuAction(null); setTargetMenu("");
     if (creating) { setName(""); setSlug(""); setImagePath(""); setProcedure(emptyRecipeProcedure()); }
   }, [creating, menuFromUrl, recipeFromUrl]);
+
+  useEffect(() => { setEditorDirty(false); }, [mode]);
 
   useEffect(() => {
     const form = menuAction ? menuEditorRef.current : mode !== "view" ? editorRef.current : null;
@@ -217,8 +221,8 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
           {pagination(recipes.data.page, recipes.data.last, (page) => { resetContext(); setRecipePage(page); }, "Công thức trong menu riêng")}
         </> : null}
         </div> : null}
-        {mode !== "view" ? <form ref={editorRef} className={styles.recipeMenuEditor} onInvalidCapture={(event) => { const disclosure = (event.target as HTMLElement).closest("details"); if (disclosure) disclosure.open = true; }} onSubmit={submit} aria-label="Thông tin công thức riêng" aria-busy={create.isPending || edit.isPending}>
-          <div className={styles.panelHeading}><div><h3>{mode === "create" ? "Thông tin món mới" : "Thông tin món"}</h3><p>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (menuId ? "Menu đã chọn (chưa tải được tên)" : "Menu của tôi")}</strong></p></div><ButtonBar disabled={busy} onClick={cancelEditor}>Quay lại danh sách</ButtonBar></div>
+        {mode !== "view" ? <form id="owner-recipe-editor" ref={editorRef} onChangeCapture={() => setEditorDirty(true)} className={styles.recipeMenuEditor} onInvalidCapture={(event) => { const disclosure = (event.target as HTMLElement).closest("details"); if (disclosure) disclosure.open = true; }} onSubmit={submit} aria-label="Thông tin công thức riêng" aria-busy={create.isPending || edit.isPending}>
+          <div className={styles.panelHeading}><div><h3>{mode === "create" ? "Thông tin món mới" : "Thông tin món"}</h3><p>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (menuId ? "Menu đã chọn (chưa tải được tên)" : "Menu của tôi")}</strong></p></div></div>
           <label className={styles.formField}><span>Tên món / công thức *</span><input required placeholder="Ví dụ: Espresso đậm vị" value={name} onChange={(event) => setName(event.target.value)} /></label>
           {mode === "create" ? <>
             <details className={styles.recipeMenuDisclosure}><summary>Thông tin bổ sung (không bắt buộc)</summary><div className={styles.recipeMenuFormGrid}><label className={styles.formField}><span>Mã tên (tùy chọn)</span><input value={slug} onChange={(event) => setSlug(event.target.value)} /></label><label className={styles.formField}><span>Đường dẫn ảnh (tùy chọn)</span><input value={imagePath} onChange={(event) => setImagePath(event.target.value)} /></label></div></details>
@@ -230,7 +234,11 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
             <label className={styles.recipeMenuConfirmation}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> Tôi hiểu việc lưu thông tin chưa xác nhận máy đã áp dụng thay đổi.</label>
           </>}
           {validation ? <p className={styles.recipeMenuError} role="alert">{validation}</p> : null}
-          <div className={styles.recipeMenuEditorFooter}><p>Sau khi lưu, mở Đồng bộ với máy để kiểm tra món đã được áp dụng.</p><div className={styles.recipeMenuActions}><ButtonBar className={styles.recipeMenuPrimary} type="submit" disabled={busy || (mode === "edit" ? !confirmed || !editTargetId : !canCreate)}>{create.isPending || edit.isPending ? "Đang lưu…" : "Lưu công thức"}</ButtonBar><ButtonBar disabled={busy} onClick={cancelEditor}>Hủy</ButtonBar></div></div>
+          <div className={styles.recipeMenuEditorFooter}><p>Sau khi lưu, mở Đồng bộ với máy để kiểm tra món đã được áp dụng.</p></div>
+          <PageActions actions={[
+            { id: "cancel-recipe", label: "Hủy", priority: 100, onClick: cancelEditor, ...(editorDirty ? { confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } } : {}) },
+            { id: "save-recipe", label: "Lưu công thức", variant: "primary", priority: 100, type: "submit", form: "owner-recipe-editor", disabled: busy || (mode === "edit" ? !confirmed || !editTargetId : !canCreate), disabledReason: "Hoàn tất thông tin và xác nhận trước khi lưu.", pending: create.isPending || edit.isPending, pendingLabel: "Đang lưu…" },
+          ]} />
         </form> : detail.data ? <section ref={detailRef} className={styles.recipeMenuDetail} aria-label="Chi tiết công thức riêng">
           <div className={styles.panelHeading}><div><h3 tabIndex={-1}>{detail.data.name}</h3><p>Thông tin công thức trong menu của bạn</p></div></div>
           {sourceId ? <div className={styles.notice}>

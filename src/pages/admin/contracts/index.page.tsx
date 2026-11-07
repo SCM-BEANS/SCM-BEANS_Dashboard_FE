@@ -348,6 +348,7 @@ function ContractsContent() {
       />}
     </section>}
     {view === "create" && <ContractCreateForm
+      onCancel={() => void router.push({ pathname: "/admin/contracts" }, undefined, { shallow: true })}
       onCreated={(id) => {
         setCreatedContractId(id);
         void router.push({ pathname: "/admin/contracts" }, undefined, { shallow: true });

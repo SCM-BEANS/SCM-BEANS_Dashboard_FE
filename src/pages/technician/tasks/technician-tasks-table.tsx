@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY, technicianWorkItemsApi } from "@/apis/technician-work-items.api";
-import { ActionBar } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
@@ -216,7 +215,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
           </div>
           <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Xem tất cả</TextLinkButton>
         </div>
-        {tasksQuery.isError ? <p className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)}</p> : null}
+        {tasksQuery.isError ? <div className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)} <ButtonBar type="button" onClick={() => void refreshTasks()}>{messages.TASKS_RETRY}</ButtonBar></div> : null}
         {isLoading ? <p className={styles.loading} role="status">Đang tải công việc được giao…</p> : null}
         {recentTasks.length > 0 ? (
           <div className={styles.taskList}>{recentTasks.map((task) => <TaskCard key={task.key} task={task} compact />)}</div>
@@ -253,7 +252,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
           <h2 id="technician-task-list-title">{filter === "all" ? "Danh sách công việc" : categoryLabels[filter]}</h2>
           <span className={styles.totalCount}>{tasksQuery.data ? tasksQuery.data.items.length : "—"}</span>
         </div>
-        {tasksQuery.isError ? <p className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)}</p> : null}
+        {tasksQuery.isError ? <div className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)} <ButtonBar type="button" onClick={() => void refreshTasks()}>{messages.TASKS_RETRY}</ButtonBar></div> : null}
         {isLoading ? <p className={styles.loading} role="status">Đang tải công việc…</p> : null}
         {tasksQuery.data ? (
           <DataTable
@@ -319,17 +318,14 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         ) : null}
       </section>
 
-      <ActionBar label={messages.TASKS_PANEL_TITLE}>
+      <div className={styles.panel}>
         <ButtonBar type="button" disabled={page === 0 || isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>
           Trang trước
         </ButtonBar>
         <ButtonBar type="button" disabled={!tasksQuery.data?.hasNext || isFetching} onClick={() => setPage((current) => current + 1)}>
           Trang sau
         </ButtonBar>
-        <ButtonBar type="button" disabled={isFetching} onClick={() => void refreshTasks()}>
-          {isFetching ? messages.TASKS_RELOADING : messages.TASKS_RETRY}
-        </ButtonBar>
-      </ActionBar>
+      </div>
     </section>
   );
 }

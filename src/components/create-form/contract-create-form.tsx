@@ -4,7 +4,7 @@ import { z } from "zod";
 import { contractsApi } from "@/apis/contracts.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateContractRequestSchema } from "@/schema/contracts.schema";
@@ -71,9 +71,11 @@ const FORM_ID = "contract-create-form";
 
 export function ContractCreateForm({
   onCreated,
+  onCancel,
   ownerRole = "OWNER",
 }: {
   onCreated: (contractId: string) => void;
+  onCancel: () => void;
   ownerRole?: string;
 }) {
   const queryClient = useQueryClient();
@@ -212,7 +214,7 @@ export function ContractCreateForm({
   };
 
   const locked = create.isPending || blockResubmit || Boolean(createdContractId);
-  const submitDisabled = locked || owners.isPending || owners.isError || owners.data?.length === 0 ||
+  const submitDisabled = !form.ownerId || !form.machineId || !form.startDate || !form.endDate || !form.monthlyRentalFee || !form.terms.trim() || locked || owners.isPending || owners.isError || owners.data?.length === 0 ||
     machines.isPending || machines.isError || warehouseMachines.length === 0;
 
   return (
@@ -281,11 +283,10 @@ export function ContractCreateForm({
           {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
         </form>
       </section>
-      <ActionBarConfig>
-        <ButtonBar type="submit" form={FORM_ID} disabled={submitDisabled}>
-          {create.isPending ? T.CONTRACTS.CREATING : createdContractId ? "Đã tạo" : T.CONTRACTS.CREATE_SUBMIT}
-        </ButtonBar>
-      </ActionBarConfig>
+      <PageActions actions={createdContractId ? [] : [
+        { id: "cancel", label: "Hủy", priority: 100, onClick: onCancel, confirm: JSON.stringify(form) !== JSON.stringify(initialForm) ? { title: "Hủy tạo hợp đồng?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy tạo" } : undefined },
+        { id: "create", label: T.CONTRACTS.CREATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: FORM_ID, disabled: submitDisabled, disabledReason: create.isPending ? "Đang tạo hợp đồng." : "Điền đầy đủ thông tin hợp lệ để tạo hợp đồng.", pending: create.isPending, pendingLabel: T.CONTRACTS.CREATING },
+      ]} />
     </>
   );
 }

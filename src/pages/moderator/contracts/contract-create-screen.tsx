@@ -24,6 +24,7 @@ export function ContractCreateScreen() {
         title={T.CONTRACTS.CREATE_TITLE}
       />
       <ContractCreateForm
+        onCancel={() => void router.push(PATH_MODERATOR.CONTRACTS)}
         ownerRole="owner"
         onCreated={(id) => {
           setCreatedContractId(id);

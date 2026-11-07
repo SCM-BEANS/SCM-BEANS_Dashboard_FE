@@ -1,3 +1,4 @@
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import {
@@ -64,7 +65,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
           {workflow.isExternalBuyback && caseData.status === "PAID" && caseData.refurbishmentTechnicianId !== workflow.ownerId ? <p className={styles.notice} role="note">Hồ sơ chưa được giao tân trang cho tài khoản Technician hiện tại.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "REFURBISHING" && !workflow.canCompleteRefurbishment ? <p className={styles.notice} role="note">Chỉ Technician được giao tân trang mới có thể ghi kết quả cho hồ sơ này.</p> : null}
           {caseData.status === "INSPECTION_PENDING" ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-inspection-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const inspection = {
                 condition: workflow.condition.trim(),
                 valuationAmount: Number(workflow.valuationAmount),
@@ -85,7 +86,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
               <label className={styles.formField}><span>Tiền tệ</span><input required maxLength={16} value={workflow.currency || caseData.currency} onChange={(event) => workflow.setCurrency(event.target.value)} /></label>
               <label className={styles.formField}><span>Ghi chú</span><textarea maxLength={2000} value={workflow.inspectionNotes} onChange={(event) => workflow.setInspectionNotes(event.target.value)} /></label>
               <p className={styles.formHint}>Endpoint hiện không có API upload/đọc evidence kiểm tra. Form không nhận URL hoặc storage key.</p>
-              <ButtonBar type="submit" disabled={!workflow.condition.trim() || !workflow.valuationAmount || workflow.submitInspection.isPending}>Gửi kết quả kiểm tra</ButtonBar>
+              <PageActions actions={[{ id: "submit-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "buyback-inspection-form", disabled: !workflow.condition.trim() || !workflow.valuationAmount, disabledReason: "Nhập tình trạng và giá trị thẩm định.", pending: workflow.submitInspection.isPending, pendingLabel: "Đang gửi…" }]} />
             </form>
           ) : null}
           {!workflow.isExternalBuyback && caseData.status === "COLLECTED" ? (

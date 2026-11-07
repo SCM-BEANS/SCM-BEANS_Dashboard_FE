@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { machinesApi } from "@/apis/machines.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -66,11 +64,6 @@ export function MachineCheckTable() {
           />
         )}
       </section>
-      <ActionBarConfig>
-        <ButtonBar disabled={machines.isFetching} onClick={() => void machines.refetch()}>
-          {machines.isFetching ? T.MACHINE_CHECK.LOADING : T.MACHINE_CHECK.RETRY}
-        </ButtonBar>
-      </ActionBarConfig>
     </section>
   );
 }

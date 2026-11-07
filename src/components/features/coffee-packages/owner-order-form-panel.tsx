@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackage } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -55,7 +55,7 @@ export function OwnerOrderFormPanel({
       ) : null}
 
       {workflow.activeSmartIoTContracts.length > 0 && packages.length > 0 ? (
-        <form className={styles.form} onSubmit={placeOrder}>
+        <form id="owner-coffee-order-form" className={styles.form} onSubmit={placeOrder}>
           <div className={styles.formGrid}>
             <label className={styles.field}>
               <span>Hợp đồng Smart IoT</span>
@@ -106,7 +106,7 @@ export function OwnerOrderFormPanel({
           {workflow.packageDetail.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.packageDetail.error)}</p> : null}
           <div className={styles.actionRow}>
             <span className={styles.hint}>Bạn có thể xem trạng thái và chứng từ sau khi gửi đơn.</span>
-            <ButtonBar type="submit" disabled={!contractId || !packageId || Number(quantity) < 1 || workflow.pending}>Gửi đơn đặt gói</ButtonBar>
+            <PageActions actions={[{ id: "place-coffee-order", label: "Gửi đơn đặt gói", variant: "primary", priority: 100, type: "submit", form: "owner-coffee-order-form", disabled: !contractId || !packageId || Number(quantity) < 1, disabledReason: "Chọn hợp đồng, gói và số lượng hợp lệ.", pending: workflow.pending, pendingLabel: "Đang gửi…" }]} />
           </div>
         </form>
       ) : null}

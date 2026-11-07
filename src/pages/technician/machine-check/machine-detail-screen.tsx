@@ -2,8 +2,7 @@ import { MachineContractHistory } from "@/components/machines/machine-contract-h
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -111,28 +110,14 @@ export function TechnicianMachineDetailScreen() {
     },
   });
 
-  const actionBar = (showRefresh: boolean) => (
-    <ActionBarConfig>
-      <ButtonBar href={PATH_TECHNICIAN.MACHINE_CHECK}>{T.MACHINE_CHECK.BACK_TO_LIST}</ButtonBar>
-      <ButtonBar
-        disabled={
-          !machine.data
-          || !machine.data.serialNumber
-          || machine.data.status !== "IN_WAREHOUSE"
-          || machine.isError
-          || machine.isPending
-          || statusUpdate.isPending
-        }
-        onClick={() => statusUpdate.mutate()}
-      >
-        {statusUpdate.isPending ? T.MACHINE_CHECK.STATUS_UPDATING : T.MACHINE_CHECK.UPDATE_STATUS}
-      </ButtonBar>
-      {showRefresh && (
-        <ButtonBar disabled={machine.isFetching} onClick={() => void machine.refetch()}>
-          {machine.isFetching ? T.MACHINE_CHECK.LOADING : T.MACHINE_CHECK.RETRY}
-        </ButtonBar>
-      )}
-    </ActionBarConfig>
+  const actionBar = () => (
+    <PageActions actions={machine.data?.status === "IN_WAREHOUSE" ? [{
+      id: "mark-ready", label: T.MACHINE_CHECK.UPDATE_STATUS, variant: "primary", priority: 50,
+      disabled: !machine.data.serialNumber || statusUpdate.isPending,
+      disabledReason: "Cần số sê-ri để cập nhật trạng thái.",
+      pending: statusUpdate.isPending, pendingLabel: T.MACHINE_CHECK.STATUS_UPDATING,
+      onClick: () => statusUpdate.mutate(),
+    }] : []} />
   );
   const heading = (title: string = T.MACHINE_CHECK.DETAIL_TITLE, description?: string) => (
     <BackButtonHeading
@@ -147,21 +132,21 @@ export function TechnicianMachineDetailScreen() {
   if (!router.isReady) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p></section>
-      {actionBar(false)}
+      {actionBar()}
     </TechnicianShell>;
   }
 
   if (!validId) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<div className={styles.machineCheckError} role="alert"><p>{T.MACHINE_CHECK.INVALID_ID}</p></div></section>
-      {actionBar(false)}
+      {actionBar()}
     </TechnicianShell>;
   }
 
   if (machine.isPending) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p></section>
-      {actionBar(true)}
+      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -174,7 +159,7 @@ export function TechnicianMachineDetailScreen() {
           <button className={styles.machineCheckRetry} type="button" onClick={() => void machine.refetch()}>{T.MACHINE_CHECK.RETRY}</button>
         </div>
       </section>
-      {actionBar(true)}
+      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -184,7 +169,7 @@ export function TechnicianMachineDetailScreen() {
         {heading()}
         <p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.NOT_FOUND}</p>
       </section>
-      {actionBar(false)}
+      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -232,7 +217,7 @@ export function TechnicianMachineDetailScreen() {
           />
         </section>
       </section>
-      {actionBar(true)}
+      {actionBar()}
     </TechnicianShell>
   );
 }
