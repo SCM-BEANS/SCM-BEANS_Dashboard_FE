@@ -5,7 +5,7 @@ Risk: high-risk — dữ liệu máy theo JWT/scope, nhiều role và API ngoài
 Test: --tdd (người dùng đã yêu cầu khi chạy cook).
 Tasks: default.
 Ngày: 2026-11-06.
-Status: Phase 01 passing, code review APPROVED; chờ người dùng duyệt Phase 02. Chưa sửa UI.
+Status: Phase 01–04 passing về triển khai/kiểm thử FE mock, code review APPROVED. Live authorization còn UNVERIFIED; production build bị chặn bởi lỗi baseline ngoài feature.
 Spec: [spec.md](spec.md). Scenarios: [scenarios.md](scenarios.md).
 Directory: `plans/cleaning-telemetry-integration/`.
 Project root: Git root `E:/Đồ án/SCM-BEANS_Dashboard_FE` (không có `.skills.json` marker); tracking tại root `feature_list.json`.
@@ -115,9 +115,9 @@ Ba điểm trên đã được chốt và plan review đã xử lý. Handoff: `c
 - [x] Người dùng xác nhận ba quyết định vận hành ngày 2026-11-06.
 - [x] Plan review 2026-11-06: không có finding BLOCK/HIGH; đã đối chiếu code/route, quyền, timezone, cleaning completeness và scenario coverage. Tracker encoding được kiểm tra riêng trước handoff.
 - [x] Phase 01 — contract/scope (targeted tests đạt; baseline compile/full-suite chưa đạt; người dùng đã duyệt Phase02).
-- [x] Phase 02 — Owner analytics/cleaning (targeted25/25, E2E6/6, review APPROVED; chờ duyệt Phase03).
-- [ ] Phase 03 — monitoring/offline review.
-- [ ] Phase 04 — cross-role validation.
+- [x] Phase 02 — Owner analytics/cleaning (targeted 25/25, E2E 6/6, review APPROVED; người dùng đã duyệt Phase03).
+- [x] Phase 03 — monitoring/offline review (targeted 33/33, E2E 10/10, review APPROVED; người dùng đã duyệt Phase04).
+- [x] Phase 04 — cross-role validation (feature Node 33/33, E2E 22/22, review APPROVED; ma trận S01–S36 và live gaps được ghi rõ).
 
 ## Risks và phần hoãn
 
@@ -132,16 +132,19 @@ Ba điểm trên đã được chốt và plan review đã xử lý. Handoff: `c
 <!-- Updated by cook automatically — do not edit manually -->
 
 **Last active:** 2026-11-07 Asia/Ho_Chi_Minh.
-**Phase in progress:** phase-02-owner-analytics-and-cleaning.
-**Status:** Phase02 passing; review APPROVED; awaiting human approval for Phase03. Không commit/push.
+**Phase in progress:** none — Phase04 FE validation complete.
+**Status:** Phase01–04 passing về FE mock; code review APPROVED. Live scope UNVERIFIED và production build baseline chưa đạt. Không commit/push.
 
 ### Decisions made this session
 
-- Owner ACTIVE scope dùng lịch sử hợp đồng theo từng máy hiển thị với status=ACTIVE; không dùng endpoint danh sách chỉ dành Admin/Moderator, không dùng JWTsub làm businessOwnerId.
-- UI Owner dùng ba tab, URL filters/page, ngày VN và daily bucket UTC; query thuộc page, hai history panel chỉ hiển thị.
-- Cleaning snapshot tuần tự tối đa5×100; incomplete giữ unknown; analytics không polling theo heartbeat. Conventional và máy ngoài ACTIVE không bị ghi thành số0.
-- Kiểm thử25/25 liên quan và E2E6/6 đạt (5viewport); review sửa2findings rồi APPROVED. Full Node196/288 với92baselinefailures; TypeScript4baselineerrors; lint0errors/3oldwarnings. Chưa live authenticated scope.
+- Offline review dùng presentation chung, query/scope/actions tại page từng role. Owner chỉ đọc; Moderator không request heartbeat/points; Technician không request offline review.
+- Quyết định đọc lại trạng thái trước POST, không tự retry; lỗi409 giữ draft. Timeout/response lệch được mô tả là chưa xác minh kết quả và luôn refetch.
+- Range/field Admin/Technician và review filters/selection có URL; telemetry datetime dùngUTC+7, biểu đồ có timestamp thật và coverage caption.
+- Targeted 33/33 và Playwright 22/22 đạt; Phase04 review APPROVED. Bao phủ subject/machine/filter pending races, 100-machine request budget, polling hidden/visible, timeout một POST và keyboard/mobile. Sửa nhãn machineType chưa xác nhận.
+- Full Node 204/296 với 92 failures (khớp số lượng baseline đã ghi, chưa so từng tên); TypeScript 4 baseline errors; lint 0 errors/3 old warnings. Production build thử thất bại ở generated validator baseline. Chưa live authenticated scope; OpenAPI public GET có đủ endpoint.
+- `.next-cleaning-review` là artifact build thử còn untracked vì automatic policy chặn lệnh dọn. Không đổi Git ignore để che artifact và không thử lách lệnh chặn.
+- Đã cài user-global Playwright CLI0.1.23, Ponytail5.3.3 và Superpowers6.3.0 theo yêu cầu xen giữa; không đổi dependencies của project.
 
 ### Next immediate action
 
-Chờ người dùng duyệt Phase03 theo cook --hard; sau duyệt nối monitoring/offline review đúng quyền, xin duyệt exact source paths mới nếu cần. Phase04 cross-role/live gaps kiểm tra sau. Giữ nguyên API và giao diện Admin/Moderator ngoài phần đã chốt.
+Đã hoàn tất phạm vi FE của kế hoạch. Khi có môi trường/phiên test được phép, xác minh các live gaps trong scenarios.md (hai Owner, grant Technician,401refresh và daily bucket thực tế); xử lý build/test baseline ngoài feature bằng công việc riêng. Chưa commit/push.

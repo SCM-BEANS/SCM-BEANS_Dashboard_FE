@@ -1,6 +1,6 @@
 # Phase 03 — Monitoring và Offline Review
 
-Status: not_started.
+Status: passing; code review APPROVED; người dùng đã duyệt Phase 04.
 Canonical ID: `phase-03-monitoring-and-offline-review`.
 Stories: CT-05, CT-06, CT-07.
 
@@ -43,3 +43,13 @@ Phase01 DTO/permission/pagination; Phase02 Owner operations tabs. Chưa có muta
 ## Risks / gate
 
 Không có endpoint upload evidence riêng cho offline review trong đặc tả: chỉ nhận reference theo schema, không bịa file upload. GET403 không chứng minh máy offline; review state server là nguồn quyết định. Admin/Moderator không có Owner Analytics thì không dựng số ly/vệ sinh từng máy giả để ép cùng dữ liệu.
+
+## Kết quả triển khai — 2026-11-07
+
+- Shared `OfflineReviewPanel` đã được duyệt và tạo đúng đường dẫn; chỉ nhận data/state/callback. Query và quyết định thuộc Admin/Moderator IoT; Owner connection tab chỉ đọc. Technician không gọi offline review.
+- URL giữ reviewId/reviewStatus/reviewPage/machineId, có kiểm tra UUID/context và reset bộ lọc sai. Query keys có authenticated subject. Moderator profile có liên kết đến review theo máy, không gọi heartbeat/points.
+- Form quyết định chỉ REVIEW_REQUIRED, bắt buộc lý do và private reference đúng schema, có NotificationDialog và khóa double submit. Adapter GET lại trạng thái trước POST; không retry mutation; sau thành công/lỗi đều refetch. 409 giữ draft; timeout/response không hợp lệ báo chưa xác minh kết quả.
+- Admin heartbeat list/detail có subject, Smart IoT/visibility gate. Admin/Technician giữ range/field trong URL; trường thời gian nhập và hiển thị theo UTC+7. Shared chart dùng timestamp thật và ghi rõ phần dữ liệu đã tải.
+- TDD: offline từ 4 RED ban đầu thành 11/11; ba bộ telemetry/Owner Analytics/offline đạt 33/33. Playwright file operations đạt 10/10, gồm ba role tại 390/768/1023/1024/1440px, Owner readonly/deep link/refresh, Moderator zero telemetry + một POST + giữ draft khi 409, Admin form + Back/Forward và analytics regressions.
+- Code review APPROVED sau sửa một finding MEDIUM về thông báo lỗi mutation. Lint: 0 errors/3 warnings cũ; git diff --check đạt. Full Node: 204/296, còn 92 failures (khớp số lượng baseline đã ghi; chưa đối chiếu từng tên với HEAD). TypeScript còn 4 lỗi baseline ở generated validator và recipe-menus-screen, không có lỗi mới trong phase.
+- Chưa xác minh GET có đăng nhập trên API thật, scope giữa hai Owner hoặc grant Technician hết hạn thật; không mutation server/Docker. Không commit/push. Phase04 vẫn chưa bắt đầu.

@@ -37,7 +37,8 @@
   transition: background-color 140ms ease, border-color 140ms ease;
 }
 
-.ownerOperationsTabs button[aria-selected="true"] {
+.ownerOperationsTabs button[aria-selected="true"],
+.ownerOperationsTabs button[aria-pressed="true"] {
   border-color: #d9a6aa;
   background: #fae9eb;
   color: #b91222;
@@ -238,6 +239,63 @@
   gap: 16px;
   min-width: 0;
   color: #302b29;
+}
+
+.monitoringContent {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.monitoringIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  overflow-wrap: anywhere;
+}
+
+.monitoringIdentity strong { color: #302b29; font-weight: 600; }
+.monitoringIdentity span { font-size: 0.8125rem; }
+
+.monitoringHeartbeatSummary,
+.monitoringMetricStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fcfaf8;
+}
+
+.monitoringHeartbeatSummary > div,
+.monitoringMetricStrip > div { display: grid; align-content: start; justify-items: start; gap: 8px; min-width: 0; }
+.monitoringHeartbeatSummary strong { font-size: 0.9375rem; font-weight: 600; overflow-wrap: anywhere; }
+.monitoringMetricStrip dt { color: #665e59; font-size: 0.875rem; }
+.monitoringMetricStrip dd { margin: 0; font-size: 1.375rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.monitoringChartToolbar { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.monitoringChartToolbar > label { flex: 1 1 220px; max-width: 360px; }
+.monitoringEmpty { margin: 0; padding: 28px 16px; border-radius: 8px; background: #f8f6f3; color: #665e59; line-height: 1.6; }
+.operationalOverviewPanel > h2 { margin: 0; font-size: 1.125rem; line-height: 1.4; }
+.operationalOverviewPanel > p { margin: 0; }
+.monitoringRecipeBars { display: grid; gap: 18px; padding: 0; margin: 0; list-style: none; }
+.monitoringRecipeBars li { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(80px, 2fr) auto; align-items: center; gap: 16px; }
+.monitoringRecipeBars li > span { overflow-wrap: anywhere; }
+.monitoringRecipeBars li > div { height: 12px; border-radius: 3px; background: #f1eae5; overflow: hidden; }
+.monitoringRecipeBars li > div > span { display: block; height: 100%; background: #b91222; border-radius: inherit; }
+.monitoringRecipeBars strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.offlineReviewStatus { display: inline-flex; padding: 4px 9px; border: 1px solid #e3d9d2; border-radius: 5px; background: #f8f6f3; color: #665e59; font-size: 0.875rem; white-space: nowrap; }
+.offlineReviewStatus[data-status="REVIEW_REQUIRED"] { color: #8a4b0f; border-color: #eed6b4; background: #fff7eb; }
+.offlineReviewStatus[data-status="REVIEWED"],
+.offlineReviewStatus[data-status="CLEARED"] { color: #28643a; border-color: #b9d9c1; background: #f1f8f3; }
+
+@media (max-width: 640px) {
+  .monitoringHeartbeatSummary,
+  .monitoringMetricStrip { grid-template-columns: 1fr; gap: 16px; }
+  .monitoringRecipeBars li { grid-template-columns: minmax(80px, 1fr) minmax(60px, 1fr) auto; gap: 10px; }
+  .monitoringChartToolbar > label { max-width: none; }
 }
 
 .operationalOverviewBack a {
@@ -486,6 +544,53 @@
     width: 100%;
   }
 }
+
+.offlineReviewDetail {
+  display: grid;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid #e9e2dc;
+  min-width: 0;
+}
+
+.offlineReviewPagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.offlineReviewForm {
+  display: grid;
+  gap: 14px;
+}
+
+.offlineReviewForm label {
+  display: grid;
+  gap: 7px;
+  color: #665e59;
+  font-size: 0.9rem;
+}
+
+.offlineReviewForm input,
+.offlineReviewForm select,
+.offlineReviewForm textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302b29;
+  font: inherit;
+}
+
+.offlineReviewForm textarea { min-height: 110px; resize: vertical; }
+.offlineReviewForm input:focus-visible,
+.offlineReviewForm select:focus-visible,
+.offlineReviewForm textarea:focus-visible { outline: 3px solid rgb(185 18 34 / 24%); outline-offset: 1px; }
+.offlineReviewForm > button { justify-self: start; }
 
 .smartIotPanel {
   display: grid;
@@ -773,14 +878,18 @@
 .telemetryChart svg {
   display: block;
   width: 100%;
-  height: 180px;
+  height: 240px;
   overflow: visible;
 }
 
 .telemetryChart svg line {
   stroke: #d9d0c9;
-  stroke-width: 2;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
 }
+
+.telemetryChart svg text { fill: #665e59; font-family: Arial, sans-serif; font-size: 13px; }
+.telemetryChart svg circle:focus { outline: 2px solid #302b29; outline-offset: 3px; }
 
 .telemetryChart svg polyline {
   fill: none;

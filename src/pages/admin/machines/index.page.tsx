@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { useRef, useState } from "react";
 import { z } from "zod";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,6 +94,7 @@ function MachineStatusFilter({ statusFilter, onChange }: { statusFilter: StatusF
 function MachinesContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const subject = authScopedQuerySubject("ADMIN");
   const view = queryValue(router.query.view);
   const isCreateView = view === "create";
   const isCreateMachineModelView = view === "create-model";
@@ -161,12 +163,12 @@ function MachinesContent() {
   const visibleHeartbeatMachines = smartIotMachines.filter((machine) => visibleMachineIds.has(machine.id));
   const listHeartbeats = useQueries({
     queries: visibleHeartbeatMachines.map((machine, index) => ({
-      queryKey: ["dolores", "admin", "telemetry", "heartbeat", machine.id],
+      queryKey: ["dolores", "admin", "telemetry", "heartbeat", subject, machine.id],
       queryFn: async ({ signal }) => {
         await staggerHeartbeatRequest(index, signal);
         return telemetryApi.getLatestHeartbeat(machine.id, signal);
       },
-      enabled: isPageVisible,
+      enabled: isPageVisible && Boolean(getAuthenticatedSubjectId()),
       retry: false,
       staleTime: 3_000,
       refetchInterval: isPageVisible ? 5_000 : false,

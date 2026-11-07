@@ -1,47 +1,67 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { dashboardApi } from "@/apis/dashboard.api";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
-import { OperationalOverview, getDefaultOperationalRange } from "@/components/machines/operational-overview";
-import type { OperationalDateRange } from "@/components/machines/operational-overview";
+import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
+import { offlineViolationReviewsApi, readOfflineReviewQuery, OfflineReviewWorkflowError } from "@/apis/offline-violation-reviews.api";
+import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
+import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
+import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
+import { createTelemetryRange, TelemetryHistoryPanel } from "@/components/machines/telemetry-history-panel";
+import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
+import { ButtonBar } from "@/components/button/button-bar";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { MachineIdSchema } from "@/schema/machines.schema";
+import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { PATH_ADMIN } from "@/routes/path";
 import { AdminShell, adminStyles } from "../admin-shell";
+import styles from "@/components/machines/machines.module.css";
+
+const tabs = [{ value: "connection", label: "Kết nối & thông số" }, { value: "reviews", label: "Mất kết nối" }];
 
 export function AdminMachineOperationalOverviewScreen({ machineId }: { machineId: string }) {
-  const [range, setRange] = useState<OperationalDateRange>(getDefaultOperationalRange);
-  const machine = useQuery({
-    queryKey: ["dolores", "machines", "detail", machineId],
-    queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    retry: false,
-  });
-  const overview = useQuery({
-    queryKey: ["admin-machine-operational-overview", machineId, range.fromDate, range.toDate],
-    queryFn: ({ signal }) => dashboardApi.getOverview(signal, range.fromDate, range.toDate),
-    enabled: Boolean(machine.data),
-    retry: false,
-  });
+  const router = useRouter(), subject = authScopedQuerySubject("ADMIN"), visible = usePageVisibility();
+  const [defaultRange] = useState(() => createTelemetryRange("24h"));
+  const ready = router.isReady && Boolean(getAuthenticatedSubjectId()) && MachineIdSchema.safeParse(machineId).success;
+  const tab = router.query.tab === undefined ? "connection" : router.query.tab;
+  const validTab = typeof tab === "string" && tabs.some((item) => item.value === tab);
+  const navigate = (patch: Record<string, string | undefined>) => {
+    const query = { ...router.query };
+    for (const [key, value] of Object.entries(patch)) { if (value === undefined || value === "") delete query[key]; else query[key] = value; }
+    void router.push({ pathname: router.pathname, query }, undefined, { shallow: true });
+  };
+  const range = useMemo(() => {
+    const from = router.query.telemetryFrom, to = router.query.telemetryTo;
+    if ((from !== undefined || to !== undefined) && (typeof from !== "string" || typeof to !== "string")) return null;
+    const parsed = TelemetryPointsParamsSchema.safeParse(from && to ? { from, to } : from !== undefined || to !== undefined ? {} : defaultRange);
+    return parsed.success ? parsed.data : null;
+  }, [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
+  const machine = useQuery({ queryKey: ["monitoring-machine", subject, machineId], queryFn: ({ signal }) => machinesApi.getById(machineId, signal), enabled: ready, retry: false });
+  const smart = machine.isSuccess && machine.data.machineType === "SMART_IOT";
+  const connectionEnabled = ready && validTab && tab === "connection" && smart && visible;
+  const heartbeat = useQuery({ queryKey: ["monitoring-heartbeat", subject, machineId], queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal), enabled: connectionEnabled, retry: false, refetchInterval: connectionEnabled ? 5_000 : false, refetchIntervalInBackground: false });
+  const points = useInfiniteQuery({ queryKey: ["monitoring-points", subject, machineId, range?.from, range?.to], queryFn: ({ signal, pageParam }) => telemetryApi.listMachinePoints(machineId, range!, pageParam, signal), enabled: connectionEnabled && Boolean(range), initialPageParam: 0, getNextPageParam: (lastPage, pages) => lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && pages.length * TELEMETRY_POINTS_PAGE_SIZE <= 100_000 ? pages.length * TELEMETRY_POINTS_PAGE_SIZE : undefined, retry: false });
+  const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
+  let reviewState: ReturnType<typeof readOfflineReviewQuery> | undefined;
+  try { reviewState = readOfflineReviewQuery(router.query, { machineId }); } catch { /* Invalid URL filters are displayed below; no API request is enabled. */ }
+  const reviewEnabled = ready && validTab && tab === "reviews" && smart && Boolean(reviewState);
+  const reviews = useQuery({ queryKey: ["offline-reviews", subject, reviewState?.params], queryFn: ({ signal }) => offlineViolationReviewsApi.listPage(reviewState!.params, signal), enabled: reviewEnabled, retry: false });
+  const detail = useQuery({ queryKey: ["offline-review", subject, reviewState?.reviewId, machineId], queryFn: ({ signal }) => offlineViolationReviewsApi.getById(reviewState!.reviewId!, signal, { machineId }), enabled: reviewEnabled && Boolean(reviewState?.reviewId), retry: false });
 
-  return (
-    <AdminShell>
-      <div className={adminStyles.pageContent}>
-        <OperationalOverview
-          machineId={machineId}
-          machineLabel={machine.data?.serialNumber ?? undefined}
-          scopeLabel="toàn hệ thống Admin"
-          showFinancialMetrics
-          overview={overview.data}
-          range={range}
-          onRangeChange={setRange}
-          loading={machine.isSuccess && overview.isPending}
-          error={overview.isError ? getApiErrorMessage(overview.error) : undefined}
-          onRetry={() => void overview.refetch()}
-          machineLoading={machine.isPending}
-          machineError={machine.isError ? getApiErrorMessage(machine.error) : undefined}
-          machineHref={PATH_ADMIN.MACHINE_DETAIL(machineId)}
-          machineListHref={PATH_ADMIN.MACHINES}
-        />
-      </div>
-    </AdminShell>
-  );
+  return <AdminShell><div className={adminStyles.pageContent}><div className={styles.operationalOverview}>
+    <MachineMonitoringHeader machineId={machineId} machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_ADMIN.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={typeof tab === "string" ? tab : ""} onTabChange={(tab) => navigate({ tab })} idPrefix="admin-monitoring" />
+    {router.isReady && !MachineIdSchema.safeParse(machineId).success ? <p role="alert">Mã máy không hợp lệ.</p> : null}
+    {machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
+    {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
+    {!validTab ? <p role="alert">Mục dữ liệu không hợp lệ. <ButtonBar onClick={() => navigate({ tab: undefined })}>Đặt lại</ButtonBar></p> : null}
+    {validTab && machine.isSuccess ? <div id="admin-monitoring-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={"admin-monitoring-tab-" + tab}>
+      {!smart ? <p className={styles.monitoringEmpty}>Máy này chưa được xác nhận là Smart IoT để xem dữ liệu kết nối.</p> : tab === "connection" ? <>
+        <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
+        <SmartIotPanel title="Lịch sử thông số">{range ? <TelemetryHistoryPanel range={range} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={typeof router.query.field === "string" ? router.query.field : ""} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /> : <p role="alert">Khoảng thời gian không hợp lệ. <ButtonBar onClick={() => navigate({ telemetryFrom: undefined, telemetryTo: undefined })}>Đặt lại khoảng thời gian</ButtonBar></p>}</SmartIotPanel>
+      </> : reviewState ? <OfflineReviewPanel page={reviews.data} detail={detail.data} status={reviewState.params.status ?? ""} machineId={machineId} canDecide loading={reviewEnabled && reviews.isPending} detailLoading={Boolean(reviewState.reviewId) && detail.isPending} error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined} onFilterChange={(status) => navigate({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigate({ reviewPage: String(page), reviewId: undefined })} onSelect={(reviewId) => navigate({ reviewId })} onRefresh={() => { if (reviewEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void detail.refetch(); } }} onDecide={async (id, body) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, { machineId }); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), detail.refetch()]); } }} /> : <p role="alert">Bộ lọc rà soát không hợp lệ. <ButtonBar onClick={() => navigate({ reviewStatus: undefined, reviewPage: undefined, reviewId: undefined })}>Đặt lại bộ lọc</ButtonBar></p>}
+    </div> : null}
+  </div></div><ActionBarConfig><ButtonBar href={PATH_ADMIN.MACHINE_DETAIL(machineId)}>Về hồ sơ máy</ButtonBar><ButtonBar href={PATH_ADMIN.REPORTS}>Báo cáo tổng hợp</ButtonBar></ActionBarConfig></AdminShell>;
 }

@@ -1,6 +1,6 @@
 # Phase 02 — Owner analytics và lịch sử vệ sinh
 
-Status: passing; chờ duyệt chuyển Phase 03.
+Status: passing; người dùng đã duyệt chuyển Phase 03.
 Canonical ID: `phase-02-owner-analytics-and-cleaning`.
 Stories: CT-01, CT-02, CT-03, CT-04, CT-07.
 

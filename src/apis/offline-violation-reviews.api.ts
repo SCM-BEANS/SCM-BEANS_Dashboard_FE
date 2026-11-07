@@ -14,6 +14,23 @@ import {
 
 const basePath = "/offline-violation-reviews";
 const reviewPath = (id: string) => `${basePath}/${encodeURIComponent(OfflineViolationReviewIdSchema.parse(id))}`;
+export class OfflineReviewWorkflowError extends Error {}
+
+export function readOfflineReviewQuery(query: Record<string, string | string[] | undefined>, expected: OfflineViolationReviewContext = {}) {
+  const context = OfflineViolationReviewContextSchema.parse(expected);
+  const scalar = (key: string) => {
+    const value = query[key];
+    if (value !== undefined && typeof value !== "string") throw new Error("Bộ lọc rà soát không hợp lệ.");
+    return value || undefined;
+  };
+  const page = scalar("reviewPage");
+  if (page && !/^\d+$/.test(page)) throw new Error("Số trang rà soát không hợp lệ.");
+  const machineId = scalar("machineId");
+  if (machineId && context.machineId && machineId !== context.machineId) throw new Error("Bộ lọc không khớp máy đang xem.");
+  const params = OfflineViolationReviewListParamsSchema.parse({ ...context, ...(machineId ? { machineId } : {}), ...(scalar("reviewStatus") ? { status: scalar("reviewStatus") } : {}), page: page ? Number(page) : 0 });
+  const selection = scalar("reviewId");
+  return { params, reviewId: selection ? OfflineViolationReviewIdSchema.parse(selection) : undefined };
+}
 
 function assertContext(review: OfflineViolationReview, context: OfflineViolationReviewContext) {
   for (const key of ["ownerId", "contractId", "machineId"] as const) {
@@ -80,13 +97,22 @@ export const offlineViolationReviewsApi = {
     const body = OfflineViolationReviewDecisionRequestSchema.parse(input);
     const context = OfflineViolationReviewContextSchema.parse(expected);
     const response = await axiosClient.post<unknown>(`${path}/decision`, body, { baseURL: DOLORES_API_BASE_URL });
-    const review = OfflineViolationReviewSchema.parse(response.data);
-    if (review.id !== id || review.status !== "REVIEWED" || review.decision !== body.decision
-      || review.decisionReason !== body.reason || review.evidenceReferences !== body.evidenceReferences
-      || review.decidedAt === null) {
-      throw new Error("Dolores did not return the requested offline review decision.");
+    try {
+      const review = OfflineViolationReviewSchema.parse(response.data);
+      if (review.id !== id || review.status !== "REVIEWED" || review.decision !== body.decision
+        || review.decisionReason !== body.reason || review.evidenceReferences !== body.evidenceReferences
+        || review.decidedAt === null) throw new Error("Invalid decision response.");
+      assertContext(review, context);
+      return review;
+    } catch {
+      throw new OfflineReviewWorkflowError("Chưa xác minh được kết quả ghi nhận. Hãy làm mới hồ sơ để kiểm tra trước khi thử lại.");
     }
-    assertContext(review, context);
-    return review;
+  },
+
+  async decideIfRequired(id: string, input: OfflineViolationReviewDecisionRequest, expected: OfflineViolationReviewContext = {}) {
+    const body = OfflineViolationReviewDecisionRequestSchema.parse(input);
+    const current = await offlineViolationReviewsApi.getById(id, undefined, expected);
+    if (current.status !== "REVIEW_REQUIRED") throw new OfflineReviewWorkflowError("Hồ sơ đã thay đổi trạng thái. Hãy xem lại dữ liệu mới nhất trước khi tiếp tục.");
+    return offlineViolationReviewsApi.decide(id, body, expected);
   },
 };

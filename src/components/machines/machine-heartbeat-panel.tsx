@@ -16,7 +16,7 @@ export function MachineHeartbeatPanel({
   loading = false,
   error,
   onRetry,
-  emptyMessage = "Chưa có heartbeat được ghi nhận.",
+  emptyMessage = "Chưa nhận được tín hiệu kết nối của máy.",
   retryLabel = "Thử lại",
 }: {
   title: string;
@@ -32,15 +32,7 @@ export function MachineHeartbeatPanel({
   const health = heartbeat?.health;
   const hasHeartbeatDetails = Boolean(
     heartbeat?.evaluatedAt
-      || heartbeat?.lastSeenAt
-      || heartbeat?.deviceReportedAt
-      || health?.ramUsedMb != null
-      || health?.ramTotalMb != null
-      || health?.wifiRssiDbm != null
-      || health?.netbirdWireguardLatencyMs != null
-      || health?.osLoadAvg1m != null
-      || health?.firmwareVersion
-      || health?.edgeAppVersion,
+      || heartbeat?.deviceReportedAt,
   );
 
   return (
@@ -52,14 +44,10 @@ export function MachineHeartbeatPanel({
       onRetry={onRetry}
     >
       {heartbeat && !error ? <>
-        <MachineConnectionBadge state={heartbeat.status} />
-        <p>Giờ Việt Nam (UTC+7)</p>
-        {hasHeartbeatDetails ? <dl className={styles.machineHeartbeatFields}>
-          {heartbeat.evaluatedAt ? <div><dt>Đánh giá lúc</dt><dd>{formatHeartbeatDate(heartbeat.evaluatedAt)}</dd></div> : null}
-          {heartbeat.lastSeenAt ? <div><dt>Nhận tín hiệu lần cuối</dt><dd>{formatHeartbeatDate(heartbeat.lastSeenAt)}</dd></div> : null}
-          {heartbeat.deviceReportedAt ? <div><dt>Thiết bị báo lúc</dt><dd>{formatHeartbeatDate(heartbeat.deviceReportedAt)}</dd></div> : null}
-        </dl> : null}
-        {health ? <details><summary>Sức khỏe ghi nhận gần nhất</summary>
+        <div className={styles.monitoringHeartbeatSummary}><div><span className={styles.telemetryRangeCaption}>Kết nối hiện tại</span><MachineConnectionBadge state={heartbeat.status} /></div><div><span className={styles.telemetryRangeCaption}>Tín hiệu gần nhất · Giờ Việt Nam</span><strong>{heartbeat.lastSeenAt ? formatHeartbeatDate(heartbeat.lastSeenAt) : "Chưa ghi nhận"}</strong></div><div><span className={styles.telemetryRangeCaption}>Thông số sức khỏe</span><strong>{health ? "Có dữ liệu đã ghi nhận" : "Chưa có dữ liệu"}</strong></div></div>
+        {heartbeat.status === "UNKNOWN" ? <p className={styles.telemetryRangeCaption}>Chưa đủ tín hiệu để xác định máy đang kết nối hay mất kết nối.</p> : null}
+        {hasHeartbeatDetails ? <p className={styles.telemetryRangeCaption}>{heartbeat.evaluatedAt ? `Đánh giá lúc ${formatHeartbeatDate(heartbeat.evaluatedAt)}` : ""}{heartbeat.deviceReportedAt ? ` · Thiết bị báo lúc ${formatHeartbeatDate(heartbeat.deviceReportedAt)}` : ""}</p> : null}
+        {health ? <details open><summary>Sức khỏe ghi nhận gần nhất</summary>
           {heartbeat.status !== "ONLINE" || !heartbeat.healthReportedAt ? <p>Dữ liệu đã ghi nhận, không phản ánh tình trạng hiện tại của máy.</p> : <p>Thông số tại lần ghi nhận bên dưới, không phải dữ liệu đo liên tục.</p>}
           <dl className={styles.machineHeartbeatFields}>
           <div><dt>Thời điểm ghi nhận sức khỏe</dt><dd>{heartbeat.healthReportedAt ? formatHeartbeatDate(heartbeat.healthReportedAt) : "Chưa ghi nhận thời điểm"}</dd></div>
@@ -69,7 +57,7 @@ export function MachineHeartbeatPanel({
           {health?.osLoadAvg1m != null ? <div><dt>Sức khỏe · Tải hệ thống (1 phút)</dt><dd>{health.osLoadAvg1m}</dd></div> : null}
           {health?.firmwareVersion ? <div><dt>Sức khỏe · Firmware</dt><dd>{health.firmwareVersion}</dd></div> : null}
           {health?.edgeAppVersion ? <div><dt>Sức khỏe · Ứng dụng Edge</dt><dd>{health.edgeAppVersion}</dd></div> : null}
-          </dl></details> : <p>Chưa có thông số sức khỏe máy.</p>}
+          </dl></details> : null}
       </> : null}
     </SmartIotPanel>
   );

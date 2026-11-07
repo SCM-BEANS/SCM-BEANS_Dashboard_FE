@@ -1,6 +1,6 @@
 # Cleaning & Telemetry — đặc tả FE đã chốt
 
-Ngày: 2026-11-06. Trạng thái: thiết kế và ba quyết định vận hành được người dùng chốt; kế hoạch đã rà soát. Chưa triển khai.
+Ngày: 2026-11-06. Trạng thái cập nhật2026-11-07: đã triển khai Phase01–04 và kiểm thử FE mock; live authorization/data scope chưa xác minh. Production build còn lỗi baseline ngoài feature; xem plan và evidence matrix.
 
 ## Nguồn và phạm vi
 

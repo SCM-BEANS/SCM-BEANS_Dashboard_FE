@@ -3,13 +3,15 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ownerAnalyticsApi } from "@/apis/owner-analytics.api";
+import { offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
+import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
 import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
-import { DataTable } from "@/components/table/data-table";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
@@ -99,10 +101,16 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
     catch { return { data: undefined, error: "Khoảng ngày hoặc bộ lọc không hợp lệ. Hãy đặt lại bộ lọc để tiếp tục." }; }
   }, [router.query, today, defaultTelemetryRange]);
   const state = parsed.data;
+  let reviewState: ReturnType<typeof readOfflineReviewQuery> | undefined;
+  let reviewFilterError: string | undefined;
+  try { reviewState = readOfflineReviewQuery(router.query, { machineId }); } catch { reviewFilterError = "Bộ lọc rà soát không hợp lệ. Hãy đặt lại bộ lọc để tiếp tục."; }
   const machine = useQuery({ queryKey: ["owner-machine", subject, machineId], queryFn: ({ signal }) => machinesApi.getById(machineId, signal), enabled: ready, retry: false });
   const contracts = useQuery({ queryKey: ["owner-machine-active-contract", subject, machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal, "ACTIVE"), enabled: ready && machine.isSuccess, retry: false });
   const activeContract = contracts.data?.find((record) => record.machineId === machineId && record.status === "ACTIVE" && (!machine.data?.ownerId || record.ownerId === machine.data.ownerId));
   const smartIot = machine.data?.machineType === "SMART_IOT";
+  const reviewsEnabled = ready && machine.isSuccess && smartIot && state?.tab === "connection" && Boolean(reviewState);
+  const reviews = useQuery({ queryKey: ["offline-reviews", subject, reviewState?.params], queryFn: ({ signal }) => offlineViolationReviewsApi.listPage(reviewState!.params, signal), enabled: reviewsEnabled, retry: false });
+  const reviewDetail = useQuery({ queryKey: ["offline-review", subject, reviewState?.reviewId, machineId], queryFn: ({ signal }) => offlineViolationReviewsApi.getById(reviewState!.reviewId!, signal, { machineId }), enabled: reviewsEnabled && Boolean(reviewState?.reviewId), retry: false });
   const analyticsEnabled = ready && Boolean(state && smartIot && activeContract);
   const context: OwnerAnalyticsContext = { machineId, ...(machine.data?.ownerId || activeContract?.ownerId ? { ownerId: machine.data?.ownerId ?? activeContract!.ownerId } : {}), ...(machine.data?.serialNumber ? { machineSerialNumber: machine.data.serialNumber } : {}) };
   const cupCount = useQuery({ queryKey: ["owner-cup-count", subject, machineId, state?.range], queryFn: ({ signal }) => ownerAnalyticsApi.getCupCount({ ...state!.range, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "brewing", retry: false, refetchOnWindowFocus: false });
@@ -113,10 +121,11 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
     queryKey: ["owner-machine-telemetry-points", subject, machineId, state?.telemetry.from, state?.telemetry.to],
     queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, state!.telemetry, pageParam, signal), initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && pages.length * TELEMETRY_POINTS_PAGE_SIZE <= 100_000 ? pages.length * TELEMETRY_POINTS_PAGE_SIZE : undefined,
-    enabled: ready && Boolean(state?.tab === "connection" && smartIot), retry: false,
+    enabled: ready && Boolean(state?.tab === "connection" && smartIot && pageVisible), retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
   const maxDailyCups = Math.max(1, ...(cupCount.data?.dailyBreakdown.map((row) => row.cups) ?? []));
+  const maxRecipeCups = Math.max(1, ...(cupCount.data?.recipeBreakdown.map((row) => row.cups) ?? []));
   const navigate = (patch: Record<string, string | undefined>) => {
     const query = { ...router.query };
     for (const [key, value] of Object.entries(patch)) { if (value === undefined || value === "") delete query[key]; else query[key] = value; }
@@ -125,27 +134,19 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const changeTab = (tab: Tab) => navigate({ tab, ...(tab === "connection" && !router.query.telemetryFrom ? { telemetryFrom: state?.telemetry.from ?? defaultTelemetryRange.from, telemetryTo: state?.telemetry.to ?? defaultTelemetryRange.to } : {}) });
   const refresh = () => {
     if (!ready || !state) return;
-    if (state.tab === "connection" && smartIot) { void heartbeat.refetch(); void points.refetch(); }
+    if (state.tab === "connection" && smartIot) { void heartbeat.refetch(); void points.refetch(); if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }
     else if (analyticsEnabled) { if (state.tab === "brewing") { void cupCount.refetch(); void brew.refetch(); } else void cleaning.refetch(); }
   };
   const pending = cupCount.isFetching || brew.isFetching || cleaning.isFetching || heartbeat.isFetching || points.isFetching;
 
   return <div className={shellStyles.pageContent}>
     <div className={styles.operationalOverview}>
-      <div className={styles.operationalOverviewBack}><Link href={PATH_CUSTOMER.MACHINE_DETAIL(machineId)}>← Về chi tiết máy</Link></div>
-      <header className={styles.operationalOverviewHeading}><h1 id="machine-operational-overview-title">Dữ liệu vận hành{machine.data?.serialNumber ? ` · ${machine.data.serialNumber}` : ""}</h1></header>
+      <MachineMonitoringHeader machineId={machineId} machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" />
       {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
-      <div className={styles.ownerOperationsTabs} role="tablist" aria-label="Dữ liệu vận hành máy">
-        {tabs.map((tab, index) => <button key={tab.value} id={`owner-operations-tab-${tab.value}`} role="tab" type="button" tabIndex={(state?.tab ?? "brewing") === tab.value ? 0 : -1} aria-selected={(state?.tab ?? "brewing") === tab.value} aria-controls="owner-operations-content" onClick={() => changeTab(tab.value)} onKeyDown={(event) => {
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-          event.preventDefault(); const next = (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
-          changeTab(tabs[next].value); document.getElementById(`owner-operations-tab-${tabs[next].value}`)?.focus();
-        }}>{tab.label}</button>)}
-      </div>
       {!router.isReady || machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
       {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
       {parsed.error && router.isReady ? <div className={styles.operationalOverviewError} role="alert"><p>{parsed.error}</p><ButtonBar onClick={() => navigate({ tab: "brewing", fromDate: today, toDate: today, brewPage: undefined, cleaningPage: undefined, recipeName: undefined, cleaningType: undefined, cleaningStatus: undefined, telemetryFrom: undefined, telemetryTo: undefined, field: undefined })}>Đặt lại bộ lọc</ButtonBar></div> : null}
-      {state && machine.data && !machine.isError ? <div id="owner-operations-content" role="tabpanel" aria-labelledby={`owner-operations-tab-${state.tab}`}>
+      {state && machine.data && !machine.isError ? <div id="owner-operations-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={`owner-operations-tab-${state.tab}`}>
         {state.tab !== "connection" ? <>
           <section className={styles.operationalOverviewPanel} aria-label="Bộ lọc dữ liệu vận hành">
             <AnalyticsFilters fromDate={state.fromDate} toDate={state.toDate} tab={state.tab} recipeName={state.brewing.recipeName ?? ""} cleaningType={state.cleaning.cleaningType ?? ""} cleaningStatus={state.cleaning.status ?? ""} onApply={navigate} />
@@ -162,14 +163,23 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                           <section className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày UTC</h2><p>Các cột dùng ngày UTC; tổng số ly vẫn theo khoảng ngày Việt Nam đã chọn.</p>
                             {cupCount.data.dailyBreakdown.length ? <div className={styles.operationalDailyChart}>{cupCount.data.dailyBreakdown.map((row) => <div key={row.date} className={styles.operationalDailyChartColumn}><strong>{row.cups.toLocaleString("vi-VN")}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${row.cups / maxDailyCups * 100}%` }} /></div><time dateTime={row.date}>{row.date.slice(5).split("-").reverse().join("/")}</time></div>)}</div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}
                           </section>
-                          <section className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2><DataTable rows={cupCount.data.recipeBreakdown} rowKey={(row) => row.recipeName} emptyMessage="Chưa có dữ liệu theo món." columns={[{ key: "recipe", header: "Món", render: (row) => row.recipeName }, { key: "cups", header: "Số ly", align: "center", render: (row) => row.cups.toLocaleString("vi-VN") }]} /></section>
+                          <section className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2>
+                            {cupCount.data.recipeBreakdown.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh số ly theo món">{[...cupCount.data.recipeBreakdown].sort((a, b) => b.cups - a.cups).map((row) => <li key={row.recipeName}><span>{row.recipeName}</span><div><span style={{ width: `${row.cups / maxRecipeCups * 100}%` }} /></div><strong>{row.cups.toLocaleString("vi-VN")} ly</strong></li>)}</ul> : <p className={styles.monitoringEmpty}>Chưa có dữ liệu theo món.</p>}
+                          </section>
                         </> : null}
                     <MachineBrewHistoryPanel data={brew.data} loading={brew.isPending} error={brew.isError ? getApiErrorMessage(brew.error) : undefined} onRetry={() => void brew.refetch()} onPageChange={(page) => navigate({ brewPage: String(page) })} />
                   </> : <MachineCleaningHistoryPanel data={cleaning.data} loading={cleaning.isPending} error={cleaning.isError ? getApiErrorMessage(cleaning.error) : undefined} onRetry={() => void cleaning.refetch()} onPageChange={(page) => navigate({ cleaningPage: String(page) })} />}
         </> : smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Lịch sử thông số"><TelemetryHistoryPanel range={state.telemetry} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={state.field} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /></SmartIotPanel>
-        </> : <p className={styles.operationalOverviewState}>Máy thường không có dữ liệu kết nối và thông số IoT.</p>}
+          {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel
+            page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={machineId} canDecide={false}
+            loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
+            error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}
+            onFilterChange={(status) => navigate({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigate({ reviewPage: String(page), reviewId: undefined })} onSelect={(id) => navigate({ reviewId: id })}
+            onRefresh={() => { if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }}
+          />}
+        </> : <p className={styles.operationalOverviewState}>{machine.data.machineType === "CONVENTIONAL" ? "Máy thường không có dữ liệu kết nối và thông số IoT." : "Chưa xác nhận loại máy để xem dữ liệu kết nối và thông số IoT."}</p>}
       </div> : null}
     </div>
     <ActionBarConfig><ButtonBar href={PATH_CUSTOMER.MACHINE_DETAIL(machineId)}>Về chi tiết máy</ButtonBar><ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar></ActionBarConfig>

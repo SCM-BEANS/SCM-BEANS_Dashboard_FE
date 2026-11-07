@@ -284,8 +284,8 @@
                       {
                           "id": "phase-03-monitoring-and-offline-review",
                           "title": "Monitoring và Offline Review",
-                          "status": "active",
-                          "evidence": "",
+                          "status": "passing",
+                          "evidence": "TDD offline 4 RED -> 11/11 green; telemetry/Owner/offline targeted 33/33; Playwright 10/10 including cross-role 5 viewports, Owner readonly, Moderator zero telemetry, one POST and 409 draft preservation, Admin deep-link/Back. Review APPROVED after mutation-error fix. Lint 0 errors/3 old warnings; full Node 204/296 with 92 failures (matches recorded baseline count; names not compared); tsc 4 baseline errors. Authenticated server scope unverified; awaiting Phase04 approval.",
                           "user_visible_behavior": "Admin/Owner/Technician xem kết nối theo quyền; Moderator không gọi telemetry; Admin/Moderator xử lý offline review, Owner chỉ xem.",
                           "verification_command": "Telemetry request-role matrix, offline decision request/409/timeout tests, timestamp charts and no billing mutations.",
                           "notes": "Covers stories: CT-05, CT-06, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",
@@ -294,8 +294,8 @@
                       {
                           "id": "phase-04-cleaning-telemetry-validation",
                           "title": "Cleaning & Telemetry cross-role validation",
-                          "status": "not_started",
-                          "evidence": "",
+                          "status": "passing",
+                          "evidence": "Feature Node 33/33; Playwright 22/22 including subject/machine/filter pending reads, Technician403, timeout one POST/draft, keyboard/mobile, 100-machine visible-row budget and hidden polling without cleaning repeats. Code review APPROVED. Lint 0 errors/3 old warnings; tsc 4 baseline errors; production build blocked by old validator. Full Node 204/296 with 92 recorded failures. OpenAPI public GET verified; real role/grant/cross-Owner scope UNVERIFIED. FE validation complete, not production release validation.",
                           "user_visible_behavior": "Bốn role giữ route, quyền, trạng thái và giao diện đúng ở desktop/mobile; live gaps được ghi rõ.",
                           "verification_command": "node --test tests/dolores-telemetry.test.cjs tests/admin-machines-iot.test.cjs; npx playwright test tests/e2e/machine-operational-overview.spec.ts; npm.cmd run lint; npx.cmd tsc --noEmit --incremental false; git diff --check; authenticated GET role validation.",
                           "notes": "Covers stories: CT-01, CT-02, CT-03, CT-04, CT-05, CT-06, CT-07. Plan: plans/cleaning-telemetry-integration/plan.md; source creation requires separate exact-path approval.",

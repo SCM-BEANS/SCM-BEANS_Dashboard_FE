@@ -155,3 +155,35 @@ test('offline guarded decision refreshes state before POST and never posts an al
   await assert.rejects(api.decideIfRequired(id, { ...decision, reason: '' }, { machineId }));
   assert.deepEqual(calls, []);
 });
+
+test('offline guarded decision stops on stale scope and never retries a failed POST', async () => {
+  const calls = [];
+  const outOfScope = apiWith({
+    get: async () => { calls.push('GET'); return { data: { ...review, machineId: ownerId } }; },
+    post: async () => { calls.push('POST'); return { data: reviewed }; },
+  });
+  await assert.rejects(outOfScope.decideIfRequired(id, decision, { machineId }));
+  assert.deepEqual(calls, ['GET']);
+
+  const forbidden = Object.assign(new Error('forbidden'), { response: { status: 403 } });
+  calls.length = 0;
+  const denied = apiWith({
+    get: async () => { calls.push('GET'); throw forbidden; },
+    post: async () => { calls.push('POST'); return { data: reviewed }; },
+  });
+  await assert.rejects(denied.decideIfRequired(id, decision, { machineId }), error => error === forbidden);
+  assert.deepEqual(calls, ['GET']);
+
+  for (const failure of [
+    Object.assign(new Error('conflict'), { response: { status: 409 } }),
+    Object.assign(new Error('timeout'), { code: 'ECONNABORTED' }),
+  ]) {
+    calls.length = 0;
+    const noRetry = apiWith({
+      get: async () => { calls.push('GET'); return { data: review }; },
+      post: async () => { calls.push('POST'); throw failure; },
+    });
+    await assert.rejects(noRetry.decideIfRequired(id, decision, { machineId }), error => error === failure);
+    assert.deepEqual(calls, ['GET', 'POST']);
+  }
+});

@@ -1,6 +1,6 @@
 # Phase 01 — API contracts và role scope
 
-Status: passing — adapter/schema đã được kiểm thử và code review APPROVED; chờ người dùng duyệt Phase02. Build/full suite còn lỗi baseline bên ngoài feature.
+Status: passing — adapter/schema đã được kiểm thử và code review APPROVED; người dùng đã duyệt Phase02. Build/full suite còn lỗi baseline bên ngoài feature.
 Canonical ID: `phase-01-api-contracts-and-role-scope`.
 Stories: CT-01, CT-03, CT-04, CT-05, CT-06.
 

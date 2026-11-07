@@ -74,8 +74,8 @@ const roleCases: RoleCase[] = [
 
 const viewportWidths = [390, 768, 1023, 1024, 1440];
 
-function tokenFor(role: string) {
-  const claims = Buffer.from(JSON.stringify({ sub: ownerId, roles: [role] })).toString("base64url");
+function tokenFor(role: string, subject = ownerId) {
+  const claims = Buffer.from(JSON.stringify({ sub: subject, roles: [role] })).toString("base64url");
   return `header.${claims}.signature`;
 }
 
@@ -184,7 +184,8 @@ test.describe("machine operational overview cross-role presentation", () => {
         await operationsLink.click();
         await expect(page).toHaveURL(new RegExp(`${role.operationsPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
         await expect(page.locator("#machine-operational-overview-title")).toBeVisible();
-        await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
+        if (role.claim === "owner") await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
+        else await expect(page.getByRole("heading", { name: role.claim === "admin" ? "Kết nối & sức khỏe máy" : "Rà soát mất kết nối", exact: true })).toBeVisible();
         await expectNoHorizontalOverflow(page, width, `${role.label} operational overview`);
 
         const backToMachine = page.locator(`a[href="${role.detailPath}"]`).last();
@@ -201,11 +202,13 @@ test.describe("machine operational overview cross-role presentation", () => {
       }
       const heartbeatRequested = requests.some((request) => request.includes("/heartbeats/latest"));
       expect(heartbeatRequested).toBe(role.claim !== "moderator");
-      const overviewEndpoint = role.claim === "owner" ? "/owner/cup-count?" : "/dashboard/overview?";
-      await expect.poll(() => requests.some((request) => request.startsWith(overviewEndpoint))).toBe(true);
-      const dashboardRequest = requests.find((request) => request.startsWith(overviewEndpoint));
-      expect(dashboardRequest).toBeTruthy();
-      expect(new URLSearchParams(dashboardRequest!.split("?", 2)[1]).has("ownerId")).toBe(false);
+      if (role.claim === "owner") {
+        const cupRequest = requests.find((request) => request.startsWith("/owner/cup-count?"));
+        expect(cupRequest).toBeTruthy();
+        expect(new URLSearchParams(cupRequest!.split("?", 2)[1]).has("ownerId")).toBe(false);
+      } else {
+        expect(requests.some((request) => request.startsWith("/dashboard/overview?") || request.startsWith("/owner/"))).toBe(false);
+      }
 
       const pointsRequested = requests.some((request) => request.includes("/telemetry-query/machines/") && request.split("?", 1)[0].endsWith("/points"));
       expect(pointsRequested).toBe(role.pointsAllowed);
@@ -214,18 +217,52 @@ test.describe("machine operational overview cross-role presentation", () => {
         expect(requests.some((request) => request.split("?", 1)[0] === "/contracts")).toBe(false);
         expect(requests.some((request) => request.startsWith(`/contracts/machine/${machineId}/history?status=ACTIVE`))).toBe(true);
       }
-      if (role.financialsVisible) {
-        await page.goto(role.operationsPath);
-        await expect(page.locator("#period-finances-title")).toBeVisible();
-      } else {
-        await page.goto(role.operationsPath);
-        await expect(page.locator("#period-finances-title")).toHaveCount(0);
-      }
+      await page.goto(role.operationsPath);
+      await expect(page.locator("#period-finances-title")).toHaveCount(0);
     });
   }
 });
 
 const ownerOperationsPath = `/dashboard/machines/${machineId}/operations`;
+
+test("Admin telemetry chart and table preserve numeric scale, text records and URL field selection", async ({ page, context }) => {
+  await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+  const requests: string[] = [];
+  await installMockApi(page, roleCases[1], requests);
+  await page.route("**/api/dolores/v1/telemetry-query/**/points?**", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+    { machineId, timestamp: "2026-11-06T01:00:00Z", field: "temperature", value: 80 },
+    { machineId, timestamp: "2026-11-06T01:10:00Z", field: "temperature", value: 95 },
+    { machineId, timestamp: "2026-11-06T01:11:00Z", field: "mode", value: "BREWING" },
+  ]) }));
+  await page.goto(`${roleCases[1].operationsPath}?field=temperature`);
+  await expect(page.getByRole("img", { name: "Biểu đồ temperature theo thời gian" })).toBeVisible();
+  await expect(page.getByText("95", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Bảng dữ liệu", exact: true }).click();
+  await expect(page.getByRole("cell", { name: "80", exact: true })).toBeVisible();
+  await page.getByLabel("Thông số đang xem").selectOption("mode");
+  await expect(page).toHaveURL(/field=mode/);
+  await expect(page.getByRole("cell", { name: "BREWING", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Biểu đồ", exact: true }).click();
+  await expect(page.getByText("Thông số này không phải dữ liệu số.", { exact: false })).toBeVisible();
+  expect(requests.some((path) => path.startsWith("/dashboard/overview") || path.startsWith("/owner/"))).toBe(false);
+});
+
+for (const role of roleCases.filter((item) => item.claim !== "owner")) {
+  test(`${role.label} monitoring directory opens the selected machine without aggregate metrics`, async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor(role.claim), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, role, requests);
+    await page.goto(`/${role.claim}/iot`);
+    await expect(page.getByRole("heading", { name: "Giám sát máy", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Xem vận hành", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${role.operationsPath}$`));
+    await expect(page.locator("#machine-operational-overview-title")).toHaveText("Giám sát vận hành");
+    expect(requests.some((path) => path.startsWith("/dashboard/overview") || path.startsWith("/owner/"))).toBe(false);
+    if (role.claim === "moderator") expect(requests.some((path) => path.includes("/heartbeats/latest") || path.includes("/points"))).toBe(false);
+    await page.goBack();
+    await expect(page.getByRole("heading", { name: "Giám sát máy", exact: true })).toBeVisible();
+  });
+}
 const fixedDates = "fromDate=2026-11-06&toDate=2026-11-06";
 
 const offlineReviewId = "f3000000-0000-4000-8000-000000000001";
@@ -256,11 +293,73 @@ async function installOfflineMock(page: Page, requests: string[], conflict = fal
         reviewerId: ownerId, reviewerRole: "MODERATOR", decidedAt: "2026-11-06T10:00:00" };
     }
     const list = path === "/offline-violation-reviews";
-    const headers = list ? { "X-Page": url.searchParams.get("page") ?? "0", "X-Page-Size": url.searchParams.get("size") ?? "50", "X-Has-Next": "false" } : {};
+    const headers: Record<string, string> = list ? { "X-Page": url.searchParams.get("page") ?? "0", "X-Page-Size": url.searchParams.get("size") ?? "50", "X-Has-Next": "false" } : {};
     await route.fulfill({ status: 200, contentType: "application/json", headers, body: JSON.stringify(list ? [current] : current) });
   });
   return posts;
 }
+
+test.describe("Offline review role workflow", () => {
+  test("Owner opens a scoped review from the URL, refreshes and remains read only", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    const posts = await installOfflineMock(page, requests);
+    await page.goto(`${ownerOperationsPath}?tab=connection&reviewId=${offlineReviewId}&keep=existing`);
+    const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
+    await expect(panel.getByRole("heading", { name: "Chi tiết rà soát" })).toBeVisible();
+    await expect(panel.getByText("08:30:00 06/11/2026", { exact: true }).first()).toBeVisible();
+    await expect(panel.locator('[name="reason"]')).toHaveCount(0);
+    await panel.getByLabel("Trạng thái rà soát").selectOption("REVIEW_REQUIRED");
+    await expect(page).toHaveURL(/reviewStatus=REVIEW_REQUIRED/);
+    await panel.getByRole("button", { name: "Xem hồ sơ" }).click();
+    await page.reload();
+    await expect(panel.getByRole("heading", { name: "Chi tiết rà soát" })).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("keep")).toBe("existing");
+    expect(requests.some((path) => path.includes(`/offline-violation-reviews?machineId=${machineId}`))).toBe(true);
+    expect(posts).toHaveLength(0);
+  });
+
+  for (const conflict of [false, true]) {
+    test(`Moderator confirms a decision with one POST${conflict ? " and keeps the draft on conflict" : ""}`, async ({ page, context }) => {
+      await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+      const requests: string[] = [];
+      await installMockApi(page, roleCases[2], requests);
+      const posts = await installOfflineMock(page, requests, conflict);
+      await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
+      const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
+      await panel.getByLabel("Lý do rà soát").fill("Liên hệ cửa hàng kiểm tra kết nối");
+      await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/e2e");
+      await panel.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
+      await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).click();
+      await expect.poll(() => posts.length).toBe(1);
+      await expect(page.getByRole("alertdialog")).toHaveCount(0);
+      if (conflict) {
+        await expect(panel.getByLabel("Lý do rà soát")).toHaveValue("Liên hệ cửa hàng kiểm tra kết nối");
+        await expect(panel.getByRole("alert")).toBeVisible();
+      } else {
+        await expect(panel.getByRole("cell", { name: "Đã rà soát", exact: true }).first()).toBeVisible();
+        await expect(panel.locator('[name="reason"]')).toHaveCount(0);
+      }
+      expect(requests.some((path) => path.includes("/heartbeats/latest") || path.includes("/points"))).toBe(false);
+      const postIndex = requests.findIndex((path) => path.startsWith("POST /offline-violation-reviews/"));
+      expect(requests.slice(0, postIndex).filter((path) => path === `GET /offline-violation-reviews/${offlineReviewId}`).length).toBeGreaterThanOrEqual(2);
+    });
+  }
+  test("Admin can open the selected review and receives the operator form", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[1], requests);
+    await installOfflineMock(page, requests);
+    await page.goto(`/admin/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
+    const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
+    await expect(panel.getByLabel("Lý do rà soát")).toBeVisible();
+    await panel.getByLabel("Trạng thái rà soát").selectOption("REVIEW_REQUIRED");
+    await expect(page).toHaveURL(/reviewStatus=REVIEW_REQUIRED/);
+    await page.goBack();
+    await expect(panel.getByLabel("Lý do rà soát")).toBeVisible();
+  });
+});
 
 test.describe("Owner operations analytics and cleaning", () => {
   test.beforeEach(async ({ context }) => {
@@ -327,5 +426,262 @@ test.describe("Owner operations analytics and cleaning", () => {
     await expect(page.getByText("0", { exact: true })).toHaveCount(0);
     expect(requests.some((path) => path.startsWith("/dashboard/overview?"))).toBe(false);
     expect(requests.some((path) => path.includes("/points"))).toBe(false);
+  });
+});
+
+test.describe("Cleaning telemetry Phase 04 safeguards", () => {
+  test("changing Owner while an old history read is pending never displays the old Owner data", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    let releaseOld: () => void = () => {};
+    const oldGate = new Promise<void>((resolve) => { releaseOld = resolve; });
+    let oldStarted = false, oldSettled = false, switched = false;
+    await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => {
+      await route.fulfill({ status: switched ? 403 : 200, contentType: "application/json", body: JSON.stringify(switched ? { message: "Forbidden" } : machine) });
+    });
+    await page.route("**/api/dolores/v1/owner/brew-records?**", async (route) => {
+      oldStarted = true;
+      await oldGate;
+      const url = new URL(route.request().url());
+      const from = url.searchParams.get("from")!;
+      const body = { content: [{ id: offlineReviewId, eventId: offlineReviewId, machineId, machineSerialNumber: machine.serialNumber, recipeName: "PRIVATE_OWNER_A_RECIPE", brewedAt: new Date(Date.parse(from) + 60_000).toISOString(), receivedAt: null }], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) }).catch(() => {});
+      oldSettled = true;
+    });
+    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await expect.poll(() => oldStarted).toBe(true);
+    await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
+    switched = true;
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner", "f4000000-0000-4000-8000-000000000001"), domain: "127.0.0.1", path: "/" }]);
+    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `${ownerOperationsPath}?tab=brewing&${fixedDates}&account=second`);
+    await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ }).first()).toBeVisible();
+    releaseOld();
+    await expect.poll(() => oldSettled).toBe(true);
+    await expect(page.getByText("PRIVATE_OWNER_A_RECIPE", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("18", { exact: true })).toHaveCount(0);
+  });
+
+  test("invalid Owner URL filters stop feature reads before a request is sent", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    for (const query of ["tab=unknown", "tab=cleaning&fromDate=2026-02-30&toDate=2026-03-01", "tab=connection&telemetryFrom=2026-11-06T10:00:00Z&telemetryTo=2026-11-06T09:00:00Z"]) {
+      requests.length = 0;
+      await page.goto(`${ownerOperationsPath}?${query}`);
+      await expect(page.getByRole("alert").filter({ hasText: "bộ lọc không hợp lệ" })).toBeVisible();
+      expect(requests.some((path) => path.startsWith("/owner/") || path.includes("/heartbeats/latest") || path.includes("/points") || path.startsWith("/offline-violation-reviews"))).toBe(false);
+    }
+  });
+
+  test("switching machines while history is pending never renders the previous machine records", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    const nextMachine = { ...machine, id: "f6000000-0000-4000-8000-000000000002", serialNumber: "E2E-IOT-02" };
+    await page.route(`**/api/dolores/v1/machines/${nextMachine.id}`, async (route) => { await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(nextMachine) }); });
+    await page.route(`**/api/dolores/v1/contracts/machine/${nextMachine.id}/history?**`, async (route) => { await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: offlineReviewId, ownerId, machineId: nextMachine.id, status: "ACTIVE", startDate: "2026-01-01", endDate: "2027-01-01" }]) }); });
+    await page.route("**/api/dolores/v1/owner/cup-count?**", async (route) => {
+      const url = new URL(route.request().url()), current = url.searchParams.get("machineId") === nextMachine.id ? nextMachine : machine;
+      const cups = current.id === nextMachine.id ? 37 : 18;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ownerId, from: url.searchParams.get("from"), to: url.searchParams.get("to"), totalCups: cups, activeMachineCount: 1, machineBreakdown: [{ machineSerialNumber: current.serialNumber, cups }], dailyBreakdown: [], recipeBreakdown: [] }) });
+    });
+    let releaseOld: () => void = () => {};
+    const oldGate = new Promise<void>((resolve) => { releaseOld = resolve; });
+    let oldStarted = false, oldSettled = false;
+    await page.route("**/api/dolores/v1/owner/brew-records?**", async (route) => {
+      const url = new URL(route.request().url()), current = url.searchParams.get("machineId") === nextMachine.id ? nextMachine : machine;
+      const isOld = current.id === machineId;
+      if (isOld) { oldStarted = true; await oldGate; }
+      const record = { id: offlineReviewId, eventId: offlineReviewId, machineId: current.id, machineSerialNumber: current.serialNumber, recipeName: isOld ? "STALE_MACHINE_RECIPE" : "NEW_MACHINE_RECIPE", brewedAt: new Date(Date.parse(url.searchParams.get("from")!) + 60_000).toISOString(), receivedAt: null };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [record], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true }) }).catch(() => {});
+      if (isOld) oldSettled = true;
+    });
+    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await expect.poll(() => oldStarted).toBe(true);
+    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `/dashboard/machines/${nextMachine.id}/operations?tab=brewing&${fixedDates}`);
+    await expect(page.getByRole("cell", { name: "NEW_MACHINE_RECIPE", exact: true })).toBeVisible();
+    await expect(page.getByText("37", { exact: true }).first()).toBeVisible();
+    releaseOld();
+    await expect.poll(() => oldSettled).toBe(true);
+    await expect(page.getByText("STALE_MACHINE_RECIPE", { exact: true })).toHaveCount(0);
+    await expect(page.locator("header").getByText(nextMachine.serialNumber, { exact: true })).toBeVisible();
+  });
+
+  test("changing the date filter while history is pending keeps only the newly selected period", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    let releaseOld: () => void = () => {};
+    const oldGate = new Promise<void>((resolve) => { releaseOld = resolve; });
+    let oldStarted = false, oldSettled = false;
+    await page.route("**/api/dolores/v1/owner/brew-records?**", async (route) => {
+      const url = new URL(route.request().url());
+      const from = url.searchParams.get("from")!;
+      const isOld = Date.parse(from) === Date.parse("2026-11-05T17:00:00Z");
+      if (isOld) { oldStarted = true; await oldGate; }
+      const record = { id: offlineReviewId, eventId: offlineReviewId, machineId, machineSerialNumber: machine.serialNumber, recipeName: isOld ? "STALE_PERIOD_RECIPE" : "FRESH_PERIOD_RECIPE", brewedAt: new Date(Date.parse(from) + 60_000).toISOString(), receivedAt: null };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [record], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true }) }).catch(() => {});
+      if (isOld) oldSettled = true;
+    });
+    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await expect.poll(() => oldStarted).toBe(true);
+    await page.getByLabel("Từ ngày", { exact: true }).fill("2026-11-07");
+    await page.getByLabel("Đến ngày", { exact: true }).fill("2026-11-07");
+    await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
+    await expect(page.getByRole("cell", { name: "FRESH_PERIOD_RECIPE", exact: true })).toBeVisible();
+    releaseOld();
+    await expect.poll(() => oldSettled).toBe(true);
+    await expect(page.getByText("STALE_PERIOD_RECIPE", { exact: true })).toHaveCount(0);
+    expect(new URL(page.url()).searchParams.get("fromDate")).toBe("2026-11-07");
+  });
+
+  test("Technician monitoring waits for machine lookup and presents a denied grant without Owner or offline reads", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    let releaseMachine: () => void = () => {};
+    const machineGate = new Promise<void>((resolve) => { releaseMachine = resolve; });
+    let machineStarted = false;
+    await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => { machineStarted = true; await machineGate; await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(machine) }); });
+    await page.route("**/api/dolores/v1/telemetry-query/**", async (route) => { requests.push(new URL(route.request().url()).pathname); await route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ message: "Grant expired" }) }); });
+    await page.goto(`/technician/machine-check/${machineId}`);
+    await expect.poll(() => machineStarted).toBe(true);
+    expect(requests.some((path) => path.includes("/telemetry-query/"))).toBe(false);
+    releaseMachine();
+    await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ }).first()).toBeVisible();
+    await expect(page.getByText("Mất kết nối", { exact: true })).toHaveCount(0);
+    expect(requests.some((path) => path.startsWith("/owner/") || path.includes("offline-violation-reviews"))).toBe(false);
+  });
+
+  test("rapid decision clicks and a timeout send one POST and preserve the draft for verification", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[2], requests);
+    await installOfflineMock(page, requests);
+    let releasePost: () => void = () => {};
+    const postGate = new Promise<void>((resolve) => { releasePost = resolve; });
+    let posts = 0;
+    await page.route("**/api/dolores/v1/offline-violation-reviews/*/decision", async (route) => { posts++; await postGate; await route.abort("timedout"); });
+    await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
+    const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
+    await panel.getByLabel("Lý do rà soát").fill("Kiểm tra sau khi mất mạng");
+    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/timeout");
+    await panel.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+    await expect.poll(() => posts).toBe(1);
+    await expect(page.getByRole("alertdialog").getByRole("button", { name: "Đang ghi nhận…", exact: true })).toBeDisabled();
+    releasePost();
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    await expect(panel.getByRole("alert")).toBeVisible();
+    await expect(panel.getByLabel("Lý do rà soát")).toHaveValue("Kiểm tra sau khi mất mạng");
+    await expect(panel.getByLabel("Mã tham chiếu minh chứng riêng tư")).toHaveValue("private://offline/timeout");
+    expect(posts).toBe(1);
+    expect(requests.some((path) => /billing|penalty|certificate|replay/.test(path))).toBe(false);
+  });
+
+  test("mobile review supports keyboard confirmation, Escape focus return and reduced motion without page overflow", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[2], requests);
+    const posts = await installOfflineMock(page, requests);
+    await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
+    const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
+    await panel.getByLabel("Lý do rà soát").fill("Kiểm tra mạng tại cửa hàng");
+    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/keyboard");
+    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").press("Tab");
+    const continueButton = panel.getByRole("button", { name: "Tiếp tục xác nhận" });
+    await expect(continueButton).toBeFocused();
+    await continueButton.press("Enter");
+    await expect(page.getByRole("alertdialog")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    await expect(continueButton).toBeFocused();
+    await expectNoHorizontalOverflow(page, 390, "Moderator offline review");
+    expect(posts).toHaveLength(0);
+  });
+
+  test("telemetry 503 and cleaning timeout stay local and never become offline or zero cup data", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    await installOfflineMock(page, requests);
+    await page.route("**/api/dolores/v1/telemetry-query/**/points?**", async (route) => { await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ message: "Influx unavailable" }) }); });
+    await page.route("**/api/dolores/v1/owner/cleaning-records?**", async (route) => { await route.abort("timedout"); });
+    await page.goto(`${ownerOperationsPath}?tab=connection&${fixedDates}`);
+    await expect(page.getByRole("alert").first()).toBeVisible();
+    await expect(page.getByText("Đang kết nối", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Mất kết nối", { exact: true })).toHaveCount(0);
+    await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
+    await expect(page.locator('[aria-labelledby="owner-cleaning-history-title"]').getByRole("alert")).toBeVisible();
+    await expect(page.getByText("Chưa có bản ghi vệ sinh trong khoảng đã chọn.", { exact: true })).toHaveCount(0);
+    await page.getByRole("tab", { name: "Pha chế", exact: true }).click();
+    await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("0", { exact: true })).toHaveCount(0);
+  });
+
+  for (const machineType of ["CONVENTIONAL", null]) {
+    test(`${machineType ?? "unconfirmed"} machine never enables Owner telemetry or analytics`, async ({ page, context }) => {
+      await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+      const requests: string[] = [];
+      await installMockApi(page, roleCases[0], requests);
+      await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => { await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...machine, machineType }) }); });
+      await page.goto(`${ownerOperationsPath}?tab=connection&${fixedDates}`);
+      await expect(page.getByText(machineType === "CONVENTIONAL" ? "Máy thường không có dữ liệu kết nối và thông số IoT." : "Chưa xác nhận loại máy để xem dữ liệu kết nối và thông số IoT.", { exact: true })).toBeVisible();
+      await page.getByRole("tab", { name: "Pha chế", exact: true }).click();
+      await expect(page.getByText("Máy này chưa được xác nhận là Smart IoT để xem dữ liệu pha chế và vệ sinh.", { exact: true })).toBeVisible();
+      expect(requests.some((path) => path.startsWith("/owner/") || path.includes("/heartbeats/latest") || path.includes("/points") || path.startsWith("/offline-violation-reviews"))).toBe(false);
+    });
+  }
+
+  test("Admin inventory requests heartbeats only for visible Smart IoT rows in a hundred-machine list", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.clock.install();
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[1], requests);
+    const machines = Array.from({ length: 100 }, (_, index) => ({ ...machine, id: `f5000000-0000-4000-8000-${String(index).padStart(12, "0")}`, serialNumber: `VISIBLE-BUDGET-${String(index).padStart(3, "0")}` }));
+    const heartbeatIds = new Set<string>();
+    await page.route("**/api/dolores/v1/machines", async (route) => { await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(machines) }); });
+    await page.route("**/api/dolores/v1/telemetry-query/**/heartbeats/latest", async (route) => {
+      const id = new URL(route.request().url()).pathname.split("/").at(-3)!;
+      heartbeatIds.add(id);
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ machineId: id, status: "ONLINE" }) });
+    });
+    await page.goto("/admin/machines");
+    await expect(page.getByRole("cell", { name: "VISIBLE-BUDGET-000", exact: true })).toBeVisible();
+    await expect.poll(() => heartbeatIds.size).toBeGreaterThan(0);
+    await page.clock.runFor(1_500);
+    expect(heartbeatIds.size).toBeLessThan(20);
+    const visibleIds = await page.locator("[data-machine-heartbeat-id]").evaluateAll((rows) => rows.filter((row) => { const bounds = row.getBoundingClientRect(); return bounds.bottom > 0 && bounds.top < window.innerHeight; }).map((row) => (row as HTMLElement).dataset.machineHeartbeatId));
+    expect([...heartbeatIds].every((id) => visibleIds.includes(id))).toBe(true);
+    expect(heartbeatIds.has(machines.at(-1)!.id)).toBe(false);
+    expect(requests.some((path) => path.startsWith("/owner/"))).toBe(false);
+  });
+
+  test("Owner heartbeat polling pauses when hidden while cleaning is not polled with heartbeats", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+    await page.clock.install();
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[0], requests);
+    await page.goto(`/dashboard/machines/${machineId}`);
+    await expect(page.getByText("Đang kết nối", { exact: true }).first()).toBeVisible();
+    await expect.poll(() => requests.filter((path) => path.startsWith("/owner/cleaning-records?")).length).toBeGreaterThan(0);
+    const cleaningBefore = requests.filter((path) => path.startsWith("/owner/cleaning-records?")).length;
+    const heartbeatCount = () => requests.filter((path) => path.includes("/heartbeats/latest")).length;
+    const heartbeatsBefore = heartbeatCount();
+    await page.clock.runFor(6_000);
+    await expect.poll(heartbeatCount).toBeGreaterThan(heartbeatsBefore);
+    expect(requests.filter((path) => path.startsWith("/owner/cleaning-records?")).length).toBe(cleaningBefore);
+    await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" }); document.dispatchEvent(new Event("visibilitychange")); });
+    const hiddenCount = heartbeatCount();
+    await page.clock.runFor(11_000);
+    expect(heartbeatCount()).toBe(hiddenCount);
+    expect(requests.filter((path) => path.startsWith("/owner/cleaning-records?")).length).toBe(cleaningBefore);
+    await page.evaluate(() => { Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" }); document.dispatchEvent(new Event("visibilitychange")); });
+    await page.clock.runFor(6_000);
+    await expect.poll(heartbeatCount).toBeGreaterThan(hiddenCount);
   });
 });

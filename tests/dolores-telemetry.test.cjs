@@ -174,6 +174,14 @@ test('telemetry chart spaces irregular observations by actual timestamp and disc
   assert.match(html, /còn dữ liệu chưa tải/);
 });
 
+test('telemetry axis preserves tiny nonzero values instead of labelling them all zero', () => {
+  const points = [0.0000001, 0.0000002].map((value, index) => ({ machineId, field: 'sensor', value, timestamp: new Date(Date.UTC(2026, 10, 1, 0, index)).toISOString() }));
+  const html = renderTelemetryPanel({ points });
+  assert.match(html, /1E-7/);
+  assert.match(html, /2E-7/);
+  assert.match(html, /1e-7/);
+});
+
 test('heartbeat shows zero health as historical separately from current connection and explicit Vietnam time', () => {
   const React = require('react');
   const { renderToStaticMarkup } = require('react-dom/server');

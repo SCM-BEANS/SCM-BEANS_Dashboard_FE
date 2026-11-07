@@ -16,6 +16,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import { MachineIdSchema, type Machine } from "@/schema/machines.schema";
+import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
 import styles from "../technician-shell.module.css";
@@ -94,7 +95,10 @@ export function TechnicianMachineDetailScreen() {
   const queryClient = useQueryClient();
   const subject = authScopedQuerySubject("TECHNICIAN");
   const pageVisible = usePageVisibility();
-  const [telemetryRange, setTelemetryRange] = useState(() => createTelemetryRange("24h"));
+  const [defaultRange] = useState(() => createTelemetryRange("24h"));
+  const rangeResult = useMemo(() => TelemetryPointsParamsSchema.safeParse(router.query.telemetryFrom || router.query.telemetryTo ? { from: router.query.telemetryFrom, to: router.query.telemetryTo } : defaultRange), [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
+  const telemetryRange = rangeResult.success ? rangeResult.data : null;
+  const setTelemetryRange = (range: { from: string; to: string }) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: range.from, telemetryTo: range.to } }, undefined, { shallow: true }); };
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
   const authenticated = Boolean(getAuthenticatedSubjectId());
@@ -119,10 +123,10 @@ export function TechnicianMachineDetailScreen() {
   });
   const points = useInfiniteQuery({
     queryKey: ["technician-machine-telemetry", subject, machineId, telemetryRange],
-    queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, telemetryRange, pageParam, signal),
+    queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, telemetryRange!, pageParam, signal),
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && pages.length * TELEMETRY_POINTS_PAGE_SIZE <= 100_000 ? pages.length * TELEMETRY_POINTS_PAGE_SIZE : undefined,
-    enabled: smartIot, retry: false,
+    enabled: smartIot && pageVisible && Boolean(telemetryRange), retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
   const statusUpdate = useMutation({
@@ -260,7 +264,7 @@ export function TechnicianMachineDetailScreen() {
         {smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Lịch sử thông số">
-            <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
+            <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
           </SmartIotPanel>
         </> : null}
       </section>
