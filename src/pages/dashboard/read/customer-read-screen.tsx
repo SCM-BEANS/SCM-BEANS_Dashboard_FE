@@ -5,8 +5,7 @@ import { ContractIdSchema } from "@/schema/contracts.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getCustomerScreenDescriptor } from "./customer-read-descriptor";
 import { OverviewScreen } from "../overview/overview-screen";
@@ -28,9 +27,7 @@ function withCustomerActions(content: ReactNode, actions: readonly ActionBarActi
     <>
       {content}
       {actions.length > 0 ? (
-        <ActionBarConfig>
-          <ActionBarActions actions={actions} />
-        </ActionBarConfig>
+        <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
       ) : null}
     </>
   );
@@ -93,9 +90,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
       ) : (
         <p className={styles.pendingNotice} role="status">{CUSTOMER_MESSAGES.ROUTES.PENDING}</p>
       )}
-      <ActionBarConfig>
-        <ActionBarActions actions={screen.actions} />
-      </ActionBarConfig>
+      <PageActions actions={screen.actions.map((action, index) => ({ ...action, id: String(index) }))} />
     </section>
   );
 }

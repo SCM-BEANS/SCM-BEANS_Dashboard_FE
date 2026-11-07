@@ -44,3 +44,8 @@
     font-size: 13px;
   }
 }
+
+.button.button.primary { background: #b81724; border-color: #b81724; color: white; }
+.button.button.primary:hover:not(:disabled) { background: #90121c; border-color: #90121c; }
+.button.button.danger { background: white; border-color: #b81724; color: #b81724; }
+.button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: #90121c; }

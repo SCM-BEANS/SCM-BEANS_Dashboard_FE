@@ -1,3 +1,6 @@
+.layout { display: contents; }
+.layout[data-visible="false"] .dock { display: none; }
+.layout[data-visible="true"] { --action-bar-height: 80px; }
 .dock {
   position: fixed;
   z-index: 5;
@@ -21,14 +24,18 @@
   overscroll-behavior-x: contain;
 }
 
+.actions:has([data-menu-open="true"]) { overflow: visible; }
+
 @media (max-width: 1023px) {
+  .layout[data-visible] { --action-bar-height: 0px; }
+
   .dock {
     position: static;
     inset: auto;
-    z-index: auto;
-    flex: 0 0 64px;
+    z-index: 5;
     width: 100%;
-    height: 64px;
+    flex: 0 0 auto;
+    height: calc(64px + env(safe-area-inset-bottom));
     padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   }
 }

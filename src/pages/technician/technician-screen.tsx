@@ -1,5 +1,5 @@
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ActionBarActions, type ActionBarAction } from "@/components/action-bar/action-bar-actions";
+import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
@@ -81,9 +81,7 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
           {screen.fields.map(renderField)}
         </fieldset>
       ) : null}
-      <ActionBarConfig>
-        <ActionBarActions actions={actions} />
-      </ActionBarConfig>
+      <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
     </section>
   );
 }

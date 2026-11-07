@@ -254,3 +254,5 @@
 @media (prefers-reduced-motion: reduce) {
   .shell a, .shell button, .shell input, .shell select, .shell textarea { transition: none; }
 }
+
+.main { padding-bottom: var(--action-bar-height, 0px); }

@@ -86,7 +86,7 @@
   min-height: 100%;
   flex-direction: column;
   gap: 22px;
-  padding: 28px 32px 112px;
+  padding: 28px 32px 32px;
   margin: 0 auto;
 }
 
@@ -403,3 +403,5 @@
     font-size: 22px;
   }
 }
+
+.main { padding-bottom: var(--action-bar-height, 0px); }

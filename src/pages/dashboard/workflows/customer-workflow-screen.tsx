@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
-import { ActionBarActions } from "@/components/action-bar/action-bar-actions";
+import { PageActions } from "@/components/action-bar/page-actions";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
@@ -38,9 +37,7 @@ function withWorkflowActions(
     <>
       {content}
       {actions.length > 0 ? (
-        <ActionBarConfig>
-          <ActionBarActions actions={actions} />
-        </ActionBarConfig>
+        <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
       ) : null}
     </>
   );
@@ -175,9 +172,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         </div>
       ) : null}
       {actions.length ? (
-        <ActionBarConfig>
-          <ActionBarActions actions={actions} />
-        </ActionBarConfig>
+        <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
       ) : null}
     </section>
   );

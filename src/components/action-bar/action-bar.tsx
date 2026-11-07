@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode, type Ref } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
 import styles from "./action-bar.module.css";
 
@@ -25,10 +25,22 @@ export function ActionBar({
 export function ActionBarLayout({ children, label }: { children: ReactNode; label: string }) {
   const [actionsElement, setActionsElement] = useState<HTMLDivElement | null>(null);
 
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!actionsElement) return;
+    const update = () => setVisible(actionsElement.childNodes.length > 0);
+    const observer = new MutationObserver(update);
+    observer.observe(actionsElement, { childList: true });
+    update();
+    return () => observer.disconnect();
+  }, [actionsElement]);
+
   return (
     <ActionBarSlotContext.Provider value={actionsElement}>
-      {children}
-      <ActionBar label={label} actionsRef={setActionsElement} />
+      <div className={styles.layout} data-visible={visible}>
+        {children}
+        <ActionBar label={label} actionsRef={setActionsElement} />
+      </div>
     </ActionBarSlotContext.Provider>
   );
 }

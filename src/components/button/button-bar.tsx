@@ -11,6 +11,7 @@ import styles from "./button-bar.module.css";
 type SharedProps = {
   children: ReactNode;
   className?: string;
+  variant?: "primary" | "secondary" | "danger";
 };
 
 type LinkButtonProps = SharedProps &
@@ -29,10 +30,11 @@ export const ButtonBar = forwardRef<
   HTMLAnchorElement | HTMLButtonElement,
   ButtonBarProps
 >(function ButtonBar(props, ref) {
-  const className = [styles.button, props.className].filter(Boolean).join(" ");
+  const { variant = "secondary", ...rest } = props;
+  const className = [styles.button, styles[variant], props.className].filter(Boolean).join(" ");
 
   if (props.href) {
-    const { href, children, ...linkProps } = props;
+    const { href, children, ...linkProps } = rest as LinkButtonProps;
     return (
       <Link
         {...linkProps}
@@ -47,7 +49,7 @@ export const ButtonBar = forwardRef<
 
   return (
     <button
-      {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
+      {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
       ref={ref as Ref<HTMLButtonElement>}
       className={className}
       type={(props as NativeButtonProps).type ?? "button"}
