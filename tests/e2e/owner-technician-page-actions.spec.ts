@@ -1,6 +1,28 @@
 import { expect, test } from "@playwright/test";
 import { expectPrimaryPageAction, pageActionBar } from "./page-actions-test-helpers";
 
+test("recall depot review places approval last and rejection in the bar", async ({ page }) => {
+  const id = "f4000000-0000-4000-8000-000000000002";
+  const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, status: "RECEIPT_REVIEW_PENDING", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  const caseData = { id, ownerId: id, contractId: id, machineId: id, type: "NORMAL", status: "RECOVERY_PENDING", requestedBy: id, reason: "test", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  await page.route("**/api/dolores/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
+    if (path === "/recall-work-orders") return route.fulfill({ json: { content: [work], page: 0, size: 20, totalElements: 1, totalPages: 1 } });
+    if (path === `/recall-work-orders/${id}`) return route.fulfill({ json: work });
+    if (path === `/termination-cases/${id}`) return route.fulfill({ json: caseData });
+    if (path === `/contracts/${id}`) return route.fulfill({ json: { id, ownerId: id, machineId: id, status: "ACTIVE" } });
+    if (path === "/profiles") return route.fulfill({ json: [], headers: { "x-page": "0", "x-page-size": "20", "x-has-next": "false" } });
+    if (path.endsWith("/events")) return route.fulfill({ json: { content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 } });
+    return route.fulfill({ json: [] });
+  });
+  await page.goto(`/admin/contracts/${id}/termination`);
+  await page.getByRole("button", { name: "Mở chi tiết" }).click();
+  await expectPrimaryPageAction(page, "recall-depot-approve");
+  await expect(pageActionBar(page).locator('[data-action-id="recall-depot-reject"]')).toBeVisible();
+});
+
 test("admin contract creation offers cancel and primary form submission", async ({ page }) => {
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
@@ -30,7 +52,7 @@ test("technician installation completion is the primary page action", async ({ p
     return route.fulfill({ json: [] });
   });
   await page.goto(`/technician/tasks/${id}`);
-  await expectPrimaryPageAction(page, "complete-installation");
+  await expectFooter(page, "complete-installation");
   await expect(pageActionBar(page).getByRole("button", { name: "Về danh sách" })).toHaveCount(0);
 });
 
@@ -136,4 +158,104 @@ test("recipe sync request is a primary page action", async ({ page }) => {
   await page.route("**/api/**", (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith("/machines") ? [{ id, ownerId: id, serialNumber: "SYNC-1", status: "IN_WAREHOUSE", machineType: "CONVENTIONAL" }] : [] }));
   await page.goto("/dashboard/menu/sync");
   await expectPrimaryPageAction(page, "recipe-sync");
+});
+
+const actionTestId = "f4000000-0000-4000-8000-000000000002";
+async function actionLogin(page: import("@playwright/test").Page, role: string) {
+  const claims = Buffer.from(JSON.stringify({ roles: [role], sub: actionTestId })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+}
+async function expectFooter(page: import("@playwright/test").Page, id: string, form?: string) {
+  await expectPrimaryPageAction(page, id);
+  const bar = pageActionBar(page);
+  if (form) {
+    await expect(bar.locator(`[data-action-id="${id}"]`)).toHaveAttribute("type", "submit");
+    await expect(bar.locator(`[data-action-id="${id}"]`)).toHaveAttribute("form", form);
+    await expect(page.locator(`form#${form}`)).toBeAttached();
+  }
+  await expect(bar.getByRole("button", { name: /quay lại|về danh sách|làm mới|tải lại|refresh|back/i })).toHaveCount(0);
+}
+
+test("operator coffee handover submits from the footer", async ({ page }) => {
+  await actionLogin(page, "admin");
+  await page.route("**/api/**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/coffee-package-orders/${actionTestId}`) ? { id: actionTestId, status: "WAITING_STOCK", quantity: 1 } : [] }));
+  await page.goto(`/admin/coffee-packages/${actionTestId}`);
+  await expectFooter(page, "coffee-order-handover", "coffee-order-handover-form");
+});
+
+test("operator coffee refund approval submits from the footer", async ({ page }) => {
+  await actionLogin(page, "admin");
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({ json: path.endsWith("/coffee-package-refunds") ? [{ id: actionTestId, status: "REQUESTED", amount: 100 }] : path.endsWith(`/coffee-package-refunds/${actionTestId}`) ? { id: actionTestId, status: "REQUESTED", amount: 100 } : [] });
+  });
+  await page.goto("/admin/coffee-packages");
+  await page.getByRole("button", { name: "Hoàn tiền", exact: true }).click();
+  await page.getByRole("button", { name: "Mở khoản hoàn" }).click();
+  await expectFooter(page, "coffee-refund-approve", "coffee-refund-approve-form");
+});
+
+test("owner confirms a coffee refund from the footer", async ({ page }) => {
+  await actionLogin(page, "owner");
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    const refund = { id: actionTestId, orderId: actionTestId, status: "PAYOUT_RECORDED", amount: 100 };
+    return route.fulfill({ json: path.endsWith(`/coffee-package-orders/${actionTestId}`) ? { id: actionTestId, status: "CANCELLED" } : path.endsWith("/refund") || path.endsWith(`/coffee-package-refunds/${actionTestId}`) ? refund : path.endsWith("/payout-attempts") ? [{ id: actionTestId, refundId: actionTestId, attemptNumber: 1, status: "RECORDED" }] : [] });
+  });
+  await page.goto(`/dashboard/coffee-packages/${actionTestId}`);
+  await expectFooter(page, "confirm-refund");
+});
+
+test("technician repair step is the primary footer action", async ({ page }) => {
+  await actionLogin(page, "technician");
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith(`/installation-work-orders/${actionTestId}`)) return route.fulfill({ status: 404, json: {} });
+    const data = path.endsWith(`/repair-cases/${actionTestId}`) ? { id: actionTestId, maintenanceRequestId: actionTestId, maintenanceTicketId: actionTestId, ownerId: actionTestId, contractId: actionTestId, primaryMachineId: actionTestId, status: "DIAGNOSIS", createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00", timeline: [] } : path.endsWith(`/maintenance-tickets/${actionTestId}`) ? { id: actionTestId, repairCaseId: actionTestId, status: "ASSIGNED", assignedTechnicianId: actionTestId } : path.endsWith("/timeline") ? { content: [], totalElements: 0, totalPages: 0, number: 0, size: 50 } : [];
+    return route.fulfill({ json: data });
+  });
+  await page.goto(`/technician/tasks/${actionTestId}`);
+  await expectFooter(page, "start-repair");
+});
+
+test("repair case current step submits from the footer", async ({ page }) => {
+  await actionLogin(page, "technician");
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith(`/installation-work-orders/${actionTestId}`)) return route.fulfill({ status: 404, json: {} });
+    const data = path.endsWith(`/repair-cases/${actionTestId}`) ? { id: actionTestId, maintenanceRequestId: actionTestId, maintenanceTicketId: actionTestId, ownerId: actionTestId, contractId: actionTestId, primaryMachineId: actionTestId, status: "DIAGNOSIS", createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00", timeline: [] } : path.endsWith(`/maintenance-requests/${actionTestId}`) ? { id: actionTestId, machineId: actionTestId, requestType: "REPAIR", status: "IN_PROGRESS", replacementAssignmentId: actionTestId } : path.endsWith(`/maintenance-tickets/${actionTestId}`) ? { id: actionTestId, repairCaseId: actionTestId, status: "ASSIGNED", assignedTechnicianId: actionTestId } : path.endsWith(`/replacement-assignments/${actionTestId}`) ? { id: actionTestId, ownerId: actionTestId, contractId: actionTestId, repairCaseId: actionTestId, primaryMachineId: actionTestId, replacementMachineId: actionTestId, status: "ACTIVE", startAt: "2026-01-01T00:00:00", endAt: "2027-01-01T00:00:00" } : path.endsWith("/custody-events") ? [{ id: actionTestId, maintenanceRequestId: actionTestId, repairCaseId: actionTestId, eventType: "REPLACEMENT_DELIVERED", machineId: actionTestId, actorRole: "TECHNICIAN", occurredAt: "2026-01-01T00:00:00", ownerAcknowledgedAt: "2026-01-01T00:00:00" }] : path.endsWith("/timeline") ? { content: [], number: 0, size: 50, totalElements: 0, totalPages: 0, numberOfElements: 0, first: true, last: true, empty: true } : [];
+    return route.fulfill({ json: data });
+  });
+  await page.goto(`/technician/tasks/repair-cases/${actionTestId}`);
+  await expectFooter(page, "start-repair-work", "start-repair-work-form");
+});
+
+test("owner buyback price decision is the primary footer action", async ({ page }) => {
+  await actionLogin(page, "owner");
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    const data = path.endsWith(`/buybacks/${actionTestId}`) ? { id: actionTestId, ownerId: actionTestId, status: "APPROVED", workflowVersion: 2, approvedPrice: 100, currency: "VND", reason: "Buyback", requestedAt: "2026-01-01", updatedAt: "2026-01-01", createdAt: "2026-01-01", collectionEvidenceRecorded: false } : [];
+    return route.fulfill({ json: data });
+  });
+  await page.goto(`/dashboard/buyback?caseId=${actionTestId}`);
+  await expectFooter(page, "accept-price");
+  await expect(pageActionBar(page).locator('[data-action-id="reject-price"]')).toBeVisible();
+});
+
+test("billing refund rejection is dangerous and requires confirmation", async ({ page }) => {
+  await actionLogin(page, "admin");
+  const refund = { id: actionTestId, ownerId: actionTestId, contractId: actionTestId, invoiceId: null, terminationCaseId: actionTestId, refundKind: "DEPOSIT", amount: 100, currency: "VND", status: "TENANT_CONFIRMED", requestedAt: "2026-01-01" };
+  const work = { id: actionTestId, terminationCaseId: actionTestId, ownerId: actionTestId, contractId: actionTestId, machineId: actionTestId, status: "RECEIVED_AT_DEPOT", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    const data = path.endsWith(`/billing/refunds/${actionTestId}`) ? refund : path.endsWith(`/termination-cases/${actionTestId}`) ? { id: actionTestId, ownerId: actionTestId, contractId: actionTestId, machineId: actionTestId, type: "NORMAL", status: "SETTLEMENT_PENDING", requestedBy: actionTestId, reason: "test", settlementId: actionTestId, depositRefundAmount: 100, refundId: actionTestId, createdAt: "2026-01-01", updatedAt: "2026-01-01" } : path.endsWith(`/contracts/${actionTestId}`) ? { id: actionTestId, ownerId: actionTestId, machineId: actionTestId, status: "ACTIVE" } : path.endsWith("/recall-work-orders") ? { content: [work], page: 0, size: 20, totalElements: 1, totalPages: 1 } : path.endsWith("/events") ? { content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 } : [];
+    return route.fulfill({ json: data });
+  });
+  await page.goto(`/admin/contracts/${actionTestId}/termination`);
+  await expectFooter(page, "refund-approve");
+  const reject = pageActionBar(page).locator('[data-action-id="refund-reject"]');
+  await expect(reject).toHaveClass(/danger/);
+  await page.getByLabel("Lý do xử lý *").fill("Không đủ điều kiện");
+  await reject.click();
+  await expect(page.getByRole("alertdialog")).toBeVisible();
 });

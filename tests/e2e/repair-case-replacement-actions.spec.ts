@@ -99,7 +99,7 @@ test("technician selects authorization and sees a conflict", async ({ page }) =>
   await expect(scope).toHaveValue("Sửa bơm");
   await expect(scope).toHaveAttribute("readonly", "");
   const request = page.waitForRequest(r => r.url().endsWith("/work/start") && r.method() === "POST");
-  await scope.locator("xpath=ancestor::form").locator('button[type="submit"]').click();
+  await page.locator('footer[aria-label^="Thao tác"]').getByRole("button", { name: "Bắt đầu sửa chữa" }).click();
   expect((await request).postDataJSON()).toEqual({ workScope: "Sửa bơm", emergencyAuthorizationId: machine });
   await expect(page.getByText("Ủy quyền này đã được sử dụng hoặc không khớp phạm vi công việc.")).toBeVisible();
 });

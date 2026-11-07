@@ -9,6 +9,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { SectionHeading } from "@/components/heading/section-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -853,7 +854,7 @@ export function RepairCaseDetailScreen({
                 {primaryCollectionEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.TECHNICIAN_RECEIVE_MACHINE_SUCCESS} ${formatDateTime(primaryCollectionEvent.occurredAt)} · ${primaryCollectionEvent.machineId}`}</p>
                 ) : canSubmitReceiveMachine ? (
-                  <form className={styles.assignmentForm} onSubmit={submitReceiveMachine}>
+                  <form id="receive-machine-form" className={styles.assignmentForm} onSubmit={submitReceiveMachine}>
                     <label className={styles.formField} htmlFor="primary-collection-condition">
                       <span>{M.TECHNICIAN_RECEIVE_MACHINE_CONDITION}</span>
                       <textarea
@@ -883,9 +884,7 @@ export function RepairCaseDetailScreen({
                     {currentPrimaryCollectionError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordPrimaryCollection.error, "mutation")}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || !receiveMachineEvidenceReference.trim() || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess}>
-                      {recordPrimaryCollection.isPending ? M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING : M.TECHNICIAN_RECEIVE_MACHINE}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || !receiveMachineEvidenceReference.trim() || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: "Nhập tình trạng máy và mã minh chứng; kiểm tra hồ sơ đủ điều kiện nhận máy.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
@@ -910,7 +909,7 @@ export function RepairCaseDetailScreen({
                 {assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED" ? (
                   <p className={styles.acknowledged} role="status">{`${M.ACTIVATE_SUCCESS} ${assignmentStatusLabel(assignment.data.status)}`}</p>
                 ) : canActivateAssignment ? (
-                  <form className={styles.assignmentForm} onSubmit={submitActivation}>
+                  <form id="activate-replacement-form" className={styles.assignmentForm} onSubmit={submitActivation}>
                     <label className={styles.formField} htmlFor="replacement-activation-evidence">
                       <span>{M.ACTIVATE_EVIDENCE}</span>
                       <input
@@ -938,9 +937,7 @@ export function RepairCaseDetailScreen({
                     {activateReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(activateReplacementAssignment.error, "mutation")}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!activationEvidence.trim() || !activationReason.trim() || activateReplacementAssignment.isPending}>
-                      {activateReplacementAssignment.isPending ? M.ACTIVATE_SUBMITTING : M.ACTIVATE_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: !activationEvidence.trim() || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: "Nhập lý do và minh chứng kích hoạt.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -956,7 +953,7 @@ export function RepairCaseDetailScreen({
                 {replacementDeliveredEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.REPLACEMENT_DELIVERY_SUCCESS} ${formatDateTime(replacementDeliveredEvent.occurredAt)} · ${replacementDeliveredEvent.machineId}`}</p>
                 ) : canRecordReplacementDelivery ? (
-                  <form className={styles.assignmentForm} onSubmit={submitReplacementDelivery}>
+                  <form id="replacement-delivery-form" className={styles.assignmentForm} onSubmit={submitReplacementDelivery}>
                     <DetailValue label={M.ASSIGNMENT_MACHINE} value={assignment.data?.replacementMachineId ?? "—"} code />
                     <label className={styles.formField} htmlFor="replacement-delivery-condition">
                       <span>{M.REPLACEMENT_DELIVERY_CONDITION}</span>
@@ -986,9 +983,7 @@ export function RepairCaseDetailScreen({
                     {recordReplacementDelivery.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReplacementDelivery.error, "mutation")}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!replacementDeliveryNotes.trim() || !replacementDeliveryEvidence.trim() || recordReplacementDelivery.isPending}>
-                      {recordReplacementDelivery.isPending ? M.REPLACEMENT_DELIVERY_SUBMITTING : M.REPLACEMENT_DELIVERY_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || !replacementDeliveryEvidence.trim() || recordReplacementDelivery.isPending, disabledReason: "Nhập ghi chú và minh chứng bàn giao máy thay thế.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
                   </form>
                 ) : assignment.data?.status === "ACTIVE" ? (
                   <p className={styles.notice} role="status">
@@ -1019,7 +1014,7 @@ export function RepairCaseDetailScreen({
                 ) : recordRepairDiagnosis.isSuccess ? (
                   <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
                 ) : canRecordDiagnosis ? (
-                  <form className={styles.assignmentForm} onSubmit={submitDiagnosis}>
+                  <form id="repair-diagnosis-form" className={styles.assignmentForm} onSubmit={submitDiagnosis}>
                     <label className={styles.formField} htmlFor={`repair-diagnosis-${caseId}`}>
                       <span>{M.TECHNICIAN_DIAGNOSIS}</span>
                       <textarea
@@ -1048,9 +1043,7 @@ export function RepairCaseDetailScreen({
                     {recordRepairDiagnosis.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordRepairDiagnosis.error)}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!diagnosisText.trim() || !diagnosisEvidenceReference.trim() || isRefreshing || recordRepairDiagnosis.isSuccess}>
-                      {recordRepairDiagnosis.isPending ? M.TECHNICIAN_DIAGNOSIS_SUBMITTING : M.TECHNICIAN_DIAGNOSIS_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || !diagnosisEvidenceReference.trim() || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: "Nhập chẩn đoán và mã minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1066,7 +1059,7 @@ export function RepairCaseDetailScreen({
                 ) : startRepairWork.isSuccess ? (
                   <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
                 ) : canStartWork ? (
-                  <form className={styles.assignmentForm} onSubmit={submitStartWork}>
+                  <form id="start-repair-work-form" className={styles.assignmentForm} onSubmit={submitStartWork}>
                     {dispute.isDisputed && <label className={styles.formField}>Ủy quyền xử lý khẩn cấp<select value={emergencyAuthorizationId} onChange={event => { const id = event.target.value; setEmergencyAuthorizationId(id); const scope = dispute.authorizations.find(item => item.authorizationId === id)?.workScope ?? ""; setWorkScope(scope); setCompletionWorkScopes(current => ({ ...current, [caseId]: scope })); }}><option value="">Chọn ủy quyền</option>{dispute.authorizations.map(item => <option key={item.authorizationId} value={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {item.workScope}</option>)}</select></label>}
                     <label className={styles.formField} htmlFor={`repair-work-scope-${caseId}`}>
                       <span>{M.TECHNICIAN_WORK_SCOPE}</span>
@@ -1084,9 +1077,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(startRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <ButtonBar type="submit" disabled={!workScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || isRefreshing || startRepairWork.isSuccess}>
-                      {startRepairWork.isPending ? M.TECHNICIAN_START_WORKING : M.TECHNICIAN_START_WORK}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "start-repair-work", label: M.TECHNICIAN_START_WORK, variant: "primary", priority: 100, type: "submit", form: "start-repair-work-form", disabled: !workScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || isRefreshing || startRepairWork.isSuccess, disabledReason: "Nhập phạm vi công việc và chọn phê duyệt nếu có tranh chấp chi phí.", pending: startRepairWork.isPending, pendingLabel: M.TECHNICIAN_START_WORKING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1109,7 +1100,7 @@ export function RepairCaseDetailScreen({
                 ) : completeRepairWork.isSuccess ? (
                   <p className={styles.notice} role="status">{M.TECHNICIAN_STATUS_SYNC_PENDING}</p>
                 ) : canCompleteWork ? (
-                  <form className={styles.assignmentForm} onSubmit={submitCompleteWork}>
+                  <form id="complete-repair-work-form" className={styles.assignmentForm} onSubmit={submitCompleteWork}>
                     {dispute.isDisputed && <label className={styles.formField}>Ủy quyền xử lý khẩn cấp<select value={emergencyAuthorizationId} onChange={event => { const id = event.target.value; setEmergencyAuthorizationId(id); const scope = dispute.authorizations.find(item => item.authorizationId === id)?.workScope ?? ""; setWorkScope(scope); setCompletionWorkScopes(current => ({ ...current, [caseId]: scope })); }}><option value="">Chọn ủy quyền</option>{dispute.authorizations.map(item => <option key={item.authorizationId} value={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {item.workScope}</option>)}</select></label>}
                     <p className={styles.notice} role="note"><strong>{M.TECHNICIAN_RECORDED_DIAGNOSIS}:</strong> {ticketDiagnosis}</p>
                     <label className={styles.formField} htmlFor={`repair-completion-scope-${caseId}`}>
@@ -1160,12 +1151,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(completeRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <ButtonBar
-                      type="submit"
-                      disabled={!completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess}
-                    >
-                      {completeRepairWork.isPending ? M.TECHNICIAN_COMPLETION_SUBMITTING : M.TECHNICIAN_COMPLETION_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess, disabledReason: "Nhập phạm vi công việc, kết quả, minh chứng và chọn phê duyệt nếu có tranh chấp chi phí.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1187,7 +1173,7 @@ export function RepairCaseDetailScreen({
                 ) : recordReturnCustodyEvent.isSuccess && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
                   <p className={styles.notice} role="status">{M.CUSTODY_STATUS_SYNC_PENDING}</p>
                 ) : canSubmitReplacementCollection ? (
-                  <form className={styles.assignmentForm} onSubmit={submitReplacementCollection}>
+                  <form id="replacement-collection-form" className={styles.assignmentForm} onSubmit={submitReplacementCollection}>
                     <p className={styles.notice} role="note">{`${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
                     <label className={styles.formField} htmlFor={`replacement-collection-condition-${caseId}`}>
                       <span>{M.REPLACEMENT_COLLECTION_CONDITION}</span>
@@ -1218,9 +1204,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!replacementCollectionCondition.trim() || !replacementCollectionEvidenceReference.trim() || isRefreshing}>
-                      {recordReturnCustodyEvent.isPending ? M.REPLACEMENT_COLLECTION_SUBMITTING : M.REPLACEMENT_COLLECTION_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || !replacementCollectionEvidenceReference.trim() || isRefreshing, disabledReason: "Nhập tình trạng và minh chứng thu máy thay thế.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1252,7 +1236,7 @@ export function RepairCaseDetailScreen({
                 ) : recordReturnCustodyEvent.isSuccess && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
                   <p className={styles.notice} role="status">{M.CUSTODY_STATUS_SYNC_PENDING}</p>
                 ) : canSubmitPrimaryReturn ? (
-                  <form className={styles.assignmentForm} onSubmit={submitPrimaryReturn}>
+                  <form id="primary-return-form" className={styles.assignmentForm} onSubmit={submitPrimaryReturn}>
                     <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"}`}</p>
                     <label className={styles.formField} htmlFor={`primary-return-condition-${caseId}`}>
                       <span>{M.PRIMARY_RETURN_CONDITION}</span>
@@ -1283,9 +1267,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!primaryReturnCondition.trim() || !primaryReturnEvidenceReference.trim() || isRefreshing}>
-                      {recordReturnCustodyEvent.isPending ? M.PRIMARY_RETURN_SUBMITTING : M.PRIMARY_RETURN_SUBMIT}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || !primaryReturnEvidenceReference.trim() || isRefreshing, disabledReason: "Nhập tình trạng và minh chứng trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1321,7 +1303,7 @@ export function RepairCaseDetailScreen({
                 ) : releaseReplacementAssignment.isSuccess ? (
                   <p className={styles.notice} role="status">{M.RELEASE_STATUS_SYNC_PENDING}</p>
                 ) : canSubmitRelease ? (
-                  <form className={styles.assignmentForm} onSubmit={submitReleaseReplacement}>
+                  <form id="release-replacement-form" className={styles.assignmentForm} onSubmit={submitReleaseReplacement}>
                     <p className={styles.notice} role="note">{`${M.REPLACEMENT_ASSIGNMENT}: ${assignment.data?.id ?? "—"}`}</p>
                     <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"} · ${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
                     <label className={styles.formField} htmlFor={`release-evidence-${caseId}`}>
@@ -1342,9 +1324,7 @@ export function RepairCaseDetailScreen({
                     {releaseReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
                     ) : null}
-                    <ButtonBar type="submit" disabled={!releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess}>
-                      {M.RELEASE_REVIEW_ACTION}
-                    </ButtonBar>
+                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: !releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: "Nhập mã minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
                   </form>
                 ) : (
                   <>

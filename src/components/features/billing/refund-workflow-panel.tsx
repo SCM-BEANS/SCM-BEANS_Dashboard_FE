@@ -2,6 +2,7 @@ import Cookies from "js-cookie";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -175,6 +176,15 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
   const receiptValid = receivedChoice !== "" && receivedAmount.trim() !== "" && Number.isFinite(Number(receivedAmount)) && Number(receivedAmount) >= 0;
   return (
     <section className={styles.panel} aria-label="Khoản hoàn tiền">
+      <PageActions actions={data && !refund.isError ? [
+        ...(owner && data.status === "REQUESTED" ? [{ id: "refund-confirm", label: "Xác nhận yêu cầu hoàn tiền", priority: 50, variant: "primary" as const, disabled: mutation.isPending, onClick: () => ask({ action: "confirm" }) }] : []),
+        ...(operator && data.status === "TENANT_CONFIRMED" ? [{ id: "refund-approve", label: "Duyệt hoàn tiền", priority: 50, variant: "primary" as const, disabled: !canApprove || mutation.isPending, onClick: () => ask({ action: "approve" }) }] : []),
+        ...(operator && ["APPROVED", "FAILED"].includes(data.status) ? [{ id: "refund-submit", label: "Gửi chứng từ", priority: 100, variant: "primary" as const, type: "submit" as const, form: "billing-refund-evidence-form", disabled: !file || mutation.isPending }] : []),
+        ...(owner && data.status === "SUBMITTED" ? [{ id: "refund-receipt", label: "Gửi xác nhận tiền thực nhận", priority: 100, variant: "primary" as const, type: "submit" as const, form: "billing-refund-receipt-form", disabled: !receiptValid || mutation.isPending }] : []),
+        ...(operator && ["REQUESTED", "TENANT_CONFIRMED", "APPROVED"].includes(data.status) ? [{ id: "refund-reject", label: "Từ chối yêu cầu", priority: 0, variant: "danger" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => ask({ action: "reject", reason: reason.trim() }) }] : []),
+        ...(operator && data.status === "SUBMITTED" ? [{ id: "refund-fail", label: "Ghi nhận chuyển khoản thất bại", priority: 50, variant: "primary" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => ask({ action: "fail", reason: reason.trim() }) }] : []),
+        ...(operator && role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status) ? [{ id: "refund-reopen", label: "Mở lại yêu cầu", priority: 50, variant: "primary" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => { const signature = `${refundId}:${reason.trim()}`; const key = reopenKeys.current.get(signature) ?? crypto.randomUUID(); reopenKeys.current.set(signature, key); ask({ action: "reopen", reason: reason.trim(), key }); } }] : []),
+      ] : []} />
       <div className={styles.heading}><h3>Khoản hoàn tiền</h3><ButtonBar disabled={refund.isFetching || mutation.isPending} onClick={() => void refund.refetch()}>Làm mới</ButtonBar></div>
       {!RefundIdSchema.safeParse(refundId).success ? <p className={styles.error} role="alert">Mã khoản hoàn không hợp lệ.</p> : null}
       {refund.isLoading ? <p role="status">Đang tải khoản hoàn…</p> : null}
@@ -191,38 +201,25 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
           {data.ownerReceiptNote ? <div><dt>Phản hồi của khách hàng</dt><dd>{data.ownerReceiptNote}</dd></div> : null}
         </dl>
         {data.failureReason ? <p className={styles.notice}>{data.failureReason}</p> : null}
-        {owner && data.status === "REQUESTED" ? <ButtonBar disabled={mutation.isPending} onClick={() => ask({ action: "confirm" })}>Xác nhận yêu cầu hoàn tiền</ButtonBar> : null}
         {operator && data.status === "TENANT_CONFIRMED" ? <>
-          <div className={styles.actions}><ButtonBar disabled={!canApprove || mutation.isPending} onClick={() => ask({ action: "approve" })}>Duyệt hoàn tiền</ButtonBar></div>
           {selfApproval ? <p className={styles.notice}>Người tạo hoặc xác nhận yêu cầu không được tự duyệt. Cần nhân viên khác xử lý.</p>
             : role === "MODERATOR" && requiredRole !== "MODERATOR" ? <p className={styles.notice}>{requiredRole === "ADMIN" ? "Khoản hoàn này cần Admin duyệt." : "API chi tiết chưa trả vai trò duyệt. Mở yêu cầu từ hàng đợi quá hạn hoặc chuyển Admin kiểm tra."}</p> : null}
         </> : null}
-        {operator && ["APPROVED", "FAILED"].includes(data.status) ? <form className={styles.form} onSubmit={(event) => { event.preventDefault(); if (file) ask({ action: "submit", file }); }}>
+        {operator && ["APPROVED", "FAILED"].includes(data.status) ? <form id="billing-refund-evidence-form" className={styles.form} onSubmit={(event) => { event.preventDefault(); if (file) ask({ action: "submit", file }); }}>
           <h4>{data.status === "FAILED" ? "Gửi chứng từ lần chuyển khoản mới" : "Chứng từ chuyển khoản"}</h4>
           <label>Chọn PDF hoặc ảnh chuyển khoản<input required type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" disabled={mutation.isPending} onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
           <p className={styles.hint}>Tối đa 20 MiB. Tải chứng từ sau khi đã chuyển khoản bên ngoài hệ thống.</p>
-          <div className={styles.actions}><ButtonBar type="submit" disabled={!file || mutation.isPending}>Gửi chứng từ</ButtonBar></div>
         </form> : null}
-        {owner && data.status === "SUBMITTED" ? <form className={styles.form} onSubmit={(event) => { event.preventDefault(); if (receiptValid) ask({ action: "receipt", received: receivedChoice === "yes", receivedAmount: Number(receivedAmount), ...(note.trim() ? { note: note.trim() } : {}) }); }}>
+        {owner && data.status === "SUBMITTED" ? <form id="billing-refund-receipt-form" className={styles.form} onSubmit={(event) => { event.preventDefault(); if (receiptValid) ask({ action: "receipt", received: receivedChoice === "yes", receivedAmount: Number(receivedAmount), ...(note.trim() ? { note: note.trim() } : {}) }); }}>
           <h4>Xác nhận tiền thực nhận</h4><div className={styles.grid}>
             <label>Bạn đã nhận tiền chưa? *<select required value={receivedChoice} onChange={(event) => setReceivedChoice(event.target.value as typeof receivedChoice)}><option value="">Chọn tình trạng nhận tiền</option><option value="yes">Đã nhận tiền</option><option value="no">Chưa nhận / có vấn đề</option></select></label>
             <label>Số tiền thực tế đã nhận (VND) *<input required type="number" min="0" step="any" value={receivedAmount} onChange={(event) => setReceivedAmount(event.target.value)} /></label>
             <label className={styles.wide}>Ghi chú<textarea maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
           </div>
           {receiptValid && (receivedChoice === "no" || Number(receivedAmount) !== data.amount) ? <p className={styles.notice}>Phản hồi này sẽ chuyển khoản hoàn sang trạng thái cần đối chiếu; hồ sơ chấm dứt chưa thể hoàn tất.</p> : null}
-          <div className={styles.actions}><ButtonBar type="submit" disabled={!receiptValid || mutation.isPending}>Gửi xác nhận tiền thực nhận</ButtonBar></div>
         </form> : null}
         {operator && (["REQUESTED", "TENANT_CONFIRMED", "APPROVED"].includes(data.status) || data.status === "SUBMITTED" || (role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status))) ? <div className={styles.form}>
           <label>Lý do xử lý *<textarea maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Ghi rõ lý do để lưu cùng hồ sơ" /></label>
-          <div className={styles.actions}>
-            {["REQUESTED", "TENANT_CONFIRMED", "APPROVED"].includes(data.status) ? <ButtonBar disabled={!reason.trim() || mutation.isPending} onClick={() => ask({ action: "reject", reason: reason.trim() })}>Từ chối yêu cầu</ButtonBar> : null}
-            {data.status === "SUBMITTED" ? <ButtonBar disabled={!reason.trim() || mutation.isPending} onClick={() => ask({ action: "fail", reason: reason.trim() })}>Ghi nhận chuyển khoản thất bại</ButtonBar> : null}
-            {role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status) ? <ButtonBar disabled={!reason.trim() || mutation.isPending} onClick={() => {
-              const signature = `${refundId}:${reason.trim()}`;
-              const key = reopenKeys.current.get(signature) ?? crypto.randomUUID(); reopenKeys.current.set(signature, key);
-              ask({ action: "reopen", reason: reason.trim(), key });
-            }}>Mở lại yêu cầu</ButtonBar> : null}
-          </div>
         </div> : null}
         {data.status === "DISPUTED" ? <p className={styles.notice}>{data.terminationCaseId ? "Khoản hoàn cần đối chiếu. Admin có thể mở lại yêu cầu để khách hàng xác nhận lại." : "Khoản hoàn đang cần đối chiếu. API hiện chưa có thao tác mở lại khoản thanh toán dư độc lập; cần bộ phận vận hành xử lý."}</p> : null}
         {data.status === "COMPLETED" ? <p className={styles.success} role="status">Khách hàng đã xác nhận nhận đủ tiền hoàn.</p> : null}
