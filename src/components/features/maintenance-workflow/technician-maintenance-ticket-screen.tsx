@@ -101,7 +101,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
       ) : null}
       {ticket ? (
         <>
-          <PageActions actions={buildTechnicianMaintenanceTicketActions({
+          <PageActions actions={ticket.repairCaseId ? [{ id: "open-repair-case", label: "Mở hồ sơ sửa chữa", variant: "secondary", href: PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId) }] : buildTechnicianMaintenanceTicketActions({
             role: "TECHNICIAN",
             status: ticket.status ?? "",
             hasRepairCase: Boolean(ticket.repairCaseId),

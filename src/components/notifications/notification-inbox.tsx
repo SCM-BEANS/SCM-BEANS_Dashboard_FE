@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from "react";
 import { Bell, Settings, X } from "lucide-react";
 import Link from "next/link";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { notificationsApi } from "@/apis/notifications.api";
@@ -241,14 +242,6 @@ export function NotificationInbox({
             >
               {messages.REFRESH}
             </button>
-            <button
-              className={styles.primaryButton}
-              disabled={markAll.isPending || (unreadCount.isSuccess && unreadCount.data.unreadCount === 0)}
-              onClick={() => markAll.mutate()}
-              type="button"
-            >
-              {markAll.isPending ? messages.MARKING : messages.MARK_ALL}
-            </button>
           </div>
         </div>
 
@@ -316,6 +309,7 @@ export function NotificationInbox({
         ) : null}
       </section>
 
+      <PageActions actions={[{ id: "notifications-read-all", label: messages.MARK_ALL, variant: "secondary", pending: markAll.isPending, pendingLabel: messages.MARKING, disabled: unreadCount.isSuccess && unreadCount.data.unreadCount === 0, disabledReason: "Không có thông báo chưa đọc.", onClick: () => markAll.mutate() }]} />
       {children ? <div className={styles.extraContent}>{children}</div> : null}
     </div>
   );

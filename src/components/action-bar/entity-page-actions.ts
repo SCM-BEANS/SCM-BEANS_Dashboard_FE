@@ -279,3 +279,22 @@ export function buildContractDetailActions(input: {
   if (input.machineId) actions.push({ id: "contract-lifecycle-history", label: "Lịch sử hợp đồng", variant: "secondary", priority: 0, onClick: input.onHistory });
   return actions;
 }
+
+export function buildInvoiceExportActions(input: { count: number; loading: boolean; pending: boolean; ownerRequired?: boolean; ownerId?: string | null; onExport: () => void }): PageAction[] {
+  if (!input.count) return [];
+  const reason = input.loading ? "Đang tải danh sách hóa đơn." : input.count > 1000 ? "Chỉ có thể xuất tối đa 1.000 hóa đơn." : input.ownerRequired && !input.ownerId ? "Lọc theo một chủ sở hữu để xuất hóa đơn." : undefined;
+  return [{ id: "invoice-export", label: "Xuất hóa đơn", variant: "primary", priority: 20, disabled: Boolean(reason), disabledReason: reason, pending: input.pending, pendingLabel: "Đang xuất hóa đơn", onClick: input.onExport }];
+}
+
+export function buildInvoiceStatusActions(input: { status: string; dueDate?: string | null; pending: boolean; pendingStatus?: string; onChange: (status: "PENDING" | "OVERDUE" | "CANCELLED") => void }): PageAction[] {
+  const overdue = Boolean(input.dueDate && Date.parse(input.dueDate) < Date.now());
+  const targets: ("PENDING" | "OVERDUE" | "CANCELLED")[] = input.status === "DRAFT" ? ["PENDING", "CANCELLED"] : input.status === "PENDING" || input.status === "UNPAID" ? [...(overdue ? ["OVERDUE" as const] : []), "CANCELLED"] : input.status === "OVERDUE" ? ["CANCELLED"] : [];
+  return targets.map((status) => ({
+    id: `invoice-status-${status.toLowerCase()}`,
+    label: status === "PENDING" ? "Gửi hóa đơn" : status === "OVERDUE" ? "Đánh dấu quá hạn" : "Hủy hóa đơn",
+    variant: status === "CANCELLED" ? "danger" : "primary", priority: status === "CANCELLED" ? 0 : 50,
+    pending: input.pending && input.pendingStatus === status, pendingLabel: "Đang cập nhật…",
+    onClick: () => input.onChange(status),
+    confirm: status === "CANCELLED" ? { title: "Hủy hóa đơn?", description: "Hóa đơn sẽ được đánh dấu đã hủy.", confirmLabel: "Hủy hóa đơn" } : undefined,
+  }));
+}

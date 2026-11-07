@@ -1,4 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildInvoiceExportActions } from "@/components/action-bar/entity-page-actions";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { billingApi } from "@/apis/billing.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -161,10 +165,21 @@ export function ModeratorInvoiceListScreen() {
     queryFn: ({ signal }) => loadInvoiceRows(signal),
   });
 
+  const router = useRouter();
+  const rows = invoices.data ?? [];
+  const firstOwner = rows[0]?.invoice.ownerId ?? rows[0]?.invoice.tenantId;
+  const ownerId = firstOwner && rows.every(({ invoice }) => (invoice.ownerId ?? invoice.tenantId) === firstOwner) ? firstOwner : undefined;
+  const exportJob = useMutation({
+    mutationFn: () => billingApi.createExport({ format: "CSV", ownerId: ownerId!, invoiceIds: rows.map(({ invoice }) => invoice.id) }),
+    onSuccess: (job) => router.push(`/moderator/invoices/exports/${encodeURIComponent(job.id)}`),
+  });
+
   return (
     <div className={styles.pageContent}>
       <ModeratorPageHeading title={messages.INVOICES_TITLE} description="Theo dõi kỳ thanh toán, chứng từ và trạng thái từng hóa đơn." />
       <QueryFeedback query={invoices} loadingMessage={messages.LOADING_INVOICES} />
+      {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error, "mutation")}</p>}
+      <PageActions actions={buildInvoiceExportActions({ count: rows.length, ownerRequired: true, ownerId, loading: invoices.isFetching, pending: exportJob.isPending, onExport: () => exportJob.mutate() })} />
       {invoices.data && !invoices.isError && <InvoiceList rows={invoices.data} />}
     </div>
   );

@@ -5,7 +5,6 @@ import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineRevi
 import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
 import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
 import { ButtonBar } from "@/components/button/button-bar";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -34,5 +33,5 @@ export function ModeratorMachineOperationalOverviewScreen({ machineId }: { machi
       <p className={styles.telemetryRangeCaption}>Theo dõi và xử lý các lần mất kết nối của máy này.</p>
       {machine.data.machineType === "SMART_IOT" ? <OfflineReviewPanel page={reviews.data} detail={detail.data} status={state.params.status ?? ""} machineId={machineId} canDecide loading={enabled && reviews.isPending} detailLoading={Boolean(state.reviewId) && detail.isPending} error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined} onFilterChange={(status) => navigate({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigate({ reviewPage: String(page), reviewId: undefined })} onSelect={(reviewId) => navigate({ reviewId })} onRefresh={() => { if (enabled) { void reviews.refetch(); if (state?.reviewId) void detail.refetch(); } }} onDecide={async (id, body) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, { machineId }); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), detail.refetch()]); } }} /> : <p className={styles.monitoringEmpty}>Máy này chưa được xác nhận là Smart IoT để xem hồ sơ mất kết nối.</p>}
     </div> : null}
-  </div><ActionBarConfig><ButtonBar href={PATH_MODERATOR.MACHINE_DETAIL(machineId)}>Về hồ sơ máy</ButtonBar></ActionBarConfig></div>;
+  </div></div>;
 }

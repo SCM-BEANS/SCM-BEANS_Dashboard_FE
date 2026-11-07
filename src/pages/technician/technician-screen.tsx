@@ -41,7 +41,7 @@ function renderField(item: TechnicianField, index: number) {
 }
 
 export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescriptor }) {
-  const actions = (screen.actions ?? []).filter((action) => action.href !== screen.back?.fallbackHref);
+  const actions = (screen.actions ?? []).filter((action) => !action.disabled && action.href !== screen.back?.fallbackHref);
 
   return (
     <section className={styles.pageContent} aria-labelledby="technician-screen-title">

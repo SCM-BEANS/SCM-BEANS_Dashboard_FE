@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CheckCircle2, Fingerprint, Mail, Phone, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { profilesApi } from "@/apis/profiles.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -124,6 +125,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                     <dd className={styles.phoneValue}>
                       {isEditingPhone && canUpdatePhone ? (
                         <form
+                          id="profile-phone-form"
                           className={styles.phoneForm}
                           onSubmit={(event) => {
                             event.preventDefault();
@@ -149,27 +151,10 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                               Không cập nhật được số điện thoại: {getApiErrorMessage(updatePhone.error, "mutation")}
                             </p>
                           ) : null}
-                          <div className={styles.phoneActions}>
-                            <button
-                              className={styles.savePhoneButton}
-                              type="submit"
-                              disabled={updatePhone.isPending || !phone.trim() || phone.trim() === (currentProfile.phone ?? "").trim()}
-                            >
-                              {updatePhone.isPending ? "Đang lưu…" : "Lưu số điện thoại"}
-                            </button>
-                            <button
-                              className={styles.cancelPhoneButton}
-                              type="button"
-                              disabled={updatePhone.isPending}
-                              onClick={() => {
-                                updatePhone.reset();
-                                setPhone(currentProfile.phone ?? "");
-                                setIsEditingPhone(false);
-                              }}
-                            >
-                              Hủy
-                            </button>
-                          </div>
+                          <PageActions actions={[
+                            { id: "profile-phone-cancel", label: "Hủy", variant: "secondary", onClick: () => { updatePhone.reset(); setPhone(currentProfile.phone ?? ""); setIsEditingPhone(false); }, confirm: phone.trim() !== (currentProfile.phone ?? "").trim() ? { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } : undefined },
+                            { id: "profile-phone-save", label: "Lưu số điện thoại", variant: "primary", type: "submit", form: "profile-phone-form", disabled: !phone.trim() || phone.trim() === (currentProfile.phone ?? "").trim(), disabledReason: "Nhập số điện thoại mới để lưu.", pending: updatePhone.isPending, pendingLabel: "Đang lưu" },
+                          ]} />
                         </form>
                       ) : (
                         <>

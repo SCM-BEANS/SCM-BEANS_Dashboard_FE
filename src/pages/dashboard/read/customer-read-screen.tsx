@@ -27,7 +27,7 @@ function withCustomerActions(content: ReactNode, actions: readonly ActionBarActi
     <>
       {content}
       {actions.length > 0 ? (
-        <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
+        <PageActions actions={actions.filter((action) => !action.disabled).map((action, index) => ({ ...action, id: String(index) }))} />
       ) : null}
     </>
   );
@@ -90,7 +90,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
       ) : (
         <p className={styles.pendingNotice} role="status">{CUSTOMER_MESSAGES.ROUTES.PENDING}</p>
       )}
-      <PageActions actions={screen.actions.map((action, index) => ({ ...action, id: String(index) }))} />
+      <PageActions actions={screen.actions.filter((action) => !action.disabled && action.href !== screen.back?.fallbackHref).map((action, index) => ({ ...action, id: String(index) }))} />
     </section>
   );
 }

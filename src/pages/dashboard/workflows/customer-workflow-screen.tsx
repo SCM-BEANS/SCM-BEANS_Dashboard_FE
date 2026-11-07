@@ -25,14 +25,8 @@ const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 function withWorkflowActions(
   content: ReactNode,
   workflowActions: readonly ActionBarAction[],
-  fallbackAction?: ActionBarAction,
 ) {
-  const navigationActions = workflowActions.filter((action) => !action.disabled);
-  const actions = navigationActions.length > 0
-    ? navigationActions
-    : fallbackAction
-      ? [fallbackAction]
-      : [];
+  const actions = workflowActions.filter((action) => !action.disabled);
   return (
     <>
       {content}
@@ -63,9 +57,6 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
   const actions = getCustomerWorkflowActions(sectionPath, screen);
-  const fallbackAction = screen.back?.fallbackHref
-    ? { label: screen.back.label, href: screen.back.fallbackHref, variant: "secondary" as const }
-    : undefined;
 
   if (sectionPath === "menu/adjustments" || sectionPath === "menu/add-dish") {
     return <OwnerRecipeAdjustmentsScreen creating={sectionPath === "menu/add-dish"} />;
@@ -78,7 +69,6 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
     return withWorkflowActions(
       <SupportRequestsListScreen />,
       actions,
-      fallbackAction,
     );
   }
   const recallDetail = /^contracts\/recall\/([^/]+)$/.exec(sectionPath);
@@ -104,7 +94,6 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         showCreateForm={sectionPath === "buyback/new"}
       />,
       actions,
-      fallbackAction,
     );
   }
   const maintenanceRequestDetail = /^maintenance\/([^/]+)$/.exec(sectionPath);
@@ -120,18 +109,16 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         listHref={PATH_CUSTOMER.SUPPORT}
       />,
       actions,
-      fallbackAction,
     );
   }
   if (sectionPath === "support/new") {
     return withWorkflowActions(
       <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />,
       actions,
-      fallbackAction,
     );
   }
   if (sectionPath === "notifications") {
-    return withWorkflowActions(<NotificationInbox back={screen.back} />, actions, fallbackAction);
+    return <NotificationInbox back={screen.back} />;
   }
 
   return (
@@ -172,7 +159,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         </div>
       ) : null}
       {actions.length ? (
-        <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
+        <PageActions actions={actions.filter((action) => !action.disabled).map((action, index) => ({ ...action, id: String(index) }))} />
       ) : null}
     </section>
   );

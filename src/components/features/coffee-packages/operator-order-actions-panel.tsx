@@ -58,7 +58,7 @@ export function OperatorOrderActionsPanel({
 
   return (
     <div className={styles.actionGrid}>
-      <PageActions actions={order.status === "WAITING_STOCK" ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
+      <PageActions actions={["PAID", "WAITING_STOCK"].includes(order.status) ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
       {order.status === "PENDING_APPROVAL" ? (
         <>
           <form className={styles.subpanel} onSubmit={approveOrder}>
@@ -97,7 +97,6 @@ export function OperatorOrderActionsPanel({
             <label className={styles.field}><span>Số lượng bàn giao</span><input type="number" min="1" step="1" value={handoverQuantity} onChange={(event) => setHandoverQuantity(event.target.value)} required /></label>
           </div>
           <label className={styles.checkboxField}><input type="checkbox" checked readOnly /> Đã kiểm tra hạn sử dụng</label>
-          {order.status === "PAID" ? <ButtonBar type="submit" disabled={!recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending}>Xác nhận bàn giao</ButtonBar> : null}
         </form>
       ) : null}
     </div>

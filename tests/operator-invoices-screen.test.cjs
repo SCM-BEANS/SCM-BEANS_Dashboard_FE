@@ -72,6 +72,9 @@ function makeScreen(queryResults) {
     React.createElement('tbody', null, rows.map((row, rowIndex) => React.createElement('tr', { key: String(rowIndex) },
       columns.map((column) => React.createElement('td', { key: column.key }, column.render(row, rowIndex)))))));
   const module = loadTypescript('src/components/features/billing/operator-invoices-screen.tsx', {
+    'next/router': { useRouter: () => ({ push: async () => {} }) },
+    '@/components/action-bar/page-actions': { PageActions: () => null },
+    '@/components/action-bar/entity-page-actions': { buildInvoiceExportActions: () => [] },
     '@tanstack/react-query': {
       useQuery,
       useMutation: () => ({ mutate: () => {}, isPending: false, isError: false, isSuccess: false }),

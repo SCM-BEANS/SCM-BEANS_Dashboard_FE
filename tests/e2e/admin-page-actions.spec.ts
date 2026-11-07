@@ -101,6 +101,24 @@ async function prepareAdminPage(page: Page, contractStatus: "ACTIVE" | "TERMINAT
   });
 }
 
+test("report summary links to invoice management in the action bar", async ({ page }) => {
+  await prepareAdminPage(page);
+  await page.goto("/admin/reports?fromDate=2026-11-01&toDate=2026-11-07");
+  const link = pageActionBar(page).getByRole("link", { name: "Quản lý hóa đơn" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/admin/invoices");
+});
+
+test("paid coffee order offers handover in the action bar", async ({ page }) => {
+  await prepareAdminPage(page);
+  await page.route("**/api/**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/coffee-package-orders/${contractId}`) ? { id: contractId, status: "PAID", quantity: 1 } : [] }));
+  await page.goto(`/admin/coffee-packages/${contractId}`);
+  const action = pageActionBar(page).getByRole("button", { name: "Xác nhận bàn giao" });
+  await expect(action).toBeDisabled();
+  await page.getByLabel("Người nhận").fill("TEST_DATA recipient");
+  await expect(action).toBeEnabled();
+});
+
 test("active contract shows termination and policy amendment", async ({ page }) => {
   await prepareAdminPage(page, "ACTIVE");
   await page.goto(`/admin/contracts?view=detail&id=${contractId}`);
@@ -200,4 +218,34 @@ test("mobile contract detail shows only primary and overflow controls", async ({
   await expect(visibleActions).toHaveCount(1);
   await expect(visibleActions.first()).toHaveAttribute("data-action-id", "contract-lifecycle-continue");
   await expect(visibleActions.first()).toHaveClass(/primary/);
+});
+
+
+test("invoice export requires one owner and submits filtered invoices", async ({ page }) => {
+  await prepareAdminPage(page);
+  const otherOwner = "f5000000-0000-4000-8000-000000000005";
+  const invoice = (id: string, owner: string) => ({ id, ownerId: owner, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" });
+  let posted: unknown;
+  await page.route("**/api/dolores/v1/billing/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/exports")) { posted = route.request().postDataJSON(); return route.fulfill({ json: { id: contractId, status: "QUEUED" } }); }
+    const rows = [invoice(contractId, ownerId), invoice(machineId, otherOwner)];
+    return route.fulfill({ json: url.searchParams.has("ownerId") ? rows.slice(0, 1) : rows });
+  });
+  await page.goto("/admin/invoices");
+  const button = pageActionBar(page).getByRole("button", { name: "Xuất hóa đơn" });
+  await expect(button).toBeVisible();
+  await expect(button).toBeDisabled();
+  await expect(button).toHaveAccessibleDescription("Lọc theo một chủ sở hữu để xuất hóa đơn.");
+  await page.getByPlaceholder(/Owner ID/).fill(ownerId);
+  await page.getByRole("button", { name: "Tìm kiếm" }).click();
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect.poll(() => posted).toEqual({ format: "CSV", ownerId, invoiceIds: [contractId] });
+});
+
+test("notifications expose bulk read in the action bar", async ({ page }) => {
+  await prepareAdminPage(page);
+  await page.goto("/admin/notifications");
+  await expect(pageActionBar(page)).toBeVisible();
 });

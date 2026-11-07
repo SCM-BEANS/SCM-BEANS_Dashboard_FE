@@ -1,3 +1,4 @@
+import { buildInvoiceExportActions, buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useState, type FormEvent, type ReactNode } from "react";
@@ -124,6 +125,14 @@ export function AdminInvoiceListScreen() {
     onSuccess: (job) => router.push(PATH_ADMIN.BILLING_EXPORT_JOB(job.id)),
   });
 
+  const displayedInvoices = invoices.data?.items ?? [];
+  const firstOwner = displayedInvoices[0]?.ownerId;
+  const exportOwner = filters.ownerId ?? (firstOwner && displayedInvoices.every((invoice) => invoice.ownerId === firstOwner) ? firstOwner : undefined);
+  const createListExport = useMutation({
+    mutationFn: () => billingApi.createExport({ format: "CSV", ownerId: exportOwner!, invoiceIds: displayedInvoices.map((invoice) => invoice.id) }),
+    onSuccess: (job) => router.push(PATH_ADMIN.BILLING_EXPORT_JOB(job.id)),
+  });
+
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const searchValue = searchDraft.trim();
@@ -209,6 +218,7 @@ export function AdminInvoiceListScreen() {
             <p>{getApiErrorMessage(invoices.error)}</p>
             <ButtonBar type="button" onClick={() => void invoices.refetch()}>Thử lại</ButtonBar>
           </div>}
+          {createListExport.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(createListExport.error, "mutation")}</p>}
           {createPdfExport.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(createPdfExport.error, "mutation")}</p>}
           <div className={pageStyles.actionGroup}>
             <ButtonBar type="button" disabled={invoices.isFetching || createPdfExport.isPending} onClick={() => void invoices.refetch()}>
@@ -249,6 +259,7 @@ export function AdminInvoiceListScreen() {
           )}
         </section>
       </div>
+      <PageActions actions={buildInvoiceExportActions({ count: displayedInvoices.length, ownerRequired: true, ownerId: exportOwner, loading: invoices.isFetching, pending: createListExport.isPending, onExport: () => createListExport.mutate() })} />
     </AdminShell>
   );
 }
@@ -259,14 +270,6 @@ function InvoiceDetailField({ label, children }: { label: string; children: Reac
 
 function InvoiceStatusActions({ invoice }: { invoice: Invoice }) {
   const queryClient = useQueryClient();
-  const isPastDue = Boolean(invoice.dueDate && Date.parse(invoice.dueDate) < Date.now());
-  const targets: InvoiceStatusChangeRequest["status"][] = invoice.status === "DRAFT"
-    ? ["PENDING", "CANCELLED"]
-    : invoice.status === "PENDING" || invoice.status === "UNPAID"
-      ? [...(isPastDue ? ["OVERDUE" as const] : []), "CANCELLED"]
-      : invoice.status === "OVERDUE"
-        ? ["CANCELLED"]
-        : [];
   const changeStatus = useMutation({
     mutationFn: (status: InvoiceStatusChangeRequest["status"]) => billingApi.changeInvoiceStatus(invoice.id, { status }),
     onSuccess: async () => Promise.all([
@@ -275,21 +278,8 @@ function InvoiceStatusActions({ invoice }: { invoice: Invoice }) {
     ]),
   });
 
-  if (targets.length === 0) return null;
-  const actions = targets.map((status) => ({
-    id: `invoice-status-${status.toLowerCase()}`,
-    label: status === "PENDING" ? "Gửi hóa đơn" : status === "OVERDUE" ? "Đánh dấu quá hạn" : "Hủy hóa đơn",
-    variant: status === "CANCELLED" ? "danger" as const : "primary" as const,
-    priority: status === "CANCELLED" ? 0 : 50,
-    pending: changeStatus.isPending && changeStatus.variables === status,
-    pendingLabel: "Đang cập nhật…",
-    onClick: () => changeStatus.mutate(status),
-    confirm: status === "CANCELLED" ? {
-      title: "Hủy hóa đơn?",
-      description: "Hóa đơn sẽ được đánh dấu đã hủy.",
-      confirmLabel: "Hủy hóa đơn",
-    } : undefined,
-  }));
+  const actions = buildInvoiceStatusActions({ status: invoice.status, dueDate: invoice.dueDate, pending: changeStatus.isPending, pendingStatus: changeStatus.variables, onChange: (status) => changeStatus.mutate(status) });
+  if (!actions.length) return null;
   return (
     <>
       <PageActions actions={actions} />

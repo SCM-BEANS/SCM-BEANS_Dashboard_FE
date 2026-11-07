@@ -1,5 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
@@ -18,6 +20,7 @@ export function RepairIntakeForm({
   description: string;
   back?: BackButtonDestination | null;
 }) {
+  const router = useRouter();
   const [machineId, setMachineId] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
   const [validationError, setValidationError] = useState("");
@@ -60,7 +63,7 @@ export function RepairIntakeForm({
         description={description}
         className={styles.pageHeading}
       />
-      <form className={styles.dataPanel} onSubmit={submit}>
+      <form id="repair-intake-form" className={styles.dataPanel} onSubmit={submit}>
         <h2>{messages.REPAIR_INTAKE_SUBMIT}</h2>
         <p>{messages.SUPPORT_API_REASON}</p>
         {machineQuery.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
@@ -108,16 +111,14 @@ export function RepairIntakeForm({
             {validationError ? <p className={styles.errorNotice} role="alert">{validationError}</p> : null}
             {submitMutation.isError ? <p className={styles.errorNotice} role="alert">{messages.REPAIR_INTAKE_ERROR}</p> : null}
             {submitMutation.isSuccess ? <p className={styles.successNotice} role="status">{messages.REPAIR_INTAKE_SUCCESS}</p> : null}
-            <button
-              className={styles.primaryButton}
-              disabled={submitMutation.isPending || !issueDescription.trim()}
-              type="submit"
-            >
-              {submitMutation.isPending ? messages.REPAIR_INTAKE_SENDING : messages.REPAIR_INTAKE_SUBMIT}
-            </button>
+
           </>
         ) : null}
       </form>
+      <PageActions actions={[
+        { id: "repair-intake-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push("/dashboard/support"); }, ...(machineId || issueDescription ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
+        { id: "repair-intake-submit", label: messages.REPAIR_INTAKE_SUBMIT, variant: "primary", type: "submit", form: "repair-intake-form", disabled: !machineId || !issueDescription.trim() || issueDescription.trim().length > 4000 || machineQuery.isPending || machineQuery.isError, disabledReason: "Chọn máy và nhập nội dung yêu cầu.", pending: submitMutation.isPending, pendingLabel: messages.REPAIR_INTAKE_SENDING },
+      ]} />
     </section>
   );
 }

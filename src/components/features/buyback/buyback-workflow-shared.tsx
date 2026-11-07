@@ -1,3 +1,5 @@
+import { PageActions } from "@/components/action-bar/page-actions";
+import { useRouter } from "next/router";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -516,6 +518,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
 }
 
 export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowController }) {
+  const router = useRouter();
   const { createFormOpen, ownerId, contracts, hasActiveContract, createConfirmed, setCreateConfirmed, create, submitCreate } = workflow;
   if (!createFormOpen) return null;
 
@@ -526,7 +529,7 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
       {!ownerId ? <p className={styles.notice} role="alert">Không xác định được Owner đăng nhập.</p> : null}
       {contracts.isPending && ownerId ? <p className={styles.notice} role="status">Đang kiểm tra điều kiện hợp đồng…</p> : null}
       {contracts.isError ? <BuybackErrorNotice error={contracts.error} /> : null}
-      <form className={styles.assignmentForm} onSubmit={submitCreate}>
+      <form id="buyback-create-form" className={styles.assignmentForm} onSubmit={submitCreate}>
         {!contracts.isPending && !contracts.isError && ownerId && !hasActiveContract ? (
           <p className={styles.notice} role="note">Bạn cần có hợp đồng đang hoạt động để mở hồ sơ thu mua.</p>
         ) : null}
@@ -535,9 +538,10 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
           <span>Tôi xác nhận gửi yêu cầu để Dolores tiếp nhận và kiểm tra máy.</span>
         </label>
         {create.isError ? <BuybackErrorNotice error={create.error} /> : null}
-        <ButtonBar type="submit" disabled={!createConfirmed || !ownerId || contracts.isPending || contracts.isError || !hasActiveContract || create.isPending}>
-          {create.isPending ? "Đang mở hồ sơ…" : "Gửi yêu cầu thu mua"}
-        </ButtonBar>
+        <PageActions actions={[
+          { id: "buyback-create-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push("/dashboard/buyback"); }, ...(createConfirmed ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
+          { id: "buyback-create-submit", label: "Gửi yêu cầu thu mua", variant: "primary", type: "submit", form: "buyback-create-form", disabled: !createConfirmed || !ownerId || contracts.isPending || contracts.isError || !hasActiveContract, disabledReason: "Xác nhận yêu cầu và kiểm tra hợp đồng đang hoạt động.", pending: create.isPending, pendingLabel: "Đang mở hồ sơ…" },
+        ]} />
       </form>
     </section>
   );

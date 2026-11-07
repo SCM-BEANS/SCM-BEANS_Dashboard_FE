@@ -1,3 +1,5 @@
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -107,12 +109,6 @@ function InvoiceMetadataField({ label, value, isCode = false }: {
 
 function InvoiceStatusActions({ invoice }: { invoice: ModeratorInvoice }) {
   const queryClient = useQueryClient();
-  const isPastDue = Boolean(invoice.dueDate && Date.parse(invoice.dueDate) < Date.now());
-  const targets: ModeratorInvoice["status"][] = invoice.status === "DRAFT"
-    ? ["PENDING", "CANCELLED"]
-    : invoice.status === "PENDING" || invoice.status === "UNPAID"
-      ? [...(isPastDue ? ["OVERDUE" as const] : []), "CANCELLED"]
-      : invoice.status === "OVERDUE" ? ["CANCELLED"] : [];
   const changeStatus = useMutation({
     mutationFn: (status: ModeratorInvoice["status"]) => billingApi.changeInvoiceStatus(invoice.id, { status }),
     onSuccess: async () => Promise.all([
@@ -121,28 +117,12 @@ function InvoiceStatusActions({ invoice }: { invoice: ModeratorInvoice }) {
     ]),
   });
 
-  if (targets.length === 0) return null;
+  const actions = buildInvoiceStatusActions({ status: invoice.status, dueDate: invoice.dueDate, pending: changeStatus.isPending, pendingStatus: changeStatus.variables, onChange: (status) => changeStatus.mutate(status) });
+  if (!actions.length) return null;
   return (
     <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-status-actions">
       <h2 id="moderator-invoice-status-actions" className={styles.sectionTitle}>{messages.INVOICE_STATUS_ACTION}</h2>
-      <div className={styles.createActions}>
-        {targets.map((status) => (
-          <button
-            key={status}
-            className={styles.retryButton}
-            type="button"
-            disabled={changeStatus.isPending}
-            onClick={() => {
-              if (status === "CANCELLED" && !window.confirm("Bạn có chắc muốn hủy hóa đơn này?")) return;
-              changeStatus.mutate(status);
-            }}
-          >
-            {changeStatus.isPending && changeStatus.variables === status
-              ? messages.INVOICE_STATUS_UPDATING
-              : messages.INVOICE_STATUS_LABELS[status]}
-          </button>
-        ))}
-      </div>
+      <PageActions actions={actions} />
       {changeStatus.isError && <p role="alert">{getApiErrorMessage(changeStatus.error)}</p>}
       {changeStatus.isSuccess && <p role="status">{messages.INVOICE_STATUS_UPDATED}</p>}
     </section>

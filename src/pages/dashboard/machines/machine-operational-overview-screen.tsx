@@ -8,7 +8,6 @@ import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
 import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
-import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
@@ -141,6 +140,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
 
   return <div className={shellStyles.pageContent}>
     <div className={styles.operationalOverview}>
+      <ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar>
       <MachineMonitoringHeader machineId={machineId} machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" />
       {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
       {!router.isReady || machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
@@ -182,6 +182,6 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
         </> : <p className={styles.operationalOverviewState}>{machine.data.machineType === "CONVENTIONAL" ? "Máy thường không có dữ liệu kết nối và thông số IoT." : "Chưa xác nhận loại máy để xem dữ liệu kết nối và thông số IoT."}</p>}
       </div> : null}
     </div>
-    <ActionBarConfig><ButtonBar href={PATH_CUSTOMER.MACHINE_DETAIL(machineId)}>Về chi tiết máy</ButtonBar><ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar></ActionBarConfig>
+
   </div>;
 }

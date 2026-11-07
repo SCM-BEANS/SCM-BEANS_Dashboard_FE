@@ -123,9 +123,12 @@ test("customer workflow and technician screens register page actions", async ({ 
   await page.goto("/dashboard/support/new");
   await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toBeVisible();
 
+  await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveAttribute("form", "repair-intake-form");
+  await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveClass(/primary/);
+
   await login(page, "technician");
   await page.goto("/technician/tasks/standard-handover");
-  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toBeVisible();
+  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toHaveCount(0);
 });
 
 test("customer operational read screen hides the dock when it has no actions", async ({ page }) => {

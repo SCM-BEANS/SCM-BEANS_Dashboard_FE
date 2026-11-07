@@ -184,6 +184,10 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
     {legacy ? <><div><ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>← Về Menu của tôi</ButtonBar></div><LegacyRecipeOverrides role="OWNER" /></> : <>
       {feedback ? <p className={styles.notice} role="status">{feedback}</p> : null}
       {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
+      {mode === "view" && !menuAction ? <PageActions actions={[
+        { id: "owner-menu-create", label: "Tạo menu", variant: "secondary", priority: 0, disabled: busy, disabledReason: "Đang xử lý yêu cầu.", onClick: () => { clear(); setMenuName(""); setMenuAction("create"); } },
+        { id: "owner-recipe-create", label: "Tạo công thức riêng", variant: "primary", priority: 20, disabled: busy || !canCreate, disabledReason: busy ? "Đang xử lý yêu cầu." : "Chưa thể tạo công thức riêng.", onClick: openCreate },
+      ]} /> : null}
       {mode === "view" ? <section className={styles.recipeMenuPanel}>
         <div className={styles.panelHeading}><div><h2>Menu của tôi</h2></div><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(""); setMenuAction("create"); }}>Tạo menu</ButtonBar></div>
         <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setSelectedMenuId(""); setRecipePage(0); setMenuQ(menuSearch); setMenuPage(0); }}>

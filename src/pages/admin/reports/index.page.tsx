@@ -6,6 +6,7 @@ import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -393,6 +394,7 @@ function ReportContent() {
 
   return (
     <>
+    <PageActions actions={[{ id: "admin-reports-invoices", label: "Quản lý hóa đơn", variant: "secondary", priority: 0, href: PATH_ADMIN.INVOICES }]} />
     <div className={styles.pageContent}>
       <div className={styles.pageHeading}>
         <h1>{ADMIN_MESSAGES.REPORTS.TITLE}</h1>

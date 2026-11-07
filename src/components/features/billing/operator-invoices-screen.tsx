@@ -1,3 +1,6 @@
+import { useRouter } from "next/router";
+import { PageActions } from "@/components/action-bar/page-actions";
+import { buildInvoiceExportActions } from "@/components/action-bar/entity-page-actions";
 import Link from "next/link";
 import axios from "axios";
 import { useEffect, useState, type FormEvent } from "react";
@@ -244,10 +247,21 @@ function InvoiceList({
     placeholderData: (previous) => previous,
   });
 
+  const router = useRouter();
+  const rows = query.data?.items ?? [];
+  const firstOwner = rows[0]?.ownerId ?? rows[0]?.tenantId;
+  const ownerId = filters.ownerId || (firstOwner && rows.every((invoice) => (invoice.ownerId ?? invoice.tenantId) === firstOwner) ? firstOwner : undefined);
+  const exportJob = useMutation({
+    mutationFn: () => billingApi.createExport({ format: "CSV", ownerId: ownerId!, invoiceIds: rows.map((invoice) => invoice.id) }),
+    onSuccess: (job) => router.push(role === "admin" ? PATH_ADMIN.BILLING_EXPORT_JOB(job.id) : `/moderator/invoices/exports/${encodeURIComponent(job.id)}`),
+  });
+
   useEffect(() => setPage(0), [filters]);
 
   return (
     <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
+      <PageActions actions={buildInvoiceExportActions({ count: rows.length, ownerRequired: true, ownerId, loading: query.isFetching, pending: exportJob.isPending, onExport: () => exportJob.mutate() })} />
+      {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}
       <h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2>
       {role === "admin" ? <InvoiceFilters role={role} onApply={onApplyFilters} disabled={query.isFetching} /> : null}
       {role === "admin" && invalidFilterMessage ? <p className={`${styles.notice} ${styles.error}`} role="alert">{invalidFilterMessage}</p> : null}

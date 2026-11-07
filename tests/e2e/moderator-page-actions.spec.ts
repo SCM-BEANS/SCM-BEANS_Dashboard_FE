@@ -118,7 +118,7 @@ test("terminated contract offers continuation", async ({ page }) => {
 });
 test("list actions omit placeholders and shortcuts", async ({ page }) => {
   await prepareModeratorPage(page);
-  for (const route of ["invoices", "technical-requests", "buyback", "iot"]) {
+  for (const route of ["technical-requests", "buyback", "iot"]) {
     await page.goto(`/moderator/${route}`);
     await expect(pageActionBar(page)).toBeHidden();
     await expect(page.getByRole("button", { name: /Đối soát chứng từ|Tạo yêu cầu kỹ thuật|Yêu cầu thu gom/ })).toHaveCount(0);
@@ -128,4 +128,23 @@ test("list actions omit placeholders and shortcuts", async ({ page }) => {
   await expect(pageActionBar(page).locator('[data-action-id="contracts-create"]')).toHaveText("Tạo hợp đồng");
   await page.goto("/moderator/machines");
   await expect(pageActionBar(page).locator('[data-action-id="machine-create"]')).toHaveClass(/primary/);
+});
+
+test("invoice lists expose export and customer creation uses the dock", async ({ page }) => {
+  await prepareModeratorPage(page);
+  await page.route("**/api/dolores/v1/billing/invoices*", async (route) => route.fulfill({ json: [{ id: contractId, ownerId, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" }] }));
+  for (const route of ["/moderator/invoices", "/moderator/invoices/list"]) {
+    await page.goto(route);
+    await expect(pageActionBar(page).locator('[data-action-id="invoice-export"]')).toBeVisible();
+  }
+  await page.goto("/moderator/customers/new");
+  await expect(pageActionBar(page).locator('[data-action-id="customer-create-submit"]')).toBeVisible();
+});
+
+ test("invoice detail exposes status actions in the dock", async ({ page }) => {
+  await prepareModeratorPage(page);
+  await page.route(`**/api/dolores/v1/billing/invoices/${contractId}`, async (route) => route.fulfill({ json: { id: contractId, ownerId, amount: 100, period: "2026-01", type: "RENTAL", status: "DRAFT", currency: "VND" } }));
+  await page.goto(`/moderator/invoices/${contractId}`);
+  await expectPrimaryPageAction(page, "invoice-status-pending");
+  await expect(pageActionBar(page).locator('[data-action-id="invoice-status-cancelled"]')).toBeVisible();
 });

@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { expectPrimaryPageAction, pageActionBar } from "./page-actions-test-helpers";
 
+test("technician maintenance ticket links to its repair workflow from the action bar", async ({ page }) => {
+  const id = "f4000000-0000-4000-8000-000000000001";
+  const claims = Buffer.from(JSON.stringify({ roles: ["technician"] })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/**", (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/maintenance-tickets/${id}`) ? { id, machineId: id, status: "IN_PROGRESS", repairCaseId: id } : [] }));
+  await page.goto(`/technician/tasks/maintenance-tickets/${id}`);
+  await expect(pageActionBar(page).getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveAttribute("href", `/technician/tasks/repair-cases/${id}`);
+});
+
 test("recall depot review places approval last and rejection in the bar", async ({ page }) => {
   const id = "f4000000-0000-4000-8000-000000000002";
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
@@ -258,4 +267,54 @@ test("billing refund rejection is dangerous and requires confirmation", async ({
   await page.getByLabel("Lý do xử lý *").fill("Không đủ điều kiện");
   await reject.click();
   await expect(page.getByRole("alertdialog")).toBeVisible();
+});
+
+for (const [role, path] of [["owner", "/dashboard/notifications"], ["technician", "/technician/notifications"]] as const) {
+  test(`${role} marks all notifications read from the action bar`, async ({ page }) => {
+    await actionLogin(page, role);
+    let marked = false;
+    await page.route("**/api/**", (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith("/notifications/read-all")) {
+        marked = true;
+        return route.fulfill({ status: 200, body: "" });
+      }
+      return route.fulfill({ json: url.pathname.endsWith("/notifications/unread-count") ? { unreadCount: 1 } : [] });
+    });
+    await page.goto(path);
+    const action = pageActionBar(page).locator('[data-action-id="notifications-read-all"]');
+    await expect(action).toBeVisible();
+    await action.click();
+    await expect.poll(() => marked).toBe(true);
+  });
+}
+
+
+test("owner exports visible invoices and can download the completed job", async ({ page }) => {
+  const id = "f4000000-0000-4000-8000-000000000002";
+  const claims = Buffer.from(JSON.stringify({ roles: ["owner"] })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  let posted: unknown;
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/billing/invoices")) return route.fulfill({ json: [{ id, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" }] });
+    if (path.endsWith("/billing/exports") && route.request().method() === "POST") { posted = route.request().postDataJSON(); return route.fulfill({ json: { id, status: "QUEUED" } }); }
+    if (path.endsWith(`/billing/exports/${id}`)) return route.fulfill({ json: { id, status: "COMPLETED" } });
+    return route.fulfill({ json: [] });
+  });
+  await page.goto("/dashboard/invoices");
+  const button = pageActionBar(page).getByRole("button", { name: "Xuất hóa đơn" });
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect.poll(() => posted).toEqual({ format: "CSV", invoiceIds: [id] });
+  await expect(page.getByRole("button", { name: "Tải file hóa đơn" })).toBeVisible();
+});
+
+
+test("owner menu lists creation actions in the action bar", async ({ page }) => {
+  await actionLogin(page, "owner");
+  await page.route("**/api/**", route => route.fulfill({ json: [] }));
+  await page.goto("/dashboard/menu/adjustments");
+  await expect(pageActionBar(page).locator('[data-action-id="owner-menu-create"]')).toBeVisible();
+  await expectPrimaryPageAction(page, "owner-recipe-create");
 });

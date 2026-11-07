@@ -5,7 +5,7 @@ import { adminUsersApi } from "@/apis/admin-users.api";
 import { AccountCreateForm, type AccountCreateValue } from "@/components/account/account-create-form";
 import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { AdminUserCreateSchema } from "@/schema/admin-users.schema";
 import { PATH_MODERATOR } from "@/routes/path";
@@ -111,15 +111,11 @@ export function ModeratorCustomerCreateScreen() {
             error={confirmOpen ? "" : error}
             disabled={busy || confirmOpen}
           >
-            <div className={styles.createActions}>
-              <ButtonBar type="submit" disabled={busy || confirmOpen}>
-                {busy ? "\u0110ang t\u1ea1o\u2026" : A.LIST.CREATE}
-              </ButtonBar>
-              <ButtonBar href={PATH_MODERATOR.CUSTOMERS}>
-                {A.FORM.CANCEL}
-              </ButtonBar>
-            </div>
           </AccountCreateForm>
+          <PageActions actions={[
+            { id: "customer-create-cancel", label: "Hủy", variant: "secondary", onClick: () => void router.push(PATH_MODERATOR.CUSTOMERS), confirm: value.name || value.email ? { title: "Hủy tạo khách hàng?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined },
+            { id: "customer-create-submit", label: A.LIST.CREATE, variant: "primary", type: "submit", form: "moderator-customer-create-form", disabled: busy || confirmOpen || !AdminUserCreateSchema.safeParse({ name: value.name, email: value.email, role: OWNER_ROLE }).success, disabledReason: "Nhập tên và email hợp lệ.", pending: busy, pendingLabel: "Đang tạo" },
+          ]} />
           {confirmOpen && (
             <NotificationDialog
               variant="confirm"
