@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import type { CoffeePackageOrder } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -57,6 +58,7 @@ export function OperatorOrderActionsPanel({
 
   return (
     <div className={styles.actionGrid}>
+      <PageActions actions={order.status === "WAITING_STOCK" ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
       {order.status === "PENDING_APPROVAL" ? (
         <>
           <form className={styles.subpanel} onSubmit={approveOrder}>
@@ -86,7 +88,7 @@ export function OperatorOrderActionsPanel({
       ) : null}
 
       {["PAID", "WAITING_STOCK"].includes(order.status) ? (
-        <form className={styles.subpanel} onSubmit={recordHandover}>
+        <form id="coffee-order-handover-form" className={styles.subpanel} onSubmit={recordHandover}>
           <h3>Ghi nhận bàn giao</h3>
           <p>{order.status === "WAITING_STOCK" ? "Owner cần xác nhận tiếp tục chờ hàng trước khi ghi nhận bàn giao." : "Đơn đã thanh toán và có thể ghi nhận bàn giao."} Dolores sẽ kiểm tra điều kiện trước khi đổi trạng thái.</p>
           <div className={styles.formGrid}>
@@ -95,7 +97,7 @@ export function OperatorOrderActionsPanel({
             <label className={styles.field}><span>Số lượng bàn giao</span><input type="number" min="1" step="1" value={handoverQuantity} onChange={(event) => setHandoverQuantity(event.target.value)} required /></label>
           </div>
           <label className={styles.checkboxField}><input type="checkbox" checked readOnly /> Đã kiểm tra hạn sử dụng</label>
-          <ButtonBar type="submit" disabled={!recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending}>Xác nhận bàn giao</ButtonBar>
+          {order.status === "PAID" ? <ButtonBar type="submit" disabled={!recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending}>Xác nhận bàn giao</ButtonBar> : null}
         </form>
       ) : null}
     </div>

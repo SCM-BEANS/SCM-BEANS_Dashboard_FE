@@ -7,6 +7,7 @@ import { repairCasesApi } from "@/apis/repair-cases.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
 import { DataTable } from "@/components/table/data-table";
@@ -254,9 +255,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 </label>
                 {recordDiagnosis.isError && <p className={styles.error} role="alert">{getApiErrorMessage(recordDiagnosis.error, "mutation")}</p>}
                 {recordDiagnosis.isSuccess && <p className={styles.success} role="status">Đã lưu chẩn đoán.</p>}
-                <ButtonBar type="button" disabled={!diagnosis.trim() || !diagnosisEvidence.trim() || recordDiagnosis.isPending} onClick={() => recordDiagnosis.mutate()}>
-                  {recordDiagnosis.isPending ? "Đang lưu…" : "Lưu chẩn đoán"}
-                </ButtonBar>
+                <PageActions actions={[{ id: "record-diagnosis", label: "Lưu chẩn đoán", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !diagnosisEvidence.trim(), disabledReason: "Nhập chẩn đoán và minh chứng.", pending: recordDiagnosis.isPending, onClick: () => recordDiagnosis.mutate() }]} />
               </section>
             ) : null}
 
@@ -269,9 +268,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                   <textarea id="repair-work-scope" rows={3} maxLength={2000} value={workScope} onChange={(event) => setWorkScope(event.target.value)} />
                 </label>
                 {startWork.isError && <p className={styles.error} role="alert">{getApiErrorMessage(startWork.error, "mutation")}</p>}
-                <ButtonBar type="button" disabled={!workScope.trim() || startWork.isPending} onClick={() => startWork.mutate()}>
-                  {startWork.isPending ? "Đang bắt đầu…" : "Bắt đầu sửa chữa"}
-                </ButtonBar>
+                <PageActions actions={[{ id: "start-repair", label: "Bắt đầu sửa chữa", variant: "primary", priority: 50, disabled: !workScope.trim(), disabledReason: "Nhập phạm vi công việc.", pending: startWork.isPending, onClick: () => startWork.mutate() }]} />
               </section>
             ) : null}
 
@@ -302,13 +299,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 </div>
                 {completeWork.isError && <p className={styles.error} role="alert">{getApiErrorMessage(completeWork.error, "mutation")}</p>}
                 {completeWork.isSuccess && <p className={styles.success} role="status">Đã hoàn tất công việc sửa chữa.</p>}
-                <ButtonBar
-                  type="button"
-                  disabled={!diagnosis.trim() || !resolutionResult.trim() || !workScope.trim() || !completionEvidence.split(/\r?\n/).some((value) => value.trim()) || completeWork.isPending}
-                  onClick={() => completeWork.mutate()}
-                >
-                  {completeWork.isPending ? "Đang lưu kết quả…" : "Xác nhận hoàn tất"}
-                </ButtonBar>
+                <PageActions actions={[{ id: "complete-repair", label: "Xác nhận hoàn tất", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !resolutionResult.trim() || !workScope.trim() || !completionEvidence.split(/\r?\n/).some((value) => value.trim()), disabledReason: "Nhập đầy đủ kết quả và minh chứng.", pending: completeWork.isPending, onClick: () => completeWork.mutate() }]} />
               </section>
             ) : null}
 
@@ -523,9 +514,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                 <>
                   <p className={styles.hint}>Bắt đầu khi đã đến điểm nhận máy theo lịch được giao.</p>
                   {startPickup.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(startPickup.error, "mutation")}</p> : null}
-                  <ButtonBar type="button" disabled={startPickup.isPending} onClick={() => startPickup.mutate()}>
-                    {startPickup.isPending ? "Đang bắt đầu…" : "Bắt đầu nhận máy"}
-                  </ButtonBar>
+                  <PageActions actions={[{ id: "start-pickup", label: "Bắt đầu nhận máy", variant: "primary", priority: 50, pending: startPickup.isPending, onClick: () => startPickup.mutate() }]} />
                 </>
               ) : null}
             </section>
@@ -565,8 +554,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                 </label>
                 {pickupAttempt.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(pickupAttempt.error, "mutation")}</p> : null}
                 <div className={styles.evidenceActions}>
-                  <ButtonBar type="button" disabled={!isPickupEvidenceReady || pickupAttempt.isPending} onClick={() => pickupAttempt.mutate(true)}>{pickupAttempt.isPending ? "Đang ghi nhận…" : "Đã nhận được máy"}</ButtonBar>
-                  <ButtonBar type="button" disabled={!pickupNotes.trim() || pickupAttempt.isPending} onClick={() => pickupAttempt.mutate(false)}>Chưa nhận được máy</ButtonBar>
+                  <PageActions actions={[{ id: "pickup-failed", label: "Chưa nhận được máy", priority: 50, disabled: !pickupNotes.trim(), disabledReason: "Nhập lý do chưa nhận máy.", pending: pickupAttempt.isPending, onClick: () => pickupAttempt.mutate(false) }, { id: "pickup-received", label: "Đã nhận được máy", variant: "primary", priority: 50, disabled: !isPickupEvidenceReady, disabledReason: "Tải chứng cứ nhận máy.", pending: pickupAttempt.isPending, onClick: () => pickupAttempt.mutate(true) }]} />
                 </div>
               </section>
             ) : null}
@@ -604,7 +592,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                 {uploadType === "DEPOT_RECEIPT" && selectedFile ? <ButtonBar type="button" disabled={Boolean(fileError) || upload.isPending} onClick={() => upload.mutate(selectedFile)}>{upload.isPending ? "Đang tải chứng cứ…" : "Tải chứng cứ nhận kho"}</ButtonBar> : null}
                 {isDepotEvidenceReady ? <p className={styles.success} role="status">Đã tải chứng cứ nhận kho.</p> : null}
                 {depotReceipt.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(depotReceipt.error, "mutation")}</p> : null}
-                <ButtonBar type="button" disabled={!depotLocation.trim() || !isDepotEvidenceReady || depotReceipt.isPending} onClick={() => depotReceipt.mutate()}>{depotReceipt.isPending ? "Đang gửi biên nhận…" : "Gửi biên nhận về kho"}</ButtonBar>
+                <PageActions actions={[{ id: "depot-receipt", label: "Gửi biên nhận về kho", variant: "primary", priority: 50, disabled: !depotLocation.trim() || !isDepotEvidenceReady, disabledReason: "Nhập địa điểm và tải chứng cứ.", pending: depotReceipt.isPending, onClick: () => depotReceipt.mutate() }]} />
               </section>
             ) : null}
 
@@ -708,12 +696,12 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
                 <>
                   <p className={styles.hint}>Bắt đầu kiểm tra khi máy đã về kho và phiếu được giao cho bạn.</p>
                   {start.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(start.error, "mutation")}</p> : null}
-                  <ButtonBar type="button" disabled={start.isPending} onClick={() => start.mutate()}>{start.isPending ? "Đang bắt đầu…" : "Bắt đầu kiểm tra"}</ButtonBar>
+                  <PageActions actions={[{ id: "start-termination-inspection", label: "Bắt đầu kiểm tra", variant: "primary", priority: 50, pending: start.isPending, onClick: () => start.mutate() }]} />
                 </>
               ) : null}
             </section>
             {ticket.data.status === "IN_PROGRESS" ? (
-              <form className={styles.panel} onSubmit={(event) => { event.preventDefault(); if (canSubmit) completeInspection.mutate(); }}>
+              <form id="termination-inspection-form" className={styles.panel} onSubmit={(event) => { event.preventDefault(); if (canSubmit) completeInspection.mutate(); }}>
                 <h2>Kết quả kiểm tra máy</h2>
                 <label className={styles.formField} htmlFor="termination-diagnosis"><span>Chẩn đoán *</span><textarea id="termination-diagnosis" required rows={4} maxLength={4000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
                 <div className={styles.formGrid}>
@@ -726,7 +714,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
                 <p className={styles.hint}>Gửi kết quả sẽ hoàn tất phiếu kiểm tra liên kết. Hợp đồng chỉ được chấm dứt sau khi bộ phận vận hành hoàn tất các bước tiếp theo.</p>
                 {completeInspection.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(completeInspection.error, "mutation")}</p> : null}
                 {completeInspection.isSuccess ? <p className={styles.success} role="status">Đã gửi kết quả kiểm tra.</p> : null}
-                <ButtonBar type="submit" disabled={!canSubmit || completeInspection.isPending}>{completeInspection.isPending ? "Đang gửi kết quả…" : "Gửi kết quả kiểm tra"}</ButtonBar>
+                <PageActions actions={[{ id: "complete-termination-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "termination-inspection-form", disabled: !canSubmit, disabledReason: "Nhập đầy đủ kết quả kiểm tra.", pending: completeInspection.isPending }]} />
               </form>
             ) : null}
             {ticket.data.status === "RESOLVED" ? <p className={styles.success} role="status">Phiếu kiểm tra đã hoàn tất. Hồ sơ chấm dứt đang chờ bước tiếp theo từ bộ phận vận hành.</p> : null}
@@ -1126,9 +1114,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                 <h2 id="work-order-start-title">Bắt đầu lắp đặt</h2>
                 <p className={styles.hint}>Lệnh chỉ có thể bắt đầu khi đang ở trạng thái “Đã phân công”.</p>
                 {start.isError && <p className={styles.error} role="alert">{getApiErrorMessage(start.error, "mutation")}</p>}
-                <ButtonBar type="button" disabled={start.isPending} onClick={() => start.mutate()}>
-                  {start.isPending ? "Đang bắt đầu…" : "Bắt đầu lắp đặt"}
-                </ButtonBar>
+                <PageActions actions={[{ id: "start-installation", label: "Bắt đầu lắp đặt", variant: "primary", priority: 50, pending: start.isPending, onClick: () => start.mutate() }]} />
               </section>
             )}
 
@@ -1146,13 +1132,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                     />
                   </label>
                   {complete.isError && <p className={styles.error} role="alert">{getApiErrorMessage(complete.error, "mutation")}</p>}
-                  <ButtonBar
-                    type="button"
-                    disabled={!canComplete || complete.isPending || uploadEvidence.isPending}
-                    onClick={() => complete.mutate(handoverRecipient.trim())}
-                  >
-                    {complete.isPending ? "Đang hoàn tất…" : "Xác nhận hoàn tất bàn giao"}
-                  </ButtonBar>
+                  <PageActions actions={[{ id: "complete-installation", label: "Xác nhận hoàn tất bàn giao", variant: "primary", priority: 50, disabled: !canComplete || uploadEvidence.isPending, disabledReason: "Nhập người nhận và tải minh chứng.", pending: complete.isPending, onClick: () => complete.mutate(handoverRecipient.trim()) }]} />
                 </section>
             )}
 

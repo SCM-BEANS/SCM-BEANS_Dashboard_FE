@@ -298,7 +298,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
       {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
       {mode === "view" && !detailOnly && operatorScreen === "menus" ? <section className={styles.recipeMenuPanel}>
         <div className={styles.panelHeading}><div><h2>Danh sách</h2></div>
-          {!owner ? <ButtonBar disabled={busy} onClick={() => { clearFeedback(); setMenuAction("create"); setMenuName(""); }}>Tạo menu</ButtonBar> : null}</div>
+        </div>
         <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; setMenuQ(menuSearch); setMenuPage(0); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }}>
           <label className={styles.formField}><span>Tìm menu</span><input placeholder="Nhập tên menu…" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} /></label>
           <ButtonBar type="submit">Tìm kiếm</ButtonBar>
@@ -345,7 +345,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
             <ButtonBar disabled={menuId === DEFAULT_MENU || busy || !recipes.data || !("totalElements" in recipes.data) || recipes.data.totalElements > 0}
               onClick={() => { clearFeedback(); setMenuAction("delete"); }}>Xóa menu rỗng</ButtonBar>
           </> : null}
-          <ButtonBar className={styles.recipeMenuPrimary} disabled={busy} onClick={() => openForm(false)}>Thêm món</ButtonBar>
+
         </div> : null}</div> : null}
         {!owner && operatorScreen === "recipes" && (menuAction === "rename" || menuAction === "delete") ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu" aria-busy={changeMenu.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
           <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : "Đổi tên menu"}</h3>
@@ -382,8 +382,8 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           {pagination(recipes.data.page, recipes.data.hasNext, (page) => { setRecipePage(page); setSelectedId(""); setMode("view"); setDeleteTarget(null); }, "Danh sách công thức")}
         </> : null}
         </div> : null}
-        {!owner && mode !== "view" ? <form ref={editorRef} className={styles.recipeMenuEditor} onInvalidCapture={(event) => { const disclosure = (event.target as HTMLElement).closest("details"); if (disclosure) disclosure.open = true; }} onSubmit={submitRecipe} aria-label="Thông tin công thức" aria-busy={write.isPending}>
-          <div className={styles.panelHeading}><div><h3>{mode === "create" ? "Thêm công thức mới" : "Chỉnh sửa công thức"}</h3><p>{mode === "edit" ? <>Đang sửa <strong>{name || "công thức"}</strong> · Phiên bản v{detail.data?.revision ?? "—"} · Menu: <strong>{menus.data?.content.find((item) => item.id === detail.data?.menuId)?.name ?? "Menu hiện tại"}</strong></> : <>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (!menuId || menuId === DEFAULT_MENU ? "Menu mặc định" : "Menu đã chọn (chưa tải được tên)")}</strong></>}</p></div><ButtonBar disabled={busy} onClick={() => { clearFeedback(); setMode("view"); if (editTargetId) setOperatorScreen("detail"); else setOperatorScreen("recipes"); }}>Quay lại</ButtonBar></div>
+        {!owner && mode !== "view" ? <form id="global-recipe-form" ref={editorRef} className={styles.recipeMenuEditor} onInvalidCapture={(event) => { const disclosure = (event.target as HTMLElement).closest("details"); if (disclosure) disclosure.open = true; }} onSubmit={submitRecipe} aria-label="Thông tin công thức" aria-busy={write.isPending}>
+          <div className={styles.panelHeading}><div><h3>{mode === "create" ? "Thêm công thức mới" : "Chỉnh sửa công thức"}</h3><p>{mode === "edit" ? <>Đang sửa <strong>{name || "công thức"}</strong> · Phiên bản v{detail.data?.revision ?? "—"} · Menu: <strong>{menus.data?.content.find((item) => item.id === detail.data?.menuId)?.name ?? "Menu hiện tại"}</strong></> : <>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (!menuId || menuId === DEFAULT_MENU ? "Menu mặc định" : "Menu đã chọn (chưa tải được tên)")}</strong></>}</p></div></div>
           {mode === "edit" && unsupportedProcedureSteps.length ? <div className={styles.recipeMenuError} role="alert"><div><strong>Không thể nạp đầy đủ thông số pha.</strong><p>Để tránh làm mất bước khi lưu, hãy giữ nguyên công thức này hoặc nhờ quản trị viên kiểm tra dữ liệu.</p><ul>{unsupportedProcedureSteps.map((step, index) => <li key={`${index}-${step}`}>{step}</li>)}</ul></div></div> : null}
           <section className={styles.recipeMenuEditSection} aria-labelledby="recipe-identity-heading">
             <div className={styles.recipeMenuEditSectionHeading}><h4 id="recipe-identity-heading">Thông tin món</h4></div>
@@ -399,7 +399,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           </section>
           {mode === "edit" ? <label className={styles.recipeMenuConfirmation}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> Tôi đã kiểm tra các thông số được nạp từ công thức hiện tại trước khi lưu.</label> : null}
           {validation ? <p className={styles.recipeMenuError} role="alert">{validation}</p> : null}
-          <div className={styles.recipeMenuEditorFooter}><div className={styles.recipeMenuActions}><ButtonBar className={styles.recipeMenuPrimary} type="submit" disabled={busy || (mode === "edit" && !confirmed)}>{write.isPending ? "Đang lưu…" : "Lưu công thức"}</ButtonBar><ButtonBar disabled={busy} onClick={() => { clearFeedback(); setMode("view"); if (editTargetId) setOperatorScreen("detail"); else setOperatorScreen("recipes"); }}>Hủy</ButtonBar></div></div>
+
         </form> : null}
         {mode === "view" && recipeId && (detailOnly || operatorScreen === "detail") ? <section ref={detailRef} className={styles.recipeMenuDetail} aria-label="Chi tiết công thức">
           {detail.isPending ? <p role="status">Đang tải chi tiết…</p> : null}
@@ -436,7 +436,10 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         </section> : null}
         </div>
       </section> : null}
-      <PageActions actions={view === "global" && (detailOnly || (mode === "view" && operatorScreen === "detail")) && !owner && mode === "view" ? [{ id: "recipe-edit", label: `Chỉnh sửa ${detail.data?.name ?? "món"}`, variant: "primary", priority: 10, disabled: busy || !detail.data, disabledReason: "Đang tải hoặc xử lý công thức.", onClick: () => openForm(true) }] : []} />
+      <PageActions actions={view === "global" && !owner && mode !== "view" ? [
+        { id: "recipe-cancel", label: "Hủy", priority: 100, disabled: busy, onClick: () => { clearFeedback(); setMode("view"); if (editTargetId) setOperatorScreen("detail"); else setOperatorScreen("recipes"); }, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } },
+        { id: "recipe-save", label: "Lưu công thức", variant: "primary", priority: 100, type: "submit", form: "global-recipe-form", disabled: busy || (mode === "edit" && !confirmed), disabledReason: "Xác nhận thay đổi và chờ yêu cầu hoàn tất.", pending: write.isPending, pendingLabel: "Đang lưu…" },
+      ] : view === "global" && !owner && mode === "view" && !detailOnly && operatorScreen === "menus" && !menuAction ? [{ id: "menu-create", label: "T\u1ea1o menu", variant: "primary", priority: 20, disabled: busy, disabledReason: "\u0110ang x\u1eed l\u00fd y\u00eau c\u1ea7u.", onClick: () => { clearFeedback(); setMenuAction("create"); setMenuName(""); } }] : view === "global" && !owner && mode === "view" && operatorScreen === "recipes" && !menuAction ? [{ id: "recipe-create", label: "Th\u00eam m\u00f3n", variant: "primary", priority: 20, disabled: busy, disabledReason: "\u0110ang x\u1eed l\u00fd y\u00eau c\u1ea7u.", onClick: () => openForm(false) }] : view === "global" && (detailOnly || (mode === "view" && operatorScreen === "detail")) && !owner && mode === "view" ? [{ id: "recipe-edit", label: `Chỉnh sửa ${detail.data?.name ?? "món"}`, variant: "primary", priority: 10, disabled: busy || !detail.data, disabledReason: "Đang tải hoặc xử lý công thức.", onClick: () => openForm(true) }] : []} />
     </> : null}
   </div>;
 }

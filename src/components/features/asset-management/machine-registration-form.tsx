@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { ZodError } from "zod";
 import { useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateMachineRequestSchema, MachineTypeSchema } from "@/schema/machines.schema";
@@ -97,7 +98,7 @@ export function MachineRegistrationForm({
         </div>}
         {ownerProfiles.data && owners.length === 0 && !ownerProfiles.hasNextPage && <p className={styles.notice} role="status">Không có Owner trong phạm vi tài khoản Moderator này.</p>}
       </>}
-      <form className={styles.formGrid} onSubmit={submit}>
+      <form id="machine-registration-form" className={styles.formGrid} onSubmit={submit}>
         {mode === "moderator" && <label className={styles.field} htmlFor="machine-owner-select">Owner *
           <select id="machine-owner-select" required value={selectedOwnerId} disabled={ownerProfiles.isPending || ownerProfiles.isError || create.isPending || blockResubmit} onChange={(event) => setSelectedOwnerId(event.target.value)}>
             <option value="">Chọn Owner</option>
@@ -123,14 +124,13 @@ export function MachineRegistrationForm({
         <div className={styles.notice} role="note">Trạng thái ban đầu: Trong kho (IN_WAREHOUSE). Số ly từ lần xả cặn gần nhất: 0.</div>
         {requestError && <p className={styles.notice} role="alert">{requestError}</p>}
         {blockResubmit && <p className={styles.notice} role="alert">Kết quả tạo máy chưa xác định. Tải lại danh sách máy và kiểm tra trước khi gửi lại.</p>}
-        <div className={styles.actions}>
-          <ButtonBar type="submit" disabled={create.isPending || blockResubmit || !validOwnerId || (mode === "moderator" && (ownerProfiles.isPending || ownerProfiles.isError || !selectedOwnerId))}>
-            {create.isPending ? "Đang đăng ký…" : "Đăng ký máy"}
-          </ButtonBar>
-          {mode === "moderator" && ownerProfiles.isError && <ButtonBar type="button" disabled={ownerProfiles.isFetching} onClick={() => void ownerProfiles.refetch()}>Thử tải lại Owner</ButtonBar>}
-          <ButtonBar type="button" disabled={create.isPending} onClick={onCancel}>Hủy</ButtonBar>
-        </div>
+        {mode === "moderator" && ownerProfiles.isError && <ButtonBar type="button" disabled={ownerProfiles.isFetching} onClick={() => void ownerProfiles.refetch()}>Thử tải lại Owner</ButtonBar>}
+
       </form>
+      <PageActions actions={[
+        { id: "machine-cancel", label: "Hủy", priority: 100, onClick: onCancel, disabled: create.isPending, confirm: serialNumber || region || selectedOwnerId || machineType !== "CONVENTIONAL" ? { title: "Hủy đăng ký máy?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy đăng ký" } : undefined },
+        { id: "machine-register", label: "Đăng ký máy", variant: "primary", priority: 100, type: "submit", form: "machine-registration-form", disabled: create.isPending || blockResubmit || !serialNumber.trim() || !validOwnerId || (mode === "moderator" && (ownerProfiles.isPending || ownerProfiles.isError || !selectedOwnerId)), disabledReason: "Kiểm tra thông tin Owner và trạng thái yêu cầu.", pending: create.isPending, pendingLabel: "Đang đăng ký…" },
+      ]} />
     </section>
   );
 }

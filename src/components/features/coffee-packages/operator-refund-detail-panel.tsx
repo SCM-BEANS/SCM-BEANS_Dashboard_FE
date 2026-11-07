@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -49,6 +50,7 @@ export function OperatorRefundDetailPanel({
 
   return (
     <section className={styles.panel} aria-labelledby="coffee-operator-refund-detail-title">
+      <PageActions actions={refund?.status === "REQUESTED" ? [{ id: "coffee-refund-approve", label: "Duyệt hoàn tiền", priority: 50, variant: "primary", type: "submit", form: "coffee-refund-approve-form", disabled: !reason.trim() || workflow.pending, disabledReason: "Nhập ghi chú phê duyệt.", pending: workflow.pending }] : refund?.status === "APPROVED" ? [{ id: "coffee-refund-payout", label: "Lưu chứng từ", priority: 50, variant: "primary", type: "submit", form: "coffee-refund-payout-form", disabled: !bankReference.trim() || !reason.trim() || !evidence || workflow.pending, disabledReason: "Nhập thông tin và chọn chứng từ.", pending: workflow.pending }] : isAdmin && payoutDisputed ? [{ id: "coffee-refund-resolve", label: "Lưu hướng xử lý", priority: 50, variant: "primary", type: "submit", form: "coffee-refund-resolve-form", disabled: !reason.trim() || workflow.pending, disabledReason: "Nhập lý do xử lý.", pending: workflow.pending }] : []} />
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-refund-detail-title">Chi tiết khoản hoàn</h2>
@@ -72,15 +74,14 @@ export function OperatorRefundDetailPanel({
           </dl>
 
           {refund.status === "REQUESTED" ? (
-            <form className={styles.subpanel} onSubmit={approveRefund}>
+            <form id="coffee-refund-approve-form" className={styles.subpanel} onSubmit={approveRefund}>
               <h3>Duyệt khoản hoàn</h3>
               <label className={styles.field}><span>Ghi chú phê duyệt</span><textarea maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
-              <ButtonBar type="submit" disabled={!reason.trim() || workflow.pending}>Duyệt hoàn tiền</ButtonBar>
             </form>
           ) : null}
 
           {refund.status === "APPROVED" ? (
-            <form className={styles.subpanel} onSubmit={createPayout}>
+            <form id="coffee-refund-payout-form" className={styles.subpanel} onSubmit={createPayout}>
               <h3>Ghi nhận chuyển khoản</h3>
               <p>Đính kèm biên nhận chuyển khoản để Owner có thể xác nhận đã nhận tiền.</p>
               <div className={styles.formGrid}>
@@ -88,19 +89,17 @@ export function OperatorRefundDetailPanel({
                 <label className={styles.field}><span>Chứng từ chuyển khoản (PDF, JPEG hoặc PNG)</span><input type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => setEvidence(event.target.files?.[0] ?? null)} required /></label>
               </div>
               <label className={styles.field}><span>Ghi chú chuyển khoản</span><textarea maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
-              <ButtonBar type="submit" disabled={!bankReference.trim() || !reason.trim() || !evidence || workflow.pending}>Lưu chứng từ chuyển khoản</ButtonBar>
             </form>
           ) : null}
 
           {isAdmin && payoutDisputed ? (
-            <form className={styles.subpanel} onSubmit={resolveDispute}>
+            <form id="coffee-refund-resolve-form" className={styles.subpanel} onSubmit={resolveDispute}>
               <h3>Xử lý tranh chấp khoản hoàn</h3>
               <p>Owner đã báo tranh chấp lần chuyển khoản gần nhất. Chọn kết quả sau khi xác minh.</p>
               <div className={styles.formGrid}>
                 <label className={styles.field}><span>Hướng xử lý</span><select value={resolution} onChange={(event) => setResolution(event.target.value as typeof resolution)}><option value="CONFIRM_PAYOUT">Xác nhận đã chuyển khoản</option><option value="RETRY_PAYOUT">Cho phép chuyển lại</option></select></label>
                 <label className={styles.field}><span>Lý do</span><textarea maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} required /></label>
               </div>
-              <ButtonBar type="submit" disabled={!reason.trim() || workflow.pending}>Lưu hướng xử lý</ButtonBar>
             </form>
           ) : null}
 

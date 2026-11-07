@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { recipesApi } from "@/apis/recipes.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -84,7 +85,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
       </div>
       {removeTarget ? <div><p>Xóa điều chỉnh đã chọn?</p><div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => remove.mutate(removeTarget)}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setRemoveTarget(null)}>Hủy</ButtonBar></div></div> : null}
     </div> : null}
-    {role === "OWNER" ? <form className={styles.recipeMenuEditor} onSubmit={submit}>
+    {role === "OWNER" ? <form id="legacy-recipe-form" className={styles.recipeMenuEditor} onSubmit={submit}>
       <h3>{editId ? "Cập nhật điều chỉnh cũ" : "Tạo điều chỉnh tương thích"}</h3>
       <div className={styles.recipeMenuToolbar}>
         <label className={styles.formField}><span>Tìm công thức nguồn</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label>
@@ -98,8 +99,12 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
       </select></label>
       {global.data ? <nav className={styles.recipeMenuPagination} aria-label="Công thức nguồn"><ButtonBar disabled={!globalPage} onClick={() => setGlobalPage(globalPage - 1)}>Trang trước</ButtonBar><span>Trang {globalPage + 1}</span><ButtonBar disabled={!global.data.hasNext} onClick={() => setGlobalPage(globalPage + 1)}>Trang sau</ButtonBar></nav> : null}
       <label className={styles.formField}><span>Định lượng (mỗi dòng một giá trị)</span><textarea rows={4} placeholder="water:40" value={values} onChange={(event) => setValues(event.target.value)} /><small>Không còn giới hạn định lượng từ thư viện. Giá trị được backend kiểm tra; để trống nếu không ghi đè.</small></label>
-      <div className={styles.recipeMenuActions}><ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !globalId} type="submit">Lưu điều chỉnh cũ</ButtonBar>{editId ? <ButtonBar disabled={busy} onClick={() => { setEditId(""); setGlobalId(""); setValues(""); }}>Hủy sửa</ButtonBar> : null}</div>
+
     </form> : null}
+    <PageActions actions={role === "OWNER" ? [
+      ...(editId ? [{ id: "legacy-cancel", label: "Hủy sửa", priority: 100, disabled: busy, onClick: () => { setEditId(""); setGlobalId(""); setValues(""); }, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy sửa" } }] : []),
+      { id: "legacy-save", label: "Lưu điều chỉnh cũ", variant: "primary", priority: 100, type: "submit", form: "legacy-recipe-form", disabled: busy || !globalId, disabledReason: "Chọn công thức nguồn hoặc chờ yêu cầu hoàn tất.", pending: save.isPending, pendingLabel: "Đang lưu…" },
+    ] : []} />
     {save.isError || remove.isError ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(save.error ?? remove.error, "mutation")}</p> : null}
   </section>;
 }

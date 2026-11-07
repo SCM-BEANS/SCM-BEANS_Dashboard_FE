@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { recipesApi } from "@/apis/recipes.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -74,9 +75,7 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
       {pageControls(machinePage, machines.data.hasNext, (page) => { setMachinePage(page); setSelectedMachine(""); setHistoryPage(0); sync.reset(); replay.reset(); }, "Danh sách máy đồng bộ")}
     </> : null}
     {machine && !machine.ownerId && role !== "ADMIN" ? <p className={styles.notice}>Máy chưa được gắn Owner trực tiếp. Hãy liên hệ vận hành để kiểm tra quyền đồng bộ; hợp đồng đang hoạt động chưa đủ để cấp quyền API này.</p> : null}
-    {machine ? <div className={styles.recipeMenuActions}>
-      <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !canRead || (role === "OWNER" && !machine.ownerId) || isStatus(current.error, 403)} onClick={() => { replay.reset(); sync.mutate(machineId); }}>{sync.isPending ? "Đang gửi…" : "Yêu cầu đồng bộ lại"}</ButtonBar>
-    </div> : null}
+    <PageActions actions={machine && canRead && !isStatus(current.error, 403) ? [{ id: "recipe-sync", label: "Yêu cầu đồng bộ lại", variant: "primary", priority: 50, disabled: busy, disabledReason: "Đang xử lý yêu cầu.", pending: sync.isPending, pendingLabel: "Đang gửi…", onClick: () => { replay.reset(); sync.mutate(machineId); } }] : []} />
     {(sync.isSuccess && sync.variables === machineId) || (replay.isSuccess && replay.variables.machineId === machineId) ? <p className={styles.recipeMenuSuccess} role="status">Đã tiếp nhận yêu cầu. Máy cần kết nối và xác nhận áp dụng; chưa thể coi là đồng bộ xong.</p> : null}
     {sync.isError || replay.isError ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(sync.error ?? replay.error, "mutation")}</p> : null}
     {canRead ? <>

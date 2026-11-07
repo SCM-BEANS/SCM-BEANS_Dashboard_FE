@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { buybackPaymentProofStatusLabel, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import {
   BuybackCaseList,
@@ -34,18 +35,11 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
                 <span>Lý do chấp nhận hoặc từ chối</span>
                 <textarea required maxLength={2000} value={workflow.ownerDecisionReason} onChange={(event) => workflow.setOwnerDecisionReason(event.target.value)} />
               </label>
-              <div className={styles.technicalRequestActions}>
-                <ButtonBar type="button" disabled={!workflow.ownerDecisionReason.trim() || workflow.decideOwnerPrice.isPending} onClick={() => {
+              <PageActions actions={[true, false].map((accepted) => ({ id: accepted ? "accept-price" : "reject-price", label: accepted ? "Chấp nhận giá" : "Từ chối giá", variant: accepted ? "primary" : "secondary", priority: 50, disabled: !workflow.ownerDecisionReason.trim(), disabledReason: "Nhập lý do quyết định.", pending: workflow.decideOwnerPrice.isPending, onClick: () => {
                   const reason = workflow.ownerDecisionReason.trim();
-                  const key = workflow.operationKey("owner-decision-accept", caseData.id, JSON.stringify({ accepted: true, reason }));
-                  workflow.decideOwnerPrice.mutate({ id: caseData.id, accepted: true, reason, idempotencyKey: key, correlationId: key });
-                }}>Chấp nhận giá</ButtonBar>
-                <ButtonBar type="button" disabled={!workflow.ownerDecisionReason.trim() || workflow.decideOwnerPrice.isPending} onClick={() => {
-                  const reason = workflow.ownerDecisionReason.trim();
-                  const key = workflow.operationKey("owner-decision-reject", caseData.id, JSON.stringify({ accepted: false, reason }));
-                  workflow.decideOwnerPrice.mutate({ id: caseData.id, accepted: false, reason, idempotencyKey: key, correlationId: key });
-                }}>Từ chối giá</ButtonBar>
-              </div>
+                  const key = workflow.operationKey(accepted ? "owner-decision-accept" : "owner-decision-reject", caseData.id, JSON.stringify({ accepted, reason }));
+                  workflow.decideOwnerPrice.mutate({ id: caseData.id, accepted, reason, idempotencyKey: key, correlationId: key });
+                } }))} />
             </div>
           ) : null}
           {workflow.isExternalBuyback && caseData.ownerAccepted === true ? <p className={styles.notice} role="status">Bạn đã chấp nhận giá {formatBuybackMoney(caseData.approvedPrice, caseData.currency)}. Dolores đang điều phối việc thu máy.</p> : null}
@@ -64,14 +58,14 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
           {workflow.isExternalBuyback && caseData.status === "PAID" ? <p className={styles.notice} role="status">Bạn đã xác nhận nhận khoản thanh toán. Hồ sơ đang tiếp tục sang bước tân trang.</p> : null}
 
           {!workflow.isExternalBuyback && caseData.status === "APPROVED" ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-payment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const key = workflow.operationKey("create-payment", caseData.id);
               workflow.createPayment.mutate({ id: caseData.id, paymentMethod: workflow.paymentMethod.trim(), ...(workflow.externalReference.trim() ? { externalReference: workflow.externalReference.trim() } : {}), idempotencyKey: key, correlationId: key });
             })}>
               <h3 className={styles.sectionTitle}>Tạo nghĩa vụ thanh toán</h3>
               <label className={styles.formField}><span>Phương thức thanh toán</span><input required maxLength={64} value={workflow.paymentMethod} onChange={(event) => workflow.setPaymentMethod(event.target.value)} /></label>
               <label className={styles.formField}><span>Mã tham chiếu bên ngoài (tùy chọn)</span><input maxLength={256} value={workflow.externalReference} onChange={(event) => workflow.setExternalReference(event.target.value)} /></label>
-              <ButtonBar type="submit" disabled={!workflow.paymentMethod.trim() || workflow.createPayment.isPending}>Tạo thông tin thanh toán</ButtonBar>
+              <PageActions actions={[{ id: "create-payment", label: "Tạo thông tin thanh toán", variant: "primary", priority: 100, type: "submit", form: "buyback-payment-form", disabled: !workflow.paymentMethod.trim(), disabledReason: "Nhập phương thức thanh toán.", pending: workflow.createPayment.isPending }]} />
             </form>
           ) : null}
           {!workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? (

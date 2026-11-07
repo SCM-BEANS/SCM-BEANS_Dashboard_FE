@@ -1,6 +1,6 @@
 # Action bar batch 4b: finish Owner/Technician/shared feature screens
 
-Context: `plans/action-bar-ux.md` (R1-R11) and `plans/action-bar-batch4-owner-technician.md`. The batch 4 working tree (contract create form, technician machine-check/tasks) is NOT committed yet. Keep it and build on it. Priorities: form submit/cancel 100, status-driven next step 50, create 20, edit 10, shortcuts/history/danger 0. FE only; you may read `C:/GitHub/BEANS/dolores_platform` but never modify it. Do not commit, push or install.
+Context: `plans/action-bar-ux.md` (R1-R11). Batch 4 part 1 is committed (5777155): contract create form, technician machine-check/tasks, owner recipe editor, owner order form, technician buyback inspection submit. Priorities: form submit/cancel 100, status-driven next step 50, create 20, edit 10, shortcuts/history/danger 0. FE only; you may read `C:/GitHub/BEANS/dolores_platform` but never modify it. Do not commit, push or install.
 
 ## Classification rule (apply to each candidate button)
 - **Move to `PageActions`:** the button acts on the page's main entity or flow and is visible on the page itself. Examples: a page form's bottom Save/Cancel/Submit row, a detail screen's status step ("Xác nhận…", "Gửi…", "Duyệt…"), "Tạo …" for the page's entity.

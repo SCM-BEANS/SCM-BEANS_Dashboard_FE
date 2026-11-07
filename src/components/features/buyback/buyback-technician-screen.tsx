@@ -1,5 +1,4 @@
 import { PageActions } from "@/components/action-bar/page-actions";
-import { ButtonBar } from "@/components/button/button-bar";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import {
   BuybackCaseList,
@@ -46,7 +45,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
             <p className={styles.notice} role="note">Hồ sơ thu máy này chưa được giao cho tài khoản Technician hiện tại.</p>
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection && !caseData.collectionEvidenceRecorded ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-collection-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const confirmedSerial = workflow.confirmedCollectionSerial.trim();
               const collectionLocation = workflow.collectionLocation.trim();
               const evidenceReference = workflow.collectionEvidenceReference.trim();
@@ -58,7 +57,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
               <label className={styles.formField}><span>Serial đã xác nhận</span><input required maxLength={128} value={workflow.confirmedCollectionSerial} onChange={(event) => workflow.setConfirmedCollectionSerial(event.target.value)} /></label>
               <label className={styles.formField}><span>Địa điểm thu máy</span><input required maxLength={512} value={workflow.collectionLocation} onChange={(event) => workflow.setCollectionLocation(event.target.value)} /></label>
               <label className={styles.formField}><span>Evidence reference</span><input required maxLength={2048} value={workflow.collectionEvidenceReference} onChange={(event) => workflow.setCollectionEvidenceReference(event.target.value)} /></label>
-              <ButtonBar type="submit" disabled={!workflow.confirmedCollectionSerial.trim() || !workflow.collectionLocation.trim() || !workflow.collectionEvidenceReference.trim() || workflow.recordCollectionEvidence.isPending}>Ghi nhận bằng chứng thu máy</ButtonBar>
+              <PageActions actions={[{ id: "collection-evidence", label: "Ghi nhận thu máy", variant: "primary", priority: 100, type: "submit", form: "buyback-collection-form", disabled: !workflow.confirmedCollectionSerial.trim() || !workflow.collectionLocation.trim() || !workflow.collectionEvidenceReference.trim(), disabledReason: "Nhập đầy đủ thông tin thu máy.", pending: workflow.recordCollectionEvidence.isPending }]} />
             </form>
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection && caseData.collectionEvidenceRecorded ? <p className={styles.notice} role="status">Đã ghi nhận bằng chứng thu máy. Moderator phụ trách sẽ xác nhận tiếp nhận trong Dolores.</p> : null}
@@ -90,18 +89,18 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
             </form>
           ) : null}
           {!workflow.isExternalBuyback && caseData.status === "COLLECTED" ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-start-refurbishment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const key = workflow.operationKey("refurbishment-start", caseData.id);
               workflow.startRefurbishment.mutate({ id: caseData.id, workPlanned: workflow.workPlanned.trim(), estimatedPartsCost: Number(workflow.estimatedPartsCost || 0), currency: workflow.currency.trim() || caseData.currency, idempotencyKey: key, correlationId: key });
             })}>
               <h3 className={styles.sectionTitle}>Bắt đầu tân trang</h3>
               <label className={styles.formField}><span>Kế hoạch công việc</span><textarea required value={workflow.workPlanned} onChange={(event) => workflow.setWorkPlanned(event.target.value)} /></label>
               <label className={styles.formField}><span>Chi phí linh kiện ước tính</span><input type="number" min="0" step="0.01" value={workflow.estimatedPartsCost} onChange={(event) => workflow.setEstimatedPartsCost(event.target.value)} /></label>
-              <ButtonBar type="submit" disabled={!workflow.workPlanned.trim() || workflow.startRefurbishment.isPending}>Bắt đầu tân trang</ButtonBar>
+              <PageActions actions={[{ id: "start-refurbishment", label: "Bắt đầu tân trang", variant: "primary", priority: 100, type: "submit", form: "buyback-start-refurbishment-form", disabled: !workflow.workPlanned.trim(), disabledReason: "Nhập công việc dự kiến.", pending: workflow.startRefurbishment.isPending }]} />
             </form>
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "PAID" && workflow.canStartRefurbishment ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-external-refurbishment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const workPlanned = workflow.workPlanned.trim();
               const estimatedPartsCost = Number(workflow.estimatedPartsCost || 0);
               const key = workflow.operationKey("refurbishment-start", caseData.id, JSON.stringify({ workPlanned, estimatedPartsCost, currency: caseData.currency }));
@@ -110,11 +109,11 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
               <h3 className={styles.sectionTitle}>Bắt đầu tân trang</h3>
               <label className={styles.formField}><span>Kế hoạch công việc</span><textarea required maxLength={2000} value={workflow.workPlanned} onChange={(event) => workflow.setWorkPlanned(event.target.value)} /></label>
               <label className={styles.formField}><span>Chi phí linh kiện ước tính ({caseData.currency})</span><input type="number" min="0" step="0.01" value={workflow.estimatedPartsCost} onChange={(event) => workflow.setEstimatedPartsCost(event.target.value)} /></label>
-              <ButtonBar type="submit" disabled={!workflow.workPlanned.trim() || !Number.isFinite(Number(workflow.estimatedPartsCost || 0)) || Number(workflow.estimatedPartsCost || 0) < 0 || workflow.startRefurbishment.isPending}>Bắt đầu tân trang</ButtonBar>
+              <PageActions actions={[{ id: "start-refurbishment", label: "Bắt đầu tân trang", variant: "primary", priority: 100, type: "submit", form: "buyback-external-refurbishment-form", disabled: !workflow.workPlanned.trim() || !Number.isFinite(Number(workflow.estimatedPartsCost || 0)) || Number(workflow.estimatedPartsCost || 0) < 0, disabledReason: "Nhập công việc và chi phí hợp lệ.", pending: workflow.startRefurbishment.isPending }]} />
             </form>
           ) : null}
           {caseData.status === "REFURBISHING" && (!workflow.isExternalBuyback || workflow.canCompleteRefurbishment) ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-complete-refurbishment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const key = workflow.operationKey("refurbishment-complete", caseData.id);
               workflow.completeRefurbishment.mutate({ id: caseData.id, workPerformed: workflow.workPerformed.trim(), result: workflow.workResult.trim(), idempotencyKey: key, correlationId: key });
             })}>
@@ -122,7 +121,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
               <label className={styles.formField}><span>Công việc đã làm</span><textarea required maxLength={2000} value={workflow.workPerformed} onChange={(event) => workflow.setWorkPerformed(event.target.value)} /></label>
               <label className={styles.formField}><span>Kết quả</span><textarea required maxLength={2000} value={workflow.workResult} onChange={(event) => workflow.setWorkResult(event.target.value)} /></label>
               <p className={styles.formHint}>API kết quả tân trang nhận evidenceReferences dạng chuỗi nhưng chưa có private evidence upload/read. Gửi kết quả văn bản theo contract BE; không tạo storage reference giả.</p>
-              <ButtonBar type="submit" disabled={!workflow.workPerformed.trim() || !workflow.workResult.trim() || workflow.completeRefurbishment.isPending}>Hoàn tất tân trang</ButtonBar>
+              <PageActions actions={[{ id: "complete-refurbishment", label: "Hoàn tất tân trang", variant: "primary", priority: 100, type: "submit", form: "buyback-complete-refurbishment-form", disabled: !workflow.workPerformed.trim() || !workflow.workResult.trim(), disabledReason: "Nhập công việc và kết quả.", pending: workflow.completeRefurbishment.isPending }]} />
             </form>
           ) : null}
         </> : null}

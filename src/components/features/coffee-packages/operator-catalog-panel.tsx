@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -61,6 +62,7 @@ export function OperatorCatalogPanel({
 
   return (
     <section className={styles.panel} aria-labelledby="coffee-operator-catalog-title">
+      <PageActions actions={isAdmin ? [...(editingId ? [{ id: "coffee-catalog-cancel", label: "Hủy chỉnh sửa", onClick: resetForm, priority: 0, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị bỏ.", confirmLabel: "Hủy chỉnh sửa" } }] : []), { id: "coffee-catalog-save", label: editingId ? "Lưu thay đổi" : "Tạo gói", priority: editingId ? 100 : 20, variant: "primary" as const, type: "submit" as const, form: "coffee-catalog-form", disabled: workflow.pending || !code.trim() || !name.trim() || !unitPrice || Number(unitPrice) < 0 || !usageDays || Number(usageDays) < 1, disabledReason: "Nhập thông tin hợp lệ cho gói.", pending: workflow.pending }] : []} />
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-catalog-title">Danh mục gói cà phê</h2>
@@ -70,7 +72,7 @@ export function OperatorCatalogPanel({
       </div>
 
       {isAdmin ? (
-        <form className={styles.subpanel} onSubmit={savePackage}>
+        <form id="coffee-catalog-form" className={styles.subpanel} onSubmit={savePackage}>
           <h3>{editingId ? "Cập nhật gói" : "Tạo gói cà phê"}</h3>
           <div className={styles.formGrid}>
             <label className={styles.field}><span>Mã gói</span><input value={code} onChange={(event) => setCode(event.target.value)} maxLength={80} required /></label>
@@ -79,12 +81,6 @@ export function OperatorCatalogPanel({
             <label className={styles.field}><span>Đơn vị tiền</span><input value={currency} onChange={(event) => setCurrency(event.target.value)} maxLength={8} required /></label>
             <label className={styles.field}><span>Số ngày sử dụng</span><input type="number" min="1" step="1" value={usageDays} onChange={(event) => setUsageDays(event.target.value)} required /></label>
             <label className={styles.field}><span>Mô tả</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} /></label>
-          </div>
-          <div className={styles.actionRow}>
-            <ButtonBar type="submit" disabled={workflow.pending || !code.trim() || !name.trim() || !unitPrice || Number(unitPrice) < 0 || !usageDays || Number(usageDays) < 1}>
-              {editingId ? "Lưu thay đổi" : "Tạo gói"}
-            </ButtonBar>
-            {editingId ? <ButtonBar type="button" onClick={resetForm}>Hủy chỉnh sửa</ButtonBar> : null}
           </div>
         </form>
       ) : (

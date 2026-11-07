@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -9,6 +10,7 @@ import styles from "./coffee-package-workflow.module.css";
 export function OwnerInvoicePanel({ workflow }: { workflow: CoffeePackageWorkflowController }) {
   const [proofAmount, setProofAmount] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [editingProof, setEditingProof] = useState(false);
 
   const submitProof = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -16,6 +18,7 @@ export function OwnerInvoicePanel({ workflow }: { workflow: CoffeePackageWorkflo
     workflow.run({ type: "SUBMIT_PROOF", invoiceId: workflow.invoice.data.id, amount: Number(proofAmount), file: proofFile });
     setProofFile(null);
     setProofAmount("");
+    setEditingProof(false);
   };
 
   if (workflow.invoice.isPending) return <p className={styles.notice} role="status">Đang tải hóa đơn…</p>;
@@ -37,14 +40,14 @@ export function OwnerInvoicePanel({ workflow }: { workflow: CoffeePackageWorkflo
       </dl>
 
       {invoice.status === "PENDING" ? (
-        <form className={styles.form} onSubmit={submitProof}>
+        <form id="owner-invoice-proof-form" className={styles.form} onFocusCapture={() => setEditingProof(true)} onSubmit={submitProof}>
           <h4>Gửi chứng từ thanh toán</h4>
           <p className={styles.hint}>Nhập số tiền đã chuyển và tải biên lai PDF, JPG hoặc PNG (tối đa 20 MB).</p>
           <div className={styles.formGrid}>
             <label className={styles.field}><span>Số tiền đã chuyển (VND)</span><input type="number" min="1" step="0.01" value={proofAmount} onChange={(event) => setProofAmount(event.target.value)} required /></label>
             <label className={styles.field}><span>Chứng từ</span><input type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => setProofFile(event.target.files?.[0] ?? null)} required /></label>
           </div>
-          <ButtonBar type="submit" disabled={!proofFile || Number(proofAmount) <= 0 || workflow.pending}>Gửi chứng từ</ButtonBar>
+          {editingProof ? <PageActions actions={[{ id: "submit-invoice-proof", label: "Gửi chứng từ", variant: "primary", priority: 100, type: "submit", form: "owner-invoice-proof-form", disabled: !proofFile || Number(proofAmount) <= 0, disabledReason: "Nhập số tiền và chọn chứng từ.", pending: workflow.pending }]} /> : null}
         </form>
       ) : null}
 

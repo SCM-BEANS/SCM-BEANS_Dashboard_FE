@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
+import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -118,6 +119,10 @@ export function LocationsManagementPanel({
 
   return (
     <section className={styles.panel} aria-labelledby="locations-management-title">
+      <PageActions actions={!validActiveOwner ? [] : createFormOpen ? [
+        { id: "location-cancel", label: "Hủy", priority: 100, disabled: create.isPending, onClick: () => setCreateFormOpen(false), confirm: Object.values(form).some(Boolean) ? { title: "Hủy tạo địa điểm?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy tạo" } : undefined },
+        { id: "location-save", label: "Lưu địa điểm", variant: "primary", priority: 100, type: "submit", form: "location-create-form", disabled: create.isPending || blockResubmit || !form.name.trim(), disabledReason: "Yêu cầu đang xử lý hoặc cần kiểm tra lại.", pending: create.isPending, pendingLabel: "Đang tạo…" },
+      ] : [{ id: "location-create", label: "Tạo địa điểm", variant: "primary", priority: 20, onClick: () => { setCreateFormOpen(true); setRequestError(""); setSuccessMessage(""); } }]} />
       <h2 id="locations-management-title">Địa điểm</h2>
       <p className={styles.description}>
         {mode === "owner"
@@ -148,11 +153,9 @@ export function LocationsManagementPanel({
         {selectedOwner && <p className={styles.hint}>Đang xem địa điểm của {selectedOwner.fullName}.</p>}
         <div className={styles.tableHeader}>
           <h3>Danh sách địa điểm</h3>
-          <ButtonBar type="button" onClick={() => { setCreateFormOpen((open) => !open); setRequestError(""); setSuccessMessage(""); }}>
-            {createFormOpen ? "Đóng biểu mẫu" : "Tạo địa điểm"}
-          </ButtonBar>
+
         </div>
-        {createFormOpen && <form className={styles.formGrid} onSubmit={submit}>
+        {createFormOpen && <form id="location-create-form" className={styles.formGrid} onSubmit={submit}>
           <label className={styles.field}>Tên địa điểm *
             <input required maxLength={160} value={form.name} disabled={create.isPending || blockResubmit} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
           </label>
@@ -168,10 +171,7 @@ export function LocationsManagementPanel({
           <label className={styles.field}>Số điện thoại
             <input maxLength={40} value={form.phoneNumber ?? ""} disabled={create.isPending || blockResubmit} onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))} />
           </label>
-          <div className={styles.actions}>
-            <ButtonBar type="submit" disabled={create.isPending || blockResubmit}>{create.isPending ? "Đang tạo…" : "Lưu địa điểm"}</ButtonBar>
-            <ButtonBar type="button" disabled={create.isPending} onClick={() => setCreateFormOpen(false)}>Hủy</ButtonBar>
-          </div>
+
         </form>}
         {requestError && <p className={styles.notice} role="alert">{requestError}</p>}
         {blockResubmit && <p className={styles.notice} role="alert">
