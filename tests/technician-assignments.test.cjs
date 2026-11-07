@@ -11,94 +11,56 @@ function loadTypescript(relativePath, mocks = {}) {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
-  const module = { exports: {} };
+  const loaded = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
-  new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
-  return module.exports;
+  new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
+  return loaded.exports;
 }
 
 const technicianId = '00000000-0000-4000-8000-000000000001';
 const machineId = '00000000-0000-4000-8000-000000000002';
-const ownerId = '00000000-0000-4000-8000-000000000003';
-const assignment = {
-  id: '00000000-0000-4000-8000-000000000004',
-  idaasUserId: technicianId,
-  machineId,
-  ownerId,
-  active: true,
-  assignedAt: '2026-10-31T10:00:00Z',
-  revokedAt: null,
-};
+const machinesSchema = loadTypescript('src/schema/machines.schema.ts');
+const profilesSchema = loadTypescript('src/schema/profiles.schema.ts');
 
-test('Technician machine access uses the IDaaS UUID path and validates assignment identity', async () => {
-  const calls = [];
-  const axiosClient = {
-    post: async (url, body, config) => {
-      calls.push({ method: 'POST', url, body, config });
-      return { data: assignment };
-    },
-  };
-  const machineSchema = loadTypescript('src/schema/machines.schema.ts');
-  const profileSchema = loadTypescript('src/schema/profiles.schema.ts');
-  const responseSchema = loadTypescript('src/schema/technician-assignments.schema.ts');
-  const { technicianAssignmentsApi } = loadTypescript('src/apis/technician-assignments.api.ts', {
+function loadMachinesApi(axiosClient) {
+  return loadTypescript('src/apis/machines.api.ts', {
     '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
-    '@/schema/machines.schema': machineSchema,
-    '@/schema/profiles.schema': profileSchema,
-    '@/schema/technician-assignments.schema': responseSchema,
+    '@/schema/machines.schema': machinesSchema,
+    '@/schema/profiles.schema': profilesSchema,
+  }).machinesApi;
+}
+
+test('machine technician assignment uses the shared Machines API route and validates UUIDs', async () => {
+  const calls = [];
+  const machinesApi = loadMachinesApi({
+    post: async (...args) => { calls.push(['POST', ...args]); return { data: undefined }; },
   });
 
-  assert.deepEqual(await technicianAssignmentsApi.assign(technicianId, machineId), assignment);
-  assert.deepEqual(calls, [{
-    method: 'POST',
-    url: `/technician-assignments/${technicianId}/machines/${machineId}`,
-    body: undefined,
-    config: { baseURL: '/api/dolores/v1' },
-  }]);
-  await assert.rejects(technicianAssignmentsApi.assign('invalid-profile', machineId));
-  await assert.rejects(technicianAssignmentsApi.assign(technicianId, 'invalid-machine'));
+  assert.equal(await machinesApi.assignTechnician(technicianId, machineId), undefined);
+  assert.deepEqual(calls, [[
+    'POST',
+    `/technician-assignments/${technicianId}/machines/${machineId}`,
+    undefined,
+    { baseURL: '/api/dolores/v1' },
+  ]]);
+  await assert.rejects(machinesApi.assignTechnician('invalid-profile', machineId));
+  await assert.rejects(machinesApi.assignTechnician(technicianId, 'invalid-machine'));
   assert.equal(calls.length, 1);
 });
 
-test('Technician machine access revoke sends DELETE and accepts the no-content response', async () => {
+test('machine technician unassignment uses DELETE and validates UUIDs', async () => {
   const calls = [];
-  const axiosClient = {
-    delete: async (url, config) => calls.push({ method: 'DELETE', url, config }),
-  };
-  const machineSchema = loadTypescript('src/schema/machines.schema.ts');
-  const profileSchema = loadTypescript('src/schema/profiles.schema.ts');
-  const responseSchema = loadTypescript('src/schema/technician-assignments.schema.ts');
-  const { technicianAssignmentsApi } = loadTypescript('src/apis/technician-assignments.api.ts', {
-    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
-    '@/schema/machines.schema': machineSchema,
-    '@/schema/profiles.schema': profileSchema,
-    '@/schema/technician-assignments.schema': responseSchema,
+  const machinesApi = loadMachinesApi({
+    delete: async (...args) => { calls.push(['DELETE', ...args]); },
   });
 
-  await technicianAssignmentsApi.revoke(technicianId, machineId);
-  assert.deepEqual(calls, [{
-    method: 'DELETE',
-    url: `/technician-assignments/${technicianId}/machines/${machineId}`,
-    config: { baseURL: '/api/dolores/v1' },
-  }]);
-});
-
-test('assignment response identity mismatch is rejected', async () => {
-  const axiosClient = {
-    post: async () => ({ data: { ...assignment, machineId: ownerId } }),
-  };
-  const machineSchema = loadTypescript('src/schema/machines.schema.ts');
-  const profileSchema = loadTypescript('src/schema/profiles.schema.ts');
-  const responseSchema = loadTypescript('src/schema/technician-assignments.schema.ts');
-  const { technicianAssignmentsApi } = loadTypescript('src/apis/technician-assignments.api.ts', {
-    '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
-    '@/schema/machines.schema': machineSchema,
-    '@/schema/profiles.schema': profileSchema,
-    '@/schema/technician-assignments.schema': responseSchema,
-  });
-
-  await assert.rejects(
-    technicianAssignmentsApi.assign(technicianId, machineId),
-    /different Technician or machine/,
-  );
+  assert.equal(await machinesApi.unassignTechnician(technicianId, machineId), undefined);
+  assert.deepEqual(calls, [[
+    'DELETE',
+    `/technician-assignments/${technicianId}/machines/${machineId}`,
+    { baseURL: '/api/dolores/v1' },
+  ]]);
+  await assert.rejects(machinesApi.unassignTechnician('invalid-profile', machineId));
+  await assert.rejects(machinesApi.unassignTechnician(technicianId, 'invalid-machine'));
+  assert.equal(calls.length, 1);
 });

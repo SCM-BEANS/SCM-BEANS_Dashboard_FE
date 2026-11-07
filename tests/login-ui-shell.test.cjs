@@ -61,7 +61,6 @@ function loadLoginPage() {
     "@/text/auth/login-messages": {
       LOGIN_MESSAGES: require("../src/text/auth/login-messages.ts").LOGIN_MESSAGES,
     },
-    "@/text/typography": { TYPOGRAPHY_STYLES: "" },
   };
   const loaded = { exports: {} };
   const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
