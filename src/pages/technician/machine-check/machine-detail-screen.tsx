@@ -1,12 +1,15 @@
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
+import axios from "axios";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { machineCertificatesApi } from "@/apis/machine-certificates.api";
+import { MachineActiveMenuPanel } from "@/components/features/recipe-menus/recipe-sync-panel";
 import { MachineCertificatesPanel } from "@/components/machines/machine-certificates-panel";
 import type { MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { ButtonBar } from "@/components/button/button-bar";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
@@ -64,6 +67,7 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
     [T.MACHINE_CHECK.ID, machine.id],
     [T.MACHINE_CHECK.OWNER_ID, machine.ownerId],
     [T.MACHINE_CHECK.SERIAL, machine.serialNumber],
+    ["Menu đang gán", machine.activeMenuId === undefined ? "Chưa có thông tin menu" : machine.activeMenuId === null ? "Menu mặc định" : machine.activeMenuName || "Menu riêng"],
     [T.MACHINE_CHECK.STATUS, getStatusLabel(machine.status)],
     [T.MACHINE_CHECK.DETAIL_FIELDS.DEPLOYED_AT, formatDate(machine.deployedAt)],
     [T.MACHINE_CHECK.DETAIL_FIELDS.NEXT_MAINTENANCE_AT, formatDate(machine.nextPreventiveMaintenanceAt)],
@@ -92,7 +96,7 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
   );
 }
 
-function TechnicianMachineCertificates({ machineId, subject }: { machineId: string; subject: string }) {
+function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { machineId: string; subject: string; serialNumber?: string | null }) {
   const [status, setStatus] = useState<MachineCertificateStatus | "">("");
   const [pageNumber, setPageNumber] = useState(0);
   const [selectedCertificateId, setSelectedCertificateId] = useState("");
@@ -107,6 +111,16 @@ function TechnicianMachineCertificates({ machineId, subject }: { machineId: stri
     alive.current = true;
     return () => { alive.current = false; downloadController.current?.abort(); };
   }, []);
+  const identity = useQuery({
+    queryKey: ["machine-device-identity", "TECHNICIAN", subject, machineId],
+    queryFn: async ({ signal }) => {
+      try { return await machinesApi.getDeviceIdentity(machineId, signal); }
+      catch (error) { if (axios.isAxiosError(error) && error.response?.status === 404) return null; throw error; }
+    },
+    retry: false,
+  });
+  const customIdentity = identity.isSuccess && Boolean(identity.data && identity.data.deviceId !== serialNumber);
+  const identityAllowsIssue = identity.isSuccess && !identity.isFetching && !customIdentity && Boolean(serialNumber?.trim());
   const certificates = useQuery({
     queryKey: ["machine-certificates", "TECHNICIAN", subject, machineId, status, pageNumber],
     queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
@@ -119,11 +133,11 @@ function TechnicianMachineCertificates({ machineId, subject }: { machineId: stri
   });
   async function refresh() {
     if (locked.current) return;
-    const result = await certificates.refetch();
-    if (alive.current && result.isSuccess) { setIssueBlocked(false); setActionError(""); }
+    const [result, identityResult] = await Promise.all([certificates.refetch(), identity.refetch()]);
+    if (alive.current && result.isSuccess && identityResult.isSuccess) { setIssueBlocked(false); setActionError(""); }
   }
   async function act(action: "issue" | "delete" | "download", id = "", format: "zip" | "json" = "zip") {
-    if (locked.current || action === "issue" && (issueBlocked || !certificates.isSuccess)) return;
+    if (locked.current || action === "issue" && (issueBlocked || !certificates.isSuccess || !identityAllowsIssue)) return;
     locked.current = true; setBusy(true); setActionError(""); setNotice("");
     try {
       if (action === "issue") {
@@ -131,7 +145,7 @@ function TechnicianMachineCertificates({ machineId, subject }: { machineId: stri
         if (!alive.current) return;
         setSelectedCertificateId(issued.id);
         setNotice("Đã phát hành chứng chỉ kết nối.");
-        await certificates.refetch();
+        await Promise.all([certificates.refetch(), identity.refetch()]);
       } else if (action === "delete") {
         await machineCertificatesApi.delete(machineId, id);
         if (!alive.current) return;
@@ -156,6 +170,9 @@ function TechnicianMachineCertificates({ machineId, subject }: { machineId: stri
       if (action === "issue") {
         setIssueBlocked(true);
         setNotice("Chưa xác nhận được kết quả phát hành. Hãy kiểm tra danh sách và bấm Làm mới trước khi thử lại.");
+        await Promise.all([certificates.refetch(), identity.refetch()]);
+      } else if (action === "delete") {
+        setSelectedCertificateId("");
         await certificates.refetch();
       }
     } finally {
@@ -163,19 +180,29 @@ function TechnicianMachineCertificates({ machineId, subject }: { machineId: stri
       if (alive.current) setBusy(false);
     }
   }
-  return <MachineCertificatesPanel
+  return <>
+    <SmartIotPanel title="Định danh thiết bị">
+      {identity.isPending ? <p role="status">Đang tải định danh…</p>
+        : identity.isError ? <p role="alert">{getApiErrorMessage(identity.error)}</p>
+          : identity.data ? <p>Mã thiết bị: <strong>{identity.data.deviceId}</strong></p>
+            : <p>Chưa có định danh đang hoạt động.</p>}
+      <ButtonBar disabled={busy || identity.isFetching} onClick={() => void identity.refetch()}>Làm mới định danh</ButtonBar>
+      {customIdentity && <p role="alert">Mã thiết bị hiện tại khác serial máy. Chưa thể phát hành chứng chỉ; hãy liên hệ bộ phận vận hành kiểm tra định danh.</p>}
+      {!serialNumber?.trim() && <p role="alert">Máy chưa có serial hợp lệ để phát hành chứng chỉ.</p>}
+    </SmartIotPanel>
+    <MachineCertificatesPanel
     page={certificates.data} detail={detail.isError ? undefined : detail.data}
     status={status} pageNumber={pageNumber} selectedCertificateId={selectedCertificateId}
     loading={certificates.isPending} detailLoading={Boolean(selectedCertificateId) && detail.isPending}
     error={certificates.isError ? getApiErrorMessage(certificates.error) : undefined}
     detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
-    actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !certificates.isSuccess}
+    actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !certificates.isSuccess || !identityAllowsIssue}
     onIssue={() => void act("issue")} onSelect={(id) => { if (id === selectedCertificateId) void detail.refetch(); else setSelectedCertificateId(id); }}
     onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelectedCertificateId(""); }}
     onPageChange={(next) => { setPageNumber(next); setSelectedCertificateId(""); }}
     onRefresh={() => void refresh()} onDownload={(id, format) => void act("download", id, format)}
     onDelete={(id) => void act("delete", id)}
-  />;
+  /></>;
 }
 
 export function TechnicianMachineDetailScreen() {
@@ -335,7 +362,8 @@ export function TechnicianMachineDetailScreen() {
             onRefresh={() => maintenanceTickets.refetch()}
           />
         </section>
-        <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} />
+        <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
+        <MachineActiveMenuPanel key={`menu:${subject}:${machineId}`} machineId={machineId} subject={subject} onChanged={() => machine.refetch()} />
         {smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Lịch sử thông số">

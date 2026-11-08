@@ -100,6 +100,8 @@ export const RentalCandidatePageSchema = z.object({
 export const MachineSchema = z.object({
   id: MachineIdSchema,
   ownerId: z.string().uuid().nullish(),
+  activeMenuId: z.string().uuid().nullish(),
+  activeMenuName: z.string().nullish(),
   tenantId: z.string().uuid().nullish(),
   serialNumber: z.string().nullish(),
   status: MachineStatusSchema.nullish(),

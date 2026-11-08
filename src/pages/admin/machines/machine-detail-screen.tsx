@@ -1,3 +1,4 @@
+import axios from "axios";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -57,7 +58,7 @@ function formatNumber(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : new Intl.NumberFormat("vi-VN").format(value);
 }
 
-function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string; subject: string }) {
+function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { machineId: string; subject: string; serialNumber?: string | null }) {
   const [status, setStatus] = useState<MachineCertificateStatus | "">("");
   const [pageNumber, setPageNumber] = useState(0);
   const [selected, setSelected] = useState("");
@@ -65,7 +66,9 @@ function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string
   const [issueBlocked, setIssueBlocked] = useState(false);
   const [actionError, setActionError] = useState("");
   const [notice, setNotice] = useState("");
-  const [deviceId, setDeviceId] = useState("");
+  const [deviceId, setDeviceId] = useState(serialNumber ?? "");
+  const [identityBlocked, setIdentityBlocked] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState<{ id: string; deviceId: string } | null>(null);
   const pending = useRef(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -73,6 +76,21 @@ function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string
     controller.current = current;
     return () => current.abort();
   }, []);
+  const identity = useQuery({
+    queryKey: ["machine-device-identity", "ADMIN", subject, machineId],
+    queryFn: ({ signal }) => machinesApi.getDeviceIdentity(machineId, signal),
+    retry: false,
+  });
+  const identityAbsent = identity.isError && axios.isAxiosError(identity.error) && identity.error.response?.status === 404;
+  const identityResolved = !identity.isFetching && (identity.isSuccess || identityAbsent);
+  const identityMismatch = identity.isSuccess && identity.data.deviceId !== serialNumber;
+  const canIssue = identityResolved && !identityBlocked && !identityMismatch && Boolean(serialNumber?.trim());
+  const refreshIdentity = async () => {
+    const result = await identity.refetch();
+    const absent = result.isError && axios.isAxiosError(result.error) && result.error.response?.status === 404;
+    if (!controller.current?.signal.aborted) setIdentityBlocked(!(result.isSuccess || absent));
+    return result;
+  };
   const list = useQuery({
     queryKey: ["machine-certificates", "ADMIN", subject, machineId, status, pageNumber],
     queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
@@ -95,36 +113,55 @@ function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string
   };
   return <>
     <SmartIotPanel title="Định danh thiết bị">
-      <form className={styles.machineEditForm} onSubmit={(event) => {
+      <ButtonBar disabled={busy || identity.isFetching} onClick={() => { void run(async () => { await refreshIdentity(); }); }}>Làm mới định danh</ButtonBar>
+      {identity.isFetching ? <p role="status">Đang kiểm tra định danh thiết bị…</p> : identity.isSuccess ? <>
+        <div className={styles.operationsGrid}>
+          <div><span>Mã thiết bị đang hoạt động</span><strong>{identity.data.deviceId}</strong></div>
+          <div><span>Máy</span><strong>{serialNumber ?? machineId}</strong></div>
+        </div>
+        <ButtonBar variant="danger" disabled={busy || identityBlocked} onClick={() => setConfirmRevoke({ id: identity.data.id, deviceId: identity.data.deviceId })}>Thu hồi định danh</ButtonBar>
+      </> : identityAbsent ? <p>Chưa có định danh đang hoạt động.</p> : <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(identity.error)}</p>}
+      {identityAbsent && !identity.isFetching && <form className={styles.machineEditForm} onSubmit={(event) => {
         event.preventDefault();
+        if (identityBlocked || !identityResolved) return;
         void run(async () => {
-          await machinesApi.provisionDeviceIdentity(machineId, { deviceId });
-          if (!controller.current?.signal.aborted) setNotice("Đã đăng ký định danh thiết bị.");
+          setIdentityBlocked(true);
+          try {
+            await machinesApi.provisionDeviceIdentity(machineId, { deviceId });
+            if (!controller.current?.signal.aborted) setNotice("Đã đăng ký định danh thiết bị. Đang kiểm tra lại dữ liệu.");
+          } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
         });
       }}>
         <label>Mã thiết bị<input required maxLength={255} value={deviceId} disabled={busy} onChange={(event) => setDeviceId(event.target.value)} /></label>
-        <ButtonBar type="submit" disabled={busy || !deviceId.trim()}>Đăng ký định danh</ButtonBar>
-      </form>
-      <p>Chưa thể đọc lại mã thiết bị đã lưu. Vui lòng kiểm tra với bộ phận vận hành trước khi đăng ký.</p>
+        <ButtonBar type="submit" disabled={busy || identityBlocked || !deviceId.trim()}>Đăng ký định danh</ButtonBar>
+        <p>Mã đã sử dụng không thể dùng lại sau khi thu hồi. Để cấp chứng chỉ hiện tại, mã thiết bị cần trùng serial máy.</p>
+      </form>}
+      {identityBlocked && <p className={styles.accountInlineWarning} role="alert">Chưa xác minh được định danh hiện tại. Hãy làm mới định danh trước khi thao tác tiếp.</p>}
+      {identityMismatch && <p className={styles.accountInlineWarning} role="alert">Mã thiết bị khác serial máy. Chưa thể phát hành chứng chỉ; cần bộ phận vận hành kiểm tra. Định danh hiện tại được giữ nguyên.</p>}
+      {!serialNumber?.trim() && <p className={styles.accountInlineWarning}>Máy chưa có serial để phát hành chứng chỉ.</p>}
     </SmartIotPanel>
     <MachineCertificatesPanel page={list.data} detail={detail.data} status={status} pageNumber={pageNumber}
       selectedCertificateId={selected} loading={list.isFetching} detailLoading={Boolean(selected) && detail.isFetching}
       error={list.isError ? getApiErrorMessage(list.error) : undefined}
       detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
-      actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !list.isSuccess}
+      actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !list.isSuccess || !canIssue}
       onSelect={(id) => { if (id === selected) void detail.refetch(); else setSelected(id); }} onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelected(""); }}
       onPageChange={(next) => { setPageNumber(next); setSelected(""); }}
-      onRefresh={() => { void run(async () => { const result = await list.refetch(); if (result.isSuccess) setIssueBlocked(false); }); }}
-      onIssue={() => { if (!issueBlocked) void run(async () => {
-        const issued = await machineCertificatesApi.issue(machineId);
-        if (controller.current?.signal.aborted) return;
-        setSelected(issued.id); setNotice("Đã phát hành chứng chỉ."); await list.refetch();
+      onRefresh={() => { void run(async () => { const result = await list.refetch(); await refreshIdentity(); if (result.isSuccess) setIssueBlocked(false); }); }}
+      onIssue={() => { if (!issueBlocked && canIssue && list.isSuccess) void run(async () => {
+        try {
+          const issued = await machineCertificatesApi.issue(machineId);
+          if (controller.current?.signal.aborted) return;
+          setSelected(issued.id); setNotice("Đã phát hành chứng chỉ."); await list.refetch();
+        } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
       }, true); }}
       onDelete={(id) => { void run(async () => {
-        await machineCertificatesApi.delete(machineId, id);
-        if (controller.current?.signal.aborted) return;
-        if (selected === id) setSelected("");
-        setNotice("Đã xóa chứng chỉ."); await list.refetch();
+        try {
+          await machineCertificatesApi.delete(machineId, id);
+          if (!controller.current?.signal.aborted) setNotice("Đã xóa chứng chỉ.");
+        } finally {
+          if (!controller.current?.signal.aborted) { if (selected === id) setSelected(""); await list.refetch(); }
+        }
       }); }}
       onDownload={(id, format) => { void run(async () => {
         const bundle = await machineCertificatesApi.download(machineId, id, format, controller.current?.signal);
@@ -135,6 +172,19 @@ function AdminMachineConnectionSetup({ machineId, subject }: { machineId: string
           document.body.appendChild(anchor); anchor.click(); anchor.remove();
         } finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
       }); }} />
+    {confirmRevoke && <NotificationDialog variant="confirm" title="Thu hồi định danh thiết bị?"
+      description={<>Thu hồi mã <strong>{confirmRevoke.deviceId}</strong> của máy <strong>{serialNumber ?? machineId}</strong>. Mã này sẽ không thể được sử dụng lại.</>}
+      primaryAction={{ label: "Thu hồi định danh", disabled: busy || !identityResolved || !identity.isSuccess || identity.data.id !== confirmRevoke.id, onClick: () => {
+        if (!identity.isSuccess || identity.data.id !== confirmRevoke.id || identityBlocked) return;
+        setConfirmRevoke(null);
+        void run(async () => {
+          setIdentityBlocked(true);
+          try { await machinesApi.revokeDeviceIdentity(machineId); }
+          finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
+        });
+      } }}
+      secondaryAction={{ label: "Hủy", disabled: busy, onClick: () => setConfirmRevoke(null) }}
+      onClose={() => { if (!busy) setConfirmRevoke(null); }} closeOnEscape={!busy} />}
   </>;
 }
 
@@ -375,7 +425,7 @@ function MachineDetailContent() {
             onClick={() => setDetailTab("connection")}>Thiết lập kết nối</button>
         </div>
         {detailTab === "connection" ? <div id="machine-connection-panel" role="tabpanel" aria-labelledby="machine-connection-tab">
-          <AdminMachineConnectionSetup key={`${subject}:${machineId}`} machineId={machineId} subject={subject} />
+          <AdminMachineConnectionSetup key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
         </div> : detailTab === "profile" ? (
           <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
             <div className={styles.machineInventoryHeading}>
@@ -391,6 +441,7 @@ function MachineDetailContent() {
                 <div className={styles.machineProfileFields}>
                   <div><span>{T.MACHINES.MACHINE_ID}</span><strong><TruncatedId value={device.id} /></strong></div>
                   <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
+                  <div><span>Menu đang gán</span><strong>{device.activeMenuId === undefined ? "Chưa có thông tin menu" : device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || "Menu riêng"}</strong></div>
                 </div>
               </section>
               <section className={styles.machineProfileGroup}>

@@ -45,6 +45,7 @@ import {
   type MachineTypeMappingRequest,
 } from "@/schema/machines.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
+import { MachineHistoryParamsSchema, MachineBrewRecordsPageSchema, MachineCleaningRecordsPageSchema, type MachineHistoryParams } from "@/schema/owner-analytics.schema";
 
 
 export class MachineIdentityMismatchError extends Error {
@@ -80,7 +81,42 @@ function responseHeader(headers: unknown, key: string): string | undefined {
 
 const machinePath = (id: string) => `/machines/${encodeURIComponent(MachineIdSchema.parse(id))}`;
 
+function validateHistoryPage(
+  result: { page: number; size: number; content: { machineId: string }[] },
+  machineId: string, params: { from: string; to: string; page: number; size: number }, timestamps: string[],
+) {
+  if (result.page !== params.page || result.size !== params.size
+    || result.content.some((row) => row.machineId.toLowerCase() !== machineId.toLowerCase())
+    || timestamps.some((time) => Date.parse(time) < Date.parse(params.from) || Date.parse(time) >= Date.parse(params.to))) {
+    throw new Error("Dữ liệu lịch sử không khớp máy, thời gian hoặc trang yêu cầu.");
+  }
+}
+
 export const machinesApi =  {
+  async listBrewRecords(id: string, input: MachineHistoryParams, signal?: AbortSignal) {
+    const path = machinePath(id), params = MachineHistoryParamsSchema.parse(input);
+    const response = await axiosClient.get<unknown>(`${path}/brew-records`, {
+      baseURL: DOLORES_API_BASE_URL, params: { ...params, sort: "brewedAt,desc" }, signal,
+    });
+    const result = MachineBrewRecordsPageSchema.parse(response.data);
+    validateHistoryPage(result, id, params, result.content.map((row) => row.brewedAt));
+    return result;
+  },
+  async listCleaningRecords(id: string, input: MachineHistoryParams, signal?: AbortSignal) {
+    const path = machinePath(id), params = MachineHistoryParamsSchema.parse(input);
+    const response = await axiosClient.get<unknown>(`${path}/cleaning-records`, {
+      baseURL: DOLORES_API_BASE_URL, params: { ...params, sort: "startedAt,desc" }, signal,
+    });
+    const result = MachineCleaningRecordsPageSchema.parse(response.data);
+    validateHistoryPage(result, id, params, result.content.map((row) => row.startedAt));
+    return result;
+  },
+  async getDeviceIdentity(id: string, signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>(`${machinePath(id)}/telemetry-device-identity`, { baseURL: DOLORES_API_BASE_URL, signal });
+    const identity = MachineDeviceIdentitySchema.parse(response.data);
+    if (identity.machineId !== id || identity.status !== "ACTIVE") throw new MachineIdentityMismatchError();
+    return identity;
+  },
   async provisionDeviceIdentity(id: string, input: { deviceId: string }) {
     const machineId = MachineIdSchema.parse(id);
     const request = MachineDeviceIdentityRequestSchema.parse(input);

@@ -45,6 +45,8 @@ export const machineCertificatesApi = {
     });
     const blob = response.data;
     if (response.status !== 200 || !(blob instanceof Blob) || !blob.size) throw new Error("Invalid certificate bundle response.");
+    const contentType = blob.type.split(";")[0].trim().toLowerCase();
+    if (contentType !== (format === "zip" ? "application/zip" : "application/json")) throw new Error("Unexpected certificate bundle content type.");
     if (format === "zip") {
       const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
       if (header[0] !== 0x50 || header[1] !== 0x4b || header[2] !== 3 || header[3] !== 4) throw new Error("Invalid certificate ZIP bundle.");

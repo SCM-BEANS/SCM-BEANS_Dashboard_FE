@@ -26,7 +26,7 @@ import { getVietnamToday, MachineCleaningHistoryPanel } from "./machine-cleaning
 import styles from "@/components/machines/machines.module.css";
 import shellStyles from "../customer-shell.module.css";
 
-const tabs = [{ value: "brewing", label: "Pha chế" }, { value: "cleaning", label: "Vệ sinh" }, { value: "connection", label: "Kết nối & thông số" }] as const;
+const tabs = [{ value: "brewing", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Thông số kỹ thuật" }, { value: "cleaning", label: "Vệ sinh" }] as const;
 type Tab = typeof tabs[number]["value"];
 const shiftDay = (day: string, amount: number) => new Date(Date.parse(`${day}T00:00:00Z`) + amount * 86_400_000).toISOString().slice(0, 10);
 
@@ -69,7 +69,7 @@ function AnalyticsFilters({ fromDate, toDate, tab, recipeName, cleaningType, cle
       setError("Kiểm tra lại ngày bắt đầu và ngày kết thúc."); return;
     }
     setError("");
-    onApply({ fromDate: draft.fromDate, toDate: draft.toDate, ...(draft.fromDate !== fromDate || draft.toDate !== toDate ? { brewPage: undefined, cleaningPage: undefined } : {}), ...(tab === "brewing" ? { recipeName: draft.recipeName.trim() || undefined, brewPage: undefined } : { cleaningType: draft.cleaningType || undefined, cleaningStatus: draft.cleaningStatus || undefined, cleaningPage: undefined }) });
+    onApply({ fromDate: draft.fromDate, toDate: draft.toDate, ...(draft.fromDate !== fromDate || draft.toDate !== toDate ? { brewPage: undefined, cleaningPage: undefined } : {}), ...(tab === "history" ? { recipeName: draft.recipeName.trim() || undefined, brewPage: undefined } : tab === "cleaning" ? { cleaningType: draft.cleaningType || undefined, cleaningStatus: draft.cleaningStatus || undefined, cleaningPage: undefined } : {}) });
   };
   return <>
     <div className={styles.operationalQuickRanges} role="group" aria-label="Khoảng ngày xem nhanh">
@@ -81,10 +81,10 @@ function AnalyticsFilters({ fromDate, toDate, tab, recipeName, cleaningType, cle
     <form className={styles.ownerOperationsFilters} onSubmit={apply}>
       <label>Từ ngày<input type="date" required value={draft.fromDate} onChange={(event) => setDraft({ ...draft, fromDate: event.target.value })} /></label>
       <label>Đến ngày<input type="date" required value={draft.toDate} onChange={(event) => setDraft({ ...draft, toDate: event.target.value })} /></label>
-      {tab === "brewing" ? <label>Món pha<input value={draft.recipeName} placeholder="Tất cả món" onChange={(event) => setDraft({ ...draft, recipeName: event.target.value })} /></label> : <>
+      {tab === "history" ? <label>Món pha<input value={draft.recipeName} placeholder="Tất cả món" onChange={(event) => setDraft({ ...draft, recipeName: event.target.value })} /></label> : tab === "cleaning" ? <>
         <label>Loại vệ sinh<select aria-label="Loại vệ sinh" value={draft.cleaningType} onChange={(event) => setDraft({ ...draft, cleaningType: event.target.value })}><option value="">Tất cả</option><option value="STARTUP">Đầu ngày</option><option value="CLOSING">Cuối ngày</option></select></label>
         <label>Kết quả<select aria-label="Kết quả" value={draft.cleaningStatus} onChange={(event) => setDraft({ ...draft, cleaningStatus: event.target.value })}><option value="">Tất cả</option><option value="COMPLETED">Hoàn tất</option><option value="FAILED">Chưa hoàn tất</option><option value="ABORTED">Bị gián đoạn</option></select></label>
-      </>}
+      </> : null}
       <ButtonBar type="submit">Áp dụng bộ lọc</ButtonBar>
     </form>
     {error && <p className={styles.operationalOverviewErrorText} role="alert">{error}</p>}
@@ -122,7 +122,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const analyticsEnabled = ready && Boolean(state && smartIot && activeContract);
   const context: OwnerAnalyticsContext = { machineId, ...(machine.data?.ownerId || activeContract?.ownerId ? { ownerId: machine.data?.ownerId ?? activeContract!.ownerId } : {}), ...(machine.data?.serialNumber ? { machineSerialNumber: machine.data.serialNumber } : {}) };
   const cupCount = useQuery({ queryKey: ["owner-cup-count", subject, machineId, state?.range], queryFn: ({ signal }) => ownerAnalyticsApi.getCupCount({ ...state!.range, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "brewing", retry: false, refetchOnWindowFocus: false });
-  const brew = useQuery({ queryKey: ["owner-brew-history", subject, machineId, state?.brewing], queryFn: ({ signal }) => ownerAnalyticsApi.listBrewRecords({ ...state!.brewing, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "brewing", retry: false, refetchOnWindowFocus: false });
+  const brew = useQuery({ queryKey: ["owner-brew-history", subject, machineId, state?.brewing], queryFn: ({ signal }) => ownerAnalyticsApi.listBrewRecords({ ...state!.brewing, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "history", retry: false, refetchOnWindowFocus: false });
   const cleaning = useQuery({ queryKey: ["owner-cleaning-history", subject, machineId, state?.cleaning], queryFn: ({ signal }) => ownerAnalyticsApi.listCleaningRecords({ ...state!.cleaning, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "cleaning", retry: false, refetchOnWindowFocus: false });
   const heartbeat = useQuery({ queryKey: ["owner-machine-heartbeat", subject, machineId], queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal), enabled: ready && Boolean(state?.tab === "connection" && smartIot && pageVisible), retry: false, refetchInterval: state?.tab === "connection" && pageVisible ? 5_000 : false, refetchIntervalInBackground: false });
   const points = useInfiniteQuery({
@@ -144,7 +144,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
     if (!ready || !state) return;
     if (complianceEnabled) void compliance.refetch();
     if (state.tab === "connection" && smartIot) { void heartbeat.refetch(); void points.refetch(); if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }
-    else if (analyticsEnabled) { if (state.tab === "brewing") { void cupCount.refetch(); void brew.refetch(); } else void cleaning.refetch(); }
+    else if (analyticsEnabled) { if (state.tab === "brewing") void cupCount.refetch(); else if (state.tab === "history") void brew.refetch(); else void cleaning.refetch(); }
   };
   const pending = cupCount.isFetching || brew.isFetching || cleaning.isFetching || compliance.isFetching || heartbeat.isFetching || points.isFetching;
 
@@ -171,18 +171,20 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                       : cupCount.isPending ? <p role="status">Đang tải số ly…</p>
                         : cupCount.data ? <>
                           <section className={styles.operationalMetricGrid} aria-label="Số ly của máy"><article className={styles.operationalMetricCard}><span>Số ly trong khoảng đã chọn</span><strong>{cupCount.data.totalCups.toLocaleString("vi-VN")}</strong><small>{machine.data.serialNumber ?? "Máy đang xem"}</small></article></section>
-                          <section className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày UTC</h2><p>Các cột dùng ngày UTC; tổng số ly vẫn theo khoảng ngày Việt Nam đã chọn.</p>
+                          <div className={styles.monitoringProductionCharts}>
+                          <section className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày</h2><p>Ngày trên biểu đồ theo UTC. Tổng ly tính theo khoảng ngày Việt Nam đã chọn.</p>
                             {cupCount.data.dailyBreakdown.length ? <div className={styles.operationalDailyChart}>{cupCount.data.dailyBreakdown.map((row) => <div key={row.date} className={styles.operationalDailyChartColumn}><strong>{row.cups.toLocaleString("vi-VN")}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${row.cups / maxDailyCups * 100}%` }} /></div><time dateTime={row.date}>{row.date.slice(5).split("-").reverse().join("/")}</time></div>)}</div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}
                           </section>
                           <section className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2>
                             {cupCount.data.recipeBreakdown.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh số ly theo món">{[...cupCount.data.recipeBreakdown].sort((a, b) => b.cups - a.cups).map((row) => <li key={row.recipeName}><span>{row.recipeName}</span><div><span style={{ width: `${row.cups / maxRecipeCups * 100}%` }} /></div><strong>{row.cups.toLocaleString("vi-VN")} ly</strong></li>)}</ul> : <p className={styles.monitoringEmpty}>Chưa có dữ liệu theo món.</p>}
                           </section>
+                          </div>
                         </> : null}
-                    <MachineBrewHistoryPanel data={brew.data} loading={brew.isPending} error={brew.isError ? getApiErrorMessage(brew.error) : undefined} onRetry={() => void brew.refetch()} onPageChange={(page) => navigate({ brewPage: String(page) })} />
-                  </> : <MachineCleaningHistoryPanel data={cleaning.data} loading={cleaning.isPending} error={cleaning.isError ? getApiErrorMessage(cleaning.error) : undefined} onRetry={() => void cleaning.refetch()} onPageChange={(page) => navigate({ cleaningPage: String(page) })} />}
+                  </> : state.tab === "history" ? <MachineBrewHistoryPanel data={brew.data} loading={brew.isPending} error={brew.isError ? getApiErrorMessage(brew.error) : undefined} onRetry={() => void brew.refetch()} onPageChange={(page) => navigate({ brewPage: String(page) })} />
+                  : <MachineCleaningHistoryPanel data={cleaning.data} loading={cleaning.isPending} error={cleaning.isError ? getApiErrorMessage(cleaning.error) : undefined} onRetry={() => void cleaning.refetch()} onPageChange={(page) => navigate({ cleaningPage: String(page) })} />}
         </> : smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
-          <SmartIotPanel title="Lịch sử thông số"><TelemetryHistoryPanel range={state.telemetry} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={state.field} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /></SmartIotPanel>
+          <SmartIotPanel title="Thông số kỹ thuật"><TelemetryHistoryPanel range={state.telemetry} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={state.field} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /></SmartIotPanel>
           {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel
             page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={machineId} canDecide={false}
             loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}

@@ -17,7 +17,8 @@ function load(relativePath, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (name) => Object.hasOwn(mocks, name) ? mocks[name] : require(name);
+  const mockedRequire = (name) => Object.hasOwn(mocks, name) ? mocks[name]
+    : name.startsWith('@/schema/') ? load(`src/${name.slice(2)}.ts`, mocks) : require(name);
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports;
 }
@@ -163,6 +164,8 @@ test('JSON errors and malformed/empty bundles cannot be saved as certificate fil
   await assert.rejects(api.download(machineId, certificateId, 'zip'));
   blob = new Blob([], { type: 'application/zip' });
   await assert.rejects(api.download(machineId, certificateId, 'zip'));
+  blob = new Blob([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], { type: 'text/html' });
+  await assert.rejects(api.download(machineId, certificateId, 'zip'));
 });
 
 test('certificate denial, outage and cancellation propagate once without adapter fallback', async () => {
@@ -185,6 +188,35 @@ function identityApi(client) {
     '@/schema/profiles.schema': load('src/schema/profiles.schema.ts'),
   }).machinesApi;
 }
+
+test('active identity GET validates machine, ACTIVE status and cancellation without swallowing 404', async () => {
+  const calls = [];
+  let data = { id: certificateId, machineId, deviceId: 'serial-test', status: 'ACTIVE', createdAt: '2026-11-07T10:00:00' };
+  let failure;
+  const api = identityApi({ get: async (...args) => { calls.push(args); if (failure) throw failure; return { status: 200, data }; } });
+  const signal = new AbortController().signal;
+  assert.equal(typeof api.getDeviceIdentity, 'function');
+  assert.deepEqual(await api.getDeviceIdentity(machineId, signal), data);
+  assert.equal(calls[0][0], `/machines/${machineId}/telemetry-device-identity`);
+  assert.equal(calls[0][1].signal, signal);
+  await assert.rejects(api.getDeviceIdentity('serial'));
+  assert.equal(calls.length, 1);
+  data = { ...data, machineId: otherMachineId };
+  await assert.rejects(api.getDeviceIdentity(machineId));
+  data = { ...data, machineId, status: 'REVOKED' };
+  await assert.rejects(api.getDeviceIdentity(machineId));
+  for (const status of [404, 403, 503]) {
+    failure = Object.assign(new Error('read failed'), { response: { status } });
+    await assert.rejects(api.getDeviceIdentity(machineId), (error) => error === failure);
+  }
+});
+
+test('certificate detail preserves unavailable public PEM without accepting private keys', async () => {
+  const data = { ...certificate(), clientCrtPem: null, caCrtPem: null };
+  const api = certificateApi({ get: async () => ({ data }) });
+  assert.deepEqual(await api.getById(machineId, certificateId), data);
+  assert.equal(schemas().MachineCertificateDetailSchema.safeParse({ ...data, clientKeyPem: 'PRIVATE' }).success, false);
+});
 
 test('device identity schema rejects blank/oversized IDs and preserves explicit server identity', () => {
   const s = load('src/schema/machines.schema.ts');
@@ -213,4 +245,98 @@ test('device identity registration validates input/status/machine and revoke sen
   await assert.rejects(api.provisionDeviceIdentity(machineId, { deviceId: 'dev-test' }));
   await api.revokeDeviceIdentity(machineId);
   assert.equal(calls.at(-1)[0], `/machines/${machineId}/telemetry-device-identity`);
+});
+
+const historyRange = { from: '2026-11-01T00:00:00Z', to: '2026-11-09T00:00:00Z' };
+const historyBrew = { id: certificateId, eventId: otherCertificateId, machineId, machineSerialNumber: 'TEST-KIOSK', recipeName: 'Espresso', brewedAt: '2026-11-06T08:00:00Z', receivedAt: null };
+const historyCleaning = { id: certificateId, eventId: otherCertificateId, machineId, machineSerialNumber: 'TEST-KIOSK', cleaningType: 'CLOSING', startedAt: '2026-11-06T08:00:00Z', finishedAt: '2026-11-06T08:15:00Z', coffeeCleaned: true, milkCleaned: false, heatingCompleted: true, groupheadPurged: true, status: 'COMPLETED', notes: null };
+const historySpringPage = (content, patch = {}) => ({ content, number: 0, size: 20, totalElements: content.length, totalPages: content.length ? 1 : 0, first: true, last: true, ...patch });
+
+test('machine history date inputs normalize inclusive UTC dates while ISO instants retain exclusive end', () => {
+  const s = load('src/schema/owner-analytics.schema.ts');
+  const result = s.MachineHistoryParamsSchema.parse({ from: '2026-11-01', to: '2026-11-08' });
+  assert.equal(Date.parse(result.from), Date.parse(historyRange.from));
+  assert.equal(Date.parse(result.to), Date.parse(historyRange.to));
+  assert.equal(result.page, 0);
+  assert.equal(result.size, 20);
+  const iso = s.MachineHistoryParamsSchema.parse(historyRange);
+  assert.equal(Date.parse(iso.to), Date.parse(historyRange.to));
+  for (const input of [
+    { from: '2026-02-30', to: '2026-03-01' },
+    { from: '2026-11-09', to: '2026-11-08' },
+    { ...historyRange, ownerId: otherMachineId },
+    { ...historyRange, page: -1 },
+    { ...historyRange, size: 101 },
+    { ...historyRange, sort: 'ownerId,asc' },
+  ]) assert.equal(s.MachineHistoryParamsSchema.safeParse(input).success, false);
+});
+
+test('machine brew and cleaning Spring pages normalize number to page without accepting broken pagination', () => {
+  const s = load('src/schema/owner-analytics.schema.ts');
+  for (const [schema, row] of [[s.MachineBrewRecordsPageSchema, historyBrew], [s.MachineCleaningRecordsPageSchema, historyCleaning]]) {
+    const result = schema.parse(historySpringPage([row]));
+    assert.deepEqual(result, { content: [row], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true });
+    assert.deepEqual(schema.parse(historySpringPage([])).content, []);
+    for (const bad of [
+      { content: [row] },
+      historySpringPage([row], { number: undefined, page: 0 }),
+      historySpringPage([row], { size: 0 }),
+      historySpringPage([row], { totalPages: 9 }),
+      historySpringPage([row], { first: false }),
+      historySpringPage([{ ...row, machineId: 'not-a-uuid' }]),
+    ]) assert.equal(schema.safeParse(bad).success, false);
+  }
+});
+
+test('operator machine histories use scoped read endpoints with fixed sorting, normalized range and signal', async () => {
+  const calls = [];
+  const signal = new AbortController().signal;
+  const api = identityApi({ get: async (...args) => {
+    calls.push(args);
+    return { data: historySpringPage([args[0].endsWith('/brew-records') ? historyBrew : historyCleaning]) };
+  } });
+  const brew = await api.listBrewRecords(machineId, { from: '2026-11-01', to: '2026-11-08' }, signal);
+  const cleaning = await api.listCleaningRecords(machineId, { from: '2026-11-01', to: '2026-11-08' }, signal);
+  assert.equal(brew.page, 0); assert.deepEqual(brew.content, [historyBrew]);
+  assert.equal(cleaning.page, 0); assert.deepEqual(cleaning.content, [historyCleaning]);
+  assert.deepEqual(calls.map(([url]) => url), [`/machines/${machineId}/brew-records`, `/machines/${machineId}/cleaning-records`]);
+  for (const [, config] of calls) {
+    assert.equal(config.baseURL, baseURL);
+    assert.equal(config.signal, signal);
+    assert.equal(Date.parse(config.params.from), Date.parse(historyRange.from));
+    assert.equal(Date.parse(config.params.to), Date.parse(historyRange.to));
+    assert.equal(config.params.page, 0); assert.equal(config.params.size, 20);
+    assert.equal(Object.hasOwn(config.params, 'ownerId'), false);
+  }
+  assert.equal(calls[0][1].params.sort, 'brewedAt,desc');
+  assert.equal(calls[1][1].params.sort, 'startedAt,desc');
+});
+
+test('machine histories reject foreign machines, out-of-range rows and incorrect requested pages', async () => {
+  let calls = 0, data = historySpringPage([historyBrew]);
+  const api = identityApi({ get: async () => { calls++; return { data }; } });
+  await assert.rejects(api.listBrewRecords('SERIAL', historyRange));
+  await assert.rejects(api.listCleaningRecords(machineId, { ...historyRange, size: 101 }));
+  assert.equal(calls, 0);
+  for (const bad of [
+    historySpringPage([{ ...historyBrew, machineId: otherMachineId }]),
+    historySpringPage([{ ...historyBrew, brewedAt: historyRange.to }]),
+    historySpringPage([{ ...historyBrew, brewedAt: '2026-10-31T23:59:59Z' }]),
+    historySpringPage([], { number: 1, first: false }),
+    historySpringPage([historyBrew], { size: 50 }),
+  ]) { data = bad; await assert.rejects(api.listBrewRecords(machineId, historyRange)); }
+  for (const row of [
+    { ...historyCleaning, machineId: otherMachineId },
+    { ...historyCleaning, startedAt: historyRange.to },
+  ]) { data = historySpringPage([row]); await assert.rejects(api.listCleaningRecords(machineId, historyRange)); }
+});
+
+test('machine history scope denials and unavailable storage propagate without retries or fallback', async () => {
+  for (const method of ['listBrewRecords', 'listCleaningRecords']) for (const status of [404, 503]) {
+    let calls = 0;
+    const failure = Object.assign(new Error('history unavailable'), { response: { status } });
+    const api = identityApi({ get: async () => { calls++; throw failure; } });
+    await assert.rejects(api[method](machineId, historyRange), (error) => error === failure);
+    assert.equal(calls, 1);
+  }
 });

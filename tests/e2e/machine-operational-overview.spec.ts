@@ -79,7 +79,7 @@ function tokenFor(role: string, subject = ownerId) {
   return `header.${claims}.signature`;
 }
 
-async function installMockApi(page: Page, role: RoleCase, requests: string[], options: { cleaningPages?: boolean; cupError?: boolean } = {}) {
+async function installMockApi(page: Page, role: RoleCase, requests: string[], options: { cleaningPages?: boolean; cupError?: boolean; machineHistoryPages?: boolean } = {}) {
   await page.route("**/api/dolores/v1/**", async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace(/^\/api\/dolores\/v1/, "");
@@ -128,6 +128,20 @@ async function installMockApi(page: Page, role: RoleCase, requests: string[], op
       const multiPage = isCleaning && options.cleaningPages && !url.searchParams.has("status");
       const content = multiPage && pageNumber === 0 ? Array.from({ length: size }, (_, index) => ({ ...record, id: `f2000000-0000-4000-8000-${String(index).padStart(12, "0")}` })) : [record];
       body = { content, page: pageNumber, size, totalElements: multiPage ? size + 1 : 1, totalPages: multiPage ? 2 : 1, first: pageNumber === 0, last: !multiPage || pageNumber === 1 };
+    } else if (path === `/machines/${machineId}/brew-records` || path === `/machines/${machineId}/cleaning-records`) {
+      const number = Number(url.searchParams.get("page") ?? 0), size = Number(url.searchParams.get("size") ?? 20);
+      const totalElements = options.machineHistoryPages ? 101 : 1;
+      const timestamp = new Date(Date.parse(url.searchParams.get("from")!) + 60_000).toISOString();
+      const content = Array.from({ length: Math.max(0, Math.min(size, totalElements - number * size)) }, (_, offset) => {
+        const index = number * size + offset;
+        const base = { id: `f2000000-0000-4000-8000-${String(index).padStart(12, "0")}`, eventId: `f3000000-0000-4000-8000-${String(index).padStart(12, "0")}`, machineId, machineSerialNumber: machine.serialNumber };
+        return path.endsWith("cleaning-records")
+          ? { ...base, cleaningType: "CLOSING", startedAt: timestamp, finishedAt: null,
+            coffeeCleaned: true, milkCleaned: false, heatingCompleted: true, groupheadPurged: true,
+            status: "ABORTED", notes: "Đã dừng chu trình vệ sinh" }
+          : { ...base, recipeName: index === 100 ? "Latte" : "Espresso", brewedAt: timestamp, receivedAt: null };
+      });
+      body = { content, number, size, totalElements, totalPages: Math.ceil(totalElements / size), first: number === 0, last: (number + 1) * size >= totalElements };
     } else if (path.includes("/heartbeats/latest")) {
       body = { machineId, status: "ONLINE", evaluatedAt: "2026-11-01T09:00:00Z", lastSeenAt: "2026-11-01T09:00:00Z" };
     } else if (path.endsWith("/points")) {
@@ -234,6 +248,47 @@ test.describe("machine operational overview cross-role presentation", () => {
 
 const ownerOperationsPath = `/dashboard/machines/${machineId}/operations`;
 
+test("Owner separates production, brew history and technical data without cross-loading APIs", async ({ page, context }) => {
+  await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+  const requests: string[] = [];
+  await installMockApi(page, roleCases[0], requests);
+  await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+  await expect(page.getByRole("heading", { name: "Số ly theo ngày", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Số ly theo món", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lịch sử pha chế", exact: true })).toHaveCount(0);
+  expect(requests.some((url) => url.startsWith("/owner/brew-records"))).toBe(false);
+  await page.getByRole("tab", { name: "Lịch sử pha", exact: true }).click();
+  await expect(page).toHaveURL(/tab=history/);
+  await expect(page.getByRole("heading", { name: "Lịch sử pha chế", exact: true })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Món", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Số ly theo ngày", exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("tab", { name: "Lịch sử pha", exact: true })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Thông số kỹ thuật", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Thông số kỹ thuật", exact: true })).toBeVisible();
+});
+
+test("Technical selector labels operating measurements and groups raw sensors as advanced", async ({ page, context }) => {
+  await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+  await installMockApi(page, roleCases[1], []);
+  await page.route("**/api/dolores/v1/telemetry-query/**/points?**", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+    { machineId, timestamp: "2026-11-06T01:00:00Z", field: "ads1115_ain0", value: 1000 },
+    { machineId, timestamp: "2026-11-06T01:00:00Z", field: "boiler_c", value: 93 },
+    { machineId, timestamp: "2026-11-06T01:00:00Z", field: "total_volume_out_ml", value: 500 },
+  ]) }));
+  await page.goto(roleCases[1].operationsPath);
+  const selector = page.getByLabel("Thông số đang xem");
+  await expect(selector).toHaveValue("boiler_c");
+  await expect(selector.locator('option[value="boiler_c"]')).toHaveText("Nhiệt độ nồi hơi (°C)");
+  await expect(selector.locator('optgroup[label="Nâng cao — cảm biến & điều khiển"] option')).toHaveCount(1);
+  await selector.selectOption("ads1115_ain0");
+  await expect(page.getByText("Dùng để chẩn đoán kỹ thuật", { exact: false })).toBeVisible();
+  await selector.selectOption("total_volume_out_ml");
+  await expect(page.getByText("Thể tích nước không phải số ly pha chế.", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalOverflow(page, 390, "technical selector");
+});
+
 test("Admin telemetry chart and table preserve numeric scale, text records and URL field selection", async ({ page, context }) => {
   await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
   const requests: string[] = [];
@@ -273,6 +328,98 @@ for (const role of roleCases.filter((item) => item.claim !== "owner")) {
   });
 }
 const fixedDates = "fromDate=2026-11-06&toDate=2026-11-06";
+
+test.describe("operator machine-scoped records", () => {
+  for (const role of roleCases.filter((item) => item.claim !== "owner")) {
+    test(`${role.label} reads brew and cleaning histories without Owner Analytics and preserves URLs`, async ({ page, context }) => {
+      await context.addCookies([{ name: "access_token", value: tokenFor(role.claim), domain: "127.0.0.1", path: "/" }]);
+      const requests: string[] = [];
+      await installMockApi(page, role, requests, { machineHistoryPages: true });
+      await page.goto(`${role.operationsPath}?tab=history&${fixedDates}&keep=existing`);
+      await expect(page.getByRole("heading", { name: "Lịch sử từng lần pha", exact: true })).toBeVisible();
+      await expect(page.getByRole("cell", { name: "Espresso", exact: true }).first()).toBeVisible();
+      const brewRequest = requests.find((path) => path.startsWith(`/machines/${machineId}/brew-records?`));
+      expect(brewRequest).toBeTruthy();
+      const params = new URLSearchParams(brewRequest!.split("?", 2)[1]);
+      expect(Date.parse(params.get("from")!)).toBe(Date.parse("2026-11-05T17:00:00Z"));
+      expect(Date.parse(params.get("to")!)).toBe(Date.parse("2026-11-06T17:00:00Z"));
+      expect(params.get("sort")).toBe("brewedAt,desc");
+      expect(params.has("ownerId")).toBe(false);
+      expect(requests.some((path) => path.includes("/cleaning-records?") || path.startsWith("/owner/"))).toBe(false);
+      await page.getByRole("button", { name: "Trang sau", exact: true }).click();
+      await expect(page).toHaveURL(/recordPage=1/);
+      await expect.poll(() => requests.some((path) => path.includes("/brew-records?") && new URLSearchParams(path.split("?", 2)[1]).get("page") === "1")).toBe(true);
+      await page.reload();
+      await expect(page.getByRole("tab", { name: "Lịch sử pha", exact: true })).toHaveAttribute("aria-selected", "true");
+      await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Lịch sử vệ sinh", exact: true })).toBeVisible();
+      await expect(page.getByRole("cell", { name: "Cuối ngày", exact: true }).first()).toBeVisible();
+      await expect(page.getByRole("cell", { name: "Bị gián đoạn", exact: true }).first()).toBeVisible();
+      await page.locator("summary").filter({ hasText: "Xem nội dung" }).first().click();
+      await expect(page.getByText("Đã dừng chu trình vệ sinh", { exact: true }).first()).toBeVisible();
+      await expect(page).not.toHaveURL(/recordPage=/);
+      await expect(page).toHaveURL(/keep=existing/);
+      const cleaningRequest = requests.find((path) => path.includes(`/machines/${machineId}/cleaning-records?`));
+      expect(new URLSearchParams(cleaningRequest!.split("?", 2)[1]).get("sort")).toBe("startedAt,desc");
+      await page.goBack();
+      await expect(page.getByRole("tab", { name: "Lịch sử pha", exact: true })).toHaveAttribute("aria-selected", "true");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expectNoHorizontalOverflow(page, 390, `${role.label} brew history`);
+      expect(requests.some((path) => path.startsWith("/owner/"))).toBe(false);
+    });
+
+    test(`${role.label} production explicitly loads remaining records before complete recipe statistics`, async ({ page, context }) => {
+      await context.addCookies([{ name: "access_token", value: tokenFor(role.claim), domain: "127.0.0.1", path: "/" }]);
+      const requests: string[] = [];
+      await installMockApi(page, role, requests, { machineHistoryPages: true });
+      await page.goto(`${role.operationsPath}?tab=production&${fixedDates}`);
+      await expect(page.getByRole("heading", { name: "Lần pha theo ngày", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Lần pha theo món", exact: true })).toBeVisible();
+      await expect(page.getByText(/100\s*\/\s*101/)).toBeVisible();
+      expect(requests.filter((path) => path.includes("/brew-records?")).length).toBe(1);
+      await expect(page.getByText("Latte", { exact: true })).toHaveCount(0);
+      await page.getByRole("button", { name: "Tải thêm dữ liệu biểu đồ", exact: true }).click();
+      await expect(page.getByText("Latte", { exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Tải thêm dữ liệu biểu đồ", exact: true })).toHaveCount(0);
+      expect(requests.filter((path) => path.includes("/brew-records?")).length).toBe(2);
+      expect(requests.some((path) => path.startsWith("/owner/") || path.includes("/points?"))).toBe(false);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expectNoHorizontalOverflow(page, 390, `${role.label} production`);
+    });
+  }
+
+  test("history 404 and production 503 show errors without invented zero statistics", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+    await installMockApi(page, roleCases[1], []);
+    let status = 404;
+    await page.route("**/api/dolores/v1/machines/*/brew-records?**", async (route) => route.fulfill({
+      status, contentType: "application/json", body: JSON.stringify({ message: "Unavailable" }),
+    }));
+    await page.goto(`${roleCases[1].operationsPath}?tab=history&${fixedDates}`);
+    await expect(page.getByRole("alert").filter({ hasText: /không tìm thấy|Không tìm thấy/ }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Espresso", exact: true })).toHaveCount(0);
+    status = 503;
+    await page.getByRole("tab", { name: "Sản lượng", exact: true }).click();
+    await expect(page.getByRole("alert").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Lần pha theo ngày", exact: true })).toHaveCount(0);
+    await expect(page.getByText("0", { exact: true })).toHaveCount(0);
+  });
+
+  test("invalid history filters and denied machine lookup prevent scoped history requests", async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor("moderator"), domain: "127.0.0.1", path: "/" }]);
+    const requests: string[] = [];
+    await installMockApi(page, roleCases[2], requests);
+    for (const suffix of ["fromDate=2026-02-30&toDate=2026-03-01", `${fixedDates}&recordPage=-1`]) {
+      await page.goto(`${roleCases[2].operationsPath}?tab=history&${suffix}`);
+      await expect(page.getByRole("alert").first()).toBeVisible();
+      expect(requests.some((path) => path.includes("/brew-records?") || path.includes("/cleaning-records?"))).toBe(false);
+    }
+    await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ message: "Not found" }) }));
+    await page.goto(`${roleCases[2].operationsPath}?tab=history&${fixedDates}`);
+    await expect(page.getByRole("alert").first()).toBeVisible();
+    expect(requests.some((path) => path.includes("/brew-records?") || path.includes("/cleaning-records?"))).toBe(false);
+  });
+});
 
 const offlineReviewId = "f3000000-0000-4000-8000-000000000001";
 const offlineReview = {
@@ -380,13 +527,14 @@ test.describe("Owner operations analytics and cleaning", () => {
     await installMockApi(page, roleCases[0], requests);
     await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}&brewPage=2&keep=existing`);
     await expect(page.locator("#machine-operational-overview-title")).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Pha chế", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Sản lượng", exact: true })).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => requests.some((path) => path.startsWith("/owner/cup-count?"))).toBe(true);
     const cupRequest = new URLSearchParams(requests.find((path) => path.startsWith("/owner/cup-count?"))!.split("?", 2)[1]);
     expect(cupRequest.get("machineId")).toBe(machineId);
     expect(Date.parse(cupRequest.get("from")!)).toBe(Date.parse("2026-11-05T17:00:00Z"));
     expect(Date.parse(cupRequest.get("to")!)).toBe(Date.parse("2026-11-06T17:00:00Z"));
     expect(cupRequest.has("ownerId")).toBe(false);
+    await page.getByRole("tab", { name: "Lịch sử pha", exact: true }).click();
     await page.getByLabel("Món pha", { exact: true }).fill("Cappuccino");
     await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
     await expect.poll(() => new URL(page.url()).searchParams.get("recipeName")).toBe("Cappuccino");
@@ -397,7 +545,7 @@ test.describe("Owner operations analytics and cleaning", () => {
     await page.reload();
     await expect(page.getByRole("tab", { name: "Vệ sinh", exact: true })).toHaveAttribute("aria-selected", "true");
     await page.goBack();
-    await expect(page.getByRole("tab", { name: "Pha chế", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Lịch sử pha", exact: true })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByLabel("Món pha", { exact: true })).toHaveValue("Cappuccino");
     await page.goForward();
     await expect(page.getByRole("tab", { name: "Vệ sinh", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -430,7 +578,7 @@ test.describe("Owner operations analytics and cleaning", () => {
     const requests: string[] = [];
     await installMockApi(page, roleCases[0], requests, { cupError: true });
     await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
-    await expect(page.getByRole("tab", { name: "Pha chế", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Sản lượng", exact: true })).toBeVisible();
     await expect(page.getByRole("alert").filter({ hasText: /không|unavailable|thử lại/i }).first()).toBeVisible();
     await expect(page.getByText("0", { exact: true })).toHaveCount(0);
     expect(requests.some((path) => path.startsWith("/dashboard/overview?"))).toBe(false);
@@ -458,12 +606,11 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) }).catch(() => {});
       oldSettled = true;
     });
-    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await page.goto(`${ownerOperationsPath}?tab=history&${fixedDates}`);
     await expect.poll(() => oldStarted).toBe(true);
-    await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
     switched = true;
     await context.addCookies([{ name: "access_token", value: tokenFor("owner", "f4000000-0000-4000-8000-000000000001"), domain: "127.0.0.1", path: "/" }]);
-    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `${ownerOperationsPath}?tab=brewing&${fixedDates}&account=second`);
+    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `${ownerOperationsPath}?tab=history&${fixedDates}&account=second`);
     await expect(page.getByRole("alert").filter({ hasText: /không có quyền/ }).first()).toBeVisible();
     releaseOld();
     await expect.poll(() => oldSettled).toBe(true);
@@ -506,11 +653,10 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [record], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true }) }).catch(() => {});
       if (isOld) oldSettled = true;
     });
-    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await page.goto(`${ownerOperationsPath}?tab=history&${fixedDates}`);
     await expect.poll(() => oldStarted).toBe(true);
-    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `/dashboard/machines/${nextMachine.id}/operations?tab=brewing&${fixedDates}`);
+    await page.evaluate((url) => (window as unknown as { next: { router: { push: (path: string) => Promise<boolean> } } }).next.router.push(url), `/dashboard/machines/${nextMachine.id}/operations?tab=history&${fixedDates}`);
     await expect(page.getByRole("cell", { name: "NEW_MACHINE_RECIPE", exact: true })).toBeVisible();
-    await expect(page.getByText("37", { exact: true }).first()).toBeVisible();
     releaseOld();
     await expect.poll(() => oldSettled).toBe(true);
     await expect(page.getByText("STALE_MACHINE_RECIPE", { exact: true })).toHaveCount(0);
@@ -533,7 +679,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ content: [record], page: 0, size: 20, totalElements: 1, totalPages: 1, first: true, last: true }) }).catch(() => {});
       if (isOld) oldSettled = true;
     });
-    await page.goto(`${ownerOperationsPath}?tab=brewing&${fixedDates}`);
+    await page.goto(`${ownerOperationsPath}?tab=history&${fixedDates}`);
     await expect.poll(() => oldStarted).toBe(true);
     await page.getByLabel("Từ ngày", { exact: true }).fill("2026-11-07");
     await page.getByLabel("Đến ngày", { exact: true }).fill("2026-11-07");
@@ -627,7 +773,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
     await expect(page.locator('[aria-labelledby="owner-cleaning-history-title"]').getByRole("alert")).toBeVisible();
     await expect(page.getByText("Chưa có bản ghi vệ sinh trong khoảng đã chọn.", { exact: true })).toHaveCount(0);
-    await page.getByRole("tab", { name: "Pha chế", exact: true }).click();
+    await page.getByRole("tab", { name: "Sản lượng", exact: true }).click();
     await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("0", { exact: true })).toHaveCount(0);
   });
@@ -640,7 +786,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
       await page.route(`**/api/dolores/v1/machines/${machineId}`, async (route) => { await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...machine, machineType }) }); });
       await page.goto(`${ownerOperationsPath}?tab=connection&${fixedDates}`);
       await expect(page.getByText(machineType === "CONVENTIONAL" ? "Máy thường không có dữ liệu kết nối và thông số IoT." : "Chưa xác nhận loại máy để xem dữ liệu kết nối và thông số IoT.", { exact: true })).toBeVisible();
-      await page.getByRole("tab", { name: "Pha chế", exact: true }).click();
+      await page.getByRole("tab", { name: "Sản lượng", exact: true }).click();
       await expect(page.getByText("Máy này chưa được xác nhận là Smart IoT để xem dữ liệu pha chế và vệ sinh.", { exact: true })).toBeVisible();
       expect(requests.some((path) => path.startsWith("/owner/") || path.includes("/heartbeats/latest") || path.includes("/points") || path.startsWith("/offline-violation-reviews"))).toBe(false);
     });

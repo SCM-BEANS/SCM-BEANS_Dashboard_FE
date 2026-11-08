@@ -38,7 +38,7 @@ function formatDate(value: string) {
 
 export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
   const [deleting, setDeleting] = useState<MachineCertificate | null>(null);
-  const detail = props.detail?.id === props.selectedCertificateId ? props.detail : undefined;
+  const detail = !props.error && props.detail?.id === props.selectedCertificateId ? props.detail : undefined;
 
   return <SmartIotPanel title="Chứng chỉ kết nối">
     <div className={styles.monitoringChartToolbar}>
@@ -50,7 +50,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
       </label>
       <div className={styles.telemetryRangePresets}>
         <ButtonBar disabled={props.busy || props.loading} onClick={props.onRefresh}>Làm mới</ButtonBar>
-        <ButtonBar variant="primary" disabled={props.busy || props.loading || props.issueBlocked} onClick={props.onIssue}>Phát hành chứng chỉ</ButtonBar>
+        <ButtonBar variant="primary" disabled={props.busy || props.loading || props.issueBlocked || Boolean(props.error)} onClick={props.onIssue}>Phát hành chứng chỉ</ButtonBar>
       </div>
     </div>
     {props.actionError && <p className={styles.telemetryError} role="alert">{props.actionError}</p>}
@@ -69,7 +69,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
             <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(item)}>Xóa chứng chỉ</ButtonBar>
           </div> },
         ]} />}
-    {props.page && <div className={styles.telemetryRangePresets}>
+    {props.page && !props.error && <div className={styles.telemetryRangePresets}>
       <ButtonBar disabled={props.busy || props.loading || props.page.first} onClick={() => props.onPageChange(props.pageNumber - 1)}>Trang trước</ButtonBar>
       <span>Trang {props.pageNumber + 1} / {Math.max(1, props.page.totalPages)}</span>
       <ButtonBar disabled={props.busy || props.loading || props.page.last} onClick={() => props.onPageChange(props.pageNumber + 1)}>Trang sau</ButtonBar>
@@ -81,10 +81,10 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
           <dl className={styles.operationalMetricGrid}>
             {[["Tên thiết bị", detail.commonName], ["Tổ chức", detail.organization], ["SPIFFE ID", detail.spiffeId], ["Dấu vân tay", detail.fingerprint]].map(([label, value]) => <div className={styles.operationalMetricCard} key={label}><dt>{label}</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{value ?? "—"}</dd></div>)}
           </dl>
-          <details><summary>Chứng chỉ công khai</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.clientCrtPem}</pre></details>
-          <details><summary>Chứng chỉ CA</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.caCrtPem}</pre></details>
+          {detail.clientCrtPem ? <details><summary>Chứng chỉ công khai</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.clientCrtPem}</pre></details> : <p>Chứng chỉ công khai hiện chưa khả dụng.</p>}
+          {detail.caCrtPem ? <details><summary>Chứng chỉ CA</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.caCrtPem}</pre></details> : <p>Chứng chỉ CA hiện chưa khả dụng.</p>}
         </div>}
-    {deleting && <NotificationDialog variant="confirm" title="Xóa chứng chỉ?" description={<>Chứng chỉ <strong>{deleting.certificateSerial ?? deleting.id}</strong> và bộ tệp kết nối liên quan sẽ bị xóa khỏi hệ thống.</>}
+    {deleting && !props.error && <NotificationDialog variant="confirm" title="Xóa chứng chỉ?" description={<>Chứng chỉ <strong>{deleting.certificateSerial ?? deleting.id}</strong> và bộ tệp kết nối liên quan sẽ bị xóa khỏi hệ thống.</>}
       primaryAction={{ label: "Xóa chứng chỉ", disabled: props.busy, onClick: () => { props.onDelete(deleting.id); setDeleting(null); } }}
       secondaryAction={{ label: "Hủy", disabled: props.busy, onClick: () => setDeleting(null) }}
       onClose={() => { if (!props.busy) setDeleting(null); }} closeOnEscape={!props.busy} />}

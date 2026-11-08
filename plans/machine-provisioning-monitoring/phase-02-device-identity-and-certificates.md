@@ -1,20 +1,33 @@
 # Phase 02 - Device identity and machine certificates
 
-Status: active - enabled certificate capabilities verified; G1 identity readback pending
+Status: FE verified and review APPROVED; deployed Admin GET/schema verified; live credential mutations and full grant matrix deferred
+
+## Current implementation - a6b3da5 specification, 2026-11-07
+
+This section supersedes the historical 4adc8a1 findings below. Backend commit a6b3da502bc7173d71f73f0fd2ad0a22b3285027 was inspected read-only with git show; deployment of that commit is not verified.
+
+- G1 contract is now available: identity GET returns the active mapping. FE adapter validates UUID, matching machineId and ACTIVE status and forwards abort signals. Admin/Technician read it only after successful machine detail loading; 404 is represented as no active mapping within that context.
+- Admin registers/revokes with readback reconciliation; revocation targets the displayed machine/mapping in a confirmation. Unknown mutation results cannot blindly repeat before GET. Technician identity UI is read-only.
+- Identity and certificate routes now both require explicit backend selection and never fall back to another environment. Existing general API auto-selection is preserved. No environment files changed.
+- Certificate issuance is blocked while identity is unavailable or its active deviceId differs from the machine serial, addressing the documented backend insertion sequence issue without auto-revoking/replacing a custom mapping. Issuance also refreshes identity because BE may create the serial mapping.
+- Nullable public client/CA PEM is represented as unavailable; private keys remain rejected from detail schemas. ZIP/JSON downloads validate MIME and content and remain transient.
+- Source a6b3da5 adds certificate per-machine Technician authorization and certificate-specific Infisical keys. These supersede the previous source blockers, but real-server denied scope and storage isolation remain unverified.
+- Verification: targeted Node49/49; machine operational/provisioning Playwright40/40 (including9 provisioning cases); TypeScript, focused ESLint and production build passed. No live mutation, commit or push.
+- Independent code review: APPROVED for the FE diff, no HIGH/CRITICAL findings; reviewer reran contract/proxy20/20 and focused ESLint. Human phase approval remains pending.
 
 ## Deferred verification - user decision 2026-11-07
 
 User requested recording the remaining checks separately and moving to Phase03. This accepts continuation, not a claim that live checks or G1 have passed.
 
-- [ ] Confirm a backend source for persisted device identity mapping; connect current mapping/revoke UI only after that contract exists (G1).
-- [ ] Select explicit local/remote environment and restart Next.js for certificate testing.
+- [x] G1 source confirmed at a6b3da5; identity GET and Admin readback/revoke UI implemented and tested with fixtures.
+- [x] Selected remote in ignored .env.local and started Next.js on port3000 with BACKEND_API_MODE=remote on 2026-11-08. Admin identity/certificate-list GET200 and response schema verified against the remote server.
 - [ ] Use an authorized disposable machine: Admin list/detail/issue/download ZIP/JSON/delete; confirm private bundle storage availability.
-- [ ] BLOCKED by backend scope: Technician allowed machine versus denied machine and revoked/expired grant. Fix per-machine authorization first; a FE machine lookup is not a backend authorization boundary.
+- [ ] Live Technician allowed machine versus denied machine and revoked/expired grant. Source a6b3da5 now checks machine scope; verify that deployed server actually includes it.
 - [ ] Confirm real-server unknown issuance reconciliation without automatically repeating POST.
 
 Keep these in this Phase02 file for a separate live verification session; do not mutate real machine credentials as part of Phase03.
 
-## Backend source correction - origin/main 4adc8a1
+## Historical backend source correction - origin/main 4adc8a1 (superseded above)
 
 Reviewed clean worktree E:/Đồ án/.work/dolores-platform-main-4adc8a1 without changing backend or FE source.
 
@@ -24,6 +37,18 @@ Reviewed clean worktree E:/Đồ án/.work/dolores-platform-main-4adc8a1 without
 - Live issuance/download/deletion must use a dedicated disposable machine with no operational credentials. Do not issue a second certificate or delete a credential on a real machine merely to test this workflow.
 - Previously recorded Node/E2E/build results remain historical evidence; no tests rerun or authenticated certificate mutation performed for this source correction.
 Stories: MP-03, MP-04, MP-07
+
+## Source recheck - 2026-11-08
+
+User requested completing Phase02 together with Phase03. Reviewed backend origin/main 05f3adb read-only. Existing FE identity/certificate implementation remains in place; no new provisioning endpoint is needed from the two latest attachments. The service still creates serial-based identity during certificate issuance, so the custom-deviceId-versus-serial issuance guard remains necessary. Deferred live issuance/download/deletion, storage availability and direct backend Technician scope checks above remain a separate verification session using a disposable machine. The new operational-history endpoints in the attachment are outside this identity/certificate phase.
+
+## Deployed API checkpoint - 2026-11-08, after Swagger update
+
+- Rechecked current remote OpenAPI; active identity GET and certificate DTOs match the FE schemas. Backend origin/main advanced to ebafe2b; inspected read-only, without changing the backend working tree. The exact running server commit is not asserted.
+- Authenticated Admin GET for machine16cafe6e-9448-4578-a4c9-f00954bc9ed1: identity200 and certificate list200; both responses passed the real FE Zod schemas. No private bundle was requested.
+- Technician on the same target received403 for identity and certificate list. This verifies one denial only; allowed/revoked/expired grant checks remain unchecked.
+- Additional authentication was rate-limited429 by IDaaS; login probing stopped. No credential mutations or changes to existing identities/certificates were performed.
+- Existing FE implementation retained; environment was the required operational change: ignored .env.local now selects remote, and the running development process explicitly selects remote. No remote-to-local fallback for identity/certificate operations.
 
 ## Objective
 

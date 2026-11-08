@@ -6,6 +6,35 @@ import styles from "./machines.module.css";
 export type TelemetryRange = { from: string; to: string };
 export type TelemetryRangePreset = "24h" | "7d" | "30d";
 
+const fieldLabels: Record<string, { label: string; unit: string; group: string }> = {
+  boiler_c: { label: "Nhiệt độ nồi hơi", unit: "°C", group: "Nhiệt độ" },
+  boiler_sp_c: { label: "Nhiệt độ nồi hơi mục tiêu", unit: "°C", group: "Nhiệt độ" },
+  thermoblock_c: { label: "Nhiệt độ bộ gia nhiệt", unit: "°C", group: "Nhiệt độ" },
+  thermo_sp_c: { label: "Nhiệt độ bộ gia nhiệt mục tiêu", unit: "°C", group: "Nhiệt độ" },
+  outlet_c: { label: "Nhiệt độ nước đầu ra", unit: "°C", group: "Nhiệt độ" },
+  pressure_bar: { label: "Áp suất nước", unit: "bar", group: "Nước & bơm" },
+  flow_in_mls: { label: "Lưu lượng nước vào", unit: "ml/giây", group: "Nước & bơm" },
+  flow_out_mls: { label: "Lưu lượng nước ra", unit: "ml/giây", group: "Nước & bơm" },
+  total_volume_in_ml: { label: "Thể tích nước vào tích lũy", unit: "ml", group: "Nước & bơm" },
+  total_volume_out_ml: { label: "Thể tích nước ra tích lũy", unit: "ml", group: "Nước & bơm" },
+  pump_pwm_pct: { label: "Mức điều khiển bơm", unit: "%", group: "Nước & bơm" },
+  ads1115_ain0: { label: "Cảm biến áp suất — ADC thô", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  ads1115_ain1: { label: "Cảm biến analog — kênh 1", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  ads1115_ain2: { label: "Cảm biến analog — kênh 2", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  ads1115_ain3: { label: "Cảm biến analog — kênh 3", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  flowmeter_in_hz: { label: "Xung cảm biến nước vào", unit: "Hz", group: "Nâng cao — cảm biến & điều khiển" },
+  flowmeter_out_hz: { label: "Xung cảm biến nước ra", unit: "Hz", group: "Nâng cao — cảm biến & điều khiển" },
+  tamping_enc: { label: "Vị trí cơ cấu nén — encoder", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  carriage_enc: { label: "Vị trí cơ cấu di chuyển — encoder", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  solenoid_mask: { label: "Trạng thái van — bitmask", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  grinder_pwm: { label: "Điều khiển mô-tơ xay — PWM", unit: "", group: "Nâng cao — cảm biến & điều khiển" },
+  triac_boiler_pct: { label: "Mức điều khiển gia nhiệt nồi hơi", unit: "%", group: "Nâng cao — cảm biến & điều khiển" },
+  triac_thermo_pct: { label: "Mức điều khiển bộ gia nhiệt", unit: "%", group: "Nâng cao — cảm biến & điều khiển" },
+};
+const fieldGroups = ["Nhiệt độ", "Nước & bơm", "Trạng thái & dữ liệu khác", "Nâng cao — cảm biến & điều khiển"];
+const fieldInfo = (field: string) => fieldLabels[field] ?? { label: field, unit: "", group: /^(ads1115_)|(_enc|_mask|_pwm|_hz)$/.test(field) ? fieldGroups[3]! : fieldGroups[2]! };
+const fieldLabel = (field: string) => { const info = fieldInfo(field); return `${info.label}${info.unit ? ` (${info.unit})` : ""}`; };
+
 export function createTelemetryRange(preset: TelemetryRangePreset, now = new Date()): TelemetryRange {
   const end = now.getTime();
   const duration = preset === "24h" ? 24 : preset === "7d" ? 24 * 7 : 24 * 30;
@@ -101,7 +130,7 @@ export function TelemetryHistoryPanel({
   );
   const fields = useMemo(() => [...new Set(orderedPoints.map((point) => point.field))].sort(), [orderedPoints]);
   const preferredField = controlledField ?? selectedField;
-  const field = fields.includes(preferredField) ? preferredField : fields[0] ?? "";
+  const field = fields.includes(preferredField) ? preferredField : fields.find((name) => fieldInfo(name).group === "Nhiệt độ") ?? fields.find((name) => fieldInfo(name).group !== fieldGroups[3]) ?? fields[0] ?? "";
   const numericPoints = orderedPoints.filter((point) => point.field === field && typeof point.value === "number" && Number.isFinite(point.value));
   const chartSource = numericPoints.slice(-500);
   const chartMin = chartSource.reduce((minimum, point) => Math.min(minimum, point.value as number), Number.POSITIVE_INFINITY);
@@ -161,11 +190,16 @@ export function TelemetryHistoryPanel({
         <div className={styles.monitoringChartToolbar}>
         {fields.length > 0 ? <label className={styles.telemetryFieldSelector}>Thông số đang xem
           <select value={field} onChange={(event) => { setSelectedField(event.target.value); onFieldChange?.(event.target.value); }}>
-            {fields.map((fieldName) => <option key={fieldName} value={fieldName}>{fieldName}</option>)}
+            {fieldGroups.map((group) => {
+              const names = fields.filter((name) => fieldInfo(name).group === group);
+              return names.length ? <optgroup key={group} label={group}>{names.map((name) => <option key={name} value={name}>{fieldLabel(name)}</option>)}</optgroup> : null;
+            })}
           </select>
         </label> : null}
         <div className={styles.telemetryRangePresets} role="group" aria-label="Cách xem thông số"><button type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</button><button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</button></div>
         </div>
+        {fieldInfo(field).group === fieldGroups[3] ? <p className={styles.telemetryRangeCaption}>Thông số nâng cao · {field}. Dùng để chẩn đoán kỹ thuật, không dùng để đếm ly.</p> : null}
+        {field.startsWith("total_volume_") ? <p className={styles.telemetryRangeCaption}>Thể tích nước không phải số ly pha chế.</p> : null}
         {view === "chart" && numericPoints.length > 0 ? <>
         <dl className={styles.monitoringMetricStrip}>
           <div><dt>Gần nhất trong dữ liệu đã tải</dt><dd>{formatPointValue(numericPoints[numericPoints.length - 1]!.value)}</dd></div>
@@ -173,7 +207,7 @@ export function TelemetryHistoryPanel({
           <div><dt>Cao nhất · biểu đồ</dt><dd>{formatPointValue(chartMax)}</dd></div>
         </dl>
         <figure className={styles.telemetryChart}>
-          <figcaption>Giá trị số theo thời gian · {field}{numericPoints.length > chartSource.length ? " · 500 điểm mới nhất" : ""}</figcaption>
+          <figcaption>{fieldLabel(field)} theo thời gian{numericPoints.length > chartSource.length ? " · 500 điểm mới nhất" : ""}</figcaption>
           <svg viewBox="-85 0 1100 205" role="img" aria-label={`Biểu đồ ${field} theo thời gian`}>
             {[20, 100, 180].map((y, index) => <g key={y}><line x1="0" y1={y} x2="1000" y2={y} /><text x="-12" y={y + 4} textAnchor="end">{formatAxisValue(chartMax === chartMin ? chartMin : chartMax - index * (chartMax - chartMin) / 2)}</text></g>)}
             {chartSource.length === 1
@@ -190,7 +224,7 @@ export function TelemetryHistoryPanel({
           rowKey={(point, index) => `${point.timestamp}-${point.field}-${index}`}
           columns={[
             { key: "time", header: "Thời điểm", render: (point) => formatPointTime(point.timestamp) },
-            { key: "field", header: "Trường", render: (point) => point.field },
+            { key: "field", header: "Thông số", render: (point) => <span title={point.field}>{fieldLabel(point.field)}</span> },
             { key: "value", header: "Giá trị", render: (point) => formatPointValue(point.value) },
             { key: "sub-state", header: "Trạng thái", render: (point) => point.subState ?? "—" },
           ]}

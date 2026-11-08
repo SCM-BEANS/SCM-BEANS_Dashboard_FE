@@ -234,3 +234,81 @@ test("accepted sync request rejects missing and foreign machine confirmations", 
     await assert.rejects(api.requestSync([machineId]), /incomplete or unrequested/i);
   }
 });
+
+const activeMenu = { machineId, activeMenuId: menuId, menuName: "Summer menu", assigned: true, fallbackStrategy: "CUSTOM_ASSIGNED_MENU", recipeCount: 8, itemCount: 8, lastSyncedAt: "2026-11-08T00:15:00Z" };
+const menuAssignment = { machineId, activeMenuId: menuId, menuName: "Summer menu", commandId: "cmd-sync-9b1deb4d", targetVersion: 3, targetHash: "sha256-target", syncState: "SYNC_PENDING", syncRequested: true, syncError: null };
+
+test("active menu readback distinguishes default from missing or inconsistent assignment", () => {
+  assert.deepEqual(menuSchema.ActiveMachineMenuSchema.parse(activeMenu), activeMenu);
+  const sourceReadback = { machineId, activeMenuId: menuId, menuName: "Summer menu", fallbackStrategy: "ACTIVE_OWNER_MENU", description: "The active Owner menu" };
+  assert.deepEqual(menuSchema.ActiveMachineMenuSchema.parse(sourceReadback), sourceReadback);
+  assert.deepEqual(menuSchema.ActiveMachineMenuSchema.parse({ ...sourceReadback, activeMenuId: null, menuName: null, fallbackStrategy: "SYSTEM_DEFAULT_OR_GLOBAL_FALLBACK" }).activeMenuId, null);
+  const fallback = { ...activeMenu, activeMenuId: null, menuName: null, assigned: false, fallbackStrategy: "SYSTEM_DEFAULT_OR_GLOBAL_FALLBACK", recipeCount: 0, itemCount: 0, lastSyncedAt: null };
+  assert.deepEqual(menuSchema.ActiveMachineMenuSchema.parse(fallback), fallback);
+  for (const bad of [
+    { ...fallback, activeMenuId: undefined },
+    { ...activeMenu, activeMenuId: null },
+    { ...fallback, assigned: true },
+    { ...activeMenu, recipeCount: -1 },
+    { ...activeMenu, machineId: "invalid" },
+  ]) assert.equal(menuSchema.ActiveMachineMenuSchema.safeParse(bad).success, false);
+});
+
+test("available menus are machine-scoped candidates and allow a truly empty Owner menu list", async () => {
+  const candidate = { id: menuId, name: "Summer menu", description: null, recipeCount: 8, createdAt: "2026-11-08T00:15:00Z" };
+  const sourceCandidate = { id: menuId, ownerId, name: "Summer menu", createdAt: "2026-11-08T00:15:00Z" };
+  assert.deepEqual(menuSchema.AvailableMachineMenusSchema.parse([sourceCandidate]), [sourceCandidate]);
+  assert.equal(Object.hasOwn(menuSchema.AvailableMachineMenusSchema.parse([sourceCandidate])[0], "recipeCount"), false);
+  assert.deepEqual(menuSchema.AvailableMachineMenusSchema.parse([candidate]), [candidate]);
+  assert.deepEqual(menuSchema.AvailableMachineMenusSchema.parse([]), []);
+  assert.equal(menuSchema.AvailableMachineMenusSchema.safeParse([{ ...candidate, recipeCount: -1 }]).success, false);
+  const calls = [];
+  const signal = new AbortController().signal;
+  const api = apiLoader({ get: async (...args) => { calls.push(args); return { data: [candidate] }; } })("src/apis/recipes.api.ts").recipesApi;
+  assert.deepEqual(await api.listAvailableMenus(machineId, signal), [candidate]);
+  assert.equal(calls[0][0], "/machines/" + machineId + "/available-menus");
+  assert.equal(calls[0][1].signal, signal);
+  assert.equal(calls[0][1].baseURL, "/api/dolores/v1");
+  assert.equal(calls.some(([url]) => url.includes("/recipe-menus/local")), false);
+});
+
+test("active menu GET uses authoritative readback and rejects foreign machine data", async () => {
+  const calls = [];
+  const api = apiLoader({ get: async (...args) => { calls.push(args); return { data: activeMenu }; } })("src/apis/recipes.api.ts").recipesApi;
+  assert.deepEqual(await api.getActiveMenu(machineId), activeMenu);
+  assert.equal(calls[0][0], "/machines/" + machineId + "/active-menu");
+  const wrong = apiLoader({ get: async () => ({ data: { ...activeMenu, machineId: ownerId } }) })("src/apis/recipes.api.ts").recipesApi;
+  await assert.rejects(wrong.getActiveMenu(machineId), /different machine/i);
+});
+
+test("menu assignment is bodyless, validates both returned IDs and preserves saved-but-not-synced", async () => {
+  const calls = [];
+  const api = apiLoader({ put: async (...args) => { calls.push(args); return { data: menuAssignment }; } })("src/apis/recipes.api.ts").recipesApi;
+  assert.deepEqual(await api.assignActiveMenu(machineId, menuId), menuAssignment);
+  assert.deepEqual(calls[0].slice(0, 2), ["/machines/" + machineId + "/active-menu/" + menuId, undefined]);
+  const saved = { ...menuAssignment, commandId: null, targetVersion: null, targetHash: null, syncRequested: false, syncError: "Queue unavailable", syncState: "SYNC_PENDING" };
+  assert.deepEqual(menuSchema.MachineMenuAssignmentSchema.parse(saved), saved);
+  assert.equal(menuSchema.MachineMenuAssignmentSchema.parse({ ...saved, syncState: null }).syncState, null);
+  assert.equal(menuSchema.MachineMenuAssignmentSchema.safeParse({ ...menuAssignment, syncRequested: undefined }).success, false);
+  for (const data of [{ ...menuAssignment, machineId: ownerId }, { ...menuAssignment, activeMenuId: recipeId }]) {
+    const wrong = apiLoader({ put: async () => ({ data }) })("src/apis/recipes.api.ts").recipesApi;
+    await assert.rejects(wrong.assignActiveMenu(machineId, menuId), /different (machine|menu)/i);
+  }
+});
+
+test("clear menu accepts 204 without JSON and all menu adapters validate UUIDs before HTTP", async () => {
+  const calls = [];
+  const api = apiLoader({
+    delete: async (...args) => { calls.push(["delete", ...args]); return { status: 204, data: "" }; },
+    get: async (...args) => { calls.push(["get", ...args]); return { data: activeMenu }; },
+    put: async (...args) => { calls.push(["put", ...args]); return { data: menuAssignment }; },
+  })("src/apis/recipes.api.ts").recipesApi;
+  await api.clearActiveMenu(machineId);
+  assert.equal(calls[0][1], "/machines/" + machineId + "/active-menu");
+  assert.equal(Object.hasOwn(calls[0][2], "data"), false);
+  await assert.rejects(api.getActiveMenu("bad"));
+  await assert.rejects(api.listAvailableMenus("bad"));
+  await assert.rejects(api.assignActiveMenu(machineId, "bad"));
+  await assert.rejects(api.clearActiveMenu("bad"));
+  assert.equal(calls.length, 1);
+});

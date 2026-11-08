@@ -39,6 +39,23 @@ test('Owner calendar bounds are Vietnam days with exclusive end regardless of br
   }
 });
 
+test('Owner direct date parameters use inclusive UTC dates without changing Vietnam calendar helper', () => {
+  const s = schema();
+  const dates = { from: '2026-11-01', to: '2026-11-08' };
+  for (const validator of [s.OwnerAnalyticsRangeSchema, s.OwnerBrewRecordsParamsSchema, s.OwnerCleaningRecordsParamsSchema]) {
+    const parsed = validator.parse(dates);
+    assert.equal(Date.parse(parsed.from), Date.parse('2026-11-01T00:00:00Z'));
+    assert.equal(Date.parse(parsed.to), Date.parse('2026-11-09T00:00:00Z'));
+    const instantRange = validator.parse(range);
+    assert.equal(Date.parse(instantRange.from), Date.parse(range.from));
+    assert.equal(Date.parse(instantRange.to), Date.parse(range.to));
+    assert.equal(validator.safeParse({ from: '2026-02-30', to: '2026-03-01' }).success, false);
+  }
+  const vietnam = s.OwnerAnalyticsCalendarRangeSchema.parse({ fromDate: '2026-11-01', toDate: '2026-11-08' });
+  assert.equal(vietnam.from, '2026-10-31T17:00:00Z');
+  assert.equal(vietnam.to, '2026-11-08T17:00:00Z');
+});
+
 test('Owner parameters reject untrusted scope, invalid ranges, paging and stale cleaning enum', () => {
   const s = schema();
   assert.equal(s.OwnerAnalyticsRangeSchema.safeParse({ ...range, machineId: 'S-018' }).success, true);

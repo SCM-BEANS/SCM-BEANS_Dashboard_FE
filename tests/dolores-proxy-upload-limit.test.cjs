@@ -90,6 +90,32 @@ function upstreamResponse(body = 'certificate bundle') {
   return { status: 200, headers, arrayBuffer: async () => Buffer.from(body) };
 }
 
+test('identity reads and mutations pin the same explicit backend and never fall back on read failure', async () => {
+  let automaticCalls = 0, fallbackCalls = 0;
+  const handler = loadHandler({ '@/lib/server/backend-api-selection': {
+    getExplicitBackendApiSelection: () => ({ doloresBaseUrl: 'http://remote.test', mode: 'remote' }),
+    getBackendApiSelection: async () => { automaticCalls++; return { doloresBaseUrl: 'http://local.test', mode: 'local' }; },
+    preferLocalBackendApis: () => { fallbackCalls++; return { doloresBaseUrl: 'http://local.test', mode: 'local' }; },
+  } });
+  const original = global.fetch;
+  let calls = 0;
+  try {
+    for (const method of ['GET', 'POST', 'DELETE']) {
+      global.fetch = async (url) => { calls++; assert.match(String(url), /^http:\/\/remote\.test/); return upstreamResponse(); };
+      const res = proxyResponse();
+      await handler(proxyRequest(['machines', machineId, 'telemetry-device-identity'], method), res);
+      assert.equal(res.statusCode, 200);
+    }
+    global.fetch = async () => { calls++; throw new Error('remote unavailable'); };
+    const res = proxyResponse();
+    await handler(proxyRequest(['machines', machineId, 'telemetry-device-identity']), res);
+    assert.equal(res.statusCode, 502);
+    assert.equal(calls, 4);
+    assert.equal(automaticCalls, 0);
+    assert.equal(fallbackCalls, 0);
+  } finally { global.fetch = original; }
+});
+
 test('certificate list, detail, download and mutations use explicit selection rather than automatic environment fallback', async () => {
   const originalFetch = global.fetch;
   const remote = { doloresBaseUrl: 'http://remote.test', mode: 'remote' };

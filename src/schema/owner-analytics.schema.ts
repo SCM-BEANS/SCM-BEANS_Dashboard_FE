@@ -4,7 +4,9 @@ const count = z.number().int().nonnegative().safe();
 const instant = z.string().datetime({ offset: true }).refine((value) => Number.isFinite(Date.parse(value)));
 const calendarDate = z.string().date().refine((value) => value.slice(0, 4) < "9999");
 const machineIdentifier = z.string().trim().min(1);
-const rangeFields = { from: instant, to: instant, machineId: machineIdentifier.optional() };
+export const AnalyticsFromSchema = z.union([instant, calendarDate.transform((value) => `${value}T00:00:00Z`)]);
+export const AnalyticsToSchema = z.union([instant, calendarDate.transform((value) => new Date(Date.parse(`${value}T00:00:00Z`) + 86_400_000).toISOString())]);
+const rangeFields = { from: AnalyticsFromSchema, to: AnalyticsToSchema, machineId: machineIdentifier.optional() };
 const increasing = (value: { from: string; to: string }) => Date.parse(value.from) < Date.parse(value.to);
 const rangeError = { message: "Thời điểm bắt đầu phải trước thời điểm kết thúc.", path: ["to"] };
 
@@ -83,3 +85,27 @@ export type OwnerBrewRecord = z.infer<typeof OwnerBrewRecordSchema>;
 export type OwnerCleaningRecord = z.infer<typeof OwnerCleaningRecordSchema>;
 export type OwnerBrewRecordsPage = z.infer<typeof OwnerBrewRecordsPageSchema>;
 export type OwnerCleaningRecordsPage = z.infer<typeof OwnerCleaningRecordsPageSchema>;
+
+
+export const MachineHistoryParamsSchema = z.object({
+  from: AnalyticsFromSchema, to: AnalyticsToSchema,
+  page: z.number().int().nonnegative().max(2_147_483_647).default(0),
+  size: z.number().int().min(1).max(100).default(20),
+}).strict().refine((value) => Date.parse(value.from) < Date.parse(value.to), { message: "Khoảng thời gian không hợp lệ.", path: ["to"] });
+export type MachineHistoryParams = z.input<typeof MachineHistoryParamsSchema>;
+
+function machineHistoryPage<T extends z.ZodTypeAny>(item: T) {
+  return z.object({
+    content: z.array(item), number: z.number().int().nonnegative(),
+    size: z.number().int().min(1).max(100), totalElements: z.number().int().nonnegative().safe(),
+    totalPages: z.number().int().nonnegative(), first: z.boolean(), last: z.boolean(),
+  }).superRefine((page, ctx) => {
+    if (page.content.length > page.size || page.content.length > page.totalElements
+      || page.totalPages !== Math.ceil(page.totalElements / page.size)
+      || page.first !== (page.number === 0) || page.last !== (page.number >= page.totalPages - 1)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Metadata phân trang không hợp lệ." });
+    }
+  }).transform(({ number, ...page }) => ({ ...page, page: number }));
+}
+export const MachineBrewRecordsPageSchema = machineHistoryPage(OwnerBrewRecordSchema);
+export const MachineCleaningRecordsPageSchema = machineHistoryPage(OwnerCleaningRecordSchema);

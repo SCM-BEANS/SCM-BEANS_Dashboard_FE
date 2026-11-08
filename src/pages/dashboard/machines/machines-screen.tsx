@@ -205,6 +205,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                 <dl className={styles.detailGrid}>
                   <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.id} />
                   <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
+                  <DetailItem label="Menu đang gán" value={detail.data.activeMenuId === undefined ? "Chưa có thông tin menu" : detail.data.activeMenuId === null ? "Menu mặc định" : detail.data.activeMenuName || "Menu riêng"} />
                   <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
                   <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType === "SMART_IOT" ? "Smart IoT" : detail.data.machineType === "CONVENTIONAL" ? "Thông thường" : "Chưa xác định"} />
                   <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />

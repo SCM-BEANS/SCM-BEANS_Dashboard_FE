@@ -4,7 +4,7 @@ Mode: --hard (planning only)
 Risk: high-risk - machine authorization, destructive identity/certificate operations and private-key downloads.
 Test: targeted regression coverage; recommend --tdd for implementation.
 Date: 2026-11-07 (Asia/Saigon)
-Status: Phase 01 FE verified and review APPROVED; awaiting human approval before Phase 02.
+Status: Phase01/02/03 FE verified. Phase04 validation executed; FE regression fixed, but full live acceptance remains pending history authentication correction, dedicated test fixtures and gateway G3.
 Spec: [spec.md](spec.md). Scenarios: [scenarios.md](scenarios.md).
 Project root: Git root E:/Đồ án/SCM-BEANS_Dashboard_FE; no .skills.json marker. Tracking: root feature_list.json.
 
@@ -45,9 +45,9 @@ These are candidate paths for implementation approval, not empty files to create
 ## Validation and tracking
 
 - [x] Phase 01: API contract and UI acceptance (mocked/runtime FE verified; live permission checks pending).
-- [ ] Phase 02: identity/certificate lifecycle and sensitive download acceptance.
-- [ ] Phase 03: readback-backed menu and verified sync acceptance.
-- [ ] Phase 04: cross-role validation and documented live readiness.
+- [x] Phase 02: FE identity/certificate lifecycle verified against a6b3da5; live verification separately deferred; human review pending.
+- [x] Phase 03: readback-backed menu FE and ACK validation verified; deployed GET schemas verified. Live mutations/device ACK and expanded role checks pending.
+- [ ] Phase 04: validation executed and readiness documented; full acceptance pending backend/history authentication, credential fixtures/deviceACK and G3.
 
 Use meaningful targeted tests, then lint/TypeScript/build; compare unrelated pre-existing failures against current baseline. Live read/write checks only with authorized fixtures and correct environment. Never delete or replace a real machine certificate merely to demonstrate a UI test. Record runtime denials as findings, not a reason to broaden FE scope.
 
@@ -67,18 +67,18 @@ Read-only planning review: APPROVED, no CRITICAL/HIGH planning blockers. Reviewe
 
 ## Session Notes
 
-**Last active:** 2026-11-07 (Asia/Saigon)
-**Phase in progress:** phase-03-machine-active-menu
-**Status:** Phase02 enabled capabilities reviewed; live verification separately deferred by user. Phase03 contract assessment found G2 still pending.
+**Last active:** 2026-11-08 (Asia/Saigon)
+**Phase in progress:** phase-04-validation-and-live-gateway-readiness
+**Status:** Admin/Moderator machine-scoped histories and production implemented and reviewed; FE checks pass. Full live acceptance remains pending backend history authentication and separate provisioning/gateway checks.
 
 ### Decisions made this session
-- User approved moving to Phase03. Phase02 live verification checklist and G1 dependency recorded separately in its phase file.
-- Clean backend origin/main4adc8a1 inspected: certificate and active-menu Technician scope are backend blockers, not merely unchecked live tests. Certificate bundle key reuse requires disposable-machine-only testing and backend lifecycle review.
-- Active-menu PUT source returns machineId/activeMenuId/menuName; DELETE source204 differs from OpenAPI200. Neither supplies GET readback after refresh.
-- Re-read public live OpenAPI: active-menu PUT/DELETE exist, but current-menu GET/readback is not declared in MachineResponse or RecipeSyncStatusResponse.
-- Owner local menus are caller-scoped; no verified operator candidate list for a selected machine Owner.
-- Follow Phase03 G2 gate: no guessed current menu, no operator impersonation, no unsupported selector or unused mutation adapter added.
-- Existing recipe-menu contract suite17/17 passed. No source changes in this contract assessment; no authenticated server mutation.
+- Phase04 added four regression scenarios in the existing provisioning E2E file. S02 test reproduced cached certificate public detail remaining after403; fixed in the shared panel for both Admin/Technician.
+- Authenticated Admin/Moderator/Owner/Technician controls returned machineGET200, but machine brew-history/cleaning-history GET401 for both real and unknown UUIDs. Source ebafe2b SecurityConfig still discards Bearer JWT and requiresDEVICE on these GET paths. No FE authentication bypass or backend edit.
+- Admin/Moderator now use the new machine-scoped brew and cleaning GETs through shared UI. Production shows total brew records plus daily/recipe distributions of explicitly loaded pages; partial coverage remains visible until complete, with a 10,000-record cap. Owner-only aggregate endpoints are not reused by operators.
+- Date-only API inputs support inclusive UTC calendar dates; ISO inputs preserve exclusive end. Existing Vietnam calendar UI boundaries remain unchanged. Remote Owner cup-count returned200 with both formats; Admin/Moderator historyGET still401 while machineGET200.
+- G1/G2 deployed read contracts and G4 verified FE behavior retained. G3 remains BLOCKED/readiness-only; no browser live gateway/hardware controls invented.
+- New contract/date tests:30/30; telemetry/compliance18/18 and technician API2/2 (50 targeted total). Combined E2E58/58 including six new operator-history scenarios; focused six rerun after schema dependency cleanup. TypeScript, focused ESLint and production build pass. Full Node suite350 tests:259 pass/91 fail in historical suites; no full-suite success claimed. Independent review APPROVED for enabled FE scope, not full live acceptance.
+- Dev3000 remains remote. Test server3101 and local generated output are separate; no business mutation, new source files, commit or push.
 
 ### Next immediate action
-Obtain authoritative machine active-menu readback contract; obtain operator Owner-menu candidate source before enabling Admin/Technician. Owner flow can proceed first once its readback exists. Phase03 remains open; Phase02 live checks are tracked in its separate checklist.
+Backend must separate user GET history from device POST in route matchers/bearer resolution and device filters, then deploy and re-test four-role scope404. Use dedicated authorized fixtures for credential lifecycle/storage and live menu/ACK tests. Confirm the browser gateway contract before implementing Watch/Exchange. Phase04 remains active until required acceptance evidence is available.

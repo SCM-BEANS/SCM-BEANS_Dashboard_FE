@@ -27,6 +27,7 @@ function loadMachinesApi(axiosClient) {
     '@/lib/http': { axiosClient, DOLORES_API_BASE_URL: '/api/dolores/v1' },
     '@/schema/machines.schema': machinesSchema,
     '@/schema/profiles.schema': profilesSchema,
+    '@/schema/owner-analytics.schema': loadTypescript('src/schema/owner-analytics.schema.ts'),
   }).machinesApi;
 }
 

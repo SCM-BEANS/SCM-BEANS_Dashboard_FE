@@ -94,7 +94,7 @@ export function getApiErrorMessage(error: unknown, intent: ApiErrorIntent = "rea
 
   const response = error.response;
   if (response?.status === 503 && response.data?.error === "CERTIFICATE_BACKEND_MODE_REQUIRED") {
-    return "Chưa chọn môi trường cấp chứng chỉ. Cần cấu hình BACKEND_API_MODE thành local hoặc remote và khởi động lại ứng dụng.";
+    return "Chưa chọn môi trường định danh và cấp chứng chỉ. Cần cấu hình BACKEND_API_MODE thành local hoặc remote và khởi động lại ứng dụng.";
   }
   if (!response || response.status >= 500) {
     return intent === "mutation"

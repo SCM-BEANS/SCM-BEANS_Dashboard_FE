@@ -19,7 +19,7 @@ export const MachineCertificateSchema = z.object({
 }).strict();
 
 export const MachineCertificateDetailSchema = MachineCertificateSchema.extend({
-  clientCrtPem: z.string().min(1), caCrtPem: z.string().min(1),
+  clientCrtPem: z.string().min(1).nullable(), caCrtPem: z.string().min(1).nullable(),
 }).strict();
 
 export const MachineCertificatePageSchema = z.object({

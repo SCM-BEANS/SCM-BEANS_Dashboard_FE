@@ -14,6 +14,7 @@ import {
   type LocalRecipeUpsertRequest,
 } from "@/schema/recipes.schema";
 import { RecipeSyncRequestSchema, RecipeSyncStatusSchema, RecipeSyncStatusesSchema } from "@/schema/recipe-menus.schema";
+import { ActiveMachineMenuSchema, AvailableMachineMenusSchema, MachineMenuAssignmentSchema } from "@/schema/recipe-menus.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
 
 type BoundedRecipePage<T> = { items: T[]; page: number; size: number; hasNext: boolean };
@@ -42,6 +43,30 @@ const recipePath = (id: string) =>
   "/recipes/global/" + encodeURIComponent(GlobalRecipeIdSchema.parse(id));
 
 export const recipesApi =  {
+  async getActiveMenu(machineId: string, signal?: AbortSignal) {
+    const id = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.get<unknown>(`/machines/${id}/active-menu`, { baseURL: DOLORES_API_BASE_URL, signal });
+    const result = ActiveMachineMenuSchema.parse(response.data);
+    if (result.machineId !== id) throw new Error("Dolores returned a different machine's active menu.");
+    return result;
+  },
+  async listAvailableMenus(machineId: string, signal?: AbortSignal) {
+    const id = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.get<unknown>(`/machines/${id}/available-menus`, { baseURL: DOLORES_API_BASE_URL, signal });
+    return AvailableMachineMenusSchema.parse(response.data);
+  },
+  async assignActiveMenu(machineId: string, menuId: string) {
+    const id = MachineIdSchema.parse(machineId), validMenuId = z.string().uuid().parse(menuId);
+    const response = await axiosClient.put<unknown>(`/machines/${id}/active-menu/${validMenuId}`, undefined, { baseURL: DOLORES_API_BASE_URL });
+    const result = MachineMenuAssignmentSchema.parse(response.data);
+    if (result.machineId !== id || result.activeMenuId !== validMenuId) throw new Error("Dolores returned a different machine or menu assignment.");
+    return result;
+  },
+  async clearActiveMenu(machineId: string) {
+    const id = MachineIdSchema.parse(machineId);
+    const response = await axiosClient.delete(`/machines/${id}/active-menu`, { baseURL: DOLORES_API_BASE_URL });
+    if (response.status !== 204) throw new Error("Unexpected active menu deletion response.");
+  },
   async listGlobalPage(page = 0, size = 50, signal?: AbortSignal, q?: string): Promise<BoundedRecipePage<import("@/schema/recipes.schema").GlobalRecipeSummary>> {
     const params = { page: z.number().int().nonnegative().parse(page), size: z.number().int().min(1).max(100).parse(size), ...(q?.trim() ? { q: q.trim() } : {}) };
     const response = await axiosClient.get<unknown>("/recipes/global", {

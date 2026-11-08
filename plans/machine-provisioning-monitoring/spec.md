@@ -1,7 +1,7 @@
 # Specification - Machine provisioning and monitoring
 
 Date: 2026-11-07 (Asia/Saigon)
-Status: Design accepted; planning only; implementation not started.
+Status: MP-01..MP-07 FE implemented and fixture-verified; Phase04 validation executed with explicit live blockers. MP-08 gateway readiness not confirmed.
 
 ## Sources and scope
 
@@ -46,6 +46,8 @@ Compliance belongs to Owner cleaning view and Admin machine operations; Technici
 Active menu extends RecipeSyncPanel and existing machine/recipe adapters. Backend owns effective recipe compilation. Distinguish menu assignment accepted, sync delivered and machine applied.
 
 ## Contract gates
+
+Current checkpoint (2026-11-08): G1 deployed Admin identity readback and G2 deployed menu/candidates GET now pass FE schemas; G4 explicit remote selection is verified in proxy tests and running dev configuration. The original assessments below are historical. G3 remains readiness-only/BLOCKED: source native gRPC Watch/Exchange is not a browser gateway contract. See phase-04-validation-and-live-gateway-readiness.md for the actual four-role history401 matrix, the S02 cached-detail fix and pending live acceptance.
 
 - G1: no identity GET or machine deviceId readback confirmed. Locate backend/runtime read source before showing a persisted mapping; if absent, record backend dependency and keep mapping-based lifecycle UI gated.
 - G2: no activeMenuId readback in published machine schema. Owner-only local menu list cannot provide an operator Owner menu selector. Owner flow needs readback; operator flow additionally needs authorized list. Do not treat mutation response/localStorage as authoritative readback.

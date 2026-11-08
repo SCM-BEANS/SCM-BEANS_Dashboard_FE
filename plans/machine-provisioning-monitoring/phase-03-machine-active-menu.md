@@ -1,6 +1,6 @@
 # Phase 03 - Machine active menu
 
-Status: active - contract assessment; G2 pending
+Status: FE verified and review APPROVED; deployed Admin/Owner GET/schema verified; live mutations, ACK and full scope matrix pending
 Stories: MP-05, MP-06, MP-07
 
 ## Objective
@@ -60,3 +60,27 @@ Clean worktree inspection confirms the public Swagger does not describe the full
 - Related telemetry authorization also needs a fresh source/runtime matrix before expanding roles; do not rely on old Swagger Technician prose as authorization evidence.
 
 No FE selector or API mutation added during this assessment. No backend working tree overwritten.
+
+## Implementation update - 2026-11-08
+
+This section supersedes the historical G2 assessment above. User supplied the updated API guides and requested completing Phase02/03. Backend origin/main was fetched read-only at 05f3adb; the original backend working tree was not changed.
+
+- Source now provides GET machine active-menu and machine-scoped available-menus; G2 has a source contract. PUT returns assignment plus sync dispatch information; DELETE returns empty 204.
+- Actual source differs from the guide: ActiveMenuDetailsResponse has description and ACTIVE_OWNER_MENU, without assigned/counts/lastSyncedAt. Available menus return OwnerRecipeMenuResponse (id/ownerId/name/createdAt), without recipeCount. FE validates these explicit DTO versions and the guide's explicit DTOs; missing counts remain unknown, never zero.
+- recipes.api.ts owns active-menu GET/candidates/PUT/DELETE. Existing recipe-menus schema validates IDs, assignment consistency and response context. Machine schema preserves absent activeMenuId as unknown versus explicit null/default.
+- Existing RecipeSyncPanel integrates shared MachineActiveMenuPanel for Admin/Owner. Technician machine detail uses the same menu panel without calling Owner local-menu APIs or recipe sync-status/history endpoints. Moderator has no menu assignment UI.
+- Assignment and manual sync lock each other. Mutation retries are disabled; unknown outcomes reconcile authoritative GET. Neither PUT success nor syncRequested=true claims that the machine applied the menu. Existing version/hash ACK checks remain unchanged.
+- Explicit sync retry is available to authorized Admin/Owner after saved-but-unsent response; Technician contacts Admin/Owner. DELETE confirms the change, reads back default and does not add another sync POST.
+- syncMachineId in the existing URL preserves machine context across reload and Back/Forward. The Admin library's existing local tab state is retained.
+- Admin/Owner/Technician overview displays assigned menu metadata when present; omitted fields show unknown, not default.
+- Historical check before deployment: OpenAPI lacked active-menu GET/available-menus and the new MachineResponse fields. This finding is superseded by the deployed API checkpoint below.
+- Historical check before deployment: Admin GET returned405 for active-menu and404 for available-menus. FE unavailable-service handling remains tested, but these results are superseded by the checkpoint below.
+- Verification: 53/53 targeted Node tests; 47/47 combined operational/provisioning E2E on an isolated server; TypeScript, focused ESLint and production build passed. Independent code review APPROVED after fixing cross-panel concurrency. Additional unavailable-service regression covers 404/405. No new source files, server mutation, commit or push.
+
+## Deployed API checkpoint - 2026-11-08, after Swagger update
+
+- Remote OpenAPI now exposes GET active-menu, GET available-menus, DELETE204 and MachineResponse.activeMenuId/activeMenuName. DTOs match the already implemented explicit FE contracts; no schema weakening or duplicate adapter was needed.
+- Authenticated Admin and Moderator GET on machine16cafe6e-9448-4578-a4c9-f00954bc9ed1 returned200 for active-menu and available-menus; actual response bodies passed FE schemas. This does not grant Moderator write UI.
+- OwnerPRIMARY's own-machine GET active-menu/available-menus returned200 and passed FE schemas. Unknown-machine GET returned404 for all tested accounts. OwnerSECONDARY had no listed machines, so no second-Owner positive scope claim is made.
+- Technician target-machine active-menu/available-menus GET returned404. An allowed Technician machine and foreign-Owner matrix were not completed; subsequent IDaaS logins returned429, and authentication probing stopped.
+- G2 read contracts are now deployed and compatible; full live workflow still requires authorized PUT/DELETE, readback after mutation, device ACK and expanded scope checks. No business mutation was performed on existing machines.

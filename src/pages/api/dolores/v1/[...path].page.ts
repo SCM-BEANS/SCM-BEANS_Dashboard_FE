@@ -131,11 +131,13 @@ export default async function handler(
   }
 
   const certificateRequest = segments[0] === "machines" && segments.length >= 3 && segments[2] === "certificates";
+  const identityRequest = segments[0] === "machines" && segments.length === 3 && segments[2] === "telemetry-device-identity";
+  const provisioningRequest = certificateRequest || identityRequest;
   let selection: Awaited<ReturnType<typeof getBackendApiSelection>>;
   try {
-    selection = certificateRequest ? getExplicitBackendApiSelection() : await getBackendApiSelection();
+    selection = provisioningRequest ? getExplicitBackendApiSelection() : await getBackendApiSelection();
   } catch {
-    res.status(certificateRequest ? 503 : 500).json({ error: certificateRequest ? "CERTIFICATE_BACKEND_MODE_REQUIRED" : "Invalid Dolores API configuration" });
+    res.status(provisioningRequest ? 503 : 500).json({ error: provisioningRequest ? "CERTIFICATE_BACKEND_MODE_REQUIRED" : "Invalid Dolores API configuration" });
     return;
   }
 
@@ -161,7 +163,7 @@ export default async function handler(
       body,
     );
   } catch {
-    if (certificateRequest || selection.mode !== "remote") {
+    if (provisioningRequest || selection.mode !== "remote") {
       res.status(502).json({ error: "Dolores API is unavailable" });
       return;
     }
