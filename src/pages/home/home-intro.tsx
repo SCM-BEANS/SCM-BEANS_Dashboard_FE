@@ -16,7 +16,7 @@ export function HomeIntro({ phase }: HomeIntroProps) {
     >
       <div className={styles.lockup}>
         <BrandMark priority />
-        <span className={styles.wordmark}>dolores.</span>
+        <span className={styles.wordmark}>Dolores.</span>
       </div>
     </div>
   );

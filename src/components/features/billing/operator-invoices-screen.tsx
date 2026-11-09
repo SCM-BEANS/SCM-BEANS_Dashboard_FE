@@ -279,24 +279,19 @@ function InvoiceList({
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
-            { key: "owner", header: messages.OWNER, render: (invoice) => <TruncatedId value={invoice.ownerId ?? invoice.tenantId} /> },
+            { key: "owner", header: messages.OWNER, render: (invoice) => (
+              <Link
+                className={styles.textButton}
+                href={role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}
+              >
+                <TruncatedId value={invoice.ownerId ?? invoice.tenantId} />
+              </Link>
+            ) },
             { key: "contract", header: messages.CONTRACT, render: (invoice) => <TruncatedId value={invoice.contractId} /> },
             { key: "period", header: messages.PERIOD, render: (invoice) => invoice.period },
             { key: "type", header: messages.TYPE, render: (invoice) => messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type },
             { key: "amount", header: messages.AMOUNT, render: (invoice) => amountText(invoice.amount, invoice.currency) },
             { key: "status", header: messages.STATUS, render: (invoice) => <StatusBadge status={invoice.status}>{invoiceStatus(invoice.status)}</StatusBadge> },
-            {
-              key: "detail",
-              header: messages.VIEW_DETAILS,
-              render: (invoice) => (
-                <Link
-                  className={styles.textButton}
-                  href={role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}
-                >
-                  {messages.VIEW_DETAILS}
-                </Link>
-              ),
-            },
           ]}
         />
       )}

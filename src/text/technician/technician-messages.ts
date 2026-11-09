@@ -1,5 +1,5 @@
 export const TECHNICIAN_MESSAGES = {
-  BRAND: "dolores.",
+  BRAND: "Dolores.",
   ROLE: "Technician",
   NAVIGATION: {
     TASKS: "Việc được giao",

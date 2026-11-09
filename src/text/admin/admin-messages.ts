@@ -1,5 +1,5 @@
 export const ADMIN_MESSAGES = {
-  BRAND: "dolores.",
+  BRAND: "Dolores.",
   ROLE: "Admin",
   NAVIGATION: {
     OVERVIEW: "Tổng quan",

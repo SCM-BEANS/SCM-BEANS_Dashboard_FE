@@ -1,5 +1,5 @@
 export const CUSTOMER_MESSAGES = {
-  BRAND: "dolores.",
+  BRAND: "Dolores.",
   ROLE: "Khách hàng",
   NAVIGATION: {
     OVERVIEW: "Tổng quan",

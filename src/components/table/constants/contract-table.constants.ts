@@ -3,7 +3,7 @@ export const ADMIN_CONTRACT_LIST_DESCRIPTION = "Danh sách hợp đồng từ Do
 
 export const CONTRACT_TABLE_HEADERS = {
   contract: "Mã hợp đồng",
-  owner: "Owner ID",
+  owner: "Owner",
   period: "Thời hạn",
   status: "Trạng thái",
   machineType: "Loại máy",

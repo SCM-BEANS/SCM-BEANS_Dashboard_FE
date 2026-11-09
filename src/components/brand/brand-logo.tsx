@@ -18,7 +18,7 @@ export function BrandLogo({
     <Link href={href} className="brand" aria-label={ariaLabel}>
       <BrandMark priority={priority} />
       <span className="brand-name">
-        <strong>dolores.</strong>
+        <strong>Dolores.</strong>
       </span>
     </Link>
   );

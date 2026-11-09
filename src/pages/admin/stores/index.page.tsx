@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { API_ERROR_MESSAGES, getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -118,6 +119,11 @@ function StoresContent() {
     });
   }, [view, detail.data, initialOwnerId, locationId]);
   const navigate = (query?: Record<string, string>) => void router.push({ pathname: "/admin/stores", query }, undefined, { shallow: true });
+  const locationDetailHref = (id: string, ownerId: string) => {
+    const query = new URLSearchParams({ view: "detail", id, ownerId });
+    if (search) query.set("q", search);
+    return `${PATH_ADMIN.STORES}?${query.toString()}`;
+  };
   const create = useMutation({
     mutationFn: () => locationsApi.create(form.ownerId, {
       name: form.name, address: form.address || undefined, city: form.city || undefined,
@@ -353,13 +359,12 @@ function StoresContent() {
           rows={visibleLocations}
           rowKey={({ location }) => location.id}
           columns={[
-            { key: "name", header: T.STORES.NAME, render: ({ location }) => location.name },
+            { key: "name", header: T.STORES.NAME, render: ({ owner, location }) => (
+              <TextLinkButton href={locationDetailHref(location.id, owner.idaasUserId)}>{location.name}</TextLinkButton>
+            ) },
             { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
             { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
             { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</StatusBadge> },
-            { key: "actions", header: "", render: ({ owner, location }) => (
-              <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: location.id, ownerId: owner.idaasUserId, ...(search ? { q: search } : {}) })}>Chi tiết</button>
-            ) },
           ]}
         />}
       </>}

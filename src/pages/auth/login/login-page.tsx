@@ -389,7 +389,7 @@ export default function LoginPage() {
             className="login-brand"
             aria-label={LOGIN_MESSAGES.BRAND.HOME_LABEL}
           >
-            dolores.
+            Dolores.
           </Link>
           <div className="form-wrap login-content" key={step} data-step={step}>
             <h1 id="login-title">{content.TITLE}</h1>

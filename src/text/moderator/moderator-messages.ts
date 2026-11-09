@@ -1,5 +1,5 @@
 export const MODERATOR_MESSAGES =  {
-  BRAND: "dolores.",
+  BRAND: "Dolores.",
   ROLE: "Moderator",
   ACTION_BAR: {
     LABEL: "Thao tác Moderator",

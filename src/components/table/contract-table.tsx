@@ -32,7 +32,7 @@ export function ContractTable({ contracts, contractHref, draftStatusHref, header
         {
           key: "owner",
           header: ownerName ? ownerHeader ?? "Owner" : CONTRACT_TABLE_HEADERS.owner,
-          render: (contract) => ownerName ? ownerName(contract.ownerId) : <TruncatedId value={contract.ownerId} />,
+          render: (contract) => ownerName ? ownerName(contract.ownerId) : contract.ownerName?.trim() || "—",
         },
         {
           key: "period",
