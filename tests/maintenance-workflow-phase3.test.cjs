@@ -26,7 +26,7 @@ function loadApi(relativePath, axiosClient) {
   const mockedRequire = (id) => {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id.startsWith("@/schema/")) return schemas;
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   };
   const loaded = { exports: {} };
   new Function("require", "exports", "module", outputText)(mockedRequire, loaded.exports, loaded);
@@ -76,6 +76,8 @@ test("maintenance request confirmation and preventive work-order creation use li
   ]);
 });
 
+const evidenceFiles = [new File(["12345678"], "evidence.pdf", { type: "application/pdf" })];
+
 test("ticket assignment, status, parts, and resolution calls validate the returned ticket identity/state", async () => {
   const calls = [];
   const responses = [
@@ -97,9 +99,13 @@ test("ticket assignment, status, parts, and resolution calls validate the return
   await api.resolveMaintenanceTicket(ids.ticket, {
     diagnosis: "Pump fault",
     resolutionResult: "Pump replaced",
-    evidenceReferences: ["private/tickets/evidence-01"],
-  });
+  }, evidenceFiles);
 
+  for (const call of calls.filter((item) => item.data instanceof FormData)) {
+    assert.deepEqual(call.data.getAll("files"), evidenceFiles);
+    assert.deepEqual([...call.data.keys()], ["data", "files"]);
+    call.data = JSON.parse(await call.data.get("data").text());
+  }
   assert.deepEqual(calls, [
     {
       url: "/maintenance-tickets/" + ids.ticket + "/assign",
@@ -121,9 +127,8 @@ test("ticket assignment, status, parts, and resolution calls validate the return
       data: {
         diagnosis: "Pump fault",
         resolutionResult: "Pump replaced",
-        evidenceReferences: ["private/tickets/evidence-01"],
       },
-      config: { baseURL: "/api/dolores/v1" },
+      config: { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } },
     },
   ]);
 });
@@ -152,24 +157,29 @@ test("repair-cost review API uses documented routes and returns the same review 
   const api = loadApi("src/apis/repair-cost-reviews.api.ts", axiosClient).repairCostReviewsApi;
   const proposal = {
     cause: "MISUSE", diagnosis: "Damaged pump", estimatedAmount: 400, currency: "VND",
-    evidenceReferences: ["private/review/evidence-1"], proposedResponsibleParty: "TENANT",
+    proposedResponsibleParty: "TENANT",
   };
   const decision = { approve: true, responsibleParty: "TENANT", approvedAmount: 400, reason: "Reviewed" };
-  const dispute = { reason: "I disagree", disputedAmount: 400, evidenceReferences: ["private/dispute/1"] };
+  const dispute = { reason: "I disagree", disputedAmount: 400 };
   const resolution = { rejectCharge: false, responsibleParty: "COMPANY", approvedAmount: 0, reason: "Reviewed dispute" };
-  await api.propose(ids.ticket, proposal);
+  await api.propose(ids.ticket, proposal, evidenceFiles);
   await api.getById(ids.review);
   await api.decide(ids.review, decision);
   await api.acknowledge(ids.review);
-  await api.dispute(ids.review, dispute);
+  await api.dispute(ids.review, dispute, evidenceFiles);
   await api.resolve(ids.review, resolution);
 
+  for (const call of calls.filter((item) => item.data instanceof FormData)) {
+    assert.deepEqual(call.data.getAll("files"), evidenceFiles);
+    assert.deepEqual([...call.data.keys()], ["data", "files"]);
+    call.data = JSON.parse(await call.data.get("data").text());
+  }
   assert.deepEqual(calls, [
-    { method: "POST", url: "/maintenance-tickets/" + ids.ticket + "/repair-cost-reviews", data: proposal, config: { baseURL: "/api/dolores/v1" } },
+    { method: "POST", url: "/maintenance-tickets/" + ids.ticket + "/repair-cost-reviews", data: proposal, config: { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } } },
     { method: "GET", url: "/repair-cost-reviews/" + ids.review, config: { baseURL: "/api/dolores/v1", signal: undefined } },
     { method: "POST", url: "/repair-cost-reviews/" + ids.review + "/decision", data: decision, config: { baseURL: "/api/dolores/v1" } },
     { method: "POST", url: "/repair-cost-reviews/" + ids.review + "/acknowledgment", data: { acknowledgeApprovedAmount: true }, config: { baseURL: "/api/dolores/v1" } },
-    { method: "POST", url: "/repair-cost-reviews/" + ids.review + "/dispute", data: dispute, config: { baseURL: "/api/dolores/v1" } },
+    { method: "POST", url: "/repair-cost-reviews/" + ids.review + "/dispute", data: dispute, config: { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } } },
     { method: "POST", url: "/repair-cost-reviews/" + ids.review + "/resolution", data: resolution, config: { baseURL: "/api/dolores/v1" } },
   ]);
 });
@@ -182,19 +192,12 @@ test("private evidence schemas reject public URLs and unsafe ticket parts values
     diagnosis: "Damaged pump",
     estimatedAmount: 400,
     currency: "VND",
-    evidenceReferences: ["private/review/evidence-1"],
     proposedResponsibleParty: "TENANT",
   };
   assert.equal(costReviews.RepairCostProposalRequestSchema.safeParse(baseProposal).success, true);
-  assert.equal(costReviews.RepairCostProposalRequestSchema.safeParse({
-    ...baseProposal,
-    evidenceReferences: ["https://example.invalid/evidence"],
-  }).success, false);
-  assert.equal(machines.MaintenanceTicketResolutionRequestSchema.safeParse({
-    diagnosis: "Pump fault",
-    resolutionResult: "Pump replaced",
-    evidenceReferences: ["http://example.invalid/evidence"],
-  }).success, false);
+  assert.equal(costReviews.RepairCostProposalRequestSchema.safeParse({ ...baseProposal, evidenceReferences: ["https://example.invalid/evidence"] }).success, false);
+  assert.equal(machines.MaintenanceTicketResolutionRequestSchema.safeParse({ diagnosis: "Pump fault", resolutionResult: "Pump replaced" }).success, true);
+  assert.throws(() => require("./evidence-multipart-helper.cjs").validateEvidenceFiles([], { min: 1, max: 5 }));
   assert.equal(machines.MaintenanceTicketPartsRequestSchema.safeParse({ partsCost: -1 }).success, false);
 });
 
@@ -223,15 +226,9 @@ test("module 1 maintenance schemas validate versioned ticket edits, review reaso
     eventType: "PRIMARY_COLLECTED",
     machineId: validId,
     conditionNotes: "Vỏ máy còn nguyên",
-    evidenceReference: "private/custody/primary-1",
     acknowledgementUnavailableReason: "Owner chưa thể phản hồi",
   }).success, true);
-  assert.equal(machines.MaintenanceCustodyEventCreateRequestSchema.safeParse({
-    eventType: "PRIMARY_COLLECTED",
-    machineId: validId,
-    conditionNotes: "Vỏ máy còn nguyên",
-    evidenceReference: "https://example.invalid/evidence",
-  }).success, false);
+  assert.equal(machines.MaintenanceCustodyEventCreateRequestSchema.safeParse({ eventType: "PRIMARY_COLLECTED", machineId: validId, conditionNotes: "Received", evidenceReference: "https://example.invalid/evidence" }).success, false);
   assert.equal(machines.MaintenanceRequestDetailsSchema.safeParse({
     id: validId,
     requestType: "PREVENTIVE",

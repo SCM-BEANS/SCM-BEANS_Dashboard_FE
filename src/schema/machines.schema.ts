@@ -181,7 +181,6 @@ export const RepairIntakeRequestSchema = z.object({
   machineId: MachineIdSchema,
   idempotencyKey: z.string().min(1).max(128),
   issueDescription: z.string().max(4000),
-  evidenceReference: z.string().max(512).optional(),
 }).strict();
 
 export const MaintenanceRequestIdSchema = z.string().uuid();
@@ -215,10 +214,6 @@ export const MaintenanceTicketPartsRequestSchema = z.object({
 export const MaintenanceTicketResolutionRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(4000),
   resolutionResult: z.string().trim().min(1).max(4000),
-  evidenceReferences: z.array(
-    z.string().trim().min(1).max(512)
-      .refine((reference) => !/^https?:\/\//i.test(reference) && !/[\r\n]/.test(reference)),
-  ).min(1),
   notes: z.string().trim().max(4000).optional(),
 }).strict();
 
@@ -406,8 +401,6 @@ export const MaintenanceCustodyEventCreateRequestSchema = z.object({
   eventType: MaintenanceCustodyEventTypeSchema,
   machineId: MachineIdSchema,
   conditionNotes: z.string().trim().min(1).max(2000),
-  evidenceReference: z.string().trim().min(1).max(512)
-    .refine((value) => !/^https?:\/\//i.test(value) && !/[\r\n]/.test(value), "Evidence must be a private storage reference."),
   acknowledgementUnavailableReason: z.string().trim().min(1).max(1000).optional(),
 }).strict();
 export const PrimaryCollectionRequestSchema = MaintenanceCustodyEventCreateRequestSchema
@@ -437,8 +430,6 @@ export const ReplacementAssignmentSchema = z.object({
 }).passthrough();
 
 export const ReplacementAssignmentIdSchema = z.string().uuid();
-const privateEvidenceReferenceSchema = z.string().trim().min(1)
-  .refine((value) => !/^https?:\/\//i.test(value) && !/[\r\n]/.test(value), "Evidence must be a private storage reference.");
 export const ReplacementAssignmentCreateRequestSchema = z.object({
   replacementMachineId: MachineIdSchema,
   startAt: dateTimeSchema,
@@ -448,13 +439,11 @@ export const ReplacementAssignmentCreateRequestSchema = z.object({
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
 export const ReplacementAssignmentActivateRequestSchema = z.object({
-  handoverEvidence: privateEvidenceReferenceSchema,
   approvalReason: z.string().trim().min(1).max(2000),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
 export const ReplacementAssignmentReleaseRequestSchema = z.object({
-  releaseEvidence: privateEvidenceReferenceSchema,
   idempotencyKey: z.string().trim().min(1),
   correlationId: z.string().trim().min(1),
 }).strict();
@@ -602,19 +591,14 @@ export const MaintenanceTicketListParamsSchema = z.object({
 
 export type MaintenanceTicketListParams = z.infer<typeof MaintenanceTicketListParamsSchema>;
 
-const privateRepairEvidenceReferenceSchema = z.string().trim().min(1).max(512)
-  .refine((reference) => !/^https?:\/\//i.test(reference) && !/[\r\n]/.test(reference), "Evidence must be a private storage reference.");
-
 export const RepairDiagnosisRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(4000),
-  evidenceReference: privateRepairEvidenceReferenceSchema,
 }).strict();
 
 export const RepairWorkCompletionRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(4000),
   resolutionResult: z.string().trim().min(1).max(4000),
   workScope: z.string().trim().min(1).max(2000),
-  evidenceReferences: z.array(privateRepairEvidenceReferenceSchema).min(1),
   notes: z.string().max(4000).optional(),
   emergencyAuthorizationId: z.string().uuid().optional(),
 }).strict();
@@ -634,7 +618,6 @@ export const RepairCustodyEventRequestSchema = z.object({
   ]),
   machineId: MachineIdSchema,
   conditionNotes: z.string().trim().min(1).max(2000),
-  evidenceReference: z.string().trim().min(1).max(512),
 }).strict();
 
 export const RepairTriageRequestSchema = z.object({

@@ -18,7 +18,7 @@ function loadApi(relativePath, axiosClient) {
     if (id === "@/lib/http") return { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" };
     if (id.startsWith("@/schema/")) return schemas;
     if (id === "@/schema/contracts.schema") return { ContractIdSchema: passthrough };
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   }, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -94,7 +94,7 @@ test("active termination workflow uses backend responsibility and recall evidenc
   const recallSource = readFileSync(join(__dirname, "../src/components/features/contract-termination/recall-work-orders-screen.tsx"), "utf8");
   assert.match(schemaSource, /responsibility:\s*z\.enum\(\["TENANT", "COMPANY", "UNKNOWN"\]\)/);
   assert.match(screenSource, /machinesApi\.getMaintenanceTicketById/);
-  assert.match(screenSource, /settlementEvidenceReference/);
+  assert.match(screenSource, /settlementFiles/);
   assert.match(recallSource, /recallWorkOrdersApi\.uploadEvidence/);
   assert.match(recallSource, /recallWorkOrdersApi\.downloadEvidence/);
   assert.doesNotMatch(recallSource, /terminationCasesApi\.recordHandover/);

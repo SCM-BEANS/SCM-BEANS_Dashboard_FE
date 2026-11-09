@@ -1,5 +1,10 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  buildEvidenceForm,
+  EVIDENCE_MULTIPART_HEADERS,
+  validateEvidenceFiles,
+} from "@/lib/evidence-multipart";
+import {
   BILLING_DEFAULT_PAGE_SIZE,
   InvoiceIdSchema,
   InvoiceLineItemListParamsSchema,
@@ -405,9 +410,31 @@ export const billingApi =  {
     if (result.contractId !== validId) throw new Error("Dolores returned a different deposit Contract.");
     return result;
   },
-  async settleDepositDamage(contractId: string, input: { damageAmount: number; evidenceReference: string; maintenanceTicketId?: string; decision: "NO_DAMAGE" | "DAMAGE" | "PARTIAL_DAMAGE"; notes?: string }) {
+  async settleDepositDamage(
+    contractId: string,
+    input: {
+      damageAmount: number;
+      maintenanceTicketId?: string;
+      decision: "NO_DAMAGE" | "DAMAGE" | "PARTIAL_DAMAGE";
+      notes?: string;
+    },
+    files: File[],
+  ) {
     const validId = ContractIdSchema.parse(contractId);
-    const response = await axiosClient.post<unknown>(`/billing/deposits/${validId}/settle-damage`, DepositDamageRequestSchema.parse(input), { baseURL: DOLORES_API_BASE_URL });
+    validateEvidenceFiles(files, { min: 1, max: 1 });
+    const data = DepositDamageRequestSchema.parse({
+      damageAmount: input.damageAmount,
+      ...(input.maintenanceTicketId === undefined ? {} : { maintenanceTicketId: input.maintenanceTicketId }),
+      decision: input.decision,
+      ...(input.notes === undefined ? {} : { notes: input.notes }),
+    });
+    // Override axiosClient's shared JSON default; the browser adapter adds the
+    // multipart boundary when it sends this FormData body.
+    const response = await axiosClient.post<unknown>(
+      `/billing/deposits/${validId}/settle-damage`,
+      buildEvidenceForm(data, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     const result = DepositSettlementResponseSchema.parse(response.data);
     if (result.contractId !== validId) throw new Error("Dolores returned a different deposit Contract.");
     return result;

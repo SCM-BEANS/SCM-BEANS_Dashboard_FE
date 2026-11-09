@@ -61,7 +61,6 @@ export const OfflineViolationReviewListParamsSchema = OfflineViolationReviewCont
 export const OfflineViolationReviewDecisionRequestSchema = z.object({
   decision: decisionSchema,
   reason: z.string().trim().min(1).max(2000),
-  evidenceReferences: z.string().trim().min(1).max(2000).startsWith("private://"),
 }).strict();
 
 export type OfflineViolationReview = z.infer<typeof OfflineViolationReviewSchema>;

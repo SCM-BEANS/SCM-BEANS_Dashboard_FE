@@ -163,7 +163,7 @@ test("selected offline review exposes its decision in the dock", async ({ page }
   const action = pageActionBar(page).locator('[data-action-id="offline-review-decide"]');
   await expect(action).toBeDisabled();
   await page.getByLabel("Lý do rà soát").fill("Kiểm tra kết nối");
-  await page.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://review");
+  await page.locator('input[type="file"]').setInputFiles({ name: "review.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-test-file") });
   await expect(action).toBeEnabled();
   await action.click();
   await expect(page.getByRole("alertdialog")).toBeVisible();

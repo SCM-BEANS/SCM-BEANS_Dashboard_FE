@@ -13,7 +13,7 @@ function loadTypescript(relativePath, mocks = {}) {
   });
   const mockModule = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id]
-    : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : require(id);
+    : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function('require', 'exports', 'module', outputText)(mockedRequire, mockModule.exports, mockModule);
   return mockModule.exports;
 }

@@ -55,10 +55,10 @@ export const TerminationInspectionRequestSchema = z.object({
   diagnosis: z.string().trim().min(1),
   responsibility: z.enum(["TENANT", "COMPANY", "UNKNOWN"]),
   actualCost: z.number().finite().nonnegative().optional(),
-  evidenceReference: z.string().trim().min(1),
   resolutionResult: z.string().trim().min(1),
   notes: z.string().optional(),
   correlationId: z.string().trim().min(1),
+  inspectionDecision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
 }).strict();
 
 export const TerminationInspectionResultSchema = z.object({

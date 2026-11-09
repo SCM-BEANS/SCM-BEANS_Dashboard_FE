@@ -58,10 +58,10 @@ export const TerminationInspectionRequestSchema = z.object({
   diagnosis: z.string().trim().min(1).max(2000),
   responsibility: z.enum(["TENANT", "COMPANY", "UNKNOWN"]),
   actualCost: z.number().finite().nonnegative().optional(),
-  evidenceReference: z.string().trim().min(1).refine((value) => !/^https?:\/\//i.test(value)),
   resolutionResult: z.string().trim().min(1).max(2000),
   notes: z.string().max(2000).optional(),
   correlationId: z.string().trim().min(1).max(128),
+  inspectionDecision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
 }).strict();
 
 export const TerminationSettlementRequestSchema = z.object({
@@ -69,7 +69,6 @@ export const TerminationSettlementRequestSchema = z.object({
   damageAmount: z.number().finite().nonnegative(),
   penaltyAmount: z.number().finite().nonnegative(),
   outstandingAmount: z.number().finite().nonnegative(),
-  evidenceReference: z.string().trim().min(1).refine((value) => !/^https?:\/\//i.test(value)),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict().refine(

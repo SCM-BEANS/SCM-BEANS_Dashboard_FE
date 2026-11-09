@@ -16,6 +16,7 @@ import { maintenanceCustodyEventsQueryKey, maintenanceRequestDetailQueryKey } fr
 import type { RepairWorkflowRole } from "./repair-workflow-query-identity";
 import { maintenanceCustodyEventLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 import styles from "./maintenance-custody-stepper.module.css";
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 
 const steps: ReadonlyArray<{ type: MaintenanceCustodyEventType; label: string }> = [
   { type: "PRIMARY_COLLECTED", label: maintenanceCustodyEventLabel("PRIMARY_COLLECTED") },
@@ -45,7 +46,8 @@ export function MaintenanceCustodyStepper({
 }) {
   const queryClient = useQueryClient();
   const [conditionNotes, setConditionNotes] = useState("");
-  const [evidenceReference, setEvidenceReference] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const fileError = evidenceFileError(files, { min: 1, max: 1 });
   const [acknowledgementUnavailableReason, setAcknowledgementUnavailableReason] = useState("");
   const [acknowledgements, setAcknowledgements] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState("");
@@ -103,7 +105,7 @@ export function MaintenanceCustodyStepper({
 
   useEffect(() => {
     setConditionNotes("");
-    setEvidenceReference("");
+    setFiles([]);
     setAcknowledgementUnavailableReason("");
   }, [nextStep?.type]);
 
@@ -135,16 +137,15 @@ export function MaintenanceCustodyStepper({
       eventType: MaintenanceCustodyEventType;
       machineId: string;
       conditionNotes: string;
-      evidenceReference: string;
       acknowledgementUnavailableReason?: string;
-    }) => maintenanceRequestsApi.recordCustodyEvent(requestId, input),
+    }) => maintenanceRequestsApi.recordCustodyEvent(requestId, input, files),
     onMutate: () => {
       setActionError("");
       setFeedback("");
     },
     onSuccess: async () => {
       setConditionNotes("");
-      setEvidenceReference("");
+      setFiles([]);
       setAcknowledgementUnavailableReason("");
       setFeedback("Đã ghi nhận bước bàn giao máy.");
       await invalidateCustody();
@@ -168,12 +169,11 @@ export function MaintenanceCustodyStepper({
 
   const submitEvent = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!nextStep || !canRecord || !eventMachineId) return;
+    if (!nextStep || !canRecord || !eventMachineId || fileError) return;
     recordEvent.mutate({
       eventType: nextStep.type,
       machineId: eventMachineId,
       conditionNotes: conditionNotes.trim(),
-      evidenceReference: evidenceReference.trim(),
       ...(isOperator && acknowledgementUnavailableReason.trim()
         ? { acknowledgementUnavailableReason: acknowledgementUnavailableReason.trim() }
         : {}),
@@ -256,16 +256,16 @@ export function MaintenanceCustodyStepper({
             value={conditionNotes}
             onChange={(event) => setConditionNotes(event.target.value)}
           />
-          <label htmlFor={`custody-evidence-${requestId}`}>Mã tham chiếu chứng từ <span aria-hidden="true">*</span></label>
+          <label htmlFor={`custody-evidence-${requestId}`}>Tệp chứng từ <span aria-hidden="true">*</span></label>
           <input
             id={`custody-evidence-${requestId}`}
-            value={evidenceReference}
-            maxLength={512}
+            type="file"
+            accept={EVIDENCE_ACCEPT}
             required
             aria-describedby={`custody-evidence-hint-${requestId}`}
-            onChange={(event) => setEvidenceReference(event.target.value)}
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
           />
-          <p className={styles.hint} id={`custody-evidence-hint-${requestId}`}>Nhập mã tham chiếu lưu trữ riêng tư; không nhập đường dẫn URL.</p>
+          <p className={styles.hint} id={`custody-evidence-hint-${requestId}`}>{files.map((file) => file.name).join(", ") || fileError}</p>
           {isOperator && (
             <>
               <label htmlFor={`custody-no-ack-${requestId}`}>Lý do chưa thể lấy xác nhận của Owner (nếu có)</label>
@@ -279,7 +279,7 @@ export function MaintenanceCustodyStepper({
             </>
           )}
           {actionError && <p className={styles.errorNotice} role="alert">{actionError}</p>}
-          <ButtonBar type="submit" disabled={!canRecord || !conditionNotes.trim() || !evidenceReference.trim() || recordEvent.isPending}>
+          <ButtonBar type="submit" aria-describedby={`custody-evidence-hint-${requestId}`} disabled={!canRecord || !conditionNotes.trim() || Boolean(fileError) || recordEvent.isPending}>
             {recordEvent.isPending ? "Đang ghi nhận…" : "Ghi nhận bước bàn giao"}
           </ButtonBar>
         </form>

@@ -7,6 +7,7 @@ import type { BackButtonDestination } from "@/components/navigation/back-button"
 import { machinesApi } from "@/apis/machines.api";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
@@ -23,6 +24,8 @@ export function RepairIntakeForm({
   const router = useRouter();
   const [machineId, setMachineId] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const fileError = evidenceFileError(files, { min: 0, max: 1 });
   const [validationError, setValidationError] = useState("");
   const idempotencyKeyRef = useRef<string | null>(null);
   const machineQuery = useQuery({
@@ -31,7 +34,7 @@ export function RepairIntakeForm({
   });
   const submitMutation = useMutation({
     mutationFn: (input: { machineId: string; issueDescription: string; idempotencyKey: string }) =>
-      machinesApi.createRepairIntake(input),
+      machinesApi.createRepairIntake(input, files),
     onSuccess: () => {
       setIssueDescription("");
       idempotencyKeyRef.current = null;
@@ -40,7 +43,7 @@ export function RepairIntakeForm({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!machineId || !issueDescription.trim() || issueDescription.trim().length > 4000) {
+    if (!machineId || !issueDescription.trim() || issueDescription.trim().length > 4000 || fileError) {
       setValidationError(messages.REPAIR_INTAKE_VALIDATION);
       return;
     }
@@ -108,6 +111,11 @@ export function RepairIntakeForm({
               />
               <small>{issueDescription.length} / 4000</small>
             </label>
+            <label className={styles.formField}>
+              <span>Chứng từ (nếu có)</span>
+              <input type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => { setFiles(Array.from(event.target.files ?? [])); idempotencyKeyRef.current = null; }} />
+              {files.map((file) => <small key={file.name}>{file.name}</small>)}
+            </label>
             {validationError ? <p className={styles.errorNotice} role="alert">{validationError}</p> : null}
             {submitMutation.isError ? <p className={styles.errorNotice} role="alert">{messages.REPAIR_INTAKE_ERROR}</p> : null}
             {submitMutation.isSuccess ? <p className={styles.successNotice} role="status">{messages.REPAIR_INTAKE_SUCCESS}</p> : null}
@@ -116,8 +124,8 @@ export function RepairIntakeForm({
         ) : null}
       </form>
       <PageActions actions={[
-        { id: "repair-intake-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push("/dashboard/support"); }, ...(machineId || issueDescription ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
-        { id: "repair-intake-submit", label: messages.REPAIR_INTAKE_SUBMIT, variant: "primary", type: "submit", form: "repair-intake-form", disabled: !machineId || !issueDescription.trim() || issueDescription.trim().length > 4000 || machineQuery.isPending || machineQuery.isError, disabledReason: "Chọn máy và nhập nội dung yêu cầu.", pending: submitMutation.isPending, pendingLabel: messages.REPAIR_INTAKE_SENDING },
+        { id: "repair-intake-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push("/dashboard/support"); }, ...(machineId || issueDescription || files.length ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
+        { id: "repair-intake-submit", label: messages.REPAIR_INTAKE_SUBMIT, variant: "primary", type: "submit", form: "repair-intake-form", disabled: !machineId || !issueDescription.trim() || issueDescription.trim().length > 4000 || machineQuery.isPending || machineQuery.isError || Boolean(fileError), disabledReason: fileError ?? "Chọn máy và nhập nội dung yêu cầu.", pending: submitMutation.isPending, pendingLabel: messages.REPAIR_INTAKE_SENDING },
       ]} />
     </section>
   );

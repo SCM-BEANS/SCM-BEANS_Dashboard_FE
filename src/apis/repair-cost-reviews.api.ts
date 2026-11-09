@@ -13,6 +13,7 @@ import {
   type RepairCostResolutionRequest,
 } from "@/schema/repair-cost-reviews.schema";
 import { MaintenanceTicketIdSchema } from "@/schema/machines.schema";
+import { buildEvidenceForm, EVIDENCE_MULTIPART_HEADERS, validateEvidenceFiles } from "@/lib/evidence-multipart";
 
 const reviewPath = (reviewId: string) => "/repair-cost-reviews/" + encodeURIComponent(RepairCostReviewIdSchema.parse(reviewId));
 
@@ -23,13 +24,14 @@ function parseReview(data: unknown, reviewId?: string) {
 }
 
 export const repairCostReviewsApi = {
-  async propose(ticketId: string, input: RepairCostProposalRequest) {
+  async propose(ticketId: string, input: RepairCostProposalRequest, files: File[]) {
     const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
     const body = RepairCostProposalRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 1, max: 5 });
     const response = await axiosClient.post<unknown>(
       "/maintenance-tickets/" + encodeURIComponent(validTicketId) + "/repair-cost-reviews",
-      body,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(body, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     const review = parseReview(response.data);
     if (review.maintenanceTicketId !== validTicketId) {
@@ -61,12 +63,15 @@ export const repairCostReviewsApi = {
     });
     return parseReview(response.data, validReviewId);
   },
-  async dispute(reviewId: string, input: RepairCostDisputeRequest) {
+  async dispute(reviewId: string, input: RepairCostDisputeRequest, files: File[]) {
     const validReviewId = RepairCostReviewIdSchema.parse(reviewId);
     const body = RepairCostDisputeRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(reviewPath(validReviewId) + "/dispute", body, {
-      baseURL: DOLORES_API_BASE_URL,
-    });
+    validateEvidenceFiles(files, { min: 1, max: 5 });
+    const response = await axiosClient.post<unknown>(
+      reviewPath(validReviewId) + "/dispute",
+      buildEvidenceForm(body, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     return parseReview(response.data, validReviewId);
   },
   async resolve(reviewId: string, input: RepairCostResolutionRequest) {

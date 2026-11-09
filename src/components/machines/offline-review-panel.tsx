@@ -1,3 +1,4 @@
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import { useRef, useState } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -16,7 +17,7 @@ export function OfflineReviewPanel({ page, detail, status, machineId, machineLab
   loading?: boolean; detailLoading?: boolean; error?: string; detailError?: string;
   onFilterChange: (status: string) => void; onPageChange: (page: number) => void;
   onSelect: (id: string | undefined) => void; onRefresh: () => void;
-  onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest) => Promise<void>;
+  onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>;
 }) {
   return <section className={styles.smartIotPanel} aria-label="Rà soát mất kết nối">
     <div className={styles.operationalOverviewPanelHeading}><h2>Rà soát mất kết nối</h2><ButtonBar onClick={onRefresh} disabled={loading}>Làm mới</ButtonBar></div>
@@ -40,16 +41,18 @@ export function OfflineReviewPanel({ page, detail, status, machineId, machineLab
   </section>;
 }
 
-function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review: OfflineViolationReview; canDecide: boolean; onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest) => Promise<void>; onClose: () => void }) {
+function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review: OfflineViolationReview; canDecide: boolean; onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>; onClose: () => void }) {
   const [decision, setDecision] = useState<"NO_ACTION" | "FOLLOW_UP">("FOLLOW_UP");
-  const [reason, setReason] = useState(""), [evidence, setEvidence] = useState("");
+  const [reason, setReason] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const fileError = evidenceFileError(files, { min: 1, max: 5 });
   const [confirm, setConfirm] = useState(false), [pending, setPending] = useState(false), [error, setError] = useState("");
   const submitting = useRef(false);
-  const draft = OfflineViolationReviewDecisionRequestSchema.safeParse({ decision, reason, evidenceReferences: evidence });
+  const draft = OfflineViolationReviewDecisionRequestSchema.safeParse({ decision, reason });
   const submit = async () => {
-    if (submitting.current || !draft.success || !onDecide || review.status !== "REVIEW_REQUIRED") return;
+    if (submitting.current || !draft.success || fileError || !onDecide || review.status !== "REVIEW_REQUIRED") return;
     submitting.current = true; setPending(true); setError("");
-    try { await onDecide(review.id, draft.data); setConfirm(false); }
+    try { await onDecide(review.id, draft.data, files); setConfirm(false); }
     catch (requestError) { setConfirm(false); setError(requestError instanceof Error ? requestError.message : "Chưa thể ghi nhận kết quả. Hãy làm mới hồ sơ để kiểm tra trước khi thử lại."); }
     finally { submitting.current = false; setPending(false); }
   };
@@ -62,10 +65,11 @@ function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review:
     </dl>
     <EvidenceList resource="OFFLINE_REVIEW" parentId={review.id} title="Chứng từ rà soát" />
     <p className={styles.telemetryRangeCaption}>Thời gian giữ theo giờ máy chủ; dữ liệu rà soát không tự áp dụng tiền phạt hoặc công nợ.</p>
-    {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || pending, disabledReason: "Nhập lý do và mã minh chứng hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success) setConfirm(true); }}>
+    {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || Boolean(fileError) || pending, disabledReason: fileError ?? "Nhập lý do hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success && !fileError) setConfirm(true); }}>
       <label>Kết quả<select disabled={pending} value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}><option value="FOLLOW_UP">Tiếp tục theo dõi, xử lý</option><option value="NO_ACTION">Không cần xử lý thêm</option></select></label>
       <label>Lý do rà soát<textarea name="reason" required maxLength={2000} value={reason} disabled={pending} onChange={(event) => setReason(event.target.value)} /></label>
-      <label>Mã tham chiếu minh chứng riêng tư<input name="evidenceReferences" required maxLength={2000} placeholder="private://…" value={evidence} disabled={pending} onChange={(event) => setEvidence(event.target.value)} /></label>
+      <label>Chứng từ rà soát<input name="evidenceFiles" type="file" multiple accept={EVIDENCE_ACCEPT} disabled={pending} onChange={(event) => setFiles(Array.from(event.target.files ?? []))} /></label>
+      {files.map((file, index) => <p key={`${file.name}-${index}`}>{file.name}</p>)}
     </form></> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : null}
     {confirm ? <NotificationDialog variant="confirm" title="Ghi nhận kết quả rà soát?" description={reason.trim()} onClose={() => { if (!pending) setConfirm(false); }} closeOnEscape={!pending} primaryAction={{ label: "Xác nhận kết quả", onClick: () => void submit(), pending, pendingLabel: "Đang ghi nhận…", disabled: pending }} secondaryAction={{ label: "Quay lại", disabled: pending, onClick: () => setConfirm(false) }} /> : null}

@@ -19,7 +19,7 @@ function loadTypeScriptModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -28,6 +28,7 @@ const caseId = "00000000-0000-4000-8000-000000000001";
 const requestId = "00000000-0000-4000-8000-000000000002";
 const machineId = "00000000-0000-4000-8000-000000000003";
 const eventId = "00000000-0000-4000-8000-000000000004";
+const files = [new File(["12345678"], "evidence.pdf", { type: "application/pdf" })];
 const assignmentId = "00000000-0000-4000-8000-000000000005";
 
 test("RepairCase custody creation sends the documented body and checks returned event identity", async () => {
@@ -36,7 +37,6 @@ test("RepairCase custody creation sends the documented body and checks returned 
     eventType: "REPLACEMENT_COLLECTED",
     machineId,
     conditionNotes: "Machine returned after repair.",
-    evidenceReference: "private://custody/record-05",
   };
   const event = {
     ...request,
@@ -58,12 +58,12 @@ test("RepairCase custody creation sends the documented body and checks returned 
     "@/schema/machines.schema": schemaMocks,
   });
 
-  assert.deepEqual(await repairCasesApi.recordCustodyEvent(caseId, request), event);
-  assert.deepEqual(calls[0], {
-    url: `/repair-cases/${caseId}/custody-events`,
-    data: request,
-    config: { baseURL: "/api/dolores/v1" },
-  });
+  assert.deepEqual(await repairCasesApi.recordCustodyEvent(caseId, request, files), event);
+  assert.equal(calls[0].url, `/repair-cases/${caseId}/custody-events`);
+  assert.deepEqual(calls[0].config, { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } });
+  assert.deepEqual(JSON.parse(await calls[0].data.get("data").text()), request);
+  assert.deepEqual(calls[0].data.getAll("files"), files);
+  assert.deepEqual([...calls[0].data.keys()], ["data", "files"]);
 });
 
 test("RepairCase custody creation rejects a response that changes case, event type, or machine", async () => {
@@ -71,7 +71,6 @@ test("RepairCase custody creation rejects a response that changes case, event ty
     eventType: "PRIMARY_RETURNED",
     machineId,
     conditionNotes: "Primary machine returned.",
-    evidenceReference: "private://custody/record-06",
   };
   let responseData = {
     ...request,
@@ -87,18 +86,17 @@ test("RepairCase custody creation rejects a response that changes case, event ty
     "@/schema/machines.schema": schemaMocks,
   });
 
-  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request), /different RepairCase custody event/);
+  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request, files), /different RepairCase custody event/);
   responseData = { ...responseData, repairCaseId: caseId, eventType: "REPLACEMENT_COLLECTED" };
-  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request), /different RepairCase custody event/);
+  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request, files), /different RepairCase custody event/);
   responseData = { ...responseData, eventType: request.eventType, machineId: requestId };
-  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request), /different RepairCase custody event/);
+  await assert.rejects(repairCasesApi.recordCustodyEvent(caseId, request, files), /different RepairCase custody event/);
 });
 
 test("Replacement assignment release sends idempotency fields and checks RELEASED response", async () => {
   const calls = [];
   let responseData = { id: assignmentId, status: "RELEASED" };
   const request = {
-    releaseEvidence: "private://release/record-07",
     idempotencyKey: "repair-closeout-7f82b7f9",
     correlationId: "correlation-5ef0aa7c",
   };
@@ -114,34 +112,21 @@ test("Replacement assignment release sends idempotency fields and checks RELEASE
     "@/schema/machines.schema": schemaMocks,
   });
 
-  assert.deepEqual(await replacementAssignmentsApi.release(assignmentId, request), responseData);
-  assert.deepEqual(calls[0], {
-    url: `/replacement-assignments/${assignmentId}/release`,
-    data: request,
-    config: { baseURL: "/api/dolores/v1" },
-  });
+  assert.deepEqual(await replacementAssignmentsApi.release(assignmentId, request, files), responseData);
+  assert.equal(calls[0].url, `/replacement-assignments/${assignmentId}/release`);
+  assert.deepEqual(calls[0].config, { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } });
+  assert.deepEqual(JSON.parse(await calls[0].data.get("data").text()), request);
+  assert.deepEqual(calls[0].data.getAll("files"), files);
+  assert.deepEqual([...calls[0].data.keys()], ["data", "files"]);
   responseData = { id: assignmentId, status: "ACTIVE" };
-  await assert.rejects(replacementAssignmentsApi.release(assignmentId, request), /did not confirm/);
+  await assert.rejects(replacementAssignmentsApi.release(assignmentId, request, files), /did not confirm/);
 });
 
-test("Private evidence schemas reject public URLs and line breaks", () => {
-  const { MaintenanceCustodyEventCreateRequestSchema, ReplacementAssignmentReleaseRequestSchema } =
-    loadTypeScriptModule("src/schema/machines.schema.ts");
-
-  const custodyRequest = {
-    eventType: "PRIMARY_RETURNED",
-    machineId,
-    conditionNotes: "Primary returned after repair.",
-    evidenceReference: "private://custody/return-1",
-  };
-  assert.equal(MaintenanceCustodyEventCreateRequestSchema.parse(custodyRequest).eventType, "PRIMARY_RETURNED");
-  assert.throws(() => MaintenanceCustodyEventCreateRequestSchema.parse({ ...custodyRequest, evidenceReference: "https://public.example/evidence" }));
-  assert.throws(() => MaintenanceCustodyEventCreateRequestSchema.parse({ ...custodyRequest, evidenceReference: "private://one\nprivate://two" }));
-  assert.throws(() => ReplacementAssignmentReleaseRequestSchema.parse({
-    releaseEvidence: "https://public.example/release",
-    idempotencyKey: "key",
-    correlationId: "correlation",
-  }));
+test("Custody and release validate multipart files", () => {
+  const { validateEvidenceFiles } = require("./evidence-multipart-helper.cjs");
+  assert.doesNotThrow(() => validateEvidenceFiles(files, { min: 1, max: 1 }));
+  assert.throws(() => validateEvidenceFiles([], { min: 1, max: 1 }));
+  assert.throws(() => validateEvidenceFiles([new File(["12345678"], "bad.txt", { type: "text/plain" })], { min: 1, max: 1 }));
 });
 
 test("Phase 4 return steps use the correct machine, role, order, and Owner acknowledgments", () => {
@@ -167,8 +152,8 @@ test("Phase 4 return steps use the correct machine, role, order, and Owner ackno
   assert.match(source, /M\.PRIMARY_RETURN_STATUS_SYNC_PENDING/);
   assert.match(source, /renderOwnerAcknowledgment\(replacementCollectionEvent, M\.ACKNOWLEDGMENT_REPLACEMENT_COLLECTED_PROMPT\)/);
   assert.match(source, /renderOwnerAcknowledgment\(primaryReturnEvent, M\.ACKNOWLEDGMENT_PRIMARY_RETURNED_PROMPT\)/);
-  assert.match(source, /eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes, evidenceReference/);
-  assert.match(source, /eventType: "PRIMARY_RETURNED", machineId, conditionNotes, evidenceReference/);
+  assert.match(source, /eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes/);
+  assert.match(source, /eventType: "PRIMARY_RETURNED", machineId, conditionNotes/);
   assert.doesNotMatch(source, /privateEvidenceStepBlocked/);
 });
 
@@ -180,7 +165,7 @@ test("Phase 5 release requires the acknowledged case state, confirmation, idempo
   assert.match(source, /replacementCollectionAcknowledged && replacementCollectionEvent\?\.machineId === assignment\.data\.replacementMachineId/);
   assert.match(source, /primaryReturnAcknowledged && primaryReturnEvent\?\.machineId === repairCase\.data\.primaryMachineId/);
   assert.match(source, /const canReleaseAsRole = role === "admin" \|\| role === "moderator" \|\| role === "technician"/);
-  assert.match(source, /replacementAssignmentsApi\.release\(expectedAssignmentId, releaseRequest\)/);
+  assert.match(source, /replacementAssignmentsApi\.release\(expectedAssignmentId, releaseRequest, releaseEvidenceReference\)/);
   assert.match(source, /idempotencyKey: globalThis\.crypto\.randomUUID\(\)/);
   assert.match(source, /correlationId: globalThis\.crypto\.randomUUID\(\)/);
   assert.match(source, /releaseReadAfterWriteConfirmed = assignment\.data\?\.status === "RELEASED" && repairCase\.data\?\.status === "CLOSED"/);

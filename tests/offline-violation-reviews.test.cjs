@@ -8,7 +8,7 @@ function loadTypescript(path, mocks = {}) {
   const fileName = join(__dirname, '..', path);
   const { outputText } = ts.transpileModule(readFileSync(fileName, 'utf8'), { fileName, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } });
   const loaded = { exports: {} };
-  const resolve = id => Object.hasOwn(mocks, id) ? mocks[id] : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : require(id);
+  const resolve = id => Object.hasOwn(mocks, id) ? mocks[id] : id.startsWith('@/lib/evidence-multipart') ? loadTypescript('src/lib/evidence-multipart.ts', mocks) : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : require(id);
   new Function('require', 'exports', 'module', outputText)(resolve, loaded.exports, loaded);
   return loaded.exports;
 }
@@ -19,8 +19,9 @@ const contractId = '00000000-0000-4000-8000-000000000003';
 const machineId = '00000000-0000-4000-8000-000000000004';
 const localTimestamp = '2026-11-06T08:30:00.123456';
 const review = { id, ownerId, contractId, machineId, policyVersionId: contractId, policyVersion: 1, offlineLimitMinutes: 60, status: 'REVIEW_REQUIRED', source: 'VALKEY_HEARTBEAT_TTL', detectedAt: localTimestamp, lastObservedAt: localTimestamp, observedOfflineSince: localTimestamp, observedOfflineUntil: null, reviewRequiredAt: localTimestamp, decision: null, reviewerId: null, reviewerRole: null, decisionReason: null, evidenceReferences: null, decidedAt: null };
-const decision = { decision: 'FOLLOW_UP', reason: 'Contact store', evidenceReferences: 'private://offline-review/evidence-123' };
-const reviewed = { ...review, status: 'REVIEWED', decision: decision.decision, reviewerId: 'operator-profile-key', reviewerRole: 'MODERATOR', decisionReason: decision.reason, evidenceReferences: decision.evidenceReferences, decidedAt: localTimestamp };
+const decision = { decision: 'FOLLOW_UP', reason: 'Contact store' };
+const files = [new File(['evidence data'], 'evidence.pdf', { type: 'application/pdf' })];
+const reviewed = { ...review, status: 'REVIEWED', decision: decision.decision, reviewerId: 'operator-profile-key', reviewerRole: 'MODERATOR', decisionReason: decision.reason, evidenceReferences: null, decidedAt: localTimestamp };
 const headers = { 'x-page': '0', 'x-page-size': '50', 'x-has-next': 'false' };
 function apiWith(http) {
   return loadTypescript('src/apis/offline-violation-reviews.api.ts', { '@/lib/http': { axiosClient: http, DOLORES_API_BASE_URL: '/api/dolores/v1' } }).offlineViolationReviewsApi;
@@ -35,10 +36,10 @@ test('offline schema preserves LocalDateTime strings and exact workflow status w
   assert.equal(s.OfflineViolationReviewSchema.safeParse({ ...review, detectedAt: '2026-02-30T08:30:00' }).success, false);
 });
 
-test('offline decision schema trims input and enforces private evidence reference and both length limits', () => {
+test('offline decision schema trims input and rejects obsolete evidence references', () => {
   const s = schema();
-  assert.deepEqual(s.OfflineViolationReviewDecisionRequestSchema.parse({ decision: 'FOLLOW_UP', reason: '  Contact store  ', evidenceReferences: '  private://evidence/x  ' }), { decision: 'FOLLOW_UP', reason: 'Contact store', evidenceReferences: 'private://evidence/x' });
-  for (const input of [{ ...decision, decision: 'PENALTY' }, { ...decision, reason: ' ' }, { ...decision, reason: 'x'.repeat(2001) }, { ...decision, evidenceReferences: '' }, { ...decision, evidenceReferences: 'https://public.example/evidence' }, { ...decision, evidenceReferences: 'private://' + 'x'.repeat(2000) }]) {
+  assert.deepEqual(s.OfflineViolationReviewDecisionRequestSchema.parse({ decision: 'FOLLOW_UP', reason: '  Contact store  ' }), decision);
+  for (const input of [{ ...decision, decision: 'PENALTY' }, { ...decision, reason: ' ' }, { ...decision, reason: 'x'.repeat(2001) }, { ...decision, evidenceReferences: 'private://old' }]) {
     assert.equal(s.OfflineViolationReviewDecisionRequestSchema.safeParse(input).success, false);
   }
   assert.equal(s.OfflineViolationReviewListParamsSchema.safeParse({ page: -1 }).success, false);
@@ -84,19 +85,22 @@ test('offline detail validates id and expected resource scope and propagates aut
   await assert.rejects(denied.getById(id), error => error === forbidden); assert.equal(deniedCalls, 1);
 });
 
-test('offline decision sends one bounded JSON request and requires matching reviewed result', async () => {
+test('offline decision sends multipart files and requires matching reviewed result', async () => {
   const calls = []; let data = reviewed;
   const api = apiWith({ post: async (url, body, config) => { calls.push({ url, body, config }); return { data }; } });
-  assert.deepEqual(await api.decide(id, decision, { ownerId, contractId, machineId }), reviewed);
-  assert.deepEqual(calls, [{ url: `/offline-violation-reviews/${id}/decision`, body: decision, config: { baseURL: '/api/dolores/v1' } }]);
+  assert.deepEqual(await api.decide(id, decision, { ownerId, contractId, machineId }, files), reviewed);
+  assert.equal(calls[0].url, `/offline-violation-reviews/${id}/decision`);
+  assert.deepEqual(JSON.parse(await calls[0].body.get('data').text()), decision);
+  assert.equal(calls[0].body.get('files').name, 'evidence.pdf');
+  assert.equal(calls[0].config.headers['Content-Type'], 'multipart/form-data');
   await assert.rejects(api.decide(id, { ...decision, reason: '' })); assert.equal(calls.length, 1);
   await assert.rejects(api.decide('invalid', decision)); assert.equal(calls.length, 1);
   for (const invalid of [{ ...reviewed, id: ownerId }, { ...reviewed, status: 'REVIEW_REQUIRED' }, { ...reviewed, decision: 'NO_ACTION' }, { ...reviewed, machineId: id }]) {
-    data = invalid; await assert.rejects(api.decide(id, decision, { machineId }));
+    data = invalid; await assert.rejects(api.decide(id, decision, { machineId }, files));
   }
   const conflict = Object.assign(new Error('conflict'), { response: { status: 409 } }); let conflictCalls = 0;
   const conflicting = apiWith({ post: async () => { conflictCalls++; throw conflict; } });
-  await assert.rejects(conflicting.decide(id, decision), error => error === conflict); assert.equal(conflictCalls, 1);
+  await assert.rejects(conflicting.decide(id, decision, {}, files), error => error === conflict); assert.equal(conflictCalls, 1);
 });
 
 function panelWith(props = {}) {
@@ -122,14 +126,14 @@ test('offline presentation is read only for Owner and preserves server local tim
   assert.match(html, /08:30:00 06\/11\/2026/);
   assert.match(html, /giờ máy chủ/);
   assert.match(html, /Cần rà soát/);
-  assert.doesNotMatch(html, /name="reason"|name="evidenceReferences"/);
+  assert.doesNotMatch(html, /name="reason"|name="evidenceFiles"/);
   assert.doesNotMatch(html, /type="file"/);
 });
 
 test('offline decisions are only available to operators for REVIEW_REQUIRED records', () => {
   const editable = panelWith({ canDecide: true });
   assert.match(editable, /name="reason"/);
-  assert.match(editable, /name="evidenceReferences"/);
+  assert.match(editable, /name="evidenceFiles"/);
   assert.match(editable, /maxLength="2000"/);
   assert.match(editable, /Tiếp tục xác nhận/);
   assert.doesNotMatch(panelWith({ canDecide: true, detail: reviewed }), /name="reason"/);
@@ -147,11 +151,11 @@ test('offline guarded decision refreshes state before POST and never posts an al
   const calls = [];
   let current = review;
   const api = apiWith({ get: async () => { calls.push('GET'); return { data: current }; }, post: async () => { calls.push('POST'); return { data: reviewed }; } });
-  assert.deepEqual(await api.decideIfRequired(id, decision, { machineId }), reviewed);
+  assert.deepEqual(await api.decideIfRequired(id, decision, { machineId }, files), reviewed);
   assert.deepEqual(calls, ['GET', 'POST']);
   calls.length = 0;
   current = reviewed;
-  await assert.rejects(api.decideIfRequired(id, decision, { machineId }));
+  await assert.rejects(api.decideIfRequired(id, decision, { machineId }, files));
   assert.deepEqual(calls, ['GET']);
   calls.length = 0;
   await assert.rejects(api.decideIfRequired(id, { ...decision, reason: '' }, { machineId }));
@@ -164,7 +168,7 @@ test('offline guarded decision stops on stale scope and never retries a failed P
     get: async () => { calls.push('GET'); return { data: { ...review, machineId: ownerId } }; },
     post: async () => { calls.push('POST'); return { data: reviewed }; },
   });
-  await assert.rejects(outOfScope.decideIfRequired(id, decision, { machineId }));
+  await assert.rejects(outOfScope.decideIfRequired(id, decision, { machineId }, files));
   assert.deepEqual(calls, ['GET']);
 
   const forbidden = Object.assign(new Error('forbidden'), { response: { status: 403 } });
@@ -173,7 +177,7 @@ test('offline guarded decision stops on stale scope and never retries a failed P
     get: async () => { calls.push('GET'); throw forbidden; },
     post: async () => { calls.push('POST'); return { data: reviewed }; },
   });
-  await assert.rejects(denied.decideIfRequired(id, decision, { machineId }), error => error === forbidden);
+  await assert.rejects(denied.decideIfRequired(id, decision, { machineId }, files), error => error === forbidden);
   assert.deepEqual(calls, ['GET']);
 
   for (const failure of [
@@ -185,7 +189,7 @@ test('offline guarded decision stops on stale scope and never retries a failed P
       get: async () => { calls.push('GET'); return { data: review }; },
       post: async () => { calls.push('POST'); throw failure; },
     });
-    await assert.rejects(noRetry.decideIfRequired(id, decision, { machineId }), error => error === failure);
+    await assert.rejects(noRetry.decideIfRequired(id, decision, { machineId }, files), error => error === failure);
     assert.deepEqual(calls, ['GET', 'POST']);
   }
 });

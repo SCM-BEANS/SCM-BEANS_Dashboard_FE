@@ -17,7 +17,7 @@ function loadApi(axiosClient) {
   new Function("require", "module", "exports", outputText)((id) => {
     if (id === "@/lib/http") return { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" };
     if (id === "@/schema/contracts.schema" || id === "@/schema/machines.schema") return schemas;
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   }, loaded, loaded.exports);
   return loaded.exports.replacementAssignmentsApi;
 }
@@ -39,15 +39,16 @@ test("direct Contract replacement create, read, activation, cancel, and release 
   };
   const api = loadApi(axiosClient);
   const create = { replacementMachineId: machineId, startAt: "2026-11-01T09:00", endAt: "2026-11-08T09:00", reason: "Repair coverage", idempotencyKey: "key-1", correlationId: "corr-1" };
-  const activate = { handoverEvidence: "private:handover/1", approvalReason: "Approved", idempotencyKey: "key-2", correlationId: "corr-2" };
-  const release = { releaseEvidence: "private:release/1", idempotencyKey: "key-3", correlationId: "corr-3" };
+  const activate = { approvalReason: "Approved", idempotencyKey: "key-2", correlationId: "corr-2" };
+  const release = { idempotencyKey: "key-3", correlationId: "corr-3" };
   const cancel = { reason: "No longer required", idempotencyKey: "key-4", correlationId: "corr-4" };
 
+  const files = [new File(["12345678"], "evidence.pdf", { type: "application/pdf" })];
   assert.equal((await api.create(contractId, create)).status, "PLANNED");
   assert.equal((await api.getById(assignmentId)).id, assignmentId);
-  assert.equal((await api.activate(assignmentId, activate)).status, "ACTIVE");
+  assert.equal((await api.activate(assignmentId, activate, files)).status, "ACTIVE");
   assert.equal((await api.cancel(assignmentId, cancel)).status, "CANCELLED");
-  assert.equal((await api.release(assignmentId, release)).status, "RELEASED");
+  assert.equal((await api.release(assignmentId, release, files)).status, "RELEASED");
   assert.deepEqual(calls.map(({ method, url }) => [method, url]), [
     ["POST", `/contracts/${contractId}/replacement-assignments`],
     ["GET", `/replacement-assignments/${assignmentId}`],
@@ -56,9 +57,13 @@ test("direct Contract replacement create, read, activation, cancel, and release 
     ["POST", `/replacement-assignments/${assignmentId}/release`],
   ]);
   assert.deepEqual(calls[0].data, create);
-  assert.deepEqual(calls[2].data, activate);
+  for (const [index, data] of [[2, activate], [4, release]]) {
+    assert.deepEqual(calls[index].config, { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } });
+    assert.deepEqual(JSON.parse(await calls[index].data.get("data").text()), data);
+    assert.deepEqual(calls[index].data.getAll("files"), files);
+    assert.deepEqual([...calls[index].data.keys()], ["data", "files"]);
+  }
   assert.deepEqual(calls[3].data, cancel);
-  assert.deepEqual(calls[4].data, release);
 });
 
 test("replacement methods reject a mismatched server response", async () => {

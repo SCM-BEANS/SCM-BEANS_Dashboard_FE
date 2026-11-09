@@ -16,6 +16,7 @@ import { PATH_TECHNICIAN } from "@/routes/path";
 import type { AssignedInstallationWorkOrderSummary, InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 import type { RepairCase, RepairCustodyEventRequest } from "@/schema/machines.schema";
 import type { RecallEvidence, RecallWorkOrder } from "@/schema/recall-work-orders.schema";
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import type { TerminationInspectionRequest } from "@/schema/termination-cases.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
@@ -104,14 +105,14 @@ const repairCustodyLabels: Record<RepairCustodyEventRequest["eventType"], string
 function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) {
   const queryClient = useQueryClient();
   const [diagnosis, setDiagnosis] = useState("");
-  const [diagnosisEvidence, setDiagnosisEvidence] = useState("");
+  const [diagnosisEvidence, setDiagnosisEvidence] = useState<File[]>([]);
   const [workScope, setWorkScope] = useState("");
   const [resolutionResult, setResolutionResult] = useState("");
-  const [completionEvidence, setCompletionEvidence] = useState("");
+  const [completionEvidence, setCompletionEvidence] = useState<File[]>([]);
   const [completionNotes, setCompletionNotes] = useState("");
   const [custodyType, setCustodyType] = useState<RepairCustodyEventRequest["eventType"] | "">("");
   const [custodyNotes, setCustodyNotes] = useState("");
-  const [custodyEvidence, setCustodyEvidence] = useState("");
+  const [custodyEvidence, setCustodyEvidence] = useState<File[]>([]);
 
   const repairCase = useQuery({
     queryKey: ["dolores", "technician", "repair-cases", "id", repairCaseId],
@@ -153,7 +154,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
   };
 
   const recordDiagnosis = useMutation({
-    mutationFn: () => repairCasesApi.recordDiagnosis(repairCaseId, ticket.data?.id ?? "", { diagnosis, evidenceReference: diagnosisEvidence }),
+    mutationFn: () => repairCasesApi.recordDiagnosis(repairCaseId, ticket.data?.id ?? "", { diagnosis }, diagnosisEvidence),
     onSuccess: refreshRepairCase,
   });
   const startWork = useMutation({
@@ -165,9 +166,8 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
       diagnosis,
       resolutionResult,
       workScope,
-      evidenceReferences: completionEvidence.split(/\r?\n/).map((value) => value.trim()).filter(Boolean),
       ...(completionNotes.trim() ? { notes: completionNotes.trim() } : {}),
-    }),
+    }, completionEvidence),
     onSuccess: refreshRepairCase,
   });
   const recordCustody = useMutation({
@@ -181,8 +181,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
         eventType: custodyType,
         machineId,
         conditionNotes: custodyNotes,
-        evidenceReference: custodyEvidence,
-      });
+      }, custodyEvidence);
     },
     onSuccess: refreshRepairCase,
   });
@@ -244,18 +243,19 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
             {canDiagnose ? (
               <section className={styles.panel} aria-labelledby="repair-diagnosis-title">
                 <h2 id="repair-diagnosis-title">Ghi nhận chẩn đoán</h2>
-                <p className={styles.hint}>Owner đã xác nhận nhận máy thay thế. Chẩn đoán cần một mã tham chiếu minh chứng riêng tư.</p>
+                <p className={styles.hint}>Owner đã xác nhận nhận máy thay thế. Chẩn đoán cần một tệp minh chứng.</p>
                 <label className={styles.formField} htmlFor="repair-diagnosis">
                   <span>Chẩn đoán</span>
                   <textarea id="repair-diagnosis" rows={3} maxLength={4000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} />
                 </label>
                 <label className={styles.formField} htmlFor="repair-diagnosis-evidence">
-                  <span>Mã tham chiếu minh chứng</span>
-                  <input id="repair-diagnosis-evidence" maxLength={512} value={diagnosisEvidence} onChange={(event) => setDiagnosisEvidence(event.target.value)} />
+                  <span>Tệp minh chứng</span>
+                  <input id="repair-diagnosis-evidence" type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => setDiagnosisEvidence(Array.from(event.target.files ?? []))} />
+                  {diagnosisEvidence.map((file) => <span key={file.name}>{file.name}</span>)}
                 </label>
                 {recordDiagnosis.isError && <p className={styles.error} role="alert">{getApiErrorMessage(recordDiagnosis.error, "mutation")}</p>}
                 {recordDiagnosis.isSuccess && <p className={styles.success} role="status">Đã lưu chẩn đoán.</p>}
-                <PageActions actions={[{ id: "record-diagnosis", label: "Lưu chẩn đoán", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !diagnosisEvidence.trim(), disabledReason: "Nhập chẩn đoán và minh chứng.", pending: recordDiagnosis.isPending, onClick: () => recordDiagnosis.mutate() }]} />
+                <PageActions actions={[{ id: "record-diagnosis", label: "Lưu chẩn đoán", variant: "primary", priority: 50, disabled: !diagnosis.trim() || Boolean(evidenceFileError(diagnosisEvidence, { min: 1, max: 1 })), disabledReason: evidenceFileError(diagnosisEvidence, { min: 1, max: 1 }) ?? "Nhập chẩn đoán.", pending: recordDiagnosis.isPending, onClick: () => recordDiagnosis.mutate() }]} />
               </section>
             ) : null}
 
@@ -289,8 +289,9 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                     <textarea id="repair-completion-scope" rows={3} maxLength={2000} value={workScope} onChange={(event) => setWorkScope(event.target.value)} />
                   </label>
                   <label className={styles.formField} htmlFor="repair-completion-evidence">
-                    <span>Mã tham chiếu minh chứng (mỗi mã một dòng)</span>
-                    <textarea id="repair-completion-evidence" rows={3} maxLength={4096} value={completionEvidence} onChange={(event) => setCompletionEvidence(event.target.value)} />
+                    <span>Tệp minh chứng</span>
+                    <input id="repair-completion-evidence" type="file" multiple accept={EVIDENCE_ACCEPT} onChange={(event) => setCompletionEvidence(Array.from(event.target.files ?? []))} />
+                    {completionEvidence.map((file) => <span key={file.name}>{file.name}</span>)}
                   </label>
                   <label className={styles.formField} htmlFor="repair-completion-notes">
                     <span>Ghi chú (nếu có)</span>
@@ -299,7 +300,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 </div>
                 {completeWork.isError && <p className={styles.error} role="alert">{getApiErrorMessage(completeWork.error, "mutation")}</p>}
                 {completeWork.isSuccess && <p className={styles.success} role="status">Đã hoàn tất công việc sửa chữa.</p>}
-                <PageActions actions={[{ id: "complete-repair", label: "Xác nhận hoàn tất", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !resolutionResult.trim() || !workScope.trim() || !completionEvidence.split(/\r?\n/).some((value) => value.trim()), disabledReason: "Nhập đầy đủ kết quả và minh chứng.", pending: completeWork.isPending, onClick: () => completeWork.mutate() }]} />
+                <PageActions actions={[{ id: "complete-repair", label: "Xác nhận hoàn tất", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !resolutionResult.trim() || !workScope.trim() || Boolean(evidenceFileError(completionEvidence, { min: 1, max: 5 })), disabledReason: evidenceFileError(completionEvidence, { min: 1, max: 5 }) ?? "Nhập đầy đủ kết quả.", pending: completeWork.isPending, onClick: () => completeWork.mutate() }]} />
               </section>
             ) : null}
 
@@ -319,18 +320,21 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                   <textarea id="repair-custody-notes" rows={3} maxLength={2000} value={custodyNotes} onChange={(event) => setCustodyNotes(event.target.value)} />
                 </label>
                 <label className={styles.formField} htmlFor="repair-custody-evidence">
-                  <span>Mã tham chiếu minh chứng riêng tư</span>
-                  <input id="repair-custody-evidence" maxLength={512} value={custodyEvidence} onChange={(event) => setCustodyEvidence(event.target.value)} />
+                  <span>Tệp minh chứng</span>
+                  <input id="repair-custody-evidence" type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => setCustodyEvidence(Array.from(event.target.files ?? []))} />
+                  {custodyEvidence.map((file) => <span key={file.name}>{file.name}</span>)}
                 </label>
                 {recordCustody.isError && <p className={styles.error} role="alert">{getApiErrorMessage(recordCustody.error, "mutation")}</p>}
                 {recordCustody.isSuccess && <p className={styles.success} role="status">Đã ghi nhận bàn giao.</p>}
                 <ButtonBar
                   type="button"
-                  disabled={!custodyType || !custodyNotes.trim() || !custodyEvidence.trim() || recordCustody.isPending}
+                  disabled={!custodyType || !custodyNotes.trim() || Boolean(evidenceFileError(custodyEvidence, { min: 1, max: 1 })) || recordCustody.isPending}
+                  aria-describedby="repair-custody-file-error"
                   onClick={() => recordCustody.mutate()}
                 >
                   {recordCustody.isPending ? "Đang ghi nhận…" : "Ghi nhận bàn giao"}
                 </ButtonBar>
+                <p id="repair-custody-file-error">{evidenceFileError(custodyEvidence, { min: 1, max: 1 })}</p>
               </section>
             ) : null}
 
@@ -630,8 +634,9 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
   const queryClient = useQueryClient();
   const [diagnosis, setDiagnosis] = useState("");
   const [responsibility, setResponsibility] = useState<TerminationInspectionRequest["responsibility"]>("UNKNOWN");
+  const [inspectionDecision, setInspectionDecision] = useState<TerminationInspectionRequest["inspectionDecision"]>("NO_DAMAGE");
   const [actualCost, setActualCost] = useState("");
-  const [evidenceReference, setEvidenceReference] = useState("");
+  const [evidenceReference, setEvidenceReference] = useState<File[]>([]);
   const [resolutionResult, setResolutionResult] = useState("");
   const [notes, setNotes] = useState("");
   const ticket = useQuery({
@@ -658,15 +663,15 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
       maintenanceTicketId,
       diagnosis: diagnosis.trim(),
       responsibility,
+      inspectionDecision,
       ...(actualCost.trim() ? { actualCost: Number(actualCost) } : {}),
-      evidenceReference: evidenceReference.trim(),
       resolutionResult: resolutionResult.trim(),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       correlationId: createWorkflowCorrelationId("termination-inspection"),
-    }),
+    }, evidenceReference),
     onSuccess: refresh,
   });
-  const canSubmit = Boolean(diagnosis.trim() && evidenceReference.trim() && resolutionResult.trim()
+  const canSubmit = Boolean(diagnosis.trim() && !evidenceFileError(evidenceReference, { min: 1, max: 1 }) && resolutionResult.trim()
     && (!actualCost.trim() || (Number.isFinite(Number(actualCost)) && Number(actualCost) >= 0)));
 
   return (
@@ -706,15 +711,16 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
                 <label className={styles.formField} htmlFor="termination-diagnosis"><span>Chẩn đoán *</span><textarea id="termination-diagnosis" required rows={4} maxLength={4000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
                 <div className={styles.formGrid}>
                   <label className={styles.formField} htmlFor="termination-responsibility"><span>Trách nhiệm chi phí *</span><select id="termination-responsibility" value={responsibility} onChange={(event) => setResponsibility(event.target.value as TerminationInspectionRequest["responsibility"])}><option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Khách thuê / Owner</option><option value="COMPANY">Công ty Dolores</option></select></label>
+                  <label className={styles.formField} htmlFor="termination-decision"><span>Kết luận kiểm tra *</span><select id="termination-decision" value={inspectionDecision} onChange={(event) => setInspectionDecision(event.target.value as TerminationInspectionRequest["inspectionDecision"])}><option value="NO_DAMAGE">Không hư hỏng</option><option value="DAMAGE">Hư hỏng</option><option value="PARTIAL_DAMAGE">Hư hỏng một phần</option></select></label>
                   <label className={styles.formField} htmlFor="termination-actual-cost"><span>Chi phí thực tế (VND, nếu có)</span><input id="termination-actual-cost" type="number" min="0" step="any" value={actualCost} onChange={(event) => setActualCost(event.target.value)} /></label>
-                  <label className={styles.formField} htmlFor="termination-evidence-reference"><span>Mã tham chiếu chứng cứ *</span><input id="termination-evidence-reference" required maxLength={512} value={evidenceReference} onChange={(event) => setEvidenceReference(event.target.value)} /></label>
+                  <label className={styles.formField} htmlFor="termination-evidence-reference"><span>Tệp chứng cứ *</span><input id="termination-evidence-reference" type="file" accept={EVIDENCE_ACCEPT} required onChange={(event) => setEvidenceReference(Array.from(event.target.files ?? []))} />{evidenceReference.map((file) => <span key={file.name}>{file.name}</span>)}</label>
                   <label className={styles.formField} htmlFor="termination-resolution-result"><span>Kết quả xử lý *</span><input id="termination-resolution-result" required maxLength={4000} value={resolutionResult} onChange={(event) => setResolutionResult(event.target.value)} /></label>
                 </div>
                 <label className={styles.formField} htmlFor="termination-inspection-notes"><span>Ghi chú thêm</span><textarea id="termination-inspection-notes" rows={3} maxLength={4000} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
                 <p className={styles.hint}>Gửi kết quả sẽ hoàn tất phiếu kiểm tra liên kết. Hợp đồng chỉ được chấm dứt sau khi bộ phận vận hành hoàn tất các bước tiếp theo.</p>
                 {completeInspection.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(completeInspection.error, "mutation")}</p> : null}
                 {completeInspection.isSuccess ? <p className={styles.success} role="status">Đã gửi kết quả kiểm tra.</p> : null}
-                <PageActions actions={[{ id: "complete-termination-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "termination-inspection-form", disabled: !canSubmit, disabledReason: "Nhập đầy đủ kết quả kiểm tra.", pending: completeInspection.isPending }]} />
+                <PageActions actions={[{ id: "complete-termination-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "termination-inspection-form", disabled: !canSubmit, disabledReason: evidenceFileError(evidenceReference, { min: 1, max: 1 }) ?? "Nhập đầy đủ kết quả kiểm tra.", pending: completeInspection.isPending }]} />
               </form>
             ) : null}
             {ticket.data.status === "RESOLVED" ? <p className={styles.success} role="status">Phiếu kiểm tra đã hoàn tất. Hồ sơ chấm dứt đang chờ bước tiếp theo từ bộ phận vận hành.</p> : null}

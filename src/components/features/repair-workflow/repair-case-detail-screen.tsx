@@ -1,3 +1,4 @@
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import axios from "axios";
 import { useRepairCaseCostDispute } from "./use-repair-case-cost-dispute";
 import { ReplacementActions } from "./replacement-actions";
@@ -144,9 +145,9 @@ export function RepairCaseDetailScreen({
   const [timelinePage, setTimelinePage] = useState(0);
   const [custodyPage, setCustodyPage] = useState(0);
   const [receiveMachineNotes, setReceiveMachineNotes] = useState<Record<string, string>>({});
-  const [receiveMachineEvidenceReferences, setReceiveMachineEvidenceReferences] = useState<Record<string, string>>({});
+  const [receiveMachineEvidenceReferences, setReceiveMachineEvidenceReferences] = useState<Record<string, File[]>>({});
   const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
-  const [activationEvidence, setActivationEvidence] = useState("");
+  const [activationEvidence, setActivationEvidence] = useState<File[]>([]);
   const [activationReason, setActivationReason] = useState("");
   const [activationAttempt, setActivationAttempt] = useState<{
     fingerprint: string;
@@ -154,12 +155,12 @@ export function RepairCaseDetailScreen({
     correlationId: string;
   } | null>(null);
   const [replacementDeliveryNotes, setReplacementDeliveryNotes] = useState("");
-  const [replacementDeliveryEvidence, setReplacementDeliveryEvidence] = useState("");
+  const [replacementDeliveryEvidence, setReplacementDeliveryEvidence] = useState<File[]>([]);
   const [replacementCollectionConditions, setReplacementCollectionConditions] = useState<Record<string, string>>({});
-  const [replacementCollectionEvidenceReferences, setReplacementCollectionEvidenceReferences] = useState<Record<string, string>>({});
+  const [replacementCollectionEvidenceReferences, setReplacementCollectionEvidenceReferences] = useState<Record<string, File[]>>({});
   const [primaryReturnConditions, setPrimaryReturnConditions] = useState<Record<string, string>>({});
-  const [primaryReturnEvidenceReferences, setPrimaryReturnEvidenceReferences] = useState<Record<string, string>>({});
-  const [releaseEvidenceReferences, setReleaseEvidenceReferences] = useState<Record<string, string>>({});
+  const [primaryReturnEvidenceReferences, setPrimaryReturnEvidenceReferences] = useState<Record<string, File[]>>({});
+  const [releaseEvidenceReferences, setReleaseEvidenceReferences] = useState<Record<string, File[]>>({});
   const [releaseConfirmationDialogs, setReleaseConfirmationDialogs] = useState<Record<string, boolean>>({});
   const [releaseAttempts, setReleaseAttempts] = useState<Record<string, {
     fingerprint: string;
@@ -168,25 +169,25 @@ export function RepairCaseDetailScreen({
   }>>({});
   const [workScopes, setWorkScopes] = useState<Record<string, string>>({});
   const [diagnosisTexts, setDiagnosisTexts] = useState<Record<string, string>>({});
-  const [diagnosisEvidenceReferences, setDiagnosisEvidenceReferences] = useState<Record<string, string>>({});
+  const [diagnosisEvidenceReferences, setDiagnosisEvidenceReferences] = useState<Record<string, File[]>>({});
   const [completionWorkScopes, setCompletionWorkScopes] = useState<Record<string, string>>({});
   const [resolutionResults, setResolutionResults] = useState<Record<string, string>>({});
-  const [completionEvidenceReferences, setCompletionEvidenceReferences] = useState<Record<string, string>>({});
+  const [completionEvidenceReferences, setCompletionEvidenceReferences] = useState<Record<string, File[]>>({});
   const [completionNotes, setCompletionNotes] = useState<Record<string, string>>({});
   const receiveMachineConditionNotes = receiveMachineNotes[caseId] ?? "";
-  const receiveMachineEvidenceReference = receiveMachineEvidenceReferences[caseId] ?? "";
+  const receiveMachineEvidenceReference = receiveMachineEvidenceReferences[caseId] ?? [];
   const workScope = workScopes[caseId] ?? "";
   const diagnosisText = diagnosisTexts[caseId] ?? "";
-  const diagnosisEvidenceReference = diagnosisEvidenceReferences[caseId] ?? "";
+  const diagnosisEvidenceReference = diagnosisEvidenceReferences[caseId] ?? [];
   const completionWorkScope = completionWorkScopes[caseId] ?? "";
   const resolutionResult = resolutionResults[caseId] ?? "";
-  const completionEvidenceReferenceText = completionEvidenceReferences[caseId] ?? "";
+  const completionEvidenceReferenceText = completionEvidenceReferences[caseId] ?? [];
   const completionNote = completionNotes[caseId] ?? "";
   const replacementCollectionCondition = replacementCollectionConditions[caseId] ?? "";
-  const replacementCollectionEvidenceReference = replacementCollectionEvidenceReferences[caseId] ?? "";
+  const replacementCollectionEvidenceReference = replacementCollectionEvidenceReferences[caseId] ?? [];
   const primaryReturnCondition = primaryReturnConditions[caseId] ?? "";
-  const primaryReturnEvidenceReference = primaryReturnEvidenceReferences[caseId] ?? "";
-  const releaseEvidenceReference = releaseEvidenceReferences[caseId] ?? "";
+  const primaryReturnEvidenceReference = primaryReturnEvidenceReferences[caseId] ?? [];
+  const releaseEvidenceReference = releaseEvidenceReferences[caseId] ?? [];
   const releaseConfirmationOpen = releaseConfirmationDialogs[caseId] ?? false;
   const setWorkScope = (value: string) => setWorkScopes((current) => ({ ...current, [caseId]: value }));
   const dispute = useRepairCaseCostDispute(caseId);
@@ -265,7 +266,7 @@ export function RepairCaseDetailScreen({
     onSettled: invalidateWorkflowQueries,
   });
   const recordRepairDiagnosis = useMutation({
-    mutationFn: ({ expectedTicketId, diagnosis, evidenceReference }: RepairDiagnosisRequest & { expectedTicketId: string }) => {
+    mutationFn: ({ expectedTicketId, diagnosis }: RepairDiagnosisRequest & { expectedTicketId: string }) => {
       if (
         role !== "technician" || !isAssignedTechnician ||
         repairCase.isFetching || assignment.isFetching || ticket.isFetching || custody.isFetching ||
@@ -277,11 +278,11 @@ export function RepairCaseDetailScreen({
       ) {
         throw new Error(M.TECHNICIAN_DIAGNOSIS_STATUS_CHANGED);
       }
-      return repairCasesApi.recordDiagnosis(caseId, expectedTicketId, { diagnosis, evidenceReference });
+      return repairCasesApi.recordDiagnosis(caseId, expectedTicketId, { diagnosis }, diagnosisEvidenceReference);
     },
     onSuccess: () => {
       setDiagnosisTexts((current) => ({ ...current, [caseId]: "" }));
-      setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: [] }));
     },
     onSettled: invalidateWorkflowQueries,
   });
@@ -313,18 +314,18 @@ export function RepairCaseDetailScreen({
         assignment.data?.status !== "ACTIVE" || assignment.data.repairCaseId !== caseId ||
         !replacementDeliveryAcknowledged
       ) throw new Error(M.TECHNICIAN_COMPLETION_STATUS_CHANGED);
-      return repairCasesApi.completeWork(caseId, expectedTicketId, request);
+      return repairCasesApi.completeWork(caseId, expectedTicketId, request, completionEvidenceReferenceText);
     },
     onSuccess: () => {
       setCompletionWorkScopes((current) => ({ ...current, [caseId]: "" }));
       setResolutionResults((current) => ({ ...current, [caseId]: "" }));
-      setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: [] }));
       setCompletionNotes((current) => ({ ...current, [caseId]: "" }));
     },
     onSettled: invalidateWorkflowQueries,
   });
   const recordPrimaryCollection = useMutation({
-    mutationFn: ({ submittedCaseId, conditionNotes, evidenceReference }: { submittedCaseId: string; conditionNotes: string; evidenceReference: string }) => {
+    mutationFn: ({ submittedCaseId, conditionNotes }: { submittedCaseId: string; conditionNotes: string }) => {
       if (submittedCaseId !== caseId) throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
       if (role !== "technician" || !isAssignedTechnician) throw new Error(M.TECHNICIAN_RECEIVE_MACHINE_STATUS_CHANGED);
       if (repairCase.data?.status !== "REPLACEMENT_PLANNED" || !repairCase.data.primaryMachineId) {
@@ -336,8 +337,7 @@ export function RepairCaseDetailScreen({
       return repairCasesApi.recordPrimaryCollection(caseId, {
         machineId: repairCase.data.primaryMachineId,
         conditionNotes,
-        evidenceReference,
-      });
+      }, receiveMachineEvidenceReference);
     },
     onSuccess: () => {
       setReceiveMachineNotes((current) => {
@@ -367,10 +367,10 @@ export function RepairCaseDetailScreen({
       ) {
         throw new Error(M.ACTIVATE_STATUS_CHANGED);
       }
-      return replacementAssignmentsApi.activate(assignment.data.id, input);
+      return replacementAssignmentsApi.activate(assignment.data.id, input, activationEvidence);
     },
     onSuccess: () => {
-      setActivationEvidence("");
+      setActivationEvidence([]);
       setActivationReason("");
       setActivationAttempt(null);
     },
@@ -393,11 +393,11 @@ export function RepairCaseDetailScreen({
       ) {
         throw new Error(M.REPLACEMENT_DELIVERY_STATUS_CHANGED);
       }
-      return repairCasesApi.recordCustodyEvent(caseId, input);
+      return repairCasesApi.recordCustodyEvent(caseId, input, replacementDeliveryEvidence);
     },
     onSuccess: () => {
       setReplacementDeliveryNotes("");
-      setReplacementDeliveryEvidence("");
+      setReplacementDeliveryEvidence([]);
     },
     onSettled: invalidateWorkflowQueries,
   });
@@ -427,16 +427,16 @@ export function RepairCaseDetailScreen({
       if (!sharedDataReady || !canRecordCurrentEvent || !expectedMachineId || input.machineId !== expectedMachineId) {
         throw new Error(M.CUSTODY_EVENT_STATUS_CHANGED);
       }
-      return repairCasesApi.recordCustodyEvent(caseId, input);
+      return repairCasesApi.recordCustodyEvent(caseId, input, input.eventType === "REPLACEMENT_COLLECTED" ? replacementCollectionEvidenceReference : primaryReturnEvidenceReference);
     },
     onSuccess: (_event, input) => {
       if (input.eventType === "REPLACEMENT_COLLECTED") {
         setReplacementCollectionConditions((current) => ({ ...current, [caseId]: "" }));
-        setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+        setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: [] }));
       }
       if (input.eventType === "PRIMARY_RETURNED") {
         setPrimaryReturnConditions((current) => ({ ...current, [caseId]: "" }));
-        setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+        setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: [] }));
       }
     },
     onSettled: invalidateWorkflowQueries,
@@ -465,10 +465,10 @@ export function RepairCaseDetailScreen({
         Boolean(primaryReturnEvent?.ownerAcknowledgedAt) &&
         primaryReturnEvent?.machineId === repairCase.data.primaryMachineId;
       if (!prerequisitesReady) throw new Error(M.RELEASE_STATUS_CHANGED);
-      return replacementAssignmentsApi.release(expectedAssignmentId, releaseRequest);
+      return replacementAssignmentsApi.release(expectedAssignmentId, releaseRequest, releaseEvidenceReference);
     },
     onSuccess: () => {
-      setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: "" }));
+      setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: [] }));
       setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: false }));
       setReleaseAttempts((current) => {
         const next = { ...current };
@@ -643,22 +643,20 @@ export function RepairCaseDetailScreen({
   const submitDiagnosis = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const diagnosis = diagnosisText.trim();
-    const evidenceReference = diagnosisEvidenceReference.trim();
     if (
-      !validCaseId || !canRecordDiagnosis || !ticket.data?.id || !diagnosis || !evidenceReference ||
+      !validCaseId || !canRecordDiagnosis || !ticket.data?.id || !diagnosis || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) ||
       recordRepairDiagnosis.isPending || recordRepairDiagnosis.isSuccess
     ) return;
-    recordRepairDiagnosis.mutate({ expectedTicketId: ticket.data.id, diagnosis, evidenceReference });
+    recordRepairDiagnosis.mutate({ expectedTicketId: ticket.data.id, diagnosis });
   };
   const submitCompleteWork = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const diagnosis = ticketDiagnosis;
     const result = resolutionResult.trim();
     const scope = dispute.isDisputed ? selectedAuthorization?.workScope ?? "" : completionWorkScope.trim();
-    const evidenceReferences = completionEvidenceReferenceText.split(/\r?\n/).map((reference) => reference.trim()).filter(Boolean);
     const notes = completionNote.trim();
     if (
-      !validCaseId || !canCompleteWork || !ticket.data?.id || !diagnosis || !result || !scope || evidenceReferences.length === 0 ||
+      !validCaseId || !canCompleteWork || !ticket.data?.id || !diagnosis || !result || !scope || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) ||
       dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || completeRepairWork.isPending || completeRepairWork.isSuccess
     ) return;
     completeRepairWork.mutate({
@@ -667,7 +665,6 @@ export function RepairCaseDetailScreen({
         diagnosis,
         resolutionResult: result,
         workScope: scope,
-        evidenceReferences,
         ...(notes ? { notes } : {}),
         ...(dispute.isDisputed && selectedAuthorization ? { emergencyAuthorizationId: selectedAuthorization.authorizationId } : {}),
       },
@@ -676,15 +673,14 @@ export function RepairCaseDetailScreen({
   const submitReceiveMachine = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const conditionNotes = receiveMachineConditionNotes.trim();
-    const evidenceReference = receiveMachineEvidenceReference.trim();
-    if (!validCaseId || !canSubmitReceiveMachine || !conditionNotes || !evidenceReference || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess) return;
-    recordPrimaryCollection.mutate({ submittedCaseId: caseId, conditionNotes, evidenceReference });
+    if (!validCaseId || !canSubmitReceiveMachine || !conditionNotes || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess) return;
+    recordPrimaryCollection.mutate({ submittedCaseId: caseId, conditionNotes });
   };
   const submitActivation = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const handoverEvidence = activationEvidence.trim();
+    const handoverEvidence = activationEvidence.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join("|");
     const approvalReasonText = activationReason.trim();
-    if (!validCaseId || !canActivateAssignment || !handoverEvidence || !approvalReasonText || isRefreshing || activateReplacementAssignment.isPending) return;
+    if (!validCaseId || !canActivateAssignment || Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !approvalReasonText || isRefreshing || activateReplacementAssignment.isPending) return;
     const fingerprint = `${caseId}|${assignment.data?.id}|${handoverEvidence}|${approvalReasonText}`;
     const attempt = activationAttempt?.fingerprint === fingerprint
       ? activationAttempt
@@ -695,7 +691,6 @@ export function RepairCaseDetailScreen({
         };
     setActivationAttempt(attempt);
     activateReplacementAssignment.mutate({
-      handoverEvidence,
       approvalReason: approvalReasonText,
       idempotencyKey: attempt.idempotencyKey,
       correlationId: attempt.correlationId,
@@ -704,41 +699,37 @@ export function RepairCaseDetailScreen({
   const submitReplacementDelivery = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const conditionNotes = replacementDeliveryNotes.trim();
-    const evidenceReference = replacementDeliveryEvidence.trim();
     const replacementMachineId = assignment.data?.replacementMachineId;
-    if (!validCaseId || !canRecordReplacementDelivery || !replacementMachineId || !conditionNotes || !evidenceReference || isRefreshing || recordReplacementDelivery.isPending) return;
+    if (!validCaseId || !canRecordReplacementDelivery || !replacementMachineId || !conditionNotes || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || isRefreshing || recordReplacementDelivery.isPending) return;
     recordReplacementDelivery.mutate({
       eventType: "REPLACEMENT_DELIVERED",
       machineId: replacementMachineId,
       conditionNotes,
-      evidenceReference,
     });
   };
   const submitReplacementCollection = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const conditionNotes = replacementCollectionCondition.trim();
-    const evidenceReference = replacementCollectionEvidenceReference.trim();
     const machineId = assignment.data?.replacementMachineId;
-    if (!validCaseId || !canSubmitReplacementCollection || !machineId || !conditionNotes || !evidenceReference || isRefreshing || recordReturnCustodyEvent.isPending) return;
-    recordReturnCustodyEvent.mutate({ eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes, evidenceReference });
+    if (!validCaseId || !canSubmitReplacementCollection || !machineId || !conditionNotes || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordReturnCustodyEvent.isPending) return;
+    recordReturnCustodyEvent.mutate({ eventType: "REPLACEMENT_COLLECTED", machineId, conditionNotes });
   };
   const submitPrimaryReturn = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const conditionNotes = primaryReturnCondition.trim();
-    const evidenceReference = primaryReturnEvidenceReference.trim();
     const machineId = repairCase.data?.primaryMachineId;
-    if (!validCaseId || !canSubmitPrimaryReturn || !machineId || !conditionNotes || !evidenceReference || isRefreshing || recordReturnCustodyEvent.isPending) return;
-    recordReturnCustodyEvent.mutate({ eventType: "PRIMARY_RETURNED", machineId, conditionNotes, evidenceReference });
+    if (!validCaseId || !canSubmitPrimaryReturn || !machineId || !conditionNotes || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordReturnCustodyEvent.isPending) return;
+    recordReturnCustodyEvent.mutate({ eventType: "PRIMARY_RETURNED", machineId, conditionNotes });
   };
   const submitReleaseReplacement = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validCaseId || !canSubmitRelease || !assignment.data?.id || !releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess) return;
+    if (!validCaseId || !canSubmitRelease || !assignment.data?.id || Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess) return;
     setReleaseConfirmationDialogs((current) => ({ ...current, [caseId]: true }));
   };
   const confirmReleaseReplacement = () => {
-    const evidence = releaseEvidenceReference.trim();
+    const evidence = releaseEvidenceReference.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join("|");
     const assignmentId = assignment.data?.id;
-    if (!validCaseId || !canSubmitRelease || !assignmentId || !evidence || isRefreshing || releaseReplacementAssignment.isSuccess) return;
+    if (!validCaseId || !canSubmitRelease || !assignmentId || evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) || isRefreshing || releaseReplacementAssignment.isSuccess) return;
     const fingerprint = `${caseId}|${assignmentId}|${evidence}`;
     const attempt = releaseAttempts[caseId]?.fingerprint === fingerprint
       ? releaseAttempts[caseId]
@@ -752,7 +743,6 @@ export function RepairCaseDetailScreen({
       expectedCaseId: caseId,
       expectedAssignmentId: assignmentId,
       request: {
-        releaseEvidence: evidence,
         idempotencyKey: attempt.idempotencyKey,
         correlationId: attempt.correlationId,
       },
@@ -871,24 +861,21 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor="primary-collection-evidence-reference">
-                      <span>{M.TECHNICIAN_RECEIVE_MACHINE_EVIDENCE_REFERENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id="primary-collection-evidence-reference"
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
-                        placeholder="private/repair-handover/collect-machine-a-001.jpg"
                         disabled={recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess}
-                        onChange={(event) => setReceiveMachineEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setReceiveMachineEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={receiveMachineEvidenceReference}
                       />
-                      <span className={styles.formHint}>{M.TECHNICIAN_RECEIVE_MACHINE_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{receiveMachineEvidenceReference.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {currentPrimaryCollectionError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordPrimaryCollection.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || !receiveMachineEvidenceReference.trim() || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: "Nhập tình trạng máy và mã minh chứng; kiểm tra hồ sơ đủ điều kiện nhận máy.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng máy và mã minh chứng; kiểm tra hồ sơ đủ điều kiện nhận máy.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
@@ -915,17 +902,16 @@ export function RepairCaseDetailScreen({
                 ) : canActivateAssignment ? (
                   <form id="activate-replacement-form" className={styles.assignmentForm} onSubmit={submitActivation}>
                     <label className={styles.formField} htmlFor="replacement-activation-evidence">
-                      <span>{M.ACTIVATE_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id="replacement-activation-evidence"
-                        type="text"
-                        autoComplete="off"
                         disabled={activateReplacementAssignment.isPending}
-                        value={activationEvidence}
-                        onChange={(event) => setActivationEvidence(event.target.value)}
+                        onChange={(event) => setActivationEvidence(Array.from(event.target.files ?? []))}
                         required
                       />
-                      <span className={styles.formHint}>{M.ACTIVATE_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{activationEvidence.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     <label className={styles.formField} htmlFor="replacement-activation-reason">
                       <span>{M.ACTIVATE_REASON}</span>
@@ -941,7 +927,7 @@ export function RepairCaseDetailScreen({
                     {activateReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(activateReplacementAssignment.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: !activationEvidence.trim() || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: "Nhập lý do và minh chứng kích hoạt.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: evidenceFileError(activationEvidence, { min: 1, max: 1 }) ?? "Nhập lý do và minh chứng kích hoạt.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -971,23 +957,21 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor="replacement-delivery-evidence-reference">
-                      <span>{M.REPLACEMENT_DELIVERY_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id="replacement-delivery-evidence-reference"
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
                         disabled={recordReplacementDelivery.isPending}
-                        value={replacementDeliveryEvidence}
-                        onChange={(event) => setReplacementDeliveryEvidence(event.target.value)}
+                        onChange={(event) => setReplacementDeliveryEvidence(Array.from(event.target.files ?? []))}
                         required
                       />
-                      <span className={styles.formHint}>{M.REPLACEMENT_DELIVERY_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{replacementDeliveryEvidence.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {recordReplacementDelivery.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReplacementDelivery.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || !replacementDeliveryEvidence.trim() || recordReplacementDelivery.isPending, disabledReason: "Nhập ghi chú và minh chứng bàn giao máy thay thế.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || recordReplacementDelivery.isPending, disabledReason: evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 }) ?? "Nhập ghi chú và minh chứng bàn giao máy thay thế.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
                   </form>
                 ) : assignment.data?.status === "ACTIVE" ? (
                   <p className={styles.notice} role="status">
@@ -1031,23 +1015,21 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`repair-diagnosis-evidence-${caseId}`}>
-                      <span>{M.TECHNICIAN_DIAGNOSIS_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id={`repair-diagnosis-evidence-${caseId}`}
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
                         disabled={isRefreshing || recordRepairDiagnosis.isSuccess}
-                        onChange={(event) => setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setDiagnosisEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={diagnosisEvidenceReference}
                       />
-                      <span className={styles.formHint}>{M.TECHNICIAN_PRIVATE_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{diagnosisEvidenceReference.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {recordRepairDiagnosis.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordRepairDiagnosis.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || !diagnosisEvidenceReference.trim() || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: "Nhập chẩn đoán và mã minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 }) ?? "Nhập chẩn đoán và mã minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1131,15 +1113,16 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`repair-completion-evidence-${caseId}`}>
-                      <span>{M.TECHNICIAN_COMPLETION_EVIDENCE}</span>
-                      <textarea
+                      <span>Tệp chứng từ *</span>
+                      <input
+                        type="file" accept={EVIDENCE_ACCEPT} multiple
                         id={`repair-completion-evidence-${caseId}`}
                         disabled={isRefreshing || completeRepairWork.isSuccess}
-                        onChange={(event) => setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setCompletionEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={completionEvidenceReferenceText}
                       />
-                      <span className={styles.formHint}>{M.TECHNICIAN_COMPLETION_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{completionEvidenceReferenceText.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     <label className={styles.formField} htmlFor={`repair-completion-notes-${caseId}`}>
                       <span>{M.TECHNICIAN_COMPLETION_NOTES}</span>
@@ -1155,7 +1138,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(completeRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || !completionEvidenceReferenceText.trim() || isRefreshing || completeRepairWork.isSuccess, disabledReason: "Nhập phạm vi công việc, kết quả, minh chứng và chọn phê duyệt nếu có tranh chấp chi phí.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) || isRefreshing || completeRepairWork.isSuccess, disabledReason: evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 }) ?? "Nhập phạm vi công việc, kết quả, minh chứng và chọn phê duyệt nếu có tranh chấp chi phí.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1191,24 +1174,22 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`replacement-collection-evidence-${caseId}`}>
-                      <span>{M.REPLACEMENT_COLLECTION_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id={`replacement-collection-evidence-${caseId}`}
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
                         aria-describedby={`replacement-collection-evidence-hint-${caseId}`}
                         disabled={isRefreshing}
-                        onChange={(event) => setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setReplacementCollectionEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={replacementCollectionEvidenceReference}
                       />
-                      <span className={styles.formHint} id={`replacement-collection-evidence-hint-${caseId}`}>{M.CUSTODY_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{replacementCollectionEvidenceReference.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint} id={`replacement-collection-evidence-hint-${caseId}`}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || !replacementCollectionEvidenceReference.trim() || isRefreshing, disabledReason: "Nhập tình trạng và minh chứng thu máy thay thế.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng và minh chứng thu máy thay thế.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1254,24 +1235,22 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`primary-return-evidence-${caseId}`}>
-                      <span>{M.PRIMARY_RETURN_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id={`primary-return-evidence-${caseId}`}
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
                         aria-describedby={`primary-return-evidence-hint-${caseId}`}
                         disabled={isRefreshing}
-                        onChange={(event) => setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setPrimaryReturnEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={primaryReturnEvidenceReference}
                       />
-                      <span className={styles.formHint} id={`primary-return-evidence-hint-${caseId}`}>{M.CUSTODY_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{primaryReturnEvidenceReference.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint} id={`primary-return-evidence-hint-${caseId}`}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || !primaryReturnEvidenceReference.trim() || isRefreshing, disabledReason: "Nhập tình trạng và minh chứng trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng và minh chứng trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1311,24 +1290,22 @@ export function RepairCaseDetailScreen({
                     <p className={styles.notice} role="note">{`${M.REPLACEMENT_ASSIGNMENT}: ${assignment.data?.id ?? "—"}`}</p>
                     <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"} · ${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
                     <label className={styles.formField} htmlFor={`release-evidence-${caseId}`}>
-                      <span>{M.RELEASE_EVIDENCE}</span>
+                      <span>Tệp chứng từ *</span>
                       <input
+                        type="file" accept={EVIDENCE_ACCEPT}
                         id={`release-evidence-${caseId}`}
-                        type="text"
-                        maxLength={512}
-                        autoComplete="off"
                         aria-describedby={`release-evidence-hint-${caseId}`}
                         disabled={isRefreshing || releaseReplacementAssignment.isSuccess}
-                        onChange={(event) => setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: event.target.value }))}
+                        onChange={(event) => setReleaseEvidenceReferences((current) => ({ ...current, [caseId]: Array.from(event.target.files ?? []) }))}
                         required
-                        value={releaseEvidenceReference}
                       />
-                      <span className={styles.formHint} id={`release-evidence-hint-${caseId}`}>{M.RELEASE_EVIDENCE_HINT}</span>
+                      <span className={styles.formHint}>{releaseEvidenceReference.map((file) => file.name).join(", ")}</span>
+                      <span className={styles.formHint} id={`release-evidence-hint-${caseId}`}>PDF, JPEG hoặc PNG.</span>
                     </label>
                     {releaseReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: !releaseEvidenceReference.trim() || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: "Nhập mã minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
+                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) ?? "Nhập mã minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
                   </form>
                 ) : (
                   <>
@@ -1416,7 +1393,7 @@ export function RepairCaseDetailScreen({
             label: M.RELEASE_CONFIRM_ACTION,
             pendingLabel: M.RELEASE_CONFIRM_PENDING,
             pending: releaseReplacementAssignment.isPending,
-            disabled: !canSubmitRelease || !releaseEvidenceReference.trim() || isRefreshing,
+            disabled: !canSubmitRelease || Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing,
             onClick: confirmReleaseReplacement,
           }}
           secondaryAction={{

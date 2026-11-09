@@ -36,6 +36,7 @@ function apiWith(axiosClient) {
   const schema = loadTypeScript("src/schema/buybacks.schema.ts", { "@/schema/machines.schema": machineSchema });
   return loadTypeScript("src/apis/buybacks.api.ts", {
     "@/lib/http": { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" },
+    "@/lib/evidence-multipart": loadTypeScript("src/lib/evidence-multipart.ts"),
     "@/schema/buybacks.schema": schema,
   }).buybacksApi;
 }
@@ -71,7 +72,7 @@ test("buyback assignment, collection evidence, and registration use documented r
   await api.assignModerator(caseId, { ...command, moderatorId });
   await api.assignInspection(caseId, { ...command, technicianId });
   await api.assignCollection(caseId, { ...command, technicianId });
-  await api.recordCollectionEvidence(caseId, { confirmedSerial: "SERIAL-01", collectionLocation: "Warehouse", evidenceReference: "private-object-ref", idempotencyKey: "evidence-idem", correlationId: "evidence-corr" });
+  await api.recordCollectionEvidence(caseId, { confirmedSerial: "SERIAL-01", collectionLocation: "Warehouse", idempotencyKey: "evidence-idem", correlationId: "evidence-corr" }, [new File(["evidence data"], "evidence.pdf", { type: "application/pdf" })]);
   await api.assignRefurbishment(caseId, { ...command, technicianId });
   await api.registerMachine(caseId, { machineType: "SMART_IOT", modelId, region: "South", reason: "Ready after refurbishment", idempotencyKey: "register-idem", correlationId: "register-corr" });
 
@@ -83,8 +84,10 @@ test("buyback assignment, collection evidence, and registration use documented r
     `/buybacks/${caseId}/refurbishment/assign`,
     `/buybacks/${caseId}/register-machine`,
   ]);
-  assert.deepEqual(calls.map(([, , config]) => config), Array.from({ length: 6 }, () => ({ baseURL: "/api/dolores/v1" })));
-  await assert.rejects(api.recordCollectionEvidence(caseId, { confirmedSerial: " ", collectionLocation: "Warehouse", evidenceReference: "real-ref", idempotencyKey: "idem", correlationId: "corr" }));
+  assert.deepEqual(JSON.parse(await calls[3][1].get("data").text()), { confirmedSerial: "SERIAL-01", collectionLocation: "Warehouse", idempotencyKey: "evidence-idem", correlationId: "evidence-corr" });
+  assert.equal(calls[3][1].get("files").name, "evidence.pdf");
+  assert.equal(calls[3][2].headers["Content-Type"], "multipart/form-data");
+  await assert.rejects(api.recordCollectionEvidence(caseId, { confirmedSerial: " ", collectionLocation: "Warehouse", idempotencyKey: "idem", correlationId: "corr" }, []));
   await assert.rejects(api.registerMachine(caseId, { machineType: "INVALID", modelId, reason: "Ready", idempotencyKey: "idem", correlationId: "corr" }));
 });
 
@@ -103,7 +106,7 @@ test("Phase 2 assignment, inspection, valuation, and Owner decisions match Dolor
     currency: "VND",
     notes: "Screen and pump checked",
     ...keys,
-  });
+  }, []);
   await api.decideValuation(caseId, {
     approved: true,
     approvedPrice: 4000000,
@@ -119,10 +122,10 @@ test("Phase 2 assignment, inspection, valuation, and Owner decisions match Dolor
     `/buybacks/${caseId}/valuation`,
     `/buybacks/${caseId}/owner-decision`,
   ]);
-  assert.deepEqual(calls.map(([, data]) => data), [
+  assert.deepEqual(JSON.parse(await calls[2][1].get("data").text()), { condition: "Clean and operational", valuationAmount: 4250000, currency: "VND", notes: "Screen and pump checked", ...keys });
+  assert.deepEqual(calls.filter((_, index) => index !== 2).map(([, data]) => data), [
     { technicianId, reason: "Assign inspection", ...keys },
     { reason: "Start inspection", ...keys },
-    { condition: "Clean and operational", valuationAmount: 4250000, currency: "VND", notes: "Screen and pump checked", ...keys },
     { approved: true, approvedPrice: 4000000, reason: "Approved after review", ...keys },
     { accepted: true, reason: "I accept", ...keys },
   ]);
@@ -157,7 +160,7 @@ test("operator proof read and review use UUID routes and don't render private re
   assert.match(source, /downloadPaymentProofContent/);
   assert.match(source, /proofReviewReason/);
   assert.match(source, /idempotencyKeys = useRef\(new Map/);
-  assert.match(source, /operationKey\("refurbishment-complete", caseData\.id\)/);
+  assert.match(source, /operationKey\("refurbishment-complete", caseData\.id,/);
   assert.match(source, /clearOperationKey\("create-payment", input\.id\)/);
   assert.match(source, /Chia sẻ mã hồ sơ\/chứng từ với operator/);
   assert.doesNotMatch(source, /caseData\.inspection\.evidenceReferences/);

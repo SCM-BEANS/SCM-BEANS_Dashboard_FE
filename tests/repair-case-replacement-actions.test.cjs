@@ -7,7 +7,7 @@ function load(file, mocks = {}) {
   const source = fs.readFileSync(file, 'utf8');
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
-  new Function('require', 'module', 'exports', code)(id => mocks[id] || require(id), module, module.exports);
+  new Function('require', 'module', 'exports', code)(id => mocks[id] || (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id)), module, module.exports);
   return module.exports;
 }
 const schema = load('src/schema/machines.schema.ts');

@@ -12,7 +12,7 @@ function loadTypescript(relativePath, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports;
 }

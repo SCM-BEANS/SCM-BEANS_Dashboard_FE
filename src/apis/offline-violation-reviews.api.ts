@@ -1,5 +1,10 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  buildEvidenceForm,
+  EVIDENCE_MULTIPART_HEADERS,
+  validateEvidenceFiles,
+} from "@/lib/evidence-multipart";
+import {
   OfflineViolationReviewContextSchema,
   OfflineViolationReviewDecisionRequestSchema,
   OfflineViolationReviewIdSchema,
@@ -92,16 +97,18 @@ export const offlineViolationReviewsApi = {
     return review;
   },
 
-  async decide(id: string, input: OfflineViolationReviewDecisionRequest, expected: OfflineViolationReviewContext = {}) {
+  async decide(id: string, input: OfflineViolationReviewDecisionRequest, expected: OfflineViolationReviewContext = {}, files: File[] = []) {
     const path = reviewPath(id);
     const body = OfflineViolationReviewDecisionRequestSchema.parse(input);
     const context = OfflineViolationReviewContextSchema.parse(expected);
-    const response = await axiosClient.post<unknown>(`${path}/decision`, body, { baseURL: DOLORES_API_BASE_URL });
+    validateEvidenceFiles(files, { min: 1, max: 5 });
+    const response = await axiosClient.post<unknown>(`${path}/decision`, buildEvidenceForm(body, files), {
+      baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS,
+    });
     try {
       const review = OfflineViolationReviewSchema.parse(response.data);
       if (review.id !== id || review.status !== "REVIEWED" || review.decision !== body.decision
-        || review.decisionReason !== body.reason || review.evidenceReferences !== body.evidenceReferences
-        || review.decidedAt === null) throw new Error("Invalid decision response.");
+        || review.decisionReason !== body.reason || review.decidedAt === null) throw new Error("Invalid decision response.");
       assertContext(review, context);
       return review;
     } catch {
@@ -109,10 +116,10 @@ export const offlineViolationReviewsApi = {
     }
   },
 
-  async decideIfRequired(id: string, input: OfflineViolationReviewDecisionRequest, expected: OfflineViolationReviewContext = {}) {
+  async decideIfRequired(id: string, input: OfflineViolationReviewDecisionRequest, expected: OfflineViolationReviewContext = {}, files: File[] = []) {
     const body = OfflineViolationReviewDecisionRequestSchema.parse(input);
     const current = await offlineViolationReviewsApi.getById(id, undefined, expected);
     if (current.status !== "REVIEW_REQUIRED") throw new OfflineReviewWorkflowError("Hồ sơ đã thay đổi trạng thái. Hãy xem lại dữ liệu mới nhất trước khi tiếp tục.");
-    return offlineViolationReviewsApi.decide(id, body, expected);
+    return offlineViolationReviewsApi.decide(id, body, expected, files);
   },
 };

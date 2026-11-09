@@ -48,7 +48,7 @@ function loadTypescript(relativePath, mocks = {}, resolveAliases = false, cache 
       if (!dependency) throw new Error('Unresolved test import: ' + id);
       return loadTypescript(dependency, mocks, true, cache);
     }
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   };
   const loaded = { exports: {} };
   cache.set(fileName, loaded);

@@ -1,5 +1,6 @@
 import { FallbackOfferRequestSchema, EmergencyAuthorizationRequestSchema, EmergencyAuthorizationResponseSchema, type FallbackOfferRequest, type EmergencyAuthorizationRequest } from "@/schema/machines.schema";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import { buildEvidenceForm, validateEvidenceFiles, EVIDENCE_MULTIPART_HEADERS } from "@/lib/evidence-multipart";
 import {
   MaintenanceRequestIdSchema,
   MachineIdSchema,
@@ -59,11 +60,12 @@ function boundedPage<T>(items: T[], headers: unknown, requested: { page: number;
   };
 }
 
-async function postCustodyEvent(caseId: string, request: MaintenanceCustodyEventCreateRequest) {
+async function postCustodyEvent(caseId: string, request: MaintenanceCustodyEventCreateRequest, files: File[]) {
+  validateEvidenceFiles(files, { min: 1, max: 1 });
   const response = await axiosClient.post<unknown>(
     `/repair-cases/${encodeURIComponent(caseId)}/custody-events`,
-    request,
-    { baseURL: DOLORES_API_BASE_URL },
+    buildEvidenceForm(request, files),
+    { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
   );
   const event = MaintenanceCustodyEventSchema.parse(response.data);
   if (event.repairCaseId !== caseId || event.eventType !== request.eventType || event.machineId !== request.machineId) {
@@ -162,20 +164,19 @@ export const repairCasesApi =  {
     }
     return event;
   },
-  async recordCustodyEvent(caseId: string, input: MaintenanceCustodyEventCreateRequest) {
+  async recordCustodyEvent(caseId: string, input: MaintenanceCustodyEventCreateRequest, files: File[]) {
     const validCaseId = RepairCaseIdSchema.parse(caseId);
     const request = MaintenanceCustodyEventCreateRequestSchema.parse(input);
-    return postCustodyEvent(validCaseId, request);
+    return postCustodyEvent(validCaseId, request, files);
   },
-  async recordPrimaryCollection(caseId: string, input: Omit<PrimaryCollectionRequest, "eventType">) {
+  async recordPrimaryCollection(caseId: string, input: Omit<PrimaryCollectionRequest, "eventType">, files: File[]) {
     const validCaseId = RepairCaseIdSchema.parse(caseId);
     const request = PrimaryCollectionRequestSchema.parse({
       eventType: "PRIMARY_COLLECTED",
       machineId: input.machineId,
       conditionNotes: input.conditionNotes,
-      evidenceReference: input.evidenceReference,
     });
-    return postCustodyEvent(validCaseId, request);
+    return postCustodyEvent(validCaseId, request, files);
   },
   async startWork(caseId: string, expectedTicketId: string, input: RepairWorkStartRequest) {
     const validCaseId = RepairCaseIdSchema.parse(caseId);
@@ -225,13 +226,16 @@ export const repairCasesApi =  {
     }
     return events;
   },
-  async recordDiagnosis(id: string, expectedTicketId: string, input: RepairDiagnosisRequest) {
+  async recordDiagnosis(id: string, expectedTicketId: string, input: RepairDiagnosisRequest, files: File[]) {
     const caseId = RepairCaseIdSchema.parse(id);
     const ticketId = MaintenanceTicketIdSchema.parse(expectedTicketId);
     const request = RepairDiagnosisRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/diagnosis`, request, {
-      baseURL: DOLORES_API_BASE_URL,
-    });
+    validateEvidenceFiles(files, { min: 1, max: 1 });
+    const response = await axiosClient.post<unknown>(
+      `${repairCasePath(caseId)}/diagnosis`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     const ticket = MaintenanceTicketSchema.parse(response.data);
     if (
       ticket.id !== ticketId ||
@@ -243,13 +247,16 @@ export const repairCasesApi =  {
     }
     return ticket;
   },
-  async completeWork(id: string, expectedTicketId: string, input: RepairWorkCompletionRequest) {
+  async completeWork(id: string, expectedTicketId: string, input: RepairWorkCompletionRequest, files: File[]) {
     const caseId = RepairCaseIdSchema.parse(id);
     const ticketId = MaintenanceTicketIdSchema.parse(expectedTicketId);
     const request = RepairWorkCompletionRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(`${repairCasePath(caseId)}/work/complete`, request, {
-      baseURL: DOLORES_API_BASE_URL,
-    });
+    validateEvidenceFiles(files, { min: 1, max: 5 });
+    const response = await axiosClient.post<unknown>(
+      `${repairCasePath(caseId)}/work/complete`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     const ticket = MaintenanceTicketSchema.parse(response.data);
     if (
       ticket.id !== ticketId ||

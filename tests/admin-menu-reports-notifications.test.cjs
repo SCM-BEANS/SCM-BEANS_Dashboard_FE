@@ -97,7 +97,7 @@ function loadModule(relativePath, mocks = {}, resolveAliases = false, cache = ne
       if (!dependency) throw new Error("Unresolved test import: " + id);
       return loadModule(dependency, mocks, true, cache);
     }
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   };
   new Function("require", "module", "exports", outputText)(
     mockedRequire,

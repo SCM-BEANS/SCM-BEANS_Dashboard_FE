@@ -8,6 +8,7 @@ import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getBillingWorkflowErrorMessage as getApiErrorMessage } from "@/lib/api-errors";
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import type { TerminationCaseStatus } from "@/schema/termination-cases.schema";
 import type { RecallWorkOrderStatus } from "@/schema/recall-work-orders.schema";
 import { RefundWorkflowPanel, useRefundDetail } from "@/components/features/billing/refund-workflow-panel";
@@ -99,7 +100,8 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   const [damageAmount, setDamageAmount] = useState("0");
   const [penaltyAmount, setPenaltyAmount] = useState("0");
   const [outstandingAmount, setOutstandingAmount] = useState("0");
-  const [settlementEvidenceReference, setSettlementEvidenceReference] = useState("");
+  const [settlementFiles, setSettlementFiles] = useState<File[]>([]);
+  const settlementFileError = evidenceFileError(settlementFiles, { min: 1, max: 1 });
   const settlementAttempts = useRef(new Map<string, { idempotencyKey: string; correlationId: string }>());
 
   const recallOrders = useQuery({
@@ -176,7 +178,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
         ? "Không ghi nhận hư hỏng thì chi phí hư hỏng phải bằng 0."
         : "";
   const canSubmitSettlement = Boolean(
-    settlementEvidenceReference.trim()
+    !settlementFileError
     && damageAmount.trim() !== ""
     && penaltyAmount.trim() !== ""
     && outstandingAmount.trim() !== ""
@@ -247,14 +249,13 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   const settleCase = useMutation({
     mutationFn: () => {
       const payload = { decision: settlementDecision, damageAmount: parsedDamageAmount,
-        penaltyAmount: parsedPenaltyAmount, outstandingAmount: parsedOutstandingAmount,
-        evidenceReference: settlementEvidenceReference.trim() };
-      const signature = JSON.stringify({ caseId: resolvedCaseId, ...payload });
+        penaltyAmount: parsedPenaltyAmount, outstandingAmount: parsedOutstandingAmount };
+      const signature = JSON.stringify({ caseId: resolvedCaseId, ...payload, files: settlementFiles.map(({ name, size, lastModified }) => ({ name, size, lastModified })) });
       const attempt = settlementAttempts.current.get(signature) ?? {
         idempotencyKey: correlationId("termination-settlement-idempotency"), correlationId: correlationId("termination-settlement"),
       };
       settlementAttempts.current.set(signature, attempt);
-      return terminationCasesApi.settle(resolvedCaseId, { ...payload, ...attempt });
+      return terminationCasesApi.settle(resolvedCaseId, { ...payload, ...attempt }, settlementFiles);
     },
     onSuccess: () => refresh(),
     onError: () => refresh(),
@@ -449,8 +450,9 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
                 <label>Công nợ còn lại (VND)
                   <input type="number" min="0" step="1" value={outstandingAmount} onChange={(event) => setOutstandingAmount(event.target.value)} />
                 </label>
-                <label className={styles.fullWidth}>Mã tham chiếu biên bản kiểm tra / chứng cứ
-                  <input value={settlementEvidenceReference} maxLength={2000} onChange={(event) => setSettlementEvidenceReference(event.target.value)} placeholder="Nhập mã tham chiếu đã lưu trong hệ thống" />
+                <label className={styles.fullWidth}>Tệp biên bản kiểm tra / chứng cứ
+                  <input type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => setSettlementFiles(Array.from(event.target.files ?? []))} />
+                  {settlementFiles.map((file) => <span key={file.name}>{file.name}</span>)}
                 </label>
               </div>
               {!inspectionResolved || !handoverReady ? <p className={styles.notice}>Chờ xác nhận biên nhận kho, bàn giao và phiếu kiểm tra đã hoàn tất trước khi quyết toán.</p> : null}
@@ -458,7 +460,8 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
               <p className={styles.notice}>
                 Quy tắc: hợp đồng kết thúc đúng hạn không tính tiền phạt; chấm dứt sớm hoặc do vi phạm cần ghi nhận tiền phạt lớn hơn 0. Không ghi nhận hư hỏng thì chi phí hư hỏng phải bằng 0.
               </p>
-              <ButtonBar type="button" disabled={!canSubmitSettlement || !inspectionResolved || !handoverReady || settleCase.isPending} onClick={() => settleCase.mutate()}>
+              {settlementFileError ? <p id="settlement-file-error">{settlementFileError}</p> : null}
+              <ButtonBar type="button" aria-describedby={settlementFileError ? "settlement-file-error" : undefined} disabled={!canSubmitSettlement || !inspectionResolved || !handoverReady || settleCase.isPending} onClick={() => { if (canSubmitSettlement) settleCase.mutate(); }}>
                 {settleCase.isPending ? "Đang gửi quyết toán…" : "Ghi nhận quyết toán"}
               </ButtonBar>
               {settleCase.isError ? <ErrorNotice error={settleCase.error} /> : null}

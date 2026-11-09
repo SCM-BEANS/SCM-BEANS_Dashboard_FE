@@ -149,7 +149,6 @@ export const BuybackInspectionRequestSchema = z.object({
   valuationAmount: z.number().finite().positive(),
   currency: z.string().trim().min(1).max(16),
   notes: z.string().trim().max(2000).optional(),
-  evidenceReferences: z.string().trim().min(1).optional(),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
@@ -221,7 +220,6 @@ export const BuybackCollectionRequestSchema = z.object({
 export const BuybackPickupEvidenceRequestSchema = z.object({
   confirmedSerial: z.string().trim().min(1),
   collectionLocation: z.string().trim().min(1),
-  evidenceReference: z.string().trim().min(1),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
@@ -235,7 +233,6 @@ export const BuybackRefurbishmentStartRequestSchema = z.object({
 export const BuybackRefurbishmentCompleteRequestSchema = z.object({
   workPerformed: z.string().trim().min(1).max(2000),
   result: z.string().trim().min(1).max(2000),
-  evidenceReferences: z.string().trim().min(1).optional(),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict();

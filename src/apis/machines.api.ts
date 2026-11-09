@@ -46,6 +46,7 @@ import {
 } from "@/schema/machines.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 import { MachineHistoryParamsSchema, MachineBrewRecordsPageSchema, MachineCleaningRecordsPageSchema, type MachineHistoryParams } from "@/schema/owner-analytics.schema";
+import { buildEvidenceForm, validateEvidenceFiles, EVIDENCE_MULTIPART_HEADERS } from "@/lib/evidence-multipart";
 
 
 export class MachineIdentityMismatchError extends Error {
@@ -350,14 +351,16 @@ export const machinesApi =  {
   },
   async resolveMaintenanceTicket(
     ticketId: string,
-    input: { diagnosis: string; resolutionResult: string; evidenceReferences: string[]; notes?: string },
+    input: { diagnosis: string; resolutionResult: string; notes?: string },
+    files: File[],
   ) {
     const validTicketId = MaintenanceTicketIdSchema.parse(ticketId);
-    const body = MaintenanceTicketResolutionRequestSchema.parse(input);
+    const request = MaintenanceTicketResolutionRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 1, max: 5 });
     const response = await axiosClient.post<unknown>(
       "/maintenance-tickets/" + encodeURIComponent(validTicketId) + "/resolve",
-      body,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     const ticket = MaintenanceTicketSchema.parse(response.data);
     if (ticket.id !== validTicketId || ticket.status !== "RESOLVED") {
@@ -365,12 +368,13 @@ export const machinesApi =  {
     }
     return ticket;
   },
-  async createRepairIntake(input: RepairIntakeRequest) {
+  async createRepairIntake(input: RepairIntakeRequest, files: File[]) {
     const request = RepairIntakeRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 0, max: 1 });
     const response = await axiosClient.post<unknown>(
       "/repair-cases/intakes",
-      request,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     return RepairIntakeResponseSchema.parse(response.data);
   },

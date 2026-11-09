@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import { EVIDENCE_MULTIPART_HEADERS, buildEvidenceForm, validateEvidenceFiles } from "@/lib/evidence-multipart";
 import {
   BuybackActionRequestSchema,
   BuybackAssignModeratorRequestSchema,
@@ -202,9 +203,15 @@ export const buybacksApi =  {
     const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/inspection/start`, BuybackActionRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
     return verifyCase(response.data, validId);
   },
-  async submitInspection(id: string, input: BuybackInspectionRequest) {
+  async submitInspection(id: string, input: BuybackInspectionRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
-    const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/inspection`, BuybackInspectionRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
+    const request = BuybackInspectionRequestSchema.parse(withoutResourceId(input, "id"));
+    validateEvidenceFiles(files, { min: 0, max: 5 });
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/inspection`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     return verifyCase(response.data, validId);
   },
   async decideValuation(id: string, input: BuybackValuationRequest) {
@@ -291,12 +298,14 @@ export const buybacksApi =  {
     );
     return verifyCase(response.data, validId);
   },
-  async recordCollectionEvidence(id: string, input: BuybackPickupEvidenceRequest) {
+  async recordCollectionEvidence(id: string, input: BuybackPickupEvidenceRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
+    const request = BuybackPickupEvidenceRequestSchema.parse(withoutResourceId(input, "id"));
+    validateEvidenceFiles(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `${buybackPath(validId)}/collection/evidence`,
-      BuybackPickupEvidenceRequestSchema.parse(input),
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     return verifyCase(response.data, validId);
   },
@@ -310,9 +319,15 @@ export const buybacksApi =  {
     const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/refurbishment/start`, BuybackRefurbishmentStartRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
     return verifyCase(response.data, validId);
   },
-  async completeRefurbishment(id: string, input: BuybackRefurbishmentCompleteRequest) {
+  async completeRefurbishment(id: string, input: BuybackRefurbishmentCompleteRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
-    const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/refurbishment/complete`, BuybackRefurbishmentCompleteRequestSchema.parse(withoutResourceId(input, "id")), { baseURL: DOLORES_API_BASE_URL });
+    const request = BuybackRefurbishmentCompleteRequestSchema.parse(withoutResourceId(input, "id"));
+    validateEvidenceFiles(files, { min: 0, max: 5 });
+    const response = await axiosClient.post<unknown>(
+      `${buybackPath(validId)}/refurbishment/complete`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     return verifyCase(response.data, validId);
   },
   async assignRefurbishment(id: string, input: BuybackAssignTechnicianRequest) {

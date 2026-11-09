@@ -448,7 +448,12 @@ async function installOfflineMock(page: Page, requests: string[], conflict = fal
     const path = url.pathname.replace(/^\/api\/dolores\/v1/, "");
     requests.push(`${route.request().method()} ${path}${url.search}`);
     if (route.request().method() === "POST") {
-      const input = route.request().postDataJSON();
+      const request = route.request();
+      expect(request.headers()["content-type"]).toContain("multipart/form-data");
+      const raw = request.postDataBuffer()?.toString() ?? "";
+      expect(raw).toContain('name="data"');
+      expect(raw).toContain('name="files"');
+      const input = JSON.parse(raw.match(/name="data"[^\r]*\r\n(?:[^\r\n]+\r\n)*\r\n([^\r]+)/)?.[1] ?? "{}");
       posts.push(input);
       if (conflict) {
         await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ message: "Review changed. Refresh and retry." }) });
@@ -495,7 +500,9 @@ test.describe("Offline review role workflow", () => {
       await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
       const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
       await panel.getByLabel("Lý do rà soát").fill("Liên hệ cửa hàng kiểm tra kết nối");
-      await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/e2e");
+      await expect(page.getByRole("button", { name: "Tiếp tục xác nhận" })).toBeDisabled();
+      await panel.locator('input[name="evidenceFiles"]').setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+      await expect(panel.getByText("evidence.pdf")).toBeVisible();
       await page.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
       await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).click();
       await expect.poll(() => posts.length).toBe(1);
@@ -732,7 +739,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
     const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
     await panel.getByLabel("Lý do rà soát").fill("Kiểm tra sau khi mất mạng");
-    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/timeout");
+    await panel.locator('input[name="evidenceFiles"]').setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
     await page.getByRole("button", { name: "Tiếp tục xác nhận" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Xác nhận kết quả", exact: true }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
     await expect.poll(() => posts).toBe(1);
@@ -741,7 +748,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await expect(page.getByRole("alertdialog")).toHaveCount(0);
     await expect(panel.getByRole("alert")).toBeVisible();
     await expect(panel.getByLabel("Lý do rà soát")).toHaveValue("Kiểm tra sau khi mất mạng");
-    await expect(panel.getByLabel("Mã tham chiếu minh chứng riêng tư")).toHaveValue("private://offline/timeout");
+    await expect(panel.getByText("evidence.pdf")).toBeVisible();
     expect(posts).toBe(1);
     expect(requests.some((path) => /billing|penalty|certificate|replay/.test(path))).toBe(false);
   });
@@ -756,7 +763,7 @@ test.describe("Cleaning telemetry Phase 04 safeguards", () => {
     await page.goto(`/moderator/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
     const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
     await panel.getByLabel("Lý do rà soát").fill("Kiểm tra mạng tại cửa hàng");
-    await panel.getByLabel("Mã tham chiếu minh chứng riêng tư").fill("private://offline/keyboard");
+    await panel.locator('input[name="evidenceFiles"]').setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
     const continueButton = page.getByRole("button", { name: "Tiếp tục xác nhận" });
     await continueButton.focus();
     await expect(continueButton).toBeFocused();

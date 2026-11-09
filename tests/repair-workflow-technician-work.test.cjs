@@ -21,20 +21,20 @@ function loadTypeScriptModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
 
 const caseId = "00000000-0000-4000-8000-000000000001";
 const ticketId = "00000000-0000-4000-8000-000000000002";
+const files = [new File(["12345678"], "evidence.pdf", { type: "application/pdf" })];
 const differentId = "00000000-0000-4000-8000-000000000003";
 
 test("RepairCase diagnosis posts documented body and accepts only the matching assigned ticket", async () => {
   const calls = [];
   const request = {
     diagnosis: "Pump seal is worn",
-    evidenceReference: "private/repair/diagnosis-01.jpg",
   };
   const ticket = { id: ticketId, repairCaseId: caseId, status: "ASSIGNED", diagnosis: request.diagnosis };
   const axiosClient = {
@@ -48,12 +48,12 @@ test("RepairCase diagnosis posts documented body and accepts only the matching a
     "@/schema/machines.schema": schemaMocks,
   });
 
-  assert.deepEqual(await repairCasesApi.recordDiagnosis(caseId, ticketId, request), ticket);
-  assert.deepEqual(calls[0], {
-    url: `/repair-cases/${caseId}/diagnosis`,
-    data: request,
-    config: { baseURL: "/api/dolores/v1" },
-  });
+  assert.deepEqual(await repairCasesApi.recordDiagnosis(caseId, ticketId, request, files), ticket);
+  assert.equal(calls[0].url, `/repair-cases/${caseId}/diagnosis`);
+  assert.deepEqual(calls[0].config, { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } });
+  assert.deepEqual(JSON.parse(await calls[0].data.get("data").text()), request);
+  assert.deepEqual(calls[0].data.getAll("files"), files);
+  assert.deepEqual([...calls[0].data.keys()], ["data", "files"]);
 });
 
 test("RepairCase diagnosis rejects a response for another case, ticket, or status", async () => {
@@ -63,14 +63,14 @@ test("RepairCase diagnosis rejects a response for another case, ticket, or statu
     "@/lib/http": { axiosClient, DOLORES_API_BASE_URL: "/api/dolores/v1" },
     "@/schema/machines.schema": schemaMocks,
   });
-  const request = { diagnosis: "Pump seal is worn", evidenceReference: "private/repair/diagnosis-01.jpg" };
+  const request = { diagnosis: "Pump seal is worn" };
 
   responseData = { ...responseData, id: differentId };
-  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request), /expected assigned ticket/);
+  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request, files), /expected assigned ticket/);
   responseData = { ...responseData, id: ticketId, repairCaseId: differentId };
-  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request), /expected assigned ticket/);
+  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request, files), /expected assigned ticket/);
   responseData = { ...responseData, repairCaseId: caseId, status: "IN_PROGRESS" };
-  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request), /expected assigned ticket/);
+  await assert.rejects(repairCasesApi.recordDiagnosis(caseId, ticketId, request, files), /expected assigned ticket/);
 });
 
 test("RepairCase work completion posts all required fields and accepts only the resolved linked ticket", async () => {
@@ -79,7 +79,6 @@ test("RepairCase work completion posts all required fields and accepts only the 
     diagnosis: "Pump seal is worn",
     resolutionResult: "Replaced seal and verified flow",
     workScope: "Replace the pump seal",
-    evidenceReferences: ["private/repair/completion-01.jpg"],
     notes: "No leak during final check",
   };
   const ticket = { id: ticketId, repairCaseId: caseId, status: "RESOLVED" };
@@ -94,12 +93,12 @@ test("RepairCase work completion posts all required fields and accepts only the 
     "@/schema/machines.schema": schemaMocks,
   });
 
-  assert.deepEqual(await repairCasesApi.completeWork(caseId, ticketId, request), ticket);
-  assert.deepEqual(calls[0], {
-    url: `/repair-cases/${caseId}/work/complete`,
-    data: request,
-    config: { baseURL: "/api/dolores/v1" },
-  });
+  assert.deepEqual(await repairCasesApi.completeWork(caseId, ticketId, request, files), ticket);
+  assert.equal(calls[0].url, `/repair-cases/${caseId}/work/complete`);
+  assert.deepEqual(calls[0].config, { baseURL: "/api/dolores/v1", headers: { "Content-Type": "multipart/form-data" } });
+  assert.deepEqual(JSON.parse(await calls[0].data.get("data").text()), request);
+  assert.deepEqual(calls[0].data.getAll("files"), files);
+  assert.deepEqual([...calls[0].data.keys()], ["data", "files"]);
 });
 
 test("RepairCase work completion rejects a response unless the linked ticket is resolved", async () => {
@@ -113,45 +112,21 @@ test("RepairCase work completion rejects a response unless the linked ticket is 
     diagnosis: "Pump seal is worn",
     resolutionResult: "Replaced seal",
     workScope: "Replace the seal",
-    evidenceReferences: ["private/repair/completion-01.jpg"],
   };
 
-  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request), /expected RepairCase ticket/);
+  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request, files), /expected RepairCase ticket/);
   responseData = { ...responseData, id: differentId, status: "RESOLVED" };
-  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request), /expected RepairCase ticket/);
+  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request, files), /expected RepairCase ticket/);
   responseData = { ...responseData, id: ticketId, repairCaseId: differentId };
-  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request), /expected RepairCase ticket/);
+  await assert.rejects(repairCasesApi.completeWork(caseId, ticketId, request, files), /expected RepairCase ticket/);
 });
 
-test("RepairCase diagnosis and completion evidence require private references", () => {
-  const { RepairDiagnosisRequestSchema, RepairWorkCompletionRequestSchema } =
-    loadTypeScriptModule("src/schema/machines.schema.ts");
-
-  assert.equal(RepairDiagnosisRequestSchema.parse({
-    diagnosis: "Pump seal is worn",
-    evidenceReference: "private/repair/diagnosis-01.jpg",
-  }).diagnosis, "Pump seal is worn");
-  assert.throws(() => RepairDiagnosisRequestSchema.parse({
-    diagnosis: "Pump seal is worn",
-    evidenceReference: "https://public.example/diagnosis.jpg",
-  }));
-  assert.throws(() => RepairDiagnosisRequestSchema.parse({
-    diagnosis: "Pump seal is worn",
-    evidenceReference: "private/repair/diagnosis-01.jpg\nprivate/repair/diagnosis-02.jpg",
-  }));
-
-  const completion = {
-    diagnosis: "Pump seal is worn",
-    resolutionResult: "Replaced seal",
-    workScope: "Replace the seal",
-    evidenceReferences: ["private/repair/completion-01.jpg"],
-  };
-  assert.equal(RepairWorkCompletionRequestSchema.parse(completion).evidenceReferences.length, 1);
-  assert.throws(() => RepairWorkCompletionRequestSchema.parse({ ...completion, evidenceReferences: [] }));
-  assert.throws(() => RepairWorkCompletionRequestSchema.parse({
-    ...completion,
-    evidenceReferences: ["https://public.example/completion.jpg"],
-  }));
+test("RepairCase diagnosis and completion validate multipart files", () => {
+  const { validateEvidenceFiles } = require("./evidence-multipart-helper.cjs");
+  assert.doesNotThrow(() => validateEvidenceFiles(files, { min: 1, max: 1 }));
+  assert.throws(() => validateEvidenceFiles([], { min: 1, max: 1 }));
+  assert.throws(() => validateEvidenceFiles([new File(["12345678"], "bad.txt", { type: "text/plain" })], { min: 1, max: 1 }));
+  assert.throws(() => validateEvidenceFiles(Array(6).fill(files[0]), { min: 1, max: 5 }));
 });
 
 test("Technician actions remain in ordered workflow steps and require the server prerequisites", () => {

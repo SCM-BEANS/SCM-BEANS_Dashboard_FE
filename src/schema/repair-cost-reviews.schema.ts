@@ -6,9 +6,6 @@ const dateTime = z.union([
   z.string().datetime({ offset: true }),
   z.string().datetime({ local: true }),
 ]);
-const privateEvidenceReference = z.string().trim().min(1).max(512)
-  .refine((reference) => !/^https?:\/\//i.test(reference) && !/[\r\n]/.test(reference));
-
 export const RepairCostReviewIdSchema = uuid;
 
 export const RepairCostComponentRequestSchema = z.object({
@@ -29,7 +26,6 @@ export const RepairCostProposalRequestSchema = z.object({
   diagnosis: z.string().trim().min(1),
   estimatedAmount: z.number().nonnegative(),
   currency: z.string().regex(/^[A-Za-z]{3}$/),
-  evidenceReferences: z.array(privateEvidenceReference).min(1),
   proposedResponsibleParty: z.enum(["TENANT", "COMPANY", "UNKNOWN"]),
   costComponents: z.array(RepairCostComponentRequestSchema).optional(),
 }).strict();
@@ -49,7 +45,6 @@ export const RepairCostAcknowledgementRequestSchema = z.object({
 export const RepairCostDisputeRequestSchema = z.object({
   reason: z.string().trim().min(1),
   disputedAmount: z.number().positive(),
-  evidenceReferences: z.array(privateEvidenceReference).min(1),
 }).strict();
 
 export const RepairCostResolutionRequestSchema = z.object({

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import {
@@ -12,6 +14,13 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
   const listHref = PATH_TECHNICIAN.TASK_BUYBACK_ASSESSMENT;
   const workflow = useBuybackWorkflowController({ role: "technician", initialCaseId: caseId, listHref });
   const { caseData } = workflow;
+  const [inspectionFiles, setInspectionFiles] = useState<File[]>([]);
+  const [collectionFiles, setCollectionFiles] = useState<File[]>([]);
+  const [refurbishmentFiles, setRefurbishmentFiles] = useState<File[]>([]);
+  useEffect(() => { setInspectionFiles([]); setCollectionFiles([]); setRefurbishmentFiles([]); }, [workflow.detailId]);
+  const inspectionError = evidenceFileError(inspectionFiles, { min: 0, max: 5 });
+  const collectionError = evidenceFileError(collectionFiles, { min: 1, max: 1 });
+  const refurbishmentError = evidenceFileError(refurbishmentFiles, { min: 0, max: 5 });
   const isAssignedInspection = Boolean(
     caseData
       && (!workflow.isExternalBuyback || caseData.inspectionTechnicianId === workflow.ownerId),
@@ -48,16 +57,16 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
             <form id="buyback-collection-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
               const confirmedSerial = workflow.confirmedCollectionSerial.trim();
               const collectionLocation = workflow.collectionLocation.trim();
-              const evidenceReference = workflow.collectionEvidenceReference.trim();
-              const key = workflow.operationKey("collection-evidence", caseData.id, JSON.stringify({ confirmedSerial, collectionLocation, evidenceReference }));
-              workflow.recordCollectionEvidence.mutate({ id: caseData.id, confirmedSerial, collectionLocation, evidenceReference, idempotencyKey: key, correlationId: key });
+              if (collectionError) return;
+              const key = workflow.operationKey("collection-evidence", caseData.id, JSON.stringify({ confirmedSerial, collectionLocation, files: collectionFiles.map(f => [f.name, f.size, f.lastModified]) }));
+              workflow.recordCollectionEvidence.mutate({ id: caseData.id, confirmedSerial, collectionLocation, files: collectionFiles, idempotencyKey: key, correlationId: key });
             })}>
               <h3 className={styles.sectionTitle}>Ghi nhận đã thu máy</h3>
-              <p className={styles.formHint}>Nhập serial thực tế, địa điểm thu và evidence reference đã được tạo trong hệ thống lưu trữ bên ngoài. Dolores không upload tệp thu máy ở bước này.</p>
               <label className={styles.formField}><span>Serial đã xác nhận</span><input required maxLength={128} value={workflow.confirmedCollectionSerial} onChange={(event) => workflow.setConfirmedCollectionSerial(event.target.value)} /></label>
               <label className={styles.formField}><span>Địa điểm thu máy</span><input required maxLength={512} value={workflow.collectionLocation} onChange={(event) => workflow.setCollectionLocation(event.target.value)} /></label>
-              <label className={styles.formField}><span>Evidence reference</span><input required maxLength={2048} value={workflow.collectionEvidenceReference} onChange={(event) => workflow.setCollectionEvidenceReference(event.target.value)} /></label>
-              <PageActions actions={[{ id: "collection-evidence", label: "Ghi nhận thu máy", variant: "primary", priority: 100, type: "submit", form: "buyback-collection-form", disabled: !workflow.confirmedCollectionSerial.trim() || !workflow.collectionLocation.trim() || !workflow.collectionEvidenceReference.trim(), disabledReason: "Nhập đầy đủ thông tin thu máy.", pending: workflow.recordCollectionEvidence.isPending }]} />
+              <label className={styles.formField}><span>Chứng từ thu máy</span><input key={workflow.detailId} type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => setCollectionFiles(Array.from(event.target.files ?? []))} /></label>
+              {collectionFiles.map((file, index) => <p key={`${file.name}-${index}`}>{file.name}</p>)}
+              <PageActions actions={[{ id: "collection-evidence", label: "Ghi nhận thu máy", variant: "primary", priority: 100, type: "submit", form: "buyback-collection-form", disabled: !workflow.confirmedCollectionSerial.trim() || !workflow.collectionLocation.trim() || Boolean(collectionError), disabledReason: collectionError ?? "Nhập đầy đủ thông tin thu máy.", pending: workflow.recordCollectionEvidence.isPending }]} />
             </form>
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" && isAssignedCollection && caseData.collectionEvidenceRecorded ? <p className={styles.notice} role="status">Đã ghi nhận bằng chứng thu máy. Moderator phụ trách sẽ xác nhận tiếp nhận trong Dolores.</p> : null}
@@ -65,16 +74,18 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
           {workflow.isExternalBuyback && caseData.status === "REFURBISHING" && !workflow.canCompleteRefurbishment ? <p className={styles.notice} role="note">Chỉ Technician được giao tân trang mới có thể ghi kết quả cho hồ sơ này.</p> : null}
           {caseData.status === "INSPECTION_PENDING" ? (
             <form id="buyback-inspection-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
+              if (inspectionError) return;
               const inspection = {
                 condition: workflow.condition.trim(),
                 valuationAmount: Number(workflow.valuationAmount),
                 currency: workflow.currency.trim() || caseData.currency,
                 ...(workflow.inspectionNotes.trim() ? { notes: workflow.inspectionNotes.trim() } : {}),
               };
-              const key = workflow.operationKey("inspection-submit", caseData.id, JSON.stringify(inspection));
+              const key = workflow.operationKey("inspection-submit", caseData.id, JSON.stringify({ ...inspection, files: inspectionFiles.map(f => [f.name, f.size, f.lastModified]) }));
               workflow.submitInspection.mutate({
                 id: caseData.id,
                 ...inspection,
+                files: inspectionFiles,
                 idempotencyKey: key,
                 correlationId: key,
               });
@@ -84,8 +95,9 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
               <label className={styles.formField}><span>Giá trị thẩm định</span><input required type="number" min="0.01" step="0.01" value={workflow.valuationAmount} onChange={(event) => workflow.setValuationAmount(event.target.value)} /></label>
               <label className={styles.formField}><span>Tiền tệ</span><input required maxLength={16} value={workflow.currency || caseData.currency} onChange={(event) => workflow.setCurrency(event.target.value)} /></label>
               <label className={styles.formField}><span>Ghi chú</span><textarea maxLength={2000} value={workflow.inspectionNotes} onChange={(event) => workflow.setInspectionNotes(event.target.value)} /></label>
-              <p className={styles.formHint}>Endpoint hiện không có API upload/đọc evidence kiểm tra. Form không nhận URL hoặc storage key.</p>
-              <PageActions actions={[{ id: "submit-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "buyback-inspection-form", disabled: !workflow.condition.trim() || !workflow.valuationAmount, disabledReason: "Nhập tình trạng và giá trị thẩm định.", pending: workflow.submitInspection.isPending, pendingLabel: "Đang gửi…" }]} />
+              <label className={styles.formField}><span>Chứng từ kiểm tra</span><input key={workflow.detailId} type="file" multiple accept={EVIDENCE_ACCEPT} onChange={(event) => setInspectionFiles(Array.from(event.target.files ?? []))} /></label>
+              {inspectionFiles.map((file, index) => <p key={`${file.name}-${index}`}>{file.name}</p>)}
+              <PageActions actions={[{ id: "submit-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "buyback-inspection-form", disabled: !workflow.condition.trim() || !workflow.valuationAmount || Boolean(inspectionError), disabledReason: inspectionError ?? "Nhập tình trạng và giá trị thẩm định.", pending: workflow.submitInspection.isPending, pendingLabel: "Đang gửi…" }]} />
             </form>
           ) : null}
           {!workflow.isExternalBuyback && caseData.status === "COLLECTED" ? (
@@ -114,14 +126,16 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
           ) : null}
           {caseData.status === "REFURBISHING" && (!workflow.isExternalBuyback || workflow.canCompleteRefurbishment) ? (
             <form id="buyback-complete-refurbishment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
-              const key = workflow.operationKey("refurbishment-complete", caseData.id);
-              workflow.completeRefurbishment.mutate({ id: caseData.id, workPerformed: workflow.workPerformed.trim(), result: workflow.workResult.trim(), idempotencyKey: key, correlationId: key });
+              if (refurbishmentError) return;
+              const key = workflow.operationKey("refurbishment-complete", caseData.id, JSON.stringify({ workPerformed: workflow.workPerformed.trim(), result: workflow.workResult.trim(), files: refurbishmentFiles.map(f => [f.name, f.size, f.lastModified]) }));
+              workflow.completeRefurbishment.mutate({ id: caseData.id, workPerformed: workflow.workPerformed.trim(), result: workflow.workResult.trim(), files: refurbishmentFiles, idempotencyKey: key, correlationId: key });
             })}>
               <h3 className={styles.sectionTitle}>Hoàn tất tân trang</h3>
               <label className={styles.formField}><span>Công việc đã làm</span><textarea required maxLength={2000} value={workflow.workPerformed} onChange={(event) => workflow.setWorkPerformed(event.target.value)} /></label>
               <label className={styles.formField}><span>Kết quả</span><textarea required maxLength={2000} value={workflow.workResult} onChange={(event) => workflow.setWorkResult(event.target.value)} /></label>
-              <p className={styles.formHint}>API kết quả tân trang nhận evidenceReferences dạng chuỗi nhưng chưa có private evidence upload/read. Gửi kết quả văn bản theo contract BE; không tạo storage reference giả.</p>
-              <PageActions actions={[{ id: "complete-refurbishment", label: "Hoàn tất tân trang", variant: "primary", priority: 100, type: "submit", form: "buyback-complete-refurbishment-form", disabled: !workflow.workPerformed.trim() || !workflow.workResult.trim(), disabledReason: "Nhập công việc và kết quả.", pending: workflow.completeRefurbishment.isPending }]} />
+              <label className={styles.formField}><span>Chứng từ tân trang</span><input key={workflow.detailId} type="file" multiple accept={EVIDENCE_ACCEPT} onChange={(event) => setRefurbishmentFiles(Array.from(event.target.files ?? []))} /></label>
+              {refurbishmentFiles.map((file, index) => <p key={`${file.name}-${index}`}>{file.name}</p>)}
+              <PageActions actions={[{ id: "complete-refurbishment", label: "Hoàn tất tân trang", variant: "primary", priority: 100, type: "submit", form: "buyback-complete-refurbishment-form", disabled: !workflow.workPerformed.trim() || !workflow.workResult.trim() || Boolean(refurbishmentError), disabledReason: refurbishmentError ?? "Nhập công việc và kết quả.", pending: workflow.completeRefurbishment.isPending }]} />
             </form>
           ) : null}
         </> : null}

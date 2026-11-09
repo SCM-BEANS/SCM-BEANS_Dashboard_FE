@@ -1,5 +1,10 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  EVIDENCE_MULTIPART_HEADERS,
+  buildEvidenceForm,
+  validateEvidenceFiles,
+} from "@/lib/evidence-multipart";
+import {
   MaintenanceAppointmentRequestSchema,
   MaintenanceClosureExceptionRequestSchema,
   MaintenanceCustodyEventCreateRequestSchema,
@@ -115,13 +120,14 @@ export const maintenanceRequestsApi =  {
     }
     return request;
   },
-  async recordCustodyEvent(requestId: string, input: MaintenanceCustodyEventCreateRequest) {
+  async recordCustodyEvent(requestId: string, input: MaintenanceCustodyEventCreateRequest, files: File[]) {
     const validRequestId = MaintenanceRequestIdSchema.parse(requestId);
     const requestBody = MaintenanceCustodyEventCreateRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `${requestPath(validRequestId)}/custody-events`,
-      requestBody,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(requestBody, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     const event = MaintenanceCustodyEventSchema.parse(response.data);
     if (event.maintenanceRequestId !== validRequestId) {

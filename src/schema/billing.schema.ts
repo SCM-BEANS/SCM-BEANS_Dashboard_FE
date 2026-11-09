@@ -236,7 +236,7 @@ export const DepositSettlementResponseSchema = z.object({
 export const DepositReserveRequestSchema = z.object({ idempotencyKey: z.string().trim().min(1).max(128) }).strict();
 export const DepositReleaseRequestSchema = DepositReserveRequestSchema.extend({ reason: z.string().trim().min(1).max(2000) });
 export const DepositDamageRequestSchema = z.object({
-  damageAmount: z.number().finite().nonnegative(), evidenceReference: z.string().trim().min(1),
+  damageAmount: z.number().finite().nonnegative(),
   maintenanceTicketId: z.string().uuid().optional(), decision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
   notes: z.string().max(2000).optional(),
 }).strict().refine((value) => value.decision !== "NO_DAMAGE" || value.damageAmount === 0, { path: ["damageAmount"], message: "NO_DAMAGE requires zero damage amount." });

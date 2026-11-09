@@ -1,5 +1,10 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  buildEvidenceForm,
+  EVIDENCE_MULTIPART_HEADERS,
+  validateEvidenceFiles,
+} from "@/lib/evidence-multipart";
+import {
   TerminationActionRequestSchema,
   TerminationCaseCreateRequestSchema,
   TerminationCaseIdSchema,
@@ -69,18 +74,28 @@ export const terminationCasesApi =  {
     if (!terminationCase.inspectionTicketId) throw new Error("Dolores did not return the termination inspection ticket ID.");
     return terminationCase;
   },
-  async completeInspection(id: string, input: TerminationInspectionRequest) {
+  async completeInspection(id: string, input: TerminationInspectionRequest, files: File[]) {
     const validId = TerminationCaseIdSchema.parse(id);
     const request = TerminationInspectionRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(`${casePath(validId)}/inspection`, request, { baseURL: DOLORES_API_BASE_URL });
+    validateEvidenceFiles(files, { min: 1, max: 1 });
+    const response = await axiosClient.post<unknown>(
+      `${casePath(validId)}/inspection`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     const terminationCase = verifyCaseIdentity(response.data, validId);
     if (terminationCase.status !== "SETTLEMENT_PENDING") throw new Error("Dolores did not confirm the termination inspection.");
     return terminationCase;
   },
-  async settle(id: string, input: TerminationSettlementRequest) {
+  async settle(id: string, input: TerminationSettlementRequest, files: File[]) {
     const validId = TerminationCaseIdSchema.parse(id);
     const request = TerminationSettlementRequestSchema.parse(input);
-    const response = await axiosClient.post<unknown>(`${casePath(validId)}/settlement`, request, { baseURL: DOLORES_API_BASE_URL });
+    validateEvidenceFiles(files, { min: 1, max: 1 });
+    const response = await axiosClient.post<unknown>(
+      `${casePath(validId)}/settlement`,
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+    );
     const terminationCase = verifyCaseIdentity(response.data, validId);
     if (terminationCase.status !== "APPROVED" || !terminationCase.settlementId) throw new Error("Dolores did not confirm an approved termination settlement.");
     return terminationCase;

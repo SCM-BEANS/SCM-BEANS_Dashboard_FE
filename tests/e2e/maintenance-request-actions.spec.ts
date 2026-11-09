@@ -110,7 +110,13 @@ async function installMockApi(page: Page, options: MockOptions = {}) {
     const url = new URL(request.url());
     const path = url.pathname.replace(/^\/api\/dolores\/v1/, "");
     const method = request.method();
-    const body = request.postData() ? request.postDataJSON() : undefined;
+    const multipart = request.headers()["content-type"]?.includes("multipart/form-data");
+    const raw = multipart ? request.postDataBuffer()?.toString("utf8") : undefined;
+    if (multipart) {
+      expect(raw).toContain('name="data"');
+      expect(raw).toContain('name="files"');
+    }
+    const body = multipart ? JSON.parse(raw?.match(/name="data"[^\r]*\r\n(?:[^\r\n]+\r\n)*\r\n([^\r\n]+)/)?.[1] ?? "null") : request.postData() ? request.postDataJSON() : undefined;
     if (["POST", "PATCH", "PUT"].includes(method)) mutations.push({ method, url: `${path}${url.search}`, body });
 
     let status = 200;
@@ -139,7 +145,6 @@ async function installMockApi(page: Page, options: MockOptions = {}) {
       const created = event(String(custodyInput.eventType), 1, {
         machineId: custodyInput.machineId,
         conditionNotes: custodyInput.conditionNotes,
-        evidenceReference: custodyInput.evidenceReference,
         acknowledgementUnavailableReason: custodyInput.acknowledgementUnavailableReason,
       });
       state.events = [...state.events, created];
@@ -218,7 +223,8 @@ test.describe("maintenance request actions", () => {
     await expect(page.getByText("Máy được ghi nhận:").locator(".." )).toContainText(machineId.slice(0, 8));
 
     await page.getByLabel("Tình trạng máy").fill("Vỏ máy và phụ kiện đầy đủ.");
-    await page.getByLabel("Mã tham chiếu chứng từ").fill("private/custody/primary-collection");
+    await page.getByLabel("Tệp chứng từ").setInputFiles({ name: "custody.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-test-file") });
+    await expect(page.getByText("custody.pdf")).toBeVisible();
     await page.getByLabel("Lý do chưa thể lấy xác nhận của Owner (nếu có)").fill("Owner xác nhận sau qua ứng dụng.");
     await page.getByRole("button", { name: "Ghi nhận bước bàn giao" }).click();
 
@@ -231,7 +237,6 @@ test.describe("maintenance request actions", () => {
         eventType: "PRIMARY_COLLECTED",
         machineId,
         conditionNotes: "Vỏ máy và phụ kiện đầy đủ.",
-        evidenceReference: "private/custody/primary-collection",
         acknowledgementUnavailableReason: "Owner xác nhận sau qua ứng dụng.",
       },
     });

@@ -47,7 +47,7 @@ function loadTypescript(relativePath, mocks = {}, extraSource = '') {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
   });
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   const loaded = { exports: {} };
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports;

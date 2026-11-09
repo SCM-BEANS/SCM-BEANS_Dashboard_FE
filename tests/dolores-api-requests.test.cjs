@@ -57,7 +57,7 @@ function loadApi(relativePath, axiosClient) {
     if (Object.hasOwn(mocks, id)) return mocks[id];
     if (id === "@/schema/buybacks.schema") return buybackSchemas;
     if (id.startsWith('@/schema/')) return schemas;
-    return require(id);
+    return (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   };
   const loaded = { exports: {} };
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
@@ -241,15 +241,18 @@ test('module 1 maintenance mutations preserve methods, routes, response identiti
   await machinesApi.unassignMaintenanceTicket(ids.ticket);
   await requestsApi.recordOverdueReview(ids.request, { reason: 'Đã liên hệ chủ máy' });
   await requestsApi.linkReplacementAssignment(ids.request, ids.assignment);
+  const evidenceFiles = [new File(['12345678'], 'evidence.pdf', { type: 'application/pdf' })];
   await requestsApi.recordCustodyEvent(ids.request, {
     eventType: 'PRIMARY_COLLECTED',
     machineId: ids.machine,
     conditionNotes: 'Vỏ máy còn nguyên',
-    evidenceReference: 'private/custody/primary-1',
     acknowledgementUnavailableReason: 'Owner chưa thể phản hồi tại thời điểm bàn giao',
-  });
+  }, evidenceFiles);
   await requestsApi.recordClosureException(ids.request, { reason: 'Đã xác nhận trả máy qua biên bản' });
 
+  assert.deepEqual(calls[6].data.getAll('files'), evidenceFiles);
+  assert.deepEqual([...calls[6].data.keys()], ['data', 'files']);
+  calls[6].data = JSON.parse(await calls[6].data.get('data').text());
   assert.deepEqual(calls, [
     { method: 'POST', url: `/machines/${ids.machine}/maintenance-tickets`, data: { alertLevel: 'Warning' }, config: { baseURL: '/api/dolores/v1' } },
     { method: 'PATCH', url: `/maintenance-tickets/${ids.ticket}/details`, data: { expectedVersion: 4, scheduledDueAt: null, alertLevel: 'Critical' }, config: { baseURL: '/api/dolores/v1' } },
@@ -261,9 +264,8 @@ test('module 1 maintenance mutations preserve methods, routes, response identiti
       eventType: 'PRIMARY_COLLECTED',
       machineId: ids.machine,
       conditionNotes: 'Vỏ máy còn nguyên',
-      evidenceReference: 'private/custody/primary-1',
-      acknowledgementUnavailableReason: 'Owner chưa thể phản hồi tại thời điểm bàn giao',
-    }, config: { baseURL: '/api/dolores/v1' } },
+        acknowledgementUnavailableReason: 'Owner chưa thể phản hồi tại thời điểm bàn giao',
+    }, config: { baseURL: '/api/dolores/v1', headers: { 'Content-Type': 'multipart/form-data' } } },
     { method: 'POST', url: `/maintenance-requests/${ids.request}/closure-exception`, data: { reason: 'Đã xác nhận trả máy qua biên bản' }, config: { baseURL: '/api/dolores/v1' } },
   ]);
 });

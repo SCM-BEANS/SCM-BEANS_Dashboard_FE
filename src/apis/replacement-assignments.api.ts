@@ -1,5 +1,10 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import {
+  buildEvidenceForm,
+  EVIDENCE_MULTIPART_HEADERS,
+  validateEvidenceFiles,
+} from "@/lib/evidence-multipart";
+import {
   ContractIdSchema,
 } from "@/schema/contracts.schema";
 import {
@@ -40,13 +45,14 @@ export const replacementAssignmentsApi = {
     if (assignment.id !== validId) throw new Error("Dolores returned a different replacement assignment than requested.");
     return assignment;
   },
-  async activate(assignmentId: string, input: ReplacementAssignmentActivateRequest) {
+  async activate(assignmentId: string, input: ReplacementAssignmentActivateRequest, files: File[]) {
     const validId = ReplacementAssignmentIdSchema.parse(assignmentId);
     const request = ReplacementAssignmentActivateRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `/replacement-assignments/${encodeURIComponent(validId)}/activate`,
-      request,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     const assignment = ReplacementAssignmentSchema.parse(response.data);
     if (assignment.id !== validId || assignment.status !== "ACTIVE") {
@@ -54,13 +60,14 @@ export const replacementAssignmentsApi = {
     }
     return assignment;
   },
-  async release(assignmentId: string, input: ReplacementAssignmentReleaseRequest) {
+  async release(assignmentId: string, input: ReplacementAssignmentReleaseRequest, files: File[]) {
     const validId = ReplacementAssignmentIdSchema.parse(assignmentId);
     const request = ReplacementAssignmentReleaseRequestSchema.parse(input);
+    validateEvidenceFiles(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `/replacement-assignments/${encodeURIComponent(validId)}/release`,
-      request,
-      { baseURL: DOLORES_API_BASE_URL },
+      buildEvidenceForm(request, files),
+      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
     );
     const assignment = ReplacementAssignmentSchema.parse(response.data);
     if (assignment.id !== validId || assignment.status !== "RELEASED") {

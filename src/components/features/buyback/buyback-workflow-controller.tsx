@@ -383,7 +383,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     onSettled: (_, __, input) => invalidate(input.id),
   });
   const startInspection = useMutation({ mutationFn: (input: { id: string; reason: string; idempotencyKey: string; correlationId: string }) => buybacksApi.startInspection(input.id, input), onSuccess: (_, input) => clearOperationKey("inspection-start", input.id), onSettled: () => invalidate() });
-  const submitInspection = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.submitInspection>[1] & { id: string }) => buybacksApi.submitInspection(input.id, input), onSuccess: (_, input) => clearOperationKey("inspection-submit", input.id), onSettled: () => invalidate() });
+  const submitInspection = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.submitInspection>[1] & { id: string; files: File[] }) => { const { id, files, ...request } = input; return buybacksApi.submitInspection(id, request, files); }, onSuccess: (_, input) => clearOperationKey("inspection-submit", input.id), onSettled: () => invalidate() });
   const decideValuation = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.decideValuation>[1] & { id: string }) => buybacksApi.decideValuation(input.id, input), onSuccess: (_, input) => clearOperationKey("valuation-decision", input.id), onSettled: () => invalidate() });
   const createPayment = useMutation({
     mutationFn: (input: Parameters<typeof buybacksApi.createPayment>[1] & { id: string }) => buybacksApi.createPayment(input.id, input),
@@ -405,12 +405,12 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   });
   const requestCollection = useMutation({ mutationFn: (input: Parameters<typeof buybacksApi.requestCollection>[1] & { id: string }) => buybacksApi.requestCollection(input.id, input), onSuccess: (_, input) => clearOperationKey("collection-request", input.id), onSettled: (_, __, input) => invalidate(input.id) });
   const recordCollectionEvidence = useMutation({
-    mutationFn: (input: Parameters<typeof buybacksApi.recordCollectionEvidence>[1] & { id: string }) => {
-      const { id, ...request } = input;
+    mutationFn: (input: Parameters<typeof buybacksApi.recordCollectionEvidence>[1] & { id: string; files: File[] }) => {
+      const { id, files, ...request } = input;
       if (role !== "technician" || !caseData || caseData.collectionTechnicianId !== ownerId || caseData.status !== "COLLECTION_PENDING") {
         throw new Error("Chỉ Technician được giao mới có thể ghi bằng chứng thu máy cho hồ sơ này.");
       }
-      return buybacksApi.recordCollectionEvidence(id, request);
+      return buybacksApi.recordCollectionEvidence(id, request, files);
     },
     onSuccess: (_, input) => {
       clearOperationKey("collection-evidence", input.id);
@@ -439,9 +439,10 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     onSettled: (_, __, input) => invalidate(input.id),
   });
   const completeRefurbishment = useMutation({
-    mutationFn: (input: Parameters<typeof buybacksApi.completeRefurbishment>[1] & { id: string }) => {
+    mutationFn: (input: Parameters<typeof buybacksApi.completeRefurbishment>[1] & { id: string; files: File[] }) => {
       if (isExternalBuyback && !canCompleteRefurbishment) throw new Error("Chỉ Technician được giao mới có thể hoàn tất tân trang hồ sơ này.");
-      return buybacksApi.completeRefurbishment(input.id, input);
+      const { id, files, ...request } = input;
+      return buybacksApi.completeRefurbishment(id, request, files);
     },
     onSuccess: (_, input) => clearOperationKey("refurbishment-complete", input.id),
     onSettled: (_, __, input) => invalidate(input.id),

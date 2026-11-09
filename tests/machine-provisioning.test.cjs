@@ -18,7 +18,7 @@ function load(relativePath, mocks = {}) {
   });
   const loaded = { exports: {} };
   const mockedRequire = (name) => Object.hasOwn(mocks, name) ? mocks[name]
-    : name.startsWith('@/schema/') ? load(`src/${name.slice(2)}.ts`, mocks) : require(name);
+    : name.startsWith('@/schema/') ? load(`src/${name.slice(2)}.ts`, mocks) : (name === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(name));
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports;
 }

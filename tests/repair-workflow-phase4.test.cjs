@@ -19,7 +19,7 @@ function loadTypeScriptModule(relativePath, mocks) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -69,7 +69,7 @@ test("Technician diagnosis, start, and completion are gated in the ordered workf
   assert.match(source, /ticket\.data\?\.assignedTechnicianId\?\.toLowerCase\(\) === currentSubjectId\.toLowerCase\(\)/);
   assert.match(source, /const canRecordDiagnosis = role === "technician"/);
   assert.match(source, /repairCase\.data\?\.status === "REPLACEMENT_DELIVERED"/);
-  assert.match(source, /repairCasesApi\.recordDiagnosis\(caseId, expectedTicketId, \{ diagnosis, evidenceReference \}\)/);
+  assert.match(source, /repairCasesApi\.recordDiagnosis\(caseId, expectedTicketId, \{ diagnosis \}, diagnosisEvidenceReference\)/);
   assert.match(source, /const canStartWork = isAssignedTechnician/);
   assert.match(source, /repairCase\.data\?\.status === "DIAGNOSIS"/);
   assert.match(source, /ticket\.data\?\.status === "ASSIGNED"/);
@@ -78,7 +78,7 @@ test("Technician diagnosis, start, and completion are gated in the ordered workf
   assert.match(source, /const canCompleteWork = role === "technician"/);
   assert.match(source, /repairCase\.data\?\.status === "REPAIR_IN_PROGRESS"/);
   assert.match(source, /ticket\.data\?\.status === "IN_PROGRESS"/);
-  assert.match(source, /repairCasesApi\.completeWork\(caseId, expectedTicketId, request\)/);
+  assert.match(source, /repairCasesApi\.completeWork\(caseId, expectedTicketId, request, completionEvidenceReferenceText\)/);
   assert.match(source, /<WorkflowStep title=\{M\.PROCESS_DIAGNOSIS\}/);
   assert.match(source, /<WorkflowStep title=\{M\.PROCESS_START_REPAIR\}/);
   assert.match(source, /<WorkflowStep title=\{M\.PROCESS_COMPLETE_REPAIR\}/);

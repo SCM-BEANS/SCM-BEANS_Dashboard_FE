@@ -196,9 +196,16 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
     const url = new URL(request.url());
     const path = url.pathname.replace("/api/dolores/v1", "");
     const method = request.method();
-    const body = method === "POST" && request.headers()["content-type"]?.includes("application/json")
-      ? request.postDataJSON() as Record<string, unknown>
-      : null;
+    const multipart = request.headers()["content-type"]?.includes("multipart/form-data");
+    const raw = multipart ? request.postDataBuffer()?.toString() ?? "" : "";
+    if (method === "POST" && /\/(inspection|collection\/evidence|refurbishment\/complete)$/.test(path)) {
+      expect(request.headers()["content-type"]).toContain("multipart/form-data");
+      expect(raw).toContain('name="data"');
+      expect(raw).toContain('name="files"');
+    }
+    const body = multipart ? JSON.parse(raw.match(/name="data"[^\r]*\r\n(?:[^\r\n]+\r\n)*\r\n([^\r]+)/)?.[1] ?? "{}") as Record<string, unknown>
+      : method === "POST" && request.headers()["content-type"]?.includes("application/json")
+      ? request.postDataJSON() as Record<string, unknown> : null;
     const respond = (data: unknown, responseStatus = 200, headers: Record<string, string> = {}) =>
       route.fulfill({ status: responseStatus, contentType: "application/json", headers, body: JSON.stringify(data) });
 
@@ -424,8 +431,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   }
   await page.getByRole("link", { name: caseId }).click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Chờ tiếp nhận" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Quay lại danh sách" })).toHaveAttribute("href", "/moderator/buyback/list");
-  await page.getByRole("link", { name: "Quay lại danh sách" }).click();
+  await page.getByRole("button", { name: "Quay lại danh sách" }).click();
   await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
   await page.getByRole("link", { name: caseId }).click();
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
@@ -450,6 +456,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByLabel("Giá trị thẩm định").fill("850000");
   await page.getByLabel("Tiền tệ").fill("VND");
   await page.getByLabel("Ghi chú").fill("All inspected functions operate normally");
+  await page.getByLabel("Chứng từ kiểm tra").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
   await page.getByRole("button", { name: "Gửi kết quả kiểm tra" }).click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Đang thẩm định giá" })).toBeVisible();
 
@@ -499,7 +506,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.goto(`/technician/tasks/buyback-assessment/${caseId}`);
   await expect(page.getByText("Tài khoản hiện tại không có quyền thực hiện thao tác này.", { exact: false })).toBeVisible();
   await expect(page.getByRole("region", { name: "Chi tiết hồ sơ thu mua" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Ghi nhận bằng chứng thu máy" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ghi nhận thu máy" })).toHaveCount(0);
   denyUnassignedTechnicianDetail = false;
 
   await setRole(page, "TECHNICIAN", technicianId);
@@ -508,10 +515,10 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByRole("link", { name: "Thu máy", exact: true }).click();
   await page.getByLabel("Serial đã xác nhận").fill("CONFIRMED-SERIAL-01");
   await page.getByLabel("Địa điểm thu máy").fill("Hồ Chí Minh");
-  await page.getByLabel("Evidence reference").fill("storage-ref:mock-fixture");
-  await page.getByRole("button", { name: "Ghi nhận bằng chứng thu máy" }).click();
+  await page.getByLabel("Chứng từ thu máy").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+  await page.getByRole("button", { name: "Ghi nhận thu máy" }).click();
   await expect(page.getByText(/Đã ghi nhận bằng chứng thu máy/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ghi nhận bằng chứng thu máy" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ghi nhận thu máy" })).toHaveCount(0);
 
   await setRole(page, "MODERATOR", moderatorId);
   await page.goto(`/moderator/buyback/${caseId}`);
@@ -600,6 +607,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await expect(page.getByRole("link", { name: "Tiếp tục tân trang", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Tiếp tục tân trang", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Đang tân trang" })).toBeVisible();
+  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
   await page.getByLabel("Công việc đã làm").fill("Replaced pump and cleaned the intake");
   await page.getByLabel("Kết quả").fill("Machine works normally after refurbishment");
   await page.getByRole("button", { name: "Hoàn tất tân trang" }).click();
@@ -887,9 +895,16 @@ test("legacy buyback keeps refurbishment and QA steps", async ({ page }) => {
     const url = new URL(request.url());
     const path = url.pathname.replace("/api/dolores/v1", "");
     const method = request.method();
-    const body = method === "POST" && request.headers()["content-type"]?.includes("application/json")
-      ? request.postDataJSON() as Record<string, unknown>
-      : null;
+    const multipart = request.headers()["content-type"]?.includes("multipart/form-data");
+    const raw = multipart ? request.postDataBuffer()?.toString() ?? "" : "";
+    if (method === "POST" && /\/(inspection|collection\/evidence|refurbishment\/complete)$/.test(path)) {
+      expect(request.headers()["content-type"]).toContain("multipart/form-data");
+      expect(raw).toContain('name="data"');
+      expect(raw).toContain('name="files"');
+    }
+    const body = multipart ? JSON.parse(raw.match(/name="data"[^\r]*\r\n(?:[^\r\n]+\r\n)*\r\n([^\r]+)/)?.[1] ?? "{}") as Record<string, unknown>
+      : method === "POST" && request.headers()["content-type"]?.includes("application/json")
+      ? request.postDataJSON() as Record<string, unknown> : null;
     const respond = (data: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
     if (path === "/buybacks" && method === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", headers: { "X-Page": "0", "X-Page-Size": "50", "X-Has-Next": "false" }, body: JSON.stringify([legacyCase()]) });
@@ -922,6 +937,7 @@ test("legacy buyback keeps refurbishment and QA steps", async ({ page }) => {
   await page.getByLabel("Chi phí linh kiện ước tính").fill("25000");
   await page.getByRole("button", { name: "Bắt đầu tân trang" }).click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Đang tân trang" })).toBeVisible();
+  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
   await page.getByLabel("Công việc đã làm").fill("Replaced pump");
   await page.getByLabel("Kết quả").fill("Machine passed functional checks");
   await page.getByRole("button", { name: "Hoàn tất tân trang" }).click();
