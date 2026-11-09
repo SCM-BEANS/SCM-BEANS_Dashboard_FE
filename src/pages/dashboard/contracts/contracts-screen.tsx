@@ -5,6 +5,8 @@ import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { contractsApi } from "@/apis/contracts.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
@@ -139,7 +141,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
       header: isExpiryList ? "Hợp đồng cần xem hạn" : messages.FIELD_CONTRACT_ID,
       render: (contract) => (
         <Link className={styles.tableLink} href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)}>
-          {contract.id} ›
+          <TruncatedId value={contract.id} /> ›
         </Link>
       ),
     },
@@ -148,9 +150,8 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
       header: messages.CONTRACT_TABLE_MACHINE,
       render: (contract) => {
         const machine = contract.machineId ? machineById.get(contract.machineId) : undefined;
-        const machineType = contract.machineTypeSnapshot ?? machine?.machineType;
-        const modelName = machineType === "SMART_IOT" ? "Smart" : machineType === "CONVENTIONAL" ? "Classic" : "";
-        return [modelName, machine?.serialNumber ?? contract.machineId ?? "—"].filter(Boolean).join(" ");
+        if (machine?.serialNumber) return machine.serialNumber;
+        return contract.machineId ? <TruncatedId value={contract.machineId} /> : "—";
       },
     },
     {
@@ -178,7 +179,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     {
       key: "status",
       header: messages.FIELD_STATUS,
-      render: (contract) => contractStatusLabel(contract),
+      render: (contract) => <StatusBadge status={contract.status}>{contractStatusLabel(contract)}</StatusBadge>,
     },
   ];
 
