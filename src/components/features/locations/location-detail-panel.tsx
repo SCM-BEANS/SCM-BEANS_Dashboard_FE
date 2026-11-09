@@ -5,6 +5,7 @@ import { locationsApi } from "@/apis/locations.api";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { MetricCard } from "@/pages/dashboard/shared/customer-screen-common";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
@@ -17,18 +18,6 @@ import { TransferMachineAction } from "./transfer-machine-action";
 
 type MachineSummary = LocationMachinePage["content"][number];
 type TableVariant = "operations" | "moderator" | "customer";
-
-const machineStatusLabels: Record<string, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 function numberLabel(value: number): string {
   return new Intl.NumberFormat("vi-VN").format(value);
@@ -95,7 +84,7 @@ export function LocationDetailPanel({
       key: "status",
       header: "Trạng thái máy",
       render: (machine: MachineSummary) => machine.status
-        ? <StatusBadge status={machine.status}>{machineStatusLabels[machine.status] ?? "Chưa xác định"}</StatusBadge>
+        ? <StatusBadge status={machine.status}>{MACHINE_STATUS_LABELS[machine.status as keyof typeof MACHINE_STATUS_LABELS] ?? "Chưa xác định"}</StatusBadge>
         : "Chưa có trạng thái",
     },
     {

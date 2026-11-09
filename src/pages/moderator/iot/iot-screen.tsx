@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
 import { ButtonBar } from "@/components/button/button-bar";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
@@ -268,7 +269,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   }
 
   const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
-  const statusLabels: Record<string, string> = { IN_WAREHOUSE: "Trong kho", PENDING_ACTIVATION: "Chờ kích hoạt", DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng", DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng", UNDER_MAINTENANCE: "Đang bảo trì", REFURBISHING: "Đang tân trang", PENDING_QA: "Chờ kiểm định", AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê", RETIRED: "Đã ngừng sử dụng" };
   return <div className={styles.pageContent}>
     <PageHeading title="Giám sát máy" description="Chọn máy để xem các lần mất kết nối và theo dõi xử lý." />
     <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
@@ -277,7 +277,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2><ButtonBar disabled={inventory.isFetching} onClick={() => void inventory.refetch()}>Làm mới</ButtonBar></div>
       <DataTable headerVariant="admin" rows={smartMachines} rowKey={(machine) => machine.id} emptyMessage="Chưa có máy Smart IoT trong danh sách." columns={[
         { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
-        { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{statusLabels[machine.status] ?? machine.status}</StatusBadge> : "—" },
+        { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</StatusBadge> : "—" },
         { key: "open", header: "Giám sát", render: (machine) => <ButtonBar href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
       ]} />
     </section> : null}

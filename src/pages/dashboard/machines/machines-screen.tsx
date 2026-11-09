@@ -2,7 +2,7 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { locationsApi } from "@/apis/locations.api";
-import { machineStatusLabel } from "@/components/machines/machine-status-labels";
+import { ownerMachineStatusLabel } from "@/components/machines/machine-status-labels";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -213,7 +213,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   <DetailItem label={messages.FIELD_MACHINE_ID} value={<span className={machineStyles.copyIdRow}><TruncatedId value={detail.data.id} /><button type="button" className={machineStyles.copyIdButton} aria-label="Sao chép mã máy" onClick={() => void navigator.clipboard.writeText(detail.data!.id)}>Sao chép</button></span>} />
                   <DetailItem label={messages.FIELD_SERIAL} value={detail.data.serialNumber} />
                   <DetailItem label="Menu đang gán" value={detail.data.activeMenuId === undefined ? "Chưa có thông tin menu" : detail.data.activeMenuId === null ? "Menu mặc định" : detail.data.activeMenuName || "Menu riêng"} />
-                  <DetailItem label={messages.FIELD_STATUS} value={<StatusBadge status={detail.data.status}>{machineStatusLabel(detail.data.status)}</StatusBadge>} />
+                  <DetailItem label={messages.FIELD_STATUS} value={<StatusBadge status={detail.data.status}>{ownerMachineStatusLabel(detail.data.status)}</StatusBadge>} />
                   <DetailItem label={messages.FIELD_MACHINE_TYPE} value={detail.data.machineType === "SMART_IOT" ? "Smart IoT" : detail.data.machineType === "CONVENTIONAL" ? "Thông thường" : "Chưa xác định"} />
                   <DetailItem label={messages.FIELD_REGION} value={detail.data.region} />
                   <DetailItem label={messages.FIELD_DEPLOYED_AT} value={formatDate(detail.data.deployedAt)} />
@@ -288,7 +288,8 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
           />
               {visibleMachines.length > 0 && <div ref={heartbeatTableRef}>
                 <DataTable
-                  variant="operations"
+                  variant="moderator"
+                  headerVariant="admin"
                   rows={visibleMachines}
                   rowKey={(machine) => machine.id}
                   rowProps={(machine) => ({
@@ -300,7 +301,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   columns={[
                     { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? messages.MACHINE_NO_SERIAL}</Link> },
                     { key: "type", header: messages.FIELD_MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Thông thường" : "—" },
-                    { key: "status", header: messages.FIELD_STATUS, render: (machine) => <StatusBadge status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> },
+                    { key: "status", header: messages.FIELD_STATUS, render: (machine) => <StatusBadge status={machine.status}>{ownerMachineStatusLabel(machine.status)}</StatusBadge> },
                     { key: "location", header: "Điểm bán", render: (machine) => locationName(machine.locationId) },
                     { key: "connection", header: "Kết nối", render: (machine) => {
                       if (machine.machineType !== "SMART_IOT") return <span className={machineStyles.muted}>Không áp dụng</span>;

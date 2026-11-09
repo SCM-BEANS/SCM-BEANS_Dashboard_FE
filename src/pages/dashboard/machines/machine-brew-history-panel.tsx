@@ -13,7 +13,7 @@ export function MachineBrewHistoryPanel({ data, loading, error, onRetry, onPageC
     {error ? <div className={styles.operationalOverviewError} role="alert"><p>{error}</p><ButtonBar onClick={onRetry}>Thử lại</ButtonBar></div>
       : loading ? <p role="status">Đang tải lịch sử pha chế…</p>
         : data ? <>
-          <DataTable rows={data.content} rowKey={(row) => row.id} emptyMessage="Chưa có lần pha nào trong khoảng đã chọn." columns={[
+          <DataTable headerVariant="admin" rows={data.content} rowKey={(row) => row.id} emptyMessage="Chưa có lần pha nào trong khoảng đã chọn." columns={[
             { key: "time", header: "Thời gian", render: (row) => <time dateTime={row.brewedAt}>{formatOwnerRecordTime(row.brewedAt)}</time> },
             { key: "recipe", header: "Món", render: (row) => row.recipeName },
             { key: "machine", header: "Máy", render: (row) => row.machineSerialNumber },

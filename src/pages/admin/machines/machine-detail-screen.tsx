@@ -16,6 +16,7 @@ import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
@@ -34,18 +35,6 @@ import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-me
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getMachineDetailBackDestination } from "../admin-back-destination";
-
-const STATUS_LABELS: Record<string, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 function formatDate(value: string | null | undefined, time = false): string {
   if (!value) return "—";
@@ -388,7 +377,7 @@ function MachineDetailContent() {
         back={getMachineDetailBackDestination(router.query)}
       />
       <MachineDetailView summary={[
-        { label: T.MACHINES.STATUS, value: device.status ? <StatusBadge status={device.status}>{STATUS_LABELS[device.status] ?? device.status}</StatusBadge> : "—" },
+        { label: T.MACHINES.STATUS, value: device.status ? <StatusBadge status={device.status}>{MACHINE_STATUS_LABELS[device.status] ?? device.status}</StatusBadge> : "—" },
         { label: T.MACHINES.MACHINE_TYPE, value: machineTypeLabel },
         { label: T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
         { label: T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },

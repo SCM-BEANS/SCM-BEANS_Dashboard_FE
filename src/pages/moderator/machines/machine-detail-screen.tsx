@@ -8,6 +8,7 @@ import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -24,18 +25,6 @@ import { MachineMaintenanceTicketTable } from "./machine-maintenance-ticket-tabl
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 const numberFormat = new Intl.NumberFormat("vi-VN");
-
-const statusLabels: Record<NonNullable<Machine["status"]>, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -239,7 +228,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
     },
     onError: (error: unknown) => setActionError(getApiErrorMessage(error, "mutation")),
   });
-  const status = device?.status ? statusLabels[device.status] : "Chưa có trạng thái";
+  const status = device?.status ? MACHINE_STATUS_LABELS[device.status] : "Chưa có trạng thái";
   const machineType = device?.machineType === "SMART_IOT"
     ? ADMIN_T.MACHINES.SMART
     : device?.machineType === "CONVENTIONAL" ? ADMIN_T.MACHINES.CONVENTIONAL : ADMIN_T.MACHINES.UNCLASSIFIED;

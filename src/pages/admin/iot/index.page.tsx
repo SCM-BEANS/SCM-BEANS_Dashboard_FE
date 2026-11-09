@@ -15,6 +15,7 @@ import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import machineStyles from "@/components/machines/machines.module.css";
 import type { Contract } from "@/schema/contracts.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
@@ -24,18 +25,6 @@ import { getIotBackDestination } from "../admin-back-destination";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
 
-
-const MACHINE_STATUS_LABELS: Record<string, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 function count(value: number | undefined): string {
   return value === undefined ? "—" : new Intl.NumberFormat("vi-VN").format(value);

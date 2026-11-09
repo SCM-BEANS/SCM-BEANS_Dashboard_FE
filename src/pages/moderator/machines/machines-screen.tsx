@@ -22,6 +22,7 @@ import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -70,18 +71,7 @@ function formatPeriod(start: string | null | undefined, end: string | null | und
 
 function machineStatusLabel(status: MachineInventoryItem["status"]): string {
   if (!status) return "—";
-  const labels: Record<string, string> = {
-    IN_WAREHOUSE: "Trong kho",
-    PENDING_ACTIVATION: "Chờ kích hoạt",
-    DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-    DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-    UNDER_MAINTENANCE: "Đang bảo trì",
-    REFURBISHING: "Đang tân trang",
-    PENDING_QA: "Chờ kiểm định",
-    AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-    RETIRED: "Đã ngừng sử dụng",
-  };
-  return labels[status] ?? status;
+  return MACHINE_STATUS_LABELS[status as keyof typeof MACHINE_STATUS_LABELS] ?? status;
 }
 
 function QueryFeedback({

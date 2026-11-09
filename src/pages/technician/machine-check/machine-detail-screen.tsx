@@ -12,6 +12,7 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel } from "@/components/machines/telemetry-history-panel";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
@@ -26,19 +27,6 @@ import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages"
 import { TechnicianShell } from "../technician-shell";
 import styles from "../technician-shell.module.css";
 
-type MachineStatus = NonNullable<Machine["status"]>;
-
-const STATUS_LABELS: Record<MachineStatus, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -59,7 +47,7 @@ function getMachineTypeLabel(machineType: Machine["machineType"]): string {
 }
 
 function getStatusLabel(status: Machine["status"]): string {
-  return status ? STATUS_LABELS[status] ?? status : "—";
+  return status ? MACHINE_STATUS_LABELS[status] ?? status : "—";
 }
 
 function MachineDetailFields({ machine }: { machine: Machine }) {

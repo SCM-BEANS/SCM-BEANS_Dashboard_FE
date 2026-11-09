@@ -275,7 +275,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                 columns={columns}
                 rows={visibleContracts}
                 rowKey={(contract) => contract.id}
-                variant="customer"
+                headerVariant="admin"
               />
               {totalPages > 1 ? (
                 <div className={styles.pagination}>

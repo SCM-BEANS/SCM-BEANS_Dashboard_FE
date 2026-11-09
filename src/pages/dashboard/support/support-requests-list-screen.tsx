@@ -94,7 +94,7 @@ export function SupportRequestsListScreen() {
             columns={columns}
             rows={requests}
             rowKey={(request) => request.id}
-            variant="customer"
+            headerVariant="admin"
           />
         ) : null}
         {!isListLoading && !list.isError && list.data ? (

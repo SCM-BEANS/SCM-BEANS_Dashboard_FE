@@ -15,6 +15,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { MachineListView } from "@/components/machines/machine-list-view";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
 import { staggerHeartbeatRequest, usePageVisibility, useVisibleMachineIds } from "@/components/machines/machine-heartbeat-visibility";
 import { MachineStatusSchema } from "@/schema/machines.schema";
@@ -31,18 +32,6 @@ const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
 type StatusFilter = "ALL" | MachineStatus;
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
-
-const STATUS_LABELS: Record<MachineStatus, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 const STATUS_FILTER_LABELS: Record<MachineStatus, string> = {
   IN_WAREHOUSE: "Trong kho",
@@ -68,7 +57,7 @@ function formatPeriod(start: string | null | undefined, end: string | null | und
 }
 
 function statusLabel(status: MachineStatus | null | undefined): string {
-  return status ? STATUS_LABELS[status] : "Chưa có trạng thái";
+  return status ? MACHINE_STATUS_LABELS[status] : "Chưa có trạng thái";
 }
 
 function machineTypeLabel(machineType: string | null | undefined): string {
