@@ -942,10 +942,22 @@
 
 @media (max-width: 420px) {
   .machineDetailSummary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .machineHeartbeatFields {
     grid-template-columns: 1fr;
   }
 }
+
+.ownerToolbarRight { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; min-width: 0; }
+.muted { color: #786e69; }
+
+.historyFilter { display: grid; gap: 6px; justify-items: start; color: #786e69; }
+.historyFilter select { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
+.historyFilter select:focus-visible { outline: 3px solid #b8172433; outline-offset: 2px; }
+
+.copyIdRow { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.copyIdButton { padding: 2px 10px; border: 1px solid #e9e2dc; border-radius: 999px; background: #fff; color: #302927; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.copyIdButton:hover { border-color: #b81724; color: #b81724; }
+.copyIdButton:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }

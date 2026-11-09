@@ -48,3 +48,8 @@ export function maintenanceAlertLevelLabel(alertLevel: string | null | undefined
   if (!alertLevel) return "Chưa đặt";
   return alertLevelLabels[alertLevel] ?? alertLevel;
 }
+
+export function maintenanceTicketOriginLabel(value: string): string {
+  const labels: Record<string, string> = { TERMINATION_INSPECTION: "Kiểm tra chấm dứt hợp đồng", PREVENTIVE: "Bảo trì định kỳ", TIME_BASED: "Bảo trì theo thời gian", ON_DEMAND: "Bảo trì theo yêu cầu", REPAIR: "Sửa chữa", MANUAL: "Tạo thủ công", ALERT: "Cảnh báo" };
+  return labels[value] ?? "Bảo trì khác";
+}

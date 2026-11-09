@@ -129,7 +129,7 @@ async function installMockApi(page: Page) {
 async function openMachine(page: Page, role: RoleCase) {
   await page.context().addCookies([{
     name: "access_token",
-    value: tokenFor(role.claim, role.subject),
+    value: tokenFor(role.claim, role.subject ?? ownerId),
     domain: "127.0.0.1",
     path: "/",
   }]);
@@ -199,7 +199,7 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
       await expect(page.getByRole("row").filter({ has: page.getByRole("cell", { name: createdTicketId, exact: true }) })).toBeVisible();
-      await expect(page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${createdTicketId.slice(0, 8)}`) })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Xem chi tiết" }).last()).toBeVisible();
 
       await clickPageAction(page, "maintenance-ticket-create");
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
@@ -214,7 +214,7 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       const api = await installMockApi(page);
       await openMachine(page, role);
 
-      await page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${assignedTicketId.slice(0, 8)}`) }).click();
+      await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
       await expectPageAction(page, "maintenance-ticket-overdue-review");
       await expectPageAction(page, "maintenance-ticket-unassign");
 
@@ -244,7 +244,7 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       await page.getByRole("alertdialog").getByRole("button", { name: "Hủy phân công", exact: true }).click();
       await expectNoPageAction(page, "maintenance-ticket-unassign");
 
-      await page.getByRole("button", { name: new RegExp(`Chi tiết phiếu ${pendingTicketId.slice(0, 8)}`) }).click();
+      await page.getByRole("button", { name: "Xem chi tiết" }).last().click();
       await expectNoPageAction(page, "maintenance-ticket-overdue-review");
       await expectNoPageAction(page, "maintenance-ticket-unassign");
 

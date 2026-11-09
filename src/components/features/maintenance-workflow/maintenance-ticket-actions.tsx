@@ -9,7 +9,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { ReasonDialog } from "@/components/reason-dialog/reason-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { maintenanceAlertLevelLabel, maintenanceTicketStatusLabel } from "./maintenance-status-labels";
+import { maintenanceAlertLevelLabel, maintenanceTicketStatusLabel, maintenanceTicketOriginLabel } from "./maintenance-status-labels";
 import {
   MaintenanceTicketDetailsPatchRequestSchema,
   type MaintenanceTicket,
@@ -362,19 +362,17 @@ export function MachineMaintenanceTicketActions({
     <div className={styles.machineActions}>
       <PageActions actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} />
       {tickets.length > 0 && (
-        <nav className={styles.ticketLinks} aria-label="Chi tiết phiếu bảo trì của máy">
-          {tickets.map((ticket, index) => ticket.id ? (
-            <button
-              type="button"
-              className={styles.ticketLink}
-              key={ticket.id}
-              aria-expanded={activeTicketId === ticket.id}
-              onClick={() => setActiveTicketId((current) => current === ticket.id ? "" : ticket.id!)}
-            >
-              Chi tiết phiếu {ticket.id.slice(0, 8)}{index === tickets.length - 1 ? " · Mới nhất" : ""}
-            </button>
-          ) : null)}
-        </nav>
+        <div className={styles.ticketCards} aria-label="Phiếu bảo trì của máy">
+          {tickets.map((ticket, index) => (
+            <article className={styles.ticketCard} key={ticket.id ?? index}>
+              <div><h3>Phiếu bảo trì</h3><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
+                <p>{formatDate(ticket.scheduledDueAt ?? ticket.completedAt)}</p>
+                {ticket.preventiveSubtype || ticket.source ? <p>{maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!)}</p> : null}
+              </div>
+              {ticket.id && <button type="button" className={styles.ticketLink} aria-expanded={activeTicketId === ticket.id} onClick={() => setActiveTicketId((current) => current === ticket.id ? "" : ticket.id!)}>Xem chi tiết</button>}
+            </article>
+          ))}
+        </div>
       )}
       {activeTicketId && (
         <MaintenanceTicketDetailsPanel

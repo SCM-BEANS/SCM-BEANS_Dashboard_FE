@@ -209,6 +209,7 @@ test.describe("maintenance request actions", () => {
   });
 
   test("records only the next valid custody step and automatically uses its machine ID", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-07T12:00:00Z"));
     const api = await installMockApi(page, { status: "CONFIRMED", replacementLinked: true });
     await openRequest(page);
     await expect(page.getByRole("heading", { name: "Bước tiếp theo: Nhận máy chính" })).toBeVisible();

@@ -1,26 +1,12 @@
+import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { machinesApi } from "@/apis/machines.api";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
-import type { MachineInventoryItem } from "@/schema/machines.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import styles from "../technician-shell.module.css";
-
-type MachineStatus = NonNullable<MachineInventoryItem["status"]>;
-
-const STATUS_LABELS: Record<MachineStatus, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Đang triển khai · Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Đang triển khai · Owner cửa hàng",
-  UNDER_MAINTENANCE: "Đang bảo trì",
-  REFURBISHING: "Đang tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Đã ngừng sử dụng",
-};
 
 export function MachineCheckTable() {
   const machines = useQuery({
@@ -58,7 +44,7 @@ export function MachineCheckTable() {
               ) },
               { key: "owner-id", header: T.MACHINE_CHECK.OWNER_ID, render: (machine) => machine.ownerId ?? "—" },
               { key: "serial", header: T.MACHINE_CHECK.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
-              { key: "status", header: T.MACHINE_CHECK.STATUS, render: (machine) => machine.status ? STATUS_LABELS[machine.status] ?? machine.status : "—" },
+              { key: "status", header: T.MACHINE_CHECK.STATUS, render: (machine) => machineStatusLabel(machine.status) },
               { key: "machine-type", header: T.MACHINE_CHECK.MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Máy thường" : "—" },
             ]}
           />

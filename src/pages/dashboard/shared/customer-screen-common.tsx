@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Cookies from "js-cookie";
 import { getAccessTokenSubject } from "@/lib/auth-role";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
@@ -44,7 +44,7 @@ export function QueryFeedback({
   return null;
 }
 
-export function DetailItem({ label, value }: { label: string; value: string | number | null | undefined }) {
+export function DetailItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className={styles.detailItem}>
       <dt>{label}</dt>

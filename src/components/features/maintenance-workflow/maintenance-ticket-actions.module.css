@@ -157,3 +157,8 @@
     flex: 1 1 100%;
   }
 }
+
+.ticketCards { display: grid; gap: 12px; }
+.ticketCard { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
+.ticketCard h3 { margin: 0 0 8px; font-size: 1rem; }
+.ticketCard p { margin: 8px 0 0; color: #786e69; }

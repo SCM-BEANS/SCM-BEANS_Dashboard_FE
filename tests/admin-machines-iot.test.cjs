@@ -290,7 +290,11 @@ test("shared list and detail components enforce summary-before-content hierarchy
     "src/pages/moderator/machines/machines-screen.tsx",
   ]) {
     assert.match(readSource(screen), /<MachineListView[\s\S]*?(?:summary=|labelledBy=|label=)/);
-    assert.match(readSource(screen), /controls=/, `${screen} should use the shared list controls region`);
+    if (screen.includes("dashboard/machines")) {
+      assert.match(readSource(screen), /ownerOperationsHeader[\s\S]*machineListFilterGroup/, `${screen} should include the type filters in the toolbar`);
+    } else {
+      assert.match(readSource(screen), /machineViewTabs/, `${screen} should include machine list controls`);
+    }
   }
 
   assert.match(readSource("src/components/machines/machine-detail-view.tsx"), /summary\.map/);

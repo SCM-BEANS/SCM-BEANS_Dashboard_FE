@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickPageAction, expectPageAction } from "./page-actions-test-helpers";
 
 const machineId = "f1000000-0000-4000-8000-000000000004";
 const ownerId = "f1000000-0000-4000-8000-000000000001";
@@ -196,10 +197,12 @@ test.describe("machine operational overview cross-role presentation", () => {
         await detailLink.click();
         await expect(page).toHaveURL(new RegExp(`${role.detailPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
         const operationsLink = page.locator(`a[href="${role.operationsPath}"]`);
-        await expect(operationsLink).toBeVisible();
+        if (role.claim === "owner") await expectPageAction(page, "machine-operational-overview");
+        else await expect(operationsLink).toBeVisible();
         await expectNoHorizontalOverflow(page, width, `${role.label} machine detail`);
 
-        await operationsLink.click();
+        if (role.claim === "owner") await clickPageAction(page, "machine-operational-overview");
+        else await operationsLink.click();
         await expect(page).toHaveURL(new RegExp(`${role.operationsPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
         await expect(page.locator("#machine-operational-overview-title")).toBeVisible();
         if (role.claim === "owner") await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
