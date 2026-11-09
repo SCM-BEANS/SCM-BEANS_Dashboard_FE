@@ -5,6 +5,7 @@ import { repairCostReviewsApi } from "@/apis/repair-cost-reviews.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { RepairCostReviewIdSchema, type RepairCostReview } from "@/schema/repair-cost-reviews.schema";
 import { querySubject, type RepairWorkflowRole } from "@/components/features/repair-workflow/repair-workflow-query-identity";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import styles from "./repair-cost-review-screen.module.css";
 
 function formatAmount(value: number | string | null | undefined, currency?: string | null) {
@@ -109,6 +110,7 @@ export function RepairCostReviewScreen({
             <div><dt>Minh chứng</dt><dd>{review.data.evidenceReferences ? "Đã đính kèm minh chứng riêng tư" : "Chưa có minh chứng"}</dd></div>
             {review.data.currentInvoiceId ? <div><dt>Hóa đơn liên quan</dt><dd className={styles.code}>{review.data.currentInvoiceId}</dd></div> : null}
           </dl>
+          <EvidenceList resource="REPAIR_COST_REVIEW" parentId={reviewId} title="Chứng từ rà soát chi phí" />
           <section className={styles.notice}>
             <h2>Chẩn đoán</h2>
             <p>{review.data.diagnosis}</p>

@@ -3,6 +3,7 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import { OfflineViolationReviewDecisionRequestSchema, type OfflineViolationReview, type OfflineViolationReviewDecisionRequest } from "@/schema/offline-violation-reviews.schema";
 import styles from "./machines.module.css";
 
@@ -59,6 +60,7 @@ function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review:
       <div><dt>Theo dõi gần nhất</dt><dd>{formatTime(review.lastObservedAt)}</dd></div><div><dt>Kết thúc mất kết nối</dt><dd>{formatTime(review.observedOfflineUntil)}</dd></div>
       {review.decision ? <><div><dt>Kết quả rà soát</dt><dd>{review.decision === "NO_ACTION" ? "Không cần xử lý thêm" : "Tiếp tục theo dõi, xử lý"}</dd></div><div><dt>Nội dung</dt><dd>{review.decisionReason ?? "—"}</dd></div><div><dt>Ghi nhận lúc</dt><dd>{formatTime(review.decidedAt)}</dd></div></> : null}
     </dl>
+    <EvidenceList resource="OFFLINE_REVIEW" parentId={review.id} title="Chứng từ rà soát" />
     <p className={styles.telemetryRangeCaption}>Thời gian giữ theo giờ máy chủ; dữ liệu rà soát không tự áp dụng tiền phạt hoặc công nợ.</p>
     {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || pending, disabledReason: "Nhập lý do và mã minh chứng hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success) setConfirm(true); }}>
       <label>Kết quả<select disabled={pending} value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}><option value="FOLLOW_UP">Tiếp tục theo dõi, xử lý</option><option value="NO_ACTION">Không cần xử lý thêm</option></select></label>

@@ -61,6 +61,17 @@ export const TerminationInspectionRequestSchema = z.object({
   correlationId: z.string().trim().min(1),
 }).strict();
 
+export const TerminationInspectionResultSchema = z.object({
+  caseId: z.string().uuid(),
+  maintenanceTicketId: z.string().uuid(),
+  status: z.string(),
+  inspectionDecision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]).nullable(),
+  diagnosis: z.string().nullish(),
+  actualCost: z.number().nullable(),
+  completedAt: z.string().nullable(),
+});
+export type TerminationInspectionResult = z.infer<typeof TerminationInspectionResultSchema>;
+
 export const TerminationRejectionRequestSchema = z.object({
   reason: z.string().trim().min(1),
   correlationId: z.string().trim().min(1),

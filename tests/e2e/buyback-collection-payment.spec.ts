@@ -821,6 +821,9 @@ test("registration 403, 404, 409, and 422 errors stay visible without reporting 
   });
 
   await setRole(page, "MODERATOR", moderatorId);
+  await page.route(/\/api\/dolores\/v1\/buybacks\/[^/]+\/evidence(\?.*)?$/, async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], page: 0, size: 20, hasNext: false }) });
+  });
   for (const status of [403, 404, 409, 422]) {
     registrationErrorStatus = status;
     await page.goto(`/moderator/buyback/${caseId}`);

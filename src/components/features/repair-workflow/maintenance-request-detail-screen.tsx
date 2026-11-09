@@ -21,6 +21,7 @@ import { RepairWorkflowPagination } from "@/components/features/repair-workflow/
 import styles from "./repair-workflow.module.css";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { maintenanceRequestStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -204,6 +205,7 @@ export function MaintenanceRequestDetailScreen({
         }),
       ]} />}
       {request && !requestQuery.isError && <MaintenanceRequestDetails request={request} />}
+      {request && !requestQuery.isError && <EvidenceList resource="MAINTENANCE_REQUEST" parentId={id} title="Chứng từ yêu cầu" />}
       {request?.requestType === "PREVENTIVE" && !request.maintenanceTicketId && (
         <section className={styles.pendingNotice} aria-labelledby="preventive-work-order-title">
           <h2 className={styles.sectionTitle} id="preventive-work-order-title">Lệnh bảo trì định kỳ</h2>

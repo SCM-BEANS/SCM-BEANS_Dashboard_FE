@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { buildMaintenanceTicketCreatePageActions, buildMaintenanceTicketDetailActions, type MaintenanceActionRole } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -302,6 +303,7 @@ export function MaintenanceTicketDetailsPanel({
             <div><dt>Kỹ thuật viên</dt><dd>{ticket.assignedTo ?? ticket.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
             <div><dt>Hướng dẫn xử lý</dt><dd>{ticket.actionableInstructions || "Chưa có hướng dẫn"}</dd></div>
           </dl>
+          <EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" />
           {editing && canManage && (
             <MaintenanceTicketDetailsForm
               key={ticket.id}

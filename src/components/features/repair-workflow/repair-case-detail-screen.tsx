@@ -26,6 +26,7 @@ import {
 } from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 import { maintenanceCustodyEventLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import styles from "./repair-workflow.module.css";
 
@@ -823,6 +824,9 @@ export function RepairCaseDetailScreen({
               <DetailValue label={M.CLOSED_AT} value={formatDateTime(repairCase.data.closedAt)} />
             </dl>
           </section>
+
+          <EvidenceList resource="REPAIR_CASE" parentId={caseId} title="Chứng từ hồ sơ sửa chữa" />
+          {replacementAssignmentId ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} title="Chứng từ máy thay thế" /> : null}
 
           <section className={styles.panel} aria-label="Công việc liên quan">
             <SectionHeading title="Công việc liên quan" description="Các mã liên kết và trạng thái hiện tại của ticket, máy thay thế." />

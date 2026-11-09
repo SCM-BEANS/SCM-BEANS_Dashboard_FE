@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
@@ -5,6 +6,7 @@ import { profilesApi } from "@/apis/profiles.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getBillingWorkflowErrorMessage as getApiErrorMessage } from "@/lib/api-errors";
 import type { TerminationCaseStatus } from "@/schema/termination-cases.schema";
 import type { RecallWorkOrderStatus } from "@/schema/recall-work-orders.schema";
@@ -34,6 +36,25 @@ function formatDateTime(value?: string | null) {
 function formatVnd(value: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 }).format(value);
 }
+
+const inspectionCostFormat = new Intl.NumberFormat("vi-VN");
+const inspectionCompletedAtFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" });
+
+function formatInspectionCost(value: number) {
+  return `${inspectionCostFormat.format(value)} ₫`;
+}
+
+function formatInspectionCompletedAt(value?: string | null) {
+  if (!value) return "Chưa hoàn tất";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Chưa hoàn tất" : inspectionCompletedAtFormat.format(date);
+}
+
+const inspectionDecisionLabels: Record<"NO_DAMAGE" | "DAMAGE" | "PARTIAL_DAMAGE", string> = {
+  NO_DAMAGE: "Không hư hỏng",
+  DAMAGE: "Có hư hỏng",
+  PARTIAL_DAMAGE: "Hư hỏng một phần",
+};
 
 const caseStatusLabels: Record<TerminationCaseStatus, string> = {
   REQUESTED: "Đang chờ xử lý",
@@ -135,6 +156,12 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
     queryKey: ["dolores", "termination-inspection-ticket", inspectionTicketId],
     queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(inspectionTicketId, signal),
     enabled: Boolean(inspectionTicketId),
+    retry: false,
+  });
+  const inspectionResult = useQuery({
+    queryKey: ["dolores", "termination-inspection-result", resolvedCaseId],
+    queryFn: ({ signal }) => terminationCasesApi.getInspection(resolvedCaseId, signal),
+    enabled: Boolean(resolvedCaseId && inspectionTicketId) && role !== "OWNER",
     retry: false,
   });
   const caseData = terminationCase.data;
@@ -376,6 +403,31 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
             </div>
           ) : null}
 
+          {role !== "OWNER" && inspectionTicketId ? (
+            <div className={styles.step}>
+              <h3>Kết quả kiểm tra</h3>
+              {inspectionResult.isPending ? <p role="status">Đang tải kết quả kiểm tra…</p> : null}
+              {inspectionResult.isError ? (
+                axios.isAxiosError(inspectionResult.error) && inspectionResult.error.response?.status === 404
+                  ? <p>Chưa có kết quả kiểm tra.</p>
+                  : <p role="alert">{getApiErrorMessage(inspectionResult.error)}</p>
+              ) : null}
+              {inspectionResult.data ? (
+                <>
+                  <dl className={styles.summary}>
+                    <div><dt>Kết luận</dt><dd>{inspectionResult.data.inspectionDecision ? inspectionDecisionLabels[inspectionResult.data.inspectionDecision] : "Chưa có kết luận"}</dd></div>
+                    <div><dt>Chẩn đoán</dt><dd>{inspectionResult.data.diagnosis || "—"}</dd></div>
+                    <div><dt>Chi phí thực tế</dt><dd>{inspectionResult.data.actualCost === null ? "Chưa ghi nhận" : formatInspectionCost(inspectionResult.data.actualCost)}</dd></div>
+                    <div><dt>Hoàn tất lúc</dt><dd>{formatInspectionCompletedAt(inspectionResult.data.completedAt)}</dd></div>
+                  </dl>
+                  {!(inspectionResult.data.status === "RESOLVED" && inspectionResult.data.completedAt) ? (
+                    <p className={styles.notice}>Kết quả chưa hoàn tất, chưa dùng để đề xuất mức trừ cọc.</p>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
           {caseData.status === "SETTLEMENT_PENDING" && mode === "operator" ? (
             <div className={styles.step}>
               <h3>Quyết toán chấm dứt hợp đồng</h3>
@@ -446,6 +498,9 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
           ) : null}
         </>
       ) : null}
+
+      {resolvedCaseId ? <EvidenceList resource="TERMINATION_CASE" parentId={resolvedCaseId} title="Chứng từ chấm dứt hợp đồng" /> : null}
+      {contractId && role !== "OWNER" ? <EvidenceList resource="DEPOSIT" parentId={contractId} title="Chứng từ tiền cọc" /> : null}
 
       <div className={styles.recallSection}>
         <div className={styles.subheading}>

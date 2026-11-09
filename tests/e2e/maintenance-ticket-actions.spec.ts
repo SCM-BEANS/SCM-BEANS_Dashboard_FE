@@ -298,3 +298,65 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
     expect(calls).toContainEqual({ method: "POST", url: `/maintenance-tickets/${technicianTicketId}/parts`, body: { partsReplaced: "Bơm nước" } });
   });
 });
+
+const evidenceId = "f2400000-0000-4000-8000-000000000009";
+const uploaderId = "f2500000-0000-4000-8000-00000000000a";
+
+async function mockTicketEvidence(page: Page, mode: "files" | "empty" | "forbidden") {
+  await page.route("**/api/dolores/v1/maintenance-tickets/*/evidence**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/content")) {
+      await route.fulfill({ status: 200, contentType: "application/pdf", headers: { "Content-Disposition": 'attachment; filename="bien-ban.pdf"' }, body: "PDF" });
+      return;
+    }
+    if (mode === "forbidden") {
+      await route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ message: "Forbidden" }) });
+      return;
+    }
+    const ticketId = url.pathname.split("/").at(-2) ?? assignedTicketId;
+    const items = mode === "empty" ? [] : [{
+      id: evidenceId, resourceType: "MAINTENANCE_TICKET", resourceId: ticketId, purpose: "MAINTENANCE_RESOLUTION",
+      originalFilename: "bien-ban.pdf", contentType: "application/pdf", sizeBytes: 2048, sha256: "abc",
+      uploadedBy: uploaderId, uploadedAt: "2026-11-08T03:00:00Z",
+      downloadPath: `/api/v1/maintenance-tickets/${ticketId}/evidence/${evidenceId}/content`,
+    }];
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items, page: 0, size: 20, hasNext: false }) });
+  });
+}
+
+test.describe("maintenance ticket evidence", () => {
+  test("lists files and downloads one", async ({ page }) => {
+    await installMockApi(page);
+    await mockTicketEvidence(page, "files");
+    await openMachine(page, roleCases[0]);
+    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    const section = page.getByRole("region", { name: "Chứng từ phiếu bảo trì" });
+    await expect(section).toBeVisible();
+    await expect(section.getByText("bien-ban.pdf")).toBeVisible();
+    await expect(section.getByText("Kết quả bảo trì")).toBeVisible();
+    await expect(section.getByText("2,0 KB")).toBeVisible();
+    const request = page.waitForRequest((req) => req.url().includes(`/evidence/${evidenceId}/content`));
+    const download = page.waitForEvent("download");
+    await section.getByRole("button", { name: "Tải xuống bien-ban.pdf" }).click();
+    await request;
+    expect((await download).suggestedFilename()).toBe("bien-ban.pdf");
+  });
+
+  test("shows the empty state", async ({ page }) => {
+    await installMockApi(page);
+    await mockTicketEvidence(page, "empty");
+    await openMachine(page, roleCases[0]);
+    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    const section = page.getByRole("region", { name: "Chứng từ phiếu bảo trì" });
+    await expect(section.getByText("Chưa có chứng từ.")).toBeVisible();
+  });
+
+  test("is hidden on 403", async ({ page }) => {
+    await installMockApi(page);
+    await mockTicketEvidence(page, "forbidden");
+    await openMachine(page, roleCases[0]);
+    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chứng từ phiếu bảo trì" })).toHaveCount(0);
+  });
+});

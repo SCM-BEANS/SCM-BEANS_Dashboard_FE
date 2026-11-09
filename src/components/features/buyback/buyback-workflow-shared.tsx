@@ -9,6 +9,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } from "@/schema/buybacks.schema";
@@ -578,6 +579,7 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
             <ButtonBar type="button" onClick={() => void detail.refetch()}>Làm mới</ButtonBar>
           </div>
           <BuybackCaseSummary caseData={caseData} role={workflow.role} />
+          <EvidenceList resource="BUYBACK_CASE" parentId={caseData.id} title="Chứng từ thu mua" />
           {caseData.status === "REGISTERED" && !caseData.registeredMachineId ? (
             <p className={`${styles.notice} ${styles.error}`} role="alert">
               Dolores trả trạng thái đã đăng ký máy nhưng chưa có mã máy. Làm mới hồ sơ để kiểm tra lại.

@@ -434,6 +434,12 @@ const offlineReview = {
   reviewerRole: null, decisionReason: null, evidenceReferences: null, decidedAt: null,
 };
 
+async function mockEmptyEvidence(page: Page) {
+  await page.route(/\/api\/dolores\/v1\/.+\/evidence(\?.*)?$/, async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], page: 0, size: 20, hasNext: false }) });
+  });
+}
+
 async function installOfflineMock(page: Page, requests: string[], conflict = false) {
   let current: Record<string, unknown> = { ...offlineReview };
   const posts: unknown[] = [];
@@ -455,6 +461,7 @@ async function installOfflineMock(page: Page, requests: string[], conflict = fal
     const headers: Record<string, string> = list ? { "X-Page": url.searchParams.get("page") ?? "0", "X-Page-Size": url.searchParams.get("size") ?? "50", "X-Has-Next": "false" } : {};
     await route.fulfill({ status: 200, contentType: "application/json", headers, body: JSON.stringify(list ? [current] : current) });
   });
+  await mockEmptyEvidence(page);
   return posts;
 }
 

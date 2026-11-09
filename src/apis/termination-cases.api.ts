@@ -14,6 +14,7 @@ import {
   type TerminationSettlementRequest,
 } from "@/schema/termination-workflow.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
+import { TerminationInspectionResultSchema } from "@/schema/termination-cases.schema";
 
 const casePath = (id: string) => `/termination-cases/${encodeURIComponent(TerminationCaseIdSchema.parse(id))}`;
 
@@ -44,6 +45,13 @@ export const terminationCasesApi =  {
     const validId = TerminationCaseIdSchema.parse(id);
     const response = await axiosClient.get<unknown>(casePath(validId), { baseURL: DOLORES_API_BASE_URL, signal });
     return verifyCaseIdentity(response.data, validId);
+  },
+  async getInspection(id: string, signal?: AbortSignal) {
+    const validId = TerminationCaseIdSchema.parse(id);
+    const response = await axiosClient.get<unknown>(`${casePath(validId)}/inspection`, { baseURL: DOLORES_API_BASE_URL, signal });
+    const result = TerminationInspectionResultSchema.parse(response.data);
+    if (result.caseId !== validId) throw new Error("Kết quả kiểm tra không thuộc hồ sơ đang xem.");
+    return result;
   },
   async beginRecovery(id: string, input: TerminationActionRequest) {
     const validId = TerminationCaseIdSchema.parse(id);
