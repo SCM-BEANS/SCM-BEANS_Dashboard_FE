@@ -30,6 +30,9 @@ export function MachineHeartbeatPanel({
   const state = error ? "error" : loading ? "loading" : !heartbeat ? "empty" : undefined;
   const stateMessage = error ?? (loading ? "Đang tải trạng thái kết nối…" : !heartbeat ? emptyMessage : undefined);
   const health = heartbeat?.health;
+  const hasGps = heartbeat?.latitude != null && heartbeat.longitude != null
+    && Math.abs(heartbeat.latitude) <= 90 && Math.abs(heartbeat.longitude) <= 180
+    && (heartbeat.latitude !== 0 || heartbeat.longitude !== 0);
   const hasHeartbeatDetails = Boolean(
     heartbeat?.evaluatedAt
       || heartbeat?.deviceReportedAt,
@@ -47,6 +50,12 @@ export function MachineHeartbeatPanel({
         <div className={styles.monitoringHeartbeatSummary}><div><span className={styles.telemetryRangeCaption}>Kết nối hiện tại</span><MachineConnectionBadge state={heartbeat.status} /></div><div><span className={styles.telemetryRangeCaption}>Tín hiệu gần nhất · Giờ Việt Nam</span><strong>{heartbeat.lastSeenAt ? formatHeartbeatDate(heartbeat.lastSeenAt) : "Chưa ghi nhận"}</strong></div><div><span className={styles.telemetryRangeCaption}>Thông số sức khỏe</span><strong>{health ? "Có dữ liệu đã ghi nhận" : "Chưa có dữ liệu"}</strong></div></div>
         {heartbeat.status === "UNKNOWN" ? <p className={styles.telemetryRangeCaption}>Chưa đủ tín hiệu để xác định máy đang kết nối hay mất kết nối.</p> : null}
         {hasHeartbeatDetails ? <p className={styles.telemetryRangeCaption}>{heartbeat.evaluatedAt ? `Đánh giá lúc ${formatHeartbeatDate(heartbeat.evaluatedAt)}` : ""}{heartbeat.deviceReportedAt ? ` · Thiết bị báo lúc ${formatHeartbeatDate(heartbeat.deviceReportedAt)}` : ""}</p> : null}
+        <dl className={styles.machineHeartbeatFields}>
+          <div><dt>Vị trí GPS</dt><dd>{hasGps ? heartbeat.status === "ONLINE" ? "Đã ghi nhận tọa độ" : "Tọa độ ghi nhận gần nhất" : "Chưa ghi nhận vị trí"}</dd></div>
+          <div><dt>Vĩ độ</dt><dd>{hasGps ? heartbeat.latitude!.toFixed(6) : "—"}</dd></div>
+          <div><dt>Kinh độ</dt><dd>{hasGps ? heartbeat.longitude!.toFixed(6) : "—"}</dd></div>
+        </dl>
+        {!hasGps && heartbeat.status === "ONLINE" ? <p className={styles.telemetryRangeCaption}>Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS.</p> : null}
         {health ? <details open><summary>Sức khỏe ghi nhận gần nhất</summary>
           {heartbeat.status !== "ONLINE" || !heartbeat.healthReportedAt ? <p>Dữ liệu đã ghi nhận, không phản ánh tình trạng hiện tại của máy.</p> : <p>Thông số tại lần ghi nhận bên dưới, không phải dữ liệu đo liên tục.</p>}
           <dl className={styles.machineHeartbeatFields}>

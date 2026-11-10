@@ -64,6 +64,39 @@ test('heartbeat lifecycle fields are typed while zero health and nullable state 
   assert.equal(MachineHeartbeatSchema.safeParse({ ...value, brewState: null, sequenceNumber: null, health: null }).success, true);
 });
 
+test('heartbeat GPS validates coordinates while permitting absent, zero and equator/meridian readings', () => {
+  const { MachineHeartbeatSchema } = loadTelemetrySchema();
+  const base = { machineId, status: 'ONLINE' };
+  for (const gps of [{}, { latitude: null, longitude: null }, { latitude: 0, longitude: 0 }, { latitude: 0, longitude: 106.7 }, { latitude: 10.7, longitude: 0 }, { latitude: 999, longitude: 106.7 }]) {
+    assert.equal(MachineHeartbeatSchema.safeParse({ ...base, ...gps }).success, true);
+  }
+  for (const gps of [{ latitude: '10.7' }, { latitude: NaN }, { longitude: Infinity }]) {
+    assert.equal(MachineHeartbeatSchema.safeParse({ ...base, ...gps }).success, false);
+  }
+});
+
+test('shared heartbeat GPS distinguishes missing, valid, stale and incomplete locations', () => {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const { MachineHeartbeatPanel } = loadTypescript('src/components/machines/machine-heartbeat-panel.tsx', {
+    './machine-connection-badge': { MachineConnectionBadge: ({ state }) => React.createElement('span', null, state) },
+    './smart-iot-panel': { SmartIotPanel: ({ children }) => React.createElement('section', null, children) },
+    './machines.module.css': { default: {} },
+  });
+  const render = (heartbeat) => renderToStaticMarkup(React.createElement(MachineHeartbeatPanel, { title: 'Machine', heartbeat: { machineId, ...heartbeat } }));
+  for (const gps of [{ latitude: 0, longitude: 0 }, { latitude: null, longitude: null }, { latitude: 10.7 }, { latitude: 999, longitude: 106.7 }, { latitude: 10.7, longitude: -181 }]) {
+    const html = render({ status: 'ONLINE', ...gps });
+    assert.match(html, /Chưa ghi nhận vị trí/);
+    assert.match(html, /kiểm tra quyền truy cập vị trí/);
+    assert.doesNotMatch(html, /0\.000000/);
+  }
+  assert.match(render({ status: 'ONLINE', latitude: 0, longitude: 106.7 }), /0\.000000/);
+  assert.match(render({ status: 'ONLINE', latitude: 0, longitude: 106.7 }), /106\.700000/);
+  const stale = render({ status: 'OFFLINE', latitude: 10.7, longitude: 106.7 });
+  assert.match(stale, /Tọa độ ghi nhận gần nhất/);
+  assert.doesNotMatch(stale, /Máy đang kết nối nhưng/);
+});
+
 test('telemetry API sends a bounded page request with the selected machine UUID and range', async () => {
   const calls = [];
   const point = { timestamp: '2026-10-20T08:15:00Z', field: 'temperature', value: 92.5, tenantId, machineId };

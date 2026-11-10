@@ -21,6 +21,20 @@ const notificationId = "00000000-0000-4000-8000-000000000001";
 const machineId = "00000000-0000-4000-8000-000000000003";
 const schemas = loadTypescript("src/schema/notifications.schema.ts", { zod: require("zod") });
 
+test('GPS advisory uses understandable copy, preserves machine context and leaves other notifications unchanged', () => {
+  const { getNotificationPresentation } = loadTypescript('src/text/notification-inbox-messages.ts');
+  const gps = { type: 'MACHINE_GPS_SIGNAL_MISSING', title: 'Warning', message: `Machine ${machineId} is online but not reporting valid GPS coordinates.` };
+  const result = getNotificationPresentation(gps);
+  assert.match(result.title, /Máy 00000000 chưa gửi được vị trí GPS/);
+  assert.equal(result.typeLabel, 'Vị trí GPS');
+  assert.match(result.message, /Tại thời điểm cảnh báo/);
+  assert.match(result.message, /quyền truy cập vị trí/);
+  assert.equal(gps.title, 'Warning');
+  assert.equal(getNotificationPresentation({ ...gps, message: '' }).title, 'Máy chưa gửi được vị trí GPS');
+  const other = { type: 'INFO', title: 'Original title', message: 'Original message' };
+  assert.deepEqual(getNotificationPresentation(other), { title: other.title, message: other.message, typeLabel: other.type });
+});
+
 test("notification and alert schemas validate server records including nullable timestamps", () => {
   const notification = {
     id: notificationId,

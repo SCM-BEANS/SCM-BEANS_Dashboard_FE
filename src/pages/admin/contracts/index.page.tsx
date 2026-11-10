@@ -64,6 +64,7 @@ type ContractPolicyDraft = {
   offlineViolationAction: "WARN_ONLY" | "MANUAL_REVIEW";
   buybackEnabled: boolean;
   offlineLimitMinutes: string;
+  heartbeatToleranceSeconds: string;
   buybackMinimumMonths: string;
   buybackValuationMethod: "MANUAL_APPRAISAL";
   [key: string]: unknown;
@@ -124,6 +125,7 @@ function ContractsContent() {
     maintenanceWindowDays: String(contractPolicySnapshot.maintenanceWindowDays),
     paymentDueEligibleDays: String(contractPolicySnapshot.paymentDueEligibleDays),
     offlineLimitMinutes: contractPolicySnapshot.offlineLimitMinutes == null ? "" : String(contractPolicySnapshot.offlineLimitMinutes),
+    heartbeatToleranceSeconds: String(contractPolicySnapshot.heartbeatToleranceSeconds ?? 45),
     buybackMinimumMonths: String(contractPolicySnapshot.buybackMinimumMonths),
   } : null;
   const policyFormDirty = Boolean(contract.data && (
@@ -154,6 +156,7 @@ function ContractsContent() {
       maintenanceWindowDays: String(snapshot.maintenanceWindowDays),
       paymentDueEligibleDays: String(snapshot.paymentDueEligibleDays),
       offlineLimitMinutes: snapshot.offlineLimitMinutes == null ? "" : String(snapshot.offlineLimitMinutes),
+      heartbeatToleranceSeconds: String(snapshot.heartbeatToleranceSeconds ?? 45),
       buybackMinimumMonths: String(snapshot.buybackMinimumMonths),
     } : null);
     setPolicyReason("");
@@ -198,6 +201,7 @@ function ContractsContent() {
         maintenanceWindowDays,
         paymentDueEligibleDays,
         offlineLimitMinutes,
+        heartbeatToleranceSeconds,
         buybackMinimumMonths,
         ...rest
       } = policySnapshot;
@@ -207,6 +211,7 @@ function ContractsContent() {
         maintenanceWindowDays: Number(maintenanceWindowDays),
         paymentDueEligibleDays: Number(paymentDueEligibleDays),
         ...(offlineLimitMinutes.trim() ? { offlineLimitMinutes: Number(offlineLimitMinutes) } : {}),
+        heartbeatToleranceSeconds: Number(heartbeatToleranceSeconds),
         buybackMinimumMonths: Number(buybackMinimumMonths),
       };
     })() : null;
@@ -366,6 +371,7 @@ function ContractsContent() {
           <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div><div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>
           <div><span>Tiền cọc</span><strong>{money(contract.data.depositAmount)}</strong></div><div><span>Phí lắp đặt</span><strong>{money(contract.data.installationFee)}</strong></div>
           <div><span>Giới hạn offline</span><strong>{contract.data.offlineLimitMinutes == null ? "—" : `${contract.data.offlineLimitMinutes} phút`}</strong></div>
+          <div><span>Ngưỡng mất kết nối</span><strong>{contract.data.contractTermsSnapshot ? `${contract.data.contractTermsSnapshot.heartbeatToleranceSeconds ?? 45} giây` : "Chưa có chính sách"}</strong></div>
         </div>
         {(contract.data.termsSnapshot ?? contract.data.terms) && <p className={styles.panelSubtitle}>{contract.data.termsSnapshot ?? contract.data.terms}</p>}</section>
         <section className={styles.panel}><h2>Trạng thái hết hạn</h2>
@@ -406,6 +412,7 @@ function ContractsContent() {
               <label>Hành động khi vi phạm offline *<select required value={policySnapshot.offlineViolationAction} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, offlineViolationAction: event.target.value as ContractPolicyDraft["offlineViolationAction"] } : current)}>
                 <option value="WARN_ONLY">Chỉ cảnh báo</option><option value="MANUAL_REVIEW">Duyệt thủ công</option>
               </select></label>
+              <label>Ngưỡng mất kết nối (giây) *<input type="number" required min={5} max={86400} step={1} value={policySnapshot.heartbeatToleranceSeconds} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, heartbeatToleranceSeconds: event.target.value } : current)} /></label>
               <label>Giới hạn offline (phút)<input type="number" min={1} step={1} value={policySnapshot.offlineLimitMinutes} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, offlineLimitMinutes: event.target.value } : current)} /></label>
               <label className={styles.contractCheckbox}><input type="checkbox" checked={policySnapshot.buybackEnabled} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, buybackEnabled: event.target.checked } : current)} /> Cho phép thu mua máy cũ</label>
               <label>Số tháng tối thiểu để thu mua *<input type="number" min={0} max={120} step={1} required disabled={!policySnapshot.buybackEnabled} value={policySnapshot.buybackMinimumMonths} onChange={(event) => setPolicySnapshot((current) => current ? { ...current, buybackMinimumMonths: event.target.value } : current)} /></label>

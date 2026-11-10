@@ -164,6 +164,20 @@ export const machinesApi =  {
     });
     return RentalCandidatePageSchema.parse(response.data).content;
   },
+  async listRentalCandidatePage(page: number, size = 100, signal?: AbortSignal) {
+    if (!Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100) {
+      throw new Error("Phân trang máy cho thuê không hợp lệ.");
+    }
+    const response = await axiosClient.get<unknown>("/inventory/rental-candidates", {
+      baseURL: DOLORES_API_BASE_URL, params: { page, size }, signal,
+    });
+    const result = RentalCandidatePageSchema.parse(response.data);
+    if (result.page !== page || result.size !== size || result.content.length > size
+      || result.totalPages !== Math.ceil(result.totalElements / size)) {
+      throw new Error("Danh sách máy cho thuê không khớp trang yêu cầu.");
+    }
+    return result;
+  },
   async getById(id: string, signal?: AbortSignal) {
     const validId = MachineIdSchema.parse(id);
     const response = await axiosClient.get<unknown>(machinePath(validId), {

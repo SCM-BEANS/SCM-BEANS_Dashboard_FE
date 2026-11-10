@@ -113,6 +113,68 @@ async function openAdminSetup(page: Page) {
   return page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
 }
 
+for (const role of ["admin", "moderator", "owner", "technician"]) {
+  test(`${role} sees GPS separately from heartbeat with desktop and mobile layouts`, async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor(role), domain: "127.0.0.1", path: "/" }]);
+    await mockMachineApi(page);
+    let heartbeat = { machineId, status: "ONLINE", latitude: 10.7769, longitude: 106.7009 };
+    await page.route("**/api/dolores/v1/telemetry-query/machines/*/heartbeats/latest", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(heartbeat) }));
+    const path = role === "technician" ? `/technician/machine-check/${machineId}` : `/${role === "owner" ? "dashboard" : role}/machines/${machineId}/operations?tab=connection`;
+    await page.goto(path);
+    await expect(page.getByText("10.776900", { exact: true })).toBeVisible();
+    await expect(page.getByText("106.700900", { exact: true })).toBeVisible();
+    heartbeat = { ...heartbeat, latitude: 0, longitude: 0 };
+    await page.reload();
+    await expect(page.getByText("Chưa ghi nhận vị trí", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ/)).toBeVisible();
+    heartbeat = { ...heartbeat, latitude: 999, longitude: 106.7009 };
+    await page.reload();
+    await expect(page.getByText(/Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ/)).toBeVisible();
+    heartbeat = { ...heartbeat, status: "OFFLINE", latitude: 10.7769 };
+    await page.reload();
+    await expect(page.getByText("Tọa độ ghi nhận gần nhất", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ/)).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByText("106.700900", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+  });
+}
+
+for (const role of ["admin", "moderator"]) {
+  test(`${role} edits the saved heartbeat tolerance through the policy amendment API`, async ({ page, context }) => {
+    await context.addCookies([{ name: "access_token", value: tokenFor(role), domain: "127.0.0.1", path: "/" }]);
+    await mockMachineApi(page);
+    const snapshot = { policyVersion: 1, maintenanceIntervalMonths: 3, maintenanceWindowDays: 10, allowedReplacementMachineTypes: ["SMART_IOT"], repairCostResponsibility: "COMPANY", paymentDueEligibleDays: 10, offlineViolationAction: "WARN_ONLY", buybackEnabled: true, buybackMinimumMonths: 0, buybackValuationMethod: "MANUAL_APPRAISAL", offlineLimitMinutes: 2880, heartbeatToleranceSeconds: 75 };
+    let contract = { id: certificateId, ownerId, machineId, status: "ACTIVE", startDate: "2026-11-01", endDate: "2027-11-01", contractTermsSnapshot: snapshot, offlineLimitMinutes: 2880 };
+    let submitted: { snapshot: typeof snapshot } | undefined;
+    await page.route(`**/api/dolores/v1/contracts/${certificateId}**`, async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith("/policy-amendments")) {
+        submitted = route.request().postDataJSON();
+        contract = { ...contract, contractTermsSnapshot: submitted!.snapshot };
+        return route.fulfill({ json: contract });
+      }
+      return route.fulfill({ json: path.endsWith(certificateId) ? contract : [] });
+    });
+    await page.goto(role === "admin" ? `/admin/contracts?view=detail&id=${certificateId}` : `/moderator/contracts/${certificateId}`);
+    await page.getByRole("button", { name: "Sửa chính sách", exact: true }).click();
+    const form = page.locator(role === "admin" ? "#contract-policy-amend-form" : "#moderator-contract-policy-amend-form");
+    const tolerance = form.getByLabel("Ngưỡng mất kết nối (giây) *", { exact: true });
+    await expect(tolerance).toHaveValue("75");
+    await tolerance.fill("4");
+    expect(await tolerance.evaluate((element: HTMLInputElement) => element.validity.rangeUnderflow)).toBe(true);
+    await tolerance.fill("90");
+    await form.getByLabel("Lý do *", { exact: true }).fill("Điều chỉnh ngưỡng kết nối");
+    await form.getByLabel("Ngày hiệu lực *", { exact: true }).fill("2026-11-10");
+    await page.getByRole("button", { name: "Xác nhận sửa đổi", exact: true }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: role === "admin" ? "Tiếp tục" : "Xác nhận", exact: true }).click();
+    await expect.poll(() => submitted?.snapshot.heartbeatToleranceSeconds).toBe(90);
+    expect(submitted?.snapshot.offlineLimitMinutes).toBe(2880);
+    await page.reload();
+    await expect(page.getByText("90 giây", { exact: true })).toBeVisible();
+  });
+}
+
 test.describe("Machine provisioning Phase 02", () => {
   test("Admin reads back identity after registration, refresh and confirmed revocation", async ({ page, context }) => {
     await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);

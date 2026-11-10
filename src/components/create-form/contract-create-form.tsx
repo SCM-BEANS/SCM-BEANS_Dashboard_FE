@@ -14,9 +14,28 @@ import styles from "./contract-create-form.module.css";
 type MachineType = "CONVENTIONAL" | "SMART_IOT";
 type MachineChoice = {
   machineId: string;
-  displayName: string;
   optionLabel: string;
 };
+
+class RentalMachineUnavailable extends Error {}
+class RentalMachineCheckFailed extends Error {
+  constructor(readonly readError: unknown) { super("Không kiểm tra được máy đã chọn."); }
+}
+
+async function rentalSerialChoices(signal?: AbortSignal): Promise<MachineChoice[]> {
+  const first = await machinesApi.listRentalCandidatePage(0, 100, signal);
+  const candidates = [...first.content];
+  for (let page = 1; page < first.totalPages; page++) {
+    if (signal?.aborted) throw new DOMException("Request aborted", "AbortError");
+    const next = await machinesApi.listRentalCandidatePage(page, 100, signal);
+    candidates.push(...next.content);
+  }
+  return [...new Map(candidates
+    .filter((machine) => machine.status === "AVAILABLE_FOR_RENT" && machine.serialNumber?.trim())
+    .map((machine) => [machine.machineId, {
+      machineId: machine.machineId, optionLabel: machine.serialNumber!.trim(),
+    }])).values()];
+}
 type ContractFormState = {
   ownerId: string;
   machineId: string;
@@ -36,6 +55,7 @@ type ContractFormState = {
     paymentDueEligibleDays: string;
     paymentDestinationReference: string;
     offlineViolationAction: string;
+    heartbeatToleranceSeconds: string;
     buybackEnabled: boolean;
     buybackMinimumMonths: string;
     buybackValuationMethod: string;
@@ -61,6 +81,7 @@ const initialForm: ContractFormState = {
     paymentDueEligibleDays: "10",
     paymentDestinationReference: "",
     offlineViolationAction: "WARN_ONLY",
+    heartbeatToleranceSeconds: "45",
     buybackEnabled: true,
     buybackMinimumMonths: "0",
     buybackValuationMethod: "MANUAL_APPRAISAL",
@@ -73,17 +94,19 @@ export function ContractCreateForm({
   onCreated,
   onCancel,
   ownerRole = "OWNER",
+  selectMachineBySerial = false,
 }: {
   onCreated: (contractId: string) => void;
   onCancel: () => void;
   ownerRole?: string;
+  selectMachineBySerial?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ContractFormState>(initialForm);
   const [requestError, setRequestError] = useState("");
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [createdContractId, setCreatedContractId] = useState("");
-  const useRentalCandidates = ownerRole === "owner";
+  const useRentalCandidates = selectMachineBySerial || ownerRole === "owner";
   const ownerQueryKey = ownerRole === "OWNER"
     ? ["dolores", "profiles", "owner-directory"]
     : ["dolores", "profiles", "owner-directory", ownerRole];
@@ -103,14 +126,14 @@ export function ContractCreateForm({
   });
   const machines = useQuery({
     queryKey: useRentalCandidates
-      ? ["dolores", "inventory", "rental-candidates"]
+      ? ["dolores", "inventory", "rental-candidates", selectMachineBySerial ? "serial-number" : "model"]
       : ["dolores", "machines", "inventory"],
     queryFn: async ({ signal }): Promise<MachineChoice[]> => {
+      if (selectMachineBySerial) return rentalSerialChoices(signal);
       if (useRentalCandidates) {
         const candidates = await machinesApi.listRentalCandidates(signal);
         return candidates.map(({ machineId, displayName }) => ({
           machineId,
-          displayName: displayName || machineId,
           optionLabel: displayName || machineId,
         }));
       }
@@ -127,7 +150,6 @@ export function ContractCreateForm({
               : T.MACHINES.UNCLASSIFIED;
           return {
             machineId: machine.id,
-            displayName,
             optionLabel: `${displayName} · ${machineType} · ${machine.id}`,
           };
         });
@@ -136,7 +158,20 @@ export function ContractCreateForm({
   const warehouseMachines = machines.data ?? [];
 
   const create = useMutation({
-    mutationFn: (request: z.infer<typeof CreateContractRequestSchema>) => contractsApi.create(request),
+    mutationFn: async (request: z.infer<typeof CreateContractRequestSchema>) => {
+      if (selectMachineBySerial) {
+        let current;
+        try { current = await machinesApi.getById(request.machineId); }
+        catch (error) { throw new RentalMachineCheckFailed(error); }
+        const selected = warehouseMachines.find((machine) => machine.machineId === request.machineId);
+        if (current.status !== "AVAILABLE_FOR_RENT" || !current.serialNumber?.trim()
+          || current.serialNumber.trim() !== selected?.optionLabel) {
+          throw new RentalMachineUnavailable("Máy đã chọn không còn sẵn sàng cho thuê hoặc serial number đã thay đổi. Vui lòng chọn lại máy.");
+        }
+      }
+      return contractsApi.create(request);
+    },
+    retry: false,
     onSuccess: ({ id }) => {
       setRequestError("");
       setCreatedContractId(id);
@@ -146,6 +181,16 @@ export function ContractCreateForm({
       onCreated(id);
     },
     onError: (error: unknown) => {
+      if (error instanceof RentalMachineCheckFailed) {
+        setRequestError("Chưa kiểm tra được tình trạng máy. " + getApiErrorMessage(error.readError));
+        return;
+      }
+      if (error instanceof RentalMachineUnavailable) {
+        setRequestError(error.message);
+        setForm((current) => ({ ...current, machineId: "" }));
+        void machines.refetch();
+        return;
+      }
       setRequestError(getApiErrorMessage(error, "mutation"));
       if (isUncertainApiMutation(error)) setBlockResubmit(true);
     },
@@ -178,7 +223,7 @@ export function ContractCreateForm({
 
   const submitCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (blockResubmit || createdContractId) return;
+    if (create.isPending || blockResubmit || createdContractId) return;
     setRequestError("");
     const optionalNumber = (value: string) => value.trim() === "" ? undefined : Number(value);
     const parsed = CreateContractRequestSchema.safeParse({
@@ -201,6 +246,7 @@ export function ContractCreateForm({
         paymentDueEligibleDays: Number(form.contractTermsSnapshot.paymentDueEligibleDays),
         paymentDestinationReference: form.contractTermsSnapshot.paymentDestinationReference.trim(),
         offlineViolationAction: form.contractTermsSnapshot.offlineViolationAction.trim(),
+        heartbeatToleranceSeconds: Number(form.contractTermsSnapshot.heartbeatToleranceSeconds),
         buybackEnabled: form.contractTermsSnapshot.buybackEnabled,
         buybackMinimumMonths: Number(form.contractTermsSnapshot.buybackMinimumMonths),
         buybackValuationMethod: form.contractTermsSnapshot.buybackValuationMethod.trim(),
@@ -210,12 +256,17 @@ export function ContractCreateForm({
       setRequestError(T.CONTRACTS.CREATE_INVALID);
       return;
     }
+    if (selectMachineBySerial && !warehouseMachines.some((machine) => machine.machineId === parsed.data.machineId)) {
+      setRequestError("Chọn serial number của máy sẵn sàng cho thuê.");
+      return;
+    }
     create.mutate(parsed.data);
   };
 
   const locked = create.isPending || blockResubmit || Boolean(createdContractId);
   const submitDisabled = !form.ownerId || !form.machineId || !form.startDate || !form.endDate || !form.monthlyRentalFee || !form.terms.trim() || locked || owners.isPending || owners.isError || owners.data?.length === 0 ||
-    machines.isPending || machines.isError || warehouseMachines.length === 0;
+    machines.isPending || machines.isError || warehouseMachines.length === 0 ||
+    (selectMachineBySerial && !warehouseMachines.some((machine) => machine.machineId === form.machineId));
 
   return (
     <>
@@ -232,11 +283,12 @@ export function ContractCreateForm({
                 </select>
               </label>
               <label htmlFor="contract-machine">
-                <span>Máy đang ở kho *</span>
-                <select id="contract-machine" name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
-                  <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy" : warehouseMachines.length ? "Chọn máy trong kho" : T.CONTRACTS.NO_WAREHOUSE_MACHINES}</option>
+                <span>{selectMachineBySerial ? "Serial number của máy *" : "Máy đang ở kho *"}</span>
+                <select id="contract-machine" aria-label={selectMachineBySerial ? "Serial number của máy *" : undefined} name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
+                  <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy" : warehouseMachines.length ? (selectMachineBySerial ? "Chọn serial number" : "Chọn máy trong kho") : (selectMachineBySerial ? "Chưa có máy sẵn sàng cho thuê" : T.CONTRACTS.NO_WAREHOUSE_MACHINES)}</option>
                   {warehouseMachines.map((machine) => <option key={machine.machineId} value={machine.machineId}>{machine.optionLabel}</option>)}
                 </select>
+                {selectMachineBySerial ? <small>Chỉ hiển thị máy sẵn sàng cho thuê.</small> : null}
               </label>
               <label htmlFor="contract-start-date"><span>Ngày bắt đầu *</span><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></label>
               <label htmlFor="contract-end-date"><span>Ngày kết thúc *</span><input id="contract-end-date" name="endDate" type="date" required min={form.startDate || undefined} value={form.endDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("endDate", event.target.value)} /></label>
@@ -261,6 +313,7 @@ export function ContractCreateForm({
                 </select>
               </label>
               <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
+              <label htmlFor="contract-heartbeat-tolerance"><span>Ngưỡng mất kết nối (giây) *</span><input id="contract-heartbeat-tolerance" name="contractTermsSnapshot.heartbeatToleranceSeconds" type="number" required min="5" max="86400" step="1" value={form.contractTermsSnapshot.heartbeatToleranceSeconds} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("heartbeatToleranceSeconds", event.target.value)} /><small>Chuyển sang mất kết nối khi quá thời gian này chưa có tín hiệu mới.</small></label>
               <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
               <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
               <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>
@@ -278,7 +331,7 @@ export function ContractCreateForm({
           {owners.data?.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_OWNERS}</p>}
           {owners.isError && <p className={styles.operationsNotice} role="alert">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)} <ButtonBar type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
           {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
-          {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
+          {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{selectMachineBySerial ? "Chưa có máy có serial number và trạng thái sẵn sàng cho thuê." : T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
           {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
           {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
         </form>

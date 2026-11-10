@@ -26,6 +26,7 @@ export function ContractCreateScreen() {
       <ContractCreateForm
         onCancel={() => void router.push(PATH_MODERATOR.CONTRACTS)}
         ownerRole="owner"
+        selectMachineBySerial
         onCreated={(id) => {
           setCreatedContractId(id);
           setSuccessDialogOpen(true);

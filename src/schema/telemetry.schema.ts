@@ -30,6 +30,8 @@ export const MachineHeartbeatSchema = z.object({
   healthReportedAt: dateTimeSchema.nullish(),
   healthDeviceReportedAt: dateTimeSchema.nullish(),
   health: HeartbeatHealthSchema.nullish(),
+  latitude: z.number().finite().nullish(),
+  longitude: z.number().finite().nullish(),
   brewState: z.string().nullish(),
   sequenceNumber: countSchema.safe().nullish(),
   // @JsonRawValue in BE may return any JSON value, not just a JSON string.

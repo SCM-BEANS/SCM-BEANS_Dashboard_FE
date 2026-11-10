@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
-const { join } = require('node:path');
+const { join, dirname, relative, resolve } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
 
@@ -12,7 +12,10 @@ function loadTypescript(relativePath, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
   });
   const module = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id]
+    : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks)
+      : id.startsWith('.') ? loadTypescript(relative(join(__dirname, '..'), resolve(dirname(fileName), `${id}.ts`)), mocks)
+        : require(id);
   new Function('require', 'exports', 'module', outputText)(mockedRequire, module.exports, module);
   return module.exports;
 }
@@ -21,9 +24,41 @@ const tenantId = '00000000-0000-4000-8000-000000000101';
 const contractId = '00000000-0000-4000-8000-000000000201';
 const documentId = '00000000-0000-4000-8000-000000000301';
 const ownerContract = { id: contractId, ownerId: tenantId, status: 'ACTIVE' };
+test('heartbeat policy validates seconds without changing legacy snapshots and survives create/amend requests', async () => {
+  const schema = loadTypescript('src/schema/contracts.schema.ts');
+  const snapshot = {
+    policyVersion: 1, maintenanceIntervalMonths: 3, maintenanceWindowDays: 10,
+    allowedReplacementMachineTypes: ['SMART_IOT'], repairCostResponsibility: 'COMPANY',
+    paymentDueEligibleDays: 10, offlineViolationAction: 'WARN_ONLY', buybackEnabled: true,
+    buybackMinimumMonths: 0, buybackValuationMethod: 'MANUAL_APPRAISAL', offlineLimitMinutes: 2880,
+  };
+  assert.deepEqual(schema.ContractTermsSnapshotSchema.parse(snapshot), snapshot);
+  assert.equal(schema.ContractTermsSnapshotSchema.safeParse({ ...snapshot, heartbeatToleranceSeconds: null }).success, true);
+  for (const seconds of [5, 45, 86400]) {
+    const policy = { ...snapshot, heartbeatToleranceSeconds: seconds };
+    const create = schema.CreateContractRequestSchema.parse({
+      ownerId: tenantId, machineId: contractId, startDate: '2026-11-01', endDate: '2027-11-01',
+      terms: 'Test', monthlyRentalFee: 1000, contractTermsSnapshot: policy,
+    });
+    assert.equal(create.contractTermsSnapshot.heartbeatToleranceSeconds, seconds);
+    const calls = [];
+    const { contractsApi } = loadTypescript('src/apis/contracts.api.ts', {
+      '@/lib/http': { DOLORES_API_BASE_URL: '/api/dolores/v1', axiosClient: { post: async (url, body) => {
+        calls.push({ url, body }); return { data: { ...ownerContract, contractTermsSnapshot: body.snapshot } };
+      } } },
+      '@/schema/contracts.schema': schema,
+    });
+    await contractsApi.amendPolicy(contractId, { snapshot: policy, reason: 'Adjust connectivity window', effectiveDate: '2026-11-10' });
+    assert.equal(calls[0].body.snapshot.heartbeatToleranceSeconds, seconds);
+    assert.equal(calls[0].url, `/contracts/${contractId}/policy-amendments`);
+  }
+  for (const seconds of [0, 4, 86401, 45.5, '45', NaN, Infinity]) {
+    assert.equal(schema.ContractTermsSnapshotSchema.safeParse({ ...snapshot, heartbeatToleranceSeconds: seconds }).success, false);
+  }
+});
 const moderatorContract = {
   id: contractId,
-  tenantId,
+  ownerId: tenantId,
   machineId: null,
   startDate: '2026-03-01',
   endDate: '2027-03-01',
@@ -71,11 +106,12 @@ function loadContractsApi(responses, contractSchemas) {
   return { api: module.contractsApi, calls };
 }
 
-test('Admin owner contract schema and Moderator tenant contract schema remain separate', () => {
+test('Admin and Moderator contract reads require Owner identity and preserve role-specific amount validation', () => {
   const contractSchemas = loadTypescript('src/schema/contracts.schema.ts');
   assert.equal(contractSchemas.ContractSchema.parse(ownerContract).ownerId, tenantId);
   assert.equal(contractSchemas.ContractSchema.safeParse(moderatorContract).success, false);
-  assert.equal(contractSchemas.ModeratorContractSchema.parse(moderatorContract).tenantId, tenantId);
+  assert.equal(contractSchemas.ModeratorContractSchema.parse(moderatorContract).ownerId, tenantId);
+  assert.equal(contractSchemas.ModeratorContractSchema.safeParse({ ...moderatorContract, ownerId: undefined, tenantId }).success, false);
   assert.equal(contractSchemas.ContractListSchema.safeParse({ content: [ownerContract], last: true }).success, false);
   assert.equal(contractSchemas.ModeratorContractSchema.safeParse({ ...moderatorContract, id: 'legacy-C-204' }).success, false);
   assert.equal(contractSchemas.ContractDocumentsSchema.parse([document])[0].originalFilename, 'signed.pdf');
@@ -88,7 +124,7 @@ test('Moderator contract detail reads use canonical GET endpoints', async () => 
     [document],
   ], contractSchemas);
 
-  assert.equal((await api.getModeratorById(contractId)).tenantId, tenantId);
+  assert.equal((await api.getModeratorById(contractId)).ownerId, tenantId);
   assert.equal((await api.getDocuments(contractId))[0].contractId, contractId);
   await assert.rejects(api.getModeratorById('C-204'));
 
