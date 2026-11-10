@@ -4,8 +4,12 @@ import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { locationsApi } from "@/apis/locations.api";
 import { ownerMachineStatusLabel } from "@/components/machines/machine-status-labels";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
+import { MachineSectionTabs } from "@/components/machines/operational-overview";
+import { TextLinkButton } from "@/components/button/text-link-button";
+import { ButtonBar } from "@/components/button/button-bar";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { DataTable } from "@/components/table/data-table";
@@ -47,6 +51,30 @@ const maintenanceRequestStatusLabels: Record<string, string> = {
   OVERDUE_REVIEW: "Chờ xem xét quá hạn",
   CANCELLED: "Đã hủy",
 };
+const closedMaintenanceRequestStatuses = new Set(["COMPLETED", "CLOSED", "CANCELLED"]);
+const REQUEST_PREVIEW_LIMIT = 5;
+const detailTabs = [
+  { value: "overview", label: "Tổng quan" },
+  { value: "maintenance", label: "Bảo trì & hỗ trợ" },
+  { value: "contracts", label: "Hợp đồng" },
+  { value: "model", label: "Xem máy" },
+] as const;
+type DetailTab = (typeof detailTabs)[number]["value"];
+const detailPanelId = (tab: string) => `owner-machine-panel-${tab}`;
+const MachineDigitalTwinView = dynamic(
+  () =>
+    import("@/components/features/digital-twin/machine-digital-twin-view").then(
+      (module) => module.MachineDigitalTwinView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <p className={styles.loadingNotice} role="status">
+        Đang tải mô hình…
+      </p>
+    ),
+  },
+);
 
 export function MachinesScreen({ sectionPath, back }: { sectionPath: string; back?: BackButtonDestination | null }) {
   const router = useRouter();
@@ -64,6 +92,9 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   const isList = sectionPath === "machines" || isHistory;
   const isPageVisible = usePageVisibility();
   const heartbeatTableRef = useRef<HTMLDivElement>(null);
+  const [detailTab, setDetailTab] = useState<DetailTab>("overview");
+  const [showAllRequests, setShowAllRequests] = useState(false);
+  useEffect(() => { setDetailTab("overview"); setShowAllRequests(false); }, [machineId]);
   const list = useQuery({
     queryKey: ["owner-machines", subject],
     queryFn: ({ signal }) => machinesApi.list(signal),
@@ -207,6 +238,8 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
           {detail.data ? (
             <>
+              <MachineSectionTabs label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} />
+              <div className={`${machineStyles.machineDetailSections} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("overview")} role="tabpanel" aria-labelledby="owner-machine-tab-overview" hidden={detailTab !== "overview"}>
               <section className={styles.dataPanel} aria-labelledby="owner-machine-profile">
                 <h2 id="owner-machine-profile">Thông tin & theo dõi</h2>
                 <dl className={styles.detailGrid}>
@@ -223,39 +256,6 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                 {detail.data.ownerId && <TransferMachineAction machine={detail.data} role="owner" pageLevel />}
                 {isSmartIot && activeScope?.isSuccess && (!activeContract || cups.data?.activeMachineCount === 0) ? <p className={styles.emptyNotice}>Dữ liệu vận hành chỉ gồm máy có hợp đồng đang hiệu lực.</p> : null}
               </section>
-              <MachineContractHistory machineId={machineId!} role="OWNER" />
-              <section className={styles.dataPanel} aria-labelledby="owner-machine-history-maintenance">
-                <h2 id="owner-machine-history-maintenance">Bảo trì và hỗ trợ</h2>
-                {schedule.isError || maintenanceTickets.isError || maintenanceRequests.isError ? (
-                  <p className={styles.errorNotice} role="alert">Không tải được một phần lịch sử bảo trì hoặc hỗ trợ.</p>
-                ) : null}
-                {schedule.isPending || maintenanceTickets.isPending || maintenanceRequests.isPending ? (
-                  <p className={styles.loadingNotice} role="status">Đang tải lịch sử bảo trì…</p>
-                ) : null}
-                <p>Lịch bảo trì tiếp theo: {formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)}</p>
-                {typeof schedule.data?.cupsServedSinceLastDescale === "number" ? (
-                  <p>Số ly từ lần vệ sinh gần nhất: {schedule.data.cupsServedSinceLastDescale.toLocaleString("vi-VN")}</p>
-                ) : null}
-                {machineId && detail.data && <MachineMaintenanceTicketActions
-                  machineId={machineId}
-                  tickets={maintenanceTickets.data ?? []}
-                  role="OWNER"
-                  onRefresh={() => maintenanceTickets.refetch()}
-                />}
-                {maintenanceRequests.data?.map((request) => (
-                  <article className={styles.recordCard} key={request.id}>
-                    <div>
-                      <h3>{request.requestType === "REPAIR" ? "Yêu cầu sửa chữa" : "Yêu cầu bảo trì"} · {maintenanceRequestStatusLabels[request.status] ?? statusLabel(request.status)}</h3>
-                      <p>{request.issueDescription?.trim() || "Không có mô tả"}</p>
-                    </div>
-                    <Link className={styles.secondaryLink} href={`${PATH_CUSTOMER.SUPPORT}/${request.id}`}>Xem yêu cầu</Link>
-                  </article>
-                ))}
-                {maintenanceTickets.isSuccess && maintenanceRequests.isSuccess
-                  && maintenanceTickets.data.length === 0 && maintenanceRequests.data.length === 0 ? (
-                  <p className={styles.emptyNotice}>Chưa có phiếu bảo trì hoặc yêu cầu hỗ trợ.</p>
-                ) : null}
-              </section>
               {isSmartIot ? <>
                 <MachineHeartbeatPanel
                   title="Kết nối gần nhất"
@@ -265,6 +265,64 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   onRetry={() => void heartbeat.refetch()}
                 />
               </> : null}
+              </div>
+              <section className={`${styles.dataPanel} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("maintenance")} role="tabpanel" aria-labelledby="owner-machine-tab-maintenance" hidden={detailTab !== "maintenance"}>
+                <div className={machineStyles.ownerOperationsHeader}>
+                  <h2 id="owner-machine-history-maintenance">Bảo trì và hỗ trợ</h2>
+                  <TextLinkButton href={PATH_CUSTOMER.MAINTENANCE}>Xem tất cả</TextLinkButton>
+                </div>
+                {schedule.isError || maintenanceTickets.isError || maintenanceRequests.isError ? (
+                  <p className={styles.errorNotice} role="alert">Không tải được một phần lịch sử bảo trì hoặc hỗ trợ.</p>
+                ) : schedule.isPending || maintenanceTickets.isPending || maintenanceRequests.isPending ? (
+                  <p className={styles.loadingNotice} role="status">Đang tải lịch sử bảo trì…</p>
+                ) : null}
+                <div className={machineStyles.machineDetailSummary} aria-label="Tóm tắt bảo trì">
+                  {([
+                    ["Bảo trì kế tiếp", formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)],
+                    ["Số ly từ lần vệ sinh", typeof schedule.data?.cupsServedSinceLastDescale === "number" ? `${schedule.data.cupsServedSinceLastDescale.toLocaleString("vi-VN")} ly` : "—"],
+                    ["Phiếu đang mở", maintenanceTickets.data ? maintenanceTickets.data.filter((ticket) => ticket.status !== "RESOLVED").length : "—"],
+                    ["Yêu cầu đang xử lý", maintenanceRequests.data ? maintenanceRequests.data.filter((request) => !closedMaintenanceRequestStatuses.has(request.status)).length : "—"],
+                  ] as const).map(([label, value]) => <article className={machineStyles.machineDetailMetric} key={label}><span>{label}</span><strong>{value}</strong></article>)}
+                </div>
+                {machineId && <MachineMaintenanceTicketActions
+                  machineId={machineId}
+                  tickets={maintenanceTickets.data ?? []}
+                  role="OWNER"
+                  presentation="table"
+                  previewLimit={REQUEST_PREVIEW_LIMIT}
+                  onRefresh={() => maintenanceTickets.refetch()}
+                />}
+                <h3>Yêu cầu hỗ trợ ({maintenanceRequests.data?.length ?? 0})</h3>
+                <DataTable
+                  rows={showAllRequests ? maintenanceRequests.data ?? [] : (maintenanceRequests.data ?? []).slice(0, REQUEST_PREVIEW_LIMIT)}
+                  rowKey={(request) => request.id}
+                  emptyMessage="Chưa có yêu cầu hỗ trợ."
+                  columns={[
+                    { key: "type", header: "Loại", render: (request) => request.requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì" },
+                    { key: "status", header: "Trạng thái", render: (request) => <StatusBadge status={request.status}>{maintenanceRequestStatusLabels[request.status] ?? statusLabel(request.status)}</StatusBadge> },
+                    { key: "description", header: "Mô tả", render: (request) => <span className={machineStyles.truncateLine} title={request.issueDescription ?? undefined}>{request.issueDescription?.trim() || "Không có mô tả"}</span> },
+                    { key: "action", header: <span className={machineStyles.visuallyHidden}>Thao tác</span>, align: "right", render: (request) => <TextLinkButton href={request.requestType === "REPAIR" ? PATH_CUSTOMER.SUPPORT_DETAIL(request.id) : PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>Xem yêu cầu</TextLinkButton> },
+                  ]}
+                />
+                {(maintenanceRequests.data?.length ?? 0) > REQUEST_PREVIEW_LIMIT && (
+                  <ButtonBar type="button" className={machineStyles.showMoreButton} onClick={() => setShowAllRequests((current) => !current)}>
+                    {showAllRequests ? "Thu gọn" : `Xem thêm ${(maintenanceRequests.data?.length ?? 0) - REQUEST_PREVIEW_LIMIT} yêu cầu`}
+                  </ButtonBar>
+                )}
+              </section>
+              <div className={machineStyles.ownerDetailTabPanel} id={detailPanelId("contracts")} role="tabpanel" aria-labelledby="owner-machine-tab-contracts" hidden={detailTab !== "contracts"}>
+                <MachineContractHistory machineId={machineId!} role="OWNER" />
+              </div>
+              <div className={machineStyles.ownerDetailTabPanel} id={detailPanelId("model")} role="tabpanel" aria-labelledby="owner-machine-tab-model" hidden={detailTab !== "model"}>
+                {detailTab === "model" ? (
+                  <>
+                    <p className={machineStyles.muted}>
+                      Mô hình 3D minh họa, chuyển động mô phỏng — không phải dữ liệu thời gian thực của máy.
+                    </p>
+                    <MachineDigitalTwinView />
+                  </>
+                ) : null}
+              </div>
             </>
           ) : null}
         </MachineDetailView>

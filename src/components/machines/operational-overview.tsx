@@ -26,15 +26,24 @@ export function MachineMonitoringHeader({ machineLabel, machineId, backHref, tab
       <h1 id="machine-operational-overview-title">Giám sát vận hành</h1>
       <p className={styles.monitoringIdentity}><strong>{machineLabel ?? "Máy đang xem"}</strong><span title={machineId}>{machineId.slice(0, 8).toUpperCase()}</span></p>
     </header>
-    <div className={styles.ownerOperationsTabs} role="tablist" aria-label="Dữ liệu vận hành máy">
-      {tabs.map((tab, index) => <button key={tab.value} id={`${idPrefix}-tab-${tab.value}`} role="tab" type="button" tabIndex={activeTab === tab.value ? 0 : -1} aria-selected={activeTab === tab.value} aria-controls={`${idPrefix}-content`} onClick={() => onTabChange(tab.value)} onKeyDown={(event) => {
-        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-        event.preventDefault();
-        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
-        onTabChange(tabs[next].value); document.getElementById(`${idPrefix}-tab-${tabs[next].value}`)?.focus();
-      }}>{tab.label}</button>)}
-    </div>
+    <MachineSectionTabs label="Dữ liệu vận hành máy" tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} idPrefix={idPrefix} />
   </>;
+}
+
+export function MachineSectionTabs({ label, tabs, activeTab, onTabChange, idPrefix, panelId = () => `${idPrefix}-content` }: {
+  label: string;
+  tabs: readonly { value: string; label: string }[]; activeTab: string;
+  onTabChange: (tab: string) => void; idPrefix: string;
+  panelId?: (tab: string) => string;
+}) {
+  return <div className={styles.ownerOperationsTabs} role="tablist" aria-label={label}>
+    {tabs.map((tab, index) => <button key={tab.value} id={`${idPrefix}-tab-${tab.value}`} role="tab" type="button" tabIndex={activeTab === tab.value ? 0 : -1} aria-selected={activeTab === tab.value} aria-controls={panelId(tab.value)} onClick={() => onTabChange(tab.value)} onKeyDown={(event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+      onTabChange(tabs[next].value); document.getElementById(`${idPrefix}-tab-${tabs[next].value}`)?.focus();
+    }}>{tab.label}</button>)}
+  </div>;
 }
 type CalendarPreset = "TODAY" | "YESTERDAY" | "THIS_WEEK" | "LAST_WEEK" | "LAST_30_DAYS" | "THIS_MONTH";
 

@@ -43,14 +43,51 @@ test("Owner detail shows a single ticket and Smart IoT action", async ({ page })
   await setup(page); await page.goto(`/dashboard/machines/${smartId}`);
   await expect(page.getByTitle(smartId)).toHaveText(`${smartId.slice(0, 12)}…`);
   await expect(page.getByText("Cửa hàng trung tâm")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Xem chi tiết" })).toHaveCount(0);
+  await expectPageAction(page, "maintenance-ticket-create");
+  await page.getByRole("tab", { name: "Bảo trì & hỗ trợ" }).click();
+  await expect(page.getByText("Cửa hàng trung tâm")).toBeHidden();
+  const maintenanceSummary = page.getByLabel("Tóm tắt bảo trì");
+  await expect(maintenanceSummary.locator("article").filter({ hasText: "Phiếu đang mở" })).toContainText("0");
+  await expect(page.getByRole("heading", { name: "Phiếu bảo trì (1)" })).toBeVisible();
+  await expect(page.getByText("Chưa có yêu cầu hỗ trợ.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Xem chi tiết" })).toHaveCount(1);
   await page.getByRole("button", { name: "Xem chi tiết" }).click();
-  await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
+  const ticketDialog = page.getByRole("dialog", { name: "Chi tiết phiếu bảo trì" });
+  await expect(ticketDialog).toBeVisible();
+  await ticketDialog.getByRole("button", { name: "Đóng" }).click();
+  await expect(ticketDialog).toBeHidden();
+  await page.getByRole("tab", { name: "Hợp đồng" }).click();
+  await expect(page.getByRole("heading", { name: "Lịch sử hợp đồng của máy" })).toBeVisible();
   await expectPageAction(page, "machine-operational-overview");
   await clickPageAction(page, "machine-operational-overview");
   await page.goto(`/dashboard/machines/${conventionalId}`);
   await expect(page.getByText("NORMAL-01")).toBeVisible();
   await expectNoPageAction(page, "machine-operational-overview");
+});
+test("Owner machine detail opens the local digital twin tab", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await setup(page);
+  await page.route("**/models/digital-twin/**", (route) => route.continue());
+  await page.route("**/draco-gltf/**", (route) => route.continue());
+  await page.goto(`/dashboard/machines/${smartId}`);
+
+  const tab = page.getByRole("tab", { name: "Xem máy" });
+  await tab.click();
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText(
+    "Mô hình 3D minh họa, chuyển động mô phỏng — không phải dữ liệu thời gian thực của máy.",
+    { exact: true },
+  )).toBeVisible();
+
+  const panel = page.getByRole("tabpanel", { name: "Xem máy" });
+  const canvas = panel.locator("canvas");
+  const loadError = panel.getByText("Không thể tải mô hình thân máy.", { exact: true });
+  await expect.poll(
+    async () => (await canvas.isVisible()) || (await loadError.isVisible()),
+    { timeout: 30_000 },
+  ).toBeTruthy();
+  await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390, { timeout: 5_000 });
 });
 test("Owner toolbar wraps at mobile width", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await setup(page); await page.goto("/dashboard/machines");

@@ -24,6 +24,7 @@ for (const role of ["admin", "owner"]) {
       return route.fulfill({ json: body });
     });
     await page.goto(role === "admin" ? `/admin/machines/${id}` : `/dashboard/machines/${id}`);
+    if (role === "owner") await page.getByRole("tab", { name: "Hợp đồng" }).click();
     const panel = page.getByRole("region", { name: "Lịch sử hợp đồng của máy" });
     await expect(panel.getByText("Owner E2E")).toBeVisible();
     if (role === "owner") {

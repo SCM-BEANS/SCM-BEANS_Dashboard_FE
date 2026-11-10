@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { EvidenceList } from "@/components/evidence/evidence-list";
@@ -9,6 +10,7 @@ import { buildMaintenanceTicketCreatePageActions, buildMaintenanceTicketDetailAc
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { ReasonDialog } from "@/components/reason-dialog/reason-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { maintenanceAlertLevelLabel, maintenanceTicketStatusLabel, maintenanceTicketOriginLabel } from "./maintenance-status-labels";
 import {
@@ -188,11 +190,14 @@ export function MaintenanceTicketDetailsPanel({
   role,
   onClose,
   onRefresh,
+  embedded = false,
 }: {
   ticketId: string;
   role: MaintenanceTicketActionRole;
   onClose?: () => void;
   onRefresh?: () => unknown;
+  /** Render without the panel frame and heading, e.g. inside a dialog that already shows the title. */
+  embedded?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -266,11 +271,11 @@ export function MaintenanceTicketDetailsPanel({
   });
 
   return (
-    <section className={styles.detailPanel} aria-labelledby="maintenance-ticket-detail-title">
-      <div className={styles.panelHeading}>
+    <section className={embedded ? styles.embeddedPanel : styles.detailPanel} aria-labelledby={embedded ? undefined : "maintenance-ticket-detail-title"}>
+      {!embedded && <div className={styles.panelHeading}>
         <h3 id="maintenance-ticket-detail-title">Chi tiết phiếu bảo trì</h3>
         {onClose && <ButtonBar type="button" onClick={onClose}>Đóng chi tiết</ButtonBar>}
-      </div>
+      </div>}
       {ticketQuery.isPending && <p className={styles.notice} role="status">Đang tải chi tiết phiếu…</p>}
       {ticketQuery.isError && (
         <div className={styles.errorBlock} role="alert">
@@ -350,20 +355,65 @@ export function MachineMaintenanceTicketActions({
   tickets,
   role,
   onRefresh,
+  presentation = "cards",
+  previewLimit = 5,
 }: {
   machineId: string;
   tickets: MaintenanceTicket[];
   role: MaintenanceTicketActionRole;
   onRefresh?: () => unknown;
+  /** "table": compact table with a row limit; ticket details open in a dialog instead of expanding inline. */
+  presentation?: "cards" | "table";
+  previewLimit?: number;
 }) {
   const [creating, setCreating] = useState(false);
   const [createPending, setCreatePending] = useState(false);
   const [activeTicketId, setActiveTicketId] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const isTable = presentation === "table";
+  const sortedTickets = isTable
+    ? [...tickets].sort((left, right) => (right.scheduledDueAt ?? right.completedAt ?? "").localeCompare(left.scheduledDueAt ?? left.completedAt ?? ""))
+    : tickets;
+  const visibleTickets = isTable && !showAll ? sortedTickets.slice(0, previewLimit) : sortedTickets;
+  const hiddenCount = sortedTickets.length - visibleTickets.length;
+  // In table mode the list may live inside a hidden tab panel; portal dialogs so they still show.
+  const overlay = (node: ReactNode) => isTable && typeof document !== "undefined" ? createPortal(node, document.body) : node;
 
   return (
-    <div className={styles.machineActions}>
+    <div className={isTable ? styles.compactActions : styles.machineActions}>
       <PageActions actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} />
-      {tickets.length > 0 && (
+      {isTable && (
+        <>
+          <h3 className={styles.compactTitle}>Phiếu bảo trì ({tickets.length})</h3>
+          <DataTable
+            rows={visibleTickets}
+            rowKey={(ticket, index) => ticket.id ?? index}
+            emptyMessage="Chưa có phiếu bảo trì."
+            columns={[
+              { key: "status", header: "Trạng thái", render: (ticket) => <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
+              { key: "due", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
+              { key: "origin", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype || ticket.source ? maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!) : "—" },
+              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <button type="button" className={styles.ticketLink} onClick={() => setActiveTicketId(ticket.id!)}>Xem chi tiết</button> : null },
+            ]}
+          />
+          {sortedTickets.length > previewLimit && (
+            <ButtonBar type="button" className={styles.showMore} onClick={() => setShowAll((current) => !current)}>
+              {showAll ? "Thu gọn" : `Xem thêm ${hiddenCount} phiếu`}
+            </ButtonBar>
+          )}
+        </>
+      )}
+      {isTable && activeTicketId && overlay(
+        <NotificationDialog
+          variant="info"
+          title="Chi tiết phiếu bảo trì"
+          onClose={() => setActiveTicketId("")}
+          primaryAction={{ label: "Đóng", onClick: () => setActiveTicketId("") }}
+        >
+          <MaintenanceTicketDetailsPanel ticketId={activeTicketId} role={role} onRefresh={onRefresh} embedded />
+        </NotificationDialog>
+      )}
+      {!isTable && tickets.length > 0 && (
         <div className={styles.ticketCards} aria-label="Phiếu bảo trì của máy">
           {tickets.map((ticket, index) => (
             <article className={styles.ticketCard} key={ticket.id ?? index}>
@@ -376,7 +426,7 @@ export function MachineMaintenanceTicketActions({
           ))}
         </div>
       )}
-      {activeTicketId && (
+      {!isTable && activeTicketId && (
         <MaintenanceTicketDetailsPanel
           ticketId={activeTicketId}
           role={role}
@@ -384,7 +434,7 @@ export function MachineMaintenanceTicketActions({
           onRefresh={onRefresh}
         />
       )}
-      {creating && (
+      {creating && overlay(
         <CreateMaintenanceTicketDialog
           machineId={machineId}
           onClose={() => setCreating(false)}

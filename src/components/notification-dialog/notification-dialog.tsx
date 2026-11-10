@@ -26,11 +26,12 @@ export type NotificationDialogProps =
       secondaryAction: NotificationDialogAction;
     })
   | (NotificationDialogBaseProps & {
-      variant: "success" | "error";
+      variant: "success" | "error" | "info";
       secondaryAction?: never;
     });
 
 const DEFAULT_EYEBROWS = {
+  info: "Thông tin chi tiết",
   confirm: "Kiểm tra trước khi tiếp tục",
   success: "Đã hoàn tất",
   error: "Thao tác chưa hoàn tất",

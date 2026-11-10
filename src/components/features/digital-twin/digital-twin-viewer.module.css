@@ -1,0 +1,268 @@
+.viewer {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: transparent;
+  color: #302b29;
+}
+
+@media (min-width: 768px) {
+  .viewer {
+    min-height: 380px;
+  }
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.canvasNoninteractive {
+  pointer-events: none;
+}
+
+.toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #e9e2dc;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 2px 8px rgb(48 43 41 / 12%);
+  backdrop-filter: blur(6px);
+}
+
+.toolbarButton {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #302b29;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.toolbarButton:focus-visible,
+.retryButton:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.toolbarButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.toolbarButton:disabled:hover {
+  background: transparent;
+}
+
+.iconButton {
+  padding: 8px;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.iconButton:hover:not(:disabled),
+.textButton:hover:not(:disabled) {
+  background: #f6f2ef;
+}
+
+.primaryButton,
+.retryButton {
+  border-color: #b91222;
+  background: #b91222;
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled),
+.retryButton:hover {
+  background: #9f101e;
+}
+
+.outlineButton {
+  border-color: #b91222;
+  color: #b91222;
+}
+
+.outlineButton:hover:not(:disabled) {
+  background: #fae9eb;
+}
+
+.textButton {
+  color: #786e69;
+}
+
+.separator {
+  width: 1px;
+  height: 28px;
+  flex: 0 0 1px;
+  background: #e9e2dc;
+}
+
+.loadingOverlay,
+.errorOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+.loadingOverlay {
+  background: rgb(255 255 255 / 86%);
+  backdrop-filter: blur(5px);
+}
+
+.loadingContent,
+.errorContent {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #b91222;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.loadingText,
+.errorText {
+  margin: 0;
+  color: #302b29;
+  font-size: 0.875rem;
+}
+
+.loadingText {
+  font-weight: 500;
+}
+
+.errorOverlay {
+  background: rgb(255 255 255 / 95%);
+}
+
+.errorContent {
+  gap: 16px;
+}
+
+.retryButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  border: 1px solid #b91222;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.readyStatus,
+.operationStatus {
+  position: absolute;
+  z-index: 10;
+  max-width: calc(100% - 24px);
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 92%);
+  color: #302b29;
+  font-size: 0.75rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  box-shadow: 0 1px 4px rgb(48 43 41 / 10%);
+}
+
+/* Kept for screen readers only: the visible model already signals readiness,
+   and a top-left badge collides with the wrapping toolbar. */
+.readyStatus {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+
+.operationStatus {
+  bottom: 12px;
+  left: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    gap: 6px;
+    padding: 4px;
+  }
+
+  .toolbarButton {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .iconButton {
+    padding: 8px;
+  }
+
+  .separator {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

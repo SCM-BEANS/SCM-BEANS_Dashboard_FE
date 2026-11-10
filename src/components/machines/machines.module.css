@@ -961,3 +961,8 @@
 .copyIdButton { padding: 2px 10px; border: 1px solid #e9e2dc; border-radius: 999px; background: #fff; color: #302927; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .copyIdButton:hover { border-color: #b81724; color: #b81724; }
 .copyIdButton:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+
+.ownerDetailTabPanel[hidden] { display: none; }
+.truncateLine { display: block; max-width: 36ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.showMoreButton { justify-self: start; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
