@@ -24,3 +24,15 @@
   BACK_TO_LIST: "Quay lại danh sách",
   DETAIL_NOT_FOUND: "Không tìm thấy thông báo này trong danh sách hiện tại.",
 } as const;
+
+export function getNotificationPresentation(notification: { type: string; title: string; message: string }) {
+  if (notification.type !== "MACHINE_GPS_SIGNAL_MISSING") {
+    return { title: notification.title, message: notification.message, typeLabel: notification.type };
+  }
+  const machineId = /\bMachine\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i.exec(notification.message)?.[1];
+  return {
+    title: `${machineId ? `Máy ${machineId.slice(0, 8).toUpperCase()}` : "Máy"} chưa gửi được vị trí GPS`,
+    typeLabel: "Vị trí GPS",
+    message: "Tại thời điểm cảnh báo, máy vẫn kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS; liên hệ kỹ thuật viên nếu tình trạng này tiếp tục.",
+  };
+}

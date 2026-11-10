@@ -55,6 +55,7 @@ type ContractFormState = {
     paymentDueEligibleDays: string;
     paymentDestinationReference: string;
     offlineViolationAction: string;
+    heartbeatToleranceSeconds: string;
     buybackEnabled: boolean;
     buybackMinimumMonths: string;
     buybackValuationMethod: string;
@@ -80,6 +81,7 @@ const initialForm: ContractFormState = {
     paymentDueEligibleDays: "10",
     paymentDestinationReference: "",
     offlineViolationAction: "WARN_ONLY",
+    heartbeatToleranceSeconds: "45",
     buybackEnabled: true,
     buybackMinimumMonths: "0",
     buybackValuationMethod: "MANUAL_APPRAISAL",
@@ -244,6 +246,7 @@ export function ContractCreateForm({
         paymentDueEligibleDays: Number(form.contractTermsSnapshot.paymentDueEligibleDays),
         paymentDestinationReference: form.contractTermsSnapshot.paymentDestinationReference.trim(),
         offlineViolationAction: form.contractTermsSnapshot.offlineViolationAction.trim(),
+        heartbeatToleranceSeconds: Number(form.contractTermsSnapshot.heartbeatToleranceSeconds),
         buybackEnabled: form.contractTermsSnapshot.buybackEnabled,
         buybackMinimumMonths: Number(form.contractTermsSnapshot.buybackMinimumMonths),
         buybackValuationMethod: form.contractTermsSnapshot.buybackValuationMethod.trim(),
@@ -310,6 +313,7 @@ export function ContractCreateForm({
                 </select>
               </label>
               <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
+              <label htmlFor="contract-heartbeat-tolerance"><span>Ngưỡng mất kết nối (giây) *</span><input id="contract-heartbeat-tolerance" name="contractTermsSnapshot.heartbeatToleranceSeconds" type="number" required min="5" max="86400" step="1" value={form.contractTermsSnapshot.heartbeatToleranceSeconds} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("heartbeatToleranceSeconds", event.target.value)} /><small>Chuyển sang mất kết nối khi quá thời gian này chưa có tín hiệu mới.</small></label>
               <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
               <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
               <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>

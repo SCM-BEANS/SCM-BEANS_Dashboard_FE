@@ -8,7 +8,7 @@ import type { BackButtonDestination } from "@/components/navigation/back-button"
 import { notificationsApi } from "@/apis/notifications.api";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
+import { getNotificationPresentation, NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
 import styles from "./notification-inbox.module.css";
 
 export type NotificationScope = "admin" | "moderator" | "customer" | "technician";
@@ -91,6 +91,7 @@ export function NotificationInbox({
     retry: false,
     onSuccess: refresh,
   });
+  const notifications = list.data?.map((notification) => ({ ...notification, ...getNotificationPresentation(notification) }));
 
   if (variant === "bell") {
     const unreadTotal = unreadCount.data?.unreadCount ?? 0;
@@ -162,13 +163,13 @@ export function NotificationInbox({
             )}
             {list.data?.length ? (
               <div className={styles.notificationList}>
-                {list.data.slice(0, 5).map((notification) => (
+                {notifications?.slice(0, 5).map((notification) => (
                   <article className={styles.notificationCard} key={notification.id}>
                     <div className={styles.notificationMeta}>
                       <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
                         {notification.read ? messages.READ : messages.UNREAD}
                       </span>
-                      <span className={styles.notificationType}>{notification.type}</span>
+                      <span className={styles.notificationType}>{notification.typeLabel}</span>
                       <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
                     </div>
                     <h3>{notification.title}</h3>
@@ -278,13 +279,13 @@ export function NotificationInbox({
 
         {list.data?.length ? (
           <div className={styles.notificationList}>
-            {list.data.map((notification) => (
+            {notifications?.map((notification) => (
               <article className={styles.notificationCard} key={notification.id}>
                 <div className={styles.notificationMeta}>
                   <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
                     {notification.read ? messages.READ : messages.UNREAD}
                   </span>
-                  <span className={styles.notificationType}>{notification.type}</span>
+                  <span className={styles.notificationType}>{notification.typeLabel}</span>
                   {showOwnerId && notification.ownerId && (
                     <span className={styles.ownerId}>{messages.OWNER_ID}: {notification.ownerId}</span>
                   )}

@@ -20,6 +20,7 @@ export const ContractTermsSnapshotSchema = z.object({
   buybackMinimumMonths: z.number().int().min(0).max(120),
   buybackValuationMethod: z.enum(["MANUAL_APPRAISAL"]),
   offlineLimitMinutes: z.number().int().positive().optional(),
+  heartbeatToleranceSeconds: z.number().int().min(5).max(86400).nullish(),
 }).passthrough();
 
 export const CreateContractRequestSchema = z.object({
