@@ -15,11 +15,8 @@ import {
 } from "@/schema/contracts.schema";
 import styles from "./contract-activation-panel.module.css";
 
-function localDate(): string {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${today.getFullYear()}-${month}-${day}`;
+function displayDate(value: string): string {
+  return value.split("-").reverse().join("/");
 }
 
 function parseContractTermsSnapshot(contract: Contract): ContractTermsSnapshot | null {
@@ -46,15 +43,6 @@ function parseContractTermsSnapshot(contract: Contract): ContractTermsSnapshot |
   return null;
 }
 
-function parseContractTermsSnapshotInput(value: string): ContractTermsSnapshot | null {
-  try {
-    const parsed = ContractTermsSnapshotSchema.safeParse(JSON.parse(value) as unknown);
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
 function getActivationTerms(contract: Contract): string {
   const terms = contract.terms?.trim();
   if (terms) return terms;
@@ -74,26 +62,11 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [effectiveStartDate, setEffectiveStartDate] = useState(
-    () => contract.startDate?.slice(0, 10) || localDate(),
-  );
-  const [termsInput, setTermsInput] = useState(() => getActivationTerms(contract));
-  const [contractTermsSnapshotInput, setContractTermsSnapshotInput] = useState(() => {
-    const snapshot = parseContractTermsSnapshot(contract);
-    return snapshot ? JSON.stringify(snapshot, null, 2) : "";
-  });
   const canCheckPrerequisites = contract.status === "DRAFT" && Boolean(contract.ownerId && contract.machineId);
 
   useEffect(() => {
     setIsAdmin(hasAdminRole(Cookies.get("access_token") ?? ""));
   }, []);
-
-  useEffect(() => {
-    setEffectiveStartDate(contract.startDate?.slice(0, 10) || localDate());
-    setTermsInput(getActivationTerms(contract));
-    const snapshot = parseContractTermsSnapshot(contract);
-    setContractTermsSnapshotInput(snapshot ? JSON.stringify(snapshot, null, 2) : "");
-  }, [contract.id, contract.startDate, contract.terms, contract.termsSnapshot, contract.contractTermsSnapshot]);
 
   const documents = useQuery({
     queryKey: ["dolores", "contract-documents", contract.id],
@@ -112,7 +85,7 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
         workOrder.ownerId === contract.ownerId &&
         workOrder.contractId === contract.id &&
         workOrder.machineId === contract.machineId,
-      );
+      ).sort((left, right) => Date.parse(right.completedAt ?? "") - Date.parse(left.completedAt ?? ""));
 
       for (const candidate of candidates) {
         const details = await installationWorkOrdersApi.getById(candidate.id, signal);
@@ -129,10 +102,12 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
       return null;
     },
   });
-  const contractTermsSnapshot = parseContractTermsSnapshotInput(contractTermsSnapshotInput);
-  const terms = termsInput.trim();
+  const contractTermsSnapshot = parseContractTermsSnapshot(contract);
+  const terms = getActivationTerms(contract);
+  // Preserve the handover's calendar date, matching BE's OffsetDateTime.toLocalDate().
+  const effectiveStartDate = completedWorkOrder.data?.completedAt?.slice(0, 10);
   const activationRequest = ActivateContractRequestSchema.safeParse({
-    effectiveStartDate,
+    ...(effectiveStartDate ? { effectiveStartDate } : {}),
     terms,
     contractTermsSnapshot,
   });
@@ -157,9 +132,31 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
     document.documentType === "MAIN_CONTRACT" && !document.archivedAt,
   ) ?? false;
   const adminCanRelyOnServerCheck = isAdmin && axios.isAxiosError(completedWorkOrder.error) && completedWorkOrder.error.response?.status === 403;
-  const hasCompletedWorkOrder = Boolean(completedWorkOrder.data) || adminCanRelyOnServerCheck;
-  const ready = canCheckPrerequisites && hasMainContract && hasCompletedWorkOrder && activationRequest.success;
+  const hasCompletedWorkOrder = Boolean(effectiveStartDate) || adminCanRelyOnServerCheck;
+  const machineType = completedWorkOrder.data?.machineType ?? contract.machineTypeSnapshot;
+  const policyIssue = contractTermsSnapshot && (
+    contractTermsSnapshot.policyVersion !== 1
+      ? "Phiên bản chính sách đã lưu chưa được hỗ trợ. Cần kiểm tra lại hồ sơ hợp đồng trước khi kích hoạt."
+      : contractTermsSnapshot.maintenanceWindowDays < 1
+        ? "Chính sách đã lưu cần có thời hạn thực hiện bảo trì ít nhất 1 ngày. Cần kiểm tra lại hồ sơ hợp đồng."
+        : contractTermsSnapshot.allowedReplacementMachineTypes.length !== 1 || (
+          machineType && contractTermsSnapshot.allowedReplacementMachineTypes[0] !== machineType
+        )
+          ? "Chính sách đã lưu chỉ được cho phép thay thế bằng đúng loại máy của hợp đồng. Cần kiểm tra lại hồ sơ hợp đồng."
+          : null
+  );
+  const commercialIssue = machineType === "SMART_IOT" && !(Number(contract.paygUnitPrice) > 0)
+    ? "Hợp đồng máy thông minh chưa có đơn giá PAYG lớn hơn 0. Cần bổ sung trong hồ sơ hợp đồng trước khi kích hoạt."
+    : null;
+  const dateIssue = effectiveStartDate && contract.endDate && effectiveStartDate >= contract.endDate.slice(0, 10)
+    ? "Ngày bàn giao phải trước ngày kết thúc hợp đồng. Cần kiểm tra lại thời hạn hợp đồng."
+    : null;
+  const ready = canCheckPrerequisites && hasMainContract && hasCompletedWorkOrder && activationRequest.success && !policyIssue && !commercialIssue && !dateIssue;
   const isChecking = documents.isPending || completedWorkOrder.isPending;
+
+  useEffect(() => {
+    setConfirming(false);
+  }, [contract.id, terms, contract.contractTermsSnapshot, effectiveStartDate]);
 
   if (contract.status === "ACTIVE") {
     return <section className={styles.panel} role="status"><h2>Hợp đồng đã kích hoạt</h2><p>Máy đã được triển khai theo hợp đồng này.</p></section>;
@@ -169,54 +166,40 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
   return (
     <section className={styles.panel} aria-labelledby="contract-activation-title">
       <h2 id="contract-activation-title">Kích hoạt hợp đồng</h2>
-      <p className={styles.description}>Bước này dành cho Admin hoặc Moderator. Máy chủ chỉ kích hoạt khi hồ sơ và lệnh lắp đặt hợp lệ.</p>
-      <div className={styles.requestFields}>
-        <label className={styles.activationField} htmlFor="contract-effective-start-date">
-          <span>Ngày bắt đầu hiệu lực</span>
-          <input
-            id="contract-effective-start-date"
-            name="effectiveStartDate"
-            type="date"
-            required
-            value={effectiveStartDate}
-            disabled={activate.isPending}
-            onChange={(event) => setEffectiveStartDate(event.target.value)}
-          />
-        </label>
-        <label className={styles.activationField} htmlFor="contract-activation-terms">
-          <span>Điều khoản hợp đồng</span>
-          <textarea
-            id="contract-activation-terms"
-            name="terms"
-            required
-            rows={3}
-            value={termsInput}
-            disabled={activate.isPending}
-            onChange={(event) => setTermsInput(event.target.value)}
-          />
-        </label>
-        <label className={styles.activationField} htmlFor="contract-activation-terms-snapshot">
-          <span>Bản chụp điều khoản (JSON)</span>
-          <textarea
-            id="contract-activation-terms-snapshot"
-            name="contractTermsSnapshot"
-            required
-            rows={10}
-            spellCheck={false}
-            value={contractTermsSnapshotInput}
-            disabled={activate.isPending}
-            onChange={(event) => setContractTermsSnapshotInput(event.target.value)}
-          />
-        </label>
-      </div>
-      {!terms && <p className={styles.error} role="alert">Hợp đồng chưa có điều khoản hợp lệ để gửi khi kích hoạt.</p>}
-      {!contractTermsSnapshot && <p className={styles.error} role="alert">Bản chụp điều khoản phải là JSON hợp lệ và có đủ trường theo yêu cầu kích hoạt.</p>}
+      <p className={styles.description}>Thông tin được lấy tự động từ hợp đồng đã lưu và lệnh lắp đặt đã hoàn tất. Admin hoặc Moderator kiểm tra và xác nhận kích hoạt.</p>
+      <dl className={styles.summary}>
+        <div><dt>Ngày bắt đầu hiệu lực</dt><dd>{effectiveStartDate ? displayDate(effectiveStartDate) : adminCanRelyOnServerCheck ? "Máy chủ tự xác định theo ngày bàn giao" : "Chờ xác nhận ngày bàn giao"}</dd></div>
+        <div><dt>Điều khoản hợp đồng</dt><dd>{terms || "Chưa có điều khoản đã lưu"}</dd></div>
+      </dl>
+      {contractTermsSnapshot && <details className={styles.policy}>
+        <summary>Chính sách vận hành đã lưu</summary>
+        <dl className={styles.summary}>
+          <div><dt>Chu kỳ bảo trì</dt><dd>{contractTermsSnapshot.maintenanceIntervalMonths} tháng</dd></div>
+          <div><dt>Thời hạn thực hiện bảo trì</dt><dd>{contractTermsSnapshot.maintenanceWindowDays} ngày</dd></div>
+          <div><dt>Loại máy được thay thế</dt><dd>{contractTermsSnapshot.allowedReplacementMachineTypes.map((type) => type === "SMART_IOT" ? "Máy thông minh" : "Máy thông thường").join(", ")}</dd></div>
+          <div><dt>Bên chịu chi phí sửa chữa</dt><dd>{{ TENANT: "Khách hàng", COMPANY: "Công ty", UNKNOWN: "Chưa xác định" }[contractTermsSnapshot.repairCostResponsibility]}</dd></div>
+          <div><dt>Thời hạn thanh toán</dt><dd>{contractTermsSnapshot.paymentDueEligibleDays} ngày</dd></div>
+          <div><dt>Thông tin tham chiếu thanh toán</dt><dd>{contractTermsSnapshot.paymentDestinationReference || "Chưa có"}</dd></div>
+          <div><dt>Xử lý mất kết nối</dt><dd>{contractTermsSnapshot.offlineViolationAction === "WARN_ONLY" ? "Cảnh báo" : "Rà soát thủ công"}</dd></div>
+          <div><dt>Giới hạn mất kết nối</dt><dd>{contractTermsSnapshot.offlineLimitMinutes == null ? "Theo chính sách mặc định của hệ thống" : `${contractTermsSnapshot.offlineLimitMinutes} phút`}</dd></div>
+          <div><dt>Cho phép mua lại máy</dt><dd>{contractTermsSnapshot.buybackEnabled ? "Có" : "Không"}</dd></div>
+          {contractTermsSnapshot.buybackEnabled && <>
+            <div><dt>Thời gian tối thiểu để mua lại</dt><dd>{contractTermsSnapshot.buybackMinimumMonths} tháng</dd></div>
+            <div><dt>Phương pháp định giá mua lại</dt><dd>Thẩm định thủ công</dd></div>
+          </>}
+        </dl>
+      </details>}
+      {!terms && <p className={styles.error} role="alert">Hợp đồng chưa có điều khoản đã lưu hợp lệ. Cần bổ sung hồ sơ hợp đồng trước khi kích hoạt.</p>}
+      {!contractTermsSnapshot && <p className={styles.error} role="alert">Hợp đồng chưa có chính sách vận hành đã lưu hợp lệ. Cần bổ sung hồ sơ hợp đồng trước khi kích hoạt.</p>}
+      {policyIssue && <p className={styles.error} role="alert">{policyIssue}</p>}
+      {commercialIssue && <p className={styles.error} role="alert">{commercialIssue}</p>}
+      {dateIssue && <p className={styles.error} role="alert">{dateIssue}</p>}
       {!contract.machineId && <p className={styles.error} role="alert">Hợp đồng chưa có máy nên chưa thể kích hoạt.</p>}
       {isChecking && <p className={styles.hint} role="status">Đang kiểm tra hợp đồng chính và lệnh lắp đặt đã hoàn tất…</p>}
       {documents.isError && <div className={styles.error} role="alert"><p>{getApiErrorMessage(documents.error)}</p><ButtonBar type="button" onClick={() => void documents.refetch()}>Tải lại</ButtonBar></div>}
       {completedWorkOrder.isError && !adminCanRelyOnServerCheck && <div className={styles.error} role="alert"><p>{getApiErrorMessage(completedWorkOrder.error)}</p><ButtonBar type="button" onClick={() => void completedWorkOrder.refetch()}>Tải lại</ButtonBar></div>}
-      {adminCanRelyOnServerCheck && <p className={styles.hint} role="status">API không cho Admin đọc danh sách lệnh; máy chủ sẽ kiểm tra lệnh đã hoàn tất trước khi kích hoạt.</p>}
-      {!activationRequest.success && Boolean(terms && contractTermsSnapshot) && <p className={styles.error} role="alert">Ngày bắt đầu hiệu lực không hợp lệ.</p>}
+      {adminCanRelyOnServerCheck && <p className={styles.hint} role="status">Ngày hiệu lực sẽ được máy chủ xác định từ lệnh bàn giao đã hoàn tất khi kích hoạt.</p>}
+      {completedWorkOrder.data && !effectiveStartDate && <p className={styles.error} role="alert">Lệnh lắp đặt đã hoàn tất nhưng chưa có ngày bàn giao. Cần kiểm tra lại lệnh lắp đặt.</p>}
       {!documents.isPending && !documents.isError && !hasMainContract && (
         <p className={styles.error} role="status">Cần tải lên ít nhất một tài liệu loại MAIN_CONTRACT chưa lưu trữ.</p>
       )}
@@ -224,14 +207,17 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
         <p className={styles.error} role="status">Chưa có lệnh COMPLETED khớp mã hợp đồng, máy và chủ sở hữu.</p>
       )}
       {activate.isError && <p className={styles.error} role="alert">{getApiErrorMessage(activate.error, "mutation")}</p>}
-      {ready && !confirming && (
-        <ButtonBar type="button" disabled={activate.isPending} onClick={() => setConfirming(true)}>
-          Kích hoạt hợp đồng
-        </ButtonBar>
+      {(!ready || !confirming) && (
+        <div className={styles.actions}>
+          <ButtonBar type="button" disabled={!ready || activate.isPending} aria-describedby={!ready ? "contract-activation-blocked-hint" : undefined} onClick={() => setConfirming(true)}>
+            Kích hoạt hợp đồng
+          </ButtonBar>
+          {!ready && <p id="contract-activation-blocked-hint" className={styles.hint}>Cần xử lý các thông báo phía trên trước khi kích hoạt hợp đồng.</p>}
+        </div>
       )}
       {ready && confirming && (
         <div className={styles.confirmation}>
-          <p>Xác nhận gửi yêu cầu kích hoạt với ngày hiệu lực {effectiveStartDate}, điều khoản hợp đồng và bản chụp điều khoản?</p>
+          <p>Xác nhận kích hoạt hợp đồng với điều khoản và chính sách đã lưu{effectiveStartDate ? `, có hiệu lực từ ngày bàn giao ${displayDate(effectiveStartDate)}` : ", có hiệu lực từ ngày bàn giao do máy chủ xác định"}?</p>
           <div className={styles.actions}>
             <ButtonBar type="button" disabled={activate.isPending} onClick={() => setConfirming(false)}>Hủy</ButtonBar>
             <ButtonBar type="button" disabled={activate.isPending || !activationRequest.success} onClick={() => activate.mutate()}>

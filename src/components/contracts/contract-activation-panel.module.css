@@ -23,39 +23,45 @@
   line-height: 1.5;
 }
 
-.requestFields {
+.summary {
   display: grid;
   gap: 12px;
+  margin: 0;
 }
 
-.activationField {
+.summary > div {
   display: grid;
-  width: min(100%, 680px);
   gap: 6px;
+  color: #302927;
+  font-size: 14px;
+}
+
+.summary dt {
+  font-weight: 600;
+}
+
+.summary dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.policy {
+  padding: 14px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+}
+
+.policy summary {
+  cursor: pointer;
   color: #302927;
   font-size: 14px;
   font-weight: 600;
 }
 
-.activationField input,
-.activationField textarea {
-  padding: 8px 10px;
-  border: 1px solid #cfc7c1;
-  border-radius: 8px;
-  background: #fff;
-  color: inherit;
-  font: inherit;
-}
-
-.activationField input {
-  min-height: 42px;
-}
-
-.activationField textarea {
-  min-height: 84px;
-  resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 13px;
+.policy[open] summary {
+  margin-bottom: 14px;
 }
 
 .error {

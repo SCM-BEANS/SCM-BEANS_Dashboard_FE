@@ -46,7 +46,8 @@ export const CreateContractRequestSchema = z.object({
 });
 
 export const ActivateContractRequestSchema = z.object({
-  effectiveStartDate: contractDateSchema,
+  // BE derives this from the completed handover when the caller cannot read the work order.
+  effectiveStartDate: contractDateSchema.optional(),
   terms: z.string().min(1),
   contractTermsSnapshot: ContractTermsSnapshotSchema,
 });

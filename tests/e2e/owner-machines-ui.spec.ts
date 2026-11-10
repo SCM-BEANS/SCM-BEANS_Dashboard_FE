@@ -6,12 +6,19 @@ const smartId = "f1000000-0000-4000-8000-000000000002";
 const conventionalId = "f1000000-0000-4000-8000-000000000003";
 const locationId = "f1000000-0000-4000-8000-000000000004";
 const ticketId = "f1000000-0000-4000-8000-000000000005";
+const alertId = "f1000000-0000-4000-8000-000000000006";
 const machines = [
   { id: smartId, ownerId, locationId, serialNumber: "SMART-01", status: "UNDER_MAINTENANCE", machineType: "SMART_IOT" },
   { id: conventionalId, ownerId, locationId: null, serialNumber: "NORMAL-01", status: "AVAILABLE_FOR_RENT", machineType: "CONVENTIONAL" },
 ];
 const ticket = { id: ticketId, machineId: smartId, ownerId, status: "RESOLVED", source: "TERMINATION_INSPECTION", scheduledDueAt: "2026-11-07T10:00:00" };
-async function setup(page: Page) {
+type SetupOptions = {
+  heartbeatStatus?: "ONLINE" | "OFFLINE" | "UNKNOWN";
+  brewState?: string;
+  alerts?: unknown[];
+  metricsJson?: unknown;
+};
+async function setup(page: Page, options: SetupOptions = {}) {
   const claims = Buffer.from(JSON.stringify({ sub: ownerId, roles: ["owner"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
   await page.route("**/api/dolores/v1/**", async (route) => {
@@ -21,6 +28,18 @@ async function setup(page: Page) {
     else if (path === "/locations") body = [{ id: locationId, ownerId, name: "Cửa hàng trung tâm" }];
     else if (path === `/machines/${smartId}`) body = machines[0];
     else if (path === `/machines/${conventionalId}`) body = machines[1];
+    else if (path.endsWith("/heartbeats/latest")) {
+      const matchedMachineId = path.match(/\/machines\/([^/]+)\/heartbeats\/latest$/)?.[1];
+      body = matchedMachineId ? {
+        machineId: decodeURIComponent(matchedMachineId),
+        status: options.heartbeatStatus ?? "ONLINE",
+        lastSeenAt: new Date().toISOString(),
+        brewState: options.brewState ?? "BREW_STATE_IDLE",
+        sequenceNumber: 1,
+        metricsJson: options.metricsJson ?? { wifiRssiDbm: -45, cupsServed: 27 },
+      } : [];
+    }
+    else if (path === "/alerts") body = options.alerts ?? [];
     else if (path.endsWith("/maintenance-schedule")) body = { nextPreventiveMaintenanceAt: null };
     else if (path === "/maintenance-tickets") body = [ticket];
     else if (path === `/maintenance-tickets/${ticketId}`) body = ticket;
@@ -76,7 +95,7 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
   await tab.click();
   await expect(tab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText(
-    "Mô hình 3D minh họa, chuyển động mô phỏng — không phải dữ liệu thời gian thực của máy.",
+    "Mô hình chuyển động theo trạng thái máy gửi về, cập nhật mỗi 3 giây.",
     { exact: true },
   )).toBeVisible();
 
@@ -88,6 +107,49 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
     { timeout: 30_000 },
   ).toBeTruthy();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390, { timeout: 5_000 });
+});
+test("Owner live digital twin follows heartbeat and switches to simulation", async ({ page }) => {
+  await setup(page, {
+    brewState: "BREW_STATE_GRINDING",
+    alerts: [{
+      id: alertId,
+      level: "WARNING",
+      machineId: smartId,
+      message: "Nhiệt độ máy tăng cao",
+      acknowledged: false,
+      ts: new Date().toISOString(),
+    }],
+    metricsJson: JSON.stringify({ wifiRssiDbm: -45, cupsServed: 27, nested: { ignored: true } }),
+  });
+  await page.goto(`/dashboard/machines/${smartId}`);
+  await page.getByRole("tab", { name: "Xem máy" }).click();
+
+  const liveButton = page.getByRole("button", { name: "Trực tiếp", exact: true });
+  await expect(liveButton).toHaveAttribute("aria-pressed", "true");
+  const panel = page.getByRole("tabpanel", { name: "Xem máy" });
+  const grindingStep = panel.getByRole("listitem").filter({ hasText: "Xay hạt" });
+  await expect(grindingStep).toHaveAttribute("aria-current", "step");
+  await expect(panel.getByText("Đang xay hạt", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Nhiệt độ máy tăng cao", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Mô phỏng", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Mô phỏng", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.getByRole("button", { name: "Chạy toàn bộ chu trình pha cafe thử nghiệm" })).toBeVisible();
+});
+test("Owner live digital twin shows when the machine is offline", async ({ page }) => {
+  await setup(page, { heartbeatStatus: "OFFLINE", brewState: "BREW_STATE_IDLE" });
+  await page.goto(`/dashboard/machines/${smartId}`);
+  await page.getByRole("tab", { name: "Xem máy" }).click();
+
+  await expect(page.getByText(/Mất kết nối — trạng thái cuối lúc/)).toBeVisible();
+});
+test("Owner conventional machine opens only the simulation twin", async ({ page }) => {
+  await setup(page);
+  await page.goto(`/dashboard/machines/${conventionalId}`);
+  await page.getByRole("tab", { name: "Xem máy" }).click();
+
+  await expect(page.getByRole("button", { name: "Trực tiếp", exact: true })).toHaveCount(0);
+  await expect(page.getByText("Máy thông thường không gửi dữ liệu, chỉ xem mô phỏng.", { exact: true })).toBeVisible();
 });
 test("Owner toolbar wraps at mobile width", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await setup(page); await page.goto("/dashboard/machines");

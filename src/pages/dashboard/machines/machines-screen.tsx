@@ -315,12 +315,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               </div>
               <div className={machineStyles.ownerDetailTabPanel} id={detailPanelId("model")} role="tabpanel" aria-labelledby="owner-machine-tab-model" hidden={detailTab !== "model"}>
                 {detailTab === "model" ? (
-                  <>
-                    <p className={machineStyles.muted}>
-                      Mô hình 3D minh họa, chuyển động mô phỏng — không phải dữ liệu thời gian thực của máy.
-                    </p>
-                    <MachineDigitalTwinView />
-                  </>
+                  <MachineDigitalTwinView machineId={machineId!} machineType={detail.data.machineType} />
                 ) : null}
               </div>
             </>

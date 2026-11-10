@@ -5,6 +5,7 @@ import { Component, useCallback, useState, type ReactNode } from "react";
 import { DIGITAL_TWIN_MESSAGES } from "@/text/digital-twin/digital-twin-messages";
 import styles from "./digital-twin-viewer.module.css";
 import type { ClusterAttachmentDefinition } from "./DigitalTwinClusterCanvas";
+import type { DigitalTwinCycleEvent } from "@/schema/digital-twin-cycle.schema";
 import { DIGITAL_TWIN_OPERATION_STAGES } from "./operation/DigitalTwinOperationConfig";
 import { useDigitalTwinTestCycle } from "./operation/useDigitalTwinTestCycle";
 
@@ -30,6 +31,8 @@ export interface BodyModelViewerProps {
   compressorRootFrameUrl?: string;
   compressorMotionDefinitionUrls?: readonly string[];
   enableOperationTest?: boolean;
+  operationEvent?: DigitalTwinCycleEvent | null;
+  operationSource?: "test" | "external";
 }
 
 interface CanvasErrorBoundaryProps {
@@ -73,14 +76,18 @@ export function BodyModelViewer({
   compressorRootFrameUrl,
   compressorMotionDefinitionUrls,
   enableOperationTest = false,
+  operationEvent: externalOperationEvent,
+  operationSource = "test",
 }: BodyModelViewerProps = {}) {
   const {
     status: operationStatus,
-    currentEvent: operationEvent,
+    currentEvent: testOperationEvent,
     start: startOperation,
     reset: resetOperation,
     fail: failOperation,
   } = useDigitalTwinTestCycle();
+  const operationEvent =
+    operationSource === "external" ? externalOperationEvent ?? null : testOperationEvent;
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<ViewerStatus>("loading");
   const [zoomLevel, setZoomLevel] = useState(0);
@@ -282,7 +289,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {enableOperationTest ? (
+        {enableOperationTest && operationSource !== "external" ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -331,7 +338,7 @@ export function BodyModelViewer({
           >
             {DIGITAL_TWIN_MESSAGES.digital_twin_body_ready}
           </div>
-          {enableOperationTest ? (
+          {enableOperationTest && operationSource !== "external" ? (
             <div
               role="status"
               aria-live="polite"

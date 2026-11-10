@@ -1,0 +1,259 @@
+.root {
+  min-width: 0;
+  color: #302b29;
+}
+
+.modeRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #f8f5f2;
+}
+
+.modeButton {
+  min-width: 104px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #625853;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modeButton[aria-pressed="true"] {
+  border-color: #b91222;
+  background: #b91222;
+  color: #fff;
+}
+
+.modeButton:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.note {
+  margin: 0 0 14px;
+  color: #786e69;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.layout {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 16px;
+}
+
+.viewerColumn,
+.viewerFrame {
+  min-width: 0;
+}
+
+.viewerFrame {
+  position: relative;
+}
+
+.sidePanel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panelSection {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(48 43 41 / 5%);
+}
+
+.panelSection h3 {
+  margin: 0 0 10px;
+  color: #302b29;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.stateMessage,
+.errorMessage,
+.lastSeen,
+.currentLabel,
+.faultLabel {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.stateMessage,
+.lastSeen {
+  color: #786e69;
+}
+
+.errorMessage,
+.faultLabel {
+  color: #b91222;
+}
+
+.errorMessage {
+  font-weight: 600;
+}
+
+.currentLabel {
+  color: #625853;
+  font-weight: 600;
+}
+
+.stepList,
+.alertList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: #a49a95;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.stepMarker {
+  width: 18px;
+  flex: 0 0 18px;
+  color: currentColor;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.currentStep {
+  color: #b91222;
+  font-weight: 700;
+}
+
+.completeStep {
+  color: #655b56;
+}
+
+.metricsList {
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metricRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.metricRow dt {
+  color: #786e69;
+  overflow-wrap: anywhere;
+}
+
+.metricRow dd {
+  margin: 0;
+  color: #302b29;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.alertItem {
+  min-width: 0;
+  padding: 0 0 10px;
+  border-bottom: 1px solid #f0ebe7;
+}
+
+.alertItem:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.alertItem p {
+  margin: 7px 0 4px;
+  color: #302b29;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.alertItem time {
+  color: #786e69;
+  font-size: 0.75rem;
+}
+
+.offlineOverlay {
+  position: absolute;
+  z-index: 15;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 12px;
+  background: rgb(48 43 41 / 34%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 55%);
+  pointer-events: none;
+}
+
+.offlineOverlay time {
+  font-weight: 500;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .modeSwitch {
+    width: 100%;
+  }
+
+  .modeButton {
+    min-width: 0;
+    flex: 1 1 0;
+    padding-inline: 8px;
+  }
+
+  .panelSection {
+    padding: 12px;
+  }
+}
