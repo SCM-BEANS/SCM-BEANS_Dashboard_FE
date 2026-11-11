@@ -86,14 +86,14 @@ export function OperatorCatalogPanel({
       ) : (
         <div className={styles.permissionNotice}>
           <div>
-            <h3>Moderator xem danh mục</h3>
-            <p>API hiện tại chỉ cấp quyền tạo, sửa và ngừng bán gói cho Admin.</p>
+            <h3>Quyền quản lý danh mục</h3>
+            <p>Moderator có thể xem danh mục. Chỉ Admin được tạo, chỉnh sửa hoặc ngừng bán gói.</p>
           </div>
           <ButtonBar type="button" disabled aria-describedby="coffee-package-catalog-permission">
             Tạo gói
           </ButtonBar>
           <span id="coffee-package-catalog-permission" className={styles.hint}>
-            Không thể tạo gói bằng tài khoản Moderator theo quyền API hiện tại.
+            Tài khoản Moderator hiện chỉ có quyền xem danh mục.
           </span>
         </div>
       )}

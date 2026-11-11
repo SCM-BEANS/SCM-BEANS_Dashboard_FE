@@ -278,8 +278,8 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
               <h3 className={styles.sectionTitle}>{hasOwnerReportedPaymentNotReceived ? "Cập nhật chứng từ thanh toán" : "Tải chứng từ thanh toán"}</h3>
               <p className={styles.formHint}>
                 {hasOwnerReportedPaymentNotReceived
-                  ? "Owner báo chưa nhận được tiền. Kiểm tra giao dịch rồi tải chứng từ cập nhật để Owner phản hồi lại."
-                  : "Dùng mã khoản chi do Dolores trả về khi tạo payout. API hiện chưa có endpoint liệt kê payout, nên sau khi mở lại trang hãy nhập mã đã lưu từ response."}
+                  ? "Khách hàng báo chưa nhận được tiền. Kiểm tra giao dịch rồi tải chứng từ cập nhật để khách hàng phản hồi lại."
+                  : "Dùng mã khoản chi được cấp khi tạo khoản thanh toán. Nếu đã rời trang, hãy nhập lại mã đã lưu."}
               </p>
               <label className={styles.formField}><span>Mã khoản chi</span><input required value={workflow.paymentId} onChange={(event) => workflow.setPaymentId(event.target.value.trim())} /></label>
               <form className={styles.assignmentForm} onSubmit={workflow.perform(() => {
@@ -364,18 +364,18 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                 workflow.confirmCollection.mutate({ id: caseData.id, evidenceReference, idempotencyKey: key, correlationId: key });
               })}>
                 <h3 className={styles.sectionTitle}>Xác nhận đã nhận máy</h3>
-                <p className={styles.formHint}>Server đã ghi nhận evidence. Tra cứu reference trong hệ thống lưu trữ ngoài rồi nhập reference dùng để xác nhận đã nhận máy.</p>
-                <label className={styles.formField}><span>Evidence reference</span><input required maxLength={2048} value={workflow.collectionConfirmationReference} onChange={(event) => workflow.setCollectionConfirmationReference(event.target.value)} /></label>
+                <p className={styles.formHint}>Tệp minh chứng đã được ghi nhận. Nhập mã tham chiếu của tệp để xác nhận đã nhận máy.</p>
+                <label className={styles.formField}><span>Mã tham chiếu tệp minh chứng</span><input required maxLength={2048} value={workflow.collectionConfirmationReference} onChange={(event) => workflow.setCollectionConfirmationReference(event.target.value)} /></label>
                 <ButtonBar type="submit" disabled={!workflow.canConfirmCollection || !workflow.collectionConfirmationReference.trim() || workflow.confirmCollection.isPending}>Xác nhận đã thu máy</ButtonBar>
               </form>
             ) : <p className={styles.formHint}>Chưa có bằng chứng thu máy trong hồ sơ Dolores.</p>}
           </> : null}
-          {workflow.isExternalBuyback && workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải metadata chứng từ thanh toán…</p> : null}
+              {workflow.isExternalBuyback && workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải thông tin chứng từ thanh toán…</p> : null}
           {workflow.isExternalBuyback && workflow.paymentProofs.isError ? <div className={styles.formPanel}><BuybackErrorNotice error={workflow.paymentProofs.error} /><ButtonBar type="button" onClick={() => void workflow.paymentProofs.refetch()}>Tải lại danh sách chứng từ</ButtonBar></div> : null}
           {workflow.isExternalBuyback && workflow.paymentProofs.data ? (
-            <section className={styles.formPanel} aria-label="Metadata chứng từ thanh toán thu mua">
+            <section className={styles.formPanel} aria-label="Thông tin chứng từ thanh toán thu mua">
               <h3 className={styles.sectionTitle}>Chứng từ thanh toán</h3>
-              <p className={styles.formHint}>Với workflow v2, Owner xác nhận đã nhận tiền hoặc báo chưa nhận trên bảng điều khiển. Nhân viên không duyệt chứng từ ở bước này.</p>
+              <p className={styles.formHint}>Khách hàng xác nhận đã nhận tiền hoặc báo chưa nhận trong tài khoản của mình. Nhân viên không duyệt chứng từ ở bước này.</p>
               <DataTable
                 variant="moderator"
                 rows={workflow.paymentProofs.data.items}

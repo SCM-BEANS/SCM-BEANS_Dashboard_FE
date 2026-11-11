@@ -203,8 +203,8 @@ export function TelemetryHistoryPanel({
         {view === "chart" && numericPoints.length > 0 ? <>
         <dl className={styles.monitoringMetricStrip}>
           <div><dt>Gần nhất trong dữ liệu đã tải</dt><dd>{formatPointValue(numericPoints[numericPoints.length - 1]!.value)}</dd></div>
-          <div><dt>Thấp nhất · biểu đồ</dt><dd>{formatPointValue(chartMin)}</dd></div>
-          <div><dt>Cao nhất · biểu đồ</dt><dd>{formatPointValue(chartMax)}</dd></div>
+          <div><dt>Giá trị thấp nhất</dt><dd>{formatPointValue(chartMin)}</dd></div>
+          <div><dt>Giá trị tối đa</dt><dd>{formatPointValue(chartMax)}</dd></div>
         </dl>
         <figure className={styles.telemetryChart}>
           <figcaption>{fieldLabel(field)} theo thời gian{numericPoints.length > chartSource.length ? " · 500 điểm mới nhất" : ""}</figcaption>

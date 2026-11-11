@@ -113,7 +113,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
               <section className={styles.detailSection} aria-labelledby="profile-contact-title">
                 <div className={styles.sectionHeading}>
                   <h3 id="profile-contact-title">Thông tin liên hệ</h3>
-                  <p>Email được đồng bộ từ IDaaS; số điện thoại do Dolores quản lý.</p>
+                  <p>Email được đồng bộ từ hệ thống tài khoản; số điện thoại được quản lý trên Dolores.</p>
                 </div>
                 <dl className={styles.detailGrid}>
                   <div className={styles.detailItem}>
@@ -189,7 +189,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                 </div>
                 <dl className={styles.detailGrid}>
                   <div className={styles.detailItem}>
-                    <dt><span className={styles.detailIcon}><Fingerprint aria-hidden="true" size={19} /></span>Mã tài khoản IDaaS</dt>
+                    <dt><span className={styles.detailIcon}><Fingerprint aria-hidden="true" size={19} /></span>Mã tài khoản</dt>
                     <dd><TruncatedId value={currentProfile.idaasUserId} /></dd>
                   </div>
                   <div className={styles.detailItem}>

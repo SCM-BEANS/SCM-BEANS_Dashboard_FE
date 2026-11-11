@@ -176,7 +176,7 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
   });
   const acknowledgeCustodyEvent = useMutation({
     mutationFn: ({ caseId, eventId, acknowledgement }: { actionKey: string; caseId: string; eventId: string; acknowledgement: string }) => {
-      if (role !== "OWNER") throw new Error("Chỉ Owner mới có thể xác nhận bàn giao.");
+      if (role !== "OWNER") throw new Error("Chỉ khách hàng trong hồ sơ mới có thể xác nhận bàn giao.");
       return repairCasesApi.acknowledgeCustodyEvent(caseId, eventId, { acknowledgement });
     },
     onSuccess: (_event, variables) => {
@@ -190,7 +190,7 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
   });
   const respondToOwnerPaymentReceipt = useMutation({
     mutationFn: (input: OwnerPaymentReceiptDecision) => {
-      if (role !== "OWNER") throw new Error("Chỉ Owner mới có thể phản hồi khoản thanh toán buyback.");
+      if (role !== "OWNER") throw new Error("Chỉ khách hàng trong hồ sơ mới có thể phản hồi khoản thanh toán thu mua máy.");
       return buybacksApi.respondToOwnerPaymentReceipt(input.proofId, {
         received: input.received,
         idempotencyKey: input.idempotencyKey,
@@ -348,7 +348,7 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
           <summary>Một số luồng hiện chưa khả dụng</summary>
           <ul>
             {items.data.workflowAvailability.filter((workflow) => !workflow.available).map((workflow) => (
-              <li key={workflow.workflow}>{workflow.workflow}: {workflow.reason || "Chưa được máy chủ bật."}</li>
+              <li key={workflow.workflow}>{workflow.workflow}: {workflow.reason || "Chức năng này hiện chưa khả dụng."}</li>
             ))}
           </ul>
         </details>

@@ -20,11 +20,11 @@ export const buybackStatusLabels: Record<BuybackStatus, string> = {
 
 export function buybackPaymentProofStatusLabel(status: string) {
   switch (status) {
-    case "SUBMITTED": return "Chờ Owner xác nhận";
-    case "APPROVED": return "Đã duyệt (luồng cũ)";
-    case "REJECTED": return "Từ chối (luồng cũ)";
-    case "OWNER_CONFIRMED": return "Owner xác nhận đã nhận tiền";
-    case "OWNER_NOT_RECEIVED": return "Owner báo chưa nhận tiền";
+    case "SUBMITTED": return "Chờ khách hàng xác nhận";
+    case "APPROVED": return "Đã duyệt";
+    case "REJECTED": return "Không được duyệt";
+    case "OWNER_CONFIRMED": return "Khách hàng xác nhận đã nhận tiền";
+    case "OWNER_NOT_RECEIVED": return "Khách hàng báo chưa nhận tiền";
     default: return status;
   }
 }

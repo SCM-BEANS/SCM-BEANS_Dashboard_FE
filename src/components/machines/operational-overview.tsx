@@ -125,7 +125,7 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
     queryKey: ["machine-brew-production", subject, machineId, range?.from, range?.to],
     queryFn: ({ signal, pageParam }) => machinesApi.listBrewRecords(machineId, { ...range!, page: pageParam, size: 100 }, signal),
     enabled: valid && kind === "production", initialPageParam: 0,
-    // shortcut: cap explicit loading at 10,000 records; use an operator aggregate API when available.
+    // shortcut: cap explicit loading at 10.000 records; use an operator aggregate API when available.
     getNextPageParam: (lastPage, pages) => !lastPage.last && pages.length < 100 ? lastPage.page + 1 : undefined,
     retry: false, refetchOnWindowFocus: false,
   });
@@ -398,7 +398,7 @@ export function OperationalOverview({
               </div>
             </div>
             {dailyUsage === undefined || dailyUsage === null ? (
-              <p className={styles.operationalOverviewState}>API chưa trả chuỗi số liệu theo ngày cho kỳ này.</p>
+              <p className={styles.operationalOverviewState}>Chưa thể hiển thị số liệu theo ngày cho kỳ này.</p>
             ) : dailyUsage.length === 0 ? (
               <p className={styles.operationalOverviewState}>Chưa có dữ liệu theo ngày trong kỳ đã chọn.</p>
             ) : (
@@ -425,7 +425,7 @@ export function OperationalOverview({
               <div className={styles.operationalOverviewPanelHeading}>
                 <div>
                   <h2 id="period-finances-title">Tài chính trong kỳ</h2>
-                  <p>Chỉ hiển thị khoản tiền API trả về cho phạm vi {scopeLabel}; đây không phải phí riêng của máy đang chọn.</p>
+                  <p>Khoản tiền được tổng hợp theo phạm vi {scopeLabel}; đây không phải chi phí riêng của máy đang chọn.</p>
                 </div>
               </div>
               <div className={styles.operationalMetricGrid}>

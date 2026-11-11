@@ -10,14 +10,14 @@ export const LOGIN_MESSAGES = {
   },
   INTRO: {
     EYEBROW: "DOLORES COFFEE",
-    TITLE: "Kết nối mọi trải nghiệm cà phê.",
+    TITLE: "Quản lý máy pha, gọn trong một nơi.",
     DESCRIPTION:
-      "Quản lý thiết bị và vận hành trên một nền tảng thống nhất.",
+      "Theo dõi thiết bị, hợp đồng, hóa đơn và yêu cầu hỗ trợ trên Dolores.",
   },
   FORM: {
     EYEBROW: "Chào mừng trở lại",
     TITLE: "Đăng nhập",
-    DESCRIPTION: "Đăng nhập để quản lý và vận hành cùng Dolores.",
+    DESCRIPTION: "Đăng nhập để tiếp tục với Dolores.",
     EMAIL_LABEL: "Email",
     EMAIL_PLACEHOLDER: "name@example.com",
     PASSWORD_LABEL: "Mật khẩu",
@@ -76,6 +76,6 @@ export const LOGIN_MESSAGES = {
     PASSWORD_TOO_SHORT: "Mật khẩu mới phải có ít nhất 8 ký tự.",
     TEMPORARY_PASSWORD_MISSING: "Phiên đổi mật khẩu tạm đã hết. Hãy đăng nhập lại bằng tài khoản và mật khẩu tạm.",
     PASSWORD_CHANGE_FAILED: "Không đổi được mật khẩu. Yêu cầu đổi mật khẩu có thể đã hết hạn; hãy đăng nhập lại bằng mật khẩu tạm để bắt đầu lại.",
-    PASSWORD_CHANGE_CHALLENGE_MISSING: "Máy chủ chưa cấp yêu cầu đổi mật khẩu lần đầu. Hãy đăng nhập lại bằng mật khẩu tạm hoặc liên hệ quản trị viên.",
+    PASSWORD_CHANGE_CHALLENGE_MISSING: "Chưa thể bắt đầu đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu tạm hoặc liên hệ quản trị viên.",
   },
 } as const;

@@ -494,7 +494,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
           variant="confirm"
           eyebrow="Điều phối thu máy"
           title="Gửi yêu cầu thu máy?"
-          description="Owner đã chấp nhận giá được duyệt. Xác nhận để chuyển hồ sơ sang COLLECTION_PENDING, sau đó phân công Technician đến thu máy."
+          description="Khách hàng đã chấp nhận mức giá. Xác nhận để chuyển hồ sơ sang bước chờ thu máy, sau đó điều phối kỹ thuật viên đến nhận máy."
           primaryAction={{
             label: "Yêu cầu thu máy",
             pending: workflow.requestCollection.isPending,
