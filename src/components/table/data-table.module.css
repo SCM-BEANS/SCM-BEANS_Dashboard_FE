@@ -89,7 +89,21 @@
   padding: 12px 10px;
   background: #f7f5f3;
   color: #706561;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.table tbody tr:hover td {
+  background-color: #fdf8f7;
+}
+
+.table:not(.customer) tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .standard th {
@@ -156,6 +170,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .table tbody tr { transition: none; }
   .table.moderator td { transition: none; }
   .table.adminHeader td { transition: none; }
 }

@@ -43,6 +43,7 @@ const ADMIN_ROUTE_ITEMS = ADMIN_NAVIGATION_LINKS.map((item) => ({
 }));
 
 export const ADMIN_SIDEBAR_ITEMS: SidebarItem[] = ADMIN_NAVIGATION_LINKS
+  .filter((item) => item.HREF !== PATH_ADMIN.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,
@@ -67,6 +68,7 @@ export function AdminSidebarMenu({ loggingOut, onLogout }: { loggingOut: boolean
       rootHref={PATH_ADMIN.ROOT}
       navigationLabel={"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}
       items={ADMIN_SIDEBAR_ITEMS}
+      settingsHref={PATH_ADMIN.SETTINGS}
       logout={{
         label: ADMIN_MESSAGES.AUTH.LOGOUT,
         pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT,

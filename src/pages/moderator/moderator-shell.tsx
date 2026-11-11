@@ -51,6 +51,7 @@ const NAV_ICONS = {
 
 const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS
   .filter((item) => item.HREF !== PATH_MODERATOR.NOTIFICATIONS)
+  .filter((item) => item.HREF !== PATH_MODERATOR.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,
@@ -149,6 +150,7 @@ export function ModeratorShell({
           rootHref={PATH_MODERATOR.ROOT}
           navigationLabel={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}
           items={MODERATOR_SIDEBAR_ITEMS}
+          settingsHref={PATH_MODERATOR.SETTINGS}
           logout={{
             label: MODERATOR_MESSAGES.AUTH.LOGOUT,
             pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT,
@@ -159,13 +161,13 @@ export function ModeratorShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             {renderBreadcrumb()}
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} />
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} />
+            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} logout={{ label: MODERATOR_MESSAGES.AUTH.LOGOUT, pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={MODERATOR_SIDEBAR_ITEMS}
               pathname={pathname}

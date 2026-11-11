@@ -1,6 +1,7 @@
 import { LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SettingsMenu } from "./settings-menu";
 import { getActiveNavigationItem } from "./navigation-route";
 import styles from "./sidebar.module.css";
 
@@ -95,6 +96,7 @@ export function Sidebar({
   rootHref,
   navigationLabel,
   items,
+  settingsHref,
   logout,
   footer,
 }: {
@@ -105,7 +107,8 @@ export function Sidebar({
   rootHref: string;
   navigationLabel: string;
   items: readonly SidebarItem[];
-  logout: SidebarLogoutProps;
+  settingsHref?: string;
+  logout?: SidebarLogoutProps;
   footer?: ReactNode;
 }) {
   return (
@@ -119,7 +122,9 @@ export function Sidebar({
         navigationLabel={navigationLabel}
       />
       {footer}
-      <SidebarLogoutButton {...logout} />
+      {settingsHref && logout ? (
+        <SettingsMenu settingsHref={settingsHref} logout={logout} variant="wide" />
+      ) : logout && <SidebarLogoutButton {...logout} />}
     </aside>
   );
 }

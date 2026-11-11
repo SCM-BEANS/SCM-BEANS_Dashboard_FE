@@ -28,6 +28,7 @@ const NAV_ICONS = {
 
 const TECHNICIAN_SIDEBAR_ITEMS: SidebarItem[] = TECHNICIAN_NAVIGATION_LINKS
   .filter((item) => item.HREF !== PATH_TECHNICIAN.NOTIFICATIONS)
+  .filter((item) => item.HREF !== PATH_TECHNICIAN.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,
@@ -113,6 +114,7 @@ export function TechnicianShell({
           rootHref={PATH_TECHNICIAN.ROOT}
           navigationLabel={TECHNICIAN_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
           items={TECHNICIAN_SIDEBAR_ITEMS}
+          settingsHref={PATH_TECHNICIAN.SETTINGS}
           logout={{
             label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT,
             pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT,
@@ -123,13 +125,13 @@ export function TechnicianShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{TECHNICIAN_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} />
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} />
+            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} logout={{ label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={TECHNICIAN_SIDEBAR_ITEMS}
               pathname={pathname}

@@ -31,6 +31,7 @@ const NAV_ICONS = {
 
 const CUSTOMER_SIDEBAR_ITEMS: SidebarItem[] = CUSTOMER_NAVIGATION_LINKS
   .filter((item) => item.HREF !== PATH_CUSTOMER.NOTIFICATIONS)
+  .filter((item) => item.HREF !== PATH_CUSTOMER.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
     href: item.HREF,
@@ -116,6 +117,7 @@ export function CustomerShell({
           rootHref={PATH_CUSTOMER.ROOT}
           navigationLabel={CUSTOMER_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
           items={CUSTOMER_SIDEBAR_ITEMS}
+          settingsHref={PATH_CUSTOMER.SETTINGS}
           logout={{
             label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT,
             pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT,
@@ -126,13 +128,13 @@ export function CustomerShell({
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>
             <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} />
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
           </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
             </Link>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} />
+            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} logout={{ label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={CUSTOMER_SIDEBAR_ITEMS}
               pathname={pathname}

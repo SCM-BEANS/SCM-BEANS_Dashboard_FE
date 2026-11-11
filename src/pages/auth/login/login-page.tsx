@@ -383,6 +383,11 @@ export default function LoginPage() {
       </Head>
 
       <main className="login-page" inert={Boolean(loginSuccessDestination)}>
+        <div className="login-shell">
+        <aside className="login-aside" aria-hidden="true">
+          <span className="aside-logo">Dolores.</span>
+          <p>{LOGIN_MESSAGES.PAGE.DESCRIPTION}</p>
+        </aside>
         <section className="login-card" aria-labelledby="login-title">
           <Link
             href={PATH_HOME.ROOT}
@@ -570,6 +575,7 @@ export default function LoginPage() {
             ) : null}
           </div>
         </section>
+        </div>
         {step === "credentials" && (
           <Link href={PATH_HOME.ROOT} className="secondary-link home-link">
             <ArrowRight size={16} className="back-arrow" aria-hidden="true" />
@@ -606,8 +612,24 @@ export default function LoginPage() {
       `}</style>
 
       <style jsx>{`
-        .login-page { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 32px 16px; color: #302927; background: #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
-        .login-card { width: 100%; max-width: 440px; padding: 28px 24px 32px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; box-shadow: 0 4px 24px rgba(48, 41, 39, .035); }
+        .login-page { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 32px 16px; color: #302927; background: radial-gradient(900px 480px at 50% -10%, #f9e9ea 0%, rgba(249, 233, 234, 0) 70%), #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
+        .login-shell { width: 100%; max-width: 440px; display: grid; border: 1px solid #ece4de; border-radius: 24px; background: #fff; box-shadow: 0 1px 2px rgba(48, 41, 39, .04), 0 24px 64px rgba(184, 23, 36, .12); overflow: hidden; }
+        .login-aside { display: none; }
+        .login-card { width: 100%; padding: 28px 24px 32px; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #fff inset; -webkit-text-fill-color: #302927; }
+        @media (min-width: 900px) {
+          .login-shell { max-width: 940px; grid-template-columns: 1fr 460px; }
+          .login-aside { display: flex; flex-direction: column; justify-content: space-between; padding: 40px; color: #fff; background: radial-gradient(420px 320px at 85% 105%, rgba(255, 255, 255, .22), transparent 70%), linear-gradient(145deg, #b81724 0%, #7d0f19 100%); }
+          .aside-logo { font-size: 2.75rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; }
+          .login-aside p { max-width: 320px; margin: 0; font-size: 1.25rem; line-height: 1.5; font-weight: 500; opacity: .92; }
+          .login-aside { position: relative; overflow: hidden; }
+          .login-aside::before, .login-aside::after { content: ""; position: absolute; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .18); pointer-events: none; }
+          .login-aside::before { width: 420px; height: 420px; top: 50%; left: 50%; transform: translate(-50%, -55%); background: radial-gradient(circle, rgba(255, 255, 255, .14), transparent 68%); }
+          .login-aside::after { width: 620px; height: 620px; top: 50%; left: 50%; transform: translate(-50%, -55%); }
+          .login-aside > * { position: relative; z-index: 1; }
+          .login-card { padding: 48px 44px; align-self: center; }
+          .login-card :global(.login-brand) { display: none; }
+        }
         .login-content { animation: login-step-enter 180ms cubic-bezier(.22, 1, .36, 1) both; }
         @keyframes login-step-enter { from { opacity: .7; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .form-wrap { width: 100%; }
@@ -616,7 +638,7 @@ export default function LoginPage() {
         form { display: grid; gap: 20px; }
         .field { display: grid; gap: 8px; }
         label { color: #302927; font-size: .875rem; font-weight: 600; }
-        .input-wrap { min-height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 16px; border: 1px solid #968781; border-radius: 10px; color: #675b57; background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
+        .input-wrap { min-height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 16px; border: 1px solid #968781; border-radius: 12px; color: #675b57; background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
         .input-wrap:hover { border-color: #887b75; }
         .input-wrap:focus-within { border-color: #b81724; box-shadow: 0 0 0 3px #f1d6d9; }
         .input-wrap:has(input:disabled) { background: #f8f6f3; border-color: #d8cfca; }
@@ -629,16 +651,13 @@ export default function LoginPage() {
         .error-message, .success-message { margin: 0; padding: 12px 16px; border-radius: 8px; font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
         .error-message { color: #a82920; background: #fcecea; }
         .success-message { color: #24653c; background: #e8f5eb; }
-        .submit-button { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; padding: 12px 16px; border: 0; border-radius: 10px; color: #fff; background: #b81724; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 160ms ease, transform 160ms ease; }
+        .submit-button { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; padding: 12px 16px; border: 0; border-radius: 12px; color: #fff; background: #b81724; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 6px 16px rgba(184, 23, 36, .22); transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
         .submit-button:hover:not(:disabled) { background: #99131d; }
         .submit-button:active:not(:disabled) { transform: scale(.99); background: #85111b; }
         .submit-button:disabled { background: #986168; cursor: wait; }
         .submit-button:focus-visible, .secondary-link:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
         .submit-spinner { width: 16px; height: 16px; border: 2px solid rgb(255 255 255 / 45%); border-top-color: #fff; border-radius: 50%; animation: login-spin 700ms linear infinite; }
         @keyframes login-spin { to { transform: rotate(360deg); } }
-        @media (min-width: 640px) {
-          .login-card { padding: 32px 36px 36px; }
-        }
         @media (prefers-reduced-motion: reduce) {
           .login-content, .submit-spinner { animation: none; }
           .login-page * { transition-duration: 0ms !important; }

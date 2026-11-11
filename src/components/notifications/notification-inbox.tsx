@@ -5,6 +5,8 @@ import Link from "next/link";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
+import { SettingsMenu } from "@/components/sidebar/settings-menu";
+import type { SidebarLogoutProps } from "@/components/sidebar/sidebar";
 import { notificationsApi } from "@/apis/notifications.api";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -20,6 +22,7 @@ interface NotificationInboxProps {
   description?: string;
   viewAllHref?: string;
   settingsHref?: string;
+  logout?: SidebarLogoutProps;
   back?: BackButtonDestination | null;
   showOwnerId?: boolean;
   onRefreshExtra?: () => Promise<unknown>;
@@ -55,6 +58,7 @@ export function NotificationInbox({
   description,
   viewAllHref,
   settingsHref,
+  logout,
   back = null,
   showOwnerId = false,
   onRefreshExtra,
@@ -111,13 +115,10 @@ export function NotificationInbox({
               <span className={styles.bellBadge} aria-hidden="true">{unreadTotal > 99 ? "99+" : unreadTotal}</span>
             )}
           </button>
-          {(settingsHref || viewAllHref) ? (
-            <Link
-              className={styles.settingsButton}
-              href={settingsHref ?? viewAllHref!}
-              aria-label={settingsHref ? "Cài đặt hồ sơ" : "Quản lý thông báo"}
-              title={settingsHref ? "Cài đặt hồ sơ" : "Quản lý thông báo"}
-            >
+          {settingsHref && logout ? (
+            <SettingsMenu settingsHref={settingsHref} logout={logout} variant="icon" />
+          ) : settingsHref ? (
+            <Link className={styles.settingsButton} href={settingsHref} aria-label="Cài đặt hồ sơ" title="Cài đặt hồ sơ">
               <Settings aria-hidden="true" size={20} />
             </Link>
           ) : null}
