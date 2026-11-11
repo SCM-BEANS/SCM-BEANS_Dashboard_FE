@@ -213,7 +213,7 @@ function prepare(gltf, id, data, requestRender) {
   return { annotations, holder, machineFrame, decor, revealGroups, revealEntries, revealDecor, woodDecor, revealBoxes, revealOffsets: {}, revealOpacity: {}, rootOffset: root.position.clone(), entries: [...entries.values()], box, center: box.getCenter(new THREE.Vector3()), radius: box.getSize(new THREE.Vector3()).length() / 2, nodeMap, initialMatrices };
 }
 
-export function createViewer(annotations, data, brainData) {
+export function createViewer(annotations, data, brainData, { includeBoards = true } = {}) {
   // The standalone compressor uses Z-up CAD; reuse its installed orientation for this presentation only.
   const syncPresentation = new THREE.Group();
   syncPresentation.quaternion.setFromRotationMatrix(COMPRESSOR_FIT);
@@ -304,7 +304,7 @@ export function createViewer(annotations, data, brainData) {
         const bodyTask = loader.loadAsync("/models/" + spec.file, event => {
           notify(id, Math.min(99, event.loaded / (event.total || spec.mb * 1e6) * 100));
         });
-        const boards = id === "body" ? BOARDS : [];
+        const boards = id === "body" && includeBoards ? BOARDS : [];
         // Keep progress below 100 until the body and both optional boards finish.
         const [gltf, ...loadedBoards] = await Promise.all([
           bodyTask,

@@ -68,7 +68,7 @@ function loadLoginPage() {
   return loaded.exports.default;
 }
 
-test("login renders a centered Dolores product card with credentials and no hero panel", () => {
+test("login renders the approved two-column layout with a decorative dashboard and unchanged brand colors", () => {
   const LoginPage = loadLoginPage();
   const markup = renderToStaticMarkup(React.createElement(LoginPage));
 
@@ -77,9 +77,15 @@ test("login renders a centered Dolores product card with credentials and no hero
   assert.match(markup, /id="login-email"/);
   assert.match(markup, /id="login-password"/);
   assert.doesNotMatch(markup, /story-panel|story-overlay|story-copy|landing-hero/);
+  assert.match(markup, /class="dashboard-preview"/);
+  assert.match(markup, /Pha cà phê tự động/);
+  assert.match(markup, /Chủ động quản lý máy/);
+  assert.doesNotMatch(markup, /coffee-machine-float|data-icon="arrow-right"/);
+  assert.match(markup, /grid-template-columns:minmax\(0,1\.2fr\)/);
+  assert.doesNotMatch(markup, /prefers-color-scheme|data-theme="dark"/);
   assert.match(markup, /max-width:\s*440px/);
   assert.match(markup, /<h1[^>]*id="login-title"/);
   assert.doesNotMatch(markup, /form-eyebrow|form-icon/);
-  assert.match(markup, /#f8f6f3/);
+  assert.match(markup, /--login-page:#fff;/);
   assert.match(markup, /#b81724/);
 });

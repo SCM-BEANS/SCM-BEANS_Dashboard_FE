@@ -1,10 +1,11 @@
+// Lucian UX/UI Prompt #244 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#244
 import axios from "axios";
 import Cookies from "js-cookie";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -25,6 +26,84 @@ import { LOGIN_MESSAGES } from "@/text/auth/login-messages";
 
 type LoginStep = "credentials" | "mfa" | "email-verification" | "password-change";
 type PasswordFieldName = "password" | "newPassword" | "confirmNewPassword";
+
+type LoginValues = { email: string; password: string; code: string; newPassword: string; confirmNewPassword: string };
+type FieldErrors = Record<string, string>;
+
+export function getLoginFieldErrors(step: LoginStep, values: LoginValues): FieldErrors {
+  const errors: FieldErrors = {};
+  if (step === "credentials") {
+    const request = LoginRequestSchema.safeParse({ email: values.email, password: values.password });
+    if (!request.success) for (const issue of request.error.issues) {
+      const field = String(issue.path[0]);
+      errors[`login-${field}`] = field === "email" ? LOGIN_MESSAGES.ERRORS.INVALID_EMAIL : LOGIN_MESSAGES.ERRORS.MISSING_PASSWORD;
+    }
+  } else if (step === "password-change") {
+    if (values.newPassword.length < 8) errors["login-new-password"] = LOGIN_MESSAGES.ERRORS.PASSWORD_TOO_SHORT;
+    else if (values.newPassword.length > 72) errors["login-new-password"] = "Mật khẩu không được vượt quá 72 ký tự.";
+    if (!values.confirmNewPassword || values.newPassword !== values.confirmNewPassword) errors["login-confirm-new-password"] = LOGIN_MESSAGES.ERRORS.PASSWORDS_DO_NOT_MATCH;
+  } else if (step === "email-verification" ? !/^\d{6}$/.test(values.code) : !values.code.trim()) {
+    errors["login-code"] = step === "email-verification" ? LOGIN_MESSAGES.ERRORS.INVALID_EMAIL_OTP : LOGIN_MESSAGES.ERRORS.MISSING_CODE;
+  }
+  return errors;
+}
+
+function focusLoginField(id: string) {
+  const field = document.getElementById(id);
+  if (!field) return;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  field.focus({ preventScroll: true });
+  field.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "center" });
+}
+
+function LoginValidationSummary({ errors }: { errors: FieldErrors }) {
+  const entries = Object.entries(errors);
+  return <div className="validation-summary" data-open={entries.length > 0}>
+    <div><div className="validation-summary-body" role="alert" aria-atomic="true">
+      {entries.length > 0 && <><strong>{entries.length} mục cần kiểm tra</strong><ul>
+        {entries.map(([id, message]) => <li key={id}><a href={`#${id}`} onClick={(event) => { event.preventDefault(); focusLoginField(id); }}>{message}</a></li>)}
+      </ul></>}
+    </div></div>
+  </div>;
+}
+
+// Reuse the landing renderer in an isolated document; unloading the iframe releases its WebGL context.
+const LOGIN_MODEL_DOCUMENT = `<!doctype html><html lang="vi"><head><base href="/"><style>
+:root{color-scheme:light}html,body{margin:0;height:100%;background:transparent;overflow:hidden}#model{height:100%;width:100%;position:relative}canvas{display:block}.viewer-status{display:none;position:absolute;bottom:8px;width:100%;text-align:center;font:13px Arial;color:#675b57}.viewer-status.load-error{display:block}.viewer-status[hidden]{display:none}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script></head><body><div id="model"></div><script type="module">
+try {
+  const { createViewer } = await import('/landing/viewer.js');
+  const annotations = { sync(){}, render(){}, pickable(){return []}, pick(){}, setMarkers(){} };
+  const viewer = createViewer(annotations, { flows:[], stepFlows:{} }, { channels:[] }, { includeBoards:false });
+  viewer.registerHost('login', document.getElementById('model'), { modelId:'body', autoRotate:false, zoom:false, lighting:'studio', view:{az:35,el:18}, shellMode:'show', explode:0 });
+  const model = await viewer.load('body');
+  const shadow = model.holder.getObjectByName('studio-soft-shadow');
+  if (shadow) shadow.visible = false;
+  const pose = viewer.shotPose({az:35,el:18,fit:true,padding:.85});
+  if (pose) viewer.setCamera('login', pose.position, pose.target);
+} catch { document.getElementById('model').textContent = ''; }
+</script></body></html>`;
+
+function LoginHero() {
+  const [showModel, setShowModel] = useState(false);
+  useEffect(() => {
+    const viewport = window.matchMedia("(min-width: 900px)");
+    const update = () => setShowModel(viewport.matches);
+    update();
+    viewport.addEventListener("change", update);
+    return () => viewport.removeEventListener("change", update);
+  }, []);
+  return <div className="login-illustration" aria-hidden="true">
+    <div className="dashboard-preview">
+      <div className="preview-sidebar"><b>dolores.</b>{["Tổng quan", "Hợp đồng", "Máy pha", "Hóa đơn", "Hỗ trợ"].map(label => <span key={label}>{label}</span>)}</div>
+      <div className="preview-main"><strong>Tổng quan vận hành</strong><div className="preview-cards"><i /><i /><i /></div>
+        <div className="preview-chart">{[38, 58, 44, 78, 66, 88, 72].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div>
+        <div className="preview-rows"><i /><i /><i /></div>
+      </div>
+    </div>
+    {showModel && <iframe title="Mô hình máy pha Dolores" className="login-model" srcDoc={LOGIN_MODEL_DOCUMENT} tabIndex={-1} />}
+  </div>;
+}
 
 function isEmailVerificationRequired(error: unknown): boolean {
   if (!axios.isAxiosError(error) || error.response?.status !== 403) return false;
@@ -70,6 +149,21 @@ export default function LoginPage() {
     confirmNewPassword: false,
   });
   const [loginSuccessDestination, setLoginSuccessDestination] = useState("");
+  const [validatedStep, setValidatedStep] = useState<LoginStep | null>(null);
+  const [validationRound, setValidationRound] = useState(0);
+  const fieldErrors = validatedStep === step ? getLoginFieldErrors(step, { email, password, code, newPassword, confirmNewPassword }) : {};
+
+  function fieldState(id: string, value: string) {
+    return {
+      "data-invalid": Boolean(fieldErrors[id]),
+      "data-valid": validatedStep === step && !fieldErrors[id] && value.length > 0,
+      style: fieldErrors[id] ? { animationName: `login-field-shake-${validationRound % 2}` } : undefined,
+    };
+  }
+
+  function fieldHint(id: string) {
+    return <div className="validation-hint" data-open={Boolean(fieldErrors[id])}><div><span id={`${id}-error`}>{fieldErrors[id]}</span></div></div>;
+  }
 
   async function navigateAfterLogin(destination: string) {
     try {
@@ -328,6 +422,14 @@ export default function LoginPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
+    const errors = getLoginFieldErrors(step, { email, password, code, newPassword, confirmNewPassword });
+    setValidatedStep(step);
+    setValidationRound((round) => round + 1);
+    if (Object.keys(errors).length) {
+      focusLoginField(Object.keys(errors)[0]);
+      return;
+    }
+
     if (step === "credentials") return submitCredentials();
     if (step === "mfa") return submitMfa();
     if (step === "email-verification") return submitEmailVerification();
@@ -335,6 +437,7 @@ export default function LoginPage() {
   }
 
   function returnToCredentials() {
+    setValidatedStep(null);
     setStep("credentials");
     setTempToken("");
     setCode("");
@@ -383,22 +486,20 @@ export default function LoginPage() {
       </Head>
 
       <main className="login-page" inert={Boolean(loginSuccessDestination)}>
+        <header className="login-header">
+          <Link href={PATH_HOME.ROOT} className="login-brand" aria-label={LOGIN_MESSAGES.BRAND.HOME_LABEL}>dolores.</Link>
+          <a className="login-help" href={`mailto:${LOGIN_MESSAGES.BRAND.CONTACT_EMAIL}`}>{LOGIN_MESSAGES.FORM.SUPPORT}</a>
+        </header>
         <div className="login-shell">
-        <aside className="login-aside" aria-hidden="true">
-          <span className="aside-logo">Dolores.</span>
-          <p>{LOGIN_MESSAGES.PAGE.DESCRIPTION}</p>
+        <aside className="login-aside" aria-label="Dolores Coffee">
+          <h2>{LOGIN_MESSAGES.INTRO.TITLE}<br /><span>{LOGIN_MESSAGES.INTRO.HIGHLIGHT}</span></h2>
+          <p>{LOGIN_MESSAGES.INTRO.DESCRIPTION}</p>
+          <LoginHero />
         </aside>
         <section className="login-card" aria-labelledby="login-title">
-          <Link
-            href={PATH_HOME.ROOT}
-            className="login-brand"
-            aria-label={LOGIN_MESSAGES.BRAND.HOME_LABEL}
-          >
-            Dolores.
-          </Link>
           <div className="form-wrap login-content" key={step} data-step={step}>
             <h1 id="login-title">{content.TITLE}</h1>
-            <p id="login-description" className="form-description">
+            <p id="login-description" className="form-description" hidden={step === "credentials"}>
               {content.DESCRIPTION}
               {isEmailVerification && <><br /><strong>{email}</strong></>}
             </p>
@@ -410,8 +511,9 @@ export default function LoginPage() {
               aria-describedby="login-description"
               noValidate
             >
+              <LoginValidationSummary errors={fieldErrors} />
               {isCodeEntry ? (
-                <div className="field">
+                <div className="field" {...fieldState("login-code", code)}>
                   <label htmlFor="login-code">
                     {isMfa
                       ? LOGIN_MESSAGES.MFA.CODE_LABEL
@@ -431,15 +533,17 @@ export default function LoginPage() {
                       value={code}
                       onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                       disabled={loading || Boolean(loginSuccessDestination)}
-                      aria-describedby={errorMessage ? "login-feedback" : undefined}
+                      aria-invalid={Boolean(fieldErrors["login-code"])}
+                      aria-describedby={fieldErrors["login-code"] ? "login-code-error" : errorMessage ? "login-feedback" : undefined}
                       required
                       autoFocus
                     />
                   </div>
+                  {fieldHint("login-code")}
                 </div>
               ) : step === "credentials" ? (
                 <>
-                  <div className="field">
+                  <div className="field" {...fieldState("login-email", email)}>
                     <label htmlFor="login-email">{LOGIN_MESSAGES.FORM.EMAIL_LABEL}</label>
                     <div className="input-wrap">
                       <input
@@ -450,13 +554,15 @@ export default function LoginPage() {
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
                         disabled={loading || Boolean(loginSuccessDestination)}
-                        aria-describedby={errorMessage ? "login-feedback" : undefined}
+                        aria-invalid={Boolean(fieldErrors["login-email"])}
+                        aria-describedby={fieldErrors["login-email"] ? "login-email-error" : errorMessage ? "login-feedback" : undefined}
                         required
                         autoFocus
                       />
                     </div>
+                    {fieldHint("login-email")}
                   </div>
-                  <div className="field">
+                  <div className="field" {...fieldState("login-password", password)}>
                     <label htmlFor="login-password">
                       {LOGIN_MESSAGES.FORM.PASSWORD_LABEL}
                     </label>
@@ -469,16 +575,18 @@ export default function LoginPage() {
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         disabled={loading || Boolean(loginSuccessDestination)}
-                        aria-describedby={errorMessage ? "login-feedback" : undefined}
+                        aria-invalid={Boolean(fieldErrors["login-password"])}
+                        aria-describedby={fieldErrors["login-password"] ? "login-password-error" : errorMessage ? "login-feedback" : undefined}
                         required
                       />
                       {passwordVisibilityToggle("password", "mật khẩu")}
                     </div>
+                    {fieldHint("login-password")}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="field">
+                  <div className="field" {...fieldState("login-new-password", newPassword)}>
                     <label htmlFor="login-new-password">
                       {LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.PASSWORD_LABEL}
                     </label>
@@ -493,15 +601,17 @@ export default function LoginPage() {
                         value={newPassword}
                         onChange={(event) => setNewPassword(event.target.value)}
                         disabled={loading || Boolean(loginSuccessDestination)}
-                        aria-describedby={errorMessage ? "login-feedback" : "login-password-hint"}
+                        aria-invalid={Boolean(fieldErrors["login-new-password"])}
+                        aria-describedby={fieldErrors["login-new-password"] ? "login-new-password-error" : errorMessage ? "login-feedback" : "login-password-hint"}
                         required
                         autoFocus
                       />
                       {passwordVisibilityToggle("newPassword", "mật khẩu mới")}
                     </div>
+                    {fieldHint("login-new-password")}
                   </div>
                   <p id="login-password-hint" className="field-hint">{LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.PASSWORD_HINT}</p>
-                  <div className="field">
+                  <div className="field" {...fieldState("login-confirm-new-password", confirmNewPassword)}>
                     <label htmlFor="login-confirm-new-password">
                       {LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.CONFIRM_PASSWORD_LABEL}
                     </label>
@@ -516,11 +626,13 @@ export default function LoginPage() {
                         value={confirmNewPassword}
                         onChange={(event) => setConfirmNewPassword(event.target.value)}
                         disabled={loading || Boolean(loginSuccessDestination)}
-                        aria-describedby={errorMessage ? "login-feedback" : undefined}
+                        aria-invalid={Boolean(fieldErrors["login-confirm-new-password"])}
+                        aria-describedby={fieldErrors["login-confirm-new-password"] ? "login-confirm-new-password-error" : errorMessage ? "login-feedback" : undefined}
                         required
                       />
                       {passwordVisibilityToggle("confirmNewPassword", "xác nhận mật khẩu mới")}
                     </div>
+                    {fieldHint("login-confirm-new-password")}
                   </div>
                 </>
               )}
@@ -544,7 +656,6 @@ export default function LoginPage() {
                     ? content.SUBMITTING
                     : content.SUBMIT}
                 </span>
-                {!loading && <ArrowRight size={18} aria-hidden="true" />}
               </button>
             </form>
 
@@ -573,15 +684,15 @@ export default function LoginPage() {
                     : LOGIN_MESSAGES.FIRST_LOGIN_PASSWORD.BACK}
               </button>
             ) : null}
-          </div>
-        </section>
-        </div>
-        {step === "credentials" && (
+            {step === "credentials" && (
           <Link href={PATH_HOME.ROOT} className="secondary-link home-link">
-            <ArrowRight size={16} className="back-arrow" aria-hidden="true" />
             {LOGIN_MESSAGES.FORM.BACK_HOME}
           </Link>
         )}
+          </div>
+        </section>
+        </div>
+        <footer className="login-footer">© Dolores Coffee</footer>
       </main>
 
       {loginSuccessDestination && (
@@ -592,76 +703,104 @@ export default function LoginPage() {
         />
       )}
 
-      <style jsx global>{`
-        html, body, #__next { min-height: 100%; }
-        body { margin: 0; }
-        *, *::before, *::after { box-sizing: border-box; }
-        .login-page .secondary-link { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 16px auto 0; padding: 8px 12px; border: 0; border-radius: 8px; color: #675b57; background: transparent; font: inherit; font-size: .875rem; font-weight: 500; text-decoration: none; cursor: pointer; }
-        .login-page .home-link { margin: 0 auto; }
-        .login-page .back-arrow { transform: rotate(180deg); }
-        .login-page .login-brand { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0 24px; border-radius: 4px; color: #b81724; font-size: 2rem; font-weight: 700; letter-spacing: -.045em; line-height: 1; text-decoration: none; }
-        .login-page .login-brand:focus-visible { outline: 2px solid #b81724; outline-offset: 4px; }
-        .login-page .password-toggle { flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #675b57; background: transparent; cursor: pointer; }
-        .login-page .password-toggle:hover { color: #b81724; background: #f9e9ea; }
-        .login-page .password-toggle:focus-visible { outline: 2px solid #b81724; outline-offset: 1px; }
-        .login-page .password-toggle:active:not(:disabled) { background: #f1d6d9; }
-        .login-page .password-toggle:disabled { cursor: not-allowed; opacity: .6; }
-        .login-page .secondary-link:hover { text-decoration: underline; }
-        .login-page .secondary-link:active { background: #f1e9e7; }
-        .login-page .secondary-link:disabled { opacity: .55; cursor: not-allowed; }
-      `}</style>
 
-      <style jsx>{`
-        .login-page { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 32px 16px; color: #302927; background: radial-gradient(900px 480px at 50% -10%, #f9e9ea 0%, rgba(249, 233, 234, 0) 70%), #f8f6f3; font-family: Arial, Helvetica, sans-serif; }
-        .login-shell { width: 100%; max-width: 440px; display: grid; border: 1px solid #ece4de; border-radius: 24px; background: #fff; box-shadow: 0 1px 2px rgba(48, 41, 39, .04), 0 24px 64px rgba(184, 23, 36, .12); overflow: hidden; }
-        .login-aside { display: none; }
-        .login-card { width: 100%; padding: 28px 24px 32px; }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #fff inset; -webkit-text-fill-color: #302927; }
-        @media (min-width: 900px) {
-          .login-shell { max-width: 940px; grid-template-columns: 1fr 460px; }
-          .login-aside { display: flex; flex-direction: column; justify-content: space-between; padding: 40px; color: #fff; background: radial-gradient(420px 320px at 85% 105%, rgba(255, 255, 255, .22), transparent 70%), linear-gradient(145deg, #b81724 0%, #7d0f19 100%); }
-          .aside-logo { font-size: 2.75rem; font-weight: 700; letter-spacing: -.05em; line-height: 1; }
-          .login-aside p { max-width: 320px; margin: 0; font-size: 1.25rem; line-height: 1.5; font-weight: 500; opacity: .92; }
-          .login-aside { position: relative; overflow: hidden; }
-          .login-aside::before, .login-aside::after { content: ""; position: absolute; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .18); pointer-events: none; }
-          .login-aside::before { width: 420px; height: 420px; top: 50%; left: 50%; transform: translate(-50%, -55%); background: radial-gradient(circle, rgba(255, 255, 255, .14), transparent 68%); }
-          .login-aside::after { width: 620px; height: 620px; top: 50%; left: 50%; transform: translate(-50%, -55%); }
-          .login-aside > * { position: relative; z-index: 1; }
-          .login-card { padding: 48px 44px; align-self: center; }
-          .login-card :global(.login-brand) { display: none; }
+      <style jsx global>{`
+        .login-page { position:absolute; inset:0; --login-page:#fff; --login-surface:#fff; --login-ink:#302927; --login-muted:#675b57; --login-line:#968781; --login-card-line:#ece4de; --login-primary:#b81724; --login-soft:#f9e9ea; --login-error:#a82920; --login-error-bg:#fcecea; --login-success:#24653c; --login-success-bg:#e8f5eb; color-scheme:light; min-height:100vh; min-height:100svh; display:flex; flex-direction:column; padding:24px clamp(24px,4.5vw,80px) 20px; color:var(--login-ink); background:var(--login-page); font-family:Arial,Helvetica,sans-serif; }
+        .login-page, .login-page * { box-sizing:border-box; }
+        .login-page .login-header, .login-page .login-footer, .login-page .login-shell { width:100%; max-width:1440px; margin-inline:auto; }
+        .login-page .login-header { display:flex; align-items:center; justify-content:space-between; min-height:48px; }
+        .login-page .login-help { display:inline-flex; align-items:center; min-height:44px; padding:8px; color:var(--login-ink); font-size:.9375rem; text-decoration:none; }
+        .login-page .login-help:hover { text-decoration:underline; }
+        .login-page .login-brand { display:inline-flex; align-items:center; min-height:44px; color:var(--login-primary); font-size:2.5rem; font-weight:700; letter-spacing:-.055em; text-decoration:none; }
+        .login-page .login-shell { flex:1; display:grid; grid-template-columns:minmax(0,1.2fr) minmax(360px,.85fr); align-items:center; gap:clamp(40px,6vw,100px); padding:28px 0; }
+        .login-page .login-aside { min-width:0; }
+        .login-page .login-aside h2 { margin:0; font-size:clamp(2rem,3vw,3.5rem); line-height:1.15; letter-spacing:-.04em; font-weight:700; }
+        .login-page .login-aside h2 span { color:var(--login-primary); }
+        .login-page .login-aside > p { margin:22px 0 0; max-width:55ch; color:var(--login-muted); font-size:clamp(1rem,1.2vw,1.125rem); line-height:1.65; }
+        .login-page .login-illustration { position:relative; height:clamp(320px,44vh,520px); margin-top:34px; isolation:isolate; pointer-events:none; }
+        .login-page .login-model { position:absolute; z-index:1; inset:0; width:100%; height:100%; border:0; background:transparent; }
+        .login-page .dashboard-preview { position:absolute; inset:8% 5% 24% 0; display:grid; grid-template-columns:25% 1fr; border:1px solid #e5dfda; border-radius:14px; background:var(--login-surface); box-shadow:0 12px 28px #30292712; overflow:hidden; filter:blur(4px); opacity:.5; user-select:none; }
+        .login-page .preview-sidebar { display:flex; flex-direction:column; gap:16px; padding:18px 14px; border-right:1px solid #e5dfda; font-size:11px; }
+        .login-page .preview-sidebar b { color:var(--login-primary); font-size:20px; }
+        .login-page .preview-sidebar span:first-of-type { color:var(--login-primary); background:var(--login-soft); border-radius:6px; padding:7px; }
+        .login-page .preview-main { display:flex; flex-direction:column; gap:14px; padding:20px; font-size:12px; }
+        .login-page .preview-cards { display:flex; gap:10px; }
+        .login-page .preview-cards i { height:32px; flex:1; border:1px solid var(--login-line); border-radius:5px; }
+        .login-page .preview-chart { display:flex; align-items:flex-end; justify-content:space-around; gap:10px; height:110px; border-bottom:1px solid var(--login-line); }
+        .login-page .preview-chart i { flex:1; background:#b8172430; border-radius:3px 3px 0 0; }
+        .login-page .preview-rows { display:grid; gap:12px; }
+        .login-page .preview-rows i { height:7px; background:var(--login-soft); border-radius:3px; }
+        .login-page .login-card { min-width:0; width:100%; max-width:460px; justify-self:center; padding:clamp(28px,3vw,44px); border:1px solid var(--login-card-line); border-radius:22px; background:var(--login-surface); box-shadow:0 12px 36px #30292708; }
+        .login-page .login-content { animation:login-step-enter 180ms cubic-bezier(.22,1,.36,1) both; }
+        .login-page h1 { margin:0 0 8px; color:var(--login-ink); font-size:clamp(1.75rem,2.5vw,2.75rem); font-weight:700; line-height:1.25; letter-spacing:-.025em; }
+        .login-page .form-description { margin:12px 0 22px; color:var(--login-muted); font-size:1rem; line-height:1.5; overflow-wrap:anywhere; }
+        .login-page [hidden] { display:none !important; }
+        .login-page form { display:flex; flex-direction:column; }
+        .login-page .field { display:grid; gap:8px; margin-top:22px; }
+        .login-page label { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--login-ink); font-size:.9375rem; font-weight:600; }
+        .login-page .field label::after { content:""; width:6px; height:11px; border:solid var(--login-success); border-width:0 2px 2px 0; opacity:0; transform:rotate(45deg) scale(0); transition:opacity .2s,transform .35s cubic-bezier(.3,1.7,.5,1); }
+        .login-page .field[data-valid="true"] label::after { opacity:1; transform:rotate(45deg) scale(1); }
+        .login-page .input-wrap { min-height:52px; display:flex; align-items:center; gap:8px; padding:0 4px 0 16px; border:1px solid var(--login-line); border-radius:10px; color:var(--login-muted); background:var(--login-surface); transition:border-color .2s,box-shadow .2s; }
+        .login-page .input-wrap:hover { border-color:var(--login-muted); }
+        .login-page .input-wrap:focus-within { border-color:var(--login-primary); box-shadow:0 0 0 3px var(--login-soft); }
+        .login-page .field[data-invalid="true"] .input-wrap { border-color:var(--login-error); box-shadow:0 0 0 1px var(--login-error); animation-name:inherit; animation-duration:.4s; }
+        .login-page .field[data-valid="true"] .input-wrap { border-color:var(--login-success); }
+        .login-page input { min-width:0; width:100%; min-height:50px; padding:0; border:0; border-radius:8px; outline:0; color:var(--login-ink); background:transparent; font:inherit; font-size:1rem; }
+        .login-page input::placeholder { color:var(--login-muted); opacity:1; }
+        .login-page input:-webkit-autofill { -webkit-box-shadow:0 0 0 100px var(--login-surface) inset; -webkit-text-fill-color:var(--login-ink); }
+        .login-page .input-wrap:has(input:disabled) { opacity:.65; }
+        .login-page input:disabled { cursor:not-allowed; }
+        .login-page .code-input { text-align:center; letter-spacing:.35em; font-variant-numeric:tabular-nums; }
+        .login-page .code-input::placeholder { letter-spacing:normal; }
+        .login-page .password-toggle { flex:0 0 44px; width:44px; min-width:44px; height:44px; min-height:44px; display:grid; place-items:center; padding:0; border:0; border-radius:8px; color:var(--login-muted); background:transparent; cursor:pointer; }
+        .login-page .password-toggle:hover { color:var(--login-primary); background:var(--login-soft); }
+        .login-page .password-toggle:disabled { cursor:not-allowed; opacity:.6; }
+        .login-page .validation-summary { display:grid; grid-template-rows:0fr; margin-top:0; transition:grid-template-rows .4s cubic-bezier(.3,1,.4,1),margin .4s; }
+        .login-page .validation-summary > div { min-height:0; overflow:hidden; }
+        .login-page .validation-summary[data-open="true"] { grid-template-rows:1fr; margin-top:20px; }
+        .login-page .validation-summary-body { padding:12px 14px; border:1px solid var(--login-error); border-radius:10px; color:var(--login-error); background:var(--login-error-bg); font-size:.875rem; line-height:1.5; }
+        .login-page .validation-summary ul { margin:6px 0 0; padding-left:20px; }
+        .login-page .validation-summary a { display:inline-flex; align-items:center; min-height:32px; color:inherit; text-underline-offset:3px; }
+        .login-page .validation-hint { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s cubic-bezier(.3,1,.4,1); }
+        .login-page .validation-hint[data-open="true"] { grid-template-rows:1fr; }
+        .login-page .validation-hint > div { min-height:0; overflow:hidden; }
+        .login-page .validation-hint span { display:block; color:var(--login-error); font-size:.875rem; line-height:1.5; }
+        .login-page .field-hint { margin:8px 0 0; color:var(--login-muted); font-size:.875rem; line-height:1.5; }
+        .login-page .error-message, .login-page .success-message { margin:16px 0 0; padding:12px 16px; border-radius:8px; font-size:.875rem; line-height:1.5; overflow-wrap:anywhere; }
+        .login-page .error-message { color:var(--login-error); background:var(--login-error-bg); }
+        .login-page .success-message { color:var(--login-success); background:var(--login-success-bg); }
+        .login-page .submit-button { min-height:52px; display:inline-flex; align-items:center; justify-content:center; gap:12px; width:100%; margin-top:30px; padding:12px 16px; border:0; border-radius:10px; color:#fff; background:var(--login-primary); font:inherit; font-size:1rem; font-weight:600; cursor:pointer; box-shadow:inset 0 1px 0 #ffffff20,0 4px 10px #b8172412; transition:background .2s,transform .2s; }
+        .login-page .submit-button:hover:not(:disabled) { background:#99131d; }
+        .login-page .submit-button:active:not(:disabled) { transform:scale(.99); background:#85111b; }
+        .login-page .submit-button:disabled { opacity:.6; cursor:wait; }
+        .login-page .submit-spinner { width:16px; height:16px; border:2px solid #ffffff73; border-top-color:#fff; border-radius:50%; animation:login-spin 700ms linear infinite; }
+        .login-page .secondary-link { display:flex; align-items:center; justify-content:center; min-height:44px; margin:16px auto 0; padding:8px 12px; border:0; border-radius:8px; color:var(--login-muted); background:transparent; font:inherit; font-size:.875rem; text-decoration:none; cursor:pointer; }
+        .login-page .secondary-link:hover { text-decoration:underline; }
+        .login-page .secondary-link:active { background:var(--login-soft); }
+        .login-page .secondary-link:disabled { opacity:.55; cursor:not-allowed; }
+        .login-page :is(button,a):focus-visible { outline:2px solid var(--login-primary); outline-offset:3px; }
+        .login-page .login-footer { color:var(--login-muted); font-size:.8125rem; }
+        @keyframes login-step-enter { from { opacity:.7; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes login-spin { to { transform:rotate(360deg); } }
+        @keyframes login-field-shake-0 { 20%,60% { transform:translateX(-5px); } 40%,80% { transform:translateX(5px); } }
+        @keyframes login-field-shake-1 { 20%,60% { transform:translateX(-5px); } 40%,80% { transform:translateX(5px); } }
+        @media (max-width:899px) {
+          .login-page .login-shell { grid-template-columns:1fr; gap:28px; }
+          .login-page .login-aside { text-align:center; }
+          .login-page .login-aside > p { margin-inline:auto; }
+          .login-page .login-illustration { display:none; }
+          .login-page .login-card { max-width:440px; }
         }
-        .login-content { animation: login-step-enter 180ms cubic-bezier(.22, 1, .36, 1) both; }
-        @keyframes login-step-enter { from { opacity: .7; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-        .form-wrap { width: 100%; }
-        h1 { margin: 0 0 8px; color: #302927; font-size: 1.75rem; font-weight: 700; line-height: 1.25; letter-spacing: -.025em; text-wrap: balance; }
-        .form-description { margin: 0 0 28px; color: #675b57; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; }
-        form { display: grid; gap: 20px; }
-        .field { display: grid; gap: 8px; }
-        label { color: #302927; font-size: .875rem; font-weight: 600; }
-        .input-wrap { min-height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 16px; border: 1px solid #968781; border-radius: 12px; color: #675b57; background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
-        .input-wrap:hover { border-color: #887b75; }
-        .input-wrap:focus-within { border-color: #b81724; box-shadow: 0 0 0 3px #f1d6d9; }
-        .input-wrap:has(input:disabled) { background: #f8f6f3; border-color: #d8cfca; }
-        input { min-width: 0; width: 100%; min-height: 50px; padding: 0; border: 0; border-radius: 8px; outline: 0; color: #302927; background: transparent; font: inherit; font-size: 1rem; }
-        input::placeholder { color: #766a65; opacity: 1; }
-        .code-input { text-align: center; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
-        .code-input::placeholder { letter-spacing: normal; }
-        .field-hint { margin: -12px 0 0; color: #675b57; font-size: .875rem; line-height: 1.5; }
-        input:disabled { cursor: not-allowed; }
-        .error-message, .success-message { margin: 0; padding: 12px 16px; border-radius: 8px; font-size: .875rem; line-height: 1.5; overflow-wrap: anywhere; }
-        .error-message { color: #a82920; background: #fcecea; }
-        .success-message { color: #24653c; background: #e8f5eb; }
-        .submit-button { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; padding: 12px 16px; border: 0; border-radius: 12px; color: #fff; background: #b81724; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 6px 16px rgba(184, 23, 36, .22); transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
-        .submit-button:hover:not(:disabled) { background: #99131d; }
-        .submit-button:active:not(:disabled) { transform: scale(.99); background: #85111b; }
-        .submit-button:disabled { background: #986168; cursor: wait; }
-        .submit-button:focus-visible, .secondary-link:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
-        .submit-spinner { width: 16px; height: 16px; border: 2px solid rgb(255 255 255 / 45%); border-top-color: #fff; border-radius: 50%; animation: login-spin 700ms linear infinite; }
-        @keyframes login-spin { to { transform: rotate(360deg); } }
-        @media (prefers-reduced-motion: reduce) {
-          .login-content, .submit-spinner { animation: none; }
-          .login-page * { transition-duration: 0ms !important; }
-          .submit-button:active:not(:disabled) { transform: none; }
+        @media (max-width:599px) {
+          .login-page { padding:20px 18px; }
+          .login-page .login-aside { display:none; }
+          .login-page .login-shell { padding:28px 0; }
+          .login-page .login-card { padding:28px 22px; border-radius:18px; }
+          .login-page .login-brand { font-size:2rem; }
+        }
+        @media (prefers-reduced-motion:reduce) {
+          .login-page *, .login-page *::before, .login-page *::after { animation:none !important; transition-duration:0ms !important; scroll-behavior:auto !important; }
+          .login-page .submit-button:active:not(:disabled) { transform:none; }
         }
       `}</style>
     </>

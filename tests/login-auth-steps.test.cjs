@@ -63,15 +63,7 @@ function loadLoginPage(hooks) {
     "@/lib/auth-role": { getPostLoginPath: () => "/dashboard" },
     "@/components/feedback/liquid-success-splash": { LiquidSuccessSplash: () => null },
     "@/routes/path": { PATH_HOME: { ROOT: "/" } },
-    "@/schema/auth.schema": {
-      FirstLoginPasswordChangeRequestSchema: {},
-      LoginMfaRequestSchema: {},
-      LoginMfaRequiredResponseSchema: {},
-      LoginPasswordChangeRequiredResponseSchema: {},
-      LoginRequestSchema: {},
-      LoginSuccessResponseSchema: {},
-      VerifyEmailRequestSchema: {},
-    },
+    "@/schema/auth.schema": require("../src/schema/auth.schema.ts"),
     "@/text/auth/login-messages": {
       LOGIN_MESSAGES: require("../src/text/auth/login-messages.ts").LOGIN_MESSAGES,
     },
@@ -79,7 +71,7 @@ function loadLoginPage(hooks) {
   const loaded = { exports: {} };
   const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
-  return loaded.exports.default;
+  return Object.assign(loaded.exports.default, { getLoginFieldErrors: loaded.exports.getLoginFieldErrors });
 }
 
 function findElements(node, predicate, result = []) {
@@ -151,4 +143,48 @@ test("login motion is brief and disabled for reduced-motion preferences", () => 
   assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   assert.match(styles, /animation:\s*none/);
   assert.match(styles, /transition-duration:\s*0ms/);
+});
+
+test("field validation follows auth schemas without imposing a new login password policy", () => {
+  const { getLoginFieldErrors } = loadLoginPage(createHookHarness());
+  const values = { email: "", password: "", code: "", newPassword: "", confirmNewPassword: "" };
+  assert.deepEqual(Object.keys(getLoginFieldErrors("credentials", values)), ["login-email", "login-password"]);
+  assert.deepEqual(getLoginFieldErrors("credentials", { ...values, email: " person@example.com ", password: "x" }), {});
+  assert.ok(getLoginFieldErrors("email-verification", { ...values, code: "123" })["login-code"]);
+  assert.deepEqual(getLoginFieldErrors("email-verification", { ...values, code: "123456" }), {});
+  assert.ok(getLoginFieldErrors("password-change", { ...values, newPassword: "x".repeat(73), confirmNewPassword: "x".repeat(73) })["login-new-password"]);
+  assert.ok(getLoginFieldErrors("password-change", { ...values, newPassword: "password123", confirmNewPassword: "different" })["login-confirm-new-password"]);
+});
+
+test("invalid submit focuses the first error, corrections reduce the summary and links focus the remaining field", async () => {
+  const oldWindow = global.window, oldDocument = global.document;
+  const focused = [], scrolls = [];
+  global.window = { matchMedia: () => ({ matches: true }) };
+  global.document = { getElementById: (id) => ({ focus: () => focused.push(id), scrollIntoView: (options) => scrolls.push(options) }) };
+  try {
+    const hooks = createHookHarness();
+    const Page = loadLoginPage(hooks);
+    let tree = hooks.render(Page);
+    const submit = findElements(tree, (el) => el.type === "form")[0].props.onSubmit;
+    await submit({ preventDefault() {} });
+    tree = hooks.render(Page);
+    assert.deepEqual(focused, ["login-email"]);
+    assert.equal(scrolls[0].behavior, "instant");
+    assert.equal(elementWithId(tree, "login-email").props["aria-invalid"], true);
+    elementWithId(tree, "login-email").props.onChange({ target: { value: "person@example.com" } });
+    tree = hooks.render(Page);
+    assert.equal(elementWithId(tree, "login-email").props["aria-invalid"], false);
+    const summary = findElements(tree, (el) => el.type?.name === "LoginValidationSummary")[0];
+    assert.deepEqual(Object.keys(summary.props.errors), ["login-password"]);
+    const summaryTree = summary.type(summary.props);
+    const link = findElements(summaryTree, (el) => el.type === "a")[0];
+    link.props.onClick({ preventDefault() {} });
+    assert.equal(focused.at(-1), "login-password");
+    elementWithId(tree, "login-password").props.onChange({ target: { value: "x" } });
+    tree = hooks.render(Page);
+    assert.deepEqual(findElements(tree, (el) => el.type?.name === "LoginValidationSummary")[0].props.errors, {});
+  } finally {
+    if (oldWindow === undefined) delete global.window; else global.window = oldWindow;
+    if (oldDocument === undefined) delete global.document; else global.document = oldDocument;
+  }
 });
