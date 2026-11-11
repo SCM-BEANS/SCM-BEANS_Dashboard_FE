@@ -9,7 +9,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
@@ -47,6 +47,7 @@ import {
   type WaterFlowPlayback,
 } from "./material-effects/WaterFlowEffect";
 import { createWaterFlowBounds } from "./material-effects/waterFlowRuntime";
+import { getPartGroupForNodeName, type DigitalTwinPresentation, type PartGroupId } from "./presentation/part-groups";
 
 const COFFEE_MACHINE_MODEL_URL =
   "/models/digital-twin/body/coffee_machine_03_v2.glb";
@@ -97,6 +98,7 @@ interface BodyModelCanvasProps {
   compressorRunning: boolean;
   operationEvent: DigitalTwinCycleEvent | null;
   onOperationError: (error: unknown) => void;
+  presentation?: DigitalTwinPresentation;
 }
 
 const INITIAL_COFFEE_PLAYBACK: CoffeeGroundPlayback = {
@@ -124,6 +126,170 @@ interface OperationVisualState {
   visibility: Map<THREE.Object3D, boolean>;
   materials: Map<THREE.Mesh, THREE.Material | THREE.Material[]>;
   clonedMaterials: Set<THREE.Material>;
+}
+
+interface PresentationVisualState {
+  visibility: Map<THREE.Object3D, boolean>;
+  materials: Map<THREE.Mesh, THREE.Material | THREE.Material[]>;
+  clonedMaterials: Set<THREE.Material>;
+  shellMaterials: Map<THREE.Mesh, THREE.Material[]>;
+  originalOpacities: Map<THREE.Material, number>;
+  originalDepthWrite: Map<THREE.Material, boolean>;
+  shellOpacityFactors: Map<THREE.Mesh, number>;
+}
+
+interface CameraFocusTransition {
+  startedAt: number;
+  durationMs: number;
+  fromPosition: THREE.Vector3;
+  toPosition: THREE.Vector3;
+  fromTarget: THREE.Vector3;
+  toTarget: THREE.Vector3;
+}
+
+function getObjectPartGroup(object: THREE.Object3D): PartGroupId {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    const group = getPartGroupForNodeName(current.name);
+    if (group !== "other") return group;
+    current = current.parent;
+  }
+  return "other";
+}
+
+function getPartGroupBounds(
+  roots: readonly (THREE.Object3D | null)[],
+  groups: readonly PartGroupId[],
+) {
+  const focus = new Set(groups);
+  const bounds = new THREE.Box3().makeEmpty();
+  for (const root of roots) {
+    root?.traverse((object) => {
+      if (object instanceof THREE.Mesh && focus.has(getObjectPartGroup(object))) {
+        bounds.expandByObject(object);
+      }
+    });
+  }
+  return bounds.isEmpty() ? null : bounds;
+}
+
+function setMaterialOpacity(
+  material: THREE.Material,
+  opacity: number,
+  originalTransparent: boolean,
+  originalDepthWrite: boolean,
+) {
+  material.opacity = opacity;
+  material.transparent = originalTransparent || opacity < 1;
+  material.depthWrite = opacity < 1 ? false : originalDepthWrite;
+  material.needsUpdate = true;
+}
+
+function restorePresentationVisualState(stateRef: MutableRefObject<PresentationVisualState | null>) {
+  const state = stateRef.current;
+  if (!state) return;
+  for (const [mesh, originals] of state.materials) mesh.material = originals;
+  for (const material of state.clonedMaterials) material.dispose();
+  for (const [node, visible] of state.visibility) node.visible = visible;
+  stateRef.current = null;
+}
+
+function applyPresentationVisualState(
+  roots: readonly (THREE.Object3D | null)[],
+  presentation: DigitalTwinPresentation,
+  state: PresentationVisualState,
+) {
+  const focus = new Set(presentation.focus);
+  const snapshotVisibility = (node: THREE.Object3D) => {
+    if (!state.visibility.has(node)) state.visibility.set(node, node.visible);
+  };
+
+  for (const root of roots) {
+    root?.traverse((object) => {
+      const group = getObjectPartGroup(object);
+      if (object !== root && !presentation.layers[group]) {
+        snapshotVisibility(object);
+        object.visible = false;
+      }
+      if (!(object instanceof THREE.Mesh)) return;
+
+      const originalMaterials = object.material;
+      const originals = Array.isArray(originalMaterials) ? originalMaterials : [originalMaterials];
+      const groupIsFocused = focus.size > 0 && focus.has(group);
+      const clones = originals.map((original) => {
+        const clone = original.clone();
+        state.clonedMaterials.add(clone);
+        state.originalOpacities.set(clone, original.opacity);
+        state.originalDepthWrite.set(clone, original.depthWrite);
+        const material = clone as THREE.MeshStandardMaterial;
+        if (material.color instanceof THREE.Color) {
+          if (groupIsFocused) material.color.lerp(new THREE.Color("#b91222"), 0.38);
+          else if (focus.size > 0) material.color.lerp(new THREE.Color("#898989"), 0.55);
+        }
+        if (groupIsFocused && material.emissive instanceof THREE.Color) {
+          material.emissive.copy(new THREE.Color("#b91222"));
+          material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.35);
+        }
+        const opacityFactor = focus.size > 0 && !groupIsFocused ? 0.35 : 1;
+        setMaterialOpacity(clone, original.opacity * opacityFactor, original.transparent, original.depthWrite);
+        return clone;
+      });
+      state.materials.set(object, originalMaterials);
+      object.material = Array.isArray(originalMaterials) ? clones : clones[0];
+      if (group === "shell") {
+        state.shellMaterials.set(object, clones);
+        state.shellOpacityFactors.set(object, groupIsFocused ? 1 : focus.size > 0 ? 0.35 : 1);
+      }
+    });
+  }
+}
+
+function applyGhostShellOpacity(
+  state: PresentationVisualState,
+  ghostedMeshes: ReadonlySet<THREE.Mesh>,
+) {
+  for (const [mesh, materials] of state.shellMaterials) {
+    const ghosted = ghostedMeshes.has(mesh);
+    const factor = ghosted ? 0.12 : state.shellOpacityFactors.get(mesh) ?? 1;
+    for (const material of materials) {
+      const originalOpacity = state.originalOpacities.get(material) ?? 1;
+      const original = state.materials.get(mesh);
+      const sourceMaterials = Array.isArray(original) ? original : original ? [original] : [];
+      const index = materials.indexOf(material);
+      setMaterialOpacity(
+        material,
+        originalOpacity * factor,
+        sourceMaterials[index]?.transparent ?? false,
+        sourceMaterials[index]?.depthWrite ?? true,
+      );
+    }
+  }
+}
+
+function findOccludingShellMeshes(
+  roots: readonly (THREE.Object3D | null)[],
+  camera: THREE.Camera,
+  focusBounds: THREE.Box3 | null,
+) {
+  const shellMeshes: THREE.Mesh[] = [];
+  for (const root of roots) {
+    root?.traverse((object) => {
+      if (object instanceof THREE.Mesh && getObjectPartGroup(object) === "shell") shellMeshes.push(object);
+    });
+  }
+  if (!focusBounds || focusBounds.isEmpty()) return new Set(shellMeshes);
+
+  try {
+    const center = focusBounds.getCenter(new THREE.Vector3());
+    const direction = center.sub(camera.position);
+    const distance = direction.length();
+    if (!Number.isFinite(distance) || distance <= 0) return new Set(shellMeshes);
+    const raycaster = new THREE.Raycaster(camera.position, direction.normalize(), 0, distance);
+    const hits = raycaster.intersectObjects(shellMeshes, false);
+    return new Set(hits.map((hit) => hit.object).filter((object): object is THREE.Mesh => object instanceof THREE.Mesh));
+  } catch {
+    return new Set(shellMeshes);
+  }
 }
 
 function collectModelResources(root: THREE.Object3D): ModelResources {
@@ -585,6 +751,7 @@ function BodyScene({
   compressorRunning,
   operationEvent,
   onOperationError,
+  presentation,
 }: Omit<BodyModelCanvasProps, "canvasLabel">) {
   const { camera, gl } = useThree();
   const [model, setModel] = useState<THREE.Group | null>(null);
@@ -615,6 +782,12 @@ function BodyScene({
   const compressorRuntimeRef = useRef<ClusterMotionRuntime | null>(null);
   const compressorPosePairsRef = useRef<CompressorPosePair[]>([]);
   const operationVisualStateRef = useRef<OperationVisualState | null>(null);
+  const presentationVisualStateRef = useRef<PresentationVisualState | null>(null);
+  const lastOcclusionUpdateAtRef = useRef(0);
+  const cameraFocusTransitionRef = useRef<CameraFocusTransition | null>(null);
+  const grinderNodeRef = useRef<THREE.Object3D | null>(null);
+  const grinderOriginalRotationRef = useRef<THREE.Euler | null>(null);
+  const grinderWasSpinningRef = useRef(false);
   const operationCycleIdRef = useRef<string | null>(null);
   const operationMotionProgressRef = useRef({ main: 0, lower: 1 });
   const previousCoffeeRunRequestRef = useRef(coffeeRunRequest);
@@ -624,6 +797,11 @@ function BodyScene({
     () => restoreOperationVisualState(operationVisualStateRef),
     [],
   );
+  const restorePresentationState = useCallback(
+    () => restorePresentationVisualState(presentationVisualStateRef),
+    [],
+  );
+  const hasPresentation = presentation !== undefined;
 
   useEffect(() => {
     if (!enableCoffeeEffect) {
@@ -632,6 +810,23 @@ function BodyScene({
           ? previous
           : INITIAL_COFFEE_PLAYBACK,
       );
+      return;
+    }
+
+    if (presentation) {
+      if (!presentation.effects?.coffee || !presentation.stepId) {
+        setCoffeePlayback((previous) =>
+          previous.phase === "idle" && previous.cycleId === null
+            ? previous
+            : INITIAL_COFFEE_PLAYBACK,
+        );
+      } else {
+        setCoffeePlayback((previous) =>
+          previous.phase === "running" && previous.cycleId === presentation.stepId
+            ? previous
+            : { phase: "running", cycleId: presentation.stepId! },
+        );
+      }
       return;
     }
 
@@ -670,7 +865,7 @@ function BodyScene({
           : { phase: "running", cycleId: operationEvent.cycleId },
       );
     }
-  }, [enableCoffeeEffect, operationEvent]);
+  }, [enableCoffeeEffect, operationEvent, presentation]);
 
   useEffect(() => {
     if (previousCoffeeRunRequestRef.current === coffeeRunRequest) return;
@@ -699,6 +894,23 @@ function BodyScene({
     previousWaterResetRequestRef.current = waterResetRequest;
     setWaterPlayback(INITIAL_WATER_PLAYBACK);
   }, [waterResetRequest]);
+
+  useEffect(() => {
+    if (!presentation) return;
+    if (!enableWaterEffect || !presentation.effects?.water || !presentation.stepId) {
+      setWaterPlayback((previous) =>
+        previous.phase === "idle" && previous.cycleId === null
+          ? previous
+          : INITIAL_WATER_PLAYBACK,
+      );
+      return;
+    }
+    setWaterPlayback((previous) =>
+      previous.phase === "running" && previous.cycleId === presentation.stepId
+        ? previous
+        : { phase: "running", cycleId: presentation.stepId! },
+    );
+  }, [enableWaterEffect, presentation]);
 
   useEffect(() => {
     if (enableWaterEffect) return;
@@ -889,7 +1101,9 @@ function BodyScene({
         }
 
       excludedNodes = detachExcludedNodes(bodyScene, [
-        ...HIDDEN_BODY_NODE_NAMES,
+        ...(hasPresentation
+          ? HIDDEN_BODY_NODE_NAMES.filter((name) => name !== "Assem_HeNhiet02-1")
+          : HIDDEN_BODY_NODE_NAMES),
         ...(includeCompressorMotion ? LEGACY_COMPRESSOR_NODE_NAMES : []),
         ...excludedNodeNames,
       ]);
@@ -1007,6 +1221,7 @@ function BodyScene({
     excludedNodeNames,
     enableCoffeeEffect,
     enableWaterEffect,
+    hasPresentation,
     includeCompressorMotion,
     includeMayxoayNode,
     modelRotationY,
@@ -1016,6 +1231,37 @@ function BodyScene({
     restoreOperationState,
   ]);
 
+  useEffect(() => {
+    restorePresentationState();
+    if (!presentation || !model) return;
+
+    const state: PresentationVisualState = {
+      visibility: new Map(),
+      materials: new Map(),
+      clonedMaterials: new Set(),
+      shellMaterials: new Map(),
+      originalOpacities: new Map(),
+      originalDepthWrite: new Map(),
+      shellOpacityFactors: new Map(),
+    };
+    presentationVisualStateRef.current = state;
+    const roots = [model, compressorDisplayRoot] as const;
+    try {
+      applyPresentationVisualState(roots, presentation, state);
+      const focusBounds = getPartGroupBounds(roots, presentation.focus);
+      const ghosted = presentation.ghostShells
+        ? findOccludingShellMeshes(roots, camera, focusBounds)
+        : new Set<THREE.Mesh>();
+      applyGhostShellOpacity(state, ghosted);
+      lastOcclusionUpdateAtRef.current = Date.now();
+    } catch (error) {
+      restorePresentationState();
+      onOperationError(error);
+    }
+
+    return restorePresentationState;
+  }, [camera, compressorDisplayRoot, model, onOperationError, presentation, restorePresentationState]);
+
   const operationPhase = operationEvent?.phase ?? "idle";
   useEffect(() => {
     restoreOperationState();
@@ -1023,7 +1269,7 @@ function BodyScene({
     const stage = DIGITAL_TWIN_OPERATION_STAGES.find(
       (candidate) => candidate.phase === operationPhase,
     );
-    if (!model || !stage) return;
+    if (presentation || !model || !stage) return;
 
     const nextState: OperationVisualState = {
       visibility: new Map(),
@@ -1050,6 +1296,7 @@ function BodyScene({
     model,
     onOperationError,
     operationPhase,
+    presentation,
     restoreOperationState,
   ]);
 
@@ -1112,6 +1359,60 @@ function BodyScene({
     );
   });
 
+  useEffect(() => {
+    const grinder = model?.getObjectByName("Mayxoay1-1") ?? null;
+    grinderNodeRef.current = grinder;
+    grinderOriginalRotationRef.current = grinder?.rotation.clone() ?? null;
+    grinderWasSpinningRef.current = false;
+    return () => {
+      if (grinder && grinderOriginalRotationRef.current) {
+        grinder.rotation.copy(grinderOriginalRotationRef.current);
+      }
+      grinderNodeRef.current = null;
+      grinderOriginalRotationRef.current = null;
+      grinderWasSpinningRef.current = false;
+    };
+  }, [model]);
+
+  useFrame((_, delta) => {
+    const grinder = grinderNodeRef.current;
+    const originalRotation = grinderOriginalRotationRef.current;
+    if (presentation?.effects?.grinderSpin && grinder) {
+      grinderWasSpinningRef.current = true;
+      grinder.rotation.y += delta * 0.8;
+    } else if (grinderWasSpinningRef.current && grinder && originalRotation) {
+      grinder.rotation.copy(originalRotation);
+      grinderWasSpinningRef.current = false;
+    }
+
+    if (presentation?.ghostShells && presentation.active && model) {
+      const now = Date.now();
+      if (now - lastOcclusionUpdateAtRef.current >= 200) {
+        const roots = [model, compressorDisplayRoot] as const;
+        const visibleFocus = presentation.focus.filter((group) => presentation.layers[group]);
+        const focusBounds = getPartGroupBounds(roots, visibleFocus);
+        const ghosted = findOccludingShellMeshes(roots, camera, focusBounds);
+        const state = presentationVisualStateRef.current;
+        if (state) applyGhostShellOpacity(state, ghosted);
+        lastOcclusionUpdateAtRef.current = now;
+      }
+    }
+
+    const transition = cameraFocusTransitionRef.current;
+    if (!transition) return;
+    const controls = controlsRef.current;
+    const linearProgress = Math.min(1, Math.max(0, (Date.now() - transition.startedAt) / transition.durationMs));
+    const eased = linearProgress * linearProgress * (3 - 2 * linearProgress);
+    camera.position.lerpVectors(transition.fromPosition, transition.toPosition, eased);
+    if (controls) {
+      controls.target.lerpVectors(transition.fromTarget, transition.toTarget, eased);
+      controls.update();
+    } else {
+      camera.lookAt(transition.toTarget);
+    }
+    if (linearProgress >= 1) cameraFocusTransitionRef.current = null;
+  });
+
   const bounds = useMemo(() => {
     if (!model) return null;
     const combinedBounds = new THREE.Box3().setFromObject(model);
@@ -1158,6 +1459,64 @@ function BodyScene({
     appliedZoomLevelRef.current = zoomLevel;
   }, [bounds, camera, cameraResetVersion, interactive, model, zoomLevel]);
 
+  useEffect(() => {
+    cameraFocusTransitionRef.current = null;
+    if (!presentation?.autoCamera || !presentation.active || !model) return;
+    const focusGroups = presentation.focus.filter((group) => presentation.layers[group]);
+    if (focusGroups.length === 0) return;
+    const focusBounds = getPartGroupBounds([model, compressorDisplayRoot], focusGroups);
+    if (!focusBounds || focusBounds.isEmpty()) return;
+
+    const center = focusBounds.getCenter(new THREE.Vector3());
+    const size = focusBounds.getSize(new THREE.Vector3());
+    const maxSize = Math.max(size.x, size.y, size.z);
+    if (!Number.isFinite(maxSize) || maxSize <= 0) return;
+    const perspectiveCamera = camera instanceof THREE.PerspectiveCamera ? camera : null;
+    const fitHeight = perspectiveCamera
+      ? maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(perspectiveCamera.fov * 0.5)))
+      : maxSize;
+    const distance = Math.max(maxSize * 1.6, fitHeight * 1.6);
+    const controls = controlsRef.current;
+    const fromTarget = controls?.target.clone() ?? new THREE.Vector3();
+    const direction = camera.position.clone().sub(fromTarget);
+    if (direction.lengthSq() < 0.0001) direction.set(0, 0.22, 1);
+    direction.normalize();
+    const toPosition = center.clone().addScaledVector(direction, distance);
+    const reducedMotion = typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      camera.position.copy(toPosition);
+      if (controls) {
+        controls.target.copy(center);
+        controls.update();
+      } else {
+        camera.lookAt(center);
+      }
+      return;
+    }
+
+    cameraFocusTransitionRef.current = {
+      startedAt: Date.now(),
+      durationMs: 600,
+      fromPosition: camera.position.clone(),
+      toPosition,
+      fromTarget,
+      toTarget: center,
+    };
+  }, [camera, cameraResetVersion, compressorDisplayRoot, model, presentation]);
+
+  const presentationLabelPosition = useMemo<[number, number, number] | null>(() => {
+    if (!presentation?.label) return null;
+    const bounds = getPartGroupBounds(
+      [model, compressorDisplayRoot],
+      [presentation.label.group],
+    );
+    if (!bounds || bounds.isEmpty()) return null;
+    const center = bounds.getCenter(new THREE.Vector3());
+    return [center.x, bounds.max.y + Math.max(bounds.getSize(new THREE.Vector3()).y * 0.08, 0.035), center.z];
+  }, [compressorDisplayRoot, model, presentation?.label]);
+
   return (
     <>
       {model && bounds ? (
@@ -1184,6 +1543,13 @@ function BodyScene({
               playback={waterPlayback}
             />
           ) : null}
+          {presentation?.label && presentationLabelPosition ? (
+            <Html position={presentationLabelPosition} center distanceFactor={8} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
+              <div className={styles.presentationLabel} role="status" aria-live="polite">
+                {presentation.label.text}
+              </div>
+            </Html>
+          ) : null}
         </>
       ) : null}
       <ambientLight intensity={0.85} />
@@ -1197,7 +1563,7 @@ function BodyScene({
           dampingFactor={0.08}
           enablePan={false}
           enableZoom
-          enableRotate={false}
+          enableRotate={Boolean(presentation)}
           minDistance={0.05}
           maxDistance={100}
         />
@@ -1230,6 +1596,7 @@ export default function BodyModelCanvas({
   compressorRunning,
   operationEvent,
   onOperationError,
+  presentation,
 }: BodyModelCanvasProps) {
   return (
     <Canvas
@@ -1262,6 +1629,7 @@ export default function BodyModelCanvas({
         compressorRunning={compressorRunning}
         operationEvent={operationEvent}
         onOperationError={onOperationError}
+        presentation={presentation}
       />
     </Canvas>
   );

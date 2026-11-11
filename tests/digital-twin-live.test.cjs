@@ -17,73 +17,103 @@ function loadTypescript(relativePath, mocks = {}) {
   return module.exports;
 }
 
-const messages = loadTypescript("src/text/digital-twin/digital-twin-messages.ts").DIGITAL_TWIN_LIVE_MESSAGES;
-const { mapBrewState, LIVE_BREW_STEPS } = loadTypescript(
-  "src/components/features/digital-twin/live/brew-state-mapping.ts",
-  { "@/text/digital-twin/digital-twin-messages": { DIGITAL_TWIN_LIVE_MESSAGES: messages } },
+const { parseProcedure } = loadTypescript("src/components/features/digital-twin/script/parse-procedure.ts");
+const timing = {
+  BREW_TIMING_ESTIMATES: { milkMs: 950 },
+  estimateGrindingDuration: (grams) => Math.max(1_200, Math.min(4_000, Math.round(grams * 90))),
+  estimateExtractionDuration: (ml) => Math.max(2_000, Math.min(7_000, Math.round(ml * 55))),
+  estimateWaterDuration: (ml) => Math.max(600, Math.min(3_500, Math.round(ml * 40))),
+  estimatePreinfusionDuration: (seconds) => Math.max(100, Math.min(30_000, Math.round(seconds * 1_000))),
+  estimateStageDuration: (phase) => ({ closing: 1_200, tamping: 1_600, opening: 1_100, ejecting: 1_300, scraping: 2_200 })[phase],
+};
+const recipeMessages = {
+  DIGITAL_TWIN_RECIPE_TWIN_MESSAGES: {
+    step_grind: "Xay", step_dose: "Nạp cà phê", step_close: "Đóng cụm nén", step_tamp: "Nén",
+    step_hold_tamp: "Giữ nén", step_preinfuse: "Ngâm sơ bộ", step_bloom: "Ngâm", step_extract: "Chiết xuất",
+    step_dry_tamp: "Nén khô", step_open: "Mở cụm nén", step_eject: "Đẩy bã", step_return: "Về vị trí chờ",
+    step_water: "Nước", step_milk: "Thêm sữa", recipe_default_missing: "Quy trình chuẩn (không tìm thấy công thức)",
+  },
+};
+const { buildBrewScript } = loadTypescript(
+  "src/components/features/digital-twin/script/build-brew-script.ts",
+  { "./brew-timing-config": timing, "@/text/digital-twin/digital-twin-messages": recipeMessages },
 );
 
-const mappingCases = [
-  ["IDLE", "idle", null, "digital_twin_live_state_idle", false],
-  ["UNKNOWN", "idle", null, "digital_twin_live_state_unknown", false],
-  ["UNSPECIFIED", "idle", null, "digital_twin_live_state_unknown", false],
-  ["CHECKING_TEMPERATURE", "idle", "heating", "digital_twin_live_state_checking_temperature", false],
-  ["HEATING", "idle", "heating", "digital_twin_live_state_heating", false],
-  ["CHECKING_ERRORS", "idle", "heating", "digital_twin_live_state_checking_errors", false],
-  ["GRINDING", "grinding", "grinding", "digital_twin_live_state_grinding", false],
-  ["CLOSE_CHAMBER_LID", "closing", "closing", "digital_twin_live_state_close_chamber_lid", false],
-  ["TAMPING_ACCORDING_TO_RECIPE", "tamping", "tamping", "digital_twin_live_state_tamping", false],
-  ["DRY_TAMP", "tamping", "tamping", "digital_twin_live_state_dry_tamp", false],
-  ["PRE_INFUSION", "extraction", "extraction", "digital_twin_live_state_pre_infusion", false],
-  ["MAIN_EXTRACTION", "extraction", "extraction", "digital_twin_live_state_main_extraction", false],
-  ["OPEN_CHAMBER_LID", "opening", "opening", "digital_twin_live_state_open_chamber_lid", false],
-  ["EJECT_GROUNDS_1", "ejecting", "ejecting", "digital_twin_live_state_eject_grounds", false],
-  ["EJECT_GROUNDS_2", "ejecting", "ejecting", "digital_twin_live_state_eject_grounds", false],
-  ["RETURN_TO_NEUTRAL_1", "scraping", "returning", "digital_twin_live_state_return_to_neutral", false],
-  ["RETURN_TO_NEUTRAL_2", "scraping", "returning", "digital_twin_live_state_return_to_neutral", false],
-  ["RETURN_TO_NEUTRAL_3", "scraping", "returning", "digital_twin_live_state_return_to_neutral", false],
-  ["STARTING_MILK", "idle", "milk", "digital_twin_live_state_starting_milk", false],
-  ["WAITING_FOR_MILK", "idle", "milk", "digital_twin_live_state_waiting_for_milk", false],
-  ["COMPLETE", "complete", "done", "digital_twin_live_state_complete", false],
-  ["ERROR", "fault", null, "digital_twin_live_state_error", true],
-];
-
-test("mapBrewState maps every machine state in prefixed and unprefixed forms", () => {
-  for (const [state, phase, step, labelKey, fault] of mappingCases) {
-    for (const raw of [state, `BREW_STATE_${state}`]) {
-      assert.deepEqual(mapBrewState(raw), {
-        key: state,
-        label: messages[labelKey],
-        phase,
-        step,
-        fault,
-      }, `${raw} should map to ${phase}/${step}`);
-    }
-  }
-});
-
-test("mapBrewState treats absent and unrecognized states as unknown", () => {
-  for (const raw of [null, undefined, "", "UNKNOWN_VALUE", "BREW_STATE_UNKNOWN_VALUE"]) {
-    const result = mapBrewState(raw);
-    assert.equal(result.label, messages.digital_twin_live_state_unknown);
-    assert.equal(result.phase, "idle");
-    assert.equal(result.step, null);
-    assert.equal(result.fault, false);
-  }
-  assert.equal(mapBrewState(null).key, "UNKNOWN");
-  assert.equal(mapBrewState("BREW_STATE_UNKNOWN_VALUE").key, "UNKNOWN_VALUE");
-});
-
-test("live step labels stay in operation order", () => {
-  assert.deepEqual(LIVE_BREW_STEPS, [
-    { key: "heating", label: messages.digital_twin_live_steps_heating },
-    { key: "grinding", label: messages.digital_twin_live_steps_grinding },
-    { key: "closing", label: messages.digital_twin_live_steps_closing },
-    { key: "tamping", label: messages.digital_twin_live_steps_tamping },
-    { key: "extraction", label: messages.digital_twin_live_steps_extraction },
-    { key: "opening", label: messages.digital_twin_live_steps_opening },
-    { key: "ejecting", label: messages.digital_twin_live_steps_ejecting },
-    { key: "returning", label: messages.digital_twin_live_steps_returning },
-    { key: "done", label: messages.digital_twin_live_steps_done },
+test("parseProcedure accepts canonical recipe directives and values", () => {
+  assert.deepEqual(parseProcedure(["DOSE:18", "TAMP:100", "HOLDTAMP:50", "EXTRACT:40"]), [
+    { directive: "DOSE", value: 18 },
+    { directive: "TAMP", value: 100 },
+    { directive: "HOLDTAMP", value: 50 },
+    { directive: "EXTRACT", value: 40 },
   ]);
+  assert.deepEqual(parseProcedure(["DOSE", "EXTRACT"]), [
+    { directive: "DOSE", value: null },
+    { directive: "EXTRACT", value: null },
+  ]);
+});
+
+test("parseProcedure recognizes older Vietnamese display strings and ignores unknown values", () => {
+  assert.deepEqual(parseProcedure([
+    "Xay 18 g",
+    "Nén 100%",
+    "Ngâm sơ bộ 3 s",
+    "Chiết xuất 40 ml",
+    "Thêm sữa",
+    "a note with no known directive",
+    "FUTURE:5",
+  ]), [
+    { directive: "DOSE", value: 18 },
+    { directive: "TAMP", value: 100 },
+    { directive: "PREINFUSE", value: 3 },
+    { directive: "EXTRACT", value: 40 },
+    { directive: "PREMILK", value: null },
+  ]);
+});
+
+test("buildBrewScript preserves Latte procedure order and adds the fixed motion tail", () => {
+  const latte = buildBrewScript(parseProcedure([
+    "PREMILK:5",
+    "DOSE:18",
+    "TAMP:100",
+    "HOLDTAMP:50",
+    "PREINFUSE:3",
+    "EXTRACT:40",
+    "POSTMILK:20",
+  ]), "Latte");
+
+  assert.deepEqual(latte.steps.map((step) => step.kind), [
+    "milk", "grind", "dose", "close", "tamp", "hold-tamp", "preinfuse", "extract", "milk", "open", "eject", "return",
+  ]);
+  assert.equal(latte.steps[1].label, "Xay");
+  assert.equal(latte.steps[1].valueText, "18 g");
+  assert.equal(latte.steps[1].phase, "grinding");
+  assert.deepEqual(latte.steps[1].focus, ["hopper", "grinder"]);
+  assert.equal(latte.steps[1].effects.grinderSpin, true);
+  assert.equal(latte.steps[3].phase, "closing");
+  assert.equal(latte.steps[5].motionProgress, 1);
+  assert.equal(latte.steps[6].phase, undefined);
+  assert.equal(latte.steps[6].motionHold, true);
+  assert.equal(latte.steps.at(-3).phase, "opening");
+  assert.equal(latte.steps.at(-2).phase, "ejecting");
+  assert.equal(latte.steps.at(-1).phase, "scraping");
+});
+
+test("buildBrewScript handles Espresso and minimal default-valued recipes", () => {
+  const espresso = buildBrewScript(parseProcedure(["DOSE:18", "TAMP:100", "EXTRACT:40"]), "Espresso");
+  assert.equal(espresso.steps.some((step) => step.kind === "milk"), false);
+  assert.equal(espresso.steps.find((step) => step.kind === "extract").valueText, "40 ml");
+
+  const minimal = buildBrewScript(parseProcedure(["DOSE", "EXTRACT"]), "Minimal");
+  assert.equal(minimal.steps.find((step) => step.kind === "grind").valueText, "18 g");
+  assert.equal(minimal.steps.find((step) => step.kind === "extract").valueText, "40 ml");
+  assert.equal(minimal.steps.filter((step) => ["open", "eject", "return"].includes(step.kind)).length, 3);
+});
+
+test("brew timing estimates stay clamped for unusual recipe values", () => {
+  const short = buildBrewScript(parseProcedure(["DOSE:1", "EXTRACT:1"]), "Short");
+  const long = buildBrewScript(parseProcedure(["DOSE:100", "EXTRACT:200"]), "Long");
+  assert.equal(short.steps.find((step) => step.kind === "grind").durationMs, 1_200);
+  assert.equal(short.steps.find((step) => step.kind === "extract").durationMs, 2_000);
+  assert.equal(long.steps.find((step) => step.kind === "grind").durationMs, 4_000);
+  assert.equal(long.steps.find((step) => step.kind === "extract").durationMs, 7_000);
 });

@@ -7,20 +7,25 @@ const conventionalId = "f1000000-0000-4000-8000-000000000003";
 const locationId = "f1000000-0000-4000-8000-000000000004";
 const ticketId = "f1000000-0000-4000-8000-000000000005";
 const alertId = "f1000000-0000-4000-8000-000000000006";
+const recipeId = "f1000000-0000-4000-8000-000000000007";
+const brewRecordId = "f1000000-0000-4000-8000-000000000008";
+const brewEventId = "f1000000-0000-4000-8000-000000000009";
 const machines = [
-  { id: smartId, ownerId, locationId, serialNumber: "SMART-01", status: "UNDER_MAINTENANCE", machineType: "SMART_IOT" },
-  { id: conventionalId, ownerId, locationId: null, serialNumber: "NORMAL-01", status: "AVAILABLE_FOR_RENT", machineType: "CONVENTIONAL" },
+  { id: smartId, ownerId, locationId, serialNumber: "SMART-01", status: "UNDER_MAINTENANCE", machineType: "SMART_IOT", activeMenuId: null },
+  { id: conventionalId, ownerId, locationId: null, serialNumber: "NORMAL-01", status: "AVAILABLE_FOR_RENT", machineType: "CONVENTIONAL", activeMenuId: null },
 ];
 const ticket = { id: ticketId, machineId: smartId, ownerId, status: "RESOLVED", source: "TERMINATION_INSPECTION", scheduledDueAt: "2026-11-07T10:00:00" };
 type SetupOptions = {
   heartbeatStatus?: "ONLINE" | "OFFLINE" | "UNKNOWN";
-  brewState?: string;
+  brewRecordOnSecondPoll?: boolean;
   alerts?: unknown[];
   metricsJson?: unknown;
 };
 async function setup(page: Page, options: SetupOptions = {}) {
   const claims = Buffer.from(JSON.stringify({ sub: ownerId, roles: ["owner"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  let brewRecordPollCount = 0;
+  let brewTwinPollingEnabled = false;
   await page.route("**/api/dolores/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace(/^\/api\/dolores\/v1/, "");
     let body: unknown = [];
@@ -34,17 +39,52 @@ async function setup(page: Page, options: SetupOptions = {}) {
         machineId: decodeURIComponent(matchedMachineId),
         status: options.heartbeatStatus ?? "ONLINE",
         lastSeenAt: new Date().toISOString(),
-        brewState: options.brewState ?? "BREW_STATE_IDLE",
         sequenceNumber: 1,
         metricsJson: options.metricsJson ?? { wifiRssiDbm: -45, cupsServed: 27 },
       } : [];
     }
+    else if (path === "/owner/brew-records") {
+      if (brewTwinPollingEnabled) brewRecordPollCount += 1;
+      const hasNewRecord = options.brewRecordOnSecondPoll && brewTwinPollingEnabled && brewRecordPollCount >= 2;
+      const brewedAt = new Date(Date.now() - 5_000).toISOString();
+      body = {
+        content: hasNewRecord ? [{
+          id: brewRecordId,
+          eventId: brewEventId,
+          machineId: smartId,
+          machineSerialNumber: "SMART-01",
+          recipeName: "Latte",
+          brewedAt,
+          receivedAt: brewedAt,
+        }] : [],
+        page: 0,
+        size: 100,
+        totalElements: hasNewRecord ? 1 : 0,
+        totalPages: hasNewRecord ? 1 : 0,
+        first: true,
+        last: true,
+      };
+    }
+    else if (path === "/recipes/global") body = [{ id: recipeId, name: "Latte", revision: 1, menuId: null }];
+    else if (path === `/recipes/global/${recipeId}`) body = {
+      id: recipeId,
+      name: "Latte",
+      steps: ["PREMILK:5", "DOSE:18", "TAMP:100", "HOLDTAMP:50", "PREINFUSE:3", "EXTRACT:40", "POSTMILK:20"],
+      revision: 1,
+      menuId: null,
+    };
     else if (path === "/alerts") body = options.alerts ?? [];
     else if (path.endsWith("/maintenance-schedule")) body = { nextPreventiveMaintenanceAt: null };
     else if (path === "/maintenance-tickets") body = [ticket];
     else if (path === `/maintenance-tickets/${ticketId}`) body = ticket;
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
   });
+  return {
+    activateBrewTwinPolling() {
+      brewRecordPollCount = 0;
+      brewTwinPollingEnabled = true;
+    },
+  };
 }
 test("Owner machine list shows status, location and fleet counts", async ({ page }) => {
   await setup(page); await page.goto("/dashboard/machines");
@@ -95,7 +135,7 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
   await tab.click();
   await expect(tab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText(
-    "Mô hình chuyển động theo trạng thái máy gửi về, cập nhật mỗi 3 giây.",
+    "Mô hình phát lại món vừa pha, chậm vài giây so với máy.",
     { exact: true },
   )).toBeVisible();
 
@@ -108,9 +148,9 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
   ).toBeTruthy();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390, { timeout: 5_000 });
 });
-test("Owner live digital twin follows heartbeat and switches to simulation", async ({ page }) => {
-  await setup(page, {
-    brewState: "BREW_STATE_GRINDING",
+test("Owner live digital twin replays new brew records and switches to simulation", async ({ page }) => {
+  const setupControls = await setup(page, {
+    brewRecordOnSecondPoll: true,
     alerts: [{
       id: alertId,
       level: "WARNING",
@@ -122,22 +162,36 @@ test("Owner live digital twin follows heartbeat and switches to simulation", asy
     metricsJson: JSON.stringify({ wifiRssiDbm: -45, cupsServed: 27, nested: { ignored: true } }),
   });
   await page.goto(`/dashboard/machines/${smartId}`);
+  setupControls.activateBrewTwinPolling();
   await page.getByRole("tab", { name: "Xem máy" }).click();
 
   const liveButton = page.getByRole("button", { name: "Trực tiếp", exact: true });
   await expect(liveButton).toHaveAttribute("aria-pressed", "true");
   const panel = page.getByRole("tabpanel", { name: "Xem máy" });
-  const grindingStep = panel.getByRole("listitem").filter({ hasText: "Xay hạt" });
-  await expect(grindingStep).toHaveAttribute("aria-current", "step");
-  await expect(panel.getByText("Đang xay hạt", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Món đang pha: Latte" })).toBeVisible({ timeout: 20_000 });
+  await expect(panel.locator('[aria-current="step"]')).toHaveCount(1);
+  await expect(panel.getByRole("button", { name: "Xem lại", exact: true })).toBeVisible();
   await expect(panel.getByText("Nhiệt độ máy tăng cao", { exact: true })).toBeVisible();
+
+  const shellLayer = page.getByRole("button", { name: "Vỏ", exact: true });
+  await expect(shellLayer).toHaveAttribute("aria-pressed", "true");
+  await shellLayer.click();
+  await expect(shellLayer).toHaveAttribute("aria-pressed", "false");
+  await shellLayer.click();
+
+  await panel.getByRole("button", { name: "Xem lại", exact: true }).click();
+  await expect(panel.getByRole("heading", { name: /Món (đang pha|vừa pha): Latte/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Mô phỏng", exact: true }).click();
   await expect(page.getByRole("button", { name: "Mô phỏng", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(panel.getByRole("button", { name: "Chạy toàn bộ chu trình pha cafe thử nghiệm" })).toBeVisible();
+  await expect(panel.getByLabel("Chọn công thức")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Chạy món này", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Dừng", exact: true }).click();
+  await panel.getByRole("button", { name: "Chạy món này", exact: true }).click();
+  await expect(panel.locator('[aria-current="step"]')).toHaveCount(1);
 });
 test("Owner live digital twin shows when the machine is offline", async ({ page }) => {
-  await setup(page, { heartbeatStatus: "OFFLINE", brewState: "BREW_STATE_IDLE" });
+  await setup(page, { heartbeatStatus: "OFFLINE" });
   await page.goto(`/dashboard/machines/${smartId}`);
   await page.getByRole("tab", { name: "Xem máy" }).click();
 

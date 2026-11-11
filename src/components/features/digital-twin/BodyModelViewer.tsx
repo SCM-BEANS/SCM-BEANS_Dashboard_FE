@@ -1,13 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useCallback, useState, type ReactNode } from "react";
-import { DIGITAL_TWIN_MESSAGES } from "@/text/digital-twin/digital-twin-messages";
+import { Component, useCallback, useMemo, useState, type ReactNode } from "react";
+import { DIGITAL_TWIN_MESSAGES, DIGITAL_TWIN_RECIPE_TWIN_MESSAGES as T } from "@/text/digital-twin/digital-twin-messages";
 import styles from "./digital-twin-viewer.module.css";
 import type { ClusterAttachmentDefinition } from "./DigitalTwinClusterCanvas";
 import type { DigitalTwinCycleEvent } from "@/schema/digital-twin-cycle.schema";
 import { DIGITAL_TWIN_OPERATION_STAGES } from "./operation/DigitalTwinOperationConfig";
 import { useDigitalTwinTestCycle } from "./operation/useDigitalTwinTestCycle";
+import {
+  DEFAULT_PART_LAYERS,
+  type DigitalTwinPresentation,
+  type PartGroupId,
+} from "./presentation/part-groups";
 
 const BodyModelCanvas = dynamic(() => import("./BodyModelCanvas"), {
   ssr: false,
@@ -33,6 +38,8 @@ export interface BodyModelViewerProps {
   enableOperationTest?: boolean;
   operationEvent?: DigitalTwinCycleEvent | null;
   operationSource?: "test" | "external";
+  presentation?: DigitalTwinPresentation;
+  showElectricalLayer?: boolean;
 }
 
 interface CanvasErrorBoundaryProps {
@@ -78,6 +85,8 @@ export function BodyModelViewer({
   enableOperationTest = false,
   operationEvent: externalOperationEvent,
   operationSource = "test",
+  presentation,
+  showElectricalLayer = false,
 }: BodyModelViewerProps = {}) {
   const {
     status: operationStatus,
@@ -96,6 +105,24 @@ export function BodyModelViewer({
   const [coffeeRunRequest, setCoffeeRunRequest] = useState(0);
   const [waterRunRequest, setWaterRunRequest] = useState(0);
   const [waterResetRequest, setWaterResetRequest] = useState(0);
+  const [autoCamera, setAutoCamera] = useState(true);
+  const [layers, setLayers] = useState<Record<PartGroupId, boolean>>({ ...DEFAULT_PART_LAYERS });
+
+  const canvasPresentation = useMemo<DigitalTwinPresentation | undefined>(() => {
+    if (!presentation) return undefined;
+    return {
+      ...presentation,
+      layers: { ...layers },
+      autoCamera,
+      ghostShells: Boolean(presentation.active),
+    };
+  }, [autoCamera, layers, presentation]);
+
+  const markManualCameraInput = useCallback((target: EventTarget | null) => {
+    if (!presentation || !(target instanceof Element)) return;
+    if (target.closest(`.${styles.toolbar}`) || !target.closest("canvas")) return;
+    setAutoCamera(false);
+  }, [presentation]);
 
   const handleLoadStart = useCallback(() => setStatus("loading"), []);
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -131,9 +158,22 @@ export function BodyModelViewer({
     setAttempt((current) => current + 1);
   }, [resetOperation]);
   const handleReset = useCallback(() => {
+    setAutoCamera(true);
     setZoomLevel(0);
     setCameraResetVersion((version) => version + 1);
   }, []);
+
+  const toggleLayer = useCallback((group: PartGroupId) => {
+    setLayers((current) => ({ ...current, [group]: !current[group] }));
+  }, []);
+  const toggleBrewAssembly = useCallback(() => {
+    const groups: PartGroupId[] = ["hopper", "grinder", "brewUnit", "output"];
+    setLayers((current) => {
+      const turnOn = !groups.every((group) => current[group]);
+      return { ...current, hopper: turnOn, grinder: turnOn, brewUnit: turnOn, output: turnOn };
+    });
+  }, []);
+  const brewAssemblyOn = layers.hopper && layers.grinder && layers.brewUnit && layers.output;
 
   const activeStage = DIGITAL_TWIN_OPERATION_STAGES.find(
     (stage) => stage.phase === operationEvent?.phase,
@@ -153,6 +193,8 @@ export function BodyModelViewer({
       style={{
         height: "var(--admin-machine-viewer-height, min(62vh, 700px))",
       }}
+      onPointerDownCapture={(event) => markManualCameraInput(event.target)}
+      onWheelCapture={(event) => markManualCameraInput(event.target)}
     >
       <CanvasErrorBoundary key={attempt} onError={handleError}>
         <BodyModelCanvas
@@ -179,6 +221,7 @@ export function BodyModelViewer({
           compressorRunning={compressorRunning}
           operationEvent={operationEvent}
           onOperationError={handleOperationError}
+          presentation={canvasPresentation}
         />
       </CanvasErrorBoundary>
 
@@ -189,7 +232,7 @@ export function BodyModelViewer({
           aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_out}
           title={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_out}
           disabled={status !== "ready" || zoomLevel <= -5}
-          onClick={() => setZoomLevel((level) => Math.max(-5, level - 1))}
+          onClick={() => { setAutoCamera(false); setZoomLevel((level) => Math.max(-5, level - 1)); }}
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
           <span aria-hidden="true">−</span>
@@ -199,7 +242,7 @@ export function BodyModelViewer({
           aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_in}
           title={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_in}
           disabled={status !== "ready" || zoomLevel >= 6}
-          onClick={() => setZoomLevel((level) => Math.min(6, level + 1))}
+          onClick={() => { setAutoCamera(false); setZoomLevel((level) => Math.min(6, level + 1)); }}
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
           <span aria-hidden="true">+</span>
@@ -215,7 +258,27 @@ export function BodyModelViewer({
         >
           <span aria-hidden="true">↺</span>
         </button>
-        {includeCompressorMotion ? (
+        {presentation ? (
+          <>
+            <span className={styles.separator} aria-hidden="true" />
+            <button
+              type="button"
+              aria-pressed={autoCamera}
+              onClick={() => setAutoCamera((value) => !value)}
+              className={`${styles.toolbarButton} ${styles.toggleButton}`}
+            >
+              {T.auto_follow}
+            </button>
+            <button type="button" aria-pressed={layers.shell} onClick={() => toggleLayer("shell")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_shell}</button>
+            <button type="button" aria-pressed={layers.frame} onClick={() => toggleLayer("frame")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_frame}</button>
+            <button type="button" aria-pressed={layers.water} onClick={() => toggleLayer("water")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_water}</button>
+            <button type="button" aria-pressed={brewAssemblyOn} onClick={toggleBrewAssembly} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_brew_unit}</button>
+            <button type="button" aria-pressed={layers.waste} onClick={() => toggleLayer("waste")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_waste}</button>
+            {showElectricalLayer ? (
+              <button type="button" aria-pressed={layers.electrical} onClick={() => toggleLayer("electrical")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_electrical}</button>
+            ) : null}
+          </>
+        ) : includeCompressorMotion ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -249,7 +312,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {enableCoffeeEffect ? (
+        {!presentation && enableCoffeeEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -264,7 +327,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {enableWaterEffect ? (
+        {!presentation && enableWaterEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -289,7 +352,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {enableOperationTest && operationSource !== "external" ? (
+        {!presentation && enableOperationTest && operationSource !== "external" ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button

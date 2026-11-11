@@ -315,7 +315,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               </div>
               <div className={machineStyles.ownerDetailTabPanel} id={detailPanelId("model")} role="tabpanel" aria-labelledby="owner-machine-tab-model" hidden={detailTab !== "model"}>
                 {detailTab === "model" ? (
-                  <MachineDigitalTwinView machineId={machineId!} machineType={detail.data.machineType} />
+                  <MachineDigitalTwinView machineId={machineId!} machineType={detail.data.machineType} activeMenuId={detail.data.activeMenuId ?? null} />
                 ) : null}
               </div>
             </>

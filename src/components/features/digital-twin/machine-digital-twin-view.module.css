@@ -106,6 +106,133 @@
   color: #786e69;
 }
 
+.selectLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: #625853;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.recipeSelect {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #d9d0ca;
+  border-radius: 8px;
+  background: #fff;
+  color: #302b29;
+  font: inherit;
+}
+
+.recipeSelect:focus-visible,
+.replayButton:focus-visible,
+.runButton:focus-visible,
+.stopButton:focus-visible {
+  outline: 3px solid rgb(185 18 34 / 28%);
+  outline-offset: 2px;
+}
+
+.simulationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.runButton,
+.stopButton,
+.replayButton {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #b91222;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.runButton {
+  background: #b91222;
+  color: #fff;
+}
+
+.stopButton,
+.replayButton {
+  background: #fff;
+  color: #b91222;
+}
+
+.runButton:disabled,
+.stopButton:disabled,
+.replayButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.recentList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.recentItem {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0ebe7;
+}
+
+.recentItem:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.recentCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recentCopy strong {
+  color: #302b29;
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.recentCopy time {
+  color: #786e69;
+  font-size: 0.72rem;
+}
+
+.replayButton {
+  flex: 0 0 auto;
+  padding-inline: 10px;
+}
+
+.delayNote {
+  margin: 10px 0 0;
+  color: #786e69;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 .errorMessage,
 .faultLabel {
   color: #b91222;

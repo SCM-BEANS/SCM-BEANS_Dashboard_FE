@@ -87,6 +87,19 @@
   background: transparent;
 }
 
+.toggleButton[aria-pressed="true"],
+.layerButton[aria-pressed="true"] {
+  border-color: #b91222;
+  background: #fae9eb;
+  color: #9f101e;
+}
+
+.layerButton[aria-pressed="false"] {
+  border-color: #e9e2dc;
+  background: #fff;
+  color: #786e69;
+}
+
 .iconButton {
   padding: 8px;
   font-size: 1.25rem;
@@ -233,6 +246,22 @@
 .operationStatus {
   bottom: 12px;
   left: 12px;
+}
+
+.presentationLabel {
+  max-width: min(230px, 72vw);
+  padding: 7px 11px;
+  border: 1px solid rgb(185 18 34 / 24%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 94%);
+  color: #302b29;
+  box-shadow: 0 2px 8px rgb(48 43 41 / 18%);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: center;
+  pointer-events: none;
 }
 
 @keyframes spin {
