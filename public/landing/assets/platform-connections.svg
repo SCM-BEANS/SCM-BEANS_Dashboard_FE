@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" fill="none">
+  <style>
+    .signal-wave { fill: #b81724; opacity: .12; transform-origin: 350px 270px; animation: signal-rise 3s ease-out infinite; }
+    .signal-wave.middle { animation-delay: .45s; }
+    .signal-wave.outer { animation-delay: .9s; }
+    @keyframes signal-rise {
+      0%, 65%, 100% { opacity: .12; transform: scale(.98); }
+      18%, 32% { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) { .signal-wave { animation: none; opacity: .85; transform: none; } }
+  </style>
+  <path class="signal-wave outer" d="M55 270C115-20 585-20 645 270L607 270C562 40 138 40 93 270Z"/>
+  <path class="signal-wave middle" d="M150 270C184 66 516 66 550 270H512C484 120 216 120 188 270Z"/>
+  <path class="signal-wave inner" d="M244 270C262 165 438 165 456 270H420C408 212 292 212 280 270Z"/>
+  <!-- Icon paths from Tabler Icons (coffee, file-description, receipt, headset).
+    MIT License. Copyright (c) 2020 Paweł Kuna.
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE. https://github.com/tabler/tabler-icons -->
+  <defs>
+    <symbol id="coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 14c.83 .642 2.077 1.017 3.5 1c1.423 .017 2.67 -.358 3.5 -1c.83 -.642 2.077 -1.017 3.5 -1c1.423 -.017 2.67 .358 3.5 1"/>
+      <path d="M8 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2M12 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2M3 10h14v5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -6 -6v-5M16.746 16.726a3 3 0 1 0 .252 -5.555"/>
+    </symbol>
+    <symbol id="file-description" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 3v4a1 1 0 0 0 1 1h4M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2M9 17h6M9 13h6"/>
+    </symbol>
+    <symbol id="receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2"/>
+    </symbol>
+    <symbol id="headset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 14v-3a8 8 0 1 1 16 0v3M18 19c0 1.657 -2.686 3 -6 3M4 14a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2v-3M15 14a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2v-3"/>
+    </symbol>
+  </defs>
+</svg>

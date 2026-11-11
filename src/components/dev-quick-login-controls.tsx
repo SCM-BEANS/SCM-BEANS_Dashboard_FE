@@ -29,7 +29,7 @@ export function DevQuickLoginControls({ floating = false }: Props) {
   const [activeAccount, setActiveAccount] = useState<AccountKey | null>(null);
   const [message, setMessage] = useState("");
 
-  if (process.env.NODE_ENV !== "development" || (floating && router.pathname === "/quick-login")) return null;
+  if (process.env.NODE_ENV !== "development" || (floating && (router.pathname === "/quick-login" || router.pathname === "/"))) return null;
 
   const login = async (account: AccountKey) => {
     setActiveAccount(account);

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="dolores-login" content="/login">
+  <meta name="description" content="Máy pha cà phê cùng nền tảng Dolores giúp theo dõi thiết bị, hợp đồng, hóa đơn và yêu cầu hỗ trợ.">
+  <title>DOLORES COFFEE | Máy pha và nền tảng quản lý</title>
+  <link rel="icon" href="./landing/assets/dolores.ico" sizes="256x256" type="image/x-icon">
+  <link rel="stylesheet" href="./landing/landing.css">
+  <link rel="stylesheet" href="./landing/process/board.css">
+  <link rel="stylesheet" href="./landing/tail/tail.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="brand"><span class="brand-mark"><img src="./landing/assets/dolores-mark.png" alt=""></span><strong class="intro-word" aria-label="Dolores">dolores.</strong></div>
+  </div>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top" aria-label="Dolores, về trang chủ"><span class="brand-mark"><img src="./landing/assets/dolores-mark.png" alt=""></span><strong>dolores.</strong></a>
+      <nav class="nav-links" aria-label="Điều hướng chính" id="desktop-nav"></nav>
+      <div class="nav-actions">
+        <a class="button login" data-login>Đăng nhập</a>
+        <button class="menu-toggle" id="menu-toggle" type="button" aria-controls="mobile-nav" aria-expanded="false" aria-label="Mở menu"><span aria-hidden="true">☰</span></button>
+      </div>
+      <nav class="mobile-menu" id="mobile-nav" aria-label="Điều hướng trên điện thoại" hidden></nav>
+    </div>
+  </header>
+  <main id="top">
+    <section class="section hero is-teaser" id="ben-trong" aria-labelledby="hero-title">
+      <div class="film-stage">
+        <div class="hero-copy">
+          <h1 id="hero-title"><span>Pha cà phê tự động.</span><span><em>Chủ động</em> quản lý máy.</span></h1>
+          <p class="hero-description">Theo dõi thiết bị, hợp đồng, hóa đơn và yêu cầu hỗ trợ trên cùng nền tảng Dolores.</p>
+          <div class="teaser-actions" id="teaser-actions">
+            <a class="button primary" href="#lien-he">Nhận tư vấn</a>
+            <a class="button" id="teaser-cta" href="#qua-trinh">Khám phá máy pha</a>
+          </div>
+        </div>
+        <p class="sr-only" id="teaser-summary">Phim khoảng 22 giây, lặp lại: nắp hộp hạt và nóc máy nhấc lên, hai vỏ hông trượt ra, máy xoay, boiler và hệ ra cà phê tách khỏi thân. Máy nén chạy một chu trình, rồi các cụm ghép lại và màn hình bật.</p>
+        <div class="viewer-host journey-host" id="journey-host" aria-describedby="teaser-summary">
+          <div class="teaser-sheen" id="teaser-sheen" aria-hidden="true"></div>
+        </div>
+        <div class="film-poster" id="film-poster">
+          <p id="film-loading" role="status">Đang tải mô hình 3D… 0%</p>
+        </div>
+      </div>
+    </section>
+    <section class="section platform-overview" id="giai-phap" aria-labelledby="overview-title">
+      <div class="wrap" id="product-content"></div>
+    </section>
+    <section class="process" id="qua-trinh" aria-labelledby="process-title">
+      <div class="process-stage">
+        <div class="wrap process-inner">
+          <header class="process-heading">
+            <div class="process-title-block">
+              <p class="process-kicker" data-process-context>BƯỚC 01 / 08 · Chuẩn bị</p>
+              <h2 id="process-title" data-process-running aria-live="polite">Nhận lệnh</h2>
+            </div>
+            <nav class="process-chapter-nav" data-process-chapters aria-label="Chặng pha"></nav>
+          </header>
+          <div class="process-scenes">
+            <div class="process-board" data-process-board></div>
+            <div class="viewer-host process-host" id="process-host" role="img" aria-label="Thiết bị đang làm việc"></div>
+          </div>
+          <nav class="process-step-nav" data-process-dots aria-label="Chọn bước đang xem"></nav>
+        </div>
+      </div>
+      <div class="process-chapters" data-process-steps></div>
+    </section>
+    <section class="section sync" id="tu-may-len-nen-tang" aria-labelledby="sync-title">
+      <div class="wrap">
+        <div class="sync-heading">
+          <div class="section-heading"><p class="sync-eyebrow">Từ máy lên nền tảng</p><h2 id="sync-title">Máy vận hành.<br>Dolores cập nhật.</h2></div>
+        </div>
+        <p class="sync-error" data-sync-message role="status" hidden></p>
+        <div class="sync-grid" data-sync-grid>
+          <div class="sync-stage">
+            <p class="sync-action"><span data-sync-number>01</span><strong data-sync-action>Đóng buồng</strong></p>
+            <div class="viewer-host sync-host" id="sync-host" role="img" aria-label="Cụm nén 3D đang thực hiện bước được chọn"></div>
+          </div>
+          <div class="sync-panel" id="sync-panel" data-sync-panel role="region" aria-label="Thông số cụm nén trên Dolores" aria-describedby="sync-description"></div>
+        </div>
+        <nav class="sync-phases" data-sync-phases aria-label="Chọn bước của cụm nén"></nav>
+        <p class="sr-only" id="sync-description">Thông số được mô phỏng theo cùng mốc thời gian với hoạt ảnh cụm nén.</p>
+      </div>
+    </section>
+    <section class="section platform-showcase" id="nen-tang" aria-labelledby="platform-title"><div class="wrap platform-showcase-layout" id="technology-content"></div></section>
+    <section class="u318" id="dong-hanh" aria-labelledby="services-title"></section>
+    <section class="tail-contact" id="lien-he" aria-labelledby="contact-title"><div class="wrap"><div class="tail-contact-panel" id="contact-content"></div></div></section>
+  </main>
+  <footer class="tail-footer"><div class="wrap" id="footer-content"></div></footer>
+  <script type="module" src="./landing/main.js"></script>
+</body>
+</html>

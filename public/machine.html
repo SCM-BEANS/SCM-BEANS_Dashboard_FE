@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dolores Máy pha</title>
+<link rel="icon" href="./landing/assets/dolores.ico" type="image/x-icon">
+<style>
+/* Showroom for the whole machine and its clusters. The model owns the page; the list
+   beside it is the index into the model, and the plan cards below say what each cluster
+   still needs before it can join the live twin. Tokens match twin.html. */
+:root{
+  --bg:#eef1f0; --surface:#ffffff; --surface-2:#f5f7f6; --ink:#141a1a; --ink-2:#465152; --muted:#6f7b7c;
+  --line:#d3dad9; --accent:#a4531d; --accent-soft:#a4531d1f; --focus:#2a78d6;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --idle:#8a9696;
+  --f-display:Arial,Helvetica,sans-serif;
+  --f-body:Arial,Helvetica,sans-serif;
+  --f-mono:Arial,Helvetica,sans-serif;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1212; --surface:#161c1c; --surface-2:#1c2323; --ink:#e6ecea; --ink-2:#aab6b4; --muted:#7f8c8a;
+    --line:#2a3434; --accent:#de8d50; --accent-soft:#de8d5026; --focus:#3987e5; --idle:#5f6b6b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1212; --surface:#161c1c; --surface-2:#1c2323; --ink:#e6ecea; --ink-2:#aab6b4; --muted:#7f8c8a;
+  --line:#2a3434; --accent:#de8d50; --accent-soft:#de8d5026; --focus:#3987e5; --idle:#5f6b6b; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);margin:0}
+body{color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+a{color:inherit}
+
+/* Header */
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:14px}
+.brand h1{font-size:30px;font-weight:700;line-height:1.05}
+.brand h1 span{color:var(--accent)}
+.brand p{margin-top:4px;color:var(--ink-2);font-size:13px}
+.nav{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.nav a{padding:7px 12px;font-size:13px;color:var(--ink-2);text-decoration:none}
+.nav a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 11px;cursor:pointer;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Showroom */
+.show{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.viewer{position:relative;height:clamp(420px,74vh,860px);overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 35%,var(--surface) 0%,var(--surface-2) 70%,var(--bg) 100%)}
+.viewer canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.viewer canvas:active{cursor:grabbing}
+.v-head{position:absolute;inset:0 0 auto 0;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;padding:16px 18px;pointer-events:none}
+.v-head h2{font-size:26px;line-height:1.1}
+.v-head h2 .num{font-family:var(--f-mono);font-size:14px;font-weight:500;color:var(--accent);margin-right:8px;vertical-align:3px}
+.v-head p{color:var(--ink-2);font-size:13px;margin-top:3px}
+.v-head .sel{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);align-self:flex-start;background:color-mix(in srgb,var(--surface) 85%,transparent);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+.v-tools{position:absolute;inset:auto 12px 12px 12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.v-tools .grp{pointer-events:auto;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:7px 10px;
+  background:color-mix(in srgb,var(--surface) 90%,transparent);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(6px)}
+.v-tools label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.v-tools input[type=range]{width:min(170px,34vw);accent-color:var(--accent)}
+.v-tools input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+.hint{font-size:12px;color:var(--muted)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.loading .box{min-width:240px;max-width:min(420px,86%);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:9px;pointer-events:auto}
+.loading .bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.loading .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+.loading.err .box{border-color:var(--crit)}
+.loading code{font-family:var(--f-mono);font-size:12px}
+
+/* Side: model picker, cluster list, detail */
+.side{display:flex;flex-direction:column}
+.side section{padding:14px 14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.side section:last-child{border-bottom:0}
+.side h3{font-size:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.models{display:flex;flex-direction:column;gap:6px}
+.mcard{display:grid;grid-template-columns:34px 1fr auto;gap:0 8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r);padding:8px 10px;cursor:pointer}
+.mcard:hover{border-color:var(--accent)}
+.mcard[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.mcard.child{margin-left:22px;grid-template-columns:30px 1fr auto}
+.mcard .num{font-family:var(--f-mono);font-size:12px;color:var(--accent);grid-row:span 2}
+.mcard b{font-family:var(--f-display);font-size:15px;font-weight:600;line-height:1.2}
+.mcard small{grid-column:2;color:var(--muted);font-size:12px;line-height:1.35}
+.mcard .size{grid-row:1 / span 2;grid-column:3;font-family:var(--f-mono);font-size:11px;color:var(--muted);text-align:right}
+.plist{display:flex;flex-direction:column;max-height:min(46vh,430px);overflow:auto;margin:0 -4px;padding:0 4px}
+.prow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:7px 8px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer;border-radius:4px}
+.prow:last-child{border-bottom:0}
+.prow:hover{background:var(--surface-2)}
+.prow[aria-pressed="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.prow .n{font-size:13.5px;font-weight:500}
+.prow .n em{font-style:normal;font-family:var(--f-mono);font-size:10.5px;color:var(--accent);margin-left:6px;letter-spacing:.04em}
+.prow code{grid-column:1;font-family:var(--f-mono);font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .c{grid-row:1 / span 2;grid-column:2;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.prow.shell .n{color:var(--ink-2)}
+.detail{display:flex;flex-direction:column;gap:8px}
+.detail h4{margin:0;font-family:var(--f-display);font-size:18px}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:13px}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.detail .names{font-family:var(--f-mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.note{font-size:12px;color:var(--muted)}
+
+/* Plan */
+.plan-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px}
+.plan-h h2{font-size:22px}
+.plan-h p{color:var(--ink-2);font-size:13px;max-width:72ch}
+.plan{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;display:flex;flex-direction:column;gap:9px}
+.pcard header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pcard h3{font-size:17px}
+.pcard h3 .num{font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--accent);margin-right:6px}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap;color:var(--ink-2)}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--idle)}
+.status.good i{background:var(--good)} .status.warn i{background:var(--warn)} .status.crit i{background:var(--crit)}
+.pcard dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:13px}
+.pcard dt{color:var(--muted)}
+.pcard dd{margin:0;overflow-wrap:anywhere}
+.pcard dd code{font-family:var(--f-mono);font-size:12px}
+.pcard .next{border-top:1px dashed var(--line);padding-top:8px;font-size:13px;color:var(--ink-2)}
+.pcard .next b{color:var(--ink);font-weight:600}
+.pcard .open{align-self:flex-start}
+
+footer{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+footer code{font-family:var(--f-mono);font-size:11.5px}
+
+@media (max-width:1060px){ .show{grid-template-columns:1fr} .plist{max-height:none} }
+@media (max-width:560px){
+  .brand h1{font-size:25px}
+  .v-head{padding:12px 12px}
+  .v-head h2{font-size:21px}
+  .v-head .sel{display:none}
+  .viewer{height:clamp(380px,64vh,620px)}
+}
+@media (prefers-reduced-motion: reduce){ .loading .bar i{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Dolores <span>Máy pha</span></h1>
+      <p>Toàn máy và các cụm bộ phận · mô hình SOLIDWORKS từ <span class="mono">SCM-BEANS_Dashboard_FE</span></p>
+    </div>
+    <nav class="nav" aria-label="Trang">
+      <a href="/digital-twin-landing.html">Trang giới thiệu</a>
+      <a href="./machine.html" aria-current="page">Máy và các cụm</a>
+      <a href="./twin.html">Twin bo mạch</a>
+    </nav>
+  </header>
+
+  <section class="show">
+    <div class="panel viewer" id="viewer">
+      <canvas id="scene" aria-label="Mô hình 3D máy pha Dolores. Kéo để xoay, cuộn để phóng to, bấm vào chi tiết để chọn."></canvas>
+      <div class="v-head">
+        <div>
+          <h2 id="v-title"><span class="num">00</span>Toàn máy</h2>
+          <p id="v-sub">Đang tải…</p>
+        </div>
+        <span class="sel" id="v-sel" hidden></span>
+      </div>
+      <div class="v-tools">
+        <div class="grp">
+          <label for="explode">Tách cụm <input type="range" id="explode" min="0" max="100" value="0" aria-describedby="explode-o"><output id="explode-o" class="mono">0%</output></label>
+          <label id="shell-wrap"><input type="checkbox" id="shell"> Ẩn vỏ, khung và ốc</label>
+        </div>
+        <div class="grp">
+          <span class="hint" id="hint">Kéo để xoay · cuộn để phóng to · bấm chi tiết để chọn</span>
+          <button class="btn" id="btn-all" hidden>Hiện tất cả</button>
+          <button class="btn" id="btn-reset" title="Gộp cụm, hiện vỏ, bỏ chọn và về góc nhìn ban đầu">Đặt lại</button>
+        </div>
+      </div>
+      <div class="loading" id="loading" role="status" aria-live="polite">
+        <div class="box"><span id="load-txt">Đang tải mô hình…</span><div class="bar"><i id="load-bar"></i></div></div>
+      </div>
+    </div>
+
+    <aside class="panel side">
+      <section>
+        <h3>Mô hình <span class="label">5 tệp GLB</span></h3>
+        <div class="models" id="models" role="group" aria-label="Chọn mô hình"></div>
+      </section>
+      <section>
+        <h3><span id="list-title">Các cụm trong thân máy</span><span class="label" id="list-count"></span></h3>
+        <div class="plist" id="plist" role="group" aria-label="Danh sách cụm và chi tiết"></div>
+      </section>
+      <section>
+        <div class="detail" id="detail" aria-live="polite"></div>
+      </section>
+    </aside>
+  </section>
+
+  <section class="plan-h">
+    <h2>Kế hoạch theo cụm</h2>
+    <p>Trạng thái mô hình của từng cụm và việc còn lại trước khi đưa cụm vào bản twin chạy thật. Dữ liệu lấy từ tệp trong dashboard và các kế hoạch trên nhánh <span class="mono">planding</span>.</p>
+  </section>
+  <section class="plan" id="plan"></section>
+
+  <footer>
+    <div>Mô hình: <code>SCM-BEANS_Dashboard_FE/public/models</code>, phục vụ qua <code>/dashboard/</code> của <code>serve.mjs</code>. Bộ giải nén Draco lấy từ <code>public/draco-gltf</code> của dashboard, nếu thiếu thì dùng <code>draco/</code> của repo này.</div>
+    <div>Tên tiếng Việt của cụm và chi tiết được dịch từ tên SOLIDWORKS. Ghép cụm trong thân máy với cụm 01, 02, 03 dựa trên tên tệp và cần được nhóm cơ khí xác nhận.</div>
+  </footer>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const $ = (id) => document.getElementById(id);
+const BASE = "/models/";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = new Intl.NumberFormat("vi-VN");
+const short = (n) => n >= 1e6 ? (n / 1e6).toFixed(2).replace(".", ",") + " tr" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(n);
+const uniq = (a) => [...new Set(a)];
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* =====================================================================
+   1. Catalogue — what each GLB is and how its parts are named
+   ===================================================================== */
+// Assem1 part names, same wording as twin.html PART_INFO.
+const A1 = { piston: "Piston nén", gear_piston: "Bánh răng piston", wiper_gear: "Bánh răng gạt", truc: "Trục quay", "12": "Tay quay", "1": "Thanh truyền trái",
+  "13": "Thanh truyền phải", oc1: "Chốt trượt", left_cover: "Nắp trái", right_cover: "Nắp phải", wiper: "Lưỡi gạt", mouth: "Miệng buồng ủ", top_block: "Khối đỉnh",
+  left_arm: "Tay đỡ trái", right_arm: "Tay đỡ phải", backcover: "Nắp lưng", base: "Đế" };
+const C02 = { Assem1: "Cụm Assem1", Assem_Pheu: "Cụm phễu", Assem_PheuThoatNuoc: "Phễu thoát nước", Dungba: "Khay đựng bã", "Dungba - Copy": "Khay đựng bã (bản sao)",
+  Opdungba: "Ốp khay bã", HMI_Box: "Hộp HMI", Chande: "Chân đế", ThanhCodinhnap: "Thanh cố định nắp", GaBangdien: "Gá bảng điện", MatbenV2: "Mặt bên",
+  MirrorMatbenV2: "Mặt bên đối xứng", Day_v2: "Tấm đáy", TamdungSau: "Tấm đứng sau", TamdungL: "Tấm đứng trái", MirrorTamdungL: "Tấm đứng phải",
+  TamDomayxoay: "Tấm đỡ máy xoay", Opsau: "Ốp sau", Opcongvao: "Ốp cổng vào", Opcongvaotrong: "Ốp cổng vào trong", Optruocduoi: "Ốp trước dưới",
+  Naptren: "Nắp trên", Congketnoi: "Cổng kết nối", Mayphacafe1: "Máy pha", Mayxoay1: "Máy xoay", Taplet: "Máy tính bảng", GaTaplet: "Gá máy tính bảng" };
+const C03 = { body_may: "Thân cụm nén", gac_coffee: "Gạt cà phê", truc_nen: "Trục nén", truc_chinh: "Trục chính", oc_left: "Chốt trượt trái", oc_right: "Chốt trượt phải",
+  gear_motor_chinh: "Bánh răng motor chính", gear_motor_nen: "Bánh răng motor nén", gear_nen: "Bánh răng nén", head_nen: "Đầu nén", wiper_gear: "Bánh răng gạt", box_nen: "Hộp nén" };
+
+// Body: top-level SOLIDWORKS components grouped into clusters by name. First match wins.
+// shell: frame, panels and fasteners — hidden by "Ẩn vỏ" and kept in place when exploding.
+const BODY_GROUPS = [
+  { key: "maypha", re: /^Mayphacafe/i, label: "Máy pha", link: "c01" },
+  { key: "mayxoay", re: /^Mayxoay/i, label: "Máy xoay", link: "c02" },
+  { key: "maynen", re: /^may_ne_coffe/i, label: "Máy nén cà phê", link: "c03" },
+  { key: "racafe", re: /^Assem_HeRaCafe/i, label: "Hệ ra cà phê" },
+  { key: "nhiet", re: /^Assem_HeNhiet/i, label: "Hệ nhiệt" },
+  { key: "hopcafe", re: /^Assem_HopCafe/i, label: "Hộp cà phê" },
+  { key: "thungba", re: /^Assem_Thungba/i, label: "Thùng bã" },
+  { key: "thoatnuoc", re: /^Assem_CumThoatNuoc/i, label: "Cụm thoát nước" },
+  { key: "dien", re: /^(Assem_BangDien|AC_Power_Socket|251101|SUNON)/i, label: "Bảng điện, ổ cắm và quạt" },
+  { key: "hmi", re: /^(Assem_Gamanhinh|Redmi_Pad)/i, label: "Màn hình HMI và giá" },
+  { key: "dauvao", re: /^(DauVaoNuoc|DauVaosua|CC10_DauNoi)/i, label: "Đầu vào nước, sữa và đầu nối" },
+  { key: "khac", re: /^DONGHO/i, label: "Đồng hồ" },
+  { key: "vo", re: /^(CV\d|Nap-?\d*$)/i, label: "Vỏ máy", shell: true },
+  { key: "khung", re: /^(HK\d|CC09|GaCodinhapke)/i, label: "Khung và gá", shell: true },
+  { key: "oc", re: /screw/i, label: "Ốc vít", shell: true },
+  { key: "conlai", re: /.*/, label: "Chi tiết khác" },
+];
+
+const MODELS = [
+  { id: "body", num: "00", title: "Toàn máy", sub: "Thân máy phiên bản 3 · Assem_CMVersion03_V2", file: "digital-twin/body/coffee_machine_03_v2.glb", mb: 11.8, groups: BODY_GROUPS },
+  { id: "c01", num: "01", title: "Buồng ủ", sub: "Assem1 · piston, nắp và lưỡi gạt", file: "a1.glb", mb: 2.0, dict: A1 },
+  { id: "c02", num: "02", title: "Máy xoay", sub: "Khung Assem_V4 kèm khối Mayxoay1", file: "digital-twin/cluster-02/may_xoay.glb", mb: 0.3, dict: C02, expand: /^Assem_V4/i },
+  { id: "c03", num: "03", title: "Cụm nén", sub: "Final.SLDASM · 18 chi tiết", file: "digital-twin/cluster-03/final.glb", mb: 6.4, dict: C03 },
+  { id: "core", num: "03b", title: "Cụm nén, bản một khối", sub: "may_nen.glb · 260820 XTR20 CORE UNIT", file: "digital-twin/cluster-03/may_nen.glb", mb: 6.7, parent: "c03", dict: { "260820 XTR20 CORE UNIT - CUSTOMER": "Cụm nén gộp một khối" } },
+];
+const byId = Object.fromEntries(MODELS.map((m) => [m.id, m]));
+
+const PLAN = [
+  { id: "body", num: "00", title: "Thân máy", status: ["good", "Có mô hình"],
+    facts: [["Tệp", "<code>body/coffee_machine_03_v2.glb</code> · 11,8 MB"], ["Nội dung", "253 mesh · 2,76 triệu tam giác · 151 vật liệu"], ["Động học", "Không có, mô hình tĩnh"],
+      ["Lỗi tệp", "2 texture là ảnh DDS nhưng ghi nhãn PNG; trình duyệt bỏ qua, vật liệu vẫn hiện màu"]],
+    next: "<b>Tiếp theo:</b> xuất lại texture dạng PNG hoặc bỏ texture, rồi làm tab Thân máy trong <code>/digital</code> theo <code>plans/digital-twin-body-tab.md</code>. Cần chốt hệ toạ độ chung trước khi đặt các cụm vào thân." },
+  { id: "c01", num: "01", title: "Buồng ủ", status: ["good", "Có động học"],
+    facts: [["Tệp", "<code>a1.glb</code> · 2,0 MB · 19 chi tiết"], ["Ràng buộc", "Mate SOLIDWORKS trong <code>Assem1.ai-assembly.json</code>"], ["Đã chạy", "Piston và nắp/gạt chuyển động theo encoder trong trang Twin bo mạch"]],
+    next: "<b>Tiếp theo:</b> xác nhận hai giả định hành trình piston và góc nắp ±30° rồi ghép vào vị trí <em>Máy pha</em> trong thân." },
+  { id: "c02", num: "02", title: "Máy xoay", status: ["warn", "Chỉ có hình"],
+    facts: [["Tệp", "<code>cluster-02/may_xoay.glb</code> · 0,3 MB"], ["Nội dung", "39 mesh · 67 nghìn tam giác"],
+      ["Lưu ý", "Kích thước bao 629 × 722 × 379 mm, gần bằng toàn máy. Tệp chứa khung <code>Assem_V4</code> và khối <code>Mayxoay1</code>, có thể là thân máy đời trước"],
+      ["Ràng buộc", "Chưa có tệp mate hoặc connections"]],
+    next: "<b>Tiếp theo:</b> xác nhận phần nào thật sự là cụm máy xoay, xuất riêng phần đó, rồi xuất mate theo khuôn <code>cluster-03/connections</code>." },
+  { id: "c03", num: "03", title: "Cụm nén", status: ["warn", "Đang dựng động học"],
+    facts: [["Tệp", "<code>cluster-03/final.glb</code> 6,4 MB · <code>may_nen.glb</code> 6,7 MB"], ["Nội dung", "18 chi tiết · 1,95 triệu tam giác"], ["Ràng buộc", "20 tệp connections · <code>phase-8-box-nen-motion-ready</code> · runtimeReady false"]],
+    next: "<b>Tiếp theo:</b> phase 9 của manifest, viết bộ nạp connections. <code>may_nen.glb</code> là cùng cụm này gộp thành một khối 147 mảnh không tên, nên có thể bỏ để giảm 6,7 MB. <code>oc_left.glb</code> và <code>ong_nuoc.glb</code> là chi tiết rời chưa dùng." },
+  { id: null, num: "04", title: "Cụm thứ tư", status: ["", "Chưa có mô hình"],
+    facts: [["Tệp", "Không tìm thấy trong dashboard"], ["Nguồn", "Kế hoạch tích hợp dashboard nhắc bốn cụm máy"]],
+    next: "<b>Tiếp theo:</b> xác định cụm này là gì và xuất GLB nén Draco vào <code>digital-twin/cluster-04/</code>." },
+];
+
+/* =====================================================================
+   2. Three.js scene
+   ===================================================================== */
+const canvas = $("scene"), host = $("viewer");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(2, 4, 3); scene.add(key);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.001, 100);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.09; controls.screenSpacePanning = true;
+let needsRender = true; controls.addEventListener("change", () => (needsRender = true));
+const grid = new THREE.GridHelper(1, 20); grid.material.transparent = true; grid.material.opacity = 0.55; scene.add(grid);
+function themeGrid() {
+  const cs = getComputedStyle(document.documentElement);
+  const c = new THREE.Color(cs.getPropertyValue("--line").trim() || "#d3dad9");
+  grid.material.color = c; grid.material.vertexColors = false; grid.material.needsUpdate = true; needsRender = true;
+}
+themeGrid(); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeGrid);
+
+const draco = new DRACOLoader();
+const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
+const dracoReady = fetch("/draco-gltf/draco_decoder.wasm", { method: "HEAD" })
+  .then((r) => { if (!r.ok) throw 0; draco.setDecoderPath("/draco-gltf/"); })
+  .catch(() => { draco.setDecoderPath("/draco-gltf/"); draco.setDecoderConfig({ type: "js" }); });
+
+function resize() {
+  const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); needsRender = true;
+}
+new ResizeObserver(resize).observe(host); resize();
+
+/* =====================================================================
+   3. Model preparation — find the part list, group it, measure it
+   ===================================================================== */
+const rawName = (o) => (o.userData && o.userData.name) || o.name || "";
+const baseName = (n) => n.replace(/-\d+$/, "").replace(/\.(step|sldprt|sldasm)$/i, "").trim();
+const hasMesh = (o) => { let f = false; o.traverse((c) => { if (c.isMesh) f = true; }); return f; };
+function partLabel(spec, base) {
+  if (spec.dict && spec.dict[base]) return { label: spec.dict[base], translated: true };
+  const arm = /^arm_(left|right)_(\d+)$/.exec(base);
+  if (arm) return { label: `Tay đòn ${arm[1] === "left" ? "trái" : "phải"} ${arm[2]}`, translated: true };
+  return { label: base, translated: false };
+}
+function stats(objs) {
+  let meshes = 0, tris = 0;
+  for (const o of objs) o.traverse((c) => { if (!c.isMesh) return; meshes++; const g = c.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
+  return { meshes, tris: Math.round(tris) };
+}
+function boxOf(objs) { const b = new THREE.Box3(); for (const o of objs) b.expandByObject(o); return b; }
+
+function prepare(gltf, spec) {
+  const root0 = gltf.scene;
+  const drop = []; root0.traverse((o) => { if (o.isLight || o.isCamera) drop.push(o); }); drop.forEach((o) => o.parent && o.parent.remove(o));
+  // Own materials per mesh so ghosting one part never touches another that shared a material.
+  root0.traverse((o) => {
+    if (!o.isMesh) return;
+    const own = (m) => { const c = m.clone(); c.userData.base = { transparent: c.transparent, opacity: c.opacity, depthWrite: c.depthWrite }; return c; };
+    o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material);
+  });
+  // Ground the model: centre in x/z, sit on y = 0.
+  const holder = new THREE.Group(); holder.add(root0);
+  const b0 = new THREE.Box3().setFromObject(root0), c0 = b0.getCenter(new THREE.Vector3());
+  root0.position.set(-c0.x, -b0.min.y, -c0.z); holder.updateMatrixWorld(true);
+  // Walk down single-child wrappers (scene → "current"/assembly root) to the real part list.
+  let root = root0;
+  // Only named glTF nodes count as parts; the unnamed children of a multi-primitive mesh do not.
+  const isNode = (o) => !!(o.userData && o.userData.name);
+  for (;;) { const kids = root.children.filter(hasMesh); if (kids.length === 1 && kids[0].children.some((c) => isNode(c) && hasMesh(c))) root = kids[0]; else break; }
+  let items = root.children.filter(hasMesh);
+  if (!items.length) items = [root];
+  if (spec.expand) items = items.flatMap((o) => spec.expand.test(rawName(o)) ? o.children.filter(hasMesh) : [o]);
+
+  let entries;
+  if (spec.groups) {
+    entries = spec.groups.map((g) => ({ ...g, members: [], names: [] }));
+    for (const o of items) { const n = rawName(o); const e = entries.find((g) => g.re.test(n)); e.members.push(o); e.names.push(n); }
+    entries = entries.filter((e) => e.members.length);
+    for (const e of entries) e.translated = true;
+  } else {
+    const map = new Map();
+    for (const o of items) {
+      const n = rawName(o), base = baseName(n);
+      if (!map.has(base)) map.set(base, { key: base, base, ...partLabel(spec, base), members: [], names: [] });
+      map.get(base).members.push(o); map.get(base).names.push(n);
+    }
+    entries = [...map.values()].sort((a, b) => (b.translated - a.translated) || a.label.localeCompare(b.label, "vi", { numeric: true }));
+  }
+  const box = new THREE.Box3().setFromObject(holder);
+  const center = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  const radius = size.length() / 2;
+  for (const e of entries) {
+    Object.assign(e, stats(e.members));
+    e.box0 = boxOf(e.members); e.center = e.box0.getCenter(new THREE.Vector3());
+    for (const o of e.members) { o.userData.entry = e; o.userData.home = o.position.clone(); o.userData.w0 = o.getWorldPosition(new THREE.Vector3()); }
+  }
+  return { spec, holder, entries, box, center, size, radius, ...stats([holder]), explode: 0, hideShell: false, sel: null };
+}
+
+/* =====================================================================
+   4. Interaction — explode, shell, isolate, focus, pick
+   ===================================================================== */
+let cur = null;
+const cache = new Map();
+const tmp = new THREE.Vector3();
+
+function entryOf(o) { while (o) { if (o.userData && o.userData.entry) return o.userData.entry; o = o.parent; } return null; }
+
+function applyExplode(m) {
+  const k = m.explode;
+  for (const e of m.entries) {
+    const dir = e.center.clone().sub(m.center); dir.y *= 0.6;
+    const len = dir.length();
+    const off = e.shell || m.entries.length < 2 ? new THREE.Vector3() :
+      (len < 1e-6 ? new THREE.Vector3(0, 1, 0) : dir.clone().divideScalar(len)).multiplyScalar((len * 1.15 + m.radius * 0.12) * k);
+    for (const o of e.members) { tmp.copy(o.userData.w0).add(off); o.position.copy(o.parent.worldToLocal(tmp)); }
+  }
+  m.holder.updateMatrixWorld(true); needsRender = true;
+}
+
+function applyLook(m) {
+  m.holder.traverse((o) => {
+    if (!o.isMesh) return;
+    const e = entryOf(o);
+    o.visible = !(m.hideShell && e && e.shell && e !== m.sel);
+    const ghost = m.sel && e !== m.sel;
+    for (const mat of Array.isArray(o.material) ? o.material : [o.material]) {
+      const b = mat.userData.base, wantT = ghost || b.transparent;
+      if (mat.transparent !== wantT) { mat.transparent = wantT; mat.needsUpdate = true; }
+      mat.opacity = ghost ? 0.07 : b.opacity; mat.depthWrite = ghost ? false : b.depthWrite;
+    }
+  });
+  needsRender = true;
+}
+
+// Camera moves: frame a box, keeping the current viewing direction (or a front-right-above default).
+let anim = null;
+function frameBox(box, instant, dirHint) {
+  const s = box.getBoundingSphere(new THREE.Sphere());
+  const vHalf = THREE.MathUtils.degToRad(camera.fov / 2), hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
+  const dist = (s.radius / Math.sin(Math.min(vHalf, hHalf))) * 1.06;
+  const dir = dirHint ? dirHint.clone() : camera.position.clone().sub(controls.target);
+  if (!isFinite(dir.lengthSq()) || dir.lengthSq() < 1e-12) dir.set(0.9, 0.55, 1.25);
+  dir.normalize();
+  const to = { target: s.center.clone(), pos: s.center.clone().add(dir.multiplyScalar(dist)) };
+  camera.near = Math.max(s.radius / 200, 0.0005); camera.far = s.radius * 60 + dist; camera.updateProjectionMatrix();
+  if (instant || reduceMotion) { controls.target.copy(to.target); camera.position.copy(to.pos); anim = null; controls.update(); needsRender = true; return; }
+  anim = { t0: performance.now(), dur: 650, from: { target: controls.target.clone(), pos: camera.position.clone() }, to };
+}
+function homeView(instant) { frameBox(cur.box, instant, new THREE.Vector3(0.9, 0.55, 1.25)); }
+
+function select(e) {
+  if (!cur) return;
+  cur.sel = e && e === cur.sel ? null : e;
+  applyLook(cur);
+  frameBox(cur.sel ? boxOf(cur.sel.members) : visibleBox(cur));
+  renderList(); renderDetail();
+}
+
+let down = null;
+canvas.addEventListener("pointerdown", (ev) => { down = [ev.clientX, ev.clientY]; anim = null; });
+canvas.addEventListener("pointerup", (ev) => {
+  if (!down || !cur) return; const moved = Math.hypot(ev.clientX - down[0], ev.clientY - down[1]); down = null;
+  if (moved > 5) return;
+  const r = canvas.getBoundingClientRect();
+  const ndc = new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObject(cur.holder, true).find((h) => h.object.visible && !isGhost(h.object));
+  if (!hit) { if (cur.sel) select(null); return; }
+  const e = entryOf(hit.object); if (e) select(e);
+});
+function isGhost(o) { return cur.sel && entryOf(o) !== cur.sel; }
+
+$("explode").addEventListener("input", (ev) => {
+  if (!cur) return; cur.explode = ev.target.value / 100; $("explode-o").value = ev.target.value + "%"; applyExplode(cur);
+});
+// After the slider is released, pull the camera back (or in) so every visible part fits.
+function visibleBox(m) { const b = new THREE.Box3(); m.holder.traverse((o) => { if (o.isMesh && o.visible) b.expandByObject(o); }); return b.isEmpty() ? m.box : b; }
+$("explode").addEventListener("change", () => { if (cur) frameBox(cur.sel ? boxOf(cur.sel.members) : visibleBox(cur)); });
+$("shell").addEventListener("change", (ev) => { if (!cur) return; cur.hideShell = ev.target.checked; applyLook(cur); });
+$("btn-reset").addEventListener("click", () => {
+  if (!cur) return;
+  cur.sel = null; cur.explode = 0; cur.hideShell = false;
+  $("explode").value = 0; $("explode-o").value = "0%"; $("shell").checked = false;
+  applyExplode(cur); applyLook(cur); renderList(); renderDetail(); homeView(false);
+});
+$("btn-all").addEventListener("click", () => select(null));
+addEventListener("keydown", (ev) => { if (ev.key === "Escape" && cur && cur.sel) select(null); });
+
+/* =====================================================================
+   5. Loading and switching models
+   ===================================================================== */
+let loadToken = 0;
+async function show(id, opts = {}) {
+  const spec = byId[id] || MODELS[0];
+  const token = ++loadToken;
+  renderModels(spec.id);
+  $("v-title").innerHTML = `<span class="num">${spec.num}</span>${esc(spec.title)}`;
+  $("v-sub").textContent = spec.sub;
+  if (location.hash.slice(1) !== spec.id) history.replaceState(null, "", "#" + spec.id);
+  if (cur) { scene.remove(cur.holder); cur = null; needsRender = true; }
+  renderList(); renderDetail();
+  let m = cache.get(spec.id);
+  if (!m) {
+    const box = $("loading"); box.hidden = false; box.classList.remove("err");
+    $("load-txt").textContent = `Đang tải ${spec.file.split("/").pop()} · ${String(spec.mb).replace(".", ",")} MB…`; $("load-bar").style.width = "0%";
+    try {
+      await dracoReady;
+      const gltf = await loader.loadAsync(BASE + spec.file, (p) => {
+        if (token !== loadToken) return;
+        const pct = p.total ? (p.loaded / p.total) * 100 : Math.min(95, (p.loaded / (spec.mb * 1e6)) * 100);
+        $("load-bar").style.width = pct.toFixed(0) + "%";
+        if (pct >= 99) $("load-txt").textContent = "Đang giải nén Draco và dựng cảnh…";
+      });
+      m = prepare(gltf, spec); cache.set(spec.id, m);
+    } catch (err) {
+      if (token !== loadToken) return;
+      box.classList.add("err");
+      $("load-txt").innerHTML = `Không tải được <code>${esc(spec.file)}</code>. Hãy chạy <code>node serve.mjs</code> và để repo <code>SCM-BEANS_Dashboard_FE</code> nằm cạnh repo này, hoặc đặt <code>DASHBOARD_PUBLIC</code>.<br><span class="note">${esc(err && err.message || err)}</span>`;
+      return;
+    }
+  }
+  if (token !== loadToken) return;
+  $("loading").hidden = true;
+  cur = m; scene.add(m.holder);
+  // Grid sits under the model, sized to it.
+  const span = Math.max(m.size.x, m.size.z) * 2.2; grid.scale.setScalar(span); grid.position.set(0, 0, 0);
+  $("explode").value = Math.round(m.explode * 100); $("explode-o").value = $("explode").value + "%";
+  $("explode").disabled = m.entries.length < 2; $("explode").closest("label").hidden = m.entries.length < 2;
+  $("shell").checked = m.hideShell; $("shell-wrap").hidden = !m.entries.some((e) => e.shell);
+  $("explode").closest(".grp").hidden = m.entries.length < 2 && $("shell-wrap").hidden;
+  applyExplode(m); applyLook(m);
+  homeView(true);
+  if (opts.select) { const e = m.entries.find((x) => x.key === opts.select); if (e) select(e); }
+  renderList(); renderDetail();
+}
+
+/* =====================================================================
+   6. Side panel and plan cards
+   ===================================================================== */
+function renderModels(active) {
+  $("models").innerHTML = MODELS.map((m) => `
+    <button class="mcard${m.parent ? " child" : ""}" data-id="${m.id}" aria-pressed="${m.id === active}">
+      <span class="num">${m.num}</span><b>${esc(m.title)}</b>
+      <span class="size">${String(m.mb).replace(".", ",")} MB</span>
+      <small>${esc(m.sub)}</small>
+    </button>`).join("");
+}
+$("models").addEventListener("click", (ev) => { const b = ev.target.closest("[data-id]"); if (b) show(b.dataset.id); });
+
+function renderList() {
+  const spec = cur ? cur.spec : byId[(location.hash.slice(1))] || MODELS[0];
+  $("list-title").textContent = spec.groups ? "Các cụm trong thân máy" : spec.id === "core" ? "Chi tiết" : "Chi tiết trong cụm";
+  if (!cur) { $("plist").innerHTML = `<p class="note">Danh sách hiện sau khi tải xong mô hình.</p>`; $("list-count").textContent = ""; $("btn-all").hidden = true; $("v-sel").hidden = true; return; }
+  $("list-count").textContent = `${cur.entries.length} mục`;
+  $("plist").innerHTML = cur.entries.map((e, i) => `
+    <button class="prow${e.shell ? " shell" : ""}" data-i="${i}" aria-pressed="${e === cur.sel}">
+      <span class="n">${esc(e.label)}${e.link ? `<em>CỤM ${byId[e.link].num}</em>` : ""}</span>
+      <span class="c">${spec.groups ? e.members.length + " chi tiết" : e.members.length > 1 ? "×" + e.members.length : short(e.tris) + " tam giác"}</span>
+      <code>${esc(spec.groups ? uniq(e.names.map(baseName)).slice(0, 3).join(", ") + (uniq(e.names.map(baseName)).length > 3 ? ", …" : "") : e.translated ? e.base : e.names[0])}</code>
+    </button>`).join("");
+  $("btn-all").hidden = !cur.sel;
+  $("v-sel").hidden = !cur.sel; if (cur.sel) $("v-sel").textContent = "Đang xem: " + cur.sel.label;
+  $("hint").hidden = !!cur.sel && innerWidth < 700;
+}
+$("plist").addEventListener("click", (ev) => { const b = ev.target.closest("[data-i]"); if (b && cur) select(cur.entries[+b.dataset.i]); });
+
+const mm = (v) => fmt.format(Math.round(v * 1000));
+const dims = (b) => { const s = b.getSize(new THREE.Vector3()); return `${mm(s.x)} × ${mm(s.y)} × ${mm(s.z)} mm`; };
+function renderDetail() {
+  const d = $("detail");
+  if (!cur) { d.innerHTML = `<p class="note">Đang tải mô hình…</p>`; return; }
+  const spec = cur.spec, e = cur.sel;
+  if (!e) {
+    d.innerHTML = `
+      <h4>${esc(spec.title)}</h4>
+      <dl>
+        <dt>Tệp</dt><dd>${esc(spec.file)}</dd>
+        <dt>Kích thước bao</dt><dd>${dims(cur.box)}</dd>
+        <dt>Mesh</dt><dd>${fmt.format(cur.meshes)}</dd>
+        <dt>Tam giác</dt><dd>${fmt.format(cur.tris)}</dd>
+      </dl>
+      <p class="note">Bấm một mục trong danh sách hoặc trên mô hình để tách riêng và phóng tới chi tiết đó. Bấm lại hoặc nhấn Esc để bỏ chọn.</p>`;
+    return;
+  }
+  const link = e.link && byId[e.link];
+  d.innerHTML = `
+    <h4>${esc(e.label)}</h4>
+    <dl>
+      <dt>Số chi tiết</dt><dd>${fmt.format(e.members.length)}</dd>
+      <dt>Mesh</dt><dd>${fmt.format(e.meshes)}</dd>
+      <dt>Tam giác</dt><dd>${fmt.format(e.tris)}</dd>
+      <dt>Kích thước bao</dt><dd>${dims(e.box0)}</dd>
+    </dl>
+    <p class="names">${esc(e.names.slice(0, 12).join(" · "))}${e.names.length > 12 ? ` · và ${e.names.length - 12} chi tiết khác` : ""}</p>
+    ${link ? `<p class="note">Trong thân máy đây là một khối đơn giản. Cụm ${link.num} có mô hình chi tiết riêng; ghép theo tên tệp, cần xác nhận.</p>
+      <button class="btn primary" id="open-link" data-id="${link.id}">Mở cụm ${link.num} · ${esc(link.title)}</button>` : ""}
+    ${!e.translated ? `<p class="note">Chưa có tên tiếng Việt cho chi tiết này, đang hiện tên SOLIDWORKS.</p>` : ""}`;
+  const b = $("open-link"); if (b) b.addEventListener("click", () => show(b.dataset.id));
+}
+
+$("plan").innerHTML = PLAN.map((p) => `
+  <article class="pcard">
+    <header><h3><span class="num">${p.num}</span>${esc(p.title)}</h3><span class="status ${p.status[0]}"><i></i>${esc(p.status[1])}</span></header>
+    <dl>${p.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>
+    <p class="next">${p.next}</p>
+    ${p.id ? `<button class="btn open" data-open="${p.id}">Xem mô hình</button>` : ""}
+  </article>`).join("");
+$("plan").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-open]"); if (!b) return;
+  show(b.dataset.open); host.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+});
+
+/* =====================================================================
+   7. Render loop — draws only when something changed
+   ===================================================================== */
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+function loop(now) {
+  if (anim) {
+    const t = Math.min(1, (now - anim.t0) / anim.dur), k = ease(t);
+    controls.target.lerpVectors(anim.from.target, anim.to.target, k);
+    camera.position.lerpVectors(anim.from.pos, anim.to.pos, k);
+    needsRender = true; if (t >= 1) anim = null;
+  }
+  if (controls.update()) needsRender = true;
+  if (needsRender) { renderer.render(scene, camera); needsRender = false; }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+addEventListener("hashchange", () => { const id = location.hash.slice(1); if (byId[id] && (!cur || cur.spec.id !== id)) show(id); });
+show(location.hash.slice(1) || "body");
+</script>
+</body>
+</html>
