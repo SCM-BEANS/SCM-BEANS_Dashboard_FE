@@ -98,7 +98,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
         {global.data?.items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select></label>
       {global.data ? <nav className={styles.recipeMenuPagination} aria-label="Công thức nguồn"><ButtonBar disabled={!globalPage} onClick={() => setGlobalPage(globalPage - 1)}>Trang trước</ButtonBar><span>Trang {globalPage + 1}</span><ButtonBar disabled={!global.data.hasNext} onClick={() => setGlobalPage(globalPage + 1)}>Trang sau</ButtonBar></nav> : null}
-      <label className={styles.formField}><span>Định lượng (mỗi dòng một giá trị)</span><textarea rows={4} placeholder="water:40" value={values} onChange={(event) => setValues(event.target.value)} /><small>Không còn giới hạn định lượng từ thư viện. Giá trị được backend kiểm tra; để trống nếu không ghi đè.</small></label>
+      <label className={styles.formField}><span>Định lượng (mỗi dòng một giá trị)</span><textarea rows={4} placeholder="water:40" value={values} onChange={(event) => setValues(event.target.value)} /><small>Để trống nếu bạn không muốn thay đổi định lượng. Giá trị sẽ được kiểm tra trước khi lưu.</small></label>
 
     </form> : null}
     <PageActions actions={role === "OWNER" ? [

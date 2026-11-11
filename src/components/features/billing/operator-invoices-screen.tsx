@@ -134,9 +134,9 @@ function InvoiceFilters({
     return (
       <TableFilters
         search={{
-          ariaLabel: "Tìm hóa đơn theo Owner ID hoặc kỳ hóa đơn",
+          ariaLabel: "Tìm hóa đơn theo mã khách hàng hoặc kỳ hóa đơn",
           maxLength: 36,
-          placeholder: "Tìm Owner ID hoặc kỳ hóa đơn (yyyy-MM)",
+          placeholder: "Tìm mã khách hàng hoặc kỳ hóa đơn (yyyy-MM)",
           value: searchDraft,
           onChange: setSearchDraft,
         }}
@@ -529,7 +529,7 @@ export function OperatorInvoicesScreen({
 
   function applyInvoiceFilters(next: InvoiceFilters) {
     if (next.ownerId.trim() && !InvoiceIdSchema.safeParse(next.ownerId.trim()).success) {
-      setInvalidFilterMessage("Owner ID phải là UUID hợp lệ.");
+      setInvalidFilterMessage("Mã khách hàng không hợp lệ. Hãy kiểm tra lại.");
       return;
     }
     setInvalidFilterMessage("");

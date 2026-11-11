@@ -74,8 +74,8 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
               <h3>Hủy đơn và yêu cầu hoàn tiền</h3>
               <p className={styles.hint}>
                 {order.status === "DELIVERED"
-                  ? "Đơn đã bàn giao. API hiện chỉ cho Owner gửi yêu cầu hủy khi đơn đang chờ hàng; chưa hỗ trợ hủy và hoàn tiền sau khi bàn giao."
-                  : `Đơn đang ở trạng thái “${coffeePackageStatusLabel(order.status)}”. API hiện chỉ cho Owner gửi yêu cầu hủy khi đơn đang chờ hàng.`}
+                  ? "Đơn đã được bàn giao nên hiện không thể hủy hoặc yêu cầu hoàn tiền."
+                  : `Đơn đang ở trạng thái “${coffeePackageStatusLabel(order.status)}” nên hiện chưa thể gửi yêu cầu hủy. Tính năng này áp dụng khi đơn đang chờ hàng.`}
               </p>
               <ButtonBar type="button" disabled>Chưa thể hủy ở trạng thái này</ButtonBar>
             </div>

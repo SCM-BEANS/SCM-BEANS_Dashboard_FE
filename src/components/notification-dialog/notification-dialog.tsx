@@ -5,6 +5,7 @@ import styles from "./notification-dialog.module.css";
 export type NotificationDialogAction = {
   label: string;
   onClick: () => void;
+  className?: string;
   disabled?: boolean;
   pending?: boolean;
   pendingLabel?: string;
@@ -116,7 +117,7 @@ export function NotificationDialog(props: NotificationDialogProps) {
 
         <div className={styles.actions}>
           <button
-            className={styles.primaryButton}
+            className={[styles.primaryButton, primaryAction.className].filter(Boolean).join(" ")}
             type="button"
             data-dialog-primary
             disabled={primaryAction.disabled || primaryAction.pending}
@@ -127,7 +128,7 @@ export function NotificationDialog(props: NotificationDialogProps) {
           </button>
           {variant === "confirm" && (
             <button
-              className={styles.secondaryButton}
+              className={[styles.secondaryButton, props.secondaryAction.className].filter(Boolean).join(" ")}
               type="button"
               disabled={props.secondaryAction.disabled || props.secondaryAction.pending}
               onClick={props.secondaryAction.onClick}

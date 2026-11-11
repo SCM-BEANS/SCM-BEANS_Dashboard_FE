@@ -319,7 +319,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
         <div>
           <h2 id="termination-workflow-title">Chấm dứt hợp đồng và thu hồi máy</h2>
           <p>{mode === "operator"
-            ? "Theo dõi hồ sơ, điều phối thu hồi và kiểm tra máy theo trạng thái backend."
+            ? "Theo dõi hồ sơ, điều phối thu hồi và kiểm tra máy theo tiến độ xử lý."
             : "Theo dõi lịch thu hồi và xác nhận tình trạng máy khi bàn giao cho kỹ thuật viên."}</p>
         </div>
         <div className={styles.actions}>
@@ -477,7 +477,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
                     ? "Đang chờ quyết toán. Sau khi Admin hoặc Moderator ghi nhận quyết toán, hệ thống sẽ xác định số cọc còn phải hoàn và tạo khoản hoàn nếu có."
                     : "Khoản hoàn cọc được xác định sau khi thu hồi máy, hoàn tất kiểm tra và ghi nhận quyết toán."}</p>
               ) : <>
-              <p>Khoản dự kiến hoàn: <strong>{caseData.depositRefundAmount == null ? "Chưa nhận được số tiền hoàn từ API" : formatVnd(caseData.depositRefundAmount)}</strong></p>
+              <p>Khoản dự kiến hoàn: <strong>{caseData.depositRefundAmount == null ? "Chưa có thông tin khoản hoàn" : formatVnd(caseData.depositRefundAmount)}</strong></p>
               {caseData.depositRefundAmount === 0 && !caseData.refundId ? (
                 <p className={styles.success}>Không phát sinh khoản hoàn cọc. Có thể tiếp tục bước hoàn tất chấm dứt hợp đồng.</p>
               ) : caseData.refundId ? (
@@ -485,9 +485,9 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
                   <RefundWorkflowPanel key={caseData.refundId} refundId={caseData.refundId} role={role} context={refundContext} onChanged={() => refresh()} />
                 </>
               ) : caseData.depositRefundAmount == null ? (
-                <p className={styles.error} role="alert">Không thể xác nhận điều kiện hoàn tất vì API chưa trả số tiền hoàn cọc.</p>
+                <p className={styles.error} role="alert">Chưa thể xác nhận điều kiện hoàn tất vì thiếu số tiền cần hoàn. Hãy làm mới hồ sơ hoặc liên hệ bộ phận vận hành.</p>
               ) : caseData.depositRefundAmount > 0 ? (
-                <p className={styles.error} role="alert">API trả số tiền cần hoàn nhưng chưa trả mã khoản hoàn. Hãy làm mới hồ sơ hoặc kiểm tra trạng thái với backend.</p>
+                <p className={styles.error} role="alert">Có khoản cần hoàn nhưng chưa có mã khoản hoàn. Hãy làm mới hồ sơ hoặc liên hệ bộ phận vận hành.</p>
               ) : null}
               {role === "MODERATOR" && caseData.refundId && caseData.refundStatus === "REQUESTED" ? <p className={styles.notice}>Đang chờ khách hàng xác nhận yêu cầu hoàn cọc. Sau đó Admin duyệt, rồi nhân viên vận hành mới gửi chứng từ chuyển khoản.</p> : null}
               </>}

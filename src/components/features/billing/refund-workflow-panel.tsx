@@ -221,11 +221,11 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
         {operator && (["REQUESTED", "TENANT_CONFIRMED", "APPROVED"].includes(data.status) || data.status === "SUBMITTED" || (role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status))) ? <div className={styles.form}>
           <label>Lý do xử lý *<textarea maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Ghi rõ lý do để lưu cùng hồ sơ" /></label>
         </div> : null}
-        {data.status === "DISPUTED" ? <p className={styles.notice}>{data.terminationCaseId ? "Khoản hoàn cần đối chiếu. Admin có thể mở lại yêu cầu để khách hàng xác nhận lại." : "Khoản hoàn đang cần đối chiếu. API hiện chưa có thao tác mở lại khoản thanh toán dư độc lập; cần bộ phận vận hành xử lý."}</p> : null}
+        {data.status === "DISPUTED" ? <p className={styles.notice}>{data.terminationCaseId ? "Khoản hoàn cần đối chiếu. Admin có thể mở lại yêu cầu để khách hàng xác nhận lại." : "Khoản hoàn đang cần đối chiếu. Vui lòng liên hệ bộ phận vận hành để được hỗ trợ."}</p> : null}
         {data.status === "COMPLETED" ? <p className={styles.success} role="status">Khách hàng đã xác nhận nhận đủ tiền hoàn.</p> : null}
         <details className={styles.form}><summary>Chứng từ chuyển khoản</summary>
           {evidence.data.map((item) => <div className={styles.heading} key={item.id}><span>{item.originalFilename} · {dateText(item.uploadedAt)}</span><ButtonBar disabled={downloading} onClick={() => void download(item.id, item.originalFilename)}>Tải chứng từ</ButtonBar></div>)}
-          <p className={styles.hint}>API không có danh sách chứng từ hoàn tiền. Nếu đã có mã chứng từ từ lần tải lên hoặc bộ phận vận hành, nhập mã để tải.</p>
+          <p className={styles.hint}>Nếu đã có mã chứng từ từ lần tải lên hoặc bộ phận vận hành, nhập mã để tải.</p>
           <form className={styles.lookup} onSubmit={(event) => { event.preventDefault(); if (RefundIdSchema.safeParse(evidenceId.trim()).success) void download(evidenceId.trim()); }}>
             <label>Mã chứng từ<input value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)} /></label><ButtonBar type="submit" disabled={downloading || !RefundIdSchema.safeParse(evidenceId.trim()).success}>Tải chứng từ</ButtonBar>
           </form>{downloadError ? <p className={styles.error} role="alert">{downloadError}</p> : null}

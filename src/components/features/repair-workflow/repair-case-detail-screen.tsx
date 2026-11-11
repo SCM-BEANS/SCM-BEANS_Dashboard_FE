@@ -861,7 +861,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor="primary-collection-evidence-reference">
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id="primary-collection-evidence-reference"
@@ -875,7 +875,7 @@ export function RepairCaseDetailScreen({
                     {currentPrimaryCollectionError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordPrimaryCollection.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng máy và mã minh chứng; kiểm tra hồ sơ đủ điều kiện nhận máy.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng để tiếp tục.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
@@ -902,7 +902,7 @@ export function RepairCaseDetailScreen({
                 ) : canActivateAssignment ? (
                   <form id="activate-replacement-form" className={styles.assignmentForm} onSubmit={submitActivation}>
                     <label className={styles.formField} htmlFor="replacement-activation-evidence">
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id="replacement-activation-evidence"
@@ -927,7 +927,7 @@ export function RepairCaseDetailScreen({
                     {activateReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(activateReplacementAssignment.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: evidenceFileError(activationEvidence, { min: 1, max: 1 }) ?? "Nhập lý do và minh chứng kích hoạt.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: evidenceFileError(activationEvidence, { min: 1, max: 1 }) ?? "Điền lý do phê duyệt và đính kèm tệp minh chứng.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -957,7 +957,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor="replacement-delivery-evidence-reference">
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id="replacement-delivery-evidence-reference"
@@ -971,7 +971,7 @@ export function RepairCaseDetailScreen({
                     {recordReplacementDelivery.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReplacementDelivery.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || recordReplacementDelivery.isPending, disabledReason: evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 }) ?? "Nhập ghi chú và minh chứng bàn giao máy thay thế.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || recordReplacementDelivery.isPending, disabledReason: evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng bàn giao.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
                   </form>
                 ) : assignment.data?.status === "ACTIVE" ? (
                   <p className={styles.notice} role="status">
@@ -1015,7 +1015,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`repair-diagnosis-evidence-${caseId}`}>
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id={`repair-diagnosis-evidence-${caseId}`}
@@ -1029,7 +1029,7 @@ export function RepairCaseDetailScreen({
                     {recordRepairDiagnosis.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordRepairDiagnosis.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 }) ?? "Nhập chẩn đoán và mã minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 }) ?? "Nhập nội dung chẩn đoán và đính kèm tệp minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1113,7 +1113,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`repair-completion-evidence-${caseId}`}>
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT} multiple
                         id={`repair-completion-evidence-${caseId}`}
@@ -1138,7 +1138,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(completeRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) || isRefreshing || completeRepairWork.isSuccess, disabledReason: evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 }) ?? "Nhập phạm vi công việc, kết quả, minh chứng và chọn phê duyệt nếu có tranh chấp chi phí.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) || isRefreshing || completeRepairWork.isSuccess, disabledReason: evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 }) ?? "Điền phạm vi công việc, kết quả sửa chữa và đính kèm tệp minh chứng. Nếu có tranh chấp chi phí, hãy chọn phương án được duyệt.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1174,7 +1174,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`replacement-collection-evidence-${caseId}`}>
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id={`replacement-collection-evidence-${caseId}`}
@@ -1189,7 +1189,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng và minh chứng thu máy thay thế.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi thu hồi.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1235,7 +1235,7 @@ export function RepairCaseDetailScreen({
                       />
                     </label>
                     <label className={styles.formField} htmlFor={`primary-return-evidence-${caseId}`}>
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id={`primary-return-evidence-${caseId}`}
@@ -1250,7 +1250,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 }) ?? "Nhập tình trạng và minh chứng trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
+                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1290,7 +1290,7 @@ export function RepairCaseDetailScreen({
                     <p className={styles.notice} role="note">{`${M.REPLACEMENT_ASSIGNMENT}: ${assignment.data?.id ?? "—"}`}</p>
                     <p className={styles.notice} role="note">{`${M.PRIMARY_MACHINE}: ${repairCase.data?.primaryMachineId ?? "—"} · ${M.ASSIGNMENT_MACHINE}: ${assignment.data?.replacementMachineId ?? "—"}`}</p>
                     <label className={styles.formField} htmlFor={`release-evidence-${caseId}`}>
-                      <span>Tệp chứng từ *</span>
+                      <span>Tệp minh chứng *</span>
                       <input
                         type="file" accept={EVIDENCE_ACCEPT}
                         id={`release-evidence-${caseId}`}
@@ -1305,7 +1305,7 @@ export function RepairCaseDetailScreen({
                     {releaseReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) ?? "Nhập mã minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
+                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) ?? "Đính kèm tệp minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
                   </form>
                 ) : (
                   <>
@@ -1322,7 +1322,7 @@ export function RepairCaseDetailScreen({
           </section>
 
           <section className={styles.panel} aria-label={M.TIMELINE_TITLE}>
-            <SectionHeading title={M.TIMELINE_TITLE} description="Sự kiện RepairCase được sắp theo thời điểm." />
+            <SectionHeading title={M.TIMELINE_TITLE} description="Các bước xử lý được sắp theo thời gian." />
             {timeline.isPending ? <p className={styles.notice} role="status">{M.TIMELINE_LOADING}</p> : null}
             {timeline.isError ? <QueryError label={M.TIMELINE_ERROR} error={timeline.error} onRetry={() => void timeline.refetch()} /> : null}
             {timeline.data?.content.length === 0 ? <p className={styles.notice} role="status">{M.TIMELINE_EMPTY}</p> : null}
@@ -1348,7 +1348,7 @@ export function RepairCaseDetailScreen({
           </section>
 
           <section className={styles.panel} aria-label={M.CUSTODY_TITLE}>
-            <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của Owner được lưu riêng với các sự kiện trạng thái." />
+            <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của khách hàng được lưu tại đây." />
             {ownerWaitingForHandover ? <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p> : null}
             {custody.isPending ? <p className={styles.notice} role="status">{M.CUSTODY_LOADING}</p> : null}
             {custody.isError ? <QueryError label={M.CUSTODY_ERROR} error={custody.error} onRetry={() => void custody.refetch()} /> : null}

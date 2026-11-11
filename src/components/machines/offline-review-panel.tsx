@@ -28,7 +28,7 @@ export function OfflineReviewPanel({ page, detail, status, machineId, machineLab
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
       <DataTable headerVariant="admin" rows={page.items} rowKey={(row) => row.id} emptyMessage="Chưa có hồ sơ rà soát trong phạm vi đã chọn." columns={[
         ...(!machineId ? [{ key: "machine", header: "Máy", render: (row: OfflineViolationReview) => <span title={row.machineId}>{machineLabels?.[row.machineId] ?? row.machineId.slice(0, 8).toUpperCase()}</span> }] : []),
-        { key: "time", header: "Phát hiện lúc · giờ máy chủ", render: (row) => formatTime(row.detectedAt) },
+        { key: "time", header: "Thời điểm phát hiện", render: (row) => formatTime(row.detectedAt) },
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
         { key: "status", header: "Trạng thái", render: (row) => <span className={styles.offlineReviewStatus} data-status={row.status}>{labels[row.status]}</span> },
         { key: "open", header: "Chi tiết", render: (row) => <ButtonBar onClick={() => onSelect(row.id)}>Xem hồ sơ</ButtonBar> },
@@ -64,7 +64,7 @@ function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review:
       {review.decision ? <><div><dt>Kết quả rà soát</dt><dd>{review.decision === "NO_ACTION" ? "Không cần xử lý thêm" : "Tiếp tục theo dõi, xử lý"}</dd></div><div><dt>Nội dung</dt><dd>{review.decisionReason ?? "—"}</dd></div><div><dt>Ghi nhận lúc</dt><dd>{formatTime(review.decidedAt)}</dd></div></> : null}
     </dl>
     <EvidenceList resource="OFFLINE_REVIEW" parentId={review.id} title="Chứng từ rà soát" />
-    <p className={styles.telemetryRangeCaption}>Thời gian giữ theo giờ máy chủ; dữ liệu rà soát không tự áp dụng tiền phạt hoặc công nợ.</p>
+    <p className={styles.telemetryRangeCaption}>Thời gian hiển thị theo giờ hệ thống. Kết quả rà soát không tự tạo tiền phạt hoặc công nợ.</p>
     {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || Boolean(fileError) || pending, disabledReason: fileError ?? "Nhập lý do hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success && !fileError) setConfirm(true); }}>
       <label>Kết quả<select disabled={pending} value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}><option value="FOLLOW_UP">Tiếp tục theo dõi, xử lý</option><option value="NO_ACTION">Không cần xử lý thêm</option></select></label>
       <label>Lý do rà soát<textarea name="reason" required maxLength={2000} value={reason} disabled={pending} onChange={(event) => setReason(event.target.value)} /></label>

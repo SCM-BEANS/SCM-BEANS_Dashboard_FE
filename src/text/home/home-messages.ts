@@ -1,8 +1,8 @@
 export const HOME_MESSAGES = {
   PAGE: {
-    TITLE: "DOLORES COFFEE | Máy pha và nền tảng quản lý",
+    TITLE: "DOLORES COFFEE | Máy pha và nền tảng vận hành",
     DESCRIPTION:
-      "Máy pha cà phê cùng nền tảng Dolores giúp theo dõi thiết bị, hợp đồng, hóa đơn và yêu cầu hỗ trợ.",
+      "Theo dõi máy pha, hợp đồng, hóa đơn và yêu cầu hỗ trợ trên cùng một nền tảng.",
   },
   BRAND: {
     ARIA_LABEL: "Dolores, về trang chủ",
@@ -20,63 +20,63 @@ export const HOME_MESSAGES = {
     ],
   },
   HERO: {
-    TITLE_START: "Máy pha thông minh.",
-    TITLE_ACCENT: "Quản lý cùng Dolores.",
+    TITLE_START: "Quản lý máy pha.",
+    TITLE_ACCENT: "Gọn trong một nền tảng.",
     DESCRIPTION:
-      "Máy pha cà phê và nền tảng Dolores tập hợp thông tin thiết bị, hợp đồng, hóa đơn và hỗ trợ trong một nơi.",
+      "Theo dõi thiết bị, hợp đồng, hóa đơn và yêu cầu hỗ trợ tại các điểm bán trên Dolores.",
     PRIMARY_ACTION: "Khám phá giải pháp",
     SECONDARY_ACTION: "Xem nền tảng",
   },
   PRODUCT: {
     IMAGE_ALT: "Máy pha cà phê thông minh DOLORES COFFEE",
-    TITLE: "Thiết bị phù hợp với cách bạn kinh doanh",
+    TITLE: "Chọn máy phù hợp. Theo dõi vận hành cùng Dolores.",
     DESCRIPTION:
-      "Lựa chọn máy pha theo nhu cầu điểm bán, rồi quản lý thông tin thiết bị cùng các nghiệp vụ liên quan trên Dolores.",
+      "Từ hồ sơ máy đến hợp đồng và hóa đơn, bạn có thể theo dõi các thông tin vận hành tại từng điểm bán trên cùng nền tảng.",
     BENEFITS: [
       "Chọn thiết bị theo nhu cầu của từng điểm bán.",
-      "Quản lý thông tin máy cùng nghiệp vụ liên quan.",
-      "Tra cứu dữ liệu vận hành trên nền tảng Dolores.",
+      "Theo dõi máy, hợp đồng và hóa đơn trên Dolores.",
+      "Gửi yêu cầu hỗ trợ khi cần.",
     ],
   },
   TECHNOLOGY: {
-    TITLE: "Nắm thông tin vận hành trong cùng một nền tảng",
+    TITLE: "Thiết bị và công việc vận hành, cùng một nơi",
     DESCRIPTION:
-      "Dolores giúp người dùng theo dõi thông tin máy, hợp đồng, hóa đơn và gửi yêu cầu hỗ trợ tại một nơi.",
+      "Tra cứu tình trạng máy, hợp đồng và hóa đơn; gửi yêu cầu sửa chữa khi cần hỗ trợ.",
     POINTS: [
       {
         TITLE: "Máy pha",
-        DESCRIPTION: "Xem danh sách máy và thông tin thiết bị được quản lý.",
+        DESCRIPTION: "Xem hồ sơ và tình trạng các máy đang quản lý.",
       },
       {
         TITLE: "Hợp đồng",
-        DESCRIPTION: "Tra cứu hợp đồng liên quan đến cửa hàng.",
+        DESCRIPTION: "Theo dõi thời hạn và thông tin thuê máy.",
       },
       {
         TITLE: "Hóa đơn",
-        DESCRIPTION: "Mở danh sách hóa đơn để xem thông tin.",
+        DESCRIPTION: "Theo dõi khoản phí, hạn thanh toán và chứng từ.",
       },
       {
         TITLE: "Yêu cầu hỗ trợ",
-        DESCRIPTION: "Gửi yêu cầu sửa chữa và xem lại thông tin đã gửi.",
+        DESCRIPTION: "Gửi yêu cầu sửa chữa và theo dõi tiến độ xử lý.",
       },
     ],
   },
   SERVICES: {
-    TITLE: "Đồng hành từ lúc chọn máy đến khi vận hành",
+    TITLE: "Đồng hành cùng điểm bán trong suốt vòng đời thiết bị",
     DESCRIPTION:
-      "Trao đổi với đội ngũ Dolores để lựa chọn thiết bị, triển khai và nhận hỗ trợ kỹ thuật.",
+      "Từ chọn máy, lắp đặt đến hỗ trợ kỹ thuật, Dolores đồng hành cùng bạn trong quá trình sử dụng thiết bị.",
     POINTS: [
       {
         TITLE: "Chọn thiết bị",
-        DESCRIPTION: "Tìm hiểu máy pha theo nhu cầu và mô hình của từng điểm bán.",
+        DESCRIPTION: "Trao đổi để chọn máy phù hợp với nhu cầu của từng điểm bán.",
       },
       {
         TITLE: "Triển khai",
-        DESCRIPTION: "Trao đổi về việc lắp đặt và đưa thiết bị vào vận hành.",
+        DESCRIPTION: "Sắp xếp lắp đặt và bàn giao thiết bị cho điểm bán.",
       },
       {
         TITLE: "Hỗ trợ kỹ thuật",
-        DESCRIPTION: "Gửi yêu cầu hỗ trợ trong quá trình sử dụng thiết bị.",
+        DESCRIPTION: "Nhận hỗ trợ kỹ thuật trong quá trình sử dụng máy.",
       },
     ],
   },
@@ -88,16 +88,16 @@ export const HOME_MESSAGES = {
     READ_MORE: "Đọc thêm",
   },
   CONTACT: {
-    TITLE: "Tìm giải pháp phù hợp cho hoạt động kinh doanh cà phê",
+    TITLE: "Tìm giải pháp phù hợp cho điểm bán của bạn",
     DESCRIPTION:
-      "Liên hệ Dolores để trao đổi về máy pha, triển khai và nền tảng quản lý.",
+      "Trao đổi với Dolores về thiết bị, lắp đặt và cách quản lý vận hành tại điểm bán.",
     EMAIL: "hello@dolorescoffee.vn",
     CONSULT_ACTION: "Liên hệ tư vấn",
     DASHBOARD_ACTION: "Đăng nhập",
   },
   FOOTER: {
     DESCRIPTION:
-      "Máy pha cà phê và nền tảng quản lý cho hoạt động kinh doanh F&B.",
+      "Máy pha cà phê và nền tảng theo dõi vận hành dành cho doanh nghiệp F&B.",
     PRODUCT_TITLE: "Sản phẩm",
     PRODUCT_LINKS: [
       "Máy pha cà phê",

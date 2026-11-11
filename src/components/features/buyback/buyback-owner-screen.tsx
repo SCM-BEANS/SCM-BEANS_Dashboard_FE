@@ -71,7 +71,7 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
           {!workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? (
             <div className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Chứng từ thanh toán riêng tư</h3>
-              {workflow.paymentId ? <p className={styles.notice} role="status">Mã khoản thanh toán: <span className={styles.codeValue}>{workflow.paymentId}</span></p> : <p className={styles.formHint}>Nếu vừa tạo khoản thanh toán trong phiên này, mã sẽ hiện ở đây. Backend hiện chưa cung cấp API liệt kê khoản thanh toán theo hồ sơ.</p>}
+              {workflow.paymentId ? <p className={styles.notice} role="status">Mã khoản thanh toán: <span className={styles.codeValue}>{workflow.paymentId}</span></p> : <p className={styles.formHint}>Nếu vừa tạo khoản thanh toán trong phiên này, mã sẽ hiện ở đây.</p>}
               {workflow.paymentId ? (
                 <form className={styles.assignmentForm} onSubmit={workflow.perform(() => {
                   if (!workflow.proofFile) return;
