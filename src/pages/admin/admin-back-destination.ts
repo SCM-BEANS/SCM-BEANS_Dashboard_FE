@@ -19,11 +19,11 @@ function listHref(pathname: string, query: RouterQuery, keys: string[]): string 
   return search ? `${pathname}?${search}` : pathname;
 }
 
-export function getStoresBackDestination(query: RouterQuery): BackButtonDestination | null {
+export function getStoresBackDestination(query: RouterQuery, pathname: string = PATH_ADMIN.STORES): BackButtonDestination | null {
   if (!["create", "detail"].includes(firstString(query.view))) return null;
   return {
     label: T.STORES.BACK_TO_LIST,
-    fallbackHref: listHref(PATH_ADMIN.STORES, query, ["ownerId", "q"]),
+    fallbackHref: listHref(pathname, query, ["ownerId", "q"]),
   };
 }
 

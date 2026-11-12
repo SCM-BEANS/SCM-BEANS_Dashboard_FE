@@ -24,6 +24,12 @@ export function getModeratorBackDestination(path: string): BackButtonDestination
   const fallbackHref = sectionParents[section];
   if (!fallbackHref || nestedPath.length === 0) return null;
   if (nestedPath.length === 1 && nestedPath[0] === "list") return null;
+  if (section === "contracts" && nestedPath.length === 2 && nestedPath[1] === "history") {
+    return {
+      label: "Chi tiết hợp đồng",
+      fallbackHref: PATH_MODERATOR.CONTRACT_DETAIL(nestedPath[0]),
+    };
+  }
 
   return {
     label: MODERATOR_MESSAGES.ACTION_BAR.BACK_TO_SECTION,

@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import { locationsApi, LocationOwnerMismatchError } from "@/apis/locations.api";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -117,29 +118,30 @@ export function LocationsManagementPanel({
     setConfirmOpen(true);
   };
 
+  const Actions = mode === "moderator" ? PageActionsRenderer : PageActions;
   return (
-    <section className={styles.panel} aria-labelledby="locations-management-title">
-      <PageActions actions={!validActiveOwner ? [] : createFormOpen ? [
+    <section className={`${styles.panel} ${mode === "moderator" ? styles.locationsPanel : ""}`} aria-labelledby="locations-management-title">
+      <div className={mode === "moderator" ? styles.locationsHeading : undefined}><h2 id="locations-management-title">{mode === "owner" ? "Địa điểm" : createFormOpen ? "Tạo địa điểm" : "Danh sách địa điểm"}</h2><Actions actions={!validActiveOwner ? [] : createFormOpen ? [
         { id: "location-cancel", label: "Hủy", priority: 100, disabled: create.isPending, onClick: () => setCreateFormOpen(false), confirm: Object.values(form).some(Boolean) ? { title: "Hủy tạo địa điểm?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy tạo" } : undefined },
         { id: "location-save", label: "Lưu địa điểm", variant: "primary", priority: 100, type: "submit", form: "location-create-form", disabled: create.isPending || blockResubmit || !form.name.trim(), disabledReason: "Yêu cầu đang xử lý hoặc cần kiểm tra lại.", pending: create.isPending, pendingLabel: "Đang tạo…" },
       ] : [{ id: "location-create", label: "Tạo địa điểm", variant: "primary", priority: 20, onClick: () => { setCreateFormOpen(true); setRequestError(""); setSuccessMessage(""); } }]} />
-      <h2 id="locations-management-title">Địa điểm</h2>
+      </div>
       <p className={styles.description}>
         {mode === "owner"
           ? "Danh sách địa điểm và thao tác tạo mới được giới hạn theo Owner trong phiên đăng nhập."
-          : "Chỉ các Owner được API cho phép xem mới có thể chọn để quản lý địa điểm."}
+          : "Chọn khách hàng để xem và tạo địa điểm."}
       </p>
       {mode === "owner" && !validActiveOwner && <p className={styles.notice} role="alert">Không xác định được Owner từ phiên đăng nhập.</p>}
       {mode === "moderator" && <div className={styles.formGrid}>
-        <label className={styles.field} htmlFor="managed-owner-select">Owner
-          <select id="managed-owner-select" value={selectedOwnerId} onChange={(event) => changeOwner(event.target.value)} disabled={operatorOwners.isPending || operatorOwners.isError}>
-            <option value="">{operatorOwners.isPending ? "Đang tải Owner…" : "Chọn Owner"}</option>
+        <label className={styles.field} htmlFor="managed-owner-select">Khách hàng
+          <select id="managed-owner-select" value={selectedOwnerId} onChange={(event) => changeOwner(event.target.value)} disabled={operatorOwners.isPending || operatorOwners.isError || create.isPending}>
+            <option value="">{operatorOwners.isPending ? "Đang tải khách hàng…" : "Chọn khách hàng"}</option>
             {owners.map((profile) => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}
           </select>
         </label>
         {operatorOwners.hasNextPage && <div className={styles.actions}>
           <ButtonBar type="button" disabled={operatorOwners.isFetchingNextPage} onClick={() => void operatorOwners.fetchNextPage()}>
-            {operatorOwners.isFetchingNextPage ? "Đang tải…" : "Tải thêm Owner"}
+            {operatorOwners.isFetchingNextPage ? "Đang tải…" : "Tải thêm khách hàng"}
           </ButtonBar>
         </div>}
       </div>}
@@ -151,10 +153,7 @@ export function LocationsManagementPanel({
       {mode === "moderator" && operatorOwners.data && owners.length === 0 && <p className={styles.notice} role="status">API không trả về Owner trong phạm vi của Moderator này.</p>}
       {validActiveOwner && <>
         {selectedOwner && <p className={styles.hint}>Đang xem địa điểm của {selectedOwner.fullName}.</p>}
-        <div className={styles.tableHeader}>
-          <h3>Danh sách địa điểm</h3>
-
-        </div>
+        {mode === "owner" && <div className={styles.tableHeader}><h3>Danh sách địa điểm</h3></div>}
         {createFormOpen && <form id="location-create-form" className={styles.formGrid} onSubmit={submit}>
           <label className={styles.field}>Tên địa điểm *
             <input required maxLength={160} value={form.name} disabled={create.isPending || blockResubmit} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
@@ -185,7 +184,7 @@ export function LocationsManagementPanel({
           <ButtonBar type="button" disabled={locations.isFetching} onClick={() => void locations.refetch()}>Thử tải lại</ButtonBar>
         </div>}
         {locations.data && locationRows.length === 0 && <p className={styles.notice} role="status">Owner chưa có địa điểm.</p>}
-        {locations.data && locationRows.length > 0 && <DataTable
+        {(mode === "owner" || !createFormOpen) && locations.data && locationRows.length > 0 && <DataTable
           variant={tableVariant}
           rows={locationRows}
           rowKey={(location) => location.id}
@@ -193,10 +192,11 @@ export function LocationsManagementPanel({
             { key: "name", header: "Tên địa điểm", render: (location) => <strong>{location.name}</strong> },
             { key: "address", header: "Địa chỉ", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
             { key: "machines", header: "Số máy", render: (location) => location.machineCount ?? "—" },
-            { key: "status", header: "Trạng thái", render: (location) => location.active == null ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> },
-            { key: "id", header: "UUID", render: (location) => <span className={styles.code}><TruncatedId value={location.id} /></span> },
+            { key: "status", header: "Trạng thái", render: (location) => location.active == null ? "—" : mode === "owner" ? <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> : <span className={styles.locationStatus} data-status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</span> },
+            ...(mode === "owner" ? [{ key: "id", header: "UUID", render: (location: typeof locationRows[number]) => <span className={styles.code}><TruncatedId value={location.id} /></span> }] : []),
             { key: "actions", header: "", render: (location) => <ButtonBar
               type="button"
+              rollingLabel={mode === "moderator"}
               onClick={() => void router.push({
                 pathname: router.pathname,
                 query: {
@@ -205,7 +205,7 @@ export function LocationsManagementPanel({
                   ...(mode === "moderator" && activeOwnerId ? { ownerId: activeOwnerId } : {}),
                 },
               }, undefined, { shallow: true })}
-            >Chi tiết</ButtonBar> },
+            >{mode === "moderator" ? "Mở hồ sơ" : "Chi tiết"}</ButtonBar> },
           ]}
         />}
         {locations.hasNextPage && <div className={styles.actions}>

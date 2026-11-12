@@ -47,10 +47,12 @@ export function LocationDetailPanel({
   locationId,
   machineDetailHref,
   tableVariant = "operations",
+  compact = false,
 }: {
   locationId: string;
   machineDetailHref: (machineId: string) => string;
   tableVariant?: TableVariant;
+  compact?: boolean;
 }) {
   const validId = LocationIdSchema.safeParse(locationId).success;
   const [page, setPage] = useState(0);
@@ -108,17 +110,17 @@ export function LocationDetailPanel({
   const currentPage = machinePage?.number ?? page;
   const totalPages = machinePage ? Math.max(1, machinePage.totalPages) : 1;
 
-  return <section className={styles.panel} aria-labelledby="location-detail-panel-title">
-    <header className={styles.heading}>
+  return <section className={`${styles.panel} ${compact ? styles.compact : ""}`} aria-label={compact ? "Vận hành cửa hàng" : undefined} aria-labelledby={compact ? undefined : "location-detail-panel-title"}>
+    {!compact && <header className={styles.heading}>
       <div>
         <h2 id="location-detail-panel-title">{statsData?.locationName ?? "Chi tiết địa điểm"}</h2>
         {statsData?.ownerName && <p>Owner: {statsData.ownerName}</p>}
       </div>
-    </header>
+    </header>}
 
     <section aria-labelledby="location-stats-title">
       <div className={styles.sectionHeading}>
-        <h3 id="location-stats-title">Thống kê vận hành</h3>
+        <h3 id="location-stats-title">{compact ? "Vận hành cửa hàng" : "Thống kê vận hành"}</h3>
         {stats.isFetching && statsData && <span role="status">Đang cập nhật…</span>}
       </div>
       {stats.isPending && <p className={styles.notice} role="status">Đang tải thống kê địa điểm…</p>}
@@ -127,21 +129,30 @@ export function LocationDetailPanel({
         <ButtonBar type="button" disabled={stats.isFetching} onClick={() => void stats.refetch()}>Thử tải lại thống kê</ButtonBar>
       </div>}
       {!validId && <p className={styles.notice} role="alert">Mã địa điểm không hợp lệ.</p>}
-      <div className={styles.statGrid}>
+      {compact ? <dl className={styles.compactStats}>
+        {[
+          ["Tổng số máy", statsData ? numberLabel(statsData.totalMachines) : "—"],
+          ["Đang kết nối", statsData ? numberLabel(statsData.onlineMachines) : "—"],
+          ["Mất kết nối", statsData ? numberLabel(statsData.offlineMachines) : "—"],
+          ["Ly hôm nay", statsData ? numberLabel(statsData.todayCupsBrewed) : "—"],
+          ["Ly trong 7 ngày", statsData ? numberLabel(statsData.weeklyCupsBrewed) : "—"],
+          ["Hao hụt trung bình", statsData ? wastageLabel(statsData.averageWastagePct) : "—"],
+        ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl> : <div className={styles.statGrid}>
         <MetricCard label="Tổng số máy" value={statsData ? numberLabel(statsData.totalMachines) : "—"} />
         <MetricCard label="Đang kết nối" value={statsData ? numberLabel(statsData.onlineMachines) : "—"} />
         <MetricCard label="Mất kết nối" value={statsData ? numberLabel(statsData.offlineMachines) : "—"} />
         <MetricCard label="Ly pha hôm nay" value={statsData ? numberLabel(statsData.todayCupsBrewed) : "—"} />
         <MetricCard label="Ly pha trong 7 ngày" value={statsData ? numberLabel(statsData.weeklyCupsBrewed) : "—"} />
         <MetricCard label="Hao hụt trung bình" value={statsData ? wastageLabel(statsData.averageWastagePct) : "—"} />
-      </div>
+      </div>}
     </section>
 
     <section className={styles.tableSection} aria-labelledby="location-machines-title">
       <div className={styles.sectionHeading}>
         <div>
-          <h3 id="location-machines-title">Máy tại địa điểm</h3>
-          <p>Máy chưa được gán địa điểm được hiển thị là Kho trong trang chi tiết máy.</p>
+          <h3 id="location-machines-title">{compact ? "Máy tại cửa hàng" : "Máy tại địa điểm"}</h3>
+          {!compact && <p>Máy chưa được gán địa điểm được hiển thị là Kho trong trang chi tiết máy.</p>}
         </div>
         {machines.isFetching && machinePage && <span role="status">Đang cập nhật…</span>}
       </div>
@@ -157,15 +168,15 @@ export function LocationDetailPanel({
           rows={machinePage.content}
           rowKey={(machine) => machine.id}
           columns={columns}
-          emptyMessage="Địa điểm này chưa có máy."
+          emptyMessage={compact ? "Cửa hàng chưa có máy." : "Địa điểm này chưa có máy."}
         />
-        <div className={styles.pagination}>
+        {(!compact || machinePage.totalElements > 0) && <div className={styles.pagination}>
           <p>Trang {currentPage + 1}/{totalPages} · {numberLabel(machinePage.totalElements)} máy</p>
           <div className={styles.sectionHeading}>
             <ButtonBar type="button" disabled={currentPage <= 0 || machines.isFetching} onClick={() => setPage(Math.max(0, currentPage - 1))}>Trang trước</ButtonBar>
             <ButtonBar type="button" disabled={machinePage.last || machines.isFetching} onClick={() => setPage(currentPage + 1)}>Trang sau</ButtonBar>
           </div>
-        </div>
+        </div>}
       </>}
     </section>
   </section>;

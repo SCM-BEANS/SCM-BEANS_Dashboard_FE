@@ -26,13 +26,13 @@
 }
 
 .tab:focus-visible {
-  outline: 3px solid var(--color-focus, #2474a6);
+  outline: 3px solid #b81724;
   outline-offset: 2px;
 }
 
 .activeTab {
-  border-bottom-color: var(--color-primary, #126b85);
-  color: var(--color-primary, #126b85);
+  border-bottom-color: #b81724;
+  color: #b81724;
   font-weight: 700;
 }
 
@@ -46,6 +46,25 @@
   margin: 0;
   font-size: 1.1rem;
 }
+
+.resultText {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-primary, #302927);
+  white-space: nowrap;
+}
+.resultText::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #8a817c;
+  content: "";
+}
+.resultText[data-tone="success"]::before { background: #2d8a63; }
+.resultText[data-tone="warning"]::before { background: #c78c2d; }
+.resultText[data-tone="danger"]::before { background: #bd2632; }
 
 .feedback {
   margin: 0;
@@ -81,6 +100,6 @@
   .panel { padding: 14px; }
   .tabs { display: grid; grid-template-columns: 1fr; border: 0; }
   .tab { border: 1px solid var(--border-subtle, #dce3e8); border-radius: 9px; text-align: left; }
-  .activeTab { border-color: var(--color-primary, #126b85); }
+  .activeTab { border-color: #b81724; color: #b81724; }
   .pagination { flex-wrap: wrap; justify-content: center; }
 }

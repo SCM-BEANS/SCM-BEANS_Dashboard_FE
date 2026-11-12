@@ -124,6 +124,37 @@
   padding: 11px 10px;
 }
 
+.contractTable {
+  overflow-x: auto;
+}
+
+.contractTable :global(table) {
+  min-width: 820px;
+}
+
+.contractStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #514843;
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.contractStatusDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: #80756f;
+}
+
+.contractStatus[data-status="ACTIVE"] .contractStatusDot { background: #32866b; }
+.contractStatus[data-status="DRAFT"] .contractStatusDot { background: #c58a16; }
+.contractStatus[data-status="TERMINATED"] .contractStatusDot { background: #bd3b3b; }
+
 .standard td {
   padding: 15px 10px;
 }

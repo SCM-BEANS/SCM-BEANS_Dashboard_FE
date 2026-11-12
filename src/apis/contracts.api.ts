@@ -82,11 +82,14 @@ export const contractsApi =  {
     });
     return ContractListSchema.parse(response.data);
   },
-  async downloadDocument(contractId: string, documentId: string, signal?: AbortSignal) {
+  async downloadDocument(contractId: string, documentId: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
     const contract = ContractIdSchema.parse(contractId);
     const document = ContractIdSchema.parse(documentId);
     const response = await axiosClient.get<Blob>(`${contractPath(contract)}/documents/${encodeURIComponent(document)}`, {
-      baseURL: DOLORES_API_BASE_URL, responseType: "blob", signal,
+      baseURL: DOLORES_API_BASE_URL,
+      responseType: "blob",
+      signal,
+      ...(onProgress ? { onDownloadProgress: (event) => onProgress(event.loaded, event.total) } : {}),
     });
     return response.data;
   },

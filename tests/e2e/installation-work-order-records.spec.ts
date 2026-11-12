@@ -11,14 +11,14 @@ const secondChecklistItemId = "f4000000-0000-4000-8000-000000000007";
 const accessoryId = "f4000000-0000-4000-8000-000000000008";
 const evidenceId = "f4000000-0000-4000-8000-000000000009";
 
-type MockOptions = { emptyChecklist?: boolean };
+type MockOptions = { emptyChecklist?: boolean; dispatchable?: boolean };
 
 function tokenFor(role: "moderator" | "technician") {
   const claims = Buffer.from(JSON.stringify({ roles: [role] })).toString("base64url");
   return `header.${claims}.signature`;
 }
 
-function workOrderDetails() {
+function workOrderDetails(dispatchable = false, assigned = false) {
   return {
     workOrder: {
       id: workOrderId,
@@ -26,10 +26,10 @@ function workOrderDetails() {
       contractId,
       machineId,
       machineType: "CONVENTIONAL",
-      status: "IN_PROGRESS",
-      assignedTechnicianId: technicianId,
-      scheduledFor: "2026-11-07T09:00:00+07:00",
-      startedAt: "2026-11-06T09:00:00+07:00",
+      status: dispatchable ? (assigned ? "ASSIGNED" : "PENDING") : "IN_PROGRESS",
+      assignedTechnicianId: dispatchable ? (assigned ? technicianId : null) : technicianId,
+      scheduledFor: dispatchable ? (assigned ? "2026-11-10T09:00:00+07:00" : null) : "2026-11-07T09:00:00+07:00",
+      startedAt: dispatchable ? null : "2026-11-06T09:00:00+07:00",
       completedAt: null,
       handoverRecipient: null,
       failureReason: null,
@@ -59,12 +59,44 @@ function checklistPage(page: number, empty = false) {
 async function installMockApi(page: Page, options: MockOptions = {}) {
   const reads: Array<{ path: string; page: string | null }> = [];
   const downloads: Request[] = [];
+  const mutations: Array<{ method: string; path: string; body: unknown }> = [];
+  let assigned = false;
+  await page.route("**/api/dolores/v1/profiles?*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [{
+          idaasUserId: technicianId,
+          email: "tech@example.com",
+          fullName: "Kỹ thuật viên thử nghiệm",
+          emailVerified: true,
+          roles: ["TECHNICIAN"],
+          status: "ACTIVE",
+        }],
+        page: 0,
+        size: 100,
+        totalElements: 1,
+        totalPages: 1,
+      }),
+    });
+  });
   await page.route("**/api/dolores/v1/installation-work-orders/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace("/api/dolores/v1", "");
     if (request.method() === "GET" && path === `/installation-work-orders/${workOrderId}`) {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(workOrderDetails()) });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(workOrderDetails(options.dispatchable, assigned)) });
+      return;
+    }
+    if (request.method() === "POST" && path === `/installation-work-orders/${workOrderId}/assign`) {
+      const body = request.postDataJSON();
+      mutations.push({ method: request.method(), path, body });
+      assigned = true;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        ...workOrderDetails(true, true).workOrder,
+        createdBy: technicianId,
+      }) });
       return;
     }
     if (request.method() === "GET" && path.endsWith("/checklist-items")) {
@@ -107,7 +139,7 @@ async function installMockApi(page: Page, options: MockOptions = {}) {
     }
     await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ message: "Not found" }) });
   });
-  return { reads, downloads };
+  return { reads, downloads, mutations };
 }
 
 async function openWorkOrder(page: Page, role: "moderator" | "technician") {
@@ -151,6 +183,27 @@ test.describe("installation work-order paged records", () => {
     await expect(page.getByRole("status").filter({ hasText: "Chưa có mục kiểm tra nào." })).toBeVisible();
   });
 
+  test("Moderator can assign a pending installation work order to an eligible technician", async ({ page }) => {
+    const api = await installMockApi(page, { dispatchable: true });
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await openWorkOrder(page, "moderator");
+
+    await expect(page.getByRole("heading", { name: "Điều phối lắp đặt" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Tiến độ lắp đặt" })).toBeVisible();
+    const technicianSelect = page.getByLabel("Kỹ thuật viên");
+    await expect(technicianSelect).toContainText("Kỹ thuật viên thử nghiệm");
+    await technicianSelect.selectOption(technicianId);
+    await page.getByRole("button", { name: "Giao kỹ thuật viên" }).click();
+
+    await expect(page.getByRole("status").filter({ hasText: "Đã giao lệnh cho kỹ thuật viên." })).toBeVisible();
+    expect(api.mutations).toContainEqual({
+      method: "POST",
+      path: `/installation-work-orders/${workOrderId}/assign`,
+      body: { technicianId },
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
+
   test("downloads evidence through the existing evidence content endpoint", async ({ page }) => {
     const api = await installMockApi(page);
     await openWorkOrder(page, "technician");
@@ -161,6 +214,25 @@ test.describe("installation work-order paged records", () => {
     await page.getByRole("button", { name: "Tải xuống" }).click();
     const request = await downloadRequest;
     expect(request.method()).toBe("GET");
+    expect(api.downloads).toHaveLength(1);
+  });
+
+  test("Moderator sees brand-colored tabs and can download evidence without file format and size columns", async ({ page }) => {
+    const api = await installMockApi(page);
+    await openWorkOrder(page, "moderator");
+
+    const activeTab = page.getByRole("tab", { name: "Danh sách kiểm tra" });
+    await expect(activeTab).toBeVisible();
+    await expect(activeTab).toHaveCSS("color", "rgb(184, 23, 36)");
+    await page.getByRole("tab", { name: "Chứng từ" }).click();
+    await expect(page.getByRole("columnheader", { name: "Định dạng" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Dung lượng" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Thao tác" })).toBeVisible();
+    await expect(page.getByText("Bien-ban-ban-giao.pdf")).toBeVisible();
+
+    const downloadRequest = page.waitForRequest((request) => request.url().includes(`/installation-work-orders/${workOrderId}/evidence/${evidenceId}`));
+    await page.getByRole("button", { name: /Tải xuống Bien-ban-ban-giao\.pdf/ }).click();
+    expect((await downloadRequest).method()).toBe("GET");
     expect(api.downloads).toHaveLength(1);
   });
 });

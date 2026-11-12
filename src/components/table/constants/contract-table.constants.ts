@@ -1,5 +1,5 @@
 export const ADMIN_CONTRACT_LIST_TITLE = "Hợp đồng";
-export const ADMIN_CONTRACT_LIST_DESCRIPTION = "Danh sách hợp đồng từ Dolores.";
+export const ADMIN_CONTRACT_LIST_DESCRIPTION = "Tra cứu và quản lý hợp đồng thuê máy.";
 
 export const CONTRACT_TABLE_HEADERS = {
   contract: "Mã hợp đồng",

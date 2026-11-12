@@ -18,11 +18,13 @@ interface ModeratorPageProps {
 
 export function isModeratorReadRoute(sectionPath: string): boolean {
   return sectionPath === "" ||
+    /^contracts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/history$/i.test(sectionPath) ||
     /^contracts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/installation-request$/i.test(sectionPath) ||
     sectionPath === "notifications" ||
     sectionPath === "notifications/alerts" ||
     sectionPath === "machines" ||
     sectionPath.startsWith("machines/") ||
+    sectionPath === "stores" ||
     sectionPath === "locations" ||
     sectionPath === "iot" ||
     sectionPath === "iot/customer" ||
@@ -42,13 +44,21 @@ export function isModeratorReadRoute(sectionPath: string): boolean {
     /^buyback\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|MB-[A-Z0-9-]+)$/i.test(sectionPath);
 }
 
-export const getServerSideProps: GetServerSideProps<ModeratorPageProps> = async ({ params }) => {
+export const getServerSideProps: GetServerSideProps<ModeratorPageProps> = async ({ params, query }) => {
   const sections = params?.sections;
   const sectionPath = Array.isArray(sections)
     ? sections.join("/")
     : typeof sections === "string"
       ? sections
       : "";
+
+  if (sectionPath === "locations") {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (key !== "sections" && typeof value === "string") search.set(key, value);
+    }
+    return { redirect: { destination: PATH_MODERATOR.STORES + (search.size ? `?${search}` : ""), permanent: false } };
+  }
 
   if (!isSupportedModeratorSection(sectionPath)) {
     return { notFound: true };

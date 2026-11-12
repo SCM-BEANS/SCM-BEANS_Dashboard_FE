@@ -222,18 +222,6 @@ export function ContractTerminationScreen({
         </div>
       ) : null}
 
-      {contract.data ? (
-        <section className={styles.contractCard} aria-label="Thông tin hợp đồng">
-          <h2>Hợp đồng</h2>
-          <dl className={styles.contractSummary}>
-            <div><dt>Mã hợp đồng</dt><dd>{contract.data.id}</dd></div>
-            <div><dt>Trạng thái</dt><dd>{contract.data.status === "ACTIVE" ? T.CONTRACTS.ACTIVE : contract.data.status === "TERMINATED" ? T.CONTRACTS.TERMINATED : T.CONTRACTS.DRAFT}</dd></div>
-            <div><dt>Chủ sở hữu</dt><dd>{contract.data.ownerId}</dd></div>
-            <div><dt>Máy</dt><dd>{contract.data.machineId ?? "Chưa gắn máy"}</dd></div>
-          </dl>
-        </section>
-      ) : null}
-
       {role !== "OWNER" && contract.data?.status === "ACTIVE" && expiry.isPending ? (
         <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p>
       ) : null}
@@ -246,32 +234,50 @@ export function ContractTerminationScreen({
           <ButtonBar type="button" onClick={() => void recallOrders.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
-      {canCreateCase ? (
-        <form className={styles.form} onSubmit={submitRequest}>
-          <h2>Tạo hồ sơ chấm dứt</h2>
-          <p>Gửi yêu cầu sẽ mở hồ sơ theo dõi. Hợp đồng vẫn hiệu lực trong lúc xử lý; backend chuyển máy sang trạng thái bảo trì ngay khi ghi nhận yêu cầu.</p>
-          <div className={styles.formGrid}>
-            <label>Loại yêu cầu
-              <select value={type} onChange={(event) => setType(event.target.value as TerminationCaseRequest["type"])}>
-                <option value="NORMAL">Kết thúc theo kỳ hạn</option>
-                <option value="EARLY">Chấm dứt trước hạn</option>
-                <option value="VIOLATION">Do vi phạm</option>
-              </select>
-            </label>
-            <label>Ngày hiệu lực
-              <input type="date" value={effectiveDate} onChange={(event) => setEffectiveDate(event.target.value)} />
-            </label>
-            <label className={styles.reasonField}>Lý do <span aria-hidden="true">*</span>
-              <textarea required maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} />
-            </label>
-          </div>
-          {formError ? <p className={styles.error} role="alert">{formError}</p> : null}
-          {requestTermination.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(requestTermination.error, "mutation")}</p> : null}
-          {requestTermination.isSuccess ? <p className={styles.success} role="status">Đã tạo hồ sơ. Máy được chuyển sang trạng thái bảo trì; hợp đồng vẫn hiệu lực đến khi quy trình hoàn tất.</p> : null}
-          <ButtonBar type="submit" disabled={requestTermination.isPending}>
-            {requestTermination.isPending ? "Đang gửi yêu cầu…" : "Tạo hồ sơ chấm dứt"}
-          </ButtonBar>
-        </form>
+      {contract.data ? (
+        <div className={canCreateCase ? styles.terminationStartLayout : styles.terminationReadLayout}>
+          <section className={styles.contractCard} aria-label="Thông tin hợp đồng">
+            <div className={styles.contractCardHeading}>
+              <h2>Hợp đồng</h2>
+              <span className={styles.terminationState}>{contract.data.status === "ACTIVE" ? T.CONTRACTS.ACTIVE : contract.data.status === "TERMINATED" ? T.CONTRACTS.TERMINATED : T.CONTRACTS.DRAFT}</span>
+            </div>
+            <dl className={styles.contractSummary}>
+              <div><dt>Mã hợp đồng</dt><dd>{contract.data.id}</dd></div>
+              <div><dt>Chủ sở hữu</dt><dd>{contract.data.ownerName || contract.data.ownerId}</dd></div>
+              <div><dt>Máy</dt><dd>{contract.data.machineId ?? "Chưa gắn máy"}</dd></div>
+              <div><dt>Thời hạn</dt><dd>{contract.data.startDate && contract.data.endDate ? `${contract.data.startDate} – ${contract.data.endDate}` : "Chưa xác định"}</dd></div>
+              <div><dt>Phí thuê tháng</dt><dd>{contract.data.monthlyRentalFee == null ? "—" : `${contract.data.monthlyRentalFee.toLocaleString("vi-VN")} ₫`}</dd></div>
+              <div><dt>Tiền cọc</dt><dd>{contract.data.depositAmount == null ? "—" : `${contract.data.depositAmount.toLocaleString("vi-VN")} ₫`}</dd></div>
+            </dl>
+          </section>
+          {canCreateCase ? (
+            <form className={styles.form} onSubmit={submitRequest}>
+              <h2>Tạo hồ sơ chấm dứt</h2>
+              <p>Sau khi tạo hồ sơ, máy chuyển sang trạng thái bảo trì. Hợp đồng vẫn có hiệu lực cho đến khi quy trình hoàn tất.</p>
+              <div className={styles.formGrid}>
+                <label>Loại yêu cầu
+                  <select value={type} onChange={(event) => setType(event.target.value as TerminationCaseRequest["type"])}>
+                    <option value="NORMAL">Kết thúc theo kỳ hạn</option>
+                    <option value="EARLY">Chấm dứt trước hạn</option>
+                    <option value="VIOLATION">Do vi phạm</option>
+                  </select>
+                </label>
+                <label>Ngày hiệu lực
+                  <input type="date" value={effectiveDate} onChange={(event) => setEffectiveDate(event.target.value)} />
+                </label>
+                <label className={styles.reasonField}>Lý do <span aria-hidden="true">*</span>
+                  <textarea required maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} />
+                </label>
+              </div>
+              {formError ? <p className={styles.error} role="alert">{formError}</p> : null}
+              {requestTermination.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(requestTermination.error, "mutation")}</p> : null}
+              {requestTermination.isSuccess ? <p className={styles.success} role="status">Đã tạo hồ sơ. Máy được chuyển sang trạng thái bảo trì; hợp đồng vẫn hiệu lực đến khi quy trình hoàn tất.</p> : null}
+              <ButtonBar type="submit" disabled={requestTermination.isPending}>
+                {requestTermination.isPending ? "Đang gửi yêu cầu…" : "Tạo hồ sơ chấm dứt"}
+              </ButtonBar>
+            </form>
+          ) : null}
+        </div>
       ) : null}
 
       {role !== "OWNER" && contract.data?.status === "ACTIVE" && activeCaseId ? (

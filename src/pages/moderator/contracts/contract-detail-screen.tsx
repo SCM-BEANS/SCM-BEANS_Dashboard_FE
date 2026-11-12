@@ -6,14 +6,15 @@ import { DataTable } from "@/components/table/data-table";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { buildContractDetailActions } from "@/components/action-bar/entity-page-actions";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { profilesApi } from "@/apis/profiles.api";
-
-import { ModeratorPageHeading } from "../moderator-page-heading";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
 
@@ -117,15 +118,10 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
-  return <ModeratorPageHeading title={title} description={description} />;
-}
-
 export function ContractDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [downloadingDocumentId, setDownloadingDocumentId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [lifecycleDirty, setLifecycleDirty] = useState(false);
   const [lifecycleView, setLifecycleView] = useState<"amend" | "continue" | null>(null);
@@ -143,7 +139,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
   const [pendingPolicy, setPendingPolicy] = useState<ContractPolicyAmendmentRequest | null>(null);
   const [pendingContinuation, setPendingContinuation] = useState<ContractContinuationRequest | null>(null);
   const [continuedContractId, setContinuedContractId] = useState("");
-  const [showMachineHistory, setShowMachineHistory] = useState(false);
   const validId = ContractIdSchema.safeParse(id).success;
   const contract = useQuery({
     queryKey: ["dolores", "contracts", "id", id],
@@ -179,12 +174,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
     queryKey: ["dolores", "contract-policy-history", id],
     queryFn: ({ signal }) => contractsApi.getPolicyHistory(id, signal),
     enabled: validId && Boolean(contract.data) && !contract.isError,
-    retry: false,
-  });
-  const machineHistory = useQuery({
-    queryKey: ["dolores", "machine-contract-history", contract.data?.machineId],
-    queryFn: ({ signal }) => contractsApi.getMachineHistory(contract.data!.machineId!, signal),
-    enabled: showMachineHistory && Boolean(contract.data?.machineId),
     retry: false,
   });
   const uploadMainContract = useMutation({
@@ -301,26 +290,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
     setPendingContinuation(parsed.data);
   };
 
-  async function downloadDocument(documentId: string, filename: string) {
-    setDownloadingDocumentId(documentId);
-    setDownloadError(null);
-    try {
-      const blob = await contractsApi.downloadDocument(id, documentId);
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = filename || documentId;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-    } catch (error) {
-      setDownloadError(getApiErrorMessage(error));
-    } finally {
-      setDownloadingDocumentId(null);
-    }
-  }
-
   const busy = amendPolicy.isPending || continueContract.isPending;
   const ownerName = owner.data?.fullName ?? `${T.COMMON.OWNER} ${contract.data?.ownerId.slice(0, 8) ?? ""}`;
   const matchingInstallationOrders = contract.data
@@ -336,9 +305,12 @@ export function ContractDetailScreen({ id }: { id: string }) {
   return (
     <>
       <div className={styles.pageContent}>
-        <PageHeading
+        <BackButtonHeading
           title={contract.data ? `${T.CONTRACTS.DETAIL} · ${contract.data.id.slice(0, 8).toUpperCase()}` : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DETAIL_TITLE}
-          description={MODERATOR_MESSAGES.READ_SCREENS.CONTRACTS_DESCRIPTION}
+          titleId="moderator-contract-detail-title"
+          description={T.CONTRACTS.DESCRIPTION}
+          className={styles.pageHeading}
+          back={{ label: "Danh sách hợp đồng", fallbackHref: PATH_MODERATOR.CONTRACTS }}
         />
         {!validId && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert">{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_UNAVAILABLE}</div>}
         {validId && <QueryFeedback query={contract} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACT} />}
@@ -347,13 +319,16 @@ export function ContractDetailScreen({ id }: { id: string }) {
           <ButtonBar type="button" onClick={() => void contract.refetch()}>{T.COMMON.RETRY}</ButtonBar>
         </div>}
         {contract.data && !contract.isError && <>
-          <section className={adminStyles.panel}>
-            <h2>{T.CONTRACTS.DETAIL}</h2>
+          <div className={adminStyles.contractDetailLayout}>
+          <section className={`${adminStyles.panel} ${adminStyles.contractOverviewPanel}`}>
+            <div className={adminStyles.contractOverviewHeading}>
+              <h2>{T.CONTRACTS.DETAIL}</h2>
+              <StatusBadge status={contract.data.status}>{contractStatus(contract.data.status)}</StatusBadge>
+            </div>
             <div className={adminStyles.operationsGrid}>
-              <div><span>Mã hợp đồng</span><strong>{contract.data.id}</strong></div>
-              <div><span>{T.COMMON.OWNER}</span><strong>{ownerName} · {contract.data.ownerId}</strong></div>
-              <div><span>Mã máy</span><strong>{contract.data.machineId ?? "Chưa gán máy"}</strong></div>
-              <div><span>Trạng thái</span><strong>{contractStatus(contract.data.status)}</strong></div>
+              <div><span>Mã hợp đồng</span><strong><TruncatedId value={contract.data.id} /></strong></div>
+              <div><span>{T.COMMON.OWNER}</span><strong>{ownerName}</strong></div>
+              <div><span>Mã máy</span><strong>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : T.CONTRACTS.NO_MACHINE}</strong></div>
               <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div>
               <div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
               <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div>
@@ -366,7 +341,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             {(contract.data.termsSnapshot ?? contract.data.terms) && <p className={adminStyles.panelSubtitle}>{contract.data.termsSnapshot ?? contract.data.terms}</p>}
           </section>
 
-          <section className={adminStyles.panel}>
+          <section className={`${adminStyles.panel} ${adminStyles.contractExpiryPanel}`}>
             <h2>Trạng thái hết hạn</h2>
             <QueryFeedback query={expiry} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACT} />
             {expiry.data && !expiry.isError && <div className={adminStyles.operationsGrid}>
@@ -380,7 +355,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             <p className={adminStyles.panelSubtitle}>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_EXPIRY_READ_ONLY}</p>
           </section>
 
-          <section className={adminStyles.panel}>
+          <section className={`${adminStyles.panel} ${adminStyles.contractHistoryPanel}`}>
             <h2>Lịch sử chính sách</h2>
             <QueryFeedback query={policyHistory} loadingMessage={T.COMMON.LOADING} />
             {policyHistory.data && policyHistory.data.length === 0 && !policyHistory.isError && <p className={adminStyles.emptyText}>{T.COMMON.EMPTY}</p>}
@@ -397,7 +372,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             />}
           </section>
 
-          {lifecycleView === "amend" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-policy-amend-form" className={adminStyles.panel} onSubmit={submitPolicyAmendment}>
+          {lifecycleView === "amend" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-policy-amend-form" className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`} onSubmit={submitPolicyAmendment}>
             <h2>Điều chỉnh chính sách</h2>
             {policySnapshot ? <>
               <p className={adminStyles.panelSubtitle}>Chỉnh điều khoản bằng các trường nhập. Chính sách cũ vẫn nằm trong lịch sử; máy chủ ghi nhận phiên bản mới sau khi xác nhận.</p>
@@ -443,7 +418,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             {amendPolicy.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
           </form>}
 
-          {lifecycleView === "continue" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-continuation-form" className={adminStyles.panel} onSubmit={submitContinuation}>
+          {lifecycleView === "continue" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-continuation-form" className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`} onSubmit={submitContinuation}>
             <h2>Tạo hợp đồng tiếp nối</h2>
             <p className={adminStyles.panelSubtitle}>Owner, máy và snapshot chính sách được kế thừa từ hợp đồng cũ. Máy chủ kiểm tra điều kiện trước khi tạo hợp đồng mới ở trạng thái nháp.</p>
             <div className={adminStyles.operationsGrid}>
@@ -459,7 +434,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
             {continueContract.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
           </form>}
 
-          <section className={adminStyles.panel} aria-labelledby="moderator-contract-documents">
+          <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-documents">
             <h2 id="moderator-contract-documents">{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOCUMENTS}</h2>
             <QueryFeedback query={documents} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_DOCUMENTS} />
             {documents.data?.length === 0 && !documents.isError && <p className={adminStyles.emptyText} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_DOCUMENTS}</p>}
@@ -480,29 +455,21 @@ export function ContractDetailScreen({ id }: { id: string }) {
               columns={[
                 { key: "file", header: "Tệp", render: (item) => item.originalFilename },
                 { key: "type", header: "Loại", render: (item) => item.documentType },
-                { key: "size", header: "Dung lượng · phiên bản", render: (item) => `${(item.sizeBytes / 1024 / 1024).toFixed(2)} MB · v${item.version}` },
+                { key: "version", header: "Phiên bản", render: (item) => `v${item.version}` },
                 { key: "uploaded", header: "Ngày tải", render: (item) => item.archivedAt ? "Đã lưu trữ" : dateTime(item.uploadedAt) },
-                { key: "action", header: "", render: (item) => <ButtonBar type="button" disabled={downloadingDocumentId === item.id} onClick={() => void downloadDocument(item.id, item.originalFilename)}>{downloadingDocumentId === item.id ? MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOWNLOADING : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOWNLOAD}</ButtonBar> },
+                { key: "action", header: "", render: (item) => <ProgressDownloadButton
+                  filename={item.originalFilename}
+                  download={(signal, onProgress) => {
+                    setDownloadError(null);
+                    return contractsApi.downloadDocument(id, item.id, signal, onProgress);
+                  }}
+                  onError={(error) => setDownloadError(getApiErrorMessage(error))}
+                >{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOWNLOAD}</ProgressDownloadButton> },
               ]}
             />}
           </section>
+          </div>
 
-          {showMachineHistory && <section className={adminStyles.panel}>
-            <h2>Hợp đồng theo máy</h2>
-            <QueryFeedback query={machineHistory} loadingMessage={T.COMMON.LOADING} />
-            {machineHistory.data && machineHistory.data.length === 0 && !machineHistory.isError && <p className={adminStyles.emptyText}>{T.COMMON.EMPTY}</p>}
-            {machineHistory.data && machineHistory.data.length > 0 && <DataTable
-              headerVariant="admin"
-              rows={machineHistory.data}
-              rowKey={(item) => item.id}
-              columns={[
-                { key: "contract", header: "Hợp đồng", render: (item) => <button className={adminStyles.accountTextButton} type="button" onClick={() => void router.push(`${PATH_MODERATOR.CONTRACTS}/${encodeURIComponent(item.id)}`)}>{item.id.slice(0, 8).toUpperCase()}</button> },
-                { key: "owner", header: "Khách hàng", render: (item) => item.ownerName?.trim() || "—" },
-                { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
-                { key: "status", header: "Trạng thái", render: (item) => contractStatus(item.status) },
-              ]}
-            />}
-          </section>}
           <ContractActivationPanel contract={contract.data} />
           {contract.data.status === "ACTIVE" && <section className={adminStyles.panel} aria-labelledby="moderator-contract-installation-history">
             <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
@@ -534,7 +501,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
         onCancel: () => { setLifecycleView(null); setLifecycleError(""); setLifecycleDirty(false); },
         onAmend: () => { setLifecycleError(""); setLifecycleDirty(false); setLifecycleView("amend"); },
         onContinue: () => { setLifecycleError(""); setLifecycleDirty(false); setLifecycleView("continue"); },
-        onHistory: () => setShowMachineHistory((current) => !current),
+        onHistory: () => void router.push(PATH_MODERATOR.CONTRACT_HISTORY(contract.data!.id)),
       })} />}
       {(pendingPolicy || pendingContinuation) && <NotificationDialog
         variant="confirm"

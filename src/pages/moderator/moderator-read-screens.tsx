@@ -9,12 +9,13 @@ const CustomerProfileListScreen = lazy(() => import("./customers/customer-list-s
 const CustomerProfileDetailScreen = lazy(() => import("./customers/customer-detail-screen").then((module) => ({ default: module.CustomerProfileDetailScreen })));
 const CustomerCreateScreen = lazy(() => import("./customers/customer-create-screen").then((module) => ({ default: module.ModeratorCustomerCreateScreen })));
 const ContractListScreen = lazy(() => import("./contracts/contract-list-screen").then((module) => ({ default: module.ContractListScreen })));
+const ContractHistoryScreen = lazy(() => import("./contracts/contract-list-screen").then((module) => ({ default: module.ContractHistoryScreen })));
 const ContractCreateScreen = lazy(() => import("./contracts/contract-create-screen").then((module) => ({ default: module.ContractCreateScreen })));
 const ContractDetailScreen = lazy(() => import("./contracts/contract-detail-screen").then((module) => ({ default: module.ContractDetailScreen })));
 const ContractInstallationRequestScreen = lazy(() => import("./contracts/contract-installation-request-screen").then((module) => ({ default: module.ContractInstallationRequestScreen })));
 const ModeratorMachinesScreen = lazy(() => import("./machines/machines-screen").then((module) => ({ default: module.ModeratorMachinesScreen })));
 const ModeratorMachineOperationalOverviewScreen = lazy(() => import("./machines/machine-operational-overview-screen").then((module) => ({ default: module.ModeratorMachineOperationalOverviewScreen })));
-const ModeratorLocationsScreen = lazy(() => import("./locations/locations-screen").then((module) => ({ default: module.ModeratorLocationsScreen })));
+const ModeratorStoresScreen = lazy(() => import("./stores/stores-screen").then((module) => ({ default: module.ModeratorStoresScreen })));
 const ModeratorIoTScreen = lazy(() => import("./iot/iot-screen").then((module) => ({ default: module.ModeratorIoTScreen })));
 const ModeratorTechnicalScreen = lazy(() => import("./technical/technical-screen").then((module) => ({ default: module.ModeratorTechnicalScreen })));
 const ModeratorInvoicesScreen = lazy(() => import("./invoices/invoices-screen").then((module) => ({ default: module.ModeratorInvoicesScreen })));
@@ -59,7 +60,7 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
   if (sectionPath === "machines" || sectionPath.startsWith("machines/")) {
     return loadScreen(<ModeratorMachinesScreen path={sectionPath} />);
   }
-  if (sectionPath === "locations") return loadScreen(<ModeratorLocationsScreen />);
+  if ((sectionPath === "stores" || sectionPath === "locations")) return loadScreen(<ModeratorStoresScreen />);
   if (sectionPath === "iot" || sectionPath === "iot/customer" || sectionPath === "iot/machines") {
     return loadScreen(<ModeratorIoTScreen path={sectionPath} />);
   }
@@ -96,6 +97,10 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
   }
   if (sectionPath === "contracts/expiry") {
     return <UnavailableReadRoute message={MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_EXPIRY_UNAVAILABLE} />;
+  }
+  const contractHistory = /^contracts\/([^/]+)\/history$/.exec(sectionPath);
+  if (contractHistory) {
+    return loadScreen(<ContractHistoryScreen id={contractHistory[1]} />);
   }
   if (sectionPath.startsWith("contracts/")) {
     return loadScreen(<ContractDetailScreen id={sectionPath.slice("contracts/".length)} />);

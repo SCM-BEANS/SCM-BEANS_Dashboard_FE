@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { existsSync, readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const { join, dirname, relative } = require("node:path");
 const test = require("node:test");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
@@ -21,7 +21,12 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    const sourcePath = id.startsWith("@/") ? join(root, "src", id.slice(2) + ".ts")
+      : id.startsWith(".") ? join(dirname(fileName), id + ".ts") : null;
+    return sourcePath && existsSync(sourcePath) ? loadModule(relative(root, sourcePath)) : require(id);
+  };
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -29,7 +34,13 @@ function loadModule(relativePath, mocks = {}) {
 const paths = loadModule("src/routes/path.ts");
 const messages = loadModule("src/text/customer/customer-messages.ts").CUSTOMER_MESSAGES;
 const schemas = {
-  "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts"),
+  "@/schema/coffee-packages.schema": loadModule("src/schema/coffee-packages.schema.ts"),
+  "@/schema/machine-models.schema": loadModule("src/schema/machine-models.schema.ts"),
+  "@/schema/contracts.schema": loadModule("src/schema/contracts.schema.ts", {
+    "./termination-cases.schema": loadModule("src/schema/termination-cases.schema.ts", {
+      "./billing.schema": loadModule("src/schema/billing.schema.ts"),
+    }),
+  }),
   "@/schema/billing.schema": loadModule("src/schema/billing.schema.ts"),
   "@/schema/machines.schema": loadModule("src/schema/machines.schema.ts"),
   "@/schema/repair-cost-reviews.schema": loadModule("src/schema/repair-cost-reviews.schema.ts"),
@@ -63,6 +74,8 @@ const customerReadScreen = loadModule("src/pages/dashboard/read/customer-read-sc
   "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
   "@/components/features/recipe-menus/recipe-menus-screen": { RecipeMenusScreen: () => null },
   "./customer-read-descriptor": customerReadDescriptor,
+  "@/components/action-bar/page-actions": { PageActions: () => null },
+  "../machines/machine-operational-overview-screen": { CustomerMachineOperationalOverviewScreen: () => null },
   "../overview/overview-screen": { OverviewScreen: () => null },
   "../contracts/contracts-screen": { ContractsScreen: () => null },
   "../machines/machines-screen": { MachinesScreen: () => null },
@@ -87,7 +100,10 @@ test("Owner asset routes are catalogued, linked in navigation, and dispatch to t
 });
 
 test("Moderator asset routes resolve to implemented role screens", () => {
-  assert.equal(paths.PATH_MODERATOR.LOCATIONS, "/moderator/locations");
+  assert.equal(paths.PATH_MODERATOR.STORES, "/moderator/stores");
+  assert.equal(routes.isSupportedModeratorSection("stores"), true);
+  const customerIndex = routes.MODERATOR_NAVIGATION_LINKS.findIndex((link) => link.HREF === paths.PATH_MODERATOR.CUSTOMERS);
+  assert.equal(routes.MODERATOR_NAVIGATION_LINKS[customerIndex + 1].HREF, paths.PATH_MODERATOR.STORES);
   assert.equal(paths.PATH_MODERATOR.MACHINE_REGISTER, "/moderator/machines/register");
   assert.ok(routes.MODERATOR_ROUTE_CATALOG.sections.includes(paths.PATH_MODERATOR.LOCATIONS));
   assert.ok(routes.MODERATOR_ROUTE_CATALOG.sections.includes(paths.PATH_MODERATOR.MACHINE_REGISTER));
@@ -95,12 +111,12 @@ test("Moderator asset routes resolve to implemented role screens", () => {
 
   for (const relativePath of [
     "src/pages/moderator/[[...sections]].page.tsx",
-    "src/pages/moderator/locations/locations-screen.tsx",
+    "src/pages/moderator/stores/stores-screen.tsx",
     "src/pages/moderator/machines/machines-screen.tsx",
   ]) {
     assert.equal(existsSync(join(root, relativePath)), true, relativePath);
   }
   const moderatorReads = readFileSync(join(root, "src/pages/moderator/moderator-read-screens.tsx"), "utf8");
   assert.match(moderatorReads, /sectionPath === "locations"/);
-  assert.match(moderatorReads, /ModeratorLocationsScreen/);
+  assert.match(moderatorReads, /ModeratorStoresScreen/);
 });

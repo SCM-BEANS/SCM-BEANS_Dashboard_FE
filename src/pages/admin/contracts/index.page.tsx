@@ -13,7 +13,7 @@ import {
   type ContractPolicyAmendmentRequest,
 } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -74,12 +74,14 @@ function ContractsContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [createdContractId, setCreatedContractId] = useState("");
+  const [downloadError, setDownloadError] = useState("");
   const [contractSearchDraft, setContractSearchDraft] = useState("");
   const [contractStatusDraft, setContractStatusDraft] = useState("");
   const [contractTypeDraft, setContractTypeDraft] = useState("");
   const [contractSearch, setContractSearch] = useState("");
   const [contractStatusFilter, setContractStatusFilter] = useState("");
   const [contractTypeFilter, setContractTypeFilter] = useState("");
+  const [contractPage, setContractPage] = useState(1);
   const [lifecycleView, setLifecycleView] = useState<"amend" | "continue" | null>(null);
   const [policySnapshot, setPolicySnapshot] = useState<ContractPolicyDraft | null>(null);
   const [policyReason, setPolicyReason] = useState("");
@@ -142,11 +144,6 @@ function ContractsContent() {
     || continuationInstallationFee !== (contract.data.installationFee == null ? "" : String(contract.data.installationFee))
     || continuationPaygPrice !== (contract.data.paygUnitPrice == null ? "" : String(contract.data.paygUnitPrice))
   ));
-  const download = useMutation({ mutationFn: ({ id, filename }: { id: string; filename: string }) => contractsApi.downloadDocument(contractId, id), onSuccess: (blob, input) => {
-    const safeFilename = input.filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180) || "contract-document";
-    const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
-    anchor.href = url; anchor.download = safeFilename; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } });
   useEffect(() => {
     if (!contract.data) return;
     const snapshot = contract.data.contractTermsSnapshot;
@@ -261,11 +258,15 @@ function ContractsContent() {
       && (!contractStatusFilter || item.status === contractStatusFilter)
       && (!contractTypeFilter || item.machineTypeSnapshot === contractTypeFilter);
   });
+  const contractPageSize = 10;
+  const contractTotalPages = Math.max(1, Math.ceil(filteredContracts.length / contractPageSize));
+  const visibleContracts = filteredContracts.slice((contractPage - 1) * contractPageSize, contractPage * contractPageSize);
   const submitContractFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setContractSearch(contractSearchDraft.trim());
     setContractStatusFilter(contractStatusDraft);
     setContractTypeFilter(contractTypeDraft);
+    setContractPage(1);
   };
   const pageTitle = view === "create"
     ? T.CONTRACTS.CREATE_TITLE
@@ -289,8 +290,14 @@ function ContractsContent() {
   }
 
   return <>
-  <div className={styles.pageContent}>
-    <BackButtonHeading
+  <div className={`${styles.pageContent} ${styles.userPage}`}>
+    {isContractList ? <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
+      <div>
+        <h1 id="admin-contracts-title">{ADMIN_CONTRACT_LIST_TITLE}</h1>
+        <p>{ADMIN_CONTRACT_LIST_DESCRIPTION}</p>
+      </div>
+      <ButtonBar variant="primary" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
+    </div> : <BackButtonHeading
       title={pageTitle}
       titleId="admin-contracts-title"
       description={view === "create"
@@ -300,14 +307,17 @@ function ContractsContent() {
           : T.CONTRACTS.DESCRIPTION}
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
-    />
-    {isContractList && <section className={styles.panel} aria-labelledby="admin-contract-list-panel-title">
-      <h2 id="admin-contract-list-panel-title">Danh sách hợp đồng</h2>
+    />}
+    {isContractList && <section className={`${styles.panel} ${styles.contractListPanel}`} aria-labelledby="admin-contract-list-panel-title">
+      <div className={styles.userSectionHeading}>
+        <h2 id="admin-contract-list-panel-title">Danh sách hợp đồng</h2>
+        {contracts.data && <span className={styles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}
+      </div>
       <TableFilters
         search={{
           ariaLabel: "Tìm hợp đồng",
           maxLength: 100,
-          placeholder: "Tìm mã hợp đồng, Owner hoặc loại máy",
+          placeholder: "Tìm mã hợp đồng hoặc khách hàng",
           value: contractSearchDraft,
           onChange: setContractSearchDraft,
         }}
@@ -343,14 +353,24 @@ function ContractsContent() {
       {contracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contracts.error)}</p><ButtonBar type="button" onClick={() => void contracts.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contracts.data?.length === 0 && !contracts.isError && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
       {contracts.data && contracts.data.length > 0 && filteredContracts.length === 0 && <p className={styles.emptyText}>Không tìm thấy hợp đồng phù hợp bộ lọc.</p>}
-      {filteredContracts.length > 0 && <ContractTable
-        contracts={filteredContracts}
-        headerVariant="admin"
-        ownerHeader={T.COMMON.OWNER}
-        ownerName={ownerName}
-        contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
-        draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
-      />}
+      {visibleContracts.length > 0 &&
+        <ContractTable
+          contracts={visibleContracts}
+          headerVariant="admin"
+          ownerHeader="Khách hàng"
+          ownerName={ownerName}
+          contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
+          draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
+        />
+      }
+      {filteredContracts.length > 0 && <div className={styles.accountPagination}>
+        <span>{(contractPage - 1) * contractPageSize + 1}–{Math.min(contractPage * contractPageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
+        <div>
+          <button className={styles.accountSecondaryButton} type="button" disabled={contractPage <= 1} onClick={() => setContractPage((page) => Math.max(1, page - 1))}>Trang trước</button>
+          <span>Trang {contractPage}/{contractTotalPages}</span>
+          <button className={styles.accountSecondaryButton} type="button" disabled={contractPage >= contractTotalPages} onClick={() => setContractPage((page) => Math.min(contractTotalPages, page + 1))}>Trang sau</button>
+        </div>
+      </div>}
     </section>}
     {view === "create" && <ContractCreateForm
       onCancel={() => void router.push({ pathname: "/admin/contracts" }, undefined, { shallow: true })}
@@ -364,9 +384,10 @@ function ContractsContent() {
       {contract.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {contract.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contract.error)}</p><ButtonBar type="button" onClick={() => void contract.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contract.data && <>
-        <section className={styles.panel}><h2>{T.CONTRACTS.DETAIL}</h2><div className={styles.operationsGrid}>
+        <div className={styles.contractDetailLayout}>
+        <section className={`${styles.panel} ${styles.contractOverviewPanel}`}><div className={styles.contractOverviewHeading}><h2>{T.CONTRACTS.DETAIL}</h2><StatusBadge status={contract.data.status}>{status(contract.data.status)}</StatusBadge></div><div className={styles.operationsGrid}>
           <div><span>Mã hợp đồng</span><strong><TruncatedId value={contract.data.id} /></strong></div><div><span>{T.COMMON.OWNER}</span><strong>{ownerName(contract.data.ownerId)}</strong></div>
-          <div><span>Mã máy</span><strong>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : T.CONTRACTS.NO_MACHINE}</strong></div><div><span>Trạng thái</span><strong><StatusBadge status={contract.data.status}>{status(contract.data.status)}</StatusBadge></strong></div>
+          <div><span>Mã máy</span><strong>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : T.CONTRACTS.NO_MACHINE}</strong></div>
           <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div><div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
           <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div><div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>
           <div><span>Tiền cọc</span><strong>{money(contract.data.depositAmount)}</strong></div><div><span>Phí lắp đặt</span><strong>{money(contract.data.installationFee)}</strong></div>
@@ -374,12 +395,12 @@ function ContractsContent() {
           <div><span>Ngưỡng mất kết nối</span><strong>{contract.data.contractTermsSnapshot ? `${contract.data.contractTermsSnapshot.heartbeatToleranceSeconds ?? 45} giây` : "Chưa có chính sách"}</strong></div>
         </div>
         {(contract.data.termsSnapshot ?? contract.data.terms) && <p className={styles.panelSubtitle}>{contract.data.termsSnapshot ?? contract.data.terms}</p>}</section>
-        <section className={styles.panel}><h2>Trạng thái hết hạn</h2>
+        <section className={`${styles.panel} ${styles.contractExpiryPanel}`}><h2>Trạng thái hết hạn</h2>
           {expiry.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {expiry.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(expiry.error)} <ButtonBar type="button" onClick={() => void expiry.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {expiry.data && <div className={styles.operationsGrid}><div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div><div><span>Ngày nhắc</span><strong>{date(expiry.data.reminderDate)}</strong></div><div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div><div><span>Quyết định</span><strong>{expiry.data.decision ?? "Chưa có"}</strong></div><div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div></div>}
         </section>
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${styles.contractHistoryPanel}`}>
           <h2>Lịch sử chính sách</h2>
           {policyHistory.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {policyHistory.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(policyHistory.error)} <ButtonBar type="button" onClick={() => void policyHistory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -396,7 +417,7 @@ function ContractsContent() {
             ]}
           />}
         </section>
-        {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={styles.panel} onSubmit={submitPolicyAmendment}>
+        {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={`${styles.panel} ${styles.contractLifecyclePanel}`} onSubmit={submitPolicyAmendment}>
           <h2>Điều chỉnh chính sách</h2>
           {policySnapshot ? <>
             <p className={styles.panelSubtitle}>Chỉnh các điều khoản bằng trường nhập rõ ràng. Phiên bản hiện tại được giữ nguyên; máy chủ sẽ ghi nhận bản sửa đổi sau khi bạn xác nhận.</p>
@@ -448,7 +469,7 @@ function ContractsContent() {
           {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
           {amendPolicy.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
         </form>}
-        {lifecycleView === "continue" && <form id="contract-continuation-form" className={styles.panel} onSubmit={submitContinuation}>
+        {lifecycleView === "continue" && <form id="contract-continuation-form" className={`${styles.panel} ${styles.contractLifecyclePanel}`} onSubmit={submitContinuation}>
           <h2>Tạo hợp đồng tiếp nối</h2>
           <p className={styles.panelSubtitle}>Owner và máy sẽ được kế thừa từ hợp đồng cũ. Chỉ tiếp tục sau khi quy trình chấm dứt đã hoàn tất.</p>
           <div className={styles.operationsGrid}>
@@ -463,7 +484,7 @@ function ContractsContent() {
           {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
           {continueContract.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
         </form>}
-        <section className={styles.panel}><h2>{T.CONTRACTS.DOCUMENTS}</h2>
+        <section className={`${styles.panel} ${styles.contractDocumentsPanel}`}><h2>{T.CONTRACTS.DOCUMENTS}</h2>
           {documents.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {documents.data && documents.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
@@ -474,13 +495,21 @@ function ContractsContent() {
             columns={[
               { key: "file", header: "Tệp", render: (doc) => doc.originalFilename },
               { key: "type", header: "Loại", render: (doc) => doc.documentType },
-              { key: "size", header: "Dung lượng · phiên bản", render: (doc) => `${(doc.sizeBytes / 1024 / 1024).toFixed(2)} MB · v${doc.version}` },
+              { key: "version", header: "Phiên bản", render: (doc) => `v${doc.version}` },
               { key: "uploaded", header: "Ngày tải", render: (doc) => doc.archivedAt ? "Đã lưu trữ" : dateTime(doc.uploadedAt) },
-              { key: "actions", header: "", render: (doc) => <ButtonBar type="button" disabled={download.isPending} onClick={() => download.mutate({ id: doc.id, filename: doc.originalFilename })}>{download.isPending && download.variables?.id === doc.id ? "Đang tải…" : T.CONTRACTS.DOWNLOAD}</ButtonBar> },
+              { key: "actions", header: "", render: (doc) => <ProgressDownloadButton
+                filename={doc.originalFilename}
+                download={(signal, onProgress) => {
+                  setDownloadError("");
+                  return contractsApi.downloadDocument(contractId, doc.id, signal, onProgress);
+                }}
+                onError={(error) => setDownloadError(getApiErrorMessage(error, "mutation"))}
+              >{T.CONTRACTS.DOWNLOAD}</ProgressDownloadButton> },
             ]}
           />}
-          {download.isError && <p className={styles.operationsNotice} role="alert">Không tải được tài liệu. Vui lòng thử lại.</p>}
+          {downloadError && <p className={styles.operationsNotice} role="alert">{downloadError}</p>}
         </section>
+        </div>
       </>}
     </>}
     {view === "detail" && contract.data && <ContractActivationPanel contract={contract.data} />}
@@ -501,9 +530,7 @@ function ContractsContent() {
       />}</section>}
     </>}
   </div>
-  <PageActions actions={isContractList ? [
-    { id: "contracts-create", label: T.CONTRACTS.CREATE, variant: "primary", priority: 20, onClick: () => navigate({ view: "create" }) },
-  ] : view === "detail" && contract.data ? buildContractDetailActions({
+  <PageActions actions={view === "detail" && contract.data ? buildContractDetailActions({
     status: contract.data.status, machineId: contract.data.machineId, hasSnapshot: Boolean(contract.data.contractTermsSnapshot), lifecycleView,
     dirty: lifecycleView === "amend" ? policyFormDirty : continuationFormDirty,
     pending: lifecycleView === "amend" ? amendPolicy.isPending : continueContract.isPending,

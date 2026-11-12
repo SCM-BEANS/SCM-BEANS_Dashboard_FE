@@ -3,7 +3,7 @@ import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
-import { StatusBadge, type StatusBadgeTone } from "@/components/status-badge/status-badge";
+import { type StatusBadgeTone } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 import styles from "./installation-work-order-records.module.css";
@@ -146,7 +146,7 @@ export function InstallationWorkOrderRecords({
                 { key: "required", header: "Bắt buộc", render: (item) => item.required ? "Có" : "Không" },
                 { key: "result", header: "Kết quả", render: (item) => {
                   const result = resultLabels[item.result] ?? { label: item.result, tone: "neutral" as const };
-                  return <StatusBadge tone={result.tone}>{result.label}</StatusBadge>;
+                  return <span className={styles.resultText} data-tone={result.tone}>{result.label}</span>;
                 } },
                 { key: "notes", header: "Ghi chú", render: (item) => item.notes ?? "—" },
                 ...(renderChecklistActions ? [{ key: "actions", header: "Cập nhật", render: renderChecklistActions }] : []),
@@ -188,8 +188,6 @@ export function InstallationWorkOrderRecords({
               style={{ minWidth: 760 }}
               columns={[
                 { key: "filename", header: "Tệp", render: (item) => item.originalFilename },
-                { key: "content-type", header: "Định dạng", render: (item) => item.contentType ?? "—" },
-                { key: "size", header: "Dung lượng", render: (item) => `${item.sizeBytes.toLocaleString("vi-VN")} bytes` },
                 { key: "sha256", header: "Mã SHA-256", render: (item) => item.sha256 ?? "—" },
                 { key: "uploaded", header: "Ngày tải", render: (item) => item.uploadedAt ? new Date(item.uploadedAt).toLocaleString("vi-VN") : "—" },
                 ...(renderEvidenceActions ? [{ key: "actions", header: "Thao tác", render: renderEvidenceActions }] : []),

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
@@ -65,6 +65,17 @@ const caseStatusLabels: Record<TerminationCaseStatus, string> = {
   APPROVED: "Đã duyệt quyết toán",
   COMPLETED: "Đã kết thúc hợp đồng",
   REJECTED: "Đã từ chối",
+};
+
+const terminationSteps = ["Hồ sơ", "Thu hồi máy", "Kiểm tra máy", "Quyết toán", "Hoàn tất"];
+const terminationStepByStatus: Record<TerminationCaseStatus, number> = {
+  REQUESTED: 0,
+  RECOVERY_PENDING: 1,
+  INSPECTION_PENDING: 2,
+  SETTLEMENT_PENDING: 3,
+  APPROVED: 4,
+  COMPLETED: 5,
+  REJECTED: -1,
 };
 
 const recallStatusLabels: Record<RecallWorkOrderStatus, string> = {
@@ -167,6 +178,8 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
     retry: false,
   });
   const caseData = terminationCase.data;
+  const currentWorkflowStep = caseData ? terminationStepByStatus[caseData.status] : -1;
+  const workflowProgress = currentWorkflowStep < 0 ? 0 : Math.min(1, currentWorkflowStep / (terminationSteps.length - 1));
   const parsedDamageAmount = Number(damageAmount);
   const parsedPenaltyAmount = Number(penaltyAmount);
   const parsedOutstandingAmount = Number(outstandingAmount);
@@ -333,6 +346,22 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
       {resolvedCaseId && terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
       {caseData ? (
         <>
+          {caseData.status !== "REJECTED" ? <ol
+            className={styles.workflowSteps}
+            aria-label="Tiến độ chấm dứt hợp đồng"
+            style={{ "--workflow-progress": workflowProgress } as CSSProperties}
+          >
+            {terminationSteps.map((step, index) => {
+              const complete = caseData.status === "COMPLETED" || index < currentWorkflowStep;
+              const current = index === currentWorkflowStep;
+              return <li key={step} className={styles.workflowStep} data-state={complete ? "done" : current ? "current" : "upcoming"} aria-current={current ? "step" : undefined}>
+                <span className={styles.workflowDot} aria-hidden="true">
+                  {complete ? <svg viewBox="0 0 16 16"><path d="M3.5 8.4l3 3 6-6.4" /></svg> : index + 1}
+                </span>
+                <span className={styles.workflowLabel}>{step}</span>
+              </li>;
+            })}
+          </ol> : null}
           <dl className={styles.summary}>
             <div><dt>Mã hồ sơ</dt><dd>{caseData.id}</dd></div>
             <div><dt>Loại yêu cầu</dt><dd>{caseData.type === "NORMAL" ? "Kết thúc theo kỳ hạn" : caseData.type === "EARLY" ? "Chấm dứt trước hạn" : "Chấm dứt do vi phạm"}</dd></div>

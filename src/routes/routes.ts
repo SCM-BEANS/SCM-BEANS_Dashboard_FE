@@ -143,6 +143,7 @@ export const MODERATOR_NAVIGATION_LINKS =  [
     HREF: PATH_MODERATOR.CUSTOMERS,
     ICON: "Users"
   },
+  { LABEL: MODERATOR_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_MODERATOR.STORES, ICON: "Building2" },
    {
     LABEL: MODERATOR_MESSAGES.NAVIGATION.INVOICES,
     HREF: PATH_MODERATOR.INVOICES,
@@ -154,7 +155,6 @@ export const MODERATOR_NAVIGATION_LINKS =  [
     HREF: PATH_MODERATOR.MACHINES,
     ICON: "Coffee"
   },
-  { LABEL: MODERATOR_MESSAGES.NAVIGATION.LOCATIONS, HREF: PATH_MODERATOR.LOCATIONS, ICON: "Building2" },
    {
     LABEL: MODERATOR_MESSAGES.NAVIGATION.IOT,
     HREF: PATH_MODERATOR.IOT,
@@ -521,6 +521,10 @@ export function isSupportedModeratorSection(section: string): boolean {
   const contractInstallationRequest = /^contracts\/([^/]+)\/installation-request$/.exec(section);
   if (contractInstallationRequest) {
     return ContractIdSchema.safeParse(contractInstallationRequest[1]).success;
+  }
+  const contractHistory = /^contracts\/([^/]+)\/history$/.exec(section);
+  if (contractHistory) {
+    return ContractIdSchema.safeParse(contractHistory[1]).success;
   }
   const maintenanceRequestDetail = /^technical-requests\/requests\/([^/]+)$/.exec(section);
   if (maintenanceRequestDetail) {

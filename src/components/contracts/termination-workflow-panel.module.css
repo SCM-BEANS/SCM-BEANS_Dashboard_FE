@@ -58,6 +58,71 @@
   font-weight: 600;
 }
 
+.workflowSteps {
+  --workflow-progress: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workflowSteps::before,
+.workflowSteps::after {
+  position: absolute;
+  top: 16px;
+  right: 10%;
+  left: 10%;
+  height: 3px;
+  border-radius: 2px;
+  content: "";
+}
+
+.workflowSteps::before { background: #e9e2dc; }
+.workflowSteps::after {
+  background: #b81724;
+  transform: scaleX(var(--workflow-progress));
+  transform-origin: left center;
+  transition: transform .6s cubic-bezier(.2,.8,.2,1);
+}
+
+.workflowStep {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.workflowDot {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border: 2px solid #dcd2ca;
+  border-radius: 50%;
+  background: #fff;
+  color: #8b817c;
+  font-size: 13px;
+  font-weight: 700;
+  transition: color .35s ease, border-color .35s ease, background-color .35s ease, transform .45s cubic-bezier(.34,1.45,.64,1);
+}
+
+.workflowDot svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.workflowDot path { stroke-dasharray: 16; stroke-dashoffset: 16; transition: stroke-dashoffset .35s ease .1s; }
+.workflowStep[data-state="done"] .workflowDot { border-color: #27834b; background: #27834b; color: #fff; }
+.workflowStep[data-state="done"] .workflowDot path { stroke-dashoffset: 0; }
+.workflowStep[data-state="current"] .workflowDot { border-color: #b81724; color: #b81724; transform: scale(1.08); box-shadow: 0 0 0 4px #b8172418; }
+.workflowLabel { color: #706561; font-size: 13px; font-weight: 600; line-height: 1.3; }
+.workflowStep[data-state="done"] .workflowLabel,
+.workflowStep[data-state="current"] .workflowLabel { color: #302927; }
+
 .summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -240,8 +305,17 @@
     grid-template-columns: 1fr;
   }
 
+  .workflowSteps { gap: 3px; }
+  .workflowSteps::before, .workflowSteps::after { top: 14px; }
+  .workflowDot { width: 30px; height: 30px; font-size: 12px; }
+  .workflowLabel { font-size: 10.5px; }
+
   .actions > button,
   .step > button {
     width: 100%;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflowSteps::after, .workflowDot, .workflowDot path { transition: none; }
 }

@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 import Link from "next/link";
 
+import { ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { profilesApi } from "@/apis/profiles.api";
 import { InstallationWorkOrderRecords } from "@/components/features/installation/installation-work-order-records";
 
 import { machinesApi } from "@/apis/machines.api";
@@ -27,6 +29,7 @@ import { MachineIdSchema, type MaintenanceRequest, type MaintenanceTicket } from
 import { maintenanceRequestStatusLabel, maintenanceTicketStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 
 import { InstallationWorkOrderIdSchema, type InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
+import { ProfileIdSchema } from "@/schema/profiles.schema";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
@@ -49,6 +52,7 @@ export type TechnicalScreenRoutes = {
   requests: string;
   requestDetail: (id: string) => string;
   requestAssign: (id: string) => string;
+  contractDetail: (id: string) => string;
   repairCaseDetail: (id: string) => string;
   machineDetail: (id: string) => string;
 };
@@ -111,7 +115,167 @@ function DetailValue({ label, value, code = false }: { label: string; value: Rea
   );
 }
 
+const workOrderStatusLabels = {
+  PENDING: "Chờ phân công",
+  ASSIGNED: "Đã phân công",
+  IN_PROGRESS: "Đang lắp đặt",
+  COMPLETED: "Đã bàn giao",
+  FAILED: "Thất bại",
+  CANCELLED: "Đã hủy",
+} as const;
+
+const workOrderProgressSteps = [
+  "Tạo lệnh",
+  "Đã phân công",
+  "Đang lắp đặt",
+  "Hoàn tất bàn giao",
+] as const;
+
+const workOrderProgressIndex = {
+  PENDING: 0,
+  ASSIGNED: 1,
+  IN_PROGRESS: 2,
+  COMPLETED: 3,
+} as const;
+
+function localDateTimeValue(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function WorkOrderDispatchPanel({ details, milestones }: { details: InstallationWorkOrderDetails; milestones?: ReactNode }) {
+  const { workOrder } = details;
+  const queryClient = useQueryClient();
+  const detailQueryKey = ["dolores", "installation-work-orders", querySubject("moderator"), "id", workOrder.id];
+  const [technicianId, setTechnicianId] = useState(workOrder.assignedTechnicianId ?? "");
+  const [scheduledFor, setScheduledFor] = useState(() => localDateTimeValue(workOrder.scheduledFor));
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const canDispatch = workOrder.status === "PENDING" || workOrder.status === "ASSIGNED";
+  const technicians = useQuery({
+    queryKey: ["dolores", "profiles", querySubject("moderator"), "TECHNICIAN", "ACTIVE", "installation", workOrder.id],
+    queryFn: ({ signal }) => profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", page: 0, size: 100 }, signal),
+    enabled: canDispatch,
+    retry: false,
+  });
+  const eligibleTechnicians = technicians.data?.items.filter((profile) =>
+    profile.status === "ACTIVE" && profile.emailVerified && profile.roles.includes("TECHNICIAN"),
+  ) ?? [];
+  const currentTechnician = eligibleTechnicians.find((profile) => profile.idaasUserId === workOrder.assignedTechnicianId);
+  const technicianName = currentTechnician?.fullName ?? workOrder.technicianName ?? (workOrder.assignedTechnicianId ? workOrder.assignedTechnicianId : "Chưa phân công");
+  const initials = technicianName === "Chưa phân công"
+    ? "?"
+    : technicianName.trim().split(/\s+/).map((part) => part[0]).slice(-2).join("").toLocaleUpperCase("vi-VN");
+
+  useEffect(() => {
+    setTechnicianId(workOrder.assignedTechnicianId ?? "");
+    setScheduledFor(localDateTimeValue(workOrder.scheduledFor));
+  }, [workOrder.assignedTechnicianId, workOrder.scheduledFor]);
+
+  const refreshWorkOrder = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: detailQueryKey }),
+      queryClient.invalidateQueries({ queryKey: ["dolores", "installation-work-orders-by-owner", workOrder.ownerId] }),
+    ]);
+  };
+  const assign = useMutation({
+    mutationFn: (selectedId: string) => installationWorkOrdersApi.assign(workOrder.id, {
+      technicianId: ProfileIdSchema.parse(selectedId),
+    }),
+    onMutate: () => setFeedback(null),
+    onSuccess: async () => {
+      setFeedback({ type: "success", message: "Đã giao lệnh cho kỹ thuật viên." });
+      await refreshWorkOrder();
+    },
+    onError: (error: unknown) => setFeedback({ type: "error", message: getApiErrorMessage(error) }),
+  });
+  const reschedule = useMutation({
+    mutationFn: (value: string) => {
+      const timestamp = new Date(value);
+      if (Number.isNaN(timestamp.getTime())) throw new Error("Hãy chọn thời gian lắp đặt hợp lệ.");
+      return installationWorkOrdersApi.reschedule(workOrder.id, { scheduledFor: timestamp.toISOString() });
+    },
+    onMutate: () => setFeedback(null),
+    onSuccess: async () => {
+      setFeedback({ type: "success", message: "Đã cập nhật lịch lắp đặt." });
+      await refreshWorkOrder();
+    },
+    onError: (error: unknown) => setFeedback({ type: "error", message: getApiErrorMessage(error) }),
+  });
+
+  const submitAssign = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!eligibleTechnicians.some((profile) => profile.idaasUserId === technicianId) || assign.isPending) return;
+    assign.mutate(technicianId);
+  };
+  const submitSchedule = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!scheduledFor || Number.isNaN(new Date(scheduledFor).getTime()) || reschedule.isPending) return;
+    reschedule.mutate(scheduledFor);
+  };
+
+  return (
+    <section className={`${styles.panel} ${styles.workOrderDispatch}`} aria-labelledby="work-order-dispatch-title">
+      <h2 id="work-order-dispatch-title">Kỹ thuật viên &amp; lịch hẹn</h2>
+      <div className={styles.workOrderTechnician}>
+        <span className={styles.workOrderTechnicianAvatar} aria-hidden="true">{initials}</span>
+        <div className={styles.workOrderTechnicianName}>
+          <strong>{technicianName}</strong>
+          <small>Kỹ thuật viên</small>
+        </div>
+        <span className={`${styles.workOrderAssignmentState} ${workOrder.assignedTechnicianId ? styles.workOrderAssignmentActive : ""}`}>
+          {workOrder.assignedTechnicianId ? "Đã phân công" : "Chưa phân công"}
+        </span>
+      </div>
+      <div className={styles.workOrderSchedule}>
+        <span>Lịch lắp đặt</span>
+        <strong>{formatDate(workOrder.scheduledFor)}</strong>
+      </div>
+      {milestones}
+      {canDispatch && <>
+        <QueryFeedback query={technicians} loadingMessage="Đang tải danh sách kỹ thuật viên…" errorMessage="Không tải được danh sách kỹ thuật viên." />
+        {technicians.data && eligibleTechnicians.length === 0 && <p className={styles.formHint} role="status">Chưa có kỹ thuật viên đang hoạt động và xác minh email.</p>}
+        <div className={styles.workOrderEditActions}>
+          <details className={styles.workOrderEditDisclosure}>
+            <summary>{workOrder.assignedTechnicianId ? "Đổi kỹ thuật viên" : "Phân công kỹ thuật viên"}</summary>
+            <form className={styles.workOrderDispatchForm} onSubmit={submitAssign}>
+              <label className={styles.formField}>
+                Kỹ thuật viên
+                <select value={technicianId} onChange={(event) => setTechnicianId(event.currentTarget.value)} disabled={technicians.isPending || assign.isPending} required>
+                  <option value="">Chọn kỹ thuật viên</option>
+                  {workOrder.assignedTechnicianId && !eligibleTechnicians.some((profile) => profile.idaasUserId === workOrder.assignedTechnicianId) && (
+                    <option value={workOrder.assignedTechnicianId}>{workOrder.technicianName ?? workOrder.assignedTechnicianId}</option>
+                  )}
+                  {eligibleTechnicians.map((profile) => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}
+                </select>
+              </label>
+              <button className={styles.inlineButton} type="submit" disabled={!technicianId || !eligibleTechnicians.some((profile) => profile.idaasUserId === technicianId) || assign.isPending}>
+                {assign.isPending ? "Đang giao…" : workOrder.assignedTechnicianId ? "Cập nhật phân công" : "Giao kỹ thuật viên"}
+              </button>
+            </form>
+          </details>
+          <details className={styles.workOrderEditDisclosure}>
+            <summary>{workOrder.scheduledFor ? "Đổi lịch hẹn" : "Đặt lịch hẹn"}</summary>
+            <form className={styles.workOrderDispatchForm} onSubmit={submitSchedule}>
+              <label className={styles.formField}>
+                Lịch lắp đặt
+                <input type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.currentTarget.value)} disabled={reschedule.isPending} required />
+              </label>
+              <button className={styles.inlineButton} type="submit" disabled={!scheduledFor || reschedule.isPending}>
+                {reschedule.isPending ? "Đang lưu…" : "Lưu lịch hẹn"}
+              </button>
+            </form>
+          </details>
+        </div>
+      </>}
+      {feedback && <p className={`${styles.workOrderFeedback} ${feedback.type === "error" ? styles.workOrderFeedbackError : styles.workOrderFeedbackSuccess}`} role={feedback.type === "error" ? "alert" : "status"}>{feedback.message}</p>}
+    </section>
+  );
+}
 function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role, machineSerialNumbers }: {
+
   tickets: MaintenanceTicket[];
   machineId?: string;
   machineDetailHref: (id: string) => string;
@@ -230,27 +394,118 @@ function MaintenanceRequestTable({
   );
 }
 
-function WorkOrderDetail({ details, role }: { details: InstallationWorkOrderDetails; role: TechnicalScreenRoutes["role"] }) {
+function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing }: {
+  details: InstallationWorkOrderDetails;
+  role: TechnicalScreenRoutes["role"];
+  contractHref: string;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+}) {
   const workOrder = details.workOrder;
-  return <>
-    <dl className={styles.detailGrid}>
-      <DetailValue label={messages.TECHNICAL_ID} value={<TruncatedId value={workOrder.id} />} code />
-      <DetailValue label={messages.TECHNICAL_STATUS} value={<StatusBadge status={workOrder.status}>{workOrder.status}</StatusBadge>} />
-      <DetailValue label={messages.TECHNICAL_TENANT} value={<TruncatedId value={workOrder.ownerId} />} code />
-      <DetailValue label={messages.TECHNICAL_CONTRACT_ID} value={<TruncatedId value={workOrder.contractId} />} code />
-      <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={workOrder.machineId} />} code />
-      <DetailValue label={messages.MACHINE_TYPE} value={workOrder.machineType} />
-      <DetailValue label={messages.TECHNICAL_ASSIGNEE} value={<TruncatedId value={workOrder.assignedTechnicianId} />} code />
-      <DetailValue label={messages.TECHNICAL_SCHEDULED} value={formatDate(workOrder.scheduledFor)} />
-      <DetailValue label={messages.TECHNICAL_STARTED} value={formatDate(workOrder.startedAt)} />
-      <DetailValue label={messages.TECHNICAL_COMPLETED} value={formatDate(workOrder.completedAt)} />
-      <DetailValue label={messages.TECHNICAL_RECIPIENT} value={workOrder.handoverRecipient ?? "—"} />
-      <DetailValue label={messages.TECHNICAL_FAILURE_REASON} value={workOrder.failureReason ?? "—"} />
+  const [evidenceError, setEvidenceError] = useState("");
+  const activeStep = workOrderProgressIndex[workOrder.status as keyof typeof workOrderProgressIndex] ?? -1;
+  const terminalIssue = workOrder.status === "FAILED" || workOrder.status === "CANCELLED";
+  const renderEvidenceActions = (item: InstallationWorkOrderDetails["evidence"][number]) => (
+    <ProgressDownloadButton
+      filename={item.originalFilename}
+      download={(signal) => {
+        setEvidenceError("");
+        return installationWorkOrdersApi.downloadEvidence(workOrder.id, item.id, signal);
+      }}
+      onError={(error) => setEvidenceError(getApiErrorMessage(error))}
+    >
+      Tải xuống
+    </ProgressDownloadButton>
+  );
+  const milestones = (workOrder.startedAt || workOrder.completedAt || workOrder.handoverRecipient) && (
+    <dl className={styles.workOrderMilestones}>
+      {workOrder.startedAt && <div><dt>Bắt đầu</dt><dd>{formatDate(workOrder.startedAt)}</dd></div>}
+      {workOrder.completedAt && <div><dt>Hoàn tất</dt><dd>{formatDate(workOrder.completedAt)}</dd></div>}
+      {workOrder.handoverRecipient && <div><dt>Người nhận bàn giao</dt><dd>{workOrder.handoverRecipient}</dd></div>}
     </dl>
-    {role === "moderator" && <InstallationWorkOrderRecords workOrderId={workOrder.id} />}
-  </>;
-}
+  );
 
+  return <div className={styles.workOrderDetail} data-role={role}>
+    {role === "moderator" && <header className={styles.workOrderPageHeading}>
+      <div>
+        <p>Moderator / Yêu cầu kỹ thuật / Lắp đặt</p>
+        <h1>Lệnh lắp đặt · <TruncatedId value={workOrder.id} /></h1>
+      </div>
+      <div className={styles.workOrderPageActions}>
+        <Link className={styles.workOrderContractLink} href={contractHref}>Về hợp đồng</Link>
+        <button className={styles.workOrderRefreshButton} type="button" onClick={onRefresh} disabled={isRefreshing}>
+          {isRefreshing ? "Đang tải…" : "Làm mới"}
+        </button>
+      </div>
+    </header>}
+    <section
+      className={`${styles.workOrderSummary} ${role === "moderator" ? styles.workOrderProgressPanel : ""}`}
+      aria-label={role === "moderator" ? "Tiến độ lắp đặt" : undefined}
+      aria-labelledby={role === "admin" ? "work-order-summary-title" : undefined}
+    >
+      {role === "moderator" ? (
+        <div className={styles.workOrderProgressStatus} data-tone={workOrder.status === "COMPLETED" ? "success" : terminalIssue ? "danger" : "warning"}>
+          {workOrderStatusLabels[workOrder.status]}
+        </div>
+      ) : (
+        <div className={styles.workOrderSummaryHeading}>
+          <div>
+            <p>LỆNH LẮP ĐẶT</p>
+            <h2 id="work-order-summary-title"><TruncatedId value={workOrder.id} /></h2>
+          </div>
+          <StatusBadge status={workOrder.status}>{workOrderStatusLabels[workOrder.status]}</StatusBadge>
+        </div>
+      )}
+      <ol className={styles.workOrderProgress} aria-label="Tiến độ lắp đặt">
+        {workOrderProgressSteps.map((label, index) => {
+          const isComplete = workOrder.status === "COMPLETED" || index < activeStep;
+          const isCurrent = index === activeStep && workOrder.status !== "COMPLETED";
+          return (
+            <li key={label} className={[
+              styles.workOrderProgressStep,
+              isComplete ? styles.workOrderProgressComplete : "",
+              isCurrent ? styles.workOrderProgressCurrent : "",
+            ].filter(Boolean).join(" ")} aria-current={isCurrent ? "step" : undefined}>
+              <span aria-hidden="true">{isComplete ? "✓" : index + 1}</span>
+              <small>{label}</small>
+            </li>
+          );
+        })}
+      </ol>
+      {terminalIssue && <p className={styles.workOrderTerminalNotice} role="status">{workOrder.failureReason || workOrderStatusLabels[workOrder.status]}</p>}
+      {role !== "moderator" && <>
+        <dl className={styles.workOrderFacts}>
+          <div><dt>Máy</dt><dd>{workOrder.machineSerialNumber || <TruncatedId value={workOrder.machineId} />}</dd><small>{workOrder.machineModelName || workOrder.machineType}</small></div>
+          <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
+          <div><dt>Hợp đồng</dt><dd><TruncatedId value={workOrder.contractId} /></dd></div>
+          <div><dt>Kỹ thuật viên</dt><dd>{workOrder.technicianName || (workOrder.assignedTechnicianId ? <TruncatedId value={workOrder.assignedTechnicianId} /> : "Chưa phân công")}</dd></div>
+          <div><dt>Lịch hẹn</dt><dd>{formatDate(workOrder.scheduledFor)}</dd></div>
+          {workOrder.locationName && <div><dt>Địa điểm</dt><dd>{workOrder.locationName}</dd></div>}
+        </dl>
+        {milestones}
+      </>}
+    </section>
+    {role === "moderator" && <div className={styles.workOrderOverviewGrid}>
+      <section className={`${styles.panel} ${styles.workOrderInfoPanel}`} aria-labelledby="work-order-info-title">
+        <h2 id="work-order-info-title">Thông tin lắp đặt</h2>
+        <dl className={styles.workOrderInfoFacts}>
+          <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
+          <div><dt>Hợp đồng</dt><dd><Link className={styles.tableLink} href={contractHref}><TruncatedId value={workOrder.contractId} /></Link></dd></div>
+          <div><dt>Máy</dt><dd>{workOrder.machineSerialNumber || <TruncatedId value={workOrder.machineId} />}</dd></div>
+          <div><dt>Loại máy</dt><dd>{workOrder.machineModelName || workOrder.machineType || "—"}</dd></div>
+          <div><dt>Trạng thái</dt><dd>{workOrderStatusLabels[workOrder.status]}</dd></div>
+          {workOrder.locationName && <div><dt>Địa điểm</dt><dd>{workOrder.locationName}</dd></div>}
+        </dl>
+      </section>
+      <WorkOrderDispatchPanel details={details} milestones={milestones} />
+    </div>}
+    {role === "moderator" && <InstallationWorkOrderRecords
+      workOrderId={workOrder.id}
+      renderEvidenceActions={renderEvidenceActions}
+      evidenceMessage={evidenceError ? <p className={styles.workOrderFeedbackError} role="alert">{evidenceError}</p> : null}
+    />}
+  </div>;
+}
 export function TechnicalOperationsScreen({
   path,
   routes,
@@ -377,7 +632,19 @@ export function TechnicalOperationsScreen({
 
   if (isDetail) {
     if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
-    return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />{detail.data && !detail.isError && <WorkOrderDetail details={detail.data} role={routes.role} />}</div>;
+    return (
+      <div className={styles.pageContent}>
+        {routes.role === "admin" && <PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} />}
+        <QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />
+        {detail.data && !detail.isError && <WorkOrderDetail
+          details={detail.data}
+          role={routes.role}
+          contractHref={routes.contractDetail(detail.data.workOrder.contractId)}
+          onRefresh={() => void detail.refetch()}
+          isRefreshing={detail.isFetching}
+        />}
+      </div>
+    );
   }
 
   if (isMachineHistory) {

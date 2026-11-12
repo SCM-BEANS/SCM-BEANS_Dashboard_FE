@@ -267,75 +267,103 @@ export function ContractCreateForm({
   const submitDisabled = !form.ownerId || !form.machineId || !form.startDate || !form.endDate || !form.monthlyRentalFee || !form.terms.trim() || locked || owners.isPending || owners.isError || owners.data?.length === 0 ||
     machines.isPending || machines.isError || warehouseMachines.length === 0 ||
     (selectMachineBySerial && !warehouseMachines.some((machine) => machine.machineId === form.machineId));
+  const selectedOwner = owners.data?.find((owner) => owner.idaasUserId === form.ownerId);
+  const selectedMachine = warehouseMachines.find((machine) => machine.machineId === form.machineId);
+  const previewMoney = (value: string) => value.trim() && Number.isFinite(Number(value))
+    ? `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(Number(value))} ₫`
+    : "Chưa nhập";
 
   return (
     <>
-      <section className={styles.panel}>
-        <h2>Thông tin hợp đồng</h2>
-        <form id={FORM_ID} className={styles.contractForm} onSubmit={submitCreate}>
-          <fieldset className={styles.contractFormFields} disabled={locked}>
-            <div className={styles.operationsGrid}>
-              <label htmlFor="contract-owner">
-                <span>Owner *</span>
-                <select id="contract-owner" name="ownerId" required value={form.ownerId} disabled={owners.isPending || owners.isError || Boolean(createdContractId)} onChange={(event) => setField("ownerId", event.target.value)}>
-                  <option value="">{owners.isPending ? T.COMMON.LOADING : "Chọn Owner"}</option>
-                  {owners.data?.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName} · {owner.idaasUserId.slice(0, 8)}</option>)}
-                </select>
-              </label>
-              <label htmlFor="contract-machine">
-                <span>{selectMachineBySerial ? "Serial number của máy *" : "Máy đang ở kho *"}</span>
-                <select id="contract-machine" aria-label={selectMachineBySerial ? "Serial number của máy *" : undefined} name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
-                  <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy" : warehouseMachines.length ? (selectMachineBySerial ? "Chọn serial number" : "Chọn máy trong kho") : (selectMachineBySerial ? "Chưa có máy sẵn sàng cho thuê" : T.CONTRACTS.NO_WAREHOUSE_MACHINES)}</option>
-                  {warehouseMachines.map((machine) => <option key={machine.machineId} value={machine.machineId}>{machine.optionLabel}</option>)}
-                </select>
-                {selectMachineBySerial ? <small>Chỉ hiển thị máy sẵn sàng cho thuê.</small> : null}
-              </label>
-              <label htmlFor="contract-start-date"><span>Ngày bắt đầu *</span><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></label>
-              <label htmlFor="contract-end-date"><span>Ngày kết thúc *</span><input id="contract-end-date" name="endDate" type="date" required min={form.startDate || undefined} value={form.endDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("endDate", event.target.value)} /></label>
-              <label htmlFor="contract-monthly-rental-fee"><span>Phí thuê hàng tháng (VND) *</span><input id="contract-monthly-rental-fee" name="monthlyRentalFee" type="number" min="0" step="any" required value={form.monthlyRentalFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("monthlyRentalFee", event.target.value)} /></label>
-              <label htmlFor="contract-payg-unit-price"><span>Đơn giá PAYG (VND / đơn vị)</span><input id="contract-payg-unit-price" name="paygUnitPrice" type="number" min="0" step="any" value={form.paygUnitPrice} disabled={Boolean(createdContractId)} onChange={(event) => setField("paygUnitPrice", event.target.value)} /></label>
-              <label htmlFor="contract-installation-fee"><span>Phí lắp đặt (VND)</span><input id="contract-installation-fee" name="installationFee" type="number" min="0" step="any" value={form.installationFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("installationFee", event.target.value)} /></label>
-              <label htmlFor="contract-deposit-amount"><span>Tiền cọc (VND)</span><input id="contract-deposit-amount" name="depositAmount" type="number" min="0" step="any" value={form.depositAmount} disabled={Boolean(createdContractId)} onChange={(event) => setField("depositAmount", event.target.value)} /></label>
-              <label htmlFor="contract-offline-limit"><span>Giới hạn offline (phút)</span><input id="contract-offline-limit" name="offlineLimitMinutes" type="number" min="1" step="1" value={form.offlineLimitMinutes} disabled={Boolean(createdContractId)} onChange={(event) => setField("offlineLimitMinutes", event.target.value)} /></label>
-              <label htmlFor="contract-terms"><span>Điều khoản *</span><textarea id="contract-terms" name="terms" required rows={4} value={form.terms} disabled={Boolean(createdContractId)} onChange={(event) => setField("terms", event.target.value)} /></label>
-            </div>
-
-            <h3>Snapshot điều khoản vận hành</h3>
-            <div className={styles.operationsGrid}>
-              <div><span>Phiên bản policy</span><strong>1</strong></div>
-              <label htmlFor="contract-maintenance-interval"><span>Chu kỳ bảo trì (tháng) *</span><input id="contract-maintenance-interval" name="contractTermsSnapshot.maintenanceIntervalMonths" type="number" min="1" max="24" step="1" required value={form.contractTermsSnapshot.maintenanceIntervalMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceIntervalMonths", event.target.value)} /></label>
-              <label htmlFor="contract-maintenance-window"><span>Thời hạn bảo trì (ngày) *</span><input id="contract-maintenance-window" name="contractTermsSnapshot.maintenanceWindowDays" type="number" min="0" max="30" step="1" required value={form.contractTermsSnapshot.maintenanceWindowDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceWindowDays", event.target.value)} /></label>
-              <label htmlFor="contract-payment-due-days"><span>Số ngày thanh toán được phép *</span><input id="contract-payment-due-days" name="contractTermsSnapshot.paymentDueEligibleDays" type="number" min="1" max="60" step="1" required value={form.contractTermsSnapshot.paymentDueEligibleDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDueEligibleDays", event.target.value)} /></label>
-              <label htmlFor="contract-repair-responsibility">
-                <span>Trách nhiệm chi phí sửa chữa *</span>
-                <select id="contract-repair-responsibility" name="contractTermsSnapshot.repairCostResponsibility" value={form.contractTermsSnapshot.repairCostResponsibility} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("repairCostResponsibility", event.target.value as ContractFormState["contractTermsSnapshot"]["repairCostResponsibility"])}>
-                  <option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Bên thuê</option><option value="COMPANY">Công ty</option>
-                </select>
-              </label>
-              <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
-              <label htmlFor="contract-heartbeat-tolerance"><span>Ngưỡng mất kết nối (giây) *</span><input id="contract-heartbeat-tolerance" name="contractTermsSnapshot.heartbeatToleranceSeconds" type="number" required min="5" max="86400" step="1" value={form.contractTermsSnapshot.heartbeatToleranceSeconds} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("heartbeatToleranceSeconds", event.target.value)} /><small>Chuyển sang mất kết nối khi quá thời gian này chưa có tín hiệu mới.</small></label>
-              <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
-              <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
-              <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>
-              <div>
-                <span>Loại máy thay thế được phép</span>
-                <div className={styles.contractCheckboxGroup}>
-                  <label><input type="checkbox" name="contractTermsSnapshot.allowedReplacementMachineTypes" value="CONVENTIONAL" checked={form.contractTermsSnapshot.allowedReplacementMachineTypes.includes("CONVENTIONAL")} disabled={Boolean(createdContractId)} onChange={(event) => toggleReplacementMachineType("CONVENTIONAL", event.target.checked)} /><span>{T.MACHINES.CONVENTIONAL}</span></label>
-                  <label><input type="checkbox" name="contractTermsSnapshot.allowedReplacementMachineTypes" value="SMART_IOT" checked={form.contractTermsSnapshot.allowedReplacementMachineTypes.includes("SMART_IOT")} disabled={Boolean(createdContractId)} onChange={(event) => toggleReplacementMachineType("SMART_IOT", event.target.checked)} /><span>{T.MACHINES.SMART}</span></label>
+      <form id={FORM_ID} className={styles.contractForm} onSubmit={submitCreate}>
+        <fieldset className={styles.contractFormFields} disabled={locked}>
+          <div className={styles.createLayout}>
+            <div className={styles.createMain}>
+              <section className={styles.panel}>
+                <h2>Thông tin hợp đồng</h2>
+                <div className={styles.operationsGrid}>
+                  <label htmlFor="contract-owner">
+                    <span>Owner *</span>
+                    <select id="contract-owner" name="ownerId" required value={form.ownerId} disabled={owners.isPending || owners.isError || Boolean(createdContractId)} onChange={(event) => setField("ownerId", event.target.value)}>
+                      <option value="">{owners.isPending ? T.COMMON.LOADING : "Chọn Owner"}</option>
+                      {owners.data?.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName} · {owner.idaasUserId.slice(0, 8)}</option>)}
+                    </select>
+                  </label>
+                  <label htmlFor="contract-machine">
+                    <span>{selectMachineBySerial ? "Serial number của máy *" : "Máy đang ở kho *"}</span>
+                    <select id="contract-machine" aria-label={selectMachineBySerial ? "Serial number của máy *" : undefined} name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
+                      <option value="">{machines.isPending ? T.COMMON.LOADING : machines.isError ? "Không tải được danh sách máy" : warehouseMachines.length ? (selectMachineBySerial ? "Chọn serial number" : "Chọn máy trong kho") : (selectMachineBySerial ? "Chưa có máy sẵn sàng cho thuê" : T.CONTRACTS.NO_WAREHOUSE_MACHINES)}</option>
+                      {warehouseMachines.map((machine) => <option key={machine.machineId} value={machine.machineId}>{machine.optionLabel}</option>)}
+                    </select>
+                    {selectMachineBySerial ? <small>Chỉ hiển thị máy sẵn sàng cho thuê.</small> : null}
+                  </label>
+                  <label htmlFor="contract-start-date"><span>Ngày bắt đầu *</span><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></label>
+                  <label htmlFor="contract-end-date"><span>Ngày kết thúc *</span><input id="contract-end-date" name="endDate" type="date" required min={form.startDate || undefined} value={form.endDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("endDate", event.target.value)} /></label>
+                  <label htmlFor="contract-monthly-rental-fee"><span>Phí thuê hàng tháng (VND) *</span><input id="contract-monthly-rental-fee" name="monthlyRentalFee" type="number" min="0" step="any" required value={form.monthlyRentalFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("monthlyRentalFee", event.target.value)} /></label>
+                  <label htmlFor="contract-payg-unit-price"><span>Đơn giá PAYG (VND / đơn vị)</span><input id="contract-payg-unit-price" name="paygUnitPrice" type="number" min="0" step="any" value={form.paygUnitPrice} disabled={Boolean(createdContractId)} onChange={(event) => setField("paygUnitPrice", event.target.value)} /></label>
+                  <label htmlFor="contract-installation-fee"><span>Phí lắp đặt (VND)</span><input id="contract-installation-fee" name="installationFee" type="number" min="0" step="any" value={form.installationFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("installationFee", event.target.value)} /></label>
+                  <label htmlFor="contract-deposit-amount"><span>Tiền cọc (VND)</span><input id="contract-deposit-amount" name="depositAmount" type="number" min="0" step="any" value={form.depositAmount} disabled={Boolean(createdContractId)} onChange={(event) => setField("depositAmount", event.target.value)} /></label>
+                  <label htmlFor="contract-offline-limit"><span>Giới hạn offline (phút)</span><input id="contract-offline-limit" name="offlineLimitMinutes" type="number" min="1" step="1" value={form.offlineLimitMinutes} disabled={Boolean(createdContractId)} onChange={(event) => setField("offlineLimitMinutes", event.target.value)} /></label>
+                  <label htmlFor="contract-terms"><span>Điều khoản *</span><textarea id="contract-terms" name="terms" required rows={4} value={form.terms} disabled={Boolean(createdContractId)} onChange={(event) => setField("terms", event.target.value)} /></label>
                 </div>
-              </div>
-              <label className={styles.contractCheckbox}><input type="checkbox" name="contractTermsSnapshot.buybackEnabled" checked={form.contractTermsSnapshot.buybackEnabled} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackEnabled", event.target.checked)} /><span>Cho phép mua lại máy</span></label>
-            </div>
-          </fieldset>
+              </section>
 
-          {owners.data?.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_OWNERS}</p>}
-          {owners.isError && <p className={styles.operationsNotice} role="alert">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)} <ButtonBar type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
-          {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
-          {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{selectMachineBySerial ? "Chưa có máy có serial number và trạng thái sẵn sàng cho thuê." : T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
-          {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-          {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
-        </form>
-      </section>
+              <section className={`${styles.panel} ${styles.policyPanel}`}>
+                <div className={styles.policyHeading}><div><h2>Điều khoản vận hành</h2><p>Thiết lập lịch bảo trì, thanh toán, kết nối và thay thế máy cho hợp đồng.</p></div><span>Phiên bản 1</span></div>
+                <div className={styles.operationsGrid}>
+                  <div><span>Phiên bản policy</span><strong>1</strong></div>
+                  <label htmlFor="contract-maintenance-interval"><span>Chu kỳ bảo trì (tháng) *</span><input id="contract-maintenance-interval" name="contractTermsSnapshot.maintenanceIntervalMonths" type="number" min="1" max="24" step="1" required value={form.contractTermsSnapshot.maintenanceIntervalMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceIntervalMonths", event.target.value)} /></label>
+                  <label htmlFor="contract-maintenance-window"><span>Thời hạn bảo trì (ngày) *</span><input id="contract-maintenance-window" name="contractTermsSnapshot.maintenanceWindowDays" type="number" min="0" max="30" step="1" required value={form.contractTermsSnapshot.maintenanceWindowDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceWindowDays", event.target.value)} /></label>
+                  <label htmlFor="contract-payment-due-days"><span>Số ngày thanh toán được phép *</span><input id="contract-payment-due-days" name="contractTermsSnapshot.paymentDueEligibleDays" type="number" min="1" max="60" step="1" required value={form.contractTermsSnapshot.paymentDueEligibleDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDueEligibleDays", event.target.value)} /></label>
+                  <label htmlFor="contract-repair-responsibility">
+                    <span>Trách nhiệm chi phí sửa chữa *</span>
+                    <select id="contract-repair-responsibility" name="contractTermsSnapshot.repairCostResponsibility" value={form.contractTermsSnapshot.repairCostResponsibility} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("repairCostResponsibility", event.target.value as ContractFormState["contractTermsSnapshot"]["repairCostResponsibility"])}>
+                      <option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Bên thuê</option><option value="COMPANY">Công ty</option>
+                    </select>
+                  </label>
+                  <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
+                  <label htmlFor="contract-heartbeat-tolerance"><span>Ngưỡng mất kết nối (giây) *</span><input id="contract-heartbeat-tolerance" name="contractTermsSnapshot.heartbeatToleranceSeconds" type="number" required min="5" max="86400" step="1" value={form.contractTermsSnapshot.heartbeatToleranceSeconds} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("heartbeatToleranceSeconds", event.target.value)} /><small>Chuyển sang mất kết nối khi quá thời gian này chưa có tín hiệu mới.</small></label>
+                  <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
+                  <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
+                  <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>
+                  <div>
+                    <span>Loại máy thay thế được phép</span>
+                    <div className={styles.contractCheckboxGroup}>
+                      <label><input type="checkbox" name="contractTermsSnapshot.allowedReplacementMachineTypes" value="CONVENTIONAL" checked={form.contractTermsSnapshot.allowedReplacementMachineTypes.includes("CONVENTIONAL")} disabled={Boolean(createdContractId)} onChange={(event) => toggleReplacementMachineType("CONVENTIONAL", event.target.checked)} /><span>{T.MACHINES.CONVENTIONAL}</span></label>
+                      <label><input type="checkbox" name="contractTermsSnapshot.allowedReplacementMachineTypes" value="SMART_IOT" checked={form.contractTermsSnapshot.allowedReplacementMachineTypes.includes("SMART_IOT")} disabled={Boolean(createdContractId)} onChange={(event) => toggleReplacementMachineType("SMART_IOT", event.target.checked)} /><span>{T.MACHINES.SMART}</span></label>
+                    </div>
+                  </div>
+                  <label className={styles.contractCheckbox}><input type="checkbox" name="contractTermsSnapshot.buybackEnabled" checked={form.contractTermsSnapshot.buybackEnabled} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackEnabled", event.target.checked)} /><span>Cho phép mua lại máy</span></label>
+                </div>
+              </section>
+            </div>
+
+            <aside className={styles.createSummary} aria-label="Tóm tắt hợp đồng">
+              <section className={styles.panel}>
+                <h2>Tóm tắt hợp đồng</h2>
+                <dl className={styles.summaryFields}>
+                  <div><dt>Owner</dt><dd>{selectedOwner?.fullName || "Chưa chọn"}</dd></div>
+                  <div><dt>Máy</dt><dd>{selectedMachine?.optionLabel || "Chưa chọn"}</dd></div>
+                  <div><dt>Thời hạn</dt><dd>{form.startDate && form.endDate ? `${form.startDate} – ${form.endDate}` : "Chưa chọn ngày"}</dd></div>
+                  <div><dt>Phí thuê hàng tháng</dt><dd>{previewMoney(form.monthlyRentalFee)}</dd></div>
+                  <div><dt>Tiền cọc</dt><dd>{previewMoney(form.depositAmount)}</dd></div>
+                  <div><dt>Phí lắp đặt</dt><dd>{previewMoney(form.installationFee)}</dd></div>
+                </dl>
+              </section>
+              <section className={`${styles.panel} ${styles.createContext}`}>
+                <h2>Trước khi tạo</h2>
+                <p>Kiểm tra Owner, máy, thời hạn và các khoản phí. Điều khoản vận hành sẽ được lưu cùng hợp đồng.</p>
+              </section>
+            </aside>
+          </div>
+        </fieldset>
+        {owners.data?.length === 0 && <p className={styles.operationsNotice} role="status">{T.CONTRACTS.NO_OWNERS}</p>}
+        {owners.isError && <p className={styles.operationsNotice} role="alert">{T.CONTRACTS.UNKNOWN_OWNER}. {getApiErrorMessage(owners.error)} <ButtonBar type="button" onClick={() => void owners.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
+        {machines.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(machines.error)} <ButtonBar type="button" onClick={() => void machines.refetch()}>{T.COMMON.RETRY}</ButtonBar></p>}
+        {machines.data && warehouseMachines.length === 0 && <p className={styles.operationsNotice} role="status">{selectMachineBySerial ? "Chưa có máy có serial number và trạng thái sẵn sàng cho thuê." : T.CONTRACTS.NO_WAREHOUSE_MACHINES}</p>}
+        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+        {blockResubmit && <p className={styles.operationsNotice} role="status">Vì kết quả gửi yêu cầu chưa xác định, hãy kiểm tra danh sách hợp đồng trước khi thử tạo lại.</p>}
+      </form>
       <PageActions actions={createdContractId ? [] : [
         { id: "cancel", label: "Hủy", priority: 100, onClick: onCancel, confirm: JSON.stringify(form) !== JSON.stringify(initialForm) ? { title: "Hủy tạo hợp đồng?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy tạo" } : undefined },
         { id: "create", label: T.CONTRACTS.CREATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: FORM_ID, disabled: submitDisabled, disabledReason: create.isPending ? "Đang tạo hợp đồng." : "Điền đầy đủ thông tin hợp lệ để tạo hợp đồng.", pending: create.isPending, pendingLabel: T.CONTRACTS.CREATING },

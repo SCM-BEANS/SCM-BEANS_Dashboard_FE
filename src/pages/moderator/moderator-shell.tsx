@@ -20,7 +20,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
-import { PageActions } from "@/components/action-bar/page-actions";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
@@ -128,11 +127,6 @@ export function ModeratorShell({
       currentLabel={currentSection.LABEL}
     />
   );
-  const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
-  const actions = !isSectionList ? [] : currentSection.HREF === PATH_MODERATOR.CONTRACTS
-    ? [{ id: "contracts-create", label: "Tạo hợp đồng", variant: "primary" as const, priority: 20, href: PATH_MODERATOR.NEW_CONTRACT }]
-    : [];
-
   return (
     <>
       <Head>
@@ -187,7 +181,6 @@ export function ModeratorShell({
           </div>
           <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
             <main className={styles.main}>{children}</main>
-            <PageActions actions={actions} />
           </ActionBarLayout>
         </div>
       </div>
