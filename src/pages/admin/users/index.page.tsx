@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
-import { PageActions } from "@/components/action-bar/page-actions";
-import { TextLinkButton } from "@/components/button/text-link-button";
-import { StatusBadge } from "@/components/status-badge/status-badge";
+import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { AdminUserCreateView } from "@/components/features/admin-users/admin-user-create-view";
@@ -34,19 +32,18 @@ function userDetailHref(userId: string, query: Record<string, string | string[] 
     const value = queryValue(query[key]);
     if (value) params.set(key, value);
   }
-  params.set("view", "detail");
-  params.set("id", userId);
-  return `${PATH_ADMIN.USERS}?${params.toString()}`;
+  const queryString = params.toString();
+  return `${PATH_ADMIN.USER_DETAIL(userId)}${queryString ? `?${queryString}` : ""}`;
 }
 
-function AdminUsersContent() {
+function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
   const router = useRouter();
   const queryView = queryValue(router.query.view);
-  const view = queryView === "detail" ? "detail" : queryView === "create" ? "create" : "list";
-  const userId = queryValue(router.query.id);
+  const view = detailUserId || queryView === "detail" ? "detail" : queryView === "create" ? "create" : "list";
+  const userId = detailUserId ?? queryValue(router.query.id);
   const page = positiveNumber(queryValue(router.query.page), 1);
   const contractPage = positiveNumber(queryValue(router.query.contractPage), 1) - 1;
-  const pageSize = 20;
+  const pageSize = 10;
   const search = queryValue(router.query.q).trim().slice(0, 100);
   const roleFilter = AdminUserRoleSchema.safeParse(queryValue(router.query.role));
   const statusFilter = AdminUserStatusSchema.safeParse(queryValue(router.query.status));
@@ -77,7 +74,7 @@ function AdminUsersContent() {
       if (value) next[key] = value;
       else delete next[key];
     }
-    void router.push({ pathname: PATH_ADMIN.USERS, query: next }, undefined, { shallow: true });
+    void router.push({ pathname: detailUserId && patch.view !== null ? PATH_ADMIN.USER_DETAIL(detailUserId) : PATH_ADMIN.USERS, query: next }, undefined, { shallow: true });
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -90,15 +87,19 @@ function AdminUsersContent() {
 
   return (
     <>
-      <div className={`${styles.pageContent} ${styles.accountPageContent}`}>
-        <div className={styles.pageHeading}>
+      <div className={`${styles.pageContent} ${styles.accountPageContent} ${styles.userPage}`}>
+        <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
+          <div>
           <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : view === "create" ? T.FORM.CREATE_TITLE : T.LIST.TITLE}</h1>
-          {view !== "list" && <p>{view === "detail" ? T.FORM.DETAIL_DESCRIPTION : T.FORM.CREATE_DESCRIPTION}</p>}
+          {view === "list" && <p>Tra cứu tài khoản và quản lý quyền truy cập.</p>}
+          {view === "create" && <p>{T.FORM.CREATE_DESCRIPTION}</p>}
+          </div>
+          {view === "list" && <ButtonBar variant="primary" onClick={() => navigate({ view: "create", id: null, contractPage: null })}>{T.LIST.CREATE}</ButtonBar>}
         </div>
 
         {view === "list" ? (
-          <section className={styles.panel}>
-            <h2>{T.LIST.PANEL}</h2>
+          <section className={`${styles.panel} ${styles.userListPanel}`}>
+            <div className={styles.userSectionHeading}><h2>{T.LIST.PANEL}</h2>{users.data && <span>{users.data.total.toLocaleString("vi-VN")} {search || roleFilter.success || statusFilter.success ? "kết quả" : "tài khoản"}</span>}</div>
             <TableFilters
               search={{
                 ariaLabel: T.LIST.SEARCH_LABEL,
@@ -149,17 +150,17 @@ function AdminUsersContent() {
                   rows={users.data.items}
                   rowKey={(entry) => entry.id}
                   columns={[
-                    { key: "name", header: T.FORM.NAME, render: (entry) => (
-                      <TextLinkButton href={userDetailHref(entry.id, router.query)}>{entry.name}</TextLinkButton>
+                    { key: "name", header: "Tài khoản", render: (entry) => (
+                      <div className={styles.userIdentityCell}><span className={styles.userAvatar} aria-hidden="true">{entry.name.trim().split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase() || "?"}</span><div><strong>{entry.name || "Chưa có họ tên"}</strong><span>{entry.email}</span></div></div>
                     ) },
-                    { key: "email", header: T.FORM.EMAIL, render: (entry) => entry.email },
                     { key: "role", header: T.FORM.ROLE, render: (entry) => {
                       const role = getAdminUserRole(entry);
                       return role ? ADMIN_USER_ROLE_LABELS[role] : entry.roles.join(", ");
                     } },
                     { key: "status", header: T.FORM.STATUS, render: (entry) => (
-                      <StatusBadge status={entry.status}>{entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</StatusBadge>
+                      <span className={styles.userStatus} data-status={entry.status}>{entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</span>
                     ) },
+                    { key: "action", header: "", render: (entry) => <ButtonBar rollingLabel href={userDetailHref(entry.id, router.query)} aria-label={`Mở hồ sơ ${entry.name || entry.email}`}>Mở hồ sơ</ButtonBar> },
                   ]}
                 />
                 <div className={styles.accountPagination}>
@@ -180,15 +181,10 @@ function AdminUsersContent() {
         )}
       </div>
 
-      {view === "list" && (
-        <PageActions actions={[
-          { id: "admin-users-create", label: T.LIST.CREATE, variant: "primary", priority: 20, onClick: () => navigate({ view: "create", id: null, contractPage: null }) },
-        ]} />
-      )}
     </>
   );
 }
 
-export default function AdminUsersPage() {
-  return <AdminShell><AdminUsersContent /></AdminShell>;
+export default function AdminUsersPage({ detailUserId }: { detailUserId?: string }) {
+  return <AdminShell><AdminUsersContent detailUserId={detailUserId} /></AdminShell>;
 }

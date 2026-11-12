@@ -20,7 +20,6 @@ export const ADMIN_MESSAGES = {
   },
   OVERVIEW: {
     TITLE: "Tổng quan vận hành",
-    DESCRIPTION: "Theo dõi hoạt động, khách hàng và tình hình tài chính.",
     CUSTOMERS: "Khách hàng",
     CUPS: "Ly hợp lệ trong kỳ",
     MAINTENANCE: "Phiếu bảo trì mở",

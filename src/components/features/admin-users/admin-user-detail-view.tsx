@@ -3,11 +3,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
 import { profilesApi } from "@/apis/profiles.api";
-import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
-import { StatusBadge } from "@/components/status-badge/status-badge";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import {
@@ -28,6 +26,11 @@ type UserForm = {
   tenantId: string;
 };
 
+function contractDate(value?: string | null) {
+  const date = value ? new Date(`${value}T00:00:00Z`) : null;
+  return date && Number.isFinite(date.getTime()) ? date.toLocaleDateString("vi-VN", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+}
+
 export function AdminUserDetailView({
   userId,
   contractPage,
@@ -43,7 +46,7 @@ export function AdminUserDetailView({
   const [form, setForm] = useState<UserForm>({ name: "", email: "", role: "", tenantId: "" });
   const [requestError, setRequestError] = useState("");
   const [pendingUpdate, setPendingUpdate] = useState<AdminUserUpdate | null>(null);
-  const [dialog, setDialog] = useState<"confirm" | "success" | "error" | null>(null);
+  const [dialog, setDialog] = useState<"confirm" | "success" | "error" | "leave" | null>(null);
 
   const detail = useQuery({
     queryKey: ["idaas", "admin-users", "detail", userId],
@@ -130,6 +133,11 @@ export function AdminUserDetailView({
 
   return (
     <>
+      <div className={styles.userViewToolbar}>
+        <ButtonBar disabled={updateUser.isPending} onClick={() => dirty ? setDialog("leave") : onNavigate({ view: null, id: null, contractPage: null })}>{T.FORM.BACK}</ButtonBar>
+        {user && <div className={styles.userToolbarIdentity}><strong>{user.name || user.email}</strong><span className={styles.userRoleLabel}>{currentRole ? ADMIN_USER_ROLE_LABELS[currentRole] : user.roles.join(", ")}</span></div>}
+        <ButtonBar variant="primary" type="submit" form="admin-user-edit-form" disabled={!canEdit || !dirty || detail.isPending || updateUser.isPending}>{updateUser.isPending ? "Đang lưu…" : T.FORM.SAVE}</ButtonBar>
+      </div>
       {!validUserId ? (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.INVALID_ID}</div>
       ) : detail.isPending ? (
@@ -141,50 +149,48 @@ export function AdminUserDetailView({
         </div>
       ) : user ? (
         <>
+          <div className={styles.userDetailLayout}>
+          <div className={styles.userMainColumn}>
           <form id="admin-user-edit-form" className={styles.panel} onSubmit={prepareUpdate}>
-            <h2>{T.FORM.DETAIL_TITLE}</h2>
+            <h2>Thông tin đăng nhập</h2>
             {!currentRole && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.UNSUPPORTED_ROLE}</div>}
             <div className={styles.accountFormGrid}>
               <label>
                 {T.FORM.NAME}
-                <input value={form.name} maxLength={50} disabled={!canEdit} onChange={(event) => updateField("name", event.target.value)} />
+                <input value={form.name} maxLength={50} disabled={!canEdit || updateUser.isPending} onChange={(event) => updateField("name", event.target.value)} />
               </label>
               <label>
                 {T.FORM.EMAIL}
-                <input type="email" value={form.email} maxLength={255} disabled={!canEdit} onChange={(event) => updateField("email", event.target.value)} />
+                <input type="email" value={form.email} maxLength={255} disabled={!canEdit || updateUser.isPending} onChange={(event) => updateField("email", event.target.value)} />
               </label>
               <label>
                 {T.FORM.ROLE}
-                <select value={form.role} disabled={!canEdit} onChange={(event) => updateField("role", event.target.value)}>
+                <select value={form.role} disabled={!canEdit || updateUser.isPending} onChange={(event) => updateField("role", event.target.value)}>
                   {roleOptions}
                 </select>
               </label>
-              <div><span>{T.FORM.STATUS}</span><strong><StatusBadge status={user.status}>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</StatusBadge></strong></div>
-              <div><span>{T.FORM.VERIFIED}</span><strong>{user.email_verified ? T.FORM.YES : T.FORM.NO}</strong></div>
-              <div><span>{T.FORM.CREATED}</span><strong>{formatAdminUserDate(user.created_at)}</strong></div>
-              <div><span>{T.FORM.UPDATED}</span><strong>{formatAdminUserDate(user.updated_at)}</strong></div>
             </div>
+            <p className={styles.userFormNote}>Đổi email hoặc vai trò có thể yêu cầu xác minh và đăng nhập lại.</p>
             {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
             {updateUser.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(updateUser.error, "mutation")}</p>}
           </form>
           {currentRole === "owner" && <section className={styles.panel} aria-labelledby="owner-profile-verification-title">
-            <h2 id="owner-profile-verification-title">Xác minh hồ sơ Owner trong Dolores</h2>
-            <p>Tra cứu bằng cùng UUID IDaaS được API tạo tài khoản trả về: <code><TruncatedId value={user.id} /></code>.</p>
+            <h2 id="owner-profile-verification-title">Hồ sơ khách hàng</h2>
             {doloresProfile.isPending && <p role="status">Đang tải hồ sơ Dolores…</p>}
             {doloresProfile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
               <p>{getApiErrorMessage(doloresProfile.error)}</p>
-              <p>Hồ sơ có thể chưa được đồng bộ từ IDaaS. Hãy thử lại sau; trình duyệt không gọi API đồng bộ nội bộ.</p>
+              <p>Hồ sơ có thể đang được đồng bộ. Hãy thử lại sau.</p>
               <button className={styles.accountSecondaryButton} type="button" disabled={doloresProfile.isFetching} onClick={() => void doloresProfile.refetch()}>{T.COMMON.RETRY}</button>
             </div>}
-            {doloresProfile.data && <div className={styles.accountFormGrid}>
+            {doloresProfile.data && <details className={styles.userTechnicalDetails}><summary>Thông tin đồng bộ</summary><div className={styles.accountFormGrid}>
               <div><span>UUID IDaaS</span><strong><TruncatedId value={doloresProfile.data.idaasUserId} /></strong></div>
               <div><span>Email</span><strong>{doloresProfile.data.email || "—"}</strong></div>
-              <div><span>Vai trò Dolores</span><strong>{doloresProfile.data.roles.join(", ") || "—"}</strong></div>
-              <div><span>Trạng thái hồ sơ</span><strong>{doloresProfile.data.status}</strong></div>
+              <div><span>Vai trò</span><strong>{doloresProfile.data.roles.map(role => ADMIN_USER_ROLE_LABELS[role.toLowerCase() as AdminUserRole] ?? role).join(", ") || "—"}</strong></div>
+              <div><span>Trạng thái hồ sơ</span><strong>{({ ACTIVE: "Đang hoạt động", DISABLED: "Đã vô hiệu hóa" } as Record<string, string>)[doloresProfile.data.status] ?? doloresProfile.data.status}</strong></div>
               <div><span>Email đã xác minh</span><strong>{doloresProfile.data.emailVerified ? "Có" : "Chưa"}</strong></div>
-            </div>}
+            </div></details>}
             {doloresProfile.data && <div className={styles.accountProfileContracts}>
-              <h3>Hợp đồng của Owner</h3>
+              <h3>Hợp đồng liên quan</h3>
               {ownerContracts.isPending && <p role="status">Đang tải hợp đồng…</p>}
               {ownerContracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
                 <p>{getApiErrorMessage(ownerContracts.error)}</p>
@@ -194,12 +200,12 @@ export function AdminUserDetailView({
                 variant="accounts"
                 rows={ownerContracts.data.items}
                 rowKey={(contract) => contract.contractId ?? contract.id ?? `${contract.machineId}-${contract.startDate}`}
-                emptyMessage="Owner chưa có hợp đồng."
+                emptyMessage="Khách hàng chưa có hợp đồng."
                 columns={[
-                  { key: "contract", header: "UUID hợp đồng", render: (contract) => <TruncatedId value={contract.contractId ?? contract.id} /> },
-                  { key: "machine", header: "UUID máy", render: (contract) => <TruncatedId value={contract.machineId} /> },
-                  { key: "status", header: "Trạng thái", render: (contract) => contract.status ?? "—" },
-                  { key: "dates", header: "Thời hạn", render: (contract) => `${contract.startDate ?? "—"} – ${contract.endDate ?? "—"}` },
+                  { key: "contract", header: "Hợp đồng", render: (contract) => <TruncatedId value={contract.contractId ?? contract.id} /> },
+                  { key: "machine", header: "Máy", render: (contract) => <TruncatedId value={contract.machineId} /> },
+                  { key: "status", header: "Trạng thái", render: (contract) => ({ ACTIVE: "Đang hiệu lực", DRAFT: "Bản nháp", TERMINATED: "Đã chấm dứt", EXPIRED: "Đã hết hạn" } as Record<string, string>)[contract.status ?? ""] ?? contract.status ?? "—" },
+                  { key: "dates", header: "Thời hạn", render: (contract) => `${contractDate(contract.startDate)} – ${contractDate(contract.endDate)}` },
                 ]}
               />}
               {ownerContracts.data && ownerContracts.data.totalPages > 0 && (
@@ -227,10 +233,21 @@ export function AdminUserDetailView({
               )}
             </div>}
           </section>}
+          </div>
+          <aside className={`${styles.panel} ${styles.userContext}`} aria-label="Trạng thái tài khoản">
+            <h2>Trạng thái tài khoản</h2>
+            <dl className={styles.userMetadata}>
+              <div><dt>{T.FORM.STATUS}</dt><dd><span className={styles.userStatus} data-status={user.status}>{user.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</span></dd></div>
+              <div><dt>Xác minh email</dt><dd>{user.email_verified ? T.FORM.YES : T.FORM.NO}</dd></div>
+              <div><dt>Ngày tạo</dt><dd>{formatAdminUserDate(user.created_at)}</dd></div>
+              <div><dt>Cập nhật</dt><dd>{formatAdminUserDate(user.updated_at)}</dd></div>
+            </dl>
+          </aside>
+          </div>
         </>
       ) : null}
 
-      <PageActions actions={[{ id: "user-save", label: T.FORM.SAVE, variant: "primary", priority: 100, type: "submit", form: "admin-user-edit-form", disabled: !canEdit || !dirty || detail.isPending || updateUser.isPending, disabledReason: !canEdit ? "Không thể chỉnh sửa người dùng này." : !dirty ? "Chưa có thay đổi để lưu." : "Đang lưu thay đổi.", pending: updateUser.isPending, pendingLabel: "Đang lưu…" }]} />
+      {dialog === "leave" && <NotificationDialog variant="confirm" title="Rời hồ sơ tài khoản?" description="Các thay đổi chưa lưu sẽ bị mất." primaryAction={{ label: "Về danh sách", onClick: () => onNavigate({ view: null, id: null, contractPage: null }) }} secondaryAction={{ label: "Tiếp tục chỉnh sửa", onClick: closeDialog }} onClose={closeDialog} />}
 
       {dialog === "confirm" && pendingUpdate && (
         <NotificationDialog

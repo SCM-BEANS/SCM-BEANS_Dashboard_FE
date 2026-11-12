@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 
 import { profilesApi } from "@/apis/profiles.api";
 import { DataTable } from "@/components/table/data-table";
+import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
 import type { Profile } from "@/schema/profiles.schema";
@@ -12,7 +12,7 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { moderatorStyles as styles } from "../moderator-shell";
 
 const OWNER_ROLE = "owner";
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const PROFILE_STATUSES: readonly Profile["status"][] = [
   "UNVERIFIED",
   "PENDING_ASSIGNMENT",
@@ -94,13 +94,18 @@ export function CustomerProfileListScreen() {
   const totalPages = pageData?.totalPages ?? 0;
 
   return (
-    <div className={styles.pageContent}>
+    <div className={`${styles.pageContent} ${styles.customerListPage}`}>
+      <div className={styles.customerPageHeading}>
       <PageHeading
         title={MODERATOR_MESSAGES.READ_SCREENS.CUSTOMERS_TITLE}
         description={MODERATOR_MESSAGES.READ_SCREENS.CUSTOMERS_DESCRIPTION}
       />
+      <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CUSTOMER}>Tạo khách hàng</ButtonBar>
+      </div>
 
-      <form className={styles.formPanel} onSubmit={handleSearch}>
+      <section className={`${styles.formPanel} ${styles.customerListPanel}`}>
+      <div className={styles.customerListHeading}><h2>Danh sách khách hàng</h2>{pageData && <span>{pageData.totalElements.toLocaleString("vi-VN")} {search || status ? "kết quả" : "khách hàng"}</span>}</div>
+      <form className={styles.customerFilters} onSubmit={handleSearch}>
         <div className={styles.formRow}>
           <label className={styles.formField}>
             {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SEARCH}
@@ -135,22 +140,20 @@ export function CustomerProfileListScreen() {
       {pageData && pageData.items.length > 0 && !profiles.isError && (
         <>
           <DataTable variant="moderator" headers={[
-            MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NAME,
-            MODERATOR_MESSAGES.READ_SCREENS.PROFILE_EMAIL,
+            "Khách hàng",
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PHONE,
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_STATUS,
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_ACTION,
           ]}>
             {pageData.items.map((profile) => (
               <tr key={profile.idaasUserId}>
-                <td>{profile.fullName || "—"}</td>
-                <td>{profile.email || "—"}</td>
+                <td><div className={styles.customerIdentity}><span className={styles.customerAvatar} aria-hidden="true">{profile.fullName.trim().split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase() || "?"}</span><div><strong>{profile.fullName || "Chưa có họ tên"}</strong><span>{profile.email || "—"}</span></div></div></td>
                 <td>{profile.phone || "—"}</td>
-                <td>{profileStatusLabel(profile.status)}</td>
+                <td><span className={styles.customerStatus} data-status={profile.status}>{profileStatusLabel(profile.status)}</span></td>
                 <td>
-                  <Link className={styles.tableLink} href={PATH_MODERATOR.CUSTOMER_DETAIL(profile.idaasUserId)}>
-                    {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_VIEW}
-                  </Link>
+                  <ButtonBar rollingLabel href={PATH_MODERATOR.CUSTOMER_DETAIL(profile.idaasUserId)} aria-label={`Mở hồ sơ ${profile.fullName || profile.email}`}>
+                    Mở hồ sơ
+                  </ButtonBar>
                 </td>
               </tr>
             ))}
@@ -178,6 +181,7 @@ export function CustomerProfileListScreen() {
           </nav>
         </>
       )}
+      </section>
     </div>
   );
 }

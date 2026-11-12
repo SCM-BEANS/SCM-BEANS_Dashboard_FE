@@ -161,7 +161,7 @@ function tableVariant(role: ActionItemsRole): "operations" | "moderator" | "cust
   return "operations";
 }
 
-export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
+export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsRole; compact?: boolean }) {
   const [bucket, setBucket] = useState<TimeBucket>("ALL");
   const [page, setPage] = useState(0);
   const [openAcknowledgement, setOpenAcknowledgement] = useState<Record<string, boolean>>({});
@@ -307,7 +307,7 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
       <header className={styles.header}>
         <div>
           <h2 id={`action-items-${role.toLowerCase()}`}>Công việc cần xử lý</h2>
-          <p>Danh sách được giới hạn theo quyền đăng nhập. Mở danh sách nghiệp vụ để xem hoặc thực hiện bước kế tiếp.</p>
+          <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>
         </div>
         <label className={styles.filter}>
           <span>Thời hạn</span>
@@ -325,15 +325,24 @@ export function ActionItemsPanel({ role }: { role: ActionItemsRole }) {
         </div>
       )}
       {items.data && (
+        <>
+        {compact && <div className={styles.queueSummary} aria-label="Hàng đợi công việc trên trang hiện tại">
+          <strong>{items.data.items.length.toLocaleString("vi-VN")}</strong>
+          <span>việc trên trang này{items.data.hasMore ? " · Còn trang tiếp theo" : ""}</span>
+        </div>}
+        <details open={!compact} className={styles.workDetails}>
+          <summary hidden={!compact}>Xem danh sách công việc</summary>
         <DataTable
           variant={tableVariant(role)}
           {...(role === "ADMIN" ? { headerVariant: "admin" as const } : {})}
           rows={items.data.items}
           rowKey={(item) => item.actionKey}
-          columns={columns}
-          style={{ minWidth: 1040 }}
+          columns={compact && role === "ADMIN" ? columns.filter(column => column.key === "work" || column.key === "action") : columns}
+          style={{ minWidth: compact && role === "ADMIN" ? 0 : 1040 }}
           emptyMessage="Không có công việc trong khoảng thời hạn này."
         />
+        </details>
+        </>
       )}
 
       <footer className={styles.pagination}>
