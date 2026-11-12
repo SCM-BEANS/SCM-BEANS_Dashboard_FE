@@ -54,6 +54,11 @@ export const ActivateContractRequestSchema = z.object({
 
 export const CreateContractResponseSchema = z.object({ id: ContractIdSchema }).passthrough();
 
+export const ContractTermsSnapshotResponseSchema = ContractTermsSnapshotSchema.extend({
+  paymentDestinationReference: z.string().max(128).nullish(),
+  offlineLimitMinutes: z.number().int().positive().nullish(),
+});
+
 export const ContractSchema = z.object({
   id: ContractIdSchema, ownerId: z.string().uuid(), ownerName: z.string().nullish(), machineId: z.string().uuid().nullish(),
   startDate: z.string().nullish(), endDate: z.string().nullish(), terms: z.string().nullish(),
@@ -62,7 +67,7 @@ export const ContractSchema = z.object({
   machineTypeSnapshot: z.string().nullish(), monthlyRentalFee: z.number().nullish(),
   depositAmount: z.number().nullish(), installationFee: z.number().nullish(),
   paygUnitPrice: z.number().nullish(), offlineLimitMinutes: z.number().int().nullish(),
-  contractTermsSnapshot: ContractTermsSnapshotSchema.nullish(),
+  contractTermsSnapshot: ContractTermsSnapshotResponseSchema.nullish(),
   currentPolicyVersion: z.number().int().nonnegative().nullish(),
   policyReadiness: z.string().nullish(),
   legacyUnmapped: z.boolean().optional(), terminatedAt: z.string().nullish(),
@@ -80,7 +85,7 @@ export const ModeratorContractSchema = z.object({
   termsSnapshot: z.string().nullish(),
   status: z.string().min(1),
   machineTypeSnapshot: z.string().nullish(),
-  contractTermsSnapshot: ContractTermsSnapshotSchema.nullish(),
+  contractTermsSnapshot: ContractTermsSnapshotResponseSchema.nullish(),
   monthlyRentalFee: z.number().nullish(),
   depositAmount: z.union([z.number(), z.string()]).nullish(),
   installationFee: z.union([z.number(), z.string()]).nullish(),
@@ -109,7 +114,7 @@ export const ContractDocumentSchema = z.object({
 export const ContractDocumentsSchema = z.array(ContractDocumentSchema);
 export const ContractPolicyVersionSchema = z.object({
   id: z.string().uuid(), contractId: ContractIdSchema, version: z.number().int().positive(),
-  snapshot: ContractTermsSnapshotSchema, supersedesVersionId: z.string().uuid().nullish(),
+  snapshot: ContractTermsSnapshotResponseSchema, supersedesVersionId: z.string().uuid().nullish(),
   actorId: z.string().uuid().nullish(), actorRole: z.string(), reason: z.string(),
   effectiveDate: contractDateSchema, effectiveAt: z.string().nullish(), createdAt: z.string().nullish(),
 }).passthrough();

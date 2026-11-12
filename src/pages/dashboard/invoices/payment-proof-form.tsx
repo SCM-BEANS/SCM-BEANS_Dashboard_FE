@@ -3,7 +3,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import styles from "../customer-shell.module.css";
+import { ButtonBar } from "@/components/button/button-bar";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import styles from "@/components/features/billing/operator-invoices-screen.module.css";
 
 const messages = CUSTOMER_MESSAGES.WORKFLOWS;
 
@@ -40,6 +42,7 @@ export function PaymentProofForm({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (mutation.isPending) return;
     const parsedAmount = Number(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       setValidationError(messages.PAYMENT_AMOUNT_REQUIRED);
@@ -56,12 +59,14 @@ export function PaymentProofForm({
   };
 
   return (
-    <form className={styles.dataPanel} onSubmit={submit}>
+    <form className={styles.panel} onSubmit={submit}>
       <h2>{title}</h2>
-      <p>{description}</p>
-      <label className={styles.formField}>
+      <p className={styles.hint}>{description}</p>
+      <div className={styles.proofUpload}>
+      <label>
         <span>{messages.FIELD_PAYMENT_AMOUNT}</span>
         <input
+          disabled={mutation.isPending}
           min="0.01"
           onChange={(event) => {
             idempotencyKeyRef.current = null;
@@ -74,9 +79,10 @@ export function PaymentProofForm({
           value={amount}
         />
       </label>
-      <label className={styles.formField}>
+      <label>
         <span>{messages.FIELD_PAYMENT_PROOF}</span>
         <input
+          disabled={mutation.isPending}
           accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
           onChange={(event) => {
             idempotencyKeyRef.current = null;
@@ -88,12 +94,13 @@ export function PaymentProofForm({
           type="file"
         />
       </label>
-      {validationError && <p className={styles.errorNotice} role="alert">{validationError}</p>}
-      {mutation.isError && <p className={styles.errorNotice} role="alert">{messages.PAYMENT_SUBMIT_ERROR}</p>}
-      {mutation.isSuccess && <p className={styles.successNotice} role="status">{messages.PAYMENT_SUBMIT_SUCCESS}</p>}
-      <button className={styles.primaryButton} disabled={mutation.isPending} type="submit">
+      </div>
+      {validationError && <p className={styles.errorText} role="alert">{validationError}</p>}
+      {mutation.isError && <p className={styles.errorText} role="alert">{getApiErrorMessage(mutation.error, "mutation") || messages.PAYMENT_SUBMIT_ERROR}</p>}
+      {mutation.isSuccess && <p className={styles.successText} role="status">{messages.PAYMENT_SUBMIT_SUCCESS}</p>}
+      <div className={styles.proofUploadFooter}><ButtonBar variant="primary" disabled={mutation.isPending} type="submit">
         {mutation.isPending ? messages.ACTION_SENDING : messages.ACTION_SEND_PROOF}
-      </button>
+      </ButtonBar></div>
     </form>
   );
 }

@@ -8,7 +8,20 @@
 .summary > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .summary dt, .hint { color: #706561; font-size: 13px; line-height: 1.5; }
 .summary dd { margin: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
-.form { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid #eee8e3; }
+.form { display: flex; flex-direction: column; gap: 14px; }
+.form[hidden] { display: none; }
+.invoiceTools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tool { min-width: 0; }
+.tool[open] > :not(summary) { margin-top: 12px; }
+.panel summary { min-height: 36px; padding-block: 8px; }
+.panel summary:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; border-radius: 4px; }
+.createForm { max-width: 960px; }
+.createForm .grid { grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); align-items: start; }
+.refundResult > .panel { border: 0; padding: 12px 0 0; }
+.refundStatus { display: inline-flex; align-items: baseline; gap: 8px; font-weight: 400; }
+.refundStatus::before { content: ""; width: 7px; height: 7px; flex: none; border-radius: 50%; background: #c78c2d; }
+.refundStatus[data-status="COMPLETED"]::before { background: #2d8a63; }
+.refundStatus[data-status="REJECTED"]::before, .refundStatus[data-status="FAILED"]::before, .refundStatus[data-status="DISPUTED"]::before { background: #bd2632; }
 .panel label { display: flex; flex-direction: column; gap: 7px; min-width: 0; color: #514843; font-size: 14px; }
 .panel input, .panel select, .panel textarea { box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; font: inherit; }
 .panel textarea { min-height: 90px; resize: vertical; }
@@ -24,5 +37,5 @@
 .queue button { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding: 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; text-align: left; font: inherit; cursor: pointer; }
 .queue button:hover { background: #faf5f4; }
 .queue button:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
-@media (max-width: 640px) { .panel { padding: 16px; } .grid, .summary { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
+@media (max-width: 640px) { .panel { padding: 16px; } .grid, .summary, .invoiceTools, .createForm .grid { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
 @media (prefers-reduced-motion: no-preference) { .queue button { transition: background-color 150ms ease; } }

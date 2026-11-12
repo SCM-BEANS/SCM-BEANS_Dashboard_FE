@@ -68,7 +68,7 @@ export function OperatorPaymentReviewPanel({ workflow }: { workflow: CoffeePacka
           <label className={styles.field}><span>Lý do đối soát</span><textarea maxLength={2000} value={proofReason} onChange={(event) => setProofReason(event.target.value)} required /></label>
           <div className={styles.actionRow}>
             <ButtonBar type="button" disabled={!proofReason.trim() || workflow.pending} onClick={() => reviewProof(true)}>Duyệt chứng từ</ButtonBar>
-            <ButtonBar type="button" disabled={!proofReason.trim() || workflow.pending} onClick={() => reviewProof(false)}>Từ chối chứng từ</ButtonBar>
+            <ButtonBar variant="danger" type="button" holdToConfirm disabled={!proofReason.trim() || workflow.pending} onClick={() => reviewProof(false)}>Từ chối chứng từ</ButtonBar>
             <ButtonBar type="button" onClick={() => setSelectedProofId("")}>Đóng</ButtonBar>
           </div>
         </div>

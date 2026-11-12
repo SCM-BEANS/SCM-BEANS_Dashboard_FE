@@ -10,6 +10,7 @@ import { hasAdminRole } from "@/lib/auth-role";
 import {
   ActivateContractRequestSchema,
   ContractTermsSnapshotSchema,
+  ContractTermsSnapshotResponseSchema,
   type Contract,
   type ContractTermsSnapshot,
 } from "@/schema/contracts.schema";
@@ -36,7 +37,13 @@ function parseContractTermsSnapshot(contract: Contract): ContractTermsSnapshot |
       value = (value as { contractTermsSnapshot?: unknown }).contractTermsSnapshot;
     }
 
-    const parsed = ContractTermsSnapshotSchema.safeParse(value);
+    const response = ContractTermsSnapshotResponseSchema.safeParse(value);
+    if (!response.success) continue;
+    const parsed = ContractTermsSnapshotSchema.safeParse({
+      ...response.data,
+      paymentDestinationReference: response.data.paymentDestinationReference ?? undefined,
+      offlineLimitMinutes: response.data.offlineLimitMinutes ?? undefined,
+    });
     if (parsed.success) return parsed.data;
   }
 

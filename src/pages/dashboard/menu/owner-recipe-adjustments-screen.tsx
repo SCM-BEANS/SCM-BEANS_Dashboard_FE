@@ -207,7 +207,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         {menuAction ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu riêng" aria-busy={menuMutation.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clear(); menuMutation.mutate({ action: menuAction, menuId, name: menuName }); }}>
           <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : menuAction === "create" ? "Tạo menu riêng" : "Đổi tên menu"}</h3>
           {menuAction !== "delete" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Món yêu thích" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ menu rỗng mới được xóa; các công thức không bị tự động xóa.</p>}
-          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || (menuAction !== "delete" && !menuName.trim())}>{menuMutation.isPending ? "Đang lưu…" : menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
+          <div className={styles.recipeMenuActions}><ButtonBar type="submit" holdToConfirm={menuAction === "delete"} disabled={busy || (menuAction !== "delete" && !menuName.trim())}>{menuMutation.isPending ? "Đang lưu…" : menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
         </form> : null}
       </section> : null}
       <section className={styles.recipeMenuPanel}>
@@ -259,7 +259,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
             <ButtonBar disabled={busy} onClick={() => { clear(); setName(detail.data.name); setEditSteps(detail.data.steps.join("\n")); setEditOverrides(detail.data.dosageOverrides.join("\n")); setConfirmed(false); setEditTargetId(detail.data.id); setDeleteTarget(null); setMode("edit"); }}>Chỉnh sửa thông tin món</ButtonBar>
             <ButtonBar disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức riêng</ButtonBar>
           </div>
-          {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa bản công thức riêng “{deleteTarget.name}”?</p><div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => { clear(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
+          {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa bản công thức riêng “{deleteTarget.name}”?</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => { clear(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
           </div></details>
         </section> : null}
         {mode === "view" && detail.isFetching ? <p role="status">Đang tải chi tiết…</p> : null}

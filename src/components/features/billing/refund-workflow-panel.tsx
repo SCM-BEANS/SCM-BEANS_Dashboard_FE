@@ -2,10 +2,10 @@ import Cookies from "js-cookie";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
-import { PageActions } from "@/components/action-bar/page-actions";
-import { ButtonBar } from "@/components/button/button-bar";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+import type { PageAction } from "@/components/action-bar/page-action.types";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getAccessTokenSubject } from "@/lib/auth-role";
 import { getBillingWorkflowErrorMessage } from "@/lib/api-errors";
 import { RefundIdSchema, type RefundDetail, type RefundPayoutEvidence, type RefundStatus } from "@/schema/billing.schema";
@@ -30,7 +30,7 @@ export const refundStatusLabels: Record<RefundStatus, string> = {
   FAILED: "Chuyển khoản thất bại",
   DISPUTED: "Cần đối chiếu khoản tiền đã nhận",
 };
-export const refundMoney = (amount: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 }).format(amount);
+export const refundMoney = (amount: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 20 }).format(amount);
 const dateText = (value: string) => {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toLocaleString("vi-VN") : value;
@@ -93,7 +93,6 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
   const [note, setNote] = useState("");
   const [evidenceId, setEvidenceId] = useState("");
   const [downloadError, setDownloadError] = useState("");
-  const [downloading, setDownloading] = useState(false);
   const [pending, setPending] = useState<Command | null>(null);
   const reopenKeys = useRef(new Map<string, string>());
   const evidenceKey = [...refund.queryKey, "payout-evidence"];
@@ -156,17 +155,6 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
     },
   });
   const ask = (command: Command) => { mutation.reset(); setPending(command); };
-  const download = async (id: string, filename = "chung-tu-hoan-tien") => {
-    setDownloading(true); setDownloadError("");
-    try {
-      const blob = await billingApi.downloadRefundEvidence(refundId, id);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a"); anchor.href = url;
-      anchor.download = filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180);
-      anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (error) { setDownloadError(getBillingWorkflowErrorMessage(error)); }
-    finally { setDownloading(false); }
-  };
   const data = refund.data;
   const operator = role === "ADMIN" || role === "MODERATOR";
   const owner = role === "OWNER" && refund.subject === data?.ownerId;
@@ -174,9 +162,7 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
   const selfApproval = Boolean(refund.subject && (data?.requestedBy === refund.subject || data?.ownerConfirmedBy === refund.subject));
   const canApprove = operator && !selfApproval && (role === "ADMIN" || requiredRole === "MODERATOR");
   const receiptValid = receivedChoice !== "" && receivedAmount.trim() !== "" && Number.isFinite(Number(receivedAmount)) && Number(receivedAmount) >= 0;
-  return (
-    <section className={styles.panel} aria-label="Khoản hoàn tiền">
-      <PageActions actions={data && !refund.isError ? [
+  const actions: PageAction[] = data && !refund.isError ? [
         ...(owner && data.status === "REQUESTED" ? [{ id: "refund-confirm", label: "Xác nhận yêu cầu hoàn tiền", priority: 50, variant: "primary" as const, disabled: mutation.isPending, onClick: () => ask({ action: "confirm" }) }] : []),
         ...(operator && data.status === "TENANT_CONFIRMED" ? [{ id: "refund-approve", label: "Duyệt hoàn tiền", priority: 50, variant: "primary" as const, disabled: !canApprove || mutation.isPending, onClick: () => ask({ action: "approve" }) }] : []),
         ...(operator && ["APPROVED", "FAILED"].includes(data.status) ? [{ id: "refund-submit", label: "Gửi chứng từ", priority: 100, variant: "primary" as const, type: "submit" as const, form: "billing-refund-evidence-form", disabled: !file || mutation.isPending }] : []),
@@ -184,7 +170,10 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
         ...(operator && ["REQUESTED", "TENANT_CONFIRMED", "APPROVED"].includes(data.status) ? [{ id: "refund-reject", label: "Từ chối yêu cầu", priority: 0, variant: "danger" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => ask({ action: "reject", reason: reason.trim() }) }] : []),
         ...(operator && data.status === "SUBMITTED" ? [{ id: "refund-fail", label: "Ghi nhận chuyển khoản thất bại", priority: 50, variant: "primary" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => ask({ action: "fail", reason: reason.trim() }) }] : []),
         ...(operator && role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status) ? [{ id: "refund-reopen", label: "Mở lại yêu cầu", priority: 50, variant: "primary" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => { const signature = `${refundId}:${reason.trim()}`; const key = reopenKeys.current.get(signature) ?? crypto.randomUUID(); reopenKeys.current.set(signature, key); ask({ action: "reopen", reason: reason.trim(), key }); } }] : []),
-      ] : []} />
+      ] : [];
+  return (
+    <section className={styles.panel} aria-label="Khoản hoàn tiền">
+
       <div className={styles.heading}><h3>Khoản hoàn tiền</h3><ButtonBar disabled={refund.isFetching || mutation.isPending} onClick={() => void refund.refetch()}>Làm mới</ButtonBar></div>
       {!RefundIdSchema.safeParse(refundId).success ? <p className={styles.error} role="alert">Mã khoản hoàn không hợp lệ.</p> : null}
       {refund.isLoading ? <p role="status">Đang tải khoản hoàn…</p> : null}
@@ -192,7 +181,7 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
       {data && !refund.isError ? <>
         <dl className={styles.summary}>
           <div><dt>Số tiền hoàn</dt><dd>{refundMoney(data.amount)}</dd></div>
-          <div><dt>Trạng thái</dt><dd><StatusBadge status={data.status}>{refundStatusLabels[data.status]}</StatusBadge></dd></div>
+          <div><dt>Trạng thái</dt><dd><span className={styles.refundStatus} data-status={data.status}>{refundStatusLabels[data.status]}</span></dd></div>
           <div><dt>Loại khoản hoàn</dt><dd>{data.refundKind === "DEPOSIT" ? "Hoàn tiền cọc" : data.refundKind === "OVERPAYMENT" ? "Hoàn khoản thanh toán dư" : "Loại khoản hoàn chưa hỗ trợ"}</dd></div>
           <div><dt>Ngày yêu cầu</dt><dd>{dateText(data.requestedAt)}</dd></div>
           <div><dt>Mã khoản hoàn</dt><dd>{data.id}</dd></div>
@@ -224,13 +213,14 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
         {data.status === "DISPUTED" ? <p className={styles.notice}>{data.terminationCaseId ? "Khoản hoàn cần đối chiếu. Admin có thể mở lại yêu cầu để khách hàng xác nhận lại." : "Khoản hoàn đang cần đối chiếu. Vui lòng liên hệ bộ phận vận hành để được hỗ trợ."}</p> : null}
         {data.status === "COMPLETED" ? <p className={styles.success} role="status">Khách hàng đã xác nhận nhận đủ tiền hoàn.</p> : null}
         <details className={styles.form}><summary>Chứng từ chuyển khoản</summary>
-          {evidence.data.map((item) => <div className={styles.heading} key={item.id}><span>{item.originalFilename} · {dateText(item.uploadedAt)}</span><ButtonBar disabled={downloading} onClick={() => void download(item.id, item.originalFilename)}>Tải chứng từ</ButtonBar></div>)}
+          {evidence.data.map((item) => <div className={styles.heading} key={item.id}><span>{item.originalFilename} · {dateText(item.uploadedAt)}</span><ProgressDownloadButton filename={item.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadRefundEvidence(refundId, item.id, signal, onProgress); }} onError={(error) => setDownloadError(getBillingWorkflowErrorMessage(error))}>Tải xuống</ProgressDownloadButton></div>)}
           <p className={styles.hint}>Nếu đã có mã chứng từ từ lần tải lên hoặc bộ phận vận hành, nhập mã để tải.</p>
-          <form className={styles.lookup} onSubmit={(event) => { event.preventDefault(); if (RefundIdSchema.safeParse(evidenceId.trim()).success) void download(evidenceId.trim()); }}>
-            <label>Mã chứng từ<input value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)} /></label><ButtonBar type="submit" disabled={downloading || !RefundIdSchema.safeParse(evidenceId.trim()).success}>Tải chứng từ</ButtonBar>
+          <form className={styles.lookup} onSubmit={(event) => { event.preventDefault(); event.currentTarget.querySelector<HTMLButtonElement>("button:not(:disabled)")?.click(); }}>
+            <label>Mã chứng từ<input value={evidenceId} onChange={(event) => setEvidenceId(event.target.value)} /></label>{RefundIdSchema.safeParse(evidenceId.trim()).success ? <ProgressDownloadButton key={evidenceId.trim()} filename="chung-tu-hoan-tien" download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadRefundEvidence(refundId, evidenceId.trim(), signal, onProgress); }} onError={(error) => setDownloadError(getBillingWorkflowErrorMessage(error))}>Tải xuống</ProgressDownloadButton> : <ButtonBar type="button" disabled>Tải xuống</ButtonBar>}
           </form>{downloadError ? <p className={styles.error} role="alert">{downloadError}</p> : null}
         </details>
       </> : null}
+      <PageActionsRenderer actions={actions} />
       {mutation.isError && !pending ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(mutation.error, "mutation")}</p> : null}
       {pending ? <NotificationDialog variant="confirm" title={`${commandLabels[pending.action]}?`} description={pending.action === "receipt" ? `Số tiền thực nhận: ${refundMoney(pending.receivedAmount)}. ${pending.received ? "Bạn đã chọn đã nhận tiền." : "Bạn đã chọn chưa nhận tiền hoặc có vấn đề."}` : `Khoản hoàn ${data ? refundMoney(data.amount) : ""}. ${"reason" in pending ? pending.reason : "Kiểm tra thông tin trước khi xác nhận."}`}
         primaryAction={{ label: commandLabels[pending.action], pending: mutation.isPending, pendingLabel: "Đang xử lý…", onClick: () => mutation.mutate(pending) }}

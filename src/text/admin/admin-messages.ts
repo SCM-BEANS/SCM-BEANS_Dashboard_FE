@@ -11,7 +11,7 @@ export const ADMIN_MESSAGES = {
     IOT: "Giám sát Smart IoT",
     MENU: "Công thức pha chế",
     REPORTS: "Báo cáo vận hành",
-    INVOICES: "Hóa đơn & đối soát",
+    INVOICES: "Hóa đơn",
     COFFEE_PACKAGES: "Gói cà phê",
     BUYBACKS: "Thu mua máy",
     NOTIFICATIONS: "Thông báo",

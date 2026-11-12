@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import { ButtonBar } from "@/components/button/button-bar";
 
 import styles from "./notification-dialog.module.css";
 
@@ -9,6 +10,7 @@ export type NotificationDialogAction = {
   disabled?: boolean;
   pending?: boolean;
   pendingLabel?: string;
+  holdToConfirm?: boolean;
 };
 
 type NotificationDialogBaseProps = {
@@ -116,16 +118,31 @@ export function NotificationDialog(props: NotificationDialogProps) {
         {children}
 
         <div className={styles.actions}>
-          <button
-            className={[styles.primaryButton, primaryAction.className].filter(Boolean).join(" ")}
-            type="button"
-            data-dialog-primary
-            disabled={primaryAction.disabled || primaryAction.pending}
-            aria-busy={primaryAction.pending || undefined}
-            onClick={primaryAction.onClick}
-          >
-            {primaryLabel}
-          </button>
+          {primaryAction.holdToConfirm ? (
+            <ButtonBar
+              variant="primary"
+              className={[styles.primaryButton, styles.holdAction, primaryAction.className].filter(Boolean).join(" ")}
+              type="button"
+              data-dialog-primary
+              holdToConfirm
+              disabled={primaryAction.disabled || primaryAction.pending}
+              aria-busy={primaryAction.pending || undefined}
+              onClick={primaryAction.onClick}
+            >
+              {primaryLabel}
+            </ButtonBar>
+          ) : (
+            <button
+              className={[styles.primaryButton, primaryAction.className].filter(Boolean).join(" ")}
+              type="button"
+              data-dialog-primary
+              disabled={primaryAction.disabled || primaryAction.pending}
+              aria-busy={primaryAction.pending || undefined}
+              onClick={primaryAction.onClick}
+            >
+              {primaryLabel}
+            </button>
+          )}
           {variant === "confirm" && (
             <button
               className={[styles.secondaryButton, props.secondaryAction.className].filter(Boolean).join(" ")}

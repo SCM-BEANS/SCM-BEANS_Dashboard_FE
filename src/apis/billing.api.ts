@@ -1,4 +1,5 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
+import type { AxiosProgressEvent } from "axios";
 import {
   buildEvidenceForm,
   EVIDENCE_MULTIPART_HEADERS,
@@ -325,12 +326,13 @@ export const billingApi =  {
     }
     return proof;
   },
-  async downloadPaymentProofContent(proofId: string, signal?: AbortSignal) {
+  async downloadPaymentProofContent(proofId: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
     const response = await axiosClient.get<Blob>(proofContentPath(proofId), {
       baseURL: DOLORES_API_BASE_URL,
       headers: { Accept: "*/*" },
       responseType: "blob",
       signal,
+      ...(onProgress ? { onDownloadProgress: (event: AxiosProgressEvent) => onProgress(event.loaded, event.total) } : {}),
     });
     return response.data;
   },
@@ -396,10 +398,11 @@ export const billingApi =  {
     const request = RefundReceiptRequestSchema.parse(input);
     return refundAction(refundId, "receipt", request);
   },
-  async downloadRefundEvidence(refundId: string, evidenceId: string, signal?: AbortSignal) {
+  async downloadRefundEvidence(refundId: string, evidenceId: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
     const validEvidenceId = PaymentProofIdSchema.parse(evidenceId);
     const response = await axiosClient.get<Blob>(`${refundPath(refundId)}/evidence/${encodeURIComponent(validEvidenceId)}`, {
       baseURL: DOLORES_API_BASE_URL, signal, responseType: "blob", headers: { Accept: "*/*", "Cache-Control": "no-store" },
+      ...(onProgress ? { onDownloadProgress: (event: AxiosProgressEvent) => onProgress(event.loaded, event.total) } : {}),
     });
     return response.data;
   },
@@ -463,13 +466,14 @@ export const billingApi =  {
     if (job.id !== validId) throw new Error("Dolores returned an export job that does not match the requested ID.");
     return job;
   },
-  async downloadExportContent(jobId: string, signal?: AbortSignal) {
+  async downloadExportContent(jobId: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
     const validId = ExportJobIdSchema.parse(jobId);
     const response = await axiosClient.get<Blob>(`/billing/exports/${encodeURIComponent(validId)}/content`, {
       baseURL: DOLORES_API_BASE_URL,
       headers: { Accept: "*/*" },
       responseType: "blob",
       signal,
+      ...(onProgress ? { onDownloadProgress: (event: AxiosProgressEvent) => onProgress(event.loaded, event.total) } : {}),
     });
     return response.data;
   },

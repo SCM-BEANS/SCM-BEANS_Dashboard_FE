@@ -350,7 +350,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         {!owner && operatorScreen === "recipes" && (menuAction === "rename" || menuAction === "delete") ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu" aria-busy={changeMenu.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
           <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : "Đổi tên menu"}</h3>
           {menuAction === "rename" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Cà phê truyền thống" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ xóa được khi menu không còn công thức.</p>}
-          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || (menuAction === "rename" && !menuName.trim())}>{changeMenu.isPending ? "Đang lưu…" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
+          <div className={styles.recipeMenuActions}><ButtonBar type="submit" holdToConfirm={menuAction === "delete"} disabled={busy || (menuAction === "rename" && !menuName.trim())}>{changeMenu.isPending ? "Đang lưu…" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
         </form> : null}
         <div className={styles.recipeMenuWorkspace} data-editing={mode !== "view" || detailOnly}>
         {mode === "view" && !detailOnly && operatorScreen === "recipes" ? <div className={styles.recipeMenuBrowser}>
@@ -430,7 +430,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
                 <ButtonBar disabled={busy || !detail.data.menuId || detail.data.menuId === DEFAULT_MENU} onClick={() => { clearFeedback(); move.mutate({ remove: true, id: detail.data.id, menuId: detail.data.menuId! }); }}>Về menu mặc định</ButtonBar>
                 <ButtonBar disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức</ButtonBar>
               </div>
-              {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa “{deleteTarget.name}”? Hệ thống có thể từ chối nếu còn điều chỉnh cũ tham chiếu.</p><div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => { clearFeedback(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
+              {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa “{deleteTarget.name}”? Hệ thống có thể từ chối nếu còn điều chỉnh cũ tham chiếu.</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => { clearFeedback(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
             </div></details>}
           </> : null}
         </section> : null}

@@ -6,7 +6,6 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
-import { StatusBadge } from "@/components/status-badge/status-badge";
 import { contractsApi } from "@/apis/contracts.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { machinesApi } from "@/apis/machines.api";
@@ -17,7 +16,7 @@ import { DetailItem, formatDate, formatMoney, QueryFeedback, statusLabel, Unavai
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 function formatContractPeriod(startDate?: string | null, endDate?: string | null) {
   const formatPart = (value?: string | null) => {
@@ -59,6 +58,8 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
   const queryClient = useQueryClient();
   const { ownerId, checked } = useOwnerSubject();
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
   const contractCandidate = sectionPath.startsWith("contracts/")
     ? sectionPath.slice("contracts/".length)
     : "";
@@ -116,8 +117,12 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     return <UnavailableIdentity title={messages.CONTRACTS_TITLE} />;
   }
 
-  const contracts = list.data ?? [];
-  const isListLoading = !list.isError && (list.isPending || machines.isPending);
+  const contracts = (list.data ?? []).filter((contract) => {
+    const machine = machines.data?.find((item) => item.id === contract.machineId);
+    const matchesSearch = `${contract.id} ${machine?.serialNumber ?? ""}`.toLocaleLowerCase("vi-VN").includes(search.trim().toLocaleLowerCase("vi-VN"));
+    return matchesSearch && (!status || contract.status === status);
+  });
+  const isListLoading = !list.isError && list.isPending;
   const visibleContracts = contracts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(contracts.length / PAGE_SIZE));
   const machineById = new Map((machines.data ?? []).map((machine) => [machine.id, machine] as const));
@@ -168,44 +173,43 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
       render: (contract) => formatContractPeriod(contract.startDate, contract.endDate),
     },
     {
-      key: "rental-fee",
-      header: messages.CONTRACT_TABLE_RENTAL_FEE,
-      render: (contract) => {
-        const fee = formatMoney(contract.monthlyRentalFee);
-        if (fee === "—") return fee;
-        return contract.paygUnitPrice && contract.paygUnitPrice > 0 ? `${fee} + PAYG` : `${fee} / tháng`;
-      },
-    },
-    {
       key: "status",
       header: messages.FIELD_STATUS,
-      render: (contract) => <StatusBadge status={contract.status}>{contractStatusLabel(contract)}</StatusBadge>,
+      render: (contract) => <span className={styles.contractStatus} data-status={contract.status}><i aria-hidden="true" />{contractStatusLabel(contract)}</span>,
     },
+    { key: "action", header: "", render: (contract) => <ButtonBar href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
   ];
 
   return (
-    <section className={styles.pageContent} aria-labelledby="customer-screen-title">
+    <section className={`${styles.pageContent} ${styles.contractPage}`} aria-labelledby="customer-screen-title">
       <BackButtonHeading
         back={back ?? null}
-        title={contractId ? messages.CONTRACT_DETAIL_TITLE : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : messages.CONTRACTS_TITLE}
+        title={contractId ? "Hồ sơ hợp đồng" : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : "Hợp đồng"}
         titleId="customer-screen-title"
-        description={messages.CONTRACTS_DESCRIPTION}
+        description={contractId ? `Hợp đồng · ${contractId.slice(0, 8).toUpperCase()}` : "Tra cứu hợp đồng thuê máy và theo dõi quá trình thực hiện."}
         className={styles.pageHeading}
       />
       {contractId ? (
         <>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_CONTRACTS} />
           {detail.data ? (
-            <>
+            <div className={styles.contractLayout}>
+              <section className={`${styles.dataPanel} ${styles.contractOverview}`}>
+              <h2>Thông tin hợp đồng</h2>
               <dl className={styles.detailGrid}>
-                <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id} />
-                <DetailItem label={messages.FIELD_MACHINE_ID} value={detail.data.machineId} />
+                <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id.slice(0, 8).toUpperCase()} />
+                <DetailItem label={messages.FIELD_MACHINE_ID} value={typeof detail.data.machineSerialNumber === "string" ? detail.data.machineSerialNumber : detail.data.machineId} />
                 <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
                 <DetailItem label={messages.FIELD_START_DATE} value={formatDate(detail.data.startDate)} />
                 <DetailItem label={messages.FIELD_END_DATE} value={formatDate(detail.data.endDate)} />
                 <DetailItem label={messages.FIELD_MONTHLY_FEE} value={formatMoney(detail.data.monthlyRentalFee)} />
                 <DetailItem label={messages.FIELD_DEPOSIT} value={formatMoney(detail.data.depositAmount)} />
+                <DetailItem label="Loại máy" value={detail.data.machineTypeSnapshot === "SMART_IOT" ? "Smart IoT" : detail.data.machineTypeSnapshot === "CONVENTIONAL" ? "Máy thường" : "—"} />
+                <DetailItem label="Phí lắp đặt" value={formatMoney(detail.data.installationFee)} />
+                <DetailItem label="Đơn giá theo lượt" value={formatMoney(detail.data.paygUnitPrice)} />
               </dl>
+              {detail.data.terms && <details className={styles.contractTerms}><summary>Điều khoản hợp đồng</summary><p>{detail.data.terms}</p></details>}
+              </section>
               <section className={styles.dataPanel} aria-labelledby="contract-expiry-title">
                 <h2 id="contract-expiry-title">Hạn hợp đồng và ý định tiếp tục</h2>
                 {expiry.isPending ? <p className={styles.loadingNotice} role="status">Đang tải thông tin hết hạn…</p> : null}
@@ -260,11 +264,16 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                   <ButtonBar href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
                 </section>
               ) : null}
-            </>
+            </div>
           ) : null}
         </>
       ) : (
-        <section className={styles.dataPanel} aria-label={messages.CONTRACTS_TITLE}>
+        <section className={`${styles.dataPanel} ${styles.contractList}`} aria-label={messages.CONTRACTS_TITLE}>
+          <div className={styles.contractListHeading}><h2>Danh sách hợp đồng</h2><span>{list.data?.length ?? "—"} hợp đồng</span></div>
+          <div className={styles.contractFilters}>
+            <label><span className={styles.contractFieldLabel}>Tìm hợp đồng</span><input aria-label="Tìm mã hợp đồng hoặc máy" placeholder="Tìm mã hợp đồng hoặc máy" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} /></label>
+            <label><span className={styles.contractFieldLabel}>Trạng thái</span><select aria-label="Lọc trạng thái hợp đồng" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hiệu lực</option><option value="DRAFT">Bản nháp</option><option value="TERMINATED">Đã chấm dứt</option></select></label>
+          </div>
           {isListLoading ? <div className={styles.loadingNotice} role="status">{messages.LOADING}</div> : null}
           {list.isError ? <div className={styles.errorNotice} role="alert">{messages.LOAD_ERROR}</div> : null}
           {!isListLoading && !list.isError && contracts.length === 0 ? (
@@ -273,12 +282,12 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
           {!isListLoading && !list.isError && contracts.length > 0 ? (
             <>
               <DataTable
-                columns={columns}
+                columns={columns.filter((column) => isExpiryList || column.key !== "term")}
                 rows={visibleContracts}
                 rowKey={(contract) => contract.id}
-                headerVariant="admin"
+                variant="accounts"
               />
-              {totalPages > 1 ? (
+              {(
                 <div className={styles.pagination}>
                   <button className={styles.secondaryButton} disabled={page <= 0 || list.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))} type="button">
                     {messages.PREVIOUS}
@@ -288,7 +297,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                     {messages.NEXT}
                   </button>
                 </div>
-              ) : null}
+              )}
             </>
           ) : null}
         </section>

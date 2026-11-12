@@ -64,6 +64,13 @@
   width: 100%;
 }
 
+.dialog .actions .holdAction.holdAction {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 16px;
+}
+
 .primaryButton,
 .secondaryButton {
   display: inline-flex;
@@ -140,4 +147,6 @@
     min-height: 52px;
     padding: 8px 12px;
   }
+
+  .dialog .actions .holdAction.holdAction { min-height: 52px; padding: 8px 12px; }
 }

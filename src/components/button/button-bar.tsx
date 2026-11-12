@@ -2,6 +2,8 @@ import Link from "next/link";
 import {
   forwardRef,
   useEffect,
+  useCallback,
+  useId,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -22,28 +24,142 @@ type SharedProps = {
 type LinkButtonProps = SharedProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children" | "className"> & {
     href: string;
+    holdToConfirm?: never;
   };
 
 type NativeButtonProps = SharedProps &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className"> & {
     href?: never;
+    holdToConfirm?: boolean;
   };
 
 export type ButtonBarProps = LinkButtonProps | NativeButtonProps;
+
+const HOLD_TO_CONFIRM_MS = 1200;
+
+export function advanceHoldProgress(progress: number, elapsed: number, holding: boolean) {
+  return holding
+    ? Math.min(1, progress + elapsed / HOLD_TO_CONFIRM_MS)
+    : Math.max(0, progress - elapsed / (HOLD_TO_CONFIRM_MS / 2.4));
+}
+
+const HoldToConfirmButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
+  function HoldToConfirmButton({ children, className, onClick, onPointerDown, onPointerUp, onPointerCancel, onLostPointerCapture, onKeyDown, onKeyUp, onBlur, onContextMenu, disabled, "aria-describedby": ariaDescribedBy, "aria-description": ariaDescription, ...props }, forwardedRef) {
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const descriptionId = useId();
+    const progress = useRef(0);
+    const frame = useRef(0);
+    const lastFrame = useRef(0);
+    const holding = useRef(false);
+    const allowClick = useRef(false);
+
+    const setButtonRef = useCallback((node: HTMLButtonElement | null) => {
+      buttonRef.current = node;
+      if (typeof forwardedRef === "function") forwardedRef(node);
+      else if (forwardedRef) Object.assign(forwardedRef, { current: node });
+    }, [forwardedRef]);
+
+    useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+    function setProgress(value: number) {
+      progress.current = value;
+      buttonRef.current?.style.setProperty("--hold-progress", `${value * 100}%`);
+    }
+
+    function complete() {
+      holding.current = false;
+      frame.current = 0;
+      lastFrame.current = 0;
+      if (buttonRef.current) buttonRef.current.dataset.holding = "false";
+      allowClick.current = true;
+      buttonRef.current?.click();
+      allowClick.current = false;
+      setProgress(0);
+      buttonRef.current?.style.setProperty("--hold-shake", "paused");
+    }
+
+    function tick(now: number) {
+      if (!buttonRef.current?.isConnected) return;
+      const elapsed = now - (lastFrame.current || now);
+      lastFrame.current = now;
+      setProgress(advanceHoldProgress(progress.current, elapsed, holding.current));
+      buttonRef.current.style.setProperty("--hold-shake", holding.current && progress.current > 0.55 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "running" : "paused");
+
+      if (progress.current >= 1 && holding.current) {
+        complete();
+        return;
+      }
+      if (holding.current || progress.current > 0) frame.current = requestAnimationFrame(tick);
+      else { frame.current = 0; lastFrame.current = 0; }
+    }
+
+    function start() {
+      if (disabled || holding.current) return;
+      holding.current = true;
+      if (buttonRef.current) buttonRef.current.dataset.holding = "true";
+      if (!frame.current) { lastFrame.current = 0; frame.current = requestAnimationFrame(tick); }
+    }
+
+    function stop() {
+      holding.current = false;
+      if (buttonRef.current) buttonRef.current.dataset.holding = "false";
+      if (!frame.current && progress.current > 0) frame.current = requestAnimationFrame(tick);
+    }
+
+    return (
+      <button
+        {...props}
+        ref={setButtonRef}
+        className={[className, styles.holdToConfirm].filter(Boolean).join(" ")}
+        disabled={disabled}
+        aria-describedby={[ariaDescribedBy, descriptionId].filter(Boolean).join(" ")}
+        onPointerDown={(event) => {
+          onPointerDown?.(event);
+          if (event.defaultPrevented || event.button !== 0) return;
+          try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* Pointer may have ended before capture. */ }
+          start();
+        }}
+        onPointerUp={(event) => { onPointerUp?.(event); stop(); }}
+        onPointerCancel={(event) => { onPointerCancel?.(event); stop(); }}
+        onLostPointerCapture={(event) => { onLostPointerCapture?.(event); stop(); }}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (event.defaultPrevented || (event.key !== " " && event.key !== "Enter")) return;
+          event.preventDefault();
+          if (!event.repeat) start();
+        }}
+        onKeyUp={(event) => {
+          onKeyUp?.(event);
+          if (event.key === " " || event.key === "Enter") { event.preventDefault(); stop(); }
+        }}
+        onBlur={(event) => { onBlur?.(event); stop(); }}
+        onContextMenu={(event) => { onContextMenu?.(event); event.preventDefault(); }}
+        onClick={(event) => {
+          if (!allowClick.current) { event.preventDefault(); event.stopPropagation(); return; }
+          onClick?.(event);
+        }}
+      >
+        <span className={styles.holdContent}>{children}</span>
+        <span className={styles.holdFill} aria-hidden="true">{children}</span>
+        <span id={descriptionId} className={styles.visuallyHidden}>{ariaDescription ?? "Nhấn giữ 1,2 giây để xác nhận."}</span>
+      </button>
+    );
+  },
+);
 
 export const ButtonBar = forwardRef<
   HTMLAnchorElement | HTMLButtonElement,
   ButtonBarProps
 >(function ButtonBar(props, ref) {
-  const { variant = "secondary", rollingLabel = false, ...rest } = props;
-  const rolls = rollingLabel && typeof props.children === "string";
+  const { variant = "secondary", rollingLabel = false, holdToConfirm = false, children, ...rest } = props;
+  const rolls = rollingLabel && typeof children === "string";
   const className = [styles.button, styles[variant], rolls && styles.rollingButton, props.className].filter(Boolean).join(" ");
   // Lucian UX/UI Prompt #009 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#009
-  const content = rolls ? <span className={styles.rollingWord} aria-hidden="true">{Array.from(props.children as string).map((letter, index) => <span key={index} className={styles.rollingLetter} data-letter={letter === " " ? "\u00a0" : letter} style={{ "--letter-index": index } as CSSProperties}>{letter === " " ? "\u00a0" : letter}</span>)}</span> : props.children;
-  const accessibleLabel = props["aria-label"] ?? (rolls ? props.children as string : undefined);
+  const content = rolls ? <span className={styles.rollingWord} aria-hidden="true">{Array.from(children as string).map((letter, index) => <span key={index} className={styles.rollingLetter} data-letter={letter === " " ? "\u00a0" : letter} style={{ "--letter-index": index } as CSSProperties}>{letter === " " ? "\u00a0" : letter}</span>)}</span> : children;
+  const accessibleLabel = props["aria-label"] ?? (rolls ? children as string : undefined);
 
   if (props.href) {
-    const { href, children, ...linkProps } = rest as LinkButtonProps;
+    const { href, ...linkProps } = rest as LinkButtonProps;
     return (
       <Link
         {...linkProps}
@@ -52,9 +168,13 @@ export const ButtonBar = forwardRef<
         className={className}
         aria-label={accessibleLabel}
       >
-        {rolls ? content : children}
+        {content}
       </Link>
     );
+  }
+
+  if (holdToConfirm) {
+    return <HoldToConfirmButton {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)} ref={ref as Ref<HTMLButtonElement>} className={className} type={(props as NativeButtonProps).type ?? "button"} aria-label={accessibleLabel}>{content}</HoldToConfirmButton>;
   }
 
   return (

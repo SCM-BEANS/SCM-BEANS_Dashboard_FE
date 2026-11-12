@@ -327,7 +327,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                   const key = workflow.operationKey("proof-review-approve", workflow.proofId);
                   workflow.reviewProof.mutate({ caseId: caseData.id, proofId: workflow.proofId, approved: true, reason: workflow.proofReviewReason.trim(), idempotencyKey: key, correlationId: key });
                 }}>Duyệt thanh toán</ButtonBar>
-                <ButtonBar type="button" disabled={!workflow.proofId || !workflow.proofReviewReason.trim() || workflow.reviewProof.isPending} onClick={() => {
+                <ButtonBar variant="danger" type="button" holdToConfirm disabled={!workflow.proofId || !workflow.proofReviewReason.trim() || workflow.reviewProof.isPending} onClick={() => {
                   const key = workflow.operationKey("proof-review-reject", workflow.proofId);
                   workflow.reviewProof.mutate({ caseId: caseData.id, proofId: workflow.proofId, approved: false, reason: workflow.proofReviewReason.trim(), idempotencyKey: key, correlationId: key });
                 }}>Từ chối</ButtonBar>

@@ -582,7 +582,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
                 <label>Lý do đối chiếu biên nhận<textarea value={receiptReason} maxLength={1000} onChange={(event) => setReceiptReason(event.target.value)} placeholder="Ghi kết quả kiểm tra máy và chứng từ" /></label>
                 <div className={styles.actions}>
                   <ButtonBar type="button" disabled={!receiptReason.trim() || recallData.depotSubmittedBy === refund.subject || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(true)}>Xác nhận đã nhận máy</ButtonBar>
-                  <ButtonBar type="button" disabled={!receiptReason.trim() || recallData.depotSubmittedBy === refund.subject || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(false)}>Từ chối biên nhận</ButtonBar>
+                  <ButtonBar variant="danger" type="button" holdToConfirm disabled={!receiptReason.trim() || recallData.depotSubmittedBy === refund.subject || reviewReceipt.isPending} onClick={() => reviewReceipt.mutate(false)}>Từ chối biên nhận</ButtonBar>
                 </div>
                 {recallData.depotSubmittedBy === refund.subject ? <p className={styles.notice}>Người gửi biên nhận không được tự xét duyệt. Cần nhân viên khác kiểm tra.</p> : null}
                 {reviewReceipt.isError ? <ErrorNotice error={reviewReceipt.error} /> : null}

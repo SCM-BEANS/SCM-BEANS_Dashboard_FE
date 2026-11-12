@@ -69,7 +69,7 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     /^invoices\/\d{4}-\d{2}$/.test(sectionPath) ||
     InvoiceIdSchema.safeParse(invoiceCandidate).success
   ) {
-    return withCustomerActions(<InvoicesScreen sectionPath={sectionPath} back={screen.back} />, screen.actions);
+    return <InvoicesScreen sectionPath={sectionPath} back={screen.back} />;
   }
 
   return (

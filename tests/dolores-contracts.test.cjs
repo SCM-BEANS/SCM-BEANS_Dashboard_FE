@@ -24,6 +24,29 @@ const tenantId = '00000000-0000-4000-8000-000000000101';
 const contractId = '00000000-0000-4000-8000-000000000201';
 const documentId = '00000000-0000-4000-8000-000000000301';
 const ownerContract = { id: contractId, ownerId: tenantId, status: 'ACTIVE' };
+test('contract reads accept nullable policy fields while create requests retain validation', async () => {
+  const schema = loadTypescript('src/schema/contracts.schema.ts');
+  const snapshot = {
+    policyVersion: 1, maintenanceIntervalMonths: 3, maintenanceWindowDays: 10,
+    allowedReplacementMachineTypes: ['SMART_IOT'], repairCostResponsibility: 'UNKNOWN',
+    paymentDueEligibleDays: 10, paymentDestinationReference: null,
+    offlineViolationAction: 'WARN_ONLY', buybackEnabled: true,
+    buybackMinimumMonths: 0, buybackValuationMethod: 'MANUAL_APPRAISAL',
+    offlineLimitMinutes: null, heartbeatToleranceSeconds: null,
+  };
+  const response = { ...ownerContract, ownerName: null, offlineLimitMinutes: null, contractTermsSnapshot: snapshot };
+  const { contractsApi } = loadTypescript('src/apis/contracts.api.ts', {
+    '@/lib/http': { DOLORES_API_BASE_URL: '/api/dolores/v1', axiosClient: { get: async () => ({ data: response }) } },
+  });
+  assert.deepEqual(await contractsApi.getById(contractId), response);
+  assert.equal(schema.ModeratorContractSchema.safeParse(response).success, true);
+  assert.equal(schema.ContractTermsSnapshotSchema.safeParse(snapshot).success, false);
+  const requestSnapshot = { ...snapshot, paymentDestinationReference: undefined, offlineLimitMinutes: undefined };
+  assert.equal(schema.ActivateContractRequestSchema.safeParse({ terms: 'Signed terms', contractTermsSnapshot: requestSnapshot }).success, true);
+  assert.equal(schema.ContractContinuationRequestSchema.safeParse({ startDate: '2026-11-12', endDate: '2027-11-12', terms: 'Signed terms', monthlyRentalFee: 1000, contractTermsSnapshot: requestSnapshot }).success, true);
+  assert.equal(schema.ContractSchema.safeParse({ ...response, id: 'invalid' }).success, false);
+  assert.equal(schema.ContractSchema.safeParse({ ...response, contractTermsSnapshot: { ...snapshot, offlineLimitMinutes: -1 } }).success, false);
+});
 test('heartbeat policy validates seconds without changing legacy snapshots and survives create/amend requests', async () => {
   const schema = loadTypescript('src/schema/contracts.schema.ts');
   const snapshot = {

@@ -72,12 +72,12 @@ export const BILLING_MESSAGES = {
   UNKNOWN_ERROR: "Có lỗi xảy ra khi tải dữ liệu hóa đơn.",
   INVOICE_TYPES: { SUPPLY: "Vật tư", RENTAL: "Thuê máy", REPAIR: "Sửa chữa" },
   INVOICE_STATUSES: {
-    DRAFT: "Nháp",
+    DRAFT: "Bản nháp",
     PENDING: "Chờ xử lý",
     UNPAID: "Chưa thanh toán",
     PAID: "Đã thanh toán",
     OVERDUE: "Quá hạn",
     CANCELLED: "Đã hủy",
   },
-  PROOF_STATUSES: { SUBMITTED: "Đã gửi", APPROVED: "Đã duyệt", REJECTED: "Bị từ chối" },
+  PROOF_STATUSES: { SUBMITTED: "Chờ xét duyệt", APPROVED: "Đã duyệt", REJECTED: "Đã từ chối" },
 } as const;

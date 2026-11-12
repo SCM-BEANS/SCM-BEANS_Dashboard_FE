@@ -5,6 +5,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import type { PaymentProof } from "@/schema/billing.schema";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { DataTable } from "@/components/table/data-table";
+import { ButtonBar } from "@/components/button/button-bar";
 import { moderatorStyles as styles } from "../moderator-shell";
 import { amountText } from "./invoice-shared";
 import {
@@ -176,16 +177,18 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
                         <p className={styles.proofReviewCounter} id={`payment-proof-reason-help-${proof.id}`}>
                           {reviewReason.trim().length === 0 ? "Nhập lý do để tiếp tục." : "Nội dung sẽ được lưu vào lịch sử đối soát."} · {reviewReason.length}/1000
                         </p>
-                        <button
+                        <ButtonBar
+                          variant="primary"
                           className={`${styles.retryButton} ${styles.proofReviewSubmit}`}
                           type="button"
+                          holdToConfirm={!reviewSelection.approve}
                           disabled={!reviewReason.trim() || review.isPending}
                           onClick={() => review.mutate({ proofId: proof.id, approve: reviewSelection.approve, reason: reviewReason.trim() })}
                         >
                           {review.isPending && review.variables?.proofId === proof.id
                             ? messages.PROOF_REVIEWING
                             : reviewSelection.approve ? "Xác nhận duyệt" : "Xác nhận từ chối"}
-                        </button>
+                        </ButtonBar>
                       </div>
                       {reviewError && <p className={styles.proofReviewError} id={`payment-proof-review-error-${proof.id}`} role="alert">{reviewError}</p>}
                     </section>

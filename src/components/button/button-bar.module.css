@@ -50,6 +50,15 @@
 .button.button.danger { background: white; border-color: #b81724; color: #b81724; }
 .button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: #90121c; }
 
+.button.button.holdToConfirm { position: relative; overflow: hidden; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; }
+.button.button.primary.holdToConfirm .holdFill { background: #90121c; }
+.holdContent { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: inherit; }
+.holdFill { position: absolute; z-index: 2; inset: 0; display: inline-flex; align-items: center; justify-content: center; gap: inherit; overflow: hidden; border-radius: inherit; background: #b81724; color: #fff; pointer-events: none; clip-path: inset(0 calc(100% - var(--hold-progress, 0%)) 0 0 round 9px); }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.button.button.holdToConfirm[data-holding="true"] { transform: scale(.97); animation: holdToConfirmShake .12s linear infinite; animation-play-state: var(--hold-shake, paused); }
+@keyframes holdToConfirmShake { 0%,100% { translate: 0 0; } 25% { translate: -.6px .3px; } 75% { translate: .6px -.3px; } }
+@media (prefers-reduced-motion: reduce) { .button.button.holdToConfirm { animation: none; transform: none; } }
+
 .button.button.rollingButton { position: relative; overflow: hidden; isolation: isolate; min-height: 44px; background: #fff; color: #000; transition: transform .5s cubic-bezier(.34,1.45,.64,1), color .45s cubic-bezier(.2,.8,.2,1); }
 .button.button.rollingButton:hover { background: #fff; }
 .rollingButton::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #f7f5f3; border-radius: 50% 50% 0 0 / 40% 40% 0 0; transform: translateY(102%); transition: transform .7s cubic-bezier(.2,.8,.2,1), border-radius .7s cubic-bezier(.2,.8,.2,1); }

@@ -191,6 +191,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
     const snapshot = contract.data.contractTermsSnapshot;
     setPolicySnapshot(snapshot ? {
       ...snapshot,
+      paymentDestinationReference: snapshot.paymentDestinationReference ?? undefined,
       maintenanceIntervalMonths: String(snapshot.maintenanceIntervalMonths),
       maintenanceWindowDays: String(snapshot.maintenanceWindowDays),
       paymentDueEligibleDays: String(snapshot.paymentDueEligibleDays),
@@ -280,7 +281,11 @@ export function ContractDetailScreen({ id }: { id: string }) {
       ...(installationFee === undefined ? {} : { installationFee }),
       ...(paygPrice === undefined ? {} : { paygUnitPrice: paygPrice }),
       ...(contract.data?.offlineLimitMinutes == null ? {} : { offlineLimitMinutes: contract.data.offlineLimitMinutes }),
-      ...(contract.data?.contractTermsSnapshot ? { contractTermsSnapshot: contract.data.contractTermsSnapshot } : {}),
+      ...(contract.data?.contractTermsSnapshot ? { contractTermsSnapshot: {
+        ...contract.data.contractTermsSnapshot,
+        paymentDestinationReference: contract.data.contractTermsSnapshot.paymentDestinationReference ?? undefined,
+        offlineLimitMinutes: contract.data.contractTermsSnapshot.offlineLimitMinutes ?? undefined,
+      } } : {}),
     });
     if (!parsed.success) {
       setLifecycleError("Vui lòng kiểm tra thời hạn, điều khoản và các khoản phí của hợp đồng tiếp nối.");

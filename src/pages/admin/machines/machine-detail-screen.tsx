@@ -580,7 +580,7 @@ function MachineDetailContent() {
       variant="confirm"
       title="Xóa máy khỏi hệ thống?"
       description="Chỉ máy chưa có lịch sử hợp đồng mới có thể xóa. Thao tác này xóa bản ghi máy khỏi hệ thống."
-      primaryAction={{ label: "Xóa máy", pending: deleteMachine.isPending, pendingLabel: "Đang xóa…", onClick: () => deleteMachine.mutate() }}
+      primaryAction={{ label: "Xóa máy", holdToConfirm: true, pending: deleteMachine.isPending, pendingLabel: "Đang xóa…", onClick: () => deleteMachine.mutate() }}
       secondaryAction={{ label: "Hủy", disabled: deleteMachine.isPending, onClick: () => setConfirmDelete(false) }}
       onClose={() => { if (!deleteMachine.isPending) setConfirmDelete(false); }}
       closeOnEscape={!deleteMachine.isPending}

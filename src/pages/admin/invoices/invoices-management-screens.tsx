@@ -12,7 +12,6 @@ import { TableFilters } from "@/components/table/table-filters";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import {
-  ExportJobIdSchema,
   InvoiceIdSchema,
   InvoiceListParamsSchema,
   type ContractBillingPreviewResponse,
@@ -24,6 +23,7 @@ import {
 } from "@/schema/billing.schema";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import pageStyles from "./invoices-screen.module.css";
+import { InvoiceExportJobScreen } from "@/components/features/billing/operator-invoices-screen";
 
 const INVOICES_KEY = ["dolores", "admin", "billing", "invoices"] as const;
 const INVOICE_PAGE_SIZE = 50;
@@ -93,14 +93,10 @@ function downloadBlob(blob: Blob, filename: string) {
   const safeFilename = filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180) || "billing-export";
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = safeFilename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  anchor.href = objectUrl; anchor.download = safeFilename;
+  document.body.appendChild(anchor); anchor.click(); anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
-
 type InvoiceFilters = Pick<InvoiceListParams, "ownerId" | "status" | "type" | "period">;
 
 export function AdminInvoiceListScreen() {
@@ -353,7 +349,7 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
                     <label htmlFor={`proof-review-reason-${proof.id}`}>{reviewSelection.approve ? "Lý do duyệt" : "Lý do từ chối"}</label>
                     <textarea id={`proof-review-reason-${proof.id}`} value={reason} maxLength={1000} required disabled={review.isPending} onChange={(event) => setReason(event.target.value)} />
                     <div className={pageStyles.reviewActions}>
-                      <ButtonBar type="button" disabled={!reason.trim() || review.isPending} onClick={() => review.mutate({ proofId: proof.id, approve: reviewSelection.approve, reason: reason.trim() })}>{review.isPending ? "Đang lưu…" : "Xác nhận đối soát"}</ButtonBar>
+                      <ButtonBar type="button" holdToConfirm={!reviewSelection.approve} disabled={!reason.trim() || review.isPending} onClick={() => review.mutate({ proofId: proof.id, approve: reviewSelection.approve, reason: reason.trim() })}>{review.isPending ? "Đang lưu…" : "Xác nhận đối soát"}</ButtonBar>
                       <ButtonBar type="button" disabled={review.isPending} onClick={() => { setReviewSelection(null); setReason(""); }}>Hủy</ButtonBar>
                     </div>
                   </div>}
@@ -497,66 +493,5 @@ function InvoiceLineItemsTable({ items, invoice }: { items: InvoiceLineItem[]; i
 }
 
 export function AdminInvoiceExportJobScreen({ jobId, routerReady }: { jobId: string; routerReady: boolean }) {
-  const validJobId = ExportJobIdSchema.safeParse(jobId).success;
-  const job = useQuery({
-    queryKey: ["dolores", "admin", "billing", "export-job", jobId],
-    queryFn: ({ signal }) => billingApi.getExportJob(jobId, signal),
-    enabled: routerReady && validJobId,
-    retry: false,
-    refetchInterval: (query) => query.state.data?.status === "QUEUED" || query.state.data?.status === "PROCESSING" ? 3000 : false,
-  });
-  const download = useMutation({
-    mutationFn: () => billingApi.downloadExportContent(jobId),
-    onSuccess: (blob) => downloadBlob(blob, `dolores-invoices-${job.data?.format?.toLowerCase() ?? "export"}.${job.data?.format === "PDF" ? "pdf" : "csv"}`),
-  });
-
-  return (
-    <AdminShell>
-      <div className={styles.pageContent}>
-        <BackButtonHeading className={styles.pageHeading} title="Tải dữ liệu hóa đơn" titleId="admin-invoice-export-title" description="Theo dõi tiến trình xuất file và tải xuống khi xử lý hoàn tất." back={{ label: "Về danh sách hóa đơn", fallbackHref: PATH_ADMIN.INVOICES }} />
-        {!routerReady ? <section className={pageStyles.billingPanel} role="status">Đang tải…</section>
-          : !validJobId ? <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">Mã xuất dữ liệu không hợp lệ.<div><ButtonBar href={PATH_ADMIN.INVOICES}>Về danh sách</ButtonBar></div></div>
-            : job.isPending ? <section className={pageStyles.billingPanel} role="status">Đang tải trạng thái xuất file…</section>
-              : job.isError ? <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert"><p>{getApiErrorMessage(job.error)}</p><ButtonBar type="button" onClick={() => void job.refetch()}>Thử lại</ButtonBar></div>
-                : job.data ? <section className={pageStyles.billingPanel} aria-labelledby="admin-export-job-status">
-                  <h2 id="admin-export-job-status">Trạng thái yêu cầu</h2>
-                  <dl className={pageStyles.detailGrid}>
-                    <InvoiceDetailField label="Mã yêu cầu">{job.data.id}</InvoiceDetailField>
-                    <InvoiceDetailField label="Định dạng">{job.data.format ?? "—"}</InvoiceDetailField>
-                    <InvoiceDetailField label="Trạng thái"><StatusBadge status={job.data.status}>{job.data.status === "QUEUED" ? "Đang chờ" : job.data.status === "PROCESSING" ? "Đang xử lý" : job.data.status === "COMPLETED" ? "Hoàn tất" : "Thất bại"}</StatusBadge></InvoiceDetailField>
-                    <InvoiceDetailField label="Số hóa đơn">{job.data.invoiceCount ?? "—"}</InvoiceDetailField>
-                    <InvoiceDetailField label="Tạo lúc">{dateTimeText(job.data.createdAt)}</InvoiceDetailField>
-                    <InvoiceDetailField label="Hoàn tất lúc">{dateTimeText(job.data.completedAt)}</InvoiceDetailField>
-                  </dl>
-                  {job.data.status === "FAILED" && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{job.data.message || job.data.errorCode || "Không thể tạo file xuất."}</p>}
-                  {download.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(download.error)}</p>}
-                  <PageActions actions={[
-                    {
-                      id: "invoice-export-download",
-                      label: "Tải file hóa đơn",
-                      variant: "primary",
-                      priority: 50,
-                      disabled: job.data.status !== "COMPLETED" || download.isPending,
-                      disabledReason: job.data.status !== "COMPLETED" ? "File chưa sẵn sàng" : download.isPending ? "Đang tải file hóa đơn." : undefined,
-                      pending: download.isPending,
-                      pendingLabel: "Đang tải file…",
-                      onClick: () => download.mutate(),
-                    },
-                    {
-                      id: "invoice-export-refresh-status",
-                      label: job.isFetching ? "Đang cập nhật…" : "Cập nhật trạng thái",
-                      variant: "secondary",
-                      priority: 0,
-                      disabled: job.isFetching,
-                      disabledReason: job.isFetching ? "Đang cập nhật trạng thái xuất file." : undefined,
-                      pending: job.isFetching,
-                      pendingLabel: "Đang cập nhật…",
-                      onClick: () => void job.refetch(),
-                    },
-                  ]} />
-                  {(job.data.status === "QUEUED" || job.data.status === "PROCESSING") && <p className={pageStyles.rowHint} role="status">Trang tự kiểm tra tiến trình mỗi 3 giây.</p>}
-                </section> : null}
-      </div>
-    </AdminShell>
-  );
+  return <AdminShell><InvoiceExportJobScreen jobId={jobId} routerReady={routerReady} role="admin" /></AdminShell>;
 }

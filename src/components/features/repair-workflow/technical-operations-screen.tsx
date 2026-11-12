@@ -444,8 +444,11 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
       aria-labelledby={role === "admin" ? "work-order-summary-title" : undefined}
     >
       {role === "moderator" ? (
+        <div className={styles.workOrderSummaryHeading}>
+        <h2>Tiến độ lắp đặt</h2>
         <div className={styles.workOrderProgressStatus} data-tone={workOrder.status === "COMPLETED" ? "success" : terminalIssue ? "danger" : "warning"}>
           {workOrderStatusLabels[workOrder.status]}
+        </div>
         </div>
       ) : (
         <div className={styles.workOrderSummaryHeading}>

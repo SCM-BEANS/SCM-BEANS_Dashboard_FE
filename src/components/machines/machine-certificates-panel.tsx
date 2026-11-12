@@ -85,7 +85,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
           {detail.caCrtPem ? <details><summary>Chứng chỉ CA</summary><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.caCrtPem}</pre></details> : <p>Chứng chỉ CA hiện chưa khả dụng.</p>}
         </div>}
     {deleting && !props.error && <NotificationDialog variant="confirm" title="Xóa chứng chỉ?" description={<>Chứng chỉ <strong>{deleting.certificateSerial ?? deleting.id}</strong> và bộ tệp kết nối liên quan sẽ bị xóa khỏi hệ thống.</>}
-      primaryAction={{ label: "Xóa chứng chỉ", disabled: props.busy, onClick: () => { props.onDelete(deleting.id); setDeleting(null); } }}
+      primaryAction={{ label: "Xóa chứng chỉ", holdToConfirm: true, disabled: props.busy, onClick: () => { props.onDelete(deleting.id); setDeleting(null); } }}
       secondaryAction={{ label: "Hủy", disabled: props.busy, onClick: () => setDeleting(null) }}
       onClose={() => { if (!props.busy) setDeleting(null); }} closeOnEscape={!props.busy} />}
   </SmartIotPanel>;

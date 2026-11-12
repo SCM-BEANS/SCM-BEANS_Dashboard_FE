@@ -524,6 +524,17 @@
   line-height: 1.35;
   text-align: center;
 }
+.workOrderProgressStep:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: calc(50% + 14px);
+  width: calc(100% - 28px);
+  height: 2px;
+  background: #e5ddd7;
+  transition: background-color .4s ease;
+}
+.workOrderProgressComplete:not(:last-child)::after { background: #b81724; }
 .workOrderProgressStep > span {
   position: relative;
   z-index: 1;
@@ -539,7 +550,16 @@
   font-size: 11px;
   font-weight: 700;
 }
-.workOrderProgressStep small { max-width: 100%; padding: 0 8px; font-size: 10px; }
+.workOrderProgressStep small { max-width: 100%; padding: 0 8px; font-size: 12px; }
+.workOrderProgressPanel { padding: 12px 20px 16px; }
+.workOrderProgressPanel .workOrderSummaryHeading h2 { font-size: 14px; }
+@media (max-width: 600px) {
+  .workOrderInfoFacts { grid-template-columns: minmax(0, 1fr); }
+  .workOrderProgress { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .workOrderProgressStep { flex-direction: column; text-align: center; }
+  .workOrderProgressStep small { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .workOrderProgressStep::after { transition: none; } }
 .workOrderProgressComplete { color: #a5101d; font-weight: 600; }
 .workOrderProgressComplete > span { border-color: #b81724; background: #b81724; color: #fff; }
 .workOrderProgressCurrent { color: #302927; font-weight: 700; }
@@ -551,7 +571,7 @@
 .workOrderOverviewGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 14px;
 }
@@ -561,13 +581,15 @@
 .workOrderDispatch h2 { margin: 0; color: #302927; font-size: 16px; line-height: 1.4; }
 .workOrderInfoFacts {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
   min-width: 0;
   margin: 2px 0 0;
 }
 .workOrderInfoFacts > div {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(110px, .72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   padding: 9px 0;
@@ -666,10 +688,11 @@
   .workOrderPageHeading h1 { font-size: 21px; }
   .workOrderPageActions { width: 100%; justify-content: flex-start; }
   .workOrderSummary { padding: 14px; }
-  .workOrderProgress { gap: 10px 4px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .workOrderProgressStep { flex-direction: row; align-items: center; text-align: left; }
+  .workOrderProgress { gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .workOrderProgressStep { flex-direction: column; align-items: center; text-align: center; }
   .workOrderProgressStep small { padding: 0 4px 0 0; }
   .workOrderFacts { gap: 14px 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workOrderInfoFacts { grid-template-columns: minmax(0, 1fr); }
   .workOrderInfoFacts > div { grid-template-columns: minmax(96px, .8fr) minmax(0, 1.2fr); gap: 8px; }
 }
 @media (max-width: 420px) {

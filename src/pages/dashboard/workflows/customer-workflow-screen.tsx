@@ -16,6 +16,7 @@ import { RecallWorkOrdersScreen } from "@/components/features/contract-terminati
 import { BuybackOwnerScreen } from "@/components/features/buyback/buyback-owner-screen";
 import { OwnerRecipeAdjustmentsScreen } from "../menu/owner-recipe-adjustments-screen";
 import { OwnerRecipeSyncScreen } from "../menu/owner-recipe-sync-screen";
+import { InvoicesScreen } from "../invoices/invoices-screen";
 import styles from "../customer-shell.module.css";
 
 export { getCustomerWorkflowDescriptor };
@@ -57,6 +58,10 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   const screen = getCustomerWorkflowDescriptor(sectionPath);
   if (!screen) return null;
   const actions = getCustomerWorkflowActions(sectionPath, screen);
+
+  if (["invoices/payment", "invoices/standard-payment", "invoices/shortfall", "invoices/refund", "invoices/reminder"].includes(sectionPath)) {
+    return <InvoicesScreen sectionPath={sectionPath} />;
+  }
 
   if (sectionPath === "menu/adjustments" || sectionPath === "menu/add-dish") {
     return <OwnerRecipeAdjustmentsScreen creating={sectionPath === "menu/add-dish"} />;

@@ -193,6 +193,12 @@ test('refund evidence is private multipart and overdue results honor scope and p
   assert.equal(await api.downloadRefundEvidence(refund.id, evidence.id) instanceof Blob, true);
   assert.equal(calls[1][0], `/billing/refunds/${refund.id}/evidence/${evidence.id}`);
   assert.equal(calls[1][1].responseType, 'blob');
+  const progress = [];
+  const controller = new AbortController();
+  await api.downloadRefundEvidence(refund.id, evidence.id, controller.signal, (loaded, total) => progress.push([loaded, total]));
+  assert.equal(calls[2][1].signal, controller.signal);
+  calls[2][1].onDownloadProgress({ loaded: 5, total: 10 });
+  assert.deepEqual(progress, [[5, 10]]);
   const page = await api.listOverdueRefunds({ ownerId: ids.owner, page: 2, size: 50 });
   assert.deepEqual([page.page, page.size, page.hasNext], [2, 50, true]);
   await assert.rejects(api.listOverdueRefunds({ ownerId: uuid(99) }), /outside.*scope/);

@@ -83,7 +83,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
         {role === "OWNER" ? <ButtonBar disabled={busy} onClick={() => { setEditId(detail.data.id); setGlobalId(detail.data.globalRecipeId); setValues(detail.data.dosageOverrides.join("\n")); setNotice(""); }}>Sửa điều chỉnh cũ</ButtonBar> : null}
         <ButtonBar disabled={busy} onClick={() => setRemoveTarget(detail.data.id)}>Xóa điều chỉnh</ButtonBar>
       </div>
-      {removeTarget ? <div><p>Xóa điều chỉnh đã chọn?</p><div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => remove.mutate(removeTarget)}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setRemoveTarget(null)}>Hủy</ButtonBar></div></div> : null}
+      {removeTarget ? <div><p>Xóa điều chỉnh đã chọn?</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => remove.mutate(removeTarget)}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setRemoveTarget(null)}>Hủy</ButtonBar></div></div> : null}
     </div> : null}
     {role === "OWNER" ? <form id="legacy-recipe-form" className={styles.recipeMenuEditor} onSubmit={submit}>
       <h3>{editId ? "Cập nhật điều chỉnh cũ" : "Tạo điều chỉnh tương thích"}</h3>
