@@ -6,6 +6,7 @@ import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
+import { useOwnerNames } from "@/hooks/use-owner-names";
 import styles from "../technician-shell.module.css";
 
 export function MachineCheckTable() {
@@ -13,6 +14,9 @@ export function MachineCheckTable() {
     queryKey: ["dolores", "machines", "inventory"],
     queryFn: ({ signal }) => machinesApi.list(signal),
   });
+  const ownerNames = useOwnerNames((machines.data ?? []).map((machine) => (
+    typeof machine.ownerName === "string" && machine.ownerName.trim() ? null : machine.ownerId
+  )));
 
   return (
     <section className={styles.pageContent} aria-labelledby="technician-machine-check-title">
@@ -42,7 +46,11 @@ export function MachineCheckTable() {
                   {machine.id}
                 </Link>
               ) },
-              { key: "owner-id", header: T.MACHINE_CHECK.OWNER_ID, render: (machine) => machine.ownerId ?? "—" },
+              { key: "owner-id", header: "Khách hàng", render: (machine) => (
+                (typeof machine.ownerName === "string" && machine.ownerName.trim() ? machine.ownerName.trim() : "")
+                  || (machine.ownerId ? ownerNames.data?.[machine.ownerId] : undefined)
+                  || "—"
+              ) },
               { key: "serial", header: T.MACHINE_CHECK.SERIAL, render: (machine) => machine.serialNumber ?? "—" },
               { key: "status", header: T.MACHINE_CHECK.STATUS, render: (machine) => machineStatusLabel(machine.status) },
               { key: "machine-type", header: T.MACHINE_CHECK.MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Máy thường" : "—" },

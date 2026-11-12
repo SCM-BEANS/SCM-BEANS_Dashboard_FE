@@ -111,33 +111,40 @@ function DetailValue({ label, value, code = false }: { label: string; value: Rea
   );
 }
 
-function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role }: {
+function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role, machineSerialNumbers }: {
   tickets: MaintenanceTicket[];
   machineId?: string;
   machineDetailHref: (id: string) => string;
   role: Extract<RepairWorkflowRole, "admin" | "moderator">;
+  machineSerialNumbers?: ReadonlyMap<string, string | null | undefined>;
 }) {
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
       variant={role === "admin" ? "operations" : "moderator"}
-      headers={[messages.TECHNICAL_ID, messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]}
+      headers={[messages.TECHNICAL_ID, role === "moderator" ? "Serial number" : messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]}
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
       minWidth={760}
     >
-      {visibleTickets.map((ticket, index) => (
-        <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-          <td className={styles.codeValue}>{ticket.id ? <TruncatedId value={ticket.id} /> : "—"}</td>
-          <td>{ticket.machineId
-            ? <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
-            : "—"}</td>
-          <td>{ticket.status
-            ? <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
-            : "—"}</td>
-          <td>{formatDate(ticketDate(ticket))}</td>
-          <td>{ticketNotes(ticket) ?? "—"}</td>
-        </tr>
-      ))}
+      {visibleTickets.map((ticket, index) => {
+        const serialNumber = ticket.machineId ? machineSerialNumbers?.get(ticket.machineId)?.trim() : undefined;
+        const machineValue = ticket.machineId
+          ? role === "moderator"
+            ? serialNumber ? <ActionLink href={machineDetailHref(ticket.machineId)}>{serialNumber}</ActionLink> : "—"
+            : <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
+          : "—";
+        return (
+          <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
+            <td className={styles.codeValue}>{ticket.id ? <TruncatedId value={ticket.id} /> : "—"}</td>
+            <td>{machineValue}</td>
+            <td>{ticket.status
+              ? <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
+              : "—"}</td>
+            <td>{formatDate(ticketDate(ticket))}</td>
+            <td>{ticketNotes(ticket) ?? "—"}</td>
+          </tr>
+        );
+      })}
     </DataTable>
   );
 }
@@ -160,14 +167,9 @@ function MaintenanceRequestTable({
   role: TechnicalScreenRoutes["role"];
 }) {
   const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
-    ...(role === "moderator" ? [{
-      key: "id",
-      header: messages.TECHNICAL_ID,
-      render: (request: MaintenanceRequest) => <TextLinkButton href={routes.requestDetail(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
-    }] : []),
-    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => role === "admin"
-      ? <TextLinkButton href={routes.requestDetail(request.id)}>{requestTypeLabel(request.requestType)}</TextLinkButton>
-      : requestTypeLabel(request.requestType) },
+    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => (
+      <TextLinkButton href={routes.requestDetail(request.id)}>{requestTypeLabel(request.requestType)}</TextLinkButton>
+    ) },
     ...(role === "admin" ? [{
       key: "status",
       header: messages.TECHNICAL_STATUS,
@@ -175,11 +177,8 @@ function MaintenanceRequestTable({
     }] : []),
     {
       key: "owner",
-      header: role === "admin" ? "Khách hàng" : messages.TECHNICAL_OWNER,
-      ...(role === "admin" ? {} : { cellProps: () => ({ className: styles.codeValue }) }),
-      render: (request) => (role === "admin"
-        ? (typeof request.ownerName === "string" ? request.ownerName : "—")
-        : <TruncatedId value={request.ownerId} />),
+      header: "Khách hàng",
+      render: (request) => (typeof request.ownerName === "string" ? request.ownerName : "—"),
     },
     { key: "updated", header: messages.TECHNICAL_UPDATED, render: (request) => formatDate(request.updatedAt ?? request.createdAt) },
     {
@@ -291,6 +290,16 @@ export function TechnicalOperationsScreen({
     enabled: shouldLoadHistory,
     retry: false,
   });
+  const shouldLoadMachineSerials = shouldLoadHistory && routes.role === "moderator" && Boolean(tickets.data?.items.some((ticket) => ticket.machineId));
+  const historyMachines = useQuery({
+    queryKey: ["dolores", "machine-history", "serial-numbers", querySubject(routes.role), historyMachineId || "all"],
+    queryFn: async ({ signal }) => validHistoryMachineId
+      ? [await machinesApi.getById(historyMachineId, signal)]
+      : machinesApi.list(signal),
+    enabled: shouldLoadMachineSerials,
+    retry: false,
+  });
+  const machineSerialNumbers = new Map((historyMachines.data ?? []).map((machine) => [machine.id, machine.serialNumber] as const));
   const maintenanceRequests = useQuery({
     queryKey: ["dolores", "maintenance-requests", querySubject(routes.role), requestFilters, requestPage, 50],
     queryFn: ({ signal }) => maintenanceRequestsApi.listPage({ page: requestPage, size: 50, ...requestFilters }, signal),
@@ -373,7 +382,7 @@ export function TechnicalOperationsScreen({
 
   if (isMachineHistory) {
     if (historyMachineId && !validHistoryMachineId) return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><p className={styles.pendingNotice} role="status">{historyMachineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
-    return <div className={styles.pageContent}><PageHeading title={historyMachineId ? "Lịch sử phiếu của máy" : messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />{tickets.data && !tickets.isError && <><MaintenanceTicketTable tickets={tickets.data.items} machineId={historyMachineId || undefined} machineDetailHref={routes.machineDetail} role={routes.role} /><RepairWorkflowPagination page={tickets.data.page} hasNext={tickets.data.hasNext} isFetching={tickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" onPageChange={setTicketPage} /></>}</div>;
+    return <div className={styles.pageContent}><PageHeading title={historyMachineId ? "Lịch sử phiếu của máy" : messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />{shouldLoadMachineSerials && <QueryFeedback query={historyMachines} loadingMessage={messages.LOADING_MACHINES} />}{tickets.data && !tickets.isError && <><MaintenanceTicketTable tickets={tickets.data.items} machineId={historyMachineId || undefined} machineDetailHref={routes.machineDetail} role={routes.role} machineSerialNumbers={machineSerialNumbers} /><RepairWorkflowPagination page={tickets.data.page} hasNext={tickets.data.hasNext} isFetching={tickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" onPageChange={setTicketPage} /></>}</div>;
   }
 
   if (!isTechnicalRequestList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;

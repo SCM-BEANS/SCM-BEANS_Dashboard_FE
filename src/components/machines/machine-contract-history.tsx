@@ -26,7 +26,7 @@ export function MachineContractHistory({ machineId, role }: { machineId: string;
       { key: "status", header: "Trạng thái", render: row => <StatusBadge status={row.status}>{labels[row.status]}</StatusBadge> },
       { key: "start", header: "Ngày bắt đầu", render: row => row.startDate ?? "—" },
       { key: "end", header: "Ngày kết thúc", render: row => row.endDate ?? "—" },
-      { key: "owner", header: "Chủ sở hữu", render: row => row.ownerName ?? "—" },
+      { key: "owner", header: "Khách hàng", render: row => row.ownerName ?? "—" },
     ]} /><nav className={styles.ownerHistoryPagination} aria-label="Phân trang lịch sử hợp đồng"><ButtonBar type="button" disabled={page === 0 || query.isFetching} onClick={() => setPage(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar type="button" disabled={!query.data.hasNext || query.isFetching} onClick={() => setPage(page + 1)}>Trang sau</ButtonBar></nav></> : null}
   </section>;
 }

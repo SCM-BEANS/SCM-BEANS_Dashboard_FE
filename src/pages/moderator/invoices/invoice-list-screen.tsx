@@ -120,7 +120,7 @@ async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
 
     return {
       invoice,
-      customerName: (ownerId && customerNames.get(ownerId)) || "Chưa xác định",
+      customerName: invoice.ownerName?.trim() || (ownerId && customerNames.get(ownerId)) || "Chưa xác định",
       proofSummary,
     };
   });

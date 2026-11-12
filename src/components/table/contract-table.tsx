@@ -49,7 +49,7 @@ export function ContractTable({
         }] : []),
         {
           key: "owner",
-          header: ownerHeader ?? (ownerName ? "Owner" : CONTRACT_TABLE_HEADERS.owner),
+          header: ownerHeader ?? "Khách hàng",
           render: renderOwner,
         },
         {

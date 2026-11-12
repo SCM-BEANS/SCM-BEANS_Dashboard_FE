@@ -283,7 +283,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
               },
               {
                 key: "owner",
-                header: "Owner",
+                header: "Khách hàng",
                 render: (task) => task.ownerName || "—",
               },
               {

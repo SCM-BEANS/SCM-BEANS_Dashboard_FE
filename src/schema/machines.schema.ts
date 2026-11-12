@@ -61,6 +61,7 @@ export const CreateMachineResponseSchema = z.object({ id: MachineIdSchema }).pas
 export const MachineInventoryItemSchema = z.object({
   id: MachineIdSchema,
   ownerId: z.string().uuid().nullish(),
+  ownerName: z.string().nullish(),
   tenantId: z.string().uuid().nullish(),
   locationId: z.string().uuid().nullish(),
   machineType: MachineTypeSchema.nullish(),
@@ -247,6 +248,7 @@ export const MaintenanceRequestSchema = z.object({
   id: MaintenanceRequestIdSchema,
   requestType: z.enum(["PREVENTIVE", "REPAIR"]),
   ownerId: z.string().uuid().nullish(),
+  ownerName: z.string().nullish(),
   contractId: z.string().uuid().nullish(),
   machineId: MachineIdSchema,
   issueDescription: z.string().nullish(),
@@ -352,6 +354,7 @@ export const RepairCaseSummarySchema = z.object({
   id: RepairCaseIdSchema,
   maintenanceRequestId: MaintenanceRequestIdSchema,
   ownerId: z.string().uuid(),
+  ownerName: z.string().nullish(),
   contractId: z.string().uuid(),
   primaryMachineId: MachineIdSchema,
   status: RepairCaseStatusSchema,

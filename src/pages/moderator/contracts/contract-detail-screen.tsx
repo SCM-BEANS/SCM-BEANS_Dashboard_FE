@@ -497,7 +497,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
               rowKey={(item) => item.id}
               columns={[
                 { key: "contract", header: "Hợp đồng", render: (item) => <button className={adminStyles.accountTextButton} type="button" onClick={() => void router.push(`${PATH_MODERATOR.CONTRACTS}/${encodeURIComponent(item.id)}`)}>{item.id.slice(0, 8).toUpperCase()}</button> },
-                { key: "owner", header: T.COMMON.OWNER, render: (item) => item.ownerId.slice(0, 8) },
+                { key: "owner", header: "Khách hàng", render: (item) => item.ownerName?.trim() || "—" },
                 { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
                 { key: "status", header: "Trạng thái", render: (item) => contractStatus(item.status) },
               ]}

@@ -9,6 +9,7 @@ import type { RepairCaseSummary } from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import { RepairWorkflowPagination } from "./repair-workflow-pagination";
+import { useOwnerNames } from "@/hooks/use-owner-names";
 import styles from "./repair-workflow.module.css";
 
 function formatDateTime(value: string | null | undefined): string {
@@ -50,6 +51,9 @@ export function RepairCaseListPanel({
     queryFn: ({ signal }) => repairCasesApi.listPage({ page, size: 50 }, signal),
     retry: false,
   });
+  const ownerNames = useOwnerNames(showOwner ? (cases.data?.items.map((repairCase) => (
+    repairCase.ownerName?.trim() ? null : repairCase.ownerId
+  )) ?? []) : []);
 
   const columns: readonly DataTableColumn<RepairCaseSummary>[] = [
     {
@@ -60,7 +64,13 @@ export function RepairCaseListPanel({
       ),
     },
     { key: "request-id", header: M.REQUEST_ID, render: (repairCase) => <TruncatedId value={repairCase.maintenanceRequestId} /> },
-    ...(showOwner ? [{ key: "owner", header: M.OWNER, render: (repairCase: RepairCaseSummary) => <TruncatedId value={repairCase.ownerId} /> }] : []),
+    ...(showOwner ? [{
+      key: "owner",
+      header: "Khách hàng",
+      render: (repairCase: RepairCaseSummary) => (
+        (repairCase.ownerName?.trim() || ownerNames.data?.[repairCase.ownerId]) || "—"
+      ),
+    }] : []),
     { key: "machine", header: M.MACHINE, render: (repairCase) => <TruncatedId value={repairCase.primaryMachineId} /> },
     { key: "status", header: M.STATUS, render: (repairCase) => statusLabel(repairCase.status) },
     { key: "updated-at", header: M.UPDATED_AT, render: (repairCase) => formatDateTime(repairCase.updatedAt) },

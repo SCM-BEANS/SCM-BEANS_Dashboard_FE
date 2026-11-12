@@ -42,6 +42,7 @@ export type BillingPage<T> = {
 export const InvoiceSchema = z.object({
   id: z.string().uuid(),
   ownerId: z.string().uuid().nullish(),
+  ownerName: z.string().nullish(),
   contractId: z.string().uuid().nullish(),
   amount: z.number().finite(),
   period: z.string(),
@@ -87,6 +88,7 @@ export const ModeratorInvoiceSchema = z.object({
   id: InvoiceIdSchema,
   subscriptionId: z.string().uuid().nullish(),
   ownerId: z.string().uuid().nullish(),
+  ownerName: optionalText,
   tenantId: z.string().uuid().nullish(),
   contractId: z.string().uuid().nullish(),
   repairCostReviewId: z.string().uuid().nullish(),

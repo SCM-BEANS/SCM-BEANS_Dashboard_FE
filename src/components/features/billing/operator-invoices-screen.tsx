@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
+import { useOwnerNames } from "@/hooks/use-owner-names";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { billingApi } from "@/apis/billing.api";
@@ -249,6 +250,12 @@ function InvoiceList({
 
   const router = useRouter();
   const rows = query.data?.items ?? [];
+  const ownerIds = rows.flatMap((invoice) => {
+    if (invoice.ownerName?.trim()) return [];
+    const ownerId = invoice.ownerId ?? invoice.tenantId;
+    return typeof ownerId === "string" && ownerId ? [ownerId] : [];
+  });
+  const ownerNames = useOwnerNames(ownerIds);
   const firstOwner = rows[0]?.ownerId ?? rows[0]?.tenantId;
   const ownerId = filters.ownerId || (firstOwner && rows.every((invoice) => (invoice.ownerId ?? invoice.tenantId) === firstOwner) ? firstOwner : undefined);
   const exportJob = useMutation({
@@ -279,14 +286,22 @@ function InvoiceList({
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
-            { key: "owner", header: messages.OWNER, render: (invoice) => (
-              <Link
-                className={styles.textButton}
-                href={role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}
-              >
-                <TruncatedId value={invoice.ownerId ?? invoice.tenantId} />
-              </Link>
-            ) },
+            { key: "owner", header: "Khách hàng", render: (invoice) => {
+              const ownerId = invoice.ownerId ?? invoice.tenantId;
+              const apiName = invoice.ownerName;
+              const profileName = typeof ownerId === "string" ? ownerNames.data?.[ownerId] : undefined;
+              const customerName = typeof apiName === "string" && apiName.trim()
+                ? apiName.trim()
+                : profileName || "—";
+              return (
+                <Link
+                  className={styles.textButton}
+                  href={role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}
+                >
+                  {customerName}
+                </Link>
+              );
+            } },
             { key: "contract", header: messages.CONTRACT, render: (invoice) => <TruncatedId value={invoice.contractId} /> },
             { key: "period", header: messages.PERIOD, render: (invoice) => invoice.period },
             { key: "type", header: messages.TYPE, render: (invoice) => messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type },

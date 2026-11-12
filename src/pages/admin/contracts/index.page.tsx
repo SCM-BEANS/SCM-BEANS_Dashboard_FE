@@ -494,7 +494,7 @@ function ContractsContent() {
         rowKey={(item) => item.id}
         columns={[
           { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}><TruncatedId value={item.id} /></button> },
-          { key: "owner", header: T.COMMON.OWNER, render: (item) => ownerName(item.ownerId) },
+          { key: "owner", header: "Khách hàng", render: (item) => ownerName(item.ownerId) },
           { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
           { key: "status", header: "Trạng thái", render: (item) => <StatusBadge status={item.status}>{status(item.status)}</StatusBadge> },
         ]}
