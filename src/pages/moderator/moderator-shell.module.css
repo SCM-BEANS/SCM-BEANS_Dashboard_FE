@@ -16,13 +16,13 @@
 .shell a, .shell button, .shell input, .shell select, .shell textarea { transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 100ms ease; }
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
-.desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: #fff; color: #706561; font-size: 14px; }
+.desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: transparent; color: #706561; font-size: 14px; }
 .headerLink { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; }
 .main { min-height: 0; flex: 1; overflow: auto; }
 .mobileHeader { display: none; }
 .mobileBreadcrumb { display: none; }
 
-.pageContent { display: flex; width: min(100%, 1440px); min-height: 100%; flex-direction: column; gap: 22px; padding: 28px 32px 120px; margin: 0 auto; }
+.pageContent { display: flex; width: min(100%, 1440px); min-height: 100%; flex-direction: column; gap: 22px; padding: 0 32px 120px; margin: -4px auto 0; }
 .technicalRequestActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .technicalRequestAccept, .technicalRequestReject { min-height: 36px; padding: 0 10px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .technicalRequestAccept { border-color: #b8d9c2; background: #f1faf3; color: #23653a; }
@@ -255,14 +255,14 @@
 
 @media (max-width: 1023px) {
   .desktopHeader { display: none; }
-  .mobileBreadcrumb { display: block; padding: 12px 16px; background: #fff; color: #706561; font-size: 14px; }
+  .mobileBreadcrumb { display: block; padding: 4px 16px 0; background: transparent; color: #706561; font-size: 14px; }
   .shell { flex-direction: column; }
-  .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: #fff; }
+  .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: transparent; }
   .mobileBrand { color: #b81724 !important; font-size: 23px; font-weight: 700; }
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .mobileHeaderLink { display: inline-flex; min-height: 44px; align-items: center; color: #706561 !important; font-size: 14px; }
   .workspace :global(footer) { bottom: 0; }
-  .pageContent { gap: 16px; padding: 20px 16px 104px; }
+  .pageContent { gap: 16px; padding: 0 16px 104px; }
   .pageHeading h1 { font-size: 24px; }
   .invoiceDetailOverview { grid-template-columns: minmax(0, 1fr) minmax(260px, .9fr); }
   .formPanel { padding: 14px; }
@@ -270,7 +270,7 @@
 }
 
 @media (max-width: 600px) {
-  .pageContent { padding: 18px 14px 100px; }
+  .pageContent { padding: 0 14px 100px; }
   .pageHeading h1 { font-size: 22px; }
   .invoiceDetailOverview { grid-template-columns: minmax(0, 1fr); }
   .invoiceOverviewMain { min-height: 0; padding: 18px; }
