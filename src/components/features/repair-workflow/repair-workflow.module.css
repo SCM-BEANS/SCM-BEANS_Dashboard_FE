@@ -14,8 +14,8 @@
   min-height: 100%;
   flex-direction: column;
   gap: 22px;
-  padding: 28px 32px 120px;
-  margin: 0 auto;
+  padding: 0 32px 120px;
+  margin: -4px auto 0;
   color: #302927;
 }
 
@@ -408,8 +408,14 @@
   font-size: 14px;
 }
 
+@media (max-width: 1023px) {
+  .pageContent { gap: 16px; padding: 0 16px 104px; }
+  .pageHeading h1 { font-size: 24px; }
+}
+
 @media (max-width: 600px) {
-  .pageContent { gap: 16px; padding: 20px 16px 104px; }
+  .pageContent { padding: 0 14px 100px; }
+  .pageHeading h1 { font-size: 22px; }
   .panel {
     padding: 14px;
   }

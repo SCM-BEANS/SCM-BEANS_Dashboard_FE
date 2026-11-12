@@ -38,6 +38,7 @@ export function BuybackWorkflowLayout({
         title={title}
         titleId="buyback-title"
         description={description}
+        className={styles.pageHeading}
         back={back ?? (actionBarBackHref ? { label: actionBarBackLabel, fallbackHref: actionBarBackHref } : null)}
       />
       {children}

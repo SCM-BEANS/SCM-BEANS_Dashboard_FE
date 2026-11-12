@@ -275,7 +275,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
 
   return <div className={showHeading ? styles.pageContent : styles.screen}>
     {showHeading ? <BackButtonHeading title={owner ? "Công thức pha chế" : "Global Menu & công thức"} titleId="recipe-management-title"
-      description={owner ? "Khám phá menu Dolores và lưu món yêu thích vào menu riêng." : "Quản lý menu dùng chung và các công thức pha chế của Dolores."} back={null} /> : null}
+      description={owner ? "Khám phá menu Dolores và lưu món yêu thích vào menu riêng." : "Quản lý menu dùng chung và các công thức pha chế của Dolores."} className={styles.pageHeading} back={null} /> : null}
     {view === "global" && mode === "view" && (operatorScreen === "recipes" || operatorScreen === "detail" || detailOnly) ? <button type="button" onClick={() => {
       if (detailOnly && owner) { void router.push(PATH_CUSTOMER.MENU); return; }
       if (operatorRole === "MODERATOR" && initialGlobalRecipeId) { void router.push(PATH_MODERATOR.MENU); return; }
