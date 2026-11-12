@@ -65,6 +65,9 @@ export function ContractListScreen() {
           contracts={contracts.data}
           contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
           draftStatusHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
+          showContractIdColumn={false}
+          ownerHeader="Khách hàng"
+          ownerHref={PATH_MODERATOR.CONTRACT_DETAIL}
         />
       )}
     </div>

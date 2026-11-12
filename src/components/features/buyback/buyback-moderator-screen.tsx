@@ -6,6 +6,7 @@ import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { PATH_MODERATOR } from "@/routes/path";
 import type { BuybackPaymentProof } from "@/schema/buybacks.schema";
+import { BuybackPaymentProofImagePreview, isPreviewablePaymentProofImage } from "./buyback-payment-proof-image-preview";
 import { buybackPaymentProofStatusLabel, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import {
   BuybackCaseList,
@@ -177,7 +178,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
     {
       key: "file",
       header: "Tệp chứng từ",
-      render: (proof) => <><strong>{proof.originalFilename}</strong><br />{proof.contentType} · {proof.sizeBytes.toLocaleString("vi-VN")} bytes</>,
+      render: (proof) => <>{operatorRole === "ADMIN" && isPreviewablePaymentProofImage(proof.contentType) ? <BuybackPaymentProofImagePreview proof={proof} /> : null}<strong>{proof.originalFilename}</strong><br />{proof.contentType} · {proof.sizeBytes.toLocaleString("vi-VN")} bytes</>,
     },
     { key: "submitted-at", header: "Gửi lúc", render: (proof) => formatBuybackDateTime(proof.submittedAt) },
     { key: "proof-id", header: "Mã chứng từ", render: (proof) => <span className={styles.codeValue}><TruncatedId value={proof.id} /></span> },

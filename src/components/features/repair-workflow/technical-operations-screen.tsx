@@ -160,12 +160,14 @@ function MaintenanceRequestTable({
   role: TechnicalScreenRoutes["role"];
 }) {
   const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
-    {
+    ...(role === "moderator" ? [{
       key: "id",
       header: messages.TECHNICAL_ID,
-      render: (request) => <TextLinkButton href={routes.requestDetail(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
-    },
-    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => requestTypeLabel(request.requestType) },
+      render: (request: MaintenanceRequest) => <TextLinkButton href={routes.requestDetail(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
+    }] : []),
+    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => role === "admin"
+      ? <TextLinkButton href={routes.requestDetail(request.id)}>{requestTypeLabel(request.requestType)}</TextLinkButton>
+      : requestTypeLabel(request.requestType) },
     ...(role === "admin" ? [{
       key: "status",
       header: messages.TECHNICAL_STATUS,
@@ -173,9 +175,11 @@ function MaintenanceRequestTable({
     }] : []),
     {
       key: "owner",
-      header: messages.TECHNICAL_OWNER,
-      cellProps: () => ({ className: styles.codeValue }),
-      render: (request) => <TruncatedId value={request.ownerId} />,
+      header: role === "admin" ? "Khách hàng" : messages.TECHNICAL_OWNER,
+      ...(role === "admin" ? {} : { cellProps: () => ({ className: styles.codeValue }) }),
+      render: (request) => (role === "admin"
+        ? (typeof request.ownerName === "string" ? request.ownerName : "—")
+        : <TruncatedId value={request.ownerId} />),
     },
     { key: "updated", header: messages.TECHNICAL_UPDATED, render: (request) => formatDate(request.updatedAt ?? request.createdAt) },
     {

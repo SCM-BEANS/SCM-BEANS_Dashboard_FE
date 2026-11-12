@@ -3,7 +3,7 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { buildInvoiceExportActions } from "@/components/action-bar/entity-page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { billingApi } from "@/apis/billing.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { DataTable } from "@/components/table/data-table";
@@ -68,8 +68,8 @@ function InvoiceProofSummary({ summary }: { summary: ProofSummary }) {
 
   return (
     <div className={styles.invoiceProofSummary} aria-label="Tình trạng chứng từ thanh toán">
-      {summary.approved > 0 && <span>Đã duyệt <strong>{summary.approved}</strong></span>}
-      {summary.submitted > 0 && <span>Chờ đối soát <strong>{summary.submitted}</strong></span>}
+      {summary.approved > 0 && <span className={styles.invoiceProofApproved}>Đã duyệt <strong>{summary.approved}</strong></span>}
+      {summary.submitted > 0 && <span className={styles.invoiceProofSubmitted}>Chờ đối soát <strong>{summary.submitted}</strong></span>}
       {summary.rejected > 0 && <span className={styles.invoiceProofRejected}>Bị từ chối <strong>{summary.rejected}</strong></span>}
     </div>
   );
@@ -120,7 +120,7 @@ async function loadInvoiceRows(signal: AbortSignal): Promise<InvoiceListRow[]> {
 
     return {
       invoice,
-      customerName: (ownerId && customerNames.get(ownerId)) || (ownerId ? `Chủ sở hữu ${ownerId.slice(0, 8)}` : "Chưa xác định"),
+      customerName: (ownerId && customerNames.get(ownerId)) || "Chưa xác định",
       proofSummary,
     };
   });
@@ -140,8 +140,7 @@ function InvoiceList({ rows }: { rows: InvoiceListRow[] }) {
         <tr key={invoice.id}>
           <td>
             <div className={styles.invoiceCustomerCell}>
-              <Link className={styles.tableLink} href={PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>{customerName}</Link>
-              <span>Mã hóa đơn · {invoice.id.slice(0, 8)}</span>
+              <TextLinkButton href={PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>{customerName}</TextLinkButton>
             </div>
           </td>
           <td>

@@ -236,7 +236,7 @@ export function AdminInvoiceListScreen() {
                   rowKey={(invoice) => invoice.id}
                   columns={[
                     { key: "invoice", header: "Hóa đơn", render: (invoice) => <div className={pageStyles.invoiceIdentity}><strong title={invoice.id}>{shortId(invoice.id)}</strong><span>Kỳ {invoice.period || "—"}</span></div> },
-                    { key: "owner", header: "Owner", render: (invoice) => <span className={pageStyles.identifier} title={invoice.ownerId ?? undefined}>{shortId(invoice.ownerId ?? "")}</span> },
+                    { key: "owner", header: "Khách hàng", render: (invoice) => typeof invoice.ownerName === "string" ? invoice.ownerName : "—" },
                     { key: "type", header: "Loại", render: (invoice) => typeText(invoice.type) },
                     { key: "amount", header: "Số tiền", align: "right", render: (invoice) => <span className={pageStyles.noWrap}>{amountText(invoice.amount, invoice.currency)}</span> },
                     { key: "due", header: "Hạn thanh toán", render: (invoice) => <span className={pageStyles.noWrap}>{compactDateText(invoice.dueDate)}</span> },

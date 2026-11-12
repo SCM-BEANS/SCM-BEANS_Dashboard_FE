@@ -7,6 +7,10 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { DataTable } from "@/components/table/data-table";
 import { moderatorStyles as styles } from "../moderator-shell";
 import { amountText } from "./invoice-shared";
+import {
+  InvoicePaymentProofImagePreview,
+  isPreviewableInvoicePaymentProofImage,
+} from "./payment-proof-image-preview";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -87,12 +91,22 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
           variant="moderator"
           className={styles.paymentProofTable}
           minWidth={1240}
-          headers={[messages.PROOF_FILENAME, messages.PROOF_STATUS, messages.PROOF_AMOUNT, messages.PROOF_SUBMITTED_AT, messages.PROOF_CONTENT, messages.PROOF_ACTION]}
+          headers={["Chứng từ", messages.PROOF_STATUS, messages.PROOF_AMOUNT, messages.PROOF_SUBMITTED_AT, messages.PROOF_CONTENT, messages.PROOF_ACTION]}
         >
           {proofs.map((proof) => (
             <Fragment key={proof.id}>
               <tr>
-                <td className={styles.proofFilenameCell}>{proof.originalFilename}</td>
+                <td className={styles.proofFilenameCell}>
+                  <div className={styles.proofFilePreview}>
+                    {isPreviewableInvoicePaymentProofImage(proof.contentType) ? (
+                      <InvoicePaymentProofImagePreview proof={proof} />
+                    ) : (
+                      <span className={styles.proofFileTypeBadge}>
+                        {proof.contentType === "application/pdf" ? "PDF" : "Tệp đính kèm"}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td>
                   <span className={`${styles.paymentProofStatus} ${proofStatusClassName(proof.status)}`}>
                     {proofStatusText(proof.status)}

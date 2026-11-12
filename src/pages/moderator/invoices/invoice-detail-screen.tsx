@@ -1,4 +1,5 @@
 import { PageActions } from "@/components/action-bar/page-actions";
+import { ActionBarConfig } from "@/components/action-bar/action-bar";
 import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
@@ -118,11 +119,10 @@ function InvoiceStatusActions({ invoice }: { invoice: ModeratorInvoice }) {
   });
 
   const actions = buildInvoiceStatusActions({ status: invoice.status, dueDate: invoice.dueDate, pending: changeStatus.isPending, pendingStatus: changeStatus.variables, onChange: (status) => changeStatus.mutate(status) });
-  if (!actions.length) return null;
   return (
     <section className={styles.pendingNotice} aria-labelledby="moderator-invoice-status-actions">
       <h2 id="moderator-invoice-status-actions" className={styles.sectionTitle}>{messages.INVOICE_STATUS_ACTION}</h2>
-      <PageActions actions={actions} />
+      {actions.length ? <PageActions actions={actions} /> : <ActionBarConfig><span role="status">Trạng thái: {invoiceStatusText(invoice.status)}</span></ActionBarConfig>}
       {changeStatus.isError && <p role="alert">{getApiErrorMessage(changeStatus.error)}</p>}
       {changeStatus.isSuccess && <p role="status">{messages.INVOICE_STATUS_UPDATED}</p>}
     </section>

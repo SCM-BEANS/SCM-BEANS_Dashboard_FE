@@ -260,7 +260,12 @@ export const buybacksApi =  {
     return proof;
   },
   async downloadPaymentProofContent(proofId: string, signal?: AbortSignal) {
-    const response = await axiosClient.get<Blob>(`${proofPath(proofId)}/content`, { baseURL: DOLORES_API_BASE_URL, responseType: "blob", signal });
+    const response = await axiosClient.get<Blob>(`${proofPath(proofId)}/content`, {
+      baseURL: DOLORES_API_BASE_URL,
+      responseType: "blob",
+      signal,
+      headers: { Accept: "*/*", "Cache-Control": "no-store" },
+    });
     return { blob: response.data, contentType: headerValue(response.headers, "content-type") };
   },
   async listPaymentProofs(id: string, page = 0, size = 50, signal?: AbortSignal) {

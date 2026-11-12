@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 
 import { profilesApi } from "@/apis/profiles.api";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
@@ -135,23 +135,21 @@ export function CustomerProfileListScreen() {
       {pageData && pageData.items.length > 0 && !profiles.isError && (
         <>
           <DataTable variant="moderator" headers={[
-            MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NAME,
+            "Khách hàng",
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_EMAIL,
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PHONE,
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_STATUS,
-            MODERATOR_MESSAGES.READ_SCREENS.PROFILE_ACTION,
           ]}>
             {pageData.items.map((profile) => (
               <tr key={profile.idaasUserId}>
-                <td>{profile.fullName || "—"}</td>
+                <td>
+                  <TextLinkButton href={PATH_MODERATOR.CUSTOMER_DETAIL(profile.idaasUserId)}>
+                    {profile.fullName || "—"}
+                  </TextLinkButton>
+                </td>
                 <td>{profile.email || "—"}</td>
                 <td>{profile.phone || "—"}</td>
                 <td>{profileStatusLabel(profile.status)}</td>
-                <td>
-                  <Link className={styles.tableLink} href={PATH_MODERATOR.CUSTOMER_DETAIL(profile.idaasUserId)}>
-                    {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_VIEW}
-                  </Link>
-                </td>
               </tr>
             ))}
           </DataTable>

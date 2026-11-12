@@ -12,9 +12,27 @@ interface ContractTableProps {
   headerVariant?: "admin";
   ownerName?: (ownerId: string) => string;
   ownerHeader?: string;
+  showContractIdColumn?: boolean;
+  ownerHref?: (contractId: string) => string;
 }
 
-export function ContractTable({ contracts, contractHref, draftStatusHref, headerVariant, ownerName, ownerHeader }: ContractTableProps) {
+export function ContractTable({
+  contracts,
+  contractHref,
+  draftStatusHref,
+  headerVariant,
+  ownerName,
+  ownerHeader,
+  showContractIdColumn = true,
+  ownerHref,
+}: ContractTableProps) {
+  const renderOwner = (contract: Contract) => {
+    const label = ownerName ? ownerName(contract.ownerId) : contract.ownerName?.trim() || "—";
+    return ownerHref && label !== "—"
+      ? <TextLinkButton href={ownerHref(contract.id)}>{label}</TextLinkButton>
+      : label;
+  };
+
   return (
     <DataTable
       variant="moderator"
@@ -22,17 +40,17 @@ export function ContractTable({ contracts, contractHref, draftStatusHref, header
       rows={contracts}
       rowKey={(contract) => contract.id}
       columns={[
-        {
+        ...(showContractIdColumn ? [{
           key: "contract",
           header: CONTRACT_TABLE_HEADERS.contract,
-          render: (contract) => (
+          render: (contract: Contract) => (
             <TextLinkButton href={contractHref(contract.id)}><TruncatedId value={contract.id} /></TextLinkButton>
           ),
-        },
+        }] : []),
         {
           key: "owner",
-          header: ownerName ? ownerHeader ?? "Owner" : CONTRACT_TABLE_HEADERS.owner,
-          render: (contract) => ownerName ? ownerName(contract.ownerId) : contract.ownerName?.trim() || "—",
+          header: ownerHeader ?? (ownerName ? "Owner" : CONTRACT_TABLE_HEADERS.owner),
+          render: renderOwner,
         },
         {
           key: "period",
