@@ -25,9 +25,32 @@
   DETAIL_NOT_FOUND: "Không tìm thấy thông báo này trong danh sách hiện tại.",
 } as const;
 
+const TYPE_LABELS: Record<string, string> = {
+  CONTRACT_EXPIRING: "Hợp đồng",
+  INSTALLATION_WORK_ORDER: "Lắp đặt",
+  REPAIR_COST_REVIEW: "Sửa chữa",
+  MAINTENANCE: "Bảo trì",
+};
+const UUID = /\b([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+// Backend text is English/raw: show short ids, dd/MM/yyyy dates and Vietnamese role names.
+function localizeText(text: string, keepFullIds: boolean) {
+  const out = text
+    .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$3/$2/$1")
+    .replace(/\bOwner\b/g, "chủ sở hữu")
+    .replace(/\bTechnician\b/g, "kỹ thuật viên");
+  return keepFullIds ? out : out.replace(UUID, (_, head: string) => `#${head.toUpperCase()}`);
+}
+
 export function getNotificationPresentation(notification: { type: string; title: string; message: string }) {
   if (notification.type !== "MACHINE_GPS_SIGNAL_MISSING") {
-    return { title: notification.title, message: notification.message, typeLabel: notification.type };
+    // REPAIR_COST_REVIEW keeps full ids: the inbox extracts "Review ID: <uuid>" from the message for its link.
+    const keepFullIds = notification.type === "REPAIR_COST_REVIEW";
+    return {
+      title: localizeText(notification.title, true),
+      message: localizeText(notification.message, keepFullIds),
+      typeLabel: TYPE_LABELS[notification.type] ?? "Thông báo",
+    };
   }
   const machineId = /\bMachine\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i.exec(notification.message)?.[1];
   return {

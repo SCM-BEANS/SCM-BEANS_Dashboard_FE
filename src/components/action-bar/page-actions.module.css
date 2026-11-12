@@ -4,6 +4,11 @@
 .action { position: relative; display: inline-flex; }
 .reason { position: absolute; bottom: 100%; left: 0; display: none; width: max-content; max-width: 220px; padding: 6px; background: #302927; color: white; border-radius: 4px; font-size: 12px; white-space: normal; }
 .action:hover .reason, .action:focus-within .reason { display: block; }
+/* Touch has no hover/focus on disabled buttons, so show the reason inline. */
+@media (max-width: 1023px) {
+  .action { flex-direction: column; align-items: flex-end; }
+  .reason { position: static; display: block; max-width: 160px; padding: 2px 0 0; background: none; color: #645b55; }
+}
 .pendingHint { align-self: center; color: #645b55; font-size: 12px; }
 .menu { position: relative; }
 .popup { position: absolute; right: 0; bottom: calc(100% + 8px); display: flex; flex-direction: column; gap: 4px; padding: 8px; background: white; border: 1px solid #e9e2dc; border-radius: 10px; box-shadow: 0 4px 16px #0002; }

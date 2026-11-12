@@ -46,9 +46,11 @@ function RepairCostReviewNotificationLink({
 function formatDate(value?: string | null) {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  if (Number.isNaN(date.getTime())) return value;
+  // "08:00, 11/11/2026" — numeric month avoids vi-VN's "11 thg 11," form.
+  const day = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  const time = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  return `${time}, ${day}`;
 }
 
 export function NotificationInbox({
@@ -165,7 +167,7 @@ export function NotificationInbox({
             {list.data?.length ? (
               <div className={styles.notificationList}>
                 {notifications?.slice(0, 5).map((notification) => (
-                  <article className={styles.notificationCard} key={notification.id}>
+                  <article className={[styles.notificationCard, notification.read ? "" : styles.unreadCard].join(" ")} key={notification.id}>
                     <div className={styles.notificationMeta}>
                       <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
                         {notification.read ? messages.READ : messages.UNREAD}
@@ -281,7 +283,7 @@ export function NotificationInbox({
         {list.data?.length ? (
           <div className={styles.notificationList}>
             {notifications?.map((notification) => (
-              <article className={styles.notificationCard} key={notification.id}>
+              <article className={[styles.notificationCard, notification.read ? "" : styles.unreadCard].join(" ")} key={notification.id}>
                 <div className={styles.notificationMeta}>
                   <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
                     {notification.read ? messages.READ : messages.UNREAD}

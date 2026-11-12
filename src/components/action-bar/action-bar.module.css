@@ -20,13 +20,16 @@
   min-width: 0;
   align-items: center;
   gap: 8px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  overflow: visible; /* desktop: at most 3 buttons + menu, and overflow would clip the reason tooltip */
 }
 
-.actions:has([data-menu-open="true"]) { overflow: visible; }
+/* Keep keyboard focus from hiding behind the fixed dock (WCAG 2.2 Focus Not Obscured). */
+:global(html):has(.layout[data-visible="true"]) { scroll-padding-bottom: 96px; }
 
 @media (max-width: 1023px) {
+  :global(html):has(.layout[data-visible="true"]) { scroll-padding-bottom: 0; }
+  .actions { overflow-x: auto; overscroll-behavior-x: contain; }
+  .actions:has([data-menu-open="true"]) { overflow: visible; }
   .layout[data-visible] { --action-bar-height: 0px; }
 
   .dock {
@@ -35,7 +38,8 @@
     z-index: 5;
     width: 100%;
     flex: 0 0 auto;
-    height: calc(64px + env(safe-area-inset-bottom));
+    height: auto;
+    min-height: calc(64px + env(safe-area-inset-bottom));
     padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   }
 }

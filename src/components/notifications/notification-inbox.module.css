@@ -387,9 +387,27 @@
   padding: 12px;
 }
 
+.unreadCard {
+  border-left: 3px solid #b81724;
+}
+
+.notificationType {
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
 .popover .notificationCard h3 {
   margin-top: 8px;
   font-size: 14px;
+}
+
+/* Secondary action: compact so it does not outweigh the message. */
+.popover .notificationCard .button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-color: transparent;
+  background: #f8f6f3;
+  font-size: 13px;
 }
 
 .popover .notificationCard p {

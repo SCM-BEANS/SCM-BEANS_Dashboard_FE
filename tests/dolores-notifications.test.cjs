@@ -32,7 +32,9 @@ test('GPS advisory uses understandable copy, preserves machine context and leave
   assert.equal(gps.title, 'Warning');
   assert.equal(getNotificationPresentation({ ...gps, message: '' }).title, 'Máy chưa gửi được vị trí GPS');
   const other = { type: 'INFO', title: 'Original title', message: 'Original message' };
-  assert.deepEqual(getNotificationPresentation(other), { title: other.title, message: other.message, typeLabel: other.type });
+  assert.deepEqual(getNotificationPresentation(other), { title: other.title, message: other.message, typeLabel: 'Thông báo' });
+  const expiring = getNotificationPresentation({ type: 'CONTRACT_EXPIRING', title: 'Hợp đồng Owner sắp hết hạn', message: 'Hợp đồng df87981a-75d5-4fd6-a209-13974dbf1c82 sẽ hết hạn vào 2026-11-22.' });
+  assert.deepEqual(expiring, { title: 'Hợp đồng chủ sở hữu sắp hết hạn', message: 'Hợp đồng #DF87981A sẽ hết hạn vào 22/11/2026.', typeLabel: 'Hợp đồng' });
 });
 
 test("notification and alert schemas validate server records including nullable timestamps", () => {

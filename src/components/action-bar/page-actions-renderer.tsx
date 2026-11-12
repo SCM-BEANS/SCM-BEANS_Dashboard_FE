@@ -38,7 +38,9 @@ export function PageActionsRenderer({ actions }: { actions: readonly PageAction[
       return dangerOrder || (right.action.priority ?? 0) - (left.action.priority ?? 0) || left.index - right.index;
     })
     .map(({ action }) => action);
-  const visibleOthers = others.slice(0, mobile ? 0 : Math.max(0, 3 - (primary ? 1 : 0)));
+  // Mobile: show a lone non-danger secondary action directly instead of hiding it behind the menu.
+  const mobileSlots = others.length === 1 && others[0].variant !== "danger" ? 1 : 0;
+  const visibleOthers = others.slice(0, mobile ? mobileSlots : Math.max(0, 3 - (primary ? 1 : 0)));
   const overflow = others.slice(visibleOthers.length);
   const pendingReasonId = `${prefix}-pending-actions`;
   const closeMenu = () => { setOpen(false); triggerRef.current?.focus(); };
