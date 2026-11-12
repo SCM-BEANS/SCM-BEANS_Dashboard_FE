@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useState } from "react";
 
-import Link from "next/link";
 import { useRouter } from "next/router";
 
 import { machineModelsApi } from "@/apis/machine-models.api";
@@ -20,6 +19,7 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 
 import { DataTable } from "@/components/table/data-table";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
@@ -189,13 +189,13 @@ function MachineList({
         rowKey={(machine) => machine.id}
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
         columns={[
-          { key: "serial", header: ADMIN_T.MACHINES.SERIAL, align: "center", render: (machine) => <Link className={adminStyles.machineInventoryLink} href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`} title={machine.serialNumber ?? machine.id}>{machine.serialNumber ?? "—"}</Link> },
-          { key: "status", header: ADMIN_T.MACHINES.STATUS, align: "center", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> : "—" },
-          { key: "connection", header: "Kết nối", align: "center", render: (machine) => {
+          { key: "serial", header: ADMIN_T.MACHINES.SERIAL, render: (machine) => <TextLinkButton href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.serialNumber ?? "—"}</TextLinkButton> },
+          { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machine.status ? <StatusBadge status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> : "—" },
+          { key: "connection", header: "Kết nối", render: (machine) => {
             if (machine.machineType !== "SMART_IOT") return "—";
             return <MachineConnectionBadge state="permission-denied" />;
           } },
-          { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, align: "center", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
+          { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
     </div>

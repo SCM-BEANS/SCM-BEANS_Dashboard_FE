@@ -225,9 +225,6 @@
 .machineManagementGroup label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
 .machineManagementGroup select, .machineManagementGroup textarea { width: 100%; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; font-size: 14px; }
 .machineManagementGroup textarea { min-height: 96px; padding: 10px 12px; resize: vertical; }
-.machineInventoryLink { display: inline-flex; min-height: 0; align-items: center; color: #302927 !important; font: inherit; font-weight: 500; text-decoration: none !important; }
-.machineInventoryLink:hover { color: #b81724 !important; text-decoration: none !important; }
-.machineInventoryLink:focus-visible { border-radius: 3px; outline: 2px solid #b81724; outline-offset: 3px; }
 .machineModelSpecifications { grid-column: 1 / -1; }
 .machineModelSpecifications textarea { font-family: Consolas, Monaco, monospace; line-height: 1.5; }
 .machineModelSpecifications pre { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font: 13px/1.5 Consolas, Monaco, monospace; }
