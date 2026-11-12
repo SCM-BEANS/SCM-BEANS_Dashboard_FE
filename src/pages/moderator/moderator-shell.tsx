@@ -131,9 +131,7 @@ export function ModeratorShell({
   const isSectionList = pathname === currentSection.HREF || pathname === currentSection.HREF + "/list";
   const actions = !isSectionList ? [] : currentSection.HREF === PATH_MODERATOR.CONTRACTS
     ? [{ id: "contracts-create", label: "Tạo hợp đồng", variant: "primary" as const, priority: 20, href: PATH_MODERATOR.NEW_CONTRACT }]
-    : currentSection.HREF === PATH_MODERATOR.CUSTOMERS
-      ? [{ id: "customers-create", label: "Tạo khách hàng", variant: "primary" as const, priority: 20, href: PATH_MODERATOR.NEW_CUSTOMER }]
-      : [];
+    : [];
 
   return (
     <>

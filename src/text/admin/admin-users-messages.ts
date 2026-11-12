@@ -1,6 +1,6 @@
 export const ADMIN_USERS_MESSAGES = {
   LIST: {
-    TITLE: "Tài khoản toàn hệ thống",
+    TITLE: "Quản lý tài khoản",
     PANEL: "Danh sách tài khoản",
     SEARCH: "Tìm tên hoặc email",
     SEARCH_LABEL: "Tìm theo họ tên hoặc email",
@@ -18,9 +18,9 @@ export const ADMIN_USERS_MESSAGES = {
   },
   FORM: {
     CREATE_TITLE: "Tạo tài khoản",
-    CREATE_DESCRIPTION: "Nhập thông tin và chọn vai trò. Mật khẩu tạm chỉ được trả về một lần.",
-    DETAIL_TITLE: "Thông tin tài khoản",
-    DETAIL_DESCRIPTION: "Thông tin tài khoản được đồng bộ từ hệ thống quản lý tài khoản. Đổi email hoặc vai trò có thể ảnh hưởng phiên đăng nhập.",
+    CREATE_DESCRIPTION: "Nhập thông tin và chọn vai trò phù hợp.",
+    DETAIL_TITLE: "Hồ sơ tài khoản",
+    DETAIL_DESCRIPTION: "",
     NAME: "Họ tên",
     EMAIL: "Email đăng nhập",
     ROLE: "Vai trò",
@@ -49,9 +49,9 @@ export const ADMIN_USERS_MESSAGES = {
   COMMON: {
     ALL_ROLES: "Tất cả vai trò",
     ALL_STATUSES: "Tất cả trạng thái",
-    OWNER: "Owner",
-    MODERATOR: "Moderator",
-    TECHNICIAN: "Technician",
+    OWNER: "Khách hàng",
+    MODERATOR: "Điều phối viên",
+    TECHNICIAN: "Kỹ thuật viên",
     ACTIVE: "Đang hoạt động",
     DISABLED: "Đã vô hiệu hóa",
     RETRY: "Thử lại",

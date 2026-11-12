@@ -49,3 +49,15 @@
 .button.button.primary:hover:not(:disabled) { background: #90121c; border-color: #90121c; }
 .button.button.danger { background: white; border-color: #b81724; color: #b81724; }
 .button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: #90121c; }
+
+.button.button.rollingButton { position: relative; overflow: hidden; isolation: isolate; min-height: 44px; background: #fff; color: #000; transition: transform .5s cubic-bezier(.34,1.45,.64,1), color .45s cubic-bezier(.2,.8,.2,1); }
+.button.button.rollingButton:hover { background: #fff; }
+.rollingButton::before { content: ""; position: absolute; inset: 0; z-index: -1; background: #f7f5f3; border-radius: 50% 50% 0 0 / 40% 40% 0 0; transform: translateY(102%); transition: transform .7s cubic-bezier(.2,.8,.2,1), border-radius .7s cubic-bezier(.2,.8,.2,1); }
+.rollingButton:active { transform: scale(.96); }
+.rollingButton:active::before { transform: none; border-radius: 0; }
+.rollingWord { display: flex; height: 1.4em; overflow: hidden; line-height: 1.4; }
+.rollingLetter { display: flex; flex-direction: column; transition: transform .55s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--letter-index) * 22ms); }
+.rollingLetter::after { content: attr(data-letter); display: block; }
+.rollingButton:focus-visible .rollingLetter { transform: translateY(-1.4em); }
+@media (hover: hover) { .rollingButton:hover .rollingLetter { transform: translateY(-1.4em); } }
+@media (prefers-reduced-motion: reduce) { .button.button.rollingButton, .rollingButton::before, .rollingLetter { transition: none; } .rollingButton:active, .rollingButton:focus-visible .rollingLetter, .rollingButton:hover .rollingLetter { transform: none; } }

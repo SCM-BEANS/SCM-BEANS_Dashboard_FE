@@ -9,7 +9,7 @@ function loadTypescript(relativePath, mocks = {}) {
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   });
   const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
   const loaded = { exports: {} };
@@ -67,7 +67,7 @@ test('Admin user operations use the IDaaS routes on the shared /api/v1 client', 
   assert.equal(calls.length, 6, 'invalid UUIDs must be rejected before reaching IDaaS');
 });
 
-test('admin has no account-management page while implemented pages remain in the route catalog', () => {
+test('admin account-management page is enabled and listed in navigation', () => {
   const path = loadTypescript('src/routes/path.ts');
   const navText = { NAVIGATION: new Proxy({}, { get: (_target, key) => String(key) }) };
   const routeMocks = {
@@ -82,16 +82,34 @@ test('admin has no account-management page while implemented pages remain in the
     '@/schema/machines.schema': { MachineIdSchema: passSchema },
     '@/schema/recipes.schema': { GlobalRecipeIdSchema: passSchema },
     '@/schema/installation-work-orders.schema': { InstallationWorkOrderIdSchema: passSchema },
+    '@/schema/repair-cost-reviews.schema': { RepairCostReviewIdSchema: passSchema },
+    '@/schema/machine-models.schema': { MachineModelIdSchema: passSchema },
+    '@/schema/coffee-packages.schema': { CoffeePackageOrderIdSchema: passSchema },
   };
   const routes = loadTypescript('src/routes/routes.ts', routeMocks);
   const root = join(__dirname, '..');
 
-  assert.equal(path.PATH_ADMIN.USERS, undefined);
-  assert.equal(routes.ADMIN_ENABLED_PATHS.has('/admin/users'), false);
-  assert.equal(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === '/admin/users'), false);
+  assert.equal(path.PATH_ADMIN.USERS, '/admin/users');
+  assert.equal(path.PATH_ADMIN.USER_DETAIL('00000000-0000-4000-8000-000000000101'), '/admin/users/00000000-0000-4000-8000-000000000101');
+  assert.equal(routes.ADMIN_ENABLED_PATHS.has('/admin/users'), true);
+  assert.equal(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === '/admin/users'), true);
   assert.equal(path.PATH_ADMIN.MENU, '/admin/menu');
   assert.ok(routes.ADMIN_ENABLED_PATHS.has(path.PATH_ADMIN.MENU));
   assert.ok(routes.ADMIN_NAVIGATION_LINKS.some((link) => link.HREF === path.PATH_ADMIN.MENU));
-  assert.equal(existsSync(join(root, 'src', 'pages', 'admin', 'users', 'index.page.tsx')), false);
+  assert.equal(existsSync(join(root, 'src', 'pages', 'admin', 'users', 'index.page.tsx')), true);
+  assert.equal(existsSync(join(root, 'src', 'pages', 'admin', 'users', '[userId].page.tsx')), true);
   assert.ok(existsSync(join(root, 'src', 'pages', 'admin', 'menu', 'index.page.tsx')));
+});
+
+test('Admin account detail route validates UUID before rendering', async () => {
+  const schema = loadTypescript('src/schema/admin-users.schema.ts');
+  const route = loadTypescript('src/pages/admin/users/[userId].page.tsx', {
+    '@/schema/admin-users.schema': schema,
+    './index.page': { default: () => null },
+  });
+  const id = '00000000-0000-4000-8000-000000000101';
+  assert.deepEqual(await route.getServerSideProps({ params: { userId: id } }), { props: { detailUserId: id } });
+  for (const userId of ['invalid', undefined, [id]]) {
+    assert.deepEqual(await route.getServerSideProps({ params: { userId } }), { notFound: true });
+  }
 });

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { ButtonBar } from "@/components/button/button-bar";
 import { AccountCreateForm, type AccountCreateField, type AccountCreateValue } from "@/components/account/account-create-form";
 import { AccountSuccessDialog, type AccountCredential } from "@/components/account/account-success-dialog";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -20,6 +20,13 @@ import {
 import { PATH_ADMIN } from "@/routes/path";
 import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
 import { ADMIN_USER_ROLE_LABELS } from "./admin-user-utils";
+import styles from "@/pages/admin/admin-shell.module.css";
+
+const roleDescriptions = {
+  owner: "Quản lý máy, hợp đồng và thanh toán trong phạm vi của mình.",
+  moderator: "Theo dõi và điều phối công việc trong phạm vi được phân quyền.",
+  technician: "Tiếp nhận và thực hiện công việc được giao.",
+};
 
 export function AdminUserCreateView() {
   const router = useRouter();
@@ -28,6 +35,7 @@ export function AdminUserCreateView() {
   const [createError, setCreateError] = useState("");
   const [createCredential, setCreateCredential] = useState<AccountCredential | null>(null);
   const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const createUser = useMutation({
     mutationFn: (input: AdminUserCreate) => adminUsersApi.create(input),
@@ -109,21 +117,31 @@ export function AdminUserCreateView() {
 
   return (
     <>
+      <div className={styles.userCreateLayout}>
       <AccountCreateForm
         id="admin-user-create-form"
-        title={T.FORM.CREATE_TITLE}
+        title="Thông tin tài khoản"
         value={createForm}
         roleOptions={createRoleOptions}
         onChange={updateCreateField}
         onSubmit={requestCreateAccount}
         error={createError}
         disabled={createUser.isPending || createConfirmOpen || createRetryBlocked}
-      />
+      >
+        <p className={styles.userFormNote}>Mật khẩu tạm chỉ hiển thị một lần sau khi tạo thành công. Hãy lưu lại để bàn giao tài khoản.</p>
+        <div className={styles.userInlineActions}>
+          <ButtonBar disabled={createUser.isPending} onClick={() => Object.values(createForm).some(Boolean) ? setCancelOpen(true) : void router.push(PATH_ADMIN.USERS)}>Hủy tạo</ButtonBar>
+          <ButtonBar variant="primary" type="submit" disabled={createUser.isPending || createConfirmOpen || createRetryBlocked || !AdminUserCreateSchema.safeParse(createForm).success}>{createUser.isPending ? "Đang tạo…" : T.LIST.CREATE}</ButtonBar>
+        </div>
+      </AccountCreateForm>
+      <aside className={`${styles.panel} ${styles.userContext}`} aria-label="Hướng dẫn chọn vai trò">
+        <h2>Vai trò và quyền truy cập</h2>
+        {createForm.role ? <><strong>{ADMIN_USER_ROLE_LABELS[createForm.role]}</strong><p>{roleDescriptions[createForm.role]}</p></> : <p>Chọn vai trò để xem phạm vi sử dụng của tài khoản.</p>}
+        <p className={styles.userFormNote}>Thông tin đăng nhập sẽ được hiển thị sau khi tạo tài khoản.</p>
+      </aside>
+      </div>
 
-      <PageActions actions={[
-        { id: "user-cancel", label: T.FORM.CANCEL, variant: "secondary", priority: 100, onClick: () => void router.push(PATH_ADMIN.USERS), confirm: Object.values(createForm).some(Boolean) ? { title: "Hủy tạo người dùng?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy" } : undefined },
-        { id: "user-create", label: "Tạo người dùng", variant: "primary", priority: 100, type: "submit", form: "admin-user-create-form", disabled: createUser.isPending || createConfirmOpen || createRetryBlocked || !AdminUserCreateSchema.safeParse(createForm).success, disabledReason: createRetryBlocked ? "Không thể thử lại thao tác này." : createConfirmOpen ? "Đang chờ xác nhận." : "Điền thông tin người dùng hợp lệ.", pending: createUser.isPending, pendingLabel: "Đang tạo…" },
-      ]} />
+      {cancelOpen && <NotificationDialog variant="confirm" title="Hủy tạo tài khoản?" description="Thông tin chưa lưu sẽ bị mất." primaryAction={{ label: "Hủy tạo", onClick: () => void router.push(PATH_ADMIN.USERS) }} secondaryAction={{ label: "Tiếp tục nhập", onClick: () => setCancelOpen(false) }} onClose={() => setCancelOpen(false)} />}
 
       {createConfirmOpen && (
         <NotificationDialog
@@ -148,14 +166,14 @@ export function AdminUserCreateView() {
         <AccountSuccessDialog
           credential={createCredential}
           title={T.DIALOG.SUCCESS}
-          summary={`${createForm.name.trim()} · ${createForm.email.trim()} · ${ADMIN_USER_ROLE_LABELS[createForm.role as AdminUserRole]}${createUser.data?.role === "owner" ? ` · UUID IDaaS: ${createUser.data.id}` : ""}`}
-          actionLabel={createUser.data?.role === "owner" ? "Tiếp tục xác minh hồ sơ" : T.FORM.BACK}
+          summary={`${createForm.name.trim()} · ${createForm.email.trim()} · ${ADMIN_USER_ROLE_LABELS[createForm.role as AdminUserRole]}`}
+          actionLabel={createUser.data?.role === "owner" ? "Mở hồ sơ khách hàng" : T.FORM.BACK}
           onClose={() => {
             const createdUser = createUser.data;
             setCreateCredential(null);
             setCreateForm({ name: "", email: "", role: "" });
             void router.push(createdUser?.role === "owner"
-              ? { pathname: PATH_ADMIN.USERS, query: { view: "detail", id: createdUser.id } }
+              ? PATH_ADMIN.USER_DETAIL(createdUser.id)
               : PATH_ADMIN.USERS);
           }}
         />
