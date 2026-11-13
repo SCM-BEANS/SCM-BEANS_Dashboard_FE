@@ -1,0 +1,508 @@
+.ownerOverview {
+  gap: 18px;
+}
+
+.visualGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.cupsPanel,
+.machinePanel,
+.contractPanel,
+.invoicePanel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cupsPanel {
+  display: flex;
+  min-height: 420px;
+  flex-direction: column;
+}
+
+.cupsHeading,
+.panelHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cupsHeading h2,
+.panelHeading h2 {
+  margin: 0;
+  color: #302927;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.cupsHeading p,
+.panelHeading p {
+  margin: 5px 0 0;
+  color: #706561;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.panelLink {
+  flex: 0 0 auto;
+  color: #a81521;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.panelLink:focus-visible,
+.invoiceIdentity a:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid #a81521;
+  outline-offset: 3px;
+}
+
+.cupsTotal {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 18px 0 0;
+  color: #302927;
+  font-variant-numeric: tabular-nums;
+}
+
+.cupsTotal strong {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.cupsTotal span {
+  color: #706561;
+  font-size: 14px;
+}
+
+.cupChart {
+  width: 100%;
+  height: 260px;
+  margin-top: 16px;
+}
+
+.cupChart :global(.recharts-text) {
+  fill: #706561;
+}
+
+.chartEmpty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  margin: 16px 0 0;
+  padding: 20px;
+  border-radius: 9px;
+  background: #f8f6f4;
+  color: #625955;
+  font-size: 14px;
+  text-align: center;
+}
+
+.chartCaption {
+  margin: auto 0 0;
+  padding-top: 12px;
+  color: #706561;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sideColumn {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.machinePanel,
+.contractPanel {
+  display: flex;
+  min-height: 200px;
+  flex-direction: column;
+}
+
+.machineGauge {
+  width: min(100%, 270px);
+  margin: 4px auto 0;
+}
+
+.machineGauge svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gaugeValue {
+  fill: #302927;
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gaugeLabel {
+  fill: #625955;
+  font-size: 13px;
+}
+
+.gaugeCaption {
+  margin: 0;
+  color: #625955;
+  font-size: 13px;
+  text-align: center;
+}
+
+.contractBar {
+  display: flex;
+  width: 100%;
+  height: 11px;
+  gap: 3px;
+  overflow: hidden;
+  margin: 17px 0 12px;
+  border-radius: 999px;
+  background: #eee8e3;
+}
+
+.contractBar span {
+  min-width: 5px;
+}
+
+.contractBar span[data-tone="active"],
+.contractLegend li > span:first-child[data-tone="active"] {
+  background: #36866a;
+}
+
+.contractBar span[data-tone="draft"],
+.contractLegend li > span:first-child[data-tone="draft"] {
+  background: #bd791f;
+}
+
+.contractBar span[data-tone="ended"],
+.contractLegend li > span:first-child[data-tone="ended"] {
+  background: #a7a09b;
+}
+
+.contractLegend {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  color: #625955;
+  font-size: 13px;
+  list-style: none;
+}
+
+.contractLegend li {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.contractLegend li > span:first-child {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.contractLegend strong {
+  color: #302927;
+  font-variant-numeric: tabular-nums;
+}
+
+.invoicePanel {
+  display: grid;
+  gap: 14px;
+  container-type: inline-size;
+}
+
+.invoiceSnapshot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 16px 32px;
+}
+
+.invoiceSnapshotTitle {
+  margin: 0 0 6px;
+  color: #302927;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.invoiceSnapshotCaption {
+  margin: 0;
+  color: #706561;
+  font-size: 13px;
+}
+
+.invoiceBalances {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: #706561;
+  font-size: 13px;
+}
+
+.invoiceBalances > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 14px;
+  color: #302927;
+  text-align: right;
+}
+
+.invoiceBalances strong {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.invoiceSnapshotBar {
+  display: flex;
+  height: 10px;
+  gap: 2px;
+  overflow: hidden;
+  margin: 12px 0;
+  border-radius: 8px;
+  background: #eee8e3;
+}
+
+.invoiceSnapshotBar [data-group="overdue"],
+.invoiceSnapshotLegend [data-group="overdue"] {
+  background: #b81724;
+}
+
+.invoiceSnapshotBar [data-group="waiting"],
+.invoiceSnapshotLegend [data-group="waiting"] {
+  background: #ad751f;
+}
+
+.invoiceSnapshotLegend,
+.invoiceSnapshotList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  list-style: none;
+}
+
+.invoiceSnapshotLegend {
+  color: #625955;
+}
+
+.invoiceSnapshotLegend li {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.invoiceSnapshotLegend [data-group] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.invoiceSnapshotLegend strong {
+  color: #302927;
+  font-variant-numeric: tabular-nums;
+}
+
+.invoiceSnapshotList {
+  min-width: 0;
+  font-size: 13px;
+}
+
+.invoiceSnapshotList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 42px;
+  padding: 3px 0;
+}
+
+.invoiceSnapshotList li + li {
+  border-top: 1px solid #eee8e3;
+}
+
+.invoiceIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.invoiceIdentity a {
+  width: fit-content;
+  color: #302927;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.invoiceIdentity a:hover {
+  color: #a81521;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.invoiceIdentity small {
+  color: #706561;
+  font-size: 12px;
+}
+
+.invoiceAmount {
+  color: #302927;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.panelNotice,
+.panelError {
+  margin: 0;
+  color: #625955;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.panelError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #a52a1f;
+}
+
+.panelError button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e9e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #302927;
+  font: inherit;
+  cursor: pointer;
+}
+
+.panelError button:hover {
+  background: #f8f6f4;
+}
+
+.panelError button:focus-visible {
+  outline: 2px solid #a81521;
+  outline-offset: 2px;
+}
+
+@media (max-width: 980px) {
+  .visualGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cupsPanel {
+    min-height: 390px;
+  }
+
+  .sideColumn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+
+  .machinePanel,
+  .contractPanel {
+    min-height: 225px;
+  }
+}
+
+@media (max-width: 680px) {
+  .sideColumn {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cupsPanel,
+  .machinePanel,
+  .contractPanel,
+  .invoicePanel {
+    padding: 16px;
+  }
+
+  .cupsPanel {
+    min-height: 0;
+  }
+
+  .cupsTotal strong {
+    font-size: 38px;
+  }
+
+  .cupChart {
+    height: 220px;
+  }
+
+  .machinePanel,
+  .contractPanel {
+    min-height: 0;
+  }
+
+  .invoiceAmount {
+    align-self: center;
+    max-width: 150px;
+    overflow-wrap: anywhere;
+  }
+
+  .invoiceBalances {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .invoiceBalances > div {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .cupsHeading,
+  .panelHeading {
+    gap: 10px;
+  }
+}
+
+@container (max-width: 610px) {
+  .invoiceSnapshot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 360px) {
+  .invoiceSnapshotList li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    padding: 8px 0;
+  }
+
+  .invoiceSnapshotList li > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  .invoiceSnapshotList li > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

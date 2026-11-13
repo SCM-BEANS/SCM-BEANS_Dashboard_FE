@@ -176,6 +176,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
   role: ActionItemsRole; compact?: boolean; summary?: TDashboardOverview["actionSummary"];
 }) {
   const moderator = role === "MODERATOR";
+  const queueView = moderator || (role === "OWNER" && compact);
   const [bucket, setBucket] = useState<TimeBucket>("ALL");
   const [page, setPage] = useState(0);
   const [openAcknowledgement, setOpenAcknowledgement] = useState<Record<string, boolean>>({});
@@ -186,7 +187,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
   const parsedBucket = bucket === "ALL" ? undefined : DashboardTimeBucketSchema.parse(bucket);
   const items = useQuery({
     queryKey: ["dolores", "dashboard", "action-items", authScopedQuerySubject(role), parsedBucket ?? "ALL", page],
-    queryFn: ({ signal }) => dashboardApi.getActionItems({ page, size: moderator ? 5 : 20, ...(parsedBucket ? { timeBucket: parsedBucket } : {}) }, signal),
+    queryFn: ({ signal }) => dashboardApi.getActionItems({ page, size: queueView ? 5 : 20, ...(parsedBucket ? { timeBucket: parsedBucket } : {}) }, signal),
     retry: false,
   });
   const acknowledgeCustodyEvent = useMutation({
@@ -240,7 +241,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
       render: (item) => <span className={item.overdue ? styles.overdue : styles.priority}>{item.overdue ? "Quá hạn" : item.priority}</span>,
     },
     { key: "due-date", header: "Hạn xử lý", render: (item) => formatDate(item.dueAt ?? item.scheduledAt) },
-    ...(role !== "OWNER" && role !== "TECHNICIAN" ? [{
+    ...(role !== "TECHNICIAN" ? [{
       key: "status",
       header: "Trạng thái",
       render: (item: TDashboardActionItem) => <StatusBadge variant="dot" status={item.overdue ? "OVERDUE" : item.status}>
@@ -318,7 +319,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         }
         const href = safeWorkflowHref(item, role);
         return href
-          ? moderator ? <ButtonBar rollingLabel href={href} className={styles.queueOpen}>Mở công việc</ButtonBar>
+          ? queueView ? <ButtonBar rollingLabel href={href} className={styles.queueOpen}>Mở công việc</ButtonBar>
             : <Link className={styles.openLink} href={href}>Mở công việc</Link>
           : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>;
       },
@@ -326,7 +327,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
   ];
 
   const workGroups = new Map<string, TDashboardActionItem[]>();
-  if (moderator) {
+  if (queueView) {
     for (const item of items.data?.items ?? []) {
       const key = JSON.stringify([item.actionType, item.title]);
       const group = workGroups.get(key);
@@ -338,13 +339,13 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
   const actionColumn = columns.find(column => column.key === "action");
 
   return (
-    <section className={moderator ? `${styles.panel} ${styles.moderatorQueue}` : styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
+    <section className={queueView ? `${styles.panel} ${styles.moderatorQueue}` : styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
       <header className={styles.header}>
         <div>
           <h2 id={`action-items-${role.toLowerCase()}`}>Công việc cần xử lý</h2>
-          {!moderator && <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>}
+          {!queueView && <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>}
         </div>
-        {!moderator && <label className={styles.filter}>
+        {!queueView && <label className={styles.filter}>
           <span>Thời hạn</span>
           <select value={bucket} onChange={event => selectBucket(event.target.value as TimeBucket)}>
             {bucketOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -352,7 +353,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         </label>}
       </header>
 
-      {moderator && <div className={styles.queueBuckets} role="group" aria-label="Thời hạn">
+      {queueView && <div className={styles.queueBuckets} role="group" aria-label="Thời hạn">
         {(["ALL", "OVERDUE", "TODAY", "UPCOMING", "UNSCHEDULED"] as const).map(value => {
           const label = value === "ALL" ? "Tất cả" : bucketOptions.find(option => option.value === value)?.label;
           const total = value === "ALL" ? summary?.actionableItems : summary?.workByTimeBucket[value];
@@ -368,7 +369,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
           <button type="button" onClick={() => void items.refetch()}>Thử lại</button>
         </div>
       )}
-      {moderator && items.data && (workGroups.size ? (
+      {queueView && items.data && (workGroups.size ? (
         <div className={styles.queueGroups} role="group" aria-label="Danh sách công việc">
           {[...workGroups].map(([key, group]) => (
             <section className={styles.queueGroup} key={key}>
@@ -401,7 +402,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
           ))}
         </div>
       ) : <p className={styles.notice}>Không có công việc trong khoảng thời hạn này.</p>)}
-      {!moderator && items.data && (
+      {!queueView && items.data && (
         <>
         {compact && <div className={styles.queueSummary} aria-label="Hàng đợi công việc trên trang hiện tại">
           <strong>{items.data.items.length.toLocaleString("vi-VN")}</strong>
@@ -422,7 +423,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         </>
       )}
 
-      {(!moderator || page > 0 || items.data?.hasMore) && <footer className={styles.pagination}>
+      {(!queueView || page > 0 || items.data?.hasMore) && <footer className={styles.pagination}>
         <span>Trang {page + 1}{items.data?.hasMore ? "+" : ""}</span>
         <div>
           <button type="button" disabled={page === 0 || items.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trước</button>

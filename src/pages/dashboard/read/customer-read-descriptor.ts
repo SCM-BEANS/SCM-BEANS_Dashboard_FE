@@ -93,12 +93,7 @@ const blocked = (label: string, variant: "primary" | "secondary" = "primary"): A
 });
 
 function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
-  if (!sectionPath) {
-    return [
-      link("Xem máy của tôi", "/dashboard/machines"),
-      link("Xem hóa đơn", "/dashboard/invoices", "secondary"),
-    ];
-  }
+  if (!sectionPath) return [];
 
   if (sectionPath === "contracts") return [link("Trao đổi hợp đồng mới", "/dashboard/contracts/new")];
   if (sectionPath === "contracts/expiry") {
