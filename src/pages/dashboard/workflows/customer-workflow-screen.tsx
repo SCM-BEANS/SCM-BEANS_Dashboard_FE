@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import repairStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -8,7 +10,7 @@ import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type Custome
 import { RepairIntakeForm } from "./repair-intake-screen";
 import { SupportRequestsListScreen } from "../support/support-requests-list-screen";
 import { RepairCaseDetailScreen } from "@/components/features/repair-workflow/repair-case-detail-screen";
-import { OwnerMaintenanceScreen } from "@/components/features/maintenance-workflow/owner-maintenance-screen";
+import { OwnerMaintenanceRequestDetail, OwnerMaintenanceScreen } from "@/components/features/maintenance-workflow/owner-maintenance-screen";
 import { RepairCostReviewScreen } from "@/components/features/maintenance-workflow/repair-cost-review-screen";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { NotificationInbox } from "./notification-inbox";
@@ -70,12 +72,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
     return <OwnerRecipeSyncScreen />;
   }
 
-  if (sectionPath === "support") {
-    return withWorkflowActions(
-      <SupportRequestsListScreen />,
-      actions,
-    );
-  }
+  if (sectionPath === "support") return <SupportRequestsListScreen />;
   const recallDetail = /^contracts\/recall\/([^/]+)$/.exec(sectionPath);
   if (recallDetail) {
     return <RecallWorkOrdersScreen
@@ -105,22 +102,43 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
   if (maintenanceRequestDetail) return <OwnerMaintenanceScreen requestId={maintenanceRequestDetail[1]} />;
   const repairCostReview = /^repair-cost-reviews\/([^/]+)$/.exec(sectionPath);
   if (repairCostReview) return <RepairCostReviewScreen reviewId={repairCostReview[1]} role="owner" listHref={PATH_CUSTOMER.NOTIFICATIONS} />;
-  const repairCaseDetail = /^support\/repair-cases\/([^/]+)$/.exec(sectionPath);
+  const repairCaseDetail = /^support\/repair-cases\/([^/]+)(\/related)?$/.exec(sectionPath);
   if (repairCaseDetail) {
-    return withWorkflowActions(
-      <RepairCaseDetailScreen
-        caseId={repairCaseDetail[1]}
-        role="owner"
-        listHref={PATH_CUSTOMER.SUPPORT}
-      />,
-      actions,
+    return (
+      <div className={repairStyles.operatorWorkspace}>
+        <RepairCaseDetailScreen
+          key={sectionPath}
+          caseId={repairCaseDetail[1]}
+          role="owner"
+          listHref={PATH_CUSTOMER.SUPPORT}
+          relatedOnly={Boolean(repairCaseDetail[2])}
+        />
+      </div>
     );
   }
   if (sectionPath === "support/new") {
-    return withWorkflowActions(
-      <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />,
-      actions,
+    return <RepairIntakeForm title={screen.title} description={screen.description} back={screen.back} />;
+  }
+  if (sectionPath === "support/menu") {
+    return (
+      <div className={repairStyles.operatorWorkspace}>
+        <section className={repairStyles.pageContent} aria-labelledby="recipe-support-title">
+          <BackButtonHeading back={screen.back ?? null} title="Hỗ trợ công thức" titleId="recipe-support-title" className={repairStyles.pageHeading} />
+          <section className={repairStyles.panel}>
+            <h2>Công thức chưa cập nhật trên máy?</h2>
+            <p>Kiểm tra lịch sử đồng bộ để xem máy đã nhận công thức mới chưa.</p>
+            <div className={repairStyles.technicalRequestActions}>
+              <ButtonBar variant="primary" href={PATH_CUSTOMER.MENU_SYNC}>Kiểm tra đồng bộ</ButtonBar>
+              <ButtonBar href={PATH_CUSTOMER.MACHINES}>Xem máy của tôi</ButtonBar>
+            </div>
+          </section>
+        </section>
+      </div>
     );
+  }
+  const supportDetail = /^support\/([^/]+)$/.exec(sectionPath);
+  if (supportDetail) {
+    return <OwnerMaintenanceRequestDetail key={supportDetail[1]} requestId={supportDetail[1]} listHref={PATH_CUSTOMER.SUPPORT} support />;
   }
   if (sectionPath === "notifications") {
     return <NotificationInbox back={screen.back} />;

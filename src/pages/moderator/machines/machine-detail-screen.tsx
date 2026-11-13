@@ -1,6 +1,8 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { MachineSpecificationsView } from "@/pages/admin/machines/create-machine-model-form";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { locationsApi } from "@/apis/locations.api";
@@ -9,7 +11,6 @@ import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
-import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
@@ -21,7 +22,6 @@ import { adminStyles } from "@/pages/admin/admin-shell";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import { moderatorStyles } from "../moderator-shell";
-import { MachineMaintenanceTicketTable } from "./machine-maintenance-ticket-table";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 const numberFormat = new Intl.NumberFormat("vi-VN");
@@ -173,7 +173,10 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
   const router = useRouter();
   const queryClient = useQueryClient();
   const validId = MachineIdSchema.safeParse(machineId).success;
-  const [detailTab, setDetailTab] = useState<"profile" | "machine-type">("profile");
+  const detailTab = ["profile", "machine-type", "history"].includes(String(router.query.tab)) ? String(router.query.tab) : "profile";
+  const setDetailTab = (tab: string) => void router.push({ pathname: router.pathname, query: { ...router.query, tab } }, undefined, { shallow: true });
+  const [ticketPage, setTicketPage] = useState(0);
+  useEffect(() => setTicketPage(0), [machineId]);
   const [editing, setEditing] = useState(false);
   const [serialNumber, setSerialNumber] = useState("");
   const [region, setRegion] = useState("");
@@ -212,8 +215,8 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
     retry: false,
   });
   const tickets = useQuery({
-    queryKey: ["dolores", "maintenance-tickets", { machineId }],
-    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId, page: 0, size: 100 }, signal),
+    queryKey: ["dolores", "maintenance-tickets", { machineId, page: ticketPage }],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({ machineId, page: ticketPage, size: 10 }, signal),
     enabled: validId && Boolean(device),
     retry: false,
   });
@@ -281,8 +284,8 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
       {heading}
       <QueryFeedback query={machine} loadingMessage={messages.LOADING_MACHINE} />
       {device && <>
-        <MachineDetailView summary={[
-          { label: ADMIN_T.MACHINES.STATUS, value: status },
+        <MachineDetailView className={adminStyles.machineWorkspace} summary={[
+          { label: ADMIN_T.MACHINES.STATUS, value: <span className={adminStyles.machinePlainStatus} data-status={device.status ?? undefined}>{status}</span> },
           { label: ADMIN_T.MACHINES.MACHINE_TYPE, value: machineType },
           { label: ADMIN_T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
           { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
@@ -293,14 +296,15 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
           <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
             <button id="moderator-machine-profile-tab" type="button" role="tab" aria-selected={detailTab === "profile"} aria-controls="moderator-machine-profile-panel" className={`${adminStyles.machineViewTab} ${detailTab === "profile" ? adminStyles.machineViewTabActive : ""}`} onClick={() => setDetailTab("profile")}>{ADMIN_T.MACHINES.DETAIL}</button>
             <button id="moderator-machine-type-tab" type="button" role="tab" aria-selected={detailTab === "machine-type"} aria-controls="moderator-machine-type-panel" className={`${adminStyles.machineViewTab} ${detailTab === "machine-type" ? adminStyles.machineViewTabActive : ""}`} disabled={editing} onClick={() => setDetailTab("machine-type")}>{ADMIN_T.MACHINES.MACHINE_TYPE}</button>
+            <button id="moderator-machine-history-tab" aria-controls="moderator-machine-history-panel" type="button" role="tab" aria-selected={detailTab === "history"} className={[adminStyles.machineViewTab, detailTab === "history" ? adminStyles.machineViewTabActive : ""].join(" ")} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
           </div>
           {detailTab === "profile" ? (
             <section id="moderator-machine-profile-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-profile-tab">
               <div className={adminStyles.machineInventoryHeading}>
                 <h2>{ADMIN_T.MACHINES.DETAIL}</h2>
-                <Link className={adminStyles.accountSecondaryButton} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
+                <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
                   Xem dữ liệu vận hành
-                </Link>
+                </ButtonBar>
                 {!editing && <button className={adminStyles.accountSecondaryButton} type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</button>}
               </div>
               <div className={adminStyles.machineProfileGroups}>
@@ -355,7 +359,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
               </form>}
               {actionError && <p className={adminStyles.accountInlineWarning} role="alert">{actionError}</p>}
             </section>
-          ) : (
+          ) : detailTab === "machine-type" ? (
             <section id="moderator-machine-type-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-type-tab">
               <h2>{ADMIN_T.MACHINES.MACHINE_TYPE}</h2>
               <div className={adminStyles.machineProfileFields}>
@@ -383,15 +387,15 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                   </div>
                   <div className={adminStyles.machineModelSpecifications}>
                     <span>{ADMIN_T.MACHINE_MODELS.SPECIFICATIONS}</span>
-                    {Object.keys(machineModel.data.specifications).length > 0 ? <pre>{JSON.stringify(machineModel.data.specifications, null, 2)}</pre> : <p>{ADMIN_T.MACHINE_MODELS.SPECIFICATIONS_EMPTY}</p>}
+                    <MachineSpecificationsView value={machineModel.data.specifications} />
                   </div>
                 </>}
               </> : <p className={adminStyles.emptyText}>{ADMIN_T.MACHINES.MODEL_UNLINKED}</p>}
             </section>
-          )}
+          ) : null}
         </div>
 
-        <section className={adminStyles.panel}>
+        {detailTab === "history" && <div id="moderator-machine-history-panel" role="tabpanel" aria-labelledby="moderator-machine-history-tab"><section className={adminStyles.panel}>
           <h2>{ADMIN_T.MACHINES.PREVENTIVE}</h2>
           <QueryFeedback query={schedule} loadingMessage={messages.LOADING_MACHINE_SCHEDULE} />
           {schedule.data && !schedule.isError && <div className={adminStyles.machineProfileFields}>
@@ -403,28 +407,25 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
         <section className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
             <h2>{ADMIN_T.MACHINES.TICKET_HISTORY}</h2>
-            {tickets.data && <span>{formatNumber(tickets.data.length)} {ADMIN_T.MACHINES.TICKET_COUNT}</span>}
+            {tickets.data && <span>{formatNumber(tickets.data.items.length)} {ADMIN_T.MACHINES.TICKET_COUNT}</span>}
           </div>
           <QueryFeedback query={tickets} loadingMessage={messages.LOADING_MACHINE_TICKETS} />
-          {tickets.data && !tickets.isError && tickets.data.length === 0 && <p className={adminStyles.emptyText}>{ADMIN_T.COMMON.EMPTY}</p>}
+          {tickets.data && !tickets.isError && tickets.data.items.length === 0 && <p className={adminStyles.emptyText}>{ADMIN_T.COMMON.EMPTY}</p>}
           {device && <MachineMaintenanceTicketActions
             machineId={machineId}
-            tickets={tickets.data ?? []}
+            tickets={tickets.data?.items ?? []}
             role="MODERATOR"
+            presentation="table"
+            previewLimit={10}
             onRefresh={() => tickets.refetch()}
           />}
-          {tickets.data && !tickets.isError && tickets.data.length > 0 && <MachineMaintenanceTicketTable tickets={tickets.data} machineId={machineId} />}
+          {tickets.data && <nav className={adminStyles.machinePagination} aria-label="Phân trang bảo trì"><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar><span>Trang {ticketPage + 1}</span><ButtonBar disabled={!tickets.data.hasNext || tickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar></nav>}
         </section>
 
 
-        {device.machineType === "SMART_IOT" && <SmartIotPanel
-          title={ADMIN_T.MACHINES.TELEMETRY}
-          state="permission-denied"
-          stateMessage="Tài khoản điều phối chưa được cấp quyền xem kết nối trực tiếp và thông số máy."
-        ><Link className={adminStyles.accountSecondaryButton} href={`${PATH_MODERATOR.IOT}?machineId=${encodeURIComponent(machineId)}`}>Xem hồ sơ mất kết nối</Link></SmartIotPanel>}
+        <MachineContractHistory machineId={machineId} role="MODERATOR" /></div>}
 
-        <MachineManagementActions key={device.id} machine={device} />
-        {machineId && <MachineContractHistory machineId={machineId} role="MODERATOR" />}
+        {detailTab === "machine-type" && <MachineManagementActions key={device.id} machine={device} />}
         </MachineDetailView>
       </>}
     </div>

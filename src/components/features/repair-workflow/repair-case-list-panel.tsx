@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { RepairCaseSummary } from "@/schema/machines.schema";
@@ -24,10 +25,10 @@ function statusLabel(status: string): string {
   return M.STATUS_LABELS[status as keyof typeof M.STATUS_LABELS] ?? status;
 }
 
-function tableVariant(role: RepairWorkflowRole): "operations" | "moderator" | "standard" | "customer" {
-  if (role === "owner") return "customer";
+function tableVariant(role: RepairWorkflowRole): "accounts" | "operations" | "standard" | "customer" {
+  if (role === "owner") return "accounts";
   if (role === "technician") return "standard";
-  if (role === "moderator") return "moderator";
+  if (role === "moderator") return "accounts";
   return "operations";
 }
 
@@ -46,9 +47,10 @@ export function RepairCaseListPanel({
 }) {
   const [page, setPage] = useState(0);
   const subject = querySubject(role);
+  const pageSize = role === "moderator" || role === "owner" ? 10 : 50;
   const cases = useQuery({
-    queryKey: ["dolores", "repair-workflow", subject, "case-list", page, 50],
-    queryFn: ({ signal }) => repairCasesApi.listPage({ page, size: 50 }, signal),
+    queryKey: ["dolores", "repair-workflow", subject, "case-list", page, pageSize],
+    queryFn: ({ signal }) => repairCasesApi.listPage({ page, size: pageSize }, signal),
     retry: false,
   });
   const ownerNames = useOwnerNames(showOwner ? (cases.data?.items.map((repairCase) => (
@@ -60,7 +62,7 @@ export function RepairCaseListPanel({
       key: "case-id",
       header: M.CASE_ID,
       render: (repairCase) => (
-        <TextLinkButton href={detailHref(repairCase.id)}><TruncatedId value={repairCase.id} /></TextLinkButton>
+        role === "owner" ? <TruncatedId value={repairCase.id} /> : <TextLinkButton href={detailHref(repairCase.id)}><TruncatedId value={repairCase.id} /></TextLinkButton>
       ),
     },
     { key: "request-id", header: M.REQUEST_ID, render: (repairCase) => <TruncatedId value={repairCase.maintenanceRequestId} /> },
@@ -72,8 +74,13 @@ export function RepairCaseListPanel({
       ),
     }] : []),
     { key: "machine", header: M.MACHINE, render: (repairCase) => <TruncatedId value={repairCase.primaryMachineId} /> },
-    { key: "status", header: M.STATUS, render: (repairCase) => statusLabel(repairCase.status) },
+    { key: "status", header: M.STATUS, render: (repairCase) => role === "owner" ? <span className={styles.requestStatus} data-status={repairCase.status}>{statusLabel(repairCase.status)}</span> : statusLabel(repairCase.status) },
     { key: "updated-at", header: M.UPDATED_AT, render: (repairCase) => formatDateTime(repairCase.updatedAt) },
+    ...(role === "owner" ? [{
+      key: "actions",
+      header: "",
+      render: (repairCase: RepairCaseSummary) => <ButtonBar rollingLabel href={detailHref(repairCase.id)}>Mở hồ sơ</ButtonBar>,
+    }] : []),
   ];
 
   return (
@@ -100,6 +107,7 @@ export function RepairCaseListPanel({
         <>
           <DataTable
             variant={tableVariant(role)}
+            headerVariant={role === "moderator" || role === "owner" ? "admin" : undefined}
             rows={cases.data.items}
             rowKey={(repairCase) => repairCase.id}
             columns={columns}

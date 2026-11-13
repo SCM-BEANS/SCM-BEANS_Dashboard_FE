@@ -4,10 +4,10 @@ import { repairCostReviewsApi } from "@/apis/repair-cost-reviews.api";
 import { RepairCaseIdSchema, type RepairCaseTimelineEvent } from "@/schema/machines.schema";
 import { parseEmergencyAuthorizationEvents } from "./emergency-authorizations";
 
-export function useRepairCaseCostDispute(caseId: string) {
+export function useRepairCaseCostDispute(caseId: string, enabled = true) {
   const timeline = useQuery({
     queryKey: ["dolores", "repair-cases", caseId, "timeline", "all"],
-    enabled: RepairCaseIdSchema.safeParse(caseId).success,
+    enabled: enabled && RepairCaseIdSchema.safeParse(caseId).success,
     retry: false,
     queryFn: async ({ signal }) => {
       const events: RepairCaseTimelineEvent[] = [];
@@ -21,6 +21,6 @@ export function useRepairCaseCostDispute(caseId: string) {
   });
   const latest = [...(timeline.data ?? [])].sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
     .map(event => event.details?.match(/(?:^|;)repairCostReviewId=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:;|$)/i)?.[1]).find(Boolean);
-  const review = useQuery({ queryKey: ["dolores", "repair-cost-reviews", latest], queryFn: ({ signal }) => repairCostReviewsApi.getById(latest!, signal), enabled: Boolean(latest), retry: false });
+  const review = useQuery({ queryKey: ["dolores", "repair-cost-reviews", latest], queryFn: ({ signal }) => repairCostReviewsApi.getById(latest!, signal), enabled: enabled && Boolean(latest), retry: false });
   return { isDisputed: review.data?.status === "DISPUTED", review: review.data, authorizations: parseEmergencyAuthorizationEvents(timeline.data ?? []), isLoading: timeline.isLoading || review.isLoading, isError: timeline.isError || review.isError };
 }

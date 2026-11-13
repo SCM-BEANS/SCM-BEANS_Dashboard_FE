@@ -19,6 +19,10 @@ const labels: Record<RecipeSyncStatus["state"], string> = {
 function stateLabel(status: RecipeSyncStatus) {
   return status.state === "APPLIED" && !isRecipeSyncApplied(status) ? "Cần kiểm tra xác nhận phiên bản từ máy" : labels[status.state];
 }
+function stateTone(status: RecipeSyncStatus) {
+  return isRecipeSyncApplied(status) ? "success" : ["FAILED", "EXPIRED"].includes(status.state) ? "danger" : undefined;
+}
+
 function formatTime(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -143,14 +147,18 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
   const replay = useMutation({ mutationFn: (input: { machineId: string; commandId: string }) => recipesApi.replaySyncCommand(input.machineId, input.commandId), onSuccess: (_result, input) => invalidate(input.machineId), retry: false });
   const busy = menuBusy || sync.isPending || replay.isPending;
   const submitSearch = (event: FormEvent) => { event.preventDefault(); if (busy) return; setQ(search); setMachinePage(0); setSelectedMachine(""); setHistoryPage(0); sync.reset(); replay.reset(); };
-  const pageControls = (page: number, hasNext: boolean, change: (page: number) => void, label: string) => <nav className={styles.recipeMenuPagination} aria-label={label}>
+  const pageControls = (page: number, hasNext: boolean, change: (page: number) => void, label: string) => role === "ADMIN" && page === 0 && !hasNext ? null : <nav className={styles.recipeMenuPagination} aria-label={label}>
     <ButtonBar disabled={busy || page === 0} onClick={() => change(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={busy || !hasNext} onClick={() => change(page + 1)}>Trang sau</ButtonBar>
   </nav>;
-  return <section className={styles.recipeMenuPanel}>
+  const requestSync = () => { replay.reset(); sync.mutate(machineId); };
+  return <section className={styles.recipeMenuPanel} data-recipe-sync>
+    <div className={styles.adminSyncToolbar}>
     <div className={styles.panelHeading}><div><h2>Đồng bộ công thức với máy</h2></div>
-      <ButtonBar disabled={!canRead || current.isFetching || history.isFetching} onClick={() => { void current.refetch(); void history.refetch(); }}>Làm mới</ButtonBar></div>
+      <ButtonBar disabled={!canRead || current.isFetching || history.isFetching} onClick={() => { void current.refetch(); void history.refetch(); }}>Làm mới</ButtonBar>
+      {role === "ADMIN" && machine && canRead && !isStatus(current.error, 403) ? <ButtonBar variant="primary" disabled={busy} onClick={requestSync}>{sync.isPending ? "Đang gửi…" : "Yêu cầu đồng bộ lại"}</ButtonBar> : null}
+    </div>
     <form className={styles.recipeMenuToolbar} onSubmit={submitSearch}>
-      <label className={styles.formField}><span>Tìm máy theo serial</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><ButtonBar type="submit" disabled={busy}>Tìm kiếm</ButtonBar>
+      <label className={styles.formField}><span>{role === "ADMIN" ? "Tìm theo số sê-ri" : "Tìm máy theo serial"}</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><ButtonBar type="submit" disabled={busy}>Tìm kiếm</ButtonBar>
     </form>
     {machines.isPending ? <p role="status">Đang tải máy…</p> : null}
     {machines.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(machines.error)}</p><ButtonBar onClick={() => void machines.refetch()}>Thử lại</ButtonBar></div> : null}
@@ -162,18 +170,20 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
       </select></label> : <p className={styles.recipeMenuEmpty}>Chưa có máy phù hợp trong phạm vi tài khoản.</p>}
       {pageControls(machinePage, machines.data.hasNext, (page) => { setMachinePage(page); setSelectedMachine(""); setHistoryPage(0); sync.reset(); replay.reset(); }, "Danh sách máy đồng bộ")}
     </> : null}
+    </div>
     {machine && !machine.ownerId && role !== "ADMIN" ? <p className={styles.notice}>Máy chưa được gắn Owner trực tiếp. Hãy liên hệ vận hành để kiểm tra quyền đồng bộ; hợp đồng đang hoạt động chưa đủ để cấp quyền API này.</p> : null}
-    {machine ? <MachineActiveMenuPanel key={`${subject}:${machineId}`} machineId={machineId} subject={subject} syncing={sync.isPending || replay.isPending} onBusyChange={setMenuBusy} onRetrySync={canRead && !isStatus(current.error, 403) && !isStatus(current.error, 404) ? () => sync.mutate(machineId) : undefined} /> : null}
-    <PageActions actions={machine && canRead && !isStatus(current.error, 403) ? [{ id: "recipe-sync", label: "Yêu cầu đồng bộ lại", variant: "primary", priority: 50, disabled: busy, disabledReason: "Đang xử lý yêu cầu.", pending: sync.isPending, pendingLabel: "Đang gửi…", onClick: () => { replay.reset(); sync.mutate(machineId); } }] : []} />
+    <PageActions actions={role !== "ADMIN" && machine && canRead && !isStatus(current.error, 403) ? [{ id: "recipe-sync", label: "Yêu cầu đồng bộ lại", variant: "primary", priority: 50, disabled: busy, disabledReason: "Đang xử lý yêu cầu.", pending: sync.isPending, pendingLabel: "Đang gửi…", onClick: requestSync }] : []} />
     {(sync.isSuccess && sync.variables === machineId) || (replay.isSuccess && replay.variables.machineId === machineId) ? <p className={styles.recipeMenuSuccess} role="status">Đã tiếp nhận yêu cầu. Máy cần kết nối và xác nhận áp dụng; chưa thể coi là đồng bộ xong.</p> : null}
     {sync.isError || replay.isError ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(sync.error ?? replay.error, "mutation")}</p> : null}
-    {canRead ? <>
+    <div className={styles.adminRecipeColumns}>
+    {machine ? <MachineActiveMenuPanel key={`${subject}:${machineId}`} machineId={machineId} subject={subject} syncing={sync.isPending || replay.isPending} onBusyChange={setMenuBusy} onRetrySync={canRead && !isStatus(current.error, 403) && !isStatus(current.error, 404) ? () => sync.mutate(machineId) : undefined} /> : null}
+    {canRead ?
       <section className={styles.recipeMenuDetail}><h3>Lần đồng bộ gần nhất</h3>
         {current.isPending ? <p role="status">Đang tải trạng thái…</p> : null}
         {current.isError ? <div role={isStatus(current.error, 404) ? "status" : "alert"}><p>{isStatus(current.error, 404) ? "Chưa có trạng thái đồng bộ hoặc máy không còn khả dụng." : getRecipeApiErrorMessage(current.error)}</p>{!isStatus(current.error, 403) ? <ButtonBar onClick={() => void current.refetch()}>Kiểm tra lại</ButtonBar> : null}</div> : null}
         {current.data ? <>
           <dl className={styles.recipeMenuStatus}>
-            <div><dt>Trạng thái</dt><dd>{stateLabel(current.data)}</dd></div>
+            <div><dt>Trạng thái</dt><dd><span className={styles.requestStatus} data-tone={stateTone(current.data)}>{stateLabel(current.data)}</span></dd></div>
             <div><dt>Phiên bản yêu cầu</dt><dd>{current.data.targetVersion}</dd></div>
             <div><dt>Phiên bản máy báo</dt><dd>{current.data.appliedVersion ?? "Chưa có xác nhận"}</dd></div>
             <div><dt>Yêu cầu lúc</dt><dd>{formatTime(current.data.requestedAt)}</dd></div>
@@ -183,20 +193,25 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
           {current.data.lastError ? <p className={styles.recipeMenuError}>{current.data.lastError}</p> : null}
           {role === "ADMIN" && current.data.commandId && ["FAILED", "EXPIRED"].includes(current.data.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: current.data.machineId, commandId: current.data.commandId! }); }}>Phát lại lệnh lỗi / hết hạn</ButtonBar> : null}
         </> : null}
-      </section>
-      <section className={styles.recipeMenuHistory}><h3>Lịch sử đồng bộ</h3>
+      </section> : null}
+    </div>
+    {canRead ? <section className={styles.recipeMenuHistory}><h3>Lịch sử đồng bộ</h3>
         {history.isPending ? <p role="status">Đang tải lịch sử…</p> : null}
         {history.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(history.error)}</p>{!isStatus(history.error, 403) ? <ButtonBar onClick={() => void history.refetch()}>Thử lại</ButtonBar> : null}</div> : null}
         {history.data ? <>
-          <ul>{history.data.items.map((status, index) => <li key={status.commandId ?? status.machineId + "-" + index}>
-            <div><strong>{stateLabel(status)}</strong><span>Phiên bản {status.targetVersion}</span></div><time>{formatTime(status.requestedAt)}</time>
-            {status.lastError ? <p>{status.lastError}</p> : null}
-            {role === "ADMIN" && status.commandId && ["FAILED", "EXPIRED"].includes(status.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: status.machineId, commandId: status.commandId! }); }}>Phát lại lệnh</ButtonBar> : null}
-          </li>)}</ul>
+          {history.data.items.length ? <div className={styles.recipeMenuTableScroll}><table className={styles.recipeMenuTable}>
+            <thead><tr><th scope="col">Thời gian</th><th scope="col">Phiên bản yêu cầu</th><th scope="col">Phiên bản máy báo</th><th scope="col">Trạng thái</th></tr></thead>
+            <tbody>{history.data.items.map((status, index) => <tr key={status.commandId ?? index}>
+              <td>{formatTime(status.requestedAt)}</td><td>{status.targetVersion}</td><td>{status.appliedVersion ?? "—"}</td>
+              <td><span className={styles.requestStatus} data-tone={stateTone(status)}>{stateLabel(status)}</span>
+                {status.lastError ? <p className={styles.recipeMenuMeta}>{status.lastError}</p> : null}
+                {role === "ADMIN" && status.commandId && ["FAILED", "EXPIRED"].includes(status.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: status.machineId, commandId: status.commandId! }); }}>Phát lại lệnh</ButtonBar> : null}
+              </td>
+            </tr>)}</tbody>
+          </table></div> : null}
           {!history.data.items.length ? <p className={styles.recipeMenuEmpty}>Chưa có lịch sử đồng bộ.</p> : null}
           {pageControls(history.data.page, history.data.hasNext, setHistoryPage, "Lịch sử đồng bộ")}
         </> : null}
-      </section>
-    </> : null}
+      </section> : null}
   </section>;
 }

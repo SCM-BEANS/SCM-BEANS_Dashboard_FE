@@ -6,12 +6,13 @@ import { buybacksApi } from "@/apis/buybacks.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
-import { DashboardTimeBucketSchema, type TDashboardActionItem } from "@/schema/dashboard.schema";
+import { DashboardTimeBucketSchema, type TDashboardActionItem, type TDashboardOverview } from "@/schema/dashboard.schema";
 import styles from "./action-items-panel.module.css";
 
 type ActionItemsRole = "ADMIN" | "MODERATOR" | "OWNER" | "TECHNICIAN";
@@ -60,6 +61,16 @@ function ownerPaymentReceiptTarget(item: TDashboardActionItem): { caseId: string
     return undefined;
   }
 }
+
+const queueStatuses: Record<string, string> = {
+  OPEN: "Đang mở", ASSIGNED: "Đã phân công", PENDING: "Chờ xử lý",
+  IN_PROGRESS: "Đang xử lý", IN_REVIEW: "Đang xem xét", SUBMITTED: "Đã gửi",
+  REQUESTED: "Đã yêu cầu", SCHEDULED: "Đã lên lịch", COMPLETED: "Hoàn tất",
+  CLOSED: "Đã đóng", OVERDUE: "Quá hạn", UNASSIGNED: "Chưa phân công",
+  ACTIVE: "Đang hiệu lực", APPROVED: "Đã duyệt", REJECTED: "Đã từ chối",
+  WAITING_OWNER: "Chờ khách hàng", INSPECTION_PENDING: "Chờ kiểm tra",
+  UNPAID: "Chưa thanh toán", PAID: "Đã thanh toán", CANCELLED: "Đã hủy",
+};
 
 const bucketOptions: { value: TimeBucket; label: string }[] = [
   { value: "ALL", label: "Tất cả thời hạn" },
@@ -123,14 +134,14 @@ function mappedWorkflowPath(item: TDashboardActionItem, role: ActionItemsRole): 
   }
 
   switch (item.resourceType) {
-    case "CONTRACT": return PATH_MODERATOR.CONTRACTS_LIST;
-    case "INVOICE": return PATH_MODERATOR.INVOICES_LIST;
+    case "CONTRACT": return PATH_MODERATOR.CONTRACT_DETAIL(item.resourceId);
+    case "INVOICE": return PATH_MODERATOR.INVOICE_DETAIL(item.resourceId);
     case "REPAIR_CASE": return PATH_MODERATOR.TECHNICAL_REPAIR_CASE_DETAIL(item.resourceId);
     case "REPAIR_COST_REVIEW": return PATH_MODERATOR.TECHNICAL_COST_REVIEW_DETAIL(item.resourceId);
-    case "BUYBACK_CASE":
+    case "BUYBACK_CASE": return PATH_MODERATOR.BUYBACK_DETAIL(item.resourceId);
     case "BUYBACK_PAYMENT_PROOF": return PATH_MODERATOR.BUYBACK_LIST;
     case "RECALL_WORK_ORDER": return PATH_MODERATOR.CONTRACT_RETRIEVAL;
-    case "MAINTENANCE_REQUEST":
+    case "MAINTENANCE_REQUEST": return PATH_MODERATOR.TECHNICAL_MAINTENANCE_REQUEST_DETAIL(item.resourceId);
     case "MAINTENANCE_TICKET":
     case "INSTALLATION_WORK_ORDER": return PATH_MODERATOR.TECHNICAL_REQUESTS;
     default: return undefined;
@@ -161,17 +172,21 @@ function tableVariant(role: ActionItemsRole): "operations" | "moderator" | "cust
   return "operations";
 }
 
-export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsRole; compact?: boolean }) {
+export function ActionItemsPanel({ role, compact = false, summary }: {
+  role: ActionItemsRole; compact?: boolean; summary?: TDashboardOverview["actionSummary"];
+}) {
+  const moderator = role === "MODERATOR";
   const [bucket, setBucket] = useState<TimeBucket>("ALL");
   const [page, setPage] = useState(0);
   const [openAcknowledgement, setOpenAcknowledgement] = useState<Record<string, boolean>>({});
   const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
   const [paymentReceiptDecision, setPaymentReceiptDecision] = useState<OwnerPaymentReceiptDecision | null>(null);
   const queryClient = useQueryClient();
+  const selectBucket = (next: TimeBucket) => { setBucket(next); setPage(0); };
   const parsedBucket = bucket === "ALL" ? undefined : DashboardTimeBucketSchema.parse(bucket);
   const items = useQuery({
     queryKey: ["dolores", "dashboard", "action-items", authScopedQuerySubject(role), parsedBucket ?? "ALL", page],
-    queryFn: ({ signal }) => dashboardApi.getActionItems({ page, size: 20, ...(parsedBucket ? { timeBucket: parsedBucket } : {}) }, signal),
+    queryFn: ({ signal }) => dashboardApi.getActionItems({ page, size: moderator ? 5 : 20, ...(parsedBucket ? { timeBucket: parsedBucket } : {}) }, signal),
     retry: false,
   });
   const acknowledgeCustodyEvent = useMutation({
@@ -225,6 +240,13 @@ export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsR
       render: (item) => <span className={item.overdue ? styles.overdue : styles.priority}>{item.overdue ? "Quá hạn" : item.priority}</span>,
     },
     { key: "due-date", header: "Hạn xử lý", render: (item) => formatDate(item.dueAt ?? item.scheduledAt) },
+    ...(role !== "OWNER" && role !== "TECHNICIAN" ? [{
+      key: "status",
+      header: "Trạng thái",
+      render: (item: TDashboardActionItem) => <StatusBadge variant="dot" status={item.overdue ? "OVERDUE" : item.status}>
+        {(Object.hasOwn(queueStatuses, item.status) ? queueStatuses[item.status] : (item.status || "Chưa rõ"))}{item.overdue && item.status !== "OVERDUE" ? " · Quá hạn" : ""}
+      </StatusBadge>,
+    }] : []),
     { key: "owner", header: "Khách hàng", render: (item) => item.ownerName || "—" },
     { key: "machine", header: "Máy", render: (item) => item.machineSerialNumber || "—" },
     {
@@ -296,27 +318,49 @@ export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsR
         }
         const href = safeWorkflowHref(item, role);
         return href
-          ? <Link className={styles.openLink} href={href}>Mở công việc</Link>
+          ? moderator ? <ButtonBar rollingLabel href={href} className={styles.queueOpen}>Mở công việc</ButtonBar>
+            : <Link className={styles.openLink} href={href}>Mở công việc</Link>
           : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>;
       },
     },
   ];
 
+  const workGroups = new Map<string, TDashboardActionItem[]>();
+  if (moderator) {
+    for (const item of items.data?.items ?? []) {
+      const key = JSON.stringify([item.actionType, item.title]);
+      const group = workGroups.get(key);
+      if (group) group.push(item);
+      else workGroups.set(key, [item]);
+    }
+  }
+  const statusColumn = columns.find(column => column.key === "status");
+  const actionColumn = columns.find(column => column.key === "action");
+
   return (
-    <section className={styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
+    <section className={moderator ? `${styles.panel} ${styles.moderatorQueue}` : styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
       <header className={styles.header}>
         <div>
           <h2 id={`action-items-${role.toLowerCase()}`}>Công việc cần xử lý</h2>
-          <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>
+          {!moderator && <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>}
         </div>
-        <label className={styles.filter}>
+        {!moderator && <label className={styles.filter}>
           <span>Thời hạn</span>
-          <select value={bucket} onChange={(event) => { setBucket(event.target.value as TimeBucket); setPage(0); }}>
-            {bucketOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          <select value={bucket} onChange={event => selectBucket(event.target.value as TimeBucket)}>
+            {bucketOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-        </label>
+        </label>}
       </header>
 
+      {moderator && <div className={styles.queueBuckets} role="group" aria-label="Thời hạn">
+        {(["ALL", "OVERDUE", "TODAY", "UPCOMING", "UNSCHEDULED"] as const).map(value => {
+          const label = value === "ALL" ? "Tất cả" : bucketOptions.find(option => option.value === value)?.label;
+          const total = value === "ALL" ? summary?.actionableItems : summary?.workByTimeBucket[value];
+          return <button key={value} type="button" data-bucket={value} aria-pressed={bucket === value} onClick={() => selectBucket(value)}>
+            {label}{total != null && <strong>{total.toLocaleString("vi-VN")}</strong>}
+          </button>;
+        })}
+      </div>}
       {items.isPending && <p className={styles.notice} role="status">Đang tải công việc…</p>}
       {items.isError && (
         <div className={`${styles.notice} ${styles.error}`} role="alert">
@@ -324,7 +368,40 @@ export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsR
           <button type="button" onClick={() => void items.refetch()}>Thử lại</button>
         </div>
       )}
-      {items.data && (
+      {moderator && items.data && (workGroups.size ? (
+        <div className={styles.queueGroups} role="group" aria-label="Danh sách công việc">
+          {[...workGroups].map(([key, group]) => (
+            <section className={styles.queueGroup} key={key}>
+              <h3>
+                {group[0].title === "Phân công Technician kiểm tra buyback" ? "Phân công kỹ thuật viên kiểm tra máy thu mua" : group[0].title}
+                <span>{group.length} việc</span>
+              </h3>
+              <ul className={styles.queueList}>
+                {group.map((item, index) => {
+                  const reference = item.resourceId.slice(-8).toUpperCase();
+                  const dueDate = item.dueAt ?? item.scheduledAt;
+                  return (
+                    <li key={item.actionKey}>
+                      <div className={styles.workIdentity}>
+                        <strong className={styles.workTitle}>{item.ownerName || item.machineSerialNumber || `Hồ sơ ${reference}`}</strong>
+                        {(item.ownerName || item.machineSerialNumber) && <small>
+                          {[item.ownerName && item.machineSerialNumber, `Mã hồ sơ: ${reference}`].filter(Boolean).join(" · ")}
+                        </small>}
+                      </div>
+                      <div className={styles.queueMeta}>
+                        {statusColumn?.render(item, index)}
+                        {dueDate && <time dateTime={dueDate}>{formatDate(dueDate)}</time>}
+                      </div>
+                      {actionColumn?.render(item, index)}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      ) : <p className={styles.notice}>Không có công việc trong khoảng thời hạn này.</p>)}
+      {!moderator && items.data && (
         <>
         {compact && <div className={styles.queueSummary} aria-label="Hàng đợi công việc trên trang hiện tại">
           <strong>{items.data.items.length.toLocaleString("vi-VN")}</strong>
@@ -337,7 +414,7 @@ export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsR
           {...(role === "ADMIN" ? { headerVariant: "admin" as const } : {})}
           rows={items.data.items}
           rowKey={(item) => item.actionKey}
-          columns={compact && role === "ADMIN" ? columns.filter(column => column.key === "work" || column.key === "action") : columns}
+          columns={compact && role === "ADMIN" ? columns.filter(column => ["work", "status", "action"].includes(column.key)) : columns}
           style={{ minWidth: compact && role === "ADMIN" ? 0 : 1040 }}
           emptyMessage="Không có công việc trong khoảng thời hạn này."
         />
@@ -345,13 +422,13 @@ export function ActionItemsPanel({ role, compact = false }: { role: ActionItemsR
         </>
       )}
 
-      <footer className={styles.pagination}>
+      {(!moderator || page > 0 || items.data?.hasMore) && <footer className={styles.pagination}>
         <span>Trang {page + 1}{items.data?.hasMore ? "+" : ""}</span>
         <div>
           <button type="button" disabled={page === 0 || items.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trước</button>
           <button type="button" disabled={!items.data?.hasMore || items.isFetching} onClick={() => setPage((current) => current + 1)}>Tiếp</button>
         </div>
-      </footer>
+      </footer>}
       {items.data?.workflowAvailability.some((workflow) => !workflow.available) && (
         <details className={styles.availability}>
           <summary>Một số luồng hiện chưa khả dụng</summary>

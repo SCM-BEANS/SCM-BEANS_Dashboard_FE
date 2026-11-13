@@ -13,11 +13,11 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import styles from "./repair-workflow.module.css";
 import { RepairWorkflowPagination } from "./repair-workflow-pagination";
-import { StatusBadge } from "@/components/status-badge/status-badge";
+
 import { maintenanceRequestStatusLabel, maintenanceTicketStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
-const TECHNICIAN_PAGE_SIZE = 20;
+const TECHNICIAN_PAGE_SIZE = 10;
 
 export function MaintenanceRequestAssignmentScreen({
   requestId,
@@ -31,6 +31,7 @@ export function MaintenanceRequestAssignmentScreen({
   const validId = MaintenanceRequestIdSchema.safeParse(requestId).success;
   const queryClient = useQueryClient();
   const [replacementMachineId, setReplacementMachineId] = useState("");
+  const [machinePage, setMachinePage] = useState(0);
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [reason, setReason] = useState("");
@@ -205,7 +206,7 @@ export function MaintenanceRequestAssignmentScreen({
   };
 
   return (
-    <div className={styles.pageContent}>
+    <div className={styles.pageContent} data-screen="assignment">
       <BackButtonHeading
         title={messages.TECHNICAL_ASSIGNMENT_TITLE}
         titleId="maintenance-request-assignment-title"
@@ -226,7 +227,7 @@ export function MaintenanceRequestAssignmentScreen({
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REQUEST_STATUS}</dt>
-              <dd><StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd>
+              <dd><span className={styles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status)}</span></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_CASE_STATUS}</dt>
@@ -239,7 +240,7 @@ export function MaintenanceRequestAssignmentScreen({
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_TICKET_STATUS}</dt>
               <dd>{ticketQuery.data?.status
-                ? <StatusBadge status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</StatusBadge>
+                ? <span className={styles.requestStatus} data-status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</span>
                 : ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—"}</dd>
             </div>
             <div className={styles.detailItem}>
@@ -252,6 +253,7 @@ export function MaintenanceRequestAssignmentScreen({
 
       {assignmentWorkflowReady && (
         <>
+          <details className={styles.technicalDetails}><summary>Thông tin yêu cầu &amp; mã liên kết</summary>
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ID}</dt>
@@ -273,12 +275,13 @@ export function MaintenanceRequestAssignmentScreen({
               <dt>{messages.TECHNICAL_ASSIGNMENT_CASE_STATUS}</dt>
               <dd>{repairCase?.status ?? "—"}</dd>
             </div>
-          </dl>
+          </dl></details>
+
 
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REQUEST_STATUS}</dt>
-              <dd><StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd>
+              <dd><span className={styles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status)}</span></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_REPLACEMENT_STATUS}</dt>
@@ -287,7 +290,7 @@ export function MaintenanceRequestAssignmentScreen({
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_TICKET_STATUS}</dt>
               <dd>{ticketQuery.data?.status
-                ? <StatusBadge status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</StatusBadge>
+                ? <span className={styles.requestStatus} data-status={ticketQuery.data.status}>{maintenanceTicketStatusLabel(ticketQuery.data.status)}</span>
                 : ticketQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_TICKET_LOADING : "—"}</dd>
             </div>
             <div className={styles.detailItem}>
@@ -312,6 +315,7 @@ export function MaintenanceRequestAssignmentScreen({
           {replacementMutation.isSuccess && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_MACHINE_SUCCESS}</p>}
           {ticketAssignmentMutation.isSuccess && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_SUCCESS}</p>}
 
+          <div className={styles.assignmentColumns}>
           <section className={styles.formPanel} aria-labelledby="replacement-assignment-step-title">
             <h2 className={styles.sectionTitle} id="replacement-assignment-step-title">{messages.TECHNICAL_ASSIGNMENT_MACHINE_STEP}</h2>
             {replacementAlreadyAssigned ? (
@@ -333,13 +337,16 @@ export function MaintenanceRequestAssignmentScreen({
                     value={replacementMachineId}
                   >
                     <option value="">{machinesQuery.isPending ? messages.TECHNICAL_ASSIGNMENT_MACHINES_LOADING : messages.TECHNICAL_ASSIGNMENT_MACHINE}</option>
-                    {replacementMachines.map((machine) => (
+                    {replacementMachines.slice(machinePage * 10, (machinePage + 1) * 10).map((machine) => (
                       <option key={machine.id} value={machine.id}>
                         {[machine.serialNumber, machine.machineType, machine.id].filter(Boolean).join(" · ")}
                       </option>
                     ))}
                   </select>
                 </label>
+                <RepairWorkflowPagination page={machinePage} hasNext={(machinePage + 1) * 10 < replacementMachines.length}
+                  isFetching={machinesQuery.isFetching || replacementMutation.isPending} ariaLabel="Phân trang máy thay thế"
+                  onPageChange={(page) => { setMachinePage(page); handleReplacementPayloadEdit(); setReplacementMachineId(""); }} />
                 <label className={styles.formField} htmlFor="replacement-start-at">
                   <span>{messages.TECHNICAL_ASSIGNMENT_START_AT}</span>
                   <input
@@ -385,7 +392,7 @@ export function MaintenanceRequestAssignmentScreen({
                     value={reason}
                   />
                 </label>
-                <label className={styles.formField} htmlFor="replacement-idempotency-key">
+                <details className={styles.technicalDetails}><summary>Mã đối chiếu</summary>                <label className={styles.formField} htmlFor="replacement-idempotency-key">
                   <span>{messages.TECHNICAL_ASSIGNMENT_IDEMPOTENCY_KEY}</span>
                   <input id="replacement-idempotency-key" readOnly value={idempotencyKey} />
                 </label>
@@ -393,6 +400,7 @@ export function MaintenanceRequestAssignmentScreen({
                   <span>{messages.TECHNICAL_ASSIGNMENT_CORRELATION_ID}</span>
                   <input id="replacement-correlation-id" readOnly value={correlationId} />
                 </label>
+</details>
                 {machinesQuery.isSuccess && replacementMachines.length === 0 && (
                   <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_NO_MACHINE}</p>
                 )}
@@ -478,6 +486,7 @@ export function MaintenanceRequestAssignmentScreen({
               </>
             )}
           </section>
+          </div>
         </>
       )}
     </div>

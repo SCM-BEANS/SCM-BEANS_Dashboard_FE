@@ -13,7 +13,7 @@ const ownerMenuSections = [
 export function OwnerMenuHeader({ active }: { active: "library" | "mine" | "sync" }) {
   return <>
     <header className={pageStyles.pageHeading}>
-      <h1>{active === "library" ? "Global Menu & công thức" : "Công thức pha chế"}</h1>
+      <h1>Công thức pha chế</h1>
       <p>{active === "library" ? "Khám phá công thức Dolores và lưu món yêu thích vào menu riêng." : active === "mine" ? "Quản lý menu, thêm món riêng và giữ các công thức bạn đã lưu." : "Chọn máy để gửi công thức và theo dõi kết quả cập nhật."}</p>
     </header>
     <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
@@ -24,7 +24,7 @@ export function OwnerMenuHeader({ active }: { active: "library" | "mine" | "sync
 }
 
 export function MenuScreen({ initialGlobalRecipeId }: { initialGlobalRecipeId?: string }) {
-  return <section className={pageStyles.pageContent}>
+  return <section className={pageStyles.pageContent + " " + styles.ownerRecipePage} data-recipe-layout>
     <OwnerMenuHeader active="library" />
     <RecipeManagementScreen key={initialGlobalRecipeId ?? "library"} role="owner" showHeading={false} showNavigation={false}
       initialGlobalRecipeId={initialGlobalRecipeId} detailOnly={Boolean(initialGlobalRecipeId)} />

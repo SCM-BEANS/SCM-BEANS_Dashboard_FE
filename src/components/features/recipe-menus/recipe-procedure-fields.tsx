@@ -20,8 +20,8 @@ const groups: { title: string; description: string; fields: { key: keyof RecipeP
   ] },
 ];
 
-export function RecipeProcedureFields({ value, onChange, prefix, disabled = false }: {
-  value: RecipeProcedureDraft; onChange: (value: RecipeProcedureDraft) => void; prefix: string; disabled?: boolean;
+export function RecipeProcedureFields({ value, onChange, prefix, disabled = false, compact = false }: {
+  value: RecipeProcedureDraft; onChange: (value: RecipeProcedureDraft) => void; prefix: string; disabled?: boolean; compact?: boolean;
 }) {
   const renderFields = (keys: (keyof RecipeProcedureDraft)[]) => <div className={styles.recipeMenuFormGrid}>
     {groups.flatMap((group) => group.fields).filter((field) => keys.includes(field.key)).map((field) => <label key={field.key} className={styles.formField} htmlFor={prefix + "-" + field.key}>
@@ -34,11 +34,11 @@ export function RecipeProcedureFields({ value, onChange, prefix, disabled = fals
   </div>;
   return <div className={styles.recipeMenuProcedure}>
     <fieldset className={styles.recipeMenuEditorGroup} disabled={disabled}>
-      <legend>Thông số pha bắt buộc</legend>
+      <legend className={compact ? styles.srOnly : undefined}>Thông số pha bắt buộc</legend>
       {renderFields(["DOSE", "EXTRACT"])}
     </fieldset>
     <details className={styles.recipeMenuDisclosure}>
-      <summary>Thông số nâng cao · nén, ủ, nước bổ sung và sữa</summary>
+      <summary>{compact ? "Thông số pha nâng cao" : "Thông số nâng cao · nén, ủ, nước bổ sung và sữa"}</summary>
       <p className={styles.recipeMenuMeta}>Chỉ thay đổi khi cần. Mức nén mặc định 100, giữ nén 50; các ô nước và sữa có thể để trống.</p>
       {groups.map((group) => {
         const keys = group.fields.filter((field) => !field.required).map((field) => field.key);
@@ -49,7 +49,7 @@ export function RecipeProcedureFields({ value, onChange, prefix, disabled = fals
         </fieldset>;
       })}
     </details>
-    <p className={styles.recipeMenuPreview} aria-live="polite">Một lần pha: <strong>{value.DOSE || "—"} g cà phê</strong> · <strong>{value.EXTRACT || "—"} ml nước chiết xuất</strong></p>
+    {!compact ? <p className={styles.recipeMenuPreview} aria-live="polite">Một lần pha: <strong>{value.DOSE || "—"} g cà phê</strong> · <strong>{value.EXTRACT || "—"} ml nước chiết xuất</strong></p> : null}
   </div>;
 }
 

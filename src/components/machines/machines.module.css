@@ -966,3 +966,49 @@
 .truncateLine { display: block; max-width: 36ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .showMoreButton { justify-self: start; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.machineConnectionBadge.machineConnectionBadge { border: 0; border-radius: 0; background: transparent; padding: 0; font: inherit; color: #302927; white-space: normal; }
+.machineConnectionBadge::before { display: none; }
+.connectionIcon { position: relative; display: inline-flex; flex: 0 0 22px; width: 22px; height: 22px; align-items: center; color: #807974; }
+.connectionIcon > svg { width: 20px; height: 20px; stroke-width: 2; }
+.machineConnectionBadge[data-state="ONLINE"] .connectionIcon { color: #23815b; filter: drop-shadow(0 0 3px #2c8b6940); }
+.machineConnectionBadge[data-state="OFFLINE"] .connectionIcon { color: #b81724; }
+.connectionIcon > .connectionCross { position: absolute; width: 11px; height: 11px; right: -2px; bottom: -1px; background: #fff; border-radius: 50%; stroke-width: 3; }
+.connectionSpinner { animation: connectionSpin 1s linear infinite; }
+.compactPeriod { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 10px; margin-bottom: 12px; }
+.periodPicker { min-width: 0; max-width: 100%; }
+.periodPicker > summary { min-height: 42px; padding: 11px 14px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; cursor: pointer; color: #302927; font-size: 14px; list-style: none; }
+.periodPicker[open] { flex-basis: 100%; }
+.periodPicker[open] > summary { width: fit-content; margin-left: auto; margin-bottom: 12px; }
+.compactPeriod select, .operationalOverviewPanelHeading select { min-height: 42px; padding: 8px 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; }
+.productionTotal .operationalMetricCard { min-height: 0; padding: 20px 24px; gap: 5px; }
+.productionTotal .operationalMetricCard > strong { font-size: 46px; line-height: 1.2; color: #302927; }
+.productionTotal .operationalMetricCard > strong > small { font-size: 16px; font-weight: 400; }
+.productionLine { margin: 12px 0 0; min-width: 0; }
+.productionLine svg { display: block; width: 100%; height: 240px; }
+.cleaningDetailFields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; text-align: left; }
+.cleaningDetailFields > div { min-width: 0; }
+.cleaningDetailFields dt { color: #706561; margin-bottom: 6px; }
+.cleaningDetailFields dd { margin: 0; color: #302927; overflow-wrap: anywhere; }
+.reviewFilter { display: grid; gap: 8px; max-width: 280px; margin-bottom: 16px; }
+.reviewFilter select { padding: 10px 12px; min-height: 44px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; }
+.offlineReviewStatus.offlineReviewStatus { border: 0; background: none; padding: 0; color: #302927; }
+.offlineReviewStatus::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #807974; }
+.offlineReviewStatus[data-status="REVIEW_REQUIRED"]::before { background: #ca8b20; }
+.offlineReviewStatus[data-status="REVIEWED"]::before, .offlineReviewStatus[data-status="CLEARED"]::before { background: #23815b; }
+.ownerOperationsTabs.ownerOperationsTabs { border-bottom: 1px solid #e9e2dc; gap: 16px; }
+.ownerOperationsTabs.ownerOperationsTabs button { background: none; border: 0; border-radius: 0; border-bottom: 2px solid transparent; min-height: 44px; }
+.ownerOperationsTabs.ownerOperationsTabs button[aria-selected="true"], .ownerOperationsTabs.ownerOperationsTabs button[aria-pressed="true"] { background: none; border-bottom-color: #b81724; color: #b81724; }
+@media (max-width: 700px) { .cleaningDetailFields { grid-template-columns: 1fr; } .compactPeriod { justify-content: flex-start; } }
+@keyframes connectionSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .connectionSpinner { animation: none; } }
+
+.ownerCompactFilters { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
+.ownerDatePopover { position:relative; }
+.ownerDatePopover > summary { padding:11px 14px; border:1px solid #e7dfd9; border-radius:9px; cursor:pointer; list-style:none; background:#fff; }
+.ownerDatePopover[open] > form { position:absolute; right:0; top:calc(100% + 8px); z-index:20; width:min(600px,calc(100vw - 64px)); padding:18px; border:1px solid #e7dfd9; border-radius:12px; background:#fff; box-shadow:0 8px 24px #302b2914; }
+.ownerPeriodSelect { display:flex; align-items:center; gap:8px; font-size:14px; }
+.ownerPeriodSelect select { min-height:44px; border:1px solid #e7dfd9; border-radius:9px; padding:8px 12px; background:#fff; color:#302b29; font:inherit; }
+.ownerProductionLine { min-width:0; }
+.ownerDatePopover summary:focus-visible { outline:2px solid #bd1427; outline-offset:3px; }
+@media(max-width:700px) { .ownerCompactFilters { justify-content:flex-start; } .ownerDatePopover[open] > form { position:static; width:100%; box-sizing:border-box; margin-top:8px; } }

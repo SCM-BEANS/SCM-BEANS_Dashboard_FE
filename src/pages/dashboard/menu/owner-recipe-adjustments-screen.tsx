@@ -5,6 +5,8 @@ import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { recipesApi } from "@/apis/recipes.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { OwnerMenuHeader } from "./menu-screen";
 import { OwnerMenuSchema } from "@/schema/recipe-menus.schema";
 import { RecipeProcedureFields, RecipeSteps } from "@/components/features/recipe-menus/recipe-procedure-fields";
@@ -179,31 +181,40 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
     <ButtonBar disabled={busy || page === 0} onClick={() => change(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={busy || last} onClick={() => change(page + 1)}>Trang sau</ButtonBar>
   </nav>;
 
-  return <section className={pageStyles.pageContent}>
+  const openPrivateRecipe = (id: string) => {
+    if (selectedRecipeId === id && detail.data?.id === id) {
+      detailRef.current?.scrollIntoView({ block: "nearest" });
+      detailRef.current?.querySelector<HTMLHeadingElement>("h3")?.focus({ preventScroll: true });
+      return;
+    }
+    resetContext(); setSelectedRecipeId(id); clear();
+    void router.push({ pathname: PATH_CUSTOMER.MENU_ADJUSTMENTS, query: { menuId, recipeId: id } }, undefined, { scroll: false });
+  };
+  return <section className={pageStyles.pageContent + " " + styles.ownerRecipePage} data-recipe-layout>
     <OwnerMenuHeader active="mine" />
     {legacy ? <><div><ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>← Về Menu của tôi</ButtonBar></div><LegacyRecipeOverrides role="OWNER" /></> : <>
       {feedback ? <p className={styles.notice} role="status">{feedback}</p> : null}
       {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
-      {mode === "view" && !menuAction ? <PageActions actions={[
-        { id: "owner-menu-create", label: "Tạo menu", variant: "secondary", priority: 0, disabled: busy, disabledReason: "Đang xử lý yêu cầu.", onClick: () => { clear(); setMenuName(""); setMenuAction("create"); } },
-        { id: "owner-recipe-create", label: "Tạo công thức riêng", variant: "primary", priority: 20, disabled: busy || !canCreate, disabledReason: busy ? "Đang xử lý yêu cầu." : "Chưa thể tạo công thức riêng.", onClick: openCreate },
-      ]} /> : null}
       {mode === "view" ? <section className={styles.recipeMenuPanel}>
         <div className={styles.panelHeading}><div><h2>Menu của tôi</h2></div><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(""); setMenuAction("create"); }}>Tạo menu</ButtonBar></div>
-        <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setSelectedMenuId(""); setRecipePage(0); setMenuQ(menuSearch); setMenuPage(0); }}>
-          <label className={styles.formField}><span>Tìm menu</span><input placeholder="Nhập tên menu…" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} /></label><ButtonBar type="submit" disabled={busy}>Tìm kiếm</ButtonBar>
-        </form>
+        <TableFilters search={{ ariaLabel: "Tìm menu", placeholder: "Tìm theo tên menu", value: menuSearch, maxLength: 200, onChange: setMenuSearch }}
+          submitLabel="Tìm kiếm" disabled={busy} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setSelectedMenuId(""); setRecipePage(0); setMenuQ(menuSearch); setMenuPage(0); }} />
         {menus.isPending ? <p role="status">Đang tải menu…</p> : null}
         {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
         {menus.data ? <>
-          {menus.data.totalElements ? <label className={styles.formField}><span>Menu đang xem</span><select aria-label="Menu đang xem" value={menuId} disabled={busy} onChange={(event) => { resetContext(); setSelectedMenuId(event.target.value); setRecipePage(0); void router.push({ pathname: PATH_CUSTOMER.MENU_ADJUSTMENTS, query: { menuId: event.target.value } }, undefined, { scroll: false }); }}>
-            {!menus.data.content.some((item) => item.id === menuId) ? <option value={menuId}>{menu.data?.name ?? "Menu đang chọn"}</option> : null}
-            {menus.data.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select></label> : <p className={styles.recipeMenuEmpty}>Chưa có menu phù hợp. Khi tạo món đầu tiên, bạn có thể để hệ thống tạo “Menu của tôi”.</p>}
+          <DataTable variant="accounts" style={{ minWidth: 0 }} rows={menus.data.content} rowKey={(item) => item.id}
+            rowProps={(item) => ({ "data-selected": item.id === menuId ? "true" : undefined })}
+            emptyMessage="Chưa có menu phù hợp. Khi tạo món đầu tiên, bạn có thể để hệ thống tạo Menu của tôi." columns={[
+              { key: "name", header: "Tên menu", cellProps: () => ({ className: styles.adminRecipeName }), render: (item) => <strong>{item.name}</strong> },
+              { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} aria-pressed={item.id === menuId} onClick={() => {
+                resetContext(); setSelectedMenuId(item.id); setRecipePage(0);
+                void router.push({ pathname: PATH_CUSTOMER.MENU_ADJUSTMENTS, query: { menuId: item.id } }, undefined, { scroll: false });
+              }}>Mở menu</ButtonBar> },
+            ]} />
           {pagination(menus.data.page, menus.data.last, (page) => { resetContext(); setMenuPage(page); setSelectedMenuId(""); setRecipePage(0); }, "Danh sách menu của tôi")}
         </> : null}
         {menu.isError ? <p role="alert">{getRecipeApiErrorMessage(menu.error)}</p> : null}
-        {menu.data ? <div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(menu.data.name); setMenuAction("rename"); }}>Đổi tên</ButtonBar><ButtonBar disabled={busy} onClick={() => { clear(); setMenuAction("delete"); }}>Xóa menu rỗng</ButtonBar></div> : null}
+        {menu.data ? <div className={styles.recipeMenuActions}><ButtonBar disabled={busy} onClick={() => { clear(); setMenuName(menu.data.name); setMenuAction("rename"); }}>Đổi tên</ButtonBar>{!recipeQ && recipes.isSuccess && !recipes.isFetching && recipes.data.totalElements === 0 ? <ButtonBar variant="danger" disabled={busy} onClick={() => { clear(); setMenuAction("delete"); }}>Xóa menu</ButtonBar> : null}</div> : null}
         {menuAction ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu riêng" aria-busy={menuMutation.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clear(); menuMutation.mutate({ action: menuAction, menuId, name: menuName }); }}>
           <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : menuAction === "create" ? "Tạo menu riêng" : "Đổi tên menu"}</h3>
           {menuAction !== "delete" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Món yêu thích" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ menu rỗng mới được xóa; các công thức không bị tự động xóa.</p>}
@@ -211,17 +222,21 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         </form> : null}
       </section> : null}
       <section className={styles.recipeMenuPanel}>
-        <div className={styles.panelHeading}><div><h2>{mode === "create" ? "Thêm món riêng" : mode === "edit" ? "Chỉnh sửa công thức riêng" : "Công thức riêng"}</h2>{mode !== "view" ? <p>Điền thông tin và kiểm tra trước khi lưu.</p> : null}</div>{mode === "view" ? <ButtonBar className={styles.recipeMenuPrimary} disabled={busy || !canCreate} onClick={openCreate}>Tạo công thức riêng</ButtonBar> : null}</div>
-        <div className={styles.recipeMenuWorkspace} data-editing={mode !== "view"}>
+        <div className={styles.panelHeading}><div><h2>{mode === "create" ? "Thêm món riêng" : mode === "edit" ? "Chỉnh sửa công thức riêng" : "Công thức riêng"}</h2>{mode !== "view" ? <p>Điền thông tin và kiểm tra trước khi lưu.</p> : null}</div>{mode === "view" ? <ButtonBar variant="primary" disabled={busy || !canCreate} onClick={openCreate}>Tạo công thức riêng</ButtonBar> : null}</div>
+        <div className={styles.recipeMenuWorkspace} data-editing={mode !== "view"} data-private-editor={mode !== "view" || undefined}>
         {mode === "view" ? <div className={styles.recipeMenuBrowser}>
-        {menuId ? <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setRecipeQ(recipeSearch); setRecipePage(0); }}>
-          <label className={styles.formField}><span>Tìm công thức trong menu</span><input placeholder="Nhập tên món…" value={recipeSearch} onChange={(event) => setRecipeSearch(event.target.value)} /></label><ButtonBar type="submit">Tìm kiếm</ButtonBar>
-        </form> : null}
+        {menuId ? <TableFilters search={{ ariaLabel: "Tìm công thức trong menu", placeholder: "Tìm theo tên món", value: recipeSearch, maxLength: 200, onChange: setRecipeSearch }}
+          submitLabel="Tìm kiếm" disabled={busy} onSubmit={(event) => { event.preventDefault(); if (busy) return; resetContext(); setRecipeQ(recipeSearch); setRecipePage(0); }} /> : null}
         {recipes.isFetching ? <p role="status">Đang tải công thức…</p> : null}
         {recipes.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(recipes.error)}</p><ButtonBar onClick={() => void recipes.refetch()}>Thử lại</ButtonBar></div> : null}
         {recipes.data ? <>
-          <ul className={styles.recipeMenuList}>{recipes.data.content.map((item) => <li key={item.id} className={styles.recipeMenuItem}><button type="button" aria-pressed={recipeId === item.id} disabled={busy} onClick={() => { if (selectedRecipeId === item.id && detail.data?.id === item.id) { detailRef.current?.scrollIntoView({ block: "nearest" }); detailRef.current?.querySelector<HTMLHeadingElement>("h3")?.focus({ preventScroll: true }); } resetContext(); setSelectedRecipeId(item.id); clear(); void router.push({ pathname: PATH_CUSTOMER.MENU_ADJUSTMENTS, query: { menuId, recipeId: item.id } }, undefined, { scroll: false }); }}><span className={styles.recipeMenuRecipeMain}><strong>{item.name}</strong><span className={styles.recipeMenuMeta}>{item.sourceGlobalRecipeId ? "Bản sao riêng · nguồn phiên bản " + (item.sourceRevision ?? "chưa xác định") : "Công thức tự tạo"}</span></span><span aria-hidden="true">›</span></button></li>)}</ul>
-          {!recipes.data.content.length ? <p className={styles.recipeMenuEmpty}>Chưa có công thức phù hợp trong menu này.</p> : null}
+          <DataTable variant="accounts" style={{ minWidth: 0 }} rows={recipes.data.content} rowKey={(item) => item.id}
+            rowProps={(item) => ({ "data-selected": recipeId === item.id ? "true" : undefined })}
+            emptyMessage="Chưa có công thức phù hợp trong menu này." columns={[
+              { key: "name", header: "Tên món", cellProps: () => ({ className: styles.adminRecipeName }), render: (item) => <strong>{item.name}</strong> },
+              { key: "source", header: "Nguồn", render: (item) => item.sourceGlobalRecipeId ? "Bản sao riêng · v" + (item.sourceRevision ?? "—") : "Công thức tự tạo" },
+              { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Xem chi tiết " + item.name} onClick={() => openPrivateRecipe(item.id)}>Xem chi tiết</ButtonBar> },
+            ]} />
           {pagination(recipes.data.page, recipes.data.last, (page) => { resetContext(); setRecipePage(page); }, "Công thức trong menu riêng")}
         </> : null}
         </div> : null}
@@ -230,7 +245,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
           <label className={styles.formField}><span>Tên món / công thức *</span><input required placeholder="Ví dụ: Espresso đậm vị" value={name} onChange={(event) => setName(event.target.value)} /></label>
           {mode === "create" ? <>
             <details className={styles.recipeMenuDisclosure}><summary>Thông tin bổ sung (không bắt buộc)</summary><div className={styles.recipeMenuFormGrid}><label className={styles.formField}><span>Mã tên (tùy chọn)</span><input value={slug} onChange={(event) => setSlug(event.target.value)} /></label><label className={styles.formField}><span>Đường dẫn ảnh (tùy chọn)</span><input value={imagePath} onChange={(event) => setImagePath(event.target.value)} /></label></div></details>
-            <RecipeProcedureFields value={procedure} onChange={setProcedure} prefix="owner-procedure" disabled={busy} />
+            <RecipeProcedureFields value={procedure} onChange={setProcedure} prefix="owner-procedure" disabled={busy} compact />
           </> : <>
             <p className={styles.recipeMenuError}>Bạn có thể đổi tên và thông tin tham khảo của món tại đây. Muốn thay đổi đầy đủ thông số pha trên máy, hãy tạo công thức riêng mới và kiểm tra kết quả đồng bộ.</p>
             <label className={styles.formField}><span>Các bước tham khảo * (mỗi dòng một bước)</span><textarea required rows={5} value={editSteps} onChange={(event) => setEditSteps(event.target.value)} /></label>
@@ -238,7 +253,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
             <label className={styles.recipeMenuConfirmation}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> Tôi hiểu việc lưu thông tin chưa xác nhận máy đã áp dụng thay đổi.</label>
           </>}
           {validation ? <p className={styles.recipeMenuError} role="alert">{validation}</p> : null}
-          <div className={styles.recipeMenuEditorFooter}><p>Sau khi lưu, mở Đồng bộ với máy để kiểm tra món đã được áp dụng.</p></div>
+
           <PageActions actions={[
             { id: "cancel-recipe", label: "Hủy", priority: 100, onClick: cancelEditor, ...(editorDirty ? { confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } } : {}) },
             { id: "save-recipe", label: "Lưu công thức", variant: "primary", priority: 100, type: "submit", form: "owner-recipe-editor", disabled: busy || (mode === "edit" ? !confirmed || !editTargetId : !canCreate), disabledReason: "Hoàn tất thông tin và xác nhận trước khi lưu.", pending: create.isPending || edit.isPending, pendingLabel: "Đang lưu…" },
@@ -251,17 +266,31 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
             {source.isSuccess && !source.isFetching && source.data && detail.data.sourceRevision !== null && source.data.revision > detail.data.sourceRevision ? <ButtonBar disabled={busy} onClick={() => { clear(); copyNew.mutate({ globalRecipeId: sourceId, menuId: detail.data.menuId }); }}>Tạo bản sao từ phiên bản mới</ButtonBar> : null}
           </div> : <p className={styles.recipeMenuMeta}>Công thức tự tạo, không gắn với phiên bản dùng chung.</p>}
           <h4>Thông số pha tham khảo</h4><RecipeSteps steps={detail.data.steps} />
-          <p className={styles.recipeMenuMeta}>Thông số trên dùng để tham khảo. Mở Đồng bộ với máy để kiểm tra máy đã nhận công thức.</p>
-          <details className={styles.recipeMenuDisclosure}><summary>Sắp xếp hoặc chỉnh sửa công thức</summary><div className={styles.recipeMenuOperatorTools}>
+          <details className={styles.recipeDetailDisclosure}><summary>Thông số và đồng bộ</summary>
+            <p>Thông số pha dùng để tham khảo. Xem trạng thái đồng bộ để biết máy đã xác nhận áp dụng chưa.</p>
+            <ButtonBar href={PATH_CUSTOMER.MENU_SYNC}>Xem đồng bộ với máy</ButtonBar>
+          </details>
+          <details className={styles.recipeDetailDisclosure}><summary>Quản lý công thức riêng</summary><div className={styles.recipeMenuOperatorTools}>
           <label className={styles.formField}><span>Chuyển sang menu khác</span><select value={targetMenu} onChange={(event) => setTargetMenu(event.target.value)}><option value="">Chọn menu đích</option>{menus.data?.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
           <div className={styles.recipeMenuActions}>
             <ButtonBar disabled={busy || !targetMenu || targetMenu === detail.data.menuId} onClick={() => { clear(); move.mutate({ menuId: targetMenu, recipeId: detail.data.id }); }}>Chuyển menu</ButtonBar>
             <ButtonBar disabled={busy} onClick={() => { clear(); setName(detail.data.name); setEditSteps(detail.data.steps.join("\n")); setEditOverrides(detail.data.dosageOverrides.join("\n")); setConfirmed(false); setEditTargetId(detail.data.id); setDeleteTarget(null); setMode("edit"); }}>Chỉnh sửa thông tin món</ButtonBar>
-            <ButtonBar disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức riêng</ButtonBar>
+            <ButtonBar variant="danger" disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức riêng</ButtonBar>
           </div>
           {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa bản công thức riêng “{deleteTarget.name}”?</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => { clear(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
           </div></details>
         </section> : null}
+        {mode !== "view" ? <aside className={styles.adminRecipeCard}>
+          <h2>Xem lại công thức</h2>
+          <dl className={styles.adminRecipeFacts}>
+            <div><dt>Menu</dt><dd>{menu.data?.name ?? menus.data?.content.find((item) => item.id === menuId)?.name ?? (menuId ? "Menu đang chọn" : "Menu của tôi")}</dd></div>
+            <div><dt>Tên món</dt><dd>{name.trim() || "Chưa nhập"}</dd></div>
+            {mode === "create" ? <>
+              <div><dt>Lượng cà phê</dt><dd>{procedure.DOSE ? procedure.DOSE + " g" : "Chưa nhập"}</dd></div>
+              <div><dt>Nước chiết xuất</dt><dd>{procedure.EXTRACT ? procedure.EXTRACT + " ml" : "Chưa nhập"}</dd></div>
+            </> : null}
+          </dl>
+        </aside> : null}
         {mode === "view" && detail.isFetching ? <p role="status">Đang tải chi tiết…</p> : null}
         {mode === "view" && detail.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(detail.error)}</p><ButtonBar onClick={() => void detail.refetch()}>Thử lại</ButtonBar></div> : null}
         </div>

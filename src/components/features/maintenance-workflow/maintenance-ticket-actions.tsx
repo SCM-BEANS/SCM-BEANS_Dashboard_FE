@@ -6,6 +6,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { buildMaintenanceTicketCreatePageActions, buildMaintenanceTicketDetailActions, type MaintenanceActionRole } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { ReasonDialog } from "@/components/reason-dialog/reason-dialog";
@@ -215,6 +216,8 @@ export function MaintenanceTicketDetailsPanel({
   });
   const ticket = ticketQuery.data;
   const canManage = role === "ADMIN" || role === "MODERATOR";
+  const modernEmbedded = embedded && (role === "ADMIN" || role === "MODERATOR");
+  const TicketActions = modernEmbedded ? PageActionsRenderer : PageActions;
 
   const refreshRelated = async (updated: MaintenanceTicket) => {
     if (updated.id) queryClient.setQueryData(maintenanceTicketDetailQueryKey(updated.id), updated);
@@ -271,7 +274,7 @@ export function MaintenanceTicketDetailsPanel({
   });
 
   return (
-    <section className={embedded ? styles.embeddedPanel : styles.detailPanel} aria-labelledby={embedded ? undefined : "maintenance-ticket-detail-title"}>
+    <section className={[embedded ? styles.embeddedPanel : styles.detailPanel, modernEmbedded ? styles.operatorTicketPanel : ""].join(" ")} aria-labelledby={embedded ? undefined : "maintenance-ticket-detail-title"}>
       {!embedded && <div className={styles.panelHeading}>
         <h3 id="maintenance-ticket-detail-title">Chi tiết phiếu bảo trì</h3>
         {onClose && <ButtonBar type="button" onClick={onClose}>Đóng chi tiết</ButtonBar>}
@@ -285,7 +288,7 @@ export function MaintenanceTicketDetailsPanel({
       )}
       {ticket && !ticketQuery.isError && (
         <>
-          {canManage && <PageActions actions={buildMaintenanceTicketDetailActions({
+          {canManage && <div className={modernEmbedded ? styles.panelHeading : undefined}>{modernEmbedded && <h3>Thông tin phiếu bảo trì</h3>}<TicketActions actions={buildMaintenanceTicketDetailActions({
             role,
             ticket,
             editing,
@@ -299,16 +302,16 @@ export function MaintenanceTicketDetailsPanel({
             onCancelEdit: () => { setEditing(false); setDetailsDirty(false); },
             onOverdueReview: () => { setActionError(""); setShowOverdueReview(true); },
             onUnassign: () => { setActionError(""); setShowUnassign(true); },
-          })} />}
+          })} /></div>}
           <dl className={styles.detailGrid}>
             <div><dt>Mã phiếu</dt><dd>{ticket.id}</dd></div>
-            <div><dt>Trạng thái</dt><dd><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
-            <div><dt>Mức cảnh báo</dt><dd><StatusBadge status={ticket.alertLevel} tone={ticket.alertLevel === "Critical" ? "danger" : ticket.alertLevel === "Warning" ? "warning" : "info"}>{maintenanceAlertLevelLabel(ticket.alertLevel)}</StatusBadge></dd></div>
+            <div><dt>Trạng thái</dt><dd>{(role === "OWNER" || modernEmbedded) ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>}</dd></div>
+            <div><dt>Mức cảnh báo</dt><dd>{(role === "OWNER" || modernEmbedded) ? (ticket.alertLevel === "INSPECTION" ? "Kiểm tra" : maintenanceAlertLevelLabel(ticket.alertLevel)) : <StatusBadge status={ticket.alertLevel} tone={ticket.alertLevel === "Critical" ? "danger" : ticket.alertLevel === "Warning" ? "warning" : "info"}>{maintenanceAlertLevelLabel(ticket.alertLevel)}</StatusBadge>}</dd></div>
             <div><dt>Lịch dự kiến</dt><dd>{formatDate(ticket.scheduledDueAt)}</dd></div>
             <div><dt>Kỹ thuật viên</dt><dd>{ticket.assignedTo ?? ticket.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
             <div><dt>Hướng dẫn xử lý</dt><dd>{ticket.actionableInstructions || "Chưa có hướng dẫn"}</dd></div>
           </dl>
-          <EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" />
+          {modernEmbedded ? <details className={styles.ticketEvidence}><summary>Chứng từ phiếu bảo trì</summary><EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" /></details> : <EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" />}
           {editing && canManage && (
             <MaintenanceTicketDetailsForm
               key={ticket.id}
@@ -377,11 +380,14 @@ export function MachineMaintenanceTicketActions({
   const visibleTickets = isTable && !showAll ? sortedTickets.slice(0, previewLimit) : sortedTickets;
   const hiddenCount = sortedTickets.length - visibleTickets.length;
   // In table mode the list may live inside a hidden tab panel; portal dialogs so they still show.
-  const overlay = (node: ReactNode) => isTable && typeof document !== "undefined" ? createPortal(node, document.body) : node;
+  const overlay = (node: ReactNode) => {
+    const content = role === "OWNER" ? <div className={styles.ownerDialogScope}>{node}</div> : node;
+    return isTable && typeof document !== "undefined" ? createPortal(content, document.body) : content;
+  };
 
   return (
     <div className={isTable ? styles.compactActions : styles.machineActions}>
-      <PageActions actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} />
+      {isTable ? <PageActionsRenderer actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} /> : <PageActions actions={buildMaintenanceTicketCreatePageActions(role, () => setCreating(true), createPending)} />}
       {isTable && (
         <>
           <h3 className={styles.compactTitle}>Phiếu bảo trì ({tickets.length})</h3>
@@ -390,10 +396,10 @@ export function MachineMaintenanceTicketActions({
             rowKey={(ticket, index) => ticket.id ?? index}
             emptyMessage="Chưa có phiếu bảo trì."
             columns={[
-              { key: "status", header: "Trạng thái", render: (ticket) => <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
+              { key: "status", header: "Trạng thái", render: (ticket) => role === "OWNER" ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
               { key: "due", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
               { key: "origin", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype || ticket.source ? maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!) : "—" },
-              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <button type="button" className={styles.ticketLink} onClick={() => setActiveTicketId(ticket.id!)}>Xem chi tiết</button> : null },
+              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <ButtonBar rollingLabel onClick={() => setActiveTicketId(ticket.id!)}>Xem chi tiết</ButtonBar> : null },
             ]}
           />
           {sortedTickets.length > previewLimit && (

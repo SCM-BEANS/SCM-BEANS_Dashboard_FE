@@ -368,7 +368,6 @@
 .summarySectionHeading h2 { margin: 0; font-size: 16px; }
 .summarySectionHeading > span, .summarySectionHeading > a { font-size: 12px; color: #675b57; }
 .summarySectionHeading > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: #b81724; }
-.summaryMoney { text-align: right; }
 .summaryColumn td > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
 .summaryValue { display: block; font-size: 32px; color: #302927; font-variant-numeric: tabular-nums; }
 .summaryValue small { font-size: 14px; color: #675b57; font-weight: 400; }
@@ -382,9 +381,6 @@
 .summaryChartEmpty p { font-size: 13px; max-width: 330px; line-height: 1.6; }
 .summaryDetails { font-size: 13px; margin-top: 16px; }
 .summaryDetails summary { cursor: pointer; padding: 12px 0; min-height: 44px; box-sizing: border-box; }
-.summaryMoney { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.summaryStatus { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #fbf1e8; color: #8c4d18; font-size: 12px; }
-.summaryStatus[data-paid="true"] { background: #edf7f0; color: #24653c; }
 .summaryGauge { max-width: 220px; margin: 12px auto 0; }
 .summaryGauge svg { width: 100%; }
 .summaryGaugeValue { font: 600 32px Arial, sans-serif; fill: #302927; }
@@ -495,4 +491,120 @@
 @media (max-width: 600px) {
   .contractOverviewHeading { align-items: flex-start; flex-direction: column; }
   .contractOverviewPanel .operationsGrid, .contractExpiryPanel .operationsGrid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.specificationsEditor { grid-column: 1 / -1; min-width: 0; }
+.specificationsList { display: grid; gap: 12px; margin: 0; }
+.specificationsList > div { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); gap: 16px; }
+.specificationsList dt { color: #706561; overflow-wrap: anywhere; }
+.specificationsList dd { margin: 0; color: #302927; overflow-wrap: anywhere; }
+.specificationRow label { display: grid; gap: 8px; }
+.specificationRow button { min-height: 44px; padding: 10px 16px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; cursor: pointer; }
+.specificationRow button:hover { background: #f7f5f3; }
+.specificationRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 16px; align-items: end; margin-top: 14px; }
+.specificationRow > span { align-self: center; overflow-wrap: anywhere; }
+.specificationRow input { width: 100%; min-width: 0; }
+.machineSearch { display: grid; gap: 8px; max-width: 520px; margin: 18px 0; }
+.machineSearch input { padding: 12px 14px; border: 1px solid #e9e2dc; border-radius: 10px; font: inherit; }
+.machinePagination { display: flex; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 18px; }
+.machinePagination > span:first-child { margin-right: auto; }
+.machinePlainStatus { display: inline-flex; align-items: baseline; gap: 8px; color: #302927; font: inherit; white-space: normal; }
+.machinePlainStatus::before { content: ""; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #888; }
+.machinePlainStatus[data-status="IN_WAREHOUSE"]::before, .machinePlainStatus[data-status="AVAILABLE_FOR_RENT"]::before, .machinePlainStatus[data-status="DEPLOYED_CONTRACT_OWNER"]::before, .machinePlainStatus[data-status="DEPLOYED_STORE_OWNER"]::before { background: #2c8b69; }
+.machinePlainStatus[data-status="PENDING_ACTIVATION"]::before, .machinePlainStatus[data-status="UNDER_MAINTENANCE"]::before, .machinePlainStatus[data-status="REFURBISHING"]::before, .machinePlainStatus[data-status="PENDING_QA"]::before { background: #ca8b20; }
+.machinePlainStatus[data-status="RETIRED"]::before { background: #b81724; }
+.machineInventoryTable.machineInventoryTable { border: 0; border-radius: 0; }
+.machineInventoryTable.machineInventoryTable :global(table) { min-width: 0; table-layout: auto; }
+.machineListToolbar { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin: 16px 0 20px; }
+.machineListToolbar .machineSearch { flex: 1; min-width: 220px; max-width: none; margin: 0; }
+.machineListToolbar .machineFilterToolbar { margin: 0; }
+.machineListToolbar .machineFilterControl { align-items: stretch; flex-direction: column; gap: 8px; }
+.machineFormLayout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(270px, 1fr); gap: 20px; align-items: start; }
+.machineWorkspace .machineProfileGroups { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px; margin-top: 22px; }
+.machineWorkspace :global(section[aria-label="Tóm tắt máy"]) { padding: 16px 20px; border: 1px solid #e9e2dc; border-radius: 14px; background: #fff; }
+.machineWorkspace :global(section[aria-label="Tóm tắt máy"] article) { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.machineWorkspace .machineProfileGroup + .machineProfileGroup { border: 0; padding-top: 0; }
+.machineWorkspace .machineProfileFields { grid-template-columns: 1fr; gap: 16px; }
+.machineWorkspace .machineProfileFields > div { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 1.5fr); gap: 14px; }
+.machineSystemDetails { margin-top: 24px; }
+.machineSystemDetails summary { min-height: 44px; cursor: pointer; color: #706561; }
+.machineSystemDetails .operationsGrid { padding-top: 14px; }
+.machineFormSummary { min-width: 0; }
+.machineConnectionLayout { display: grid; grid-template-columns: minmax(250px, .8fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.machineConnectionLayout > section { min-width: 0; }
+.machineConnectionLayout .operationsGrid { grid-template-columns: 1fr; gap: 14px; margin: 18px 0; }
+@media (max-width: 1250px) { .machineConnectionLayout { grid-template-columns: 1fr; } }
+.machineFormLayout > form { min-width: 0; }
+.machineModelEditingLayout > form { order: -1; }
+.machineModelEditingLayout > section { align-self: start; }
+.machineModelEditingLayout > section .operationsGrid { grid-template-columns: 1fr; }
+.specificationRow:has(> details) { grid-template-columns: minmax(0, 1fr) auto; }
+.specificationRow > details { grid-column: 1 / -1; min-width: 0; padding: 12px; background: #faf8f6; border-radius: 10px; }
+.specificationRow > details > .specificationsEditor { margin-top: 14px; }
+.specificationsEditor { container-type: inline-size; }
+@container (max-width: 430px) { .specificationRow { grid-template-columns: minmax(0, 1fr); } }
+.machineFormSummary .specificationsList > div { grid-template-columns: minmax(100px, 1fr) minmax(0, 1.3fr); padding: 7px 0; }
+.machineTopActions { display: flex; justify-content: flex-end; margin-top: -10px; }
+.machineTopActions > div { width: auto; }
+.machineInventoryGroup .machineViewTabs { align-self: stretch; max-width: 100%; margin: 0 0 18px; gap: 18px; border-bottom: 1px solid #e9e2dc; flex-wrap: wrap; }
+.machineInventoryGroup .machineViewTab { min-height: 44px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; }
+.machineInventoryGroup .machineViewTabActive { color: #b81724; border-bottom-color: #b81724; background: transparent; }
+.machineInventoryHeading .machineFilterCount { padding: 0; border: 0; border-radius: 0; background: none; font-size: 14px; font-weight: 400; }
+@media (max-width: 1000px) { .machineFormLayout, .machineWorkspace .machineProfileGroups { grid-template-columns: 1fr; } }
+.machineInventoryTable.machineInventoryTable :global(td) { height: 48px; padding: 6px 12px; }
+.machineInventoryTable.machineInventoryTable :global(td:last-child) { width: 130px; }
+.machineInventoryTable.machineInventoryTable :global(th), .machineInventoryTable.machineInventoryTable :global(td) { width: auto; white-space: normal; overflow-wrap: anywhere; text-align: left; padding: 14px 12px; }
+@media (max-width: 700px) { .specificationRow { grid-template-columns: 1fr; gap: 8px; } .machinePagination { flex-wrap: wrap; } }
+
+.machineDetailHeading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
+.machineDetailHeading .pageHeading { margin-bottom: 0; }
+.machineDetailHeading .machineTopActions { margin: 0; }
+.machineTopActions { gap: 12px; flex-wrap: wrap; align-items: center; }
+.machineTopActions > div { gap: 10px; }
+@media (max-width: 900px) { .machineDetailHeading { align-items: flex-start; } .machineDetailHeading .machineTopActions { width: 100%; justify-content: flex-start; } }
+
+.moderatorOverview { gap: 16px; }
+.moderatorOverview .summaryCumulative { order: initial; }
+.moderatorOverview .summaryTitle > span { display: inline; }
+.moderatorOverview .summarySectionHeading { gap: 8px; margin-bottom: 8px; }
+.moderatorOverview .summarySectionHeading h2 { margin: 0; }
+.moderatorOverview .summaryValue { font-size: clamp(22px, 2vw, 32px); }
+.moderatorOverview .summaryRevenueChart,
+.moderatorOverview .summaryChart { height: 180px; margin-top: 8px; }
+.moderatorOverview .summaryDetails { margin-top: 0; }
+.moderatorOverview .summaryDetails summary { padding: 8px 0; min-height: 36px; }
+.moderatorOverviewCharts { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+.moderatorOverviewCharts > section { min-width: 0; padding: 16px 20px; }
+.moderatorOverviewCharts .summaryGauge { width: 100%; margin-top: 16px; }
+.moderatorOverviewStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.moderatorOverviewStats dt { color: #675b57; font-size: 13px; }
+.moderatorOverviewStats dd { margin: 5px 0 0; font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .moderatorOverviewCharts { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .moderatorOverview .summaryFinance, .moderatorOverviewStats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .moderatorOverview .summaryFinanceCard, .moderatorOverviewCharts > section { padding: 14px; }
+}
+
+.invoiceOverview { container-type: inline-size; }
+.invoiceSnapshot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px 32px; }
+.invoiceSnapshotTitle { margin: 0 0 6px; font-weight: 600; font-size: 14px; }
+.invoiceSnapshotCaption { margin: 0; color: #706561; font-size: 13px; }
+.invoiceSnapshotBar { display: flex; gap: 2px; height: 10px; margin: 12px 0; border-radius: 8px; overflow: hidden; }
+.invoiceSnapshot [data-group="overdue"] { background: #b81724; }
+.invoiceSnapshot [data-group="waiting"] { background: #ad751f; }
+.invoiceSnapshot [data-group="paid"] { background: #36866a; }
+.invoiceSnapshot [data-group="other"] { background: #80756f; }
+.invoiceSnapshotLegend, .invoiceSnapshotList { display: grid; list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.invoiceSnapshotLegend li { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 8px; padding: 4px 0; }
+.invoiceSnapshotLegend [data-group] { width: 8px; height: 8px; border-radius: 50%; }
+.invoiceSnapshotList li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 12px; min-height: 42px; padding: 3px 0; }
+.invoiceSnapshotList li + li { border-top: 1px solid #eee8e3; }
+.invoiceSnapshotList a { color: inherit; text-underline-offset: 3px; }
+.invoiceSnapshotList strong { text-align: right; font-variant-numeric: tabular-nums; }
+@container (max-width: 610px) { .invoiceSnapshot { grid-template-columns: minmax(0, 1fr); } }
+@container (max-width: 330px) {
+  .invoiceSnapshotList li { grid-template-columns: 1fr auto; padding: 8px 0; }
+  .invoiceSnapshotList li > span { grid-row: 2; grid-column: 1 / -1; }
 }

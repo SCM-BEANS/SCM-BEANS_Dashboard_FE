@@ -313,7 +313,7 @@ export function MachineDigitalTwinView({
   const currentStepIndex = player.status === "running" ? player.stepIndex : -1;
 
   return (
-    <section className={styles.root}>
+    <section className={styles.root} data-owner-twin-layout>
       {smartMachine ? (
         <div className={styles.modeRow}>
           <div className={styles.modeSwitch} role="group" aria-label="Chế độ xem máy">

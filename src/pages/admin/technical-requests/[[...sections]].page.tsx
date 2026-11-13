@@ -9,6 +9,7 @@ import { PATH_ADMIN } from "@/routes/path";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { MaintenanceRequestIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
 import { RepairCostReviewIdSchema } from "@/schema/repair-cost-reviews.schema";
+import technicalStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
 import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 
 type AdminTechnicalRequestsPageProps = { sectionPath: string };
@@ -34,7 +35,7 @@ function isSupportedTechnicalRequestsSection(sectionPath: string): boolean {
   const requestDetail = /^requests\/([^/]+)$/.exec(sectionPath);
   if (requestDetail) return MaintenanceRequestIdSchema.safeParse(requestDetail[1]).success;
 
-  const repairCaseDetail = /^cases\/([^/]+)$/.exec(sectionPath);
+  const repairCaseDetail = /^cases\/([^/]+)(?:\/related)?$/.exec(sectionPath);
   if (repairCaseDetail) return RepairCaseIdSchema.safeParse(repairCaseDetail[1]).success;
 
   const costReviewDetail = /^cost-reviews\/([^/]+)$/.exec(sectionPath);
@@ -67,7 +68,7 @@ export default function AdminTechnicalRequestsPage({
           <section className={adminStyles.panel} role="status">Đang tải yêu cầu kỹ thuật…</section>
         </div>
       }>
-        <TechnicalOperationsScreen path={path} routes={routes} />
+        <div className={technicalStyles.operatorWorkspace}><TechnicalOperationsScreen path={path} routes={routes} /></div>
       </Suspense>
     </AdminShell>
   );

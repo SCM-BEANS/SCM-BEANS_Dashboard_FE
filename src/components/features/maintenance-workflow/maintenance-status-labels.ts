@@ -26,7 +26,8 @@ const alertLevelLabels: Record<string, string> = {
   Critical: "Nghiêm trọng",
 };
 
-export function maintenanceRequestStatusLabel(status: MaintenanceRequest["status"]): string {
+export function maintenanceRequestStatusLabel(status: MaintenanceRequest["status"], type?: MaintenanceRequest["requestType"]): string {
+  if (type === "REPAIR" && status === "REQUESTED") return "Đã gửi";
   return requestStatusLabels[status];
 }
 

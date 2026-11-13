@@ -62,6 +62,7 @@ export const evidenceApi = {
     parentId: string,
     evidenceId: string,
     signal?: AbortSignal,
+    onProgress?: (loaded: number, total?: number) => void,
   ): Promise<Blob> {
     const validResource = EvidenceResourceSchema.parse(resource);
     const validParentId = EvidenceParentIdSchema.parse(parentId);
@@ -73,6 +74,7 @@ export const evidenceApi = {
         headers: { Accept: "*/*", "Cache-Control": "no-store" },
         responseType: "blob",
         signal,
+        ...(onProgress ? { onDownloadProgress: (event) => onProgress(event.loaded, event.total) } : {}),
       },
     );
     return response.data;

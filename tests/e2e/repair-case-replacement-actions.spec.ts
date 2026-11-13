@@ -6,6 +6,89 @@ const id = "f3000000-0000-4000-8000-000000000001";
 const machine = "f3000000-0000-4000-8000-000000000002";
 const alternate = "f3000000-0000-4000-8000-000000000003";
 
+for (const role of ["admin", "moderator", "owner"]) {
+  test(`${role} opens related work on its own route and returns to the repair case`, async ({ page }) => {
+    const detail = role === "owner" ? `/dashboard/support/repair-cases/${id}` : `/${role}/technical-requests/cases/${id}`;
+    let evidenceRequests = 0;
+    await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: [role] })).toString("base64url")}.signature`, domain: "127.0.0.1", path: "/" }]);
+    await page.route("**/api/dolores/v1/**", async route => {
+      const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
+      let data: unknown = [];
+      if (path === `/repair-cases/${id}`) data = { id, maintenanceRequestId: id, ownerId: id, contractId: id, primaryMachineId: machine, status: "CLOSED", createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00", timeline: [] };
+      else if (path.endsWith("/timeline")) data = { content: [{
+        id, repairCaseId: id, eventType: "REPLACEMENT_PLANNED", actorRole: "ADMIN",
+        occurredAt: "2026-01-01T00:00:00", reason: "replacementAssignmentId=" + alternate,
+      }], number: 0, size: 50, totalElements: 1, totalPages: 1, numberOfElements: 1, first: true, last: true, empty: false };
+      else if (path.endsWith("/content")) {
+        await route.fulfill({ contentType: "application/octet-stream", body: "test file" });
+        return;
+      } else if (path.endsWith("/evidence")) {
+        evidenceRequests++;
+        const repair = path.startsWith("/repair-cases/");
+        data = { items: [{
+          id: machine, resourceType: repair ? "REPAIR_CASE" : "REPLACEMENT_ASSIGNMENT",
+          resourceId: repair ? id : alternate, purpose: "REPAIR_CUSTODY",
+          originalFilename: repair ? "repair.txt" : "replacement.txt",
+          contentType: "text/plain", sizeBytes: 9, sha256: "", uploadedBy: id,
+          uploadedAt: "2026-01-01T00:00:00Z", downloadPath: "",
+        }], page: 0, size: 20, hasNext: false };
+      }
+      await route.fulfill({ json: data });
+    });
+
+    await page.goto(detail);
+    const relatedLink = page.getByRole("link", { name: "Công việc liên quan & chứng từ" });
+    await expect(relatedLink).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Chứng từ hồ sơ sửa chữa" })).toHaveCount(0);
+    expect(evidenceRequests).toBe(0);
+
+    await relatedLink.click();
+    await expect(page).toHaveURL(`${detail}/related`);
+    await expect(page.getByRole("columnheader", { name: "Dung lượng" })).toHaveCount(0);
+    for (const filename of ["repair.txt", "replacement.txt"]) {
+      const download = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Tải xuống " + filename }).click();
+      expect((await download).suggestedFilename()).toBe(filename);
+      await expect(page.getByRole("button", { name: "Đã tải xong " + filename })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { name: "Tiến độ xử lý" })).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Tải xuống repair.txt" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Về hồ sơ sửa chữa" }).click();
+    await expect(page).toHaveURL(detail);
+    await expect(relatedLink).toBeVisible();
+  });
+}
+
+
+test("owner opens a support request and can see the current acknowledgement step", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const token = Buffer.from(JSON.stringify({ roles: ["owner"] })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: "header." + token + ".signature", domain: "127.0.0.1", path: "/" }]);
+  const request = { id, machineId: machine, requestType: "REPAIR", status: "IN_PROGRESS", issueDescription: "Máy không lên nguồn.", maintenanceTicketId: alternate };
+  const repair = { id: alternate, maintenanceRequestId: id, ownerId: id, contractId: id, primaryMachineId: machine, status: "REPLACEMENT_PLANNED", createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00", timeline: [] };
+  await page.route("**/api/dolores/v1/**", async route => {
+    const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
+    let data: unknown = [];
+    if (path === "/maintenance-requests") data = [request];
+    else if (path === "/maintenance-requests/" + id) data = request;
+    else if (path === "/repair-cases") data = [repair];
+    else if (path === "/repair-cases/" + alternate) data = repair;
+    else if (path.endsWith("/custody-events")) data = [{ id: machine, maintenanceRequestId: id, repairCaseId: alternate, eventType: "PRIMARY_COLLECTED", machineId: machine, actorRole: "TECHNICIAN", occurredAt: "2026-01-01T00:00:00" }];
+    else if (path.endsWith("/timeline")) data = { content: [], number: 0, size: 50, totalElements: 0, totalPages: 0 };
+    await route.fulfill({ json: data });
+  });
+  const listResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith("/maintenance-requests"));
+  await page.goto("/dashboard/support");
+  expect(new URL((await listResponse).url()).searchParams.get("size")).toBe("10");
+  await page.getByRole("link", { name: "Xem yêu cầu" }).click();
+  await expect(page.getByText(request.issueDescription)).toBeVisible();
+  await page.reload();
+  await page.getByRole("link", { name: "Mở hồ sơ sửa chữa" }).click();
+  await expect(page.getByRole("textbox", { name: "Nội dung xác nhận bàn giao" })).toBeVisible();
+});
+
 for (const role of ["admin", "moderator"]) {
   test(`${role} can open a different-type offer and sees a conflict`, async ({ page }) => {
     await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: [role] })).toString("base64url")}.signature`, domain: "127.0.0.1", path: "/" }]);

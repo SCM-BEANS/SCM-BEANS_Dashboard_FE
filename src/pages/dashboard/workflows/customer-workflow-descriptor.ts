@@ -193,7 +193,7 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
     };
   }
 
-  if (/^support\/repair-cases\/[0-9a-f-]{36}$/i.test(sectionPath)) {
+  if (/^support\/repair-cases\/[0-9a-f-]{36}(?:\/related)?$/i.test(sectionPath)) {
     return {
       title: "Chi tiết hồ sơ sửa chữa",
       description: "Trạng thái, lịch sử bàn giao và tiến độ sửa máy.",

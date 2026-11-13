@@ -235,3 +235,138 @@ test("Revenue quality, loading space and mobile finance disclosure stay explicit
   const revenue = page.locator("section").filter({ has: page.getByRole("heading", { name: "Doanh thu đã thu" }) });
   await expect(revenue.locator("strong").first()).toHaveText("—");
 });
+
+test("Moderator overview uses the selected period and keeps an actionable work queue", async ({ page, context }) => {
+  const claims = Buffer.from(JSON.stringify({ roles: ["moderator"] })).toString("base64url");
+  await context.addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  const today = dateAtBusinessZone();
+  const yesterday = dateAtBusinessZone(-1);
+  const ranges: string[] = [];
+  const bucketRequests: string[] = [];
+  let invoiceRequests = 0;
+
+  page.on("request", request => {
+    if (new URL(request.url()).pathname === "/api/dolores/v1/billing/invoices") invoiceRequests++;
+  });
+  await page.route("**/api/dolores/v1/dashboard/overview*", route => {
+    const range = new URL(route.request().url()).searchParams;
+    const from = range.get("fromDate");
+    const to = range.get("toDate");
+    ranges.push(`${from}:${to}`);
+    return route.fulfill({ json: { ...overview, actionSummary: { actionableItems: 8, workByTimeBucket: { OVERDUE: 3, TODAY: 0, UPCOMING: 1, UNSCHEDULED: 4 } } } });
+  });
+  await page.route("**/api/dolores/v1/dashboard/action-items*", route => {
+    const bucket = new URL(route.request().url()).searchParams.get("timeBucket");
+    if (bucket) bucketRequests.push(bucket);
+    return route.fulfill({ json: {
+      items: bucket ? [] : [{
+        actionKey: "fixture-contract", title: "Hợp đồng hết hạn trong 30 ngày",
+        actionType: "CONTRACT_EXPIRING", resourceType: "CONTRACT", ownerName: "Cà phê Deer",
+        resourceId: "f5000000-0000-4000-8000-000000000001",
+        status: "ACTIVE", overdue: false, priority: "NORMAL",
+        detailPath: "/moderator/technical-requests", availableActions: [],
+      }, {
+        actionKey: "fixture-contract-2", title: "Hợp đồng hết hạn trong 30 ngày",
+        actionType: "CONTRACT_EXPIRING", resourceType: "CONTRACT", ownerName: "Cà phê S202",
+        resourceId: "f5000000-0000-4000-8000-000000000002",
+        status: "ACTIVE", overdue: false, priority: "NORMAL",
+        detailPath: "/moderator/technical-requests", availableActions: [],
+      }],
+      page: 0, size: 5, hasMore: false, generatedAt: new Date().toISOString(),
+      businessTimezone: "Asia/Ho_Chi_Minh", workflowAvailability: [],
+    } });
+  });
+
+  await page.setViewportSize({ width: 1440, height: 810 });
+  await page.goto(`/moderator?fromDate=${yesterday}&toDate=${today}`);
+  const finance = page.getByRole("region", { name: "Tài chính lũy kế" });
+  const revenue = page.getByRole("img", { name: "Biểu đồ tiền đã thu theo kỳ" });
+  const cups = page.getByRole("img", { name: "Biểu đồ số ly ghi nhận theo ngày" });
+  await expect(finance.locator("strong")).toHaveCount(4);
+  await expect(revenue).toBeVisible();
+  await expect(cups).toBeVisible();
+  expect((await finance.boundingBox())!.y).toBeLessThan((await revenue.boundingBox())!.y);
+  expect((await revenue.boundingBox())!.x).toBeLessThan((await cups.boundingBox())!.x);
+  expect(ranges).toEqual(expect.arrayContaining([`${yesterday}:${today}`, `${yesterday}:${yesterday}`, `${today}:${today}`]));
+  await expect(page.getByRole("region", { name: "Chỉ số vận hành" }).locator("dd")).toHaveText(["3", "12", "2", "1"]);
+  await expect(page.getByRole("link", { name: "Mở công việc" }).first()).toHaveAttribute("href", "/moderator/contracts/f5000000-0000-4000-8000-000000000001");
+  const status = page.getByText("Đang hiệu lực", { exact: true }).first();
+  await expect(status).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  expect(await status.evaluate(el => getComputedStyle(el, "::before").height)).toBe("7px");
+  const open = page.getByRole("link", { name: "Mở công việc" }).first();
+  const letter = open.locator("[data-letter]").first();
+  await open.hover();
+  await expect.poll(() => letter.evaluate(el => getComputedStyle(el).transform)).not.toBe("none");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(letter).toHaveCSS("transform", "none");
+  await expect(page.getByRole("heading", { name: "Hợp đồng hết hạn trong 30 ngày 2 việc" })).toHaveCount(1);
+  await expect(page.getByText("Cà phê Deer", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cà phê S202", { exact: true })).toBeVisible();
+  await expect(page.getByText("Mã hồ sơ: 00000001")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tiếp", exact: true })).toHaveCount(0);
+  const queue = page.getByRole("region", { name: "Công việc cần xử lý" });
+  await expect(queue.getByRole("table")).toHaveCount(0);
+  await expect(queue.getByRole("button", { name: "Tất cả 8" })).toHaveAttribute("aria-pressed", "true");
+  await queue.getByRole("button", { name: "Quá hạn 3" }).click();
+  await expect(queue.getByRole("button", { name: "Quá hạn 3" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Không có công việc trong khoảng thời hạn này.")).toBeVisible();
+  expect(bucketRequests).toContain("OVERDUE");
+  expect(invoiceRequests).toBe(1);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect.poll(async () => (await cups.boundingBox())!.y - (await revenue.boundingBox())!.y).toBeGreaterThan(100);
+  await expect(finance.locator("strong").last()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
+test("Moderator overview shows permitted invoices even when finance is omitted", async ({ page, context }) => {
+  const claims = Buffer.from(JSON.stringify({ roles: ["moderator"] })).toString("base64url");
+  await context.addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  let requests = 0;
+  await page.route("**/api/dolores/v1/dashboard/overview*", route => {
+    requests++;
+    return route.fulfill({ json: { ...overview, scope: "OPERATOR", financialMetrics: undefined, periodFinancialMetrics: undefined } });
+  });
+
+  const id = "4f500000-0000-4000-8000-000000000001";
+  await page.route("**/api/dolores/v1/billing/invoices*", route => {
+    expect(new URL(route.request().url()).searchParams.get("size")).toBe("5");
+    return route.fulfill({ headers: { "X-Has-Next": "true" }, json: [
+      { id, period: "2026-10", type: "RENTAL", amount: 1500000, currency: "VND", status: "PAID" },
+      { id: "9f500000-0000-4000-8000-000000000002", period: "2026-10", type: "RENTAL", amount: 500000, currency: "VND", status: "OVERDUE" },
+    ] });
+  });
+  await page.goto("/moderator");
+  const invoices = page.getByRole("region", { name: "Hóa đơn", exact: true });
+  await expect(invoices.getByRole("link", { name: "Xem tất cả hóa đơn" })).toHaveAttribute("href", "/moderator/invoices/list");
+  await expect(invoices.getByRole("link", { name: "4F500000" })).toHaveAttribute("href", `/moderator/invoices/${id}`);
+  await expect(invoices.getByText("1.500.000 ₫")).toBeVisible();
+  await expect(invoices.getByText("2 hóa đơn trong nhóm đang xem")).toBeVisible();
+  await expect(invoices.getByRole("table")).toHaveCount(0);
+  const operations = page.getByRole("region", { name: "Chỉ số vận hành" });
+  expect((await invoices.boundingBox())!.y).toBeLessThan((await operations.boundingBox())!.y);
+  await expect(invoices.getByRole("listitem").filter({ has: page.getByRole("link", { name: "9F500000" }) })).toBeVisible();
+  await expect(invoices.getByRole("link").nth(1)).toHaveText("9F500000");
+  await expect(invoices.getByRole("listitem").filter({ has: page.getByRole("link", { name: "4F500000" }) }).getByText("Đã thanh toán")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.getByRole("heading", { name: "Tài chính lũy kế" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Doanh thu đã thu" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Biểu đồ số ly ghi nhận theo ngày" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "3 trên 5 máy đang cho thuê" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Xem danh sách máy" })).toHaveAttribute("href", "/moderator/machines/list");
+  expect(requests).toBe(1);
+});
+
+test("Admin overview shows invoice breakdown and opens the Admin invoice", async ({ page, context }) => {
+  const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
+  await context.addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  const id = "4f500000-0000-4000-8000-000000000001";
+  await page.route("**/api/dolores/v1/dashboard/overview*", route => route.fulfill({ json: overview }));
+  await page.route("**/api/dolores/v1/billing/invoices*", route => route.fulfill({ json: [
+    { id, period: "2026-10", type: "RENTAL", amount: 1500000, currency: "VND", status: "OVERDUE" },
+  ] }));
+  await page.goto("/admin");
+  const invoices = page.getByRole("region", { name: "Hóa đơn", exact: true });
+  await expect(invoices.getByText("Phân bố trạng thái")).toBeVisible();
+  await expect(invoices.getByRole("table")).toHaveCount(0);
+  await expect(invoices.getByRole("link", { name: "4F500000" })).toHaveAttribute("href", `/admin/invoices/${id}`);
+});

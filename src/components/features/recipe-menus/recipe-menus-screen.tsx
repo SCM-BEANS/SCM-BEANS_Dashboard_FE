@@ -3,8 +3,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
 import { recipesApi } from "@/apis/recipes.api";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
-import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getRecipeApiErrorDetails, getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -62,6 +63,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   const router = useRouter();
   const editorRef = useRef<HTMLFormElement>(null);
   const menuEditorRef = useRef<HTMLFormElement>(null);
+  const menuDialog = useRef<HTMLDialogElement>(null);
   const detailRef = useRef<HTMLElement>(null);
   const owner = role === "owner";
   const admin = !owner && operatorRole === "ADMIN";
@@ -135,19 +137,22 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   }, [initialGlobalRecipeId, owner]);
 
   useEffect(() => {
+    if (!owner && menuAction && !menuDialog.current?.open) menuDialog.current?.showModal();
     const form = menuAction ? menuEditorRef.current : mode !== "view" ? editorRef.current : null;
     if (form) {
       form.scrollIntoView({ block: "nearest" });
       form.querySelector<HTMLInputElement>("input:not([type=checkbox])")?.focus({ preventScroll: true });
     }
-  }, [mode, menuAction]);
+  }, [owner, mode, menuAction]);
 
   useEffect(() => {
     if (selectedId && detail.data?.id === selectedId && mode === "view") {
+      const title = document.getElementById("recipe-management-title");
+      if (!owner && title) { title.focus(); return; }
       detailRef.current?.scrollIntoView({ block: "nearest" });
       detailRef.current?.querySelector<HTMLHeadingElement>("h3")?.focus({ preventScroll: true });
     }
-  }, [selectedId, detail.data?.id, mode]);
+  }, [owner, selectedId, detail.data?.id, mode]);
 
   const invalidate = () => Promise.all([
     client.invalidateQueries({ queryKey: ["dolores", "recipes"] }),
@@ -156,6 +161,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     client.invalidateQueries({ queryKey: ["dolores", "recipe-sync-history"] }),
   ]);
   const clearFeedback = () => { setFeedback(""); setError(null); setValidation(""); };
+  const closeMenuDialog = () => { menuDialog.current?.close(); setMenuAction(null); };
   const write = useMutation({
     mutationFn: async (input: { payload: RecipePublishRequest; id?: string; target: string }) => {
       const recipe = input.id ? await recipesApi.updateGlobal(input.id, input.payload) : await recipesApi.publishGlobal(input.payload);
@@ -195,7 +201,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
       throw new Error("No menu operation selected.");
     },
     onSuccess: async (result, variables) => {
-      setMenuId(result?.id ?? ""); setSelectedId(""); setRecipePage(0); setMode("view"); setMenuAction(null);
+      setMenuId(result?.id ?? ""); setSelectedId(""); setRecipePage(0); setMode("view"); closeMenuDialog();
       setOperatorScreen(variables.action === "delete" ? "menus" : "recipes");
       setFeedback("Đã cập nhật menu. Bạn có thể thêm hoặc chọn công thức trong menu này."); await invalidate();
     },
@@ -251,6 +257,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   const busy = write.isPending || move.isPending || remove.isPending || copy.isPending || changeMenu.isPending;
   const openMenu = (id: string) => {
     setMenuId(id);
+    setRecipeSearch(""); setRecipeQ("");
     setSelectedId("");
     setRecipePage(0);
     setOperatorScreen("recipes");
@@ -269,152 +276,177 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     clearFeedback();
   };
   const recipeStepValue = (directive: string) => detail.data?.steps.find((step) => step.startsWith(`${directive}:`))?.slice(directive.length + 1);
-  const coffeeDose = recipeStepValue("DOSE");
-  const waterVolume = recipeStepValue("EXTRACT");
-  const milkVolume = recipeStepValue("PREMILK") ?? recipeStepValue("POSTMILK");
+  const coffeeDose = recipeStepValue("DOSE") ?? recipeStepValue("GRIND");
+  const waterVolume = recipeStepValue("EXTRACT") ?? recipeStepValue("BREW");
 
-  return <div className={showHeading ? styles.pageContent : styles.screen}>
-    {showHeading ? <BackButtonHeading title={owner ? "Công thức pha chế" : "Global Menu & công thức"} titleId="recipe-management-title"
-      description={owner ? "Khám phá menu Dolores và lưu món yêu thích vào menu riêng." : "Quản lý menu dùng chung và các công thức pha chế của Dolores."} className={styles.pageHeading} back={null} /> : null}
-    {view === "global" && mode === "view" && (operatorScreen === "recipes" || operatorScreen === "detail" || detailOnly) ? <button type="button" onClick={() => {
-      if (detailOnly && owner) { void router.push(PATH_CUSTOMER.MENU); return; }
-      if (operatorRole === "MODERATOR" && initialGlobalRecipeId) { void router.push(PATH_MODERATOR.MENU); return; }
-      setSelectedId(""); setOperatorScreen(operatorScreen === "detail" ? "recipes" : "menus"); setMode("view");
-    }}>Quay lại</button> : null}
-    {showNavigation ? <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
-      <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Thư viện dùng chung</button>
+  const activeMenu = menu.data?.name ?? menus.data?.content.find((item) => item.id === menuId)?.name
+    ?? (menuId && menuId !== DEFAULT_MENU ? "Menu đang chọn" : "Menu mặc định");
+  const detailMenu = menus.data?.content.find((item) => item.id === detail.data?.menuId)?.name
+    ?? (detail.data?.menuId === menuId ? activeMenu : detail.data?.menuId === DEFAULT_MENU ? "Menu mặc định" : "Chưa tải được tên menu");
+  const library = operatorScreen === "menus" && mode === "view";
+  const editing = mode !== "view";
+  const backToList = () => {
+    if (detailOnly && owner) { void router.push(PATH_CUSTOMER.MENU); return; }
+    if (operatorRole === "MODERATOR" && initialGlobalRecipeId) { void router.push(PATH_MODERATOR.MENU); return; }
+    clearFeedback(); setSelectedId(""); setMenuAction(null);
+    setOperatorScreen(operatorScreen === "detail" ? "recipes" : "menus");
+  };
+  const recipeTools = useRef<HTMLDetailsElement>(null);
+  const toggleTools = (tools: HTMLDetailsElement | null) => {
+    if (tools) { tools.open = !tools.open; if (tools.open) tools.querySelector("summary")?.focus({ preventScroll: true }); if (tools.open) tools.scrollIntoView({ block: "nearest" }); }
+  };
+  const formatMenuDate = (date: string) => Number.isNaN(new Date(date).getTime()) ? "—" : new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" }).format(new Date(date));
+  const canDeleteMenu = !recipeQ && recipes.isSuccess && !recipes.isFetching && "totalElements" in recipes.data && recipes.data.totalElements === 0;
+  const searchMenus = (event: FormEvent) => { event.preventDefault(); if (busy) return; setMenuQ(menuSearch); setMenuPage(0); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); };
+  const searchRecipes = (event: FormEvent) => { event.preventDefault(); if (busy) return; setRecipeQ(recipeSearch); setRecipePage(0); setSelectedId(""); setMode("view"); setDeleteTarget(null); };
+  const extraRecipeFields = <details className={styles.recipeMenuDisclosure}><summary>{admin ? "Mã món và đường dẫn ảnh" : "Mã tên và ảnh · không bắt buộc"}</summary><div className={styles.recipeMenuFormGrid}>
+              <label className={styles.formField}><span>{admin ? "Mã món" : "Mã tên"}</span><input value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="espresso" /></label>
+              <label className={styles.formField + " " + styles.recipeMenuFieldWide}><span>Đường dẫn ảnh</span><input value={imagePath} onChange={(event) => setImagePath(event.target.value)} placeholder="assets/images/espresso.webp" /></label>
+            </div></details>;
+
+  return <div className={showHeading ? styles.pageContent : styles.screen} data-recipe-layout data-recipe-mode={view === "global" ? editing ? "editor" : operatorScreen : undefined}>
+    {showHeading && !owner ? <header className={styles.adminRecipeHeader}>
+      <div>
+        {view === "global" && !library && !editing ? <ButtonBar className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</ButtonBar> : null}
+        <h1 id="recipe-management-title" tabIndex={-1}>{view !== "global" || library ? "Công thức pha chế" : mode === "create" ? "Thêm công thức" : mode === "edit" ? "Chỉnh sửa công thức" : operatorScreen === "detail" ? detail.data?.name ?? "Chi tiết công thức" : activeMenu}</h1>
+        {view === "global" && library ? <p>Quản lý menu và công thức dùng chung.</p> : null}
+        {view === "global" && mode === "create" ? <p>Menu đích: {activeMenu}</p> : null}
+        {view === "global" && mode !== "create" && detail.data && (mode === "edit" || operatorScreen === "detail") ? <p>{editing ? detail.data.name : detailMenu} · Phiên bản v{detail.data.revision}</p> : null}
+      </div>
+      {view === "global" ? <div className={styles.recipeMenuActions}>
+        {library ? <ButtonBar variant="primary" disabled={busy} onClick={() => { clearFeedback(); setMenuName(""); setMenuAction("create"); }}>Tạo menu</ButtonBar>
+          : editing ? <>
+            <ButtonBar disabled={busy} onClick={() => { if (!window.confirm("Hủy chỉnh sửa? Các thay đổi chưa lưu sẽ bị mất.")) return; clearFeedback(); setMode("view"); setOperatorScreen(editTargetId ? "detail" : "recipes"); }}>Hủy</ButtonBar>
+            <ButtonBar variant="primary" type="submit" form="global-recipe-form" disabled={busy || (mode === "edit" && (!confirmed || unsupportedProcedureSteps.length > 0))}>{write.isPending ? "Đang lưu…" : "Lưu công thức"}</ButtonBar>
+          </> : operatorScreen === "recipes" ? <>
+            {menu.data && menuId !== DEFAULT_MENU ? <>
+              <ButtonBar disabled={busy} onClick={() => { clearFeedback(); setMenuName(menu.data.name); setMenuAction("rename"); }}>Đổi tên menu</ButtonBar>
+              {canDeleteMenu ? <ButtonBar variant="danger" disabled={busy} onClick={() => { clearFeedback(); setMenuAction("delete"); }}>Xóa menu</ButtonBar> : null}
+            </> : null}
+            <ButtonBar variant="primary" disabled={busy} onClick={() => openForm(false)}>Thêm món</ButtonBar>
+          </> : <>
+            <ButtonBar variant="primary" disabled={busy || !detail.data} onClick={() => openForm(true)}>Chỉnh sửa</ButtonBar>
+            <ButtonBar disabled={busy || !detail.data} onClick={() => toggleTools(recipeTools.current)}>Thao tác</ButtonBar>
+          </>}
+      </div> : null}
+    </header> : null}
+    {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title"
+      description="Khám phá công thức Dolores và lưu món yêu thích vào menu riêng." className={styles.pageHeading} back={null} /> : null}
+    {owner && !library ? <div><ButtonBar onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</ButtonBar></div> : null}
+    {showNavigation && (library || view !== "global") ? <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
+      <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</button>
       {owner ? <>
         <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS)}>Menu của tôi</button>
         <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}>Đồng bộ với máy</button>
       </> : admin ? <>
-        <button type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh cũ</button>
-        <button type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Theo dõi đồng bộ</button>
+        <button type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh định lượng cũ</button>
+        <button type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Đồng bộ với máy</button>
       </> : null}
     </nav> : null}
     {view === "legacy" && admin ? <LegacyRecipeOverrides role="ADMIN" /> : null}
     {view === "sync" && admin ? <RecipeSyncPanel role="ADMIN" /> : null}
     {view === "global" ? <>
+        {!owner && menuAction ? <dialog ref={menuDialog} className={styles.adminRecipeDialog} aria-labelledby="create-menu-title" onCancel={(event) => {
+          event.preventDefault(); if (!busy) { clearFeedback(); closeMenuDialog(); }
+        }}>
+          <form ref={menuEditorRef} onSubmit={(event) => { event.preventDefault(); if (busy || (menuAction === "delete" ? !canDeleteMenu : !menuName.trim())) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
+            <div className={styles.panelHeading}>
+              <h2 id="create-menu-title">{menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Đổi tên menu" : "Xóa menu?"}</h2>
+              <button type="button" className={styles.adminRecipeDialogClose} aria-label="Đóng hộp thoại" disabled={busy} onClick={() => { clearFeedback(); closeMenuDialog(); }}>×</button>
+            </div>
+            {menuAction === "delete" ? <p>Xóa “{activeMenu}”? Thao tác này không thể hoàn tác.</p> : <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Menu buổi sáng" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label>}
+            {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
+            <div className={styles.recipeMenuActions}>
+              <ButtonBar disabled={busy} onClick={() => { clearFeedback(); closeMenuDialog(); }}>Hủy</ButtonBar>
+              <ButtonBar variant={menuAction === "delete" ? "danger" : "primary"} holdToConfirm={menuAction === "delete"} type="submit" disabled={busy || (menuAction === "delete" ? !canDeleteMenu : !menuName.trim())}>{busy ? "Đang xử lý…" : menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Lưu tên menu" : "Giữ để xóa"}</ButtonBar>
+            </div>
+          </form>
+        </dialog> : null}
       {feedback ? <p className={styles.recipeMenuSuccess} role="status">{feedback}</p> : null}
-      {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
+      {error && !(!owner && menuAction) ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
       {mode === "view" && !detailOnly && operatorScreen === "menus" ? <section className={styles.recipeMenuPanel}>
-        <div className={styles.panelHeading}><div><h2>Danh sách</h2></div>
+        <div className={styles.panelHeading}><div><h2>Danh sách menu</h2></div>
         </div>
-        <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; setMenuQ(menuSearch); setMenuPage(0); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }}>
-          <label className={styles.formField}><span>Tìm menu</span><input placeholder="Nhập tên menu…" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} /></label>
-          <ButtonBar type="submit">Tìm kiếm</ButtonBar>
-        </form>
+        <TableFilters search={{ ariaLabel: "Tìm menu", placeholder: "Tìm theo tên menu", value: menuSearch, maxLength: 200, onChange: setMenuSearch }}
+          submitLabel="Tìm kiếm" onSubmit={searchMenus} disabled={busy} />
         {menus.isPending ? <p role="status">Đang tải menu…</p> : null}
         {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
         {menus.data ? <>
-          <div className={styles.recipeMenuTableScroll}>
-            <table className={styles.recipeMenuTable}>
-              <thead><tr><th scope="col">Menu</th><th scope="col">Ngày tạo</th></tr></thead>
-              <tbody>
-                {menus.data.content.map((item) => <tr key={item.id} data-clickable="true" data-selected={menuId === item.id || undefined}
-                  tabIndex={busy ? -1 : 0} aria-label={`Mở menu ${item.name}`}
-                  onClick={() => { if (!busy) openMenu(item.id); }}
-                  onKeyDown={(event) => {
-                    if ((event.key === "Enter" || event.key === " ") && !busy) {
-                      event.preventDefault();
-                      openMenu(item.id);
-                    }
-                  }}>
-                  <th scope="row">{item.name}</th>
-                  <td>{Number.isNaN(new Date(item.createdAt).getTime()) ? "—" : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(new Date(item.createdAt))}</td>
-                </tr>)}
-                {!menus.data.content.length ? <tr><td colSpan={2}>Chưa có menu phù hợp.</td></tr> : null}
-              </tbody>
-            </table>
-          </div>
+          <DataTable variant="accounts" style={{ minWidth: 0 }} rows={menus.data.content} rowKey={(item) => item.id} emptyMessage="Chưa có menu phù hợp." columns={[
+            { key: "name", header: "Tên menu", cellProps: () => ({ className: styles.adminRecipeName }), render: (item) => <strong>{item.name}</strong> },
+            { key: "date", header: "Ngày tạo", render: (item) => formatMenuDate(item.createdAt) },
+            { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>Mở menu</ButtonBar> },
+          ]} />
           {pagination(menus.data.page, !menus.data.last, (page) => { setMenuPage(page); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }, "Danh sách menu")}
         </> : null}
         {menu.isError ? <p role="alert">{getRecipeApiErrorMessage(menu.error)}</p> : null}
-        {!owner && menuAction === "create" ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu" aria-busy={changeMenu.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
-          <h3>Menu mới</h3>
-          <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Cà phê truyền thống" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label>
-          <div className={styles.recipeMenuActions}><ButtonBar type="submit" disabled={busy || !menuName.trim()}>{changeMenu.isPending ? "Đang lưu…" : "Tạo menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
-        </form> : null}
       </section> : null}
       {mode !== "view" || detailOnly || operatorScreen !== "menus" ? <section className={styles.recipeMenuPanel}>
         {mode === "view" && operatorScreen === "recipes" ? <div className={styles.panelHeading}><div>
-          <h2>{menu.data?.name ?? (menuId ? "Menu đang chọn" : "Tất cả công thức")} · các món</h2>
-          <p>{menuId && recipes.data && "totalElements" in recipes.data ? `${recipes.data.totalElements} món trong menu.` : "Chọn một món để xem thông tin chi tiết."}</p>
-        </div>{!owner ? <div className={styles.recipeMenuActions}>
-          {menuId && menu.data ? <>
-            <ButtonBar disabled={menuId === DEFAULT_MENU || busy} onClick={() => { clearFeedback(); setMenuName(menu.data.name); setMenuAction("rename"); }}>Đổi tên menu</ButtonBar>
-            <ButtonBar disabled={menuId === DEFAULT_MENU || busy || !recipes.data || !("totalElements" in recipes.data) || recipes.data.totalElements > 0}
-              onClick={() => { clearFeedback(); setMenuAction("delete"); }}>Xóa menu rỗng</ButtonBar>
-          </> : null}
-
-        </div> : null}</div> : null}
-        {!owner && operatorScreen === "recipes" && (menuAction === "rename" || menuAction === "delete") ? <form ref={menuEditorRef} className={styles.recipeMenuEditor} aria-label="Quản lý menu" aria-busy={changeMenu.isPending} onSubmit={(event) => { event.preventDefault(); if (busy) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
-          <h3>{menuAction === "delete" ? "Xóa menu đang chọn?" : "Đổi tên menu"}</h3>
-          {menuAction === "rename" ? <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Cà phê truyền thống" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label> : <p>Chỉ xóa được khi menu không còn công thức.</p>}
-          <div className={styles.recipeMenuActions}><ButtonBar type="submit" holdToConfirm={menuAction === "delete"} disabled={busy || (menuAction === "rename" && !menuName.trim())}>{changeMenu.isPending ? "Đang lưu…" : menuAction === "rename" ? "Lưu tên menu" : "Xóa menu"}</ButtonBar><ButtonBar disabled={busy} onClick={() => setMenuAction(null)}>Hủy</ButtonBar></div>
-        </form> : null}
+          {owner ? <h2>{activeMenu}</h2> : <h2>Công thức trong menu</h2>}
+          {recipes.data && "totalElements" in recipes.data ? <p>{recipes.data.totalElements} món trong menu.</p> : null}
+        </div></div> : null}
         <div className={styles.recipeMenuWorkspace} data-editing={mode !== "view" || detailOnly}>
         {mode === "view" && !detailOnly && operatorScreen === "recipes" ? <div className={styles.recipeMenuBrowser}>
-        <form className={styles.recipeMenuToolbar} onSubmit={(event) => { event.preventDefault(); if (busy) return; setRecipeQ(recipeSearch); setRecipePage(0); setSelectedId(""); setMode("view"); setDeleteTarget(null); }}>
-          <label className={styles.formField}><span>Tìm công thức</span><input placeholder="Nhập tên món, ví dụ Espresso…" value={recipeSearch} onChange={(event) => setRecipeSearch(event.target.value)} /></label><ButtonBar type="submit">Tìm kiếm</ButtonBar>
-        </form>
+        <TableFilters search={{ ariaLabel: "Tìm công thức", placeholder: "Tìm theo tên món", value: recipeSearch, maxLength: 200, onChange: setRecipeSearch }}
+          submitLabel="Tìm kiếm" onSubmit={searchRecipes} disabled={busy} />
         {recipes.isPending ? <p role="status">Đang tải công thức…</p> : null}
         {recipes.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(recipes.error)}</p><ButtonBar onClick={() => void recipes.refetch()}>Thử lại</ButtonBar></div> : null}
         {recipes.data ? <>
-          <div className={styles.recipeMenuTableScroll}>
-            <table className={styles.recipeMenuTable}>
-              <thead><tr><th scope="col">Món</th><th scope="col">Phiên bản</th></tr></thead>
-              <tbody>
-                {recipes.data.items.map((item) => <tr key={item.id} data-clickable="true" tabIndex={busy ? -1 : 0}
-                  aria-label={`Mở công thức ${item.name}`} onClick={() => { if (!busy) openRecipe(item.id); }}
-                  onKeyDown={(event) => {
-                    if ((event.key === "Enter" || event.key === " ") && !busy) {
-                      event.preventDefault();
-                      openRecipe(item.id);
-                    }
-                  }}>
-                  <th scope="row">{item.name}</th>
-                  <td>v{item.revision}</td>
-                </tr>)}
-                {!recipes.data.items.length ? <tr><td colSpan={2}>Chưa có món nào trong menu này.</td></tr> : null}
-              </tbody>
-            </table>
-          </div>
+          <DataTable variant="accounts" style={{ minWidth: 0 }} rows={recipes.data.items} rowKey={(item) => item.id} emptyMessage="Chưa có món nào phù hợp." columns={[
+            { key: "name", header: "Tên món", cellProps: () => ({ className: styles.adminRecipeName }), render: (item) => <strong>{item.name}</strong> },
+            { key: "version", header: "Phiên bản", render: (item) => "v" + item.revision },
+            { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Xem chi tiết " + item.name} onClick={() => openRecipe(item.id)}>Xem chi tiết</ButtonBar> },
+          ]} />
           {pagination(recipes.data.page, recipes.data.hasNext, (page) => { setRecipePage(page); setSelectedId(""); setMode("view"); setDeleteTarget(null); }, "Danh sách công thức")}
         </> : null}
         </div> : null}
         {!owner && mode !== "view" ? <form id="global-recipe-form" ref={editorRef} className={styles.recipeMenuEditor} onInvalidCapture={(event) => { const disclosure = (event.target as HTMLElement).closest("details"); if (disclosure) disclosure.open = true; }} onSubmit={submitRecipe} aria-label="Thông tin công thức" aria-busy={write.isPending}>
-          <div className={styles.panelHeading}><div><h3>{mode === "create" ? "Thêm công thức mới" : "Chỉnh sửa công thức"}</h3><p>{mode === "edit" ? <>Đang sửa <strong>{name || "công thức"}</strong> · Phiên bản v{detail.data?.revision ?? "—"} · Menu: <strong>{menus.data?.content.find((item) => item.id === detail.data?.menuId)?.name ?? "Menu hiện tại"}</strong></> : <>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (!menuId || menuId === DEFAULT_MENU ? "Menu mặc định" : "Menu đã chọn (chưa tải được tên)")}</strong></>}</p></div></div>
+          <div hidden={!owner} className={styles.panelHeading}><div><h3>{mode === "create" ? "Thêm công thức mới" : "Chỉnh sửa công thức"}</h3><p>{mode === "edit" ? <>Đang sửa <strong>{name || "công thức"}</strong> · Phiên bản v{detail.data?.revision ?? "—"} · Menu: <strong>{menus.data?.content.find((item) => item.id === detail.data?.menuId)?.name ?? "Menu hiện tại"}</strong></> : <>Menu đích: <strong>{menus.data?.content.find((item) => item.id === menuId)?.name ?? menu.data?.name ?? (!menuId || menuId === DEFAULT_MENU ? "Menu mặc định" : "Menu đã chọn (chưa tải được tên)")}</strong></>}</p></div></div>
           {mode === "edit" && unsupportedProcedureSteps.length ? <div className={styles.recipeMenuError} role="alert"><div><strong>Không thể nạp đầy đủ thông số pha.</strong><p>Để tránh làm mất bước khi lưu, hãy giữ nguyên công thức này hoặc nhờ quản trị viên kiểm tra dữ liệu.</p><ul>{unsupportedProcedureSteps.map((step, index) => <li key={`${index}-${step}`}>{step}</li>)}</ul></div></div> : null}
           <section className={styles.recipeMenuEditSection} aria-labelledby="recipe-identity-heading">
             <div className={styles.recipeMenuEditSectionHeading}><h4 id="recipe-identity-heading">Thông tin món</h4></div>
-            <label className={styles.formField}><span>Tên món / công thức *</span><input required placeholder="Ví dụ: Espresso đậm vị" value={name} onChange={(event) => setName(event.target.value)} /></label>
-            <details className={styles.recipeMenuDisclosure}><summary>Mã tên và ảnh · không bắt buộc</summary><div className={styles.recipeMenuFormGrid}>
-              <label className={styles.formField}><span>Mã tên</span><input value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="espresso" /></label>
-              <label className={styles.formField + " " + styles.recipeMenuFieldWide}><span>Đường dẫn ảnh</span><input value={imagePath} onChange={(event) => setImagePath(event.target.value)} placeholder="assets/images/espresso.webp" /></label>
-            </div></details>
+            <label className={styles.formField}><span>{admin ? "Tên món *" : "Tên món / công thức *"}</span><input required placeholder="Ví dụ: Espresso đậm vị" value={name} onChange={(event) => setName(event.target.value)} /></label>
+
           </section>
           <section className={styles.recipeMenuEditSection} aria-labelledby="recipe-procedure-heading">
             <div className={styles.recipeMenuEditSectionHeading}><h4 id="recipe-procedure-heading">Thông số pha</h4></div>
-            <RecipeProcedureFields value={procedure} onChange={setProcedure} prefix="global-procedure" disabled={write.isPending} />
+            <RecipeProcedureFields value={procedure} onChange={setProcedure} prefix="global-procedure" disabled={write.isPending} compact />
           </section>
-          {mode === "edit" ? <label className={styles.recipeMenuConfirmation}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> Tôi đã kiểm tra các thông số được nạp từ công thức hiện tại trước khi lưu.</label> : null}
+          {extraRecipeFields}
+          {mode === "edit" ? <label className={styles.recipeMenuConfirmation}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} required /> {admin ? "Đã kiểm tra thông số trước khi lưu." : "Tôi đã kiểm tra các thông số được nạp từ công thức hiện tại trước khi lưu."}</label> : null}
           {validation ? <p className={styles.recipeMenuError} role="alert">{validation}</p> : null}
 
         </form> : null}
+        {!owner && editing ? <aside className={styles.adminRecipeCard}>
+          <h2>Xem lại công thức</h2>
+          <dl className={styles.adminRecipeFacts}>
+            <div><dt>Menu</dt><dd>{mode === "edit" ? detailMenu : activeMenu}</dd></div>
+            <div><dt>Tên món</dt><dd>{name.trim() || "Chưa nhập"}</dd></div>
+            <div><dt>Lượng cà phê</dt><dd>{procedure.DOSE ? procedure.DOSE + " g" : "Chưa nhập"}</dd></div>
+            <div><dt>Nước chiết xuất</dt><dd>{procedure.EXTRACT ? procedure.EXTRACT + " ml" : "Chưa nhập"}</dd></div>
+          </dl>
+        </aside> : null}
         {mode === "view" && recipeId && (detailOnly || operatorScreen === "detail") ? <section ref={detailRef} className={styles.recipeMenuDetail} aria-label="Chi tiết công thức">
           {detail.isPending ? <p role="status">Đang tải chi tiết…</p> : null}
           {detail.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(detail.error)}</p><ButtonBar onClick={() => void detail.refetch()}>Thử lại</ButtonBar></div> : null}
           {detail.data ? <>
-            <div className={styles.panelHeading}><div><h3 tabIndex={-1}>{detail.data.name}</h3><p>Phiên bản v{detail.data.revision}</p></div></div>
-            <div className={styles.recipeMenuDetailGrid}>
-              <div><span>Menu / món</span><strong>{(menus.data?.content.find((item) => item.id === detail.data.menuId)?.name ?? (detail.data.menuId === DEFAULT_MENU ? "Menu mặc định" : "Chưa tải được tên menu")) + " / " + detail.data.name}</strong></div>
-              <div><span>Thành phần</span><strong>{coffeeDose ? milkVolume ? "Cà phê và sữa" : "Cà phê" : "Chưa có thông số thành phần"}</strong></div>
-              <div><span>Lượng cà phê</span><strong>{coffeeDose ? `${coffeeDose} g` : "Chưa có thông số"}</strong></div>
-              <div><span>Lượng nước pha</span><strong>{waterVolume ? `${waterVolume} ml` : "Chưa có thông số"}</strong></div>
-            </div>
-            <h4>Các bước pha</h4><RecipeSteps steps={detail.data.steps} />
-            <details className={styles.recipeMenuDisclosure}><summary>Lưu ý về thông số và đồng bộ</summary><p className={styles.recipeMenuMeta}>Các bước thư viện trả về có thể chưa phản ánh quy trình vừa cập nhật. Dữ liệu này chưa đủ để xác nhận toàn bộ thông số vật lý hoặc trạng thái máy đang áp dụng.</p></details>
-            {owner ? <div className={styles.recipeMenuCopyPanel}><h4>Lưu món này vào menu của tôi</h4><p className={styles.recipeMenuMeta}>Chọn menu nhận bản sao. Công thức gốc trong thư viện vẫn được giữ nguyên.</p>
+            {owner ? <div className={styles.panelHeading}><div><h3 tabIndex={-1}>{detail.data.name}</h3><p>{detailMenu} · Phiên bản v{detail.data.revision}</p></div></div> : null}
+            <div className={styles.adminRecipeColumns}>
+              <section className={styles.adminRecipeCard + " " + styles.recipeStepCard}><h2>Các bước pha</h2><RecipeSteps steps={detail.data.steps} /></section>
+              <div className={styles.recipeDetailSide}>
+              <section className={styles.adminRecipeCard}><h2>Thông số pha</h2>
+                <dl className={styles.adminRecipeFacts}>
+                  <div><dt>Lượng cà phê</dt><dd>{coffeeDose ? coffeeDose + " g" : "Chưa có thông số"}</dd></div>
+                  <div><dt>Nước chiết xuất</dt><dd>{waterVolume ? waterVolume + " ml" : "Chưa có thông số"}</dd></div>
+                </dl>
+              </section>
+            <details className={styles.recipeDetailDisclosure}>
+              <summary>Thông số và đồng bộ</summary>
+              <p>Các bước trong thư viện có thể chưa phản ánh lần cập nhật gần nhất. Xem trạng thái đồng bộ để biết máy đã xác nhận áp dụng chưa.</p>
+              {owner ? <ButtonBar href={PATH_CUSTOMER.MENU_SYNC}>Xem đồng bộ với máy</ButtonBar> : admin ? <ButtonBar onClick={() => setView("sync")}>Xem đồng bộ với máy</ButtonBar> : null}
+            </details>
+            {owner ? <div className={styles.adminRecipeCard + " " + styles.recipeDetailSide}><h2>Lưu vào Menu của tôi</h2><p className={styles.recipeMenuMeta}>Chọn menu nhận bản sao. Công thức gốc trong thư viện vẫn được giữ nguyên.</p>
               {ownerMenus.isPending ? <p>Đang tải menu của bạn…</p> : null}
               {ownerMenus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(ownerMenus.error)}</p><ButtonBar onClick={() => void ownerMenus.refetch()}>Thử lại</ButtonBar></div> : null}
               {ownerMenus.data ? <>
@@ -423,23 +455,21 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
                 <ButtonBar disabled={busy || (ownerMenus.data.totalElements > 0 && !copyMenuId)} onClick={() => { clearFeedback(); copy.mutate({ globalRecipeId: detail.data.id, ...(copyMenuId ? { menuId: copyMenuId } : {}) }); }}>{copy.isPending ? "Đang sao chép…" : "Lưu bản sao riêng"}</ButtonBar>
                 <ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>Mở Menu của tôi</ButtonBar>
               </> : null}
-            </div> : <details className={styles.recipeMenuDisclosure}><summary>Sắp xếp hoặc xóa công thức</summary><div className={styles.recipeMenuOperatorTools}>
+            </div> : <details ref={recipeTools} className={styles.recipeDetailDisclosure}><summary>Quản lý công thức</summary><div className={styles.recipeMenuOperatorTools}>
               <label className={styles.formField}><span>Chuyển công thức sang menu</span><select aria-label="Chuyển công thức sang menu" value={moveMenuId} onChange={(event) => setMoveMenuId(event.target.value)}><option value="">Chọn menu đích</option>{menus.data?.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
               <div className={styles.recipeMenuActions}>
                 <ButtonBar disabled={busy || !moveMenuId || moveMenuId === detail.data.menuId} onClick={() => { clearFeedback(); move.mutate({ remove: false, id: detail.data.id, menuId: moveMenuId }); }}>Chuyển menu</ButtonBar>
                 <ButtonBar disabled={busy || !detail.data.menuId || detail.data.menuId === DEFAULT_MENU} onClick={() => { clearFeedback(); move.mutate({ remove: true, id: detail.data.id, menuId: detail.data.menuId! }); }}>Về menu mặc định</ButtonBar>
-                <ButtonBar disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức</ButtonBar>
+                <ButtonBar variant="danger" disabled={busy} onClick={() => setDeleteTarget({ id: detail.data.id, name: detail.data.name })}>Xóa công thức</ButtonBar>
               </div>
               {deleteTarget ? <div className={styles.recipeMenuEditor}><p>Xóa “{deleteTarget.name}”? Hệ thống có thể từ chối nếu còn điều chỉnh cũ tham chiếu.</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => { clearFeedback(); remove.mutate(deleteTarget.id); }}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setDeleteTarget(null)}>Hủy</ButtonBar></div></div> : null}
             </div></details>}
+            </div>
+            </div>
           </> : null}
         </section> : null}
         </div>
       </section> : null}
-      <PageActions actions={view === "global" && !owner && mode !== "view" ? [
-        { id: "recipe-cancel", label: "Hủy", priority: 100, disabled: busy, onClick: () => { clearFeedback(); setMode("view"); if (editTargetId) setOperatorScreen("detail"); else setOperatorScreen("recipes"); }, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy chỉnh sửa" } },
-        { id: "recipe-save", label: "Lưu công thức", variant: "primary", priority: 100, type: "submit", form: "global-recipe-form", disabled: busy || (mode === "edit" && !confirmed), disabledReason: "Xác nhận thay đổi và chờ yêu cầu hoàn tất.", pending: write.isPending, pendingLabel: "Đang lưu…" },
-      ] : view === "global" && !owner && mode === "view" && !detailOnly && operatorScreen === "menus" && !menuAction ? [{ id: "menu-create", label: "T\u1ea1o menu", variant: "primary", priority: 20, disabled: busy, disabledReason: "\u0110ang x\u1eed l\u00fd y\u00eau c\u1ea7u.", onClick: () => { clearFeedback(); setMenuAction("create"); setMenuName(""); } }] : view === "global" && !owner && mode === "view" && operatorScreen === "recipes" && !menuAction ? [{ id: "recipe-create", label: "Th\u00eam m\u00f3n", variant: "primary", priority: 20, disabled: busy, disabledReason: "\u0110ang x\u1eed l\u00fd y\u00eau c\u1ea7u.", onClick: () => openForm(false) }] : view === "global" && (detailOnly || (mode === "view" && operatorScreen === "detail")) && !owner && mode === "view" ? [{ id: "recipe-edit", label: `Chỉnh sửa ${detail.data?.name ?? "món"}`, variant: "primary", priority: 10, disabled: busy || !detail.data, disabledReason: "Đang tải hoặc xử lý công thức.", onClick: () => openForm(true) }] : []} />
     </> : null}
   </div>;
 }

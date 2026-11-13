@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer as PageActions } from "@/components/action-bar/page-actions-renderer";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateMachineModelRequestSchema, type CreateMachineModelRequest } from "@/schema/machine-models.schema";
 import { MachineTypeSchema } from "@/schema/machines.schema";
@@ -24,18 +24,46 @@ const initialForm: MachineModelForm = {
   specifications: "{}",
 };
 
-const sampleSpecifications = `{
-  "power": "1450 W",
-  "voltage": "220-240 V",
-  "waterTankCapacity": "2 L",
-  "beanHopperCapacity": "500 g",
-  "dimensionsMm": {
-    "width": 280,
-    "depth": 430,
-    "height": 360
-  },
-  "weightKg": 9.5
-}`;
+const specificationLabels: Record<string, string> = { power: "Công suất", voltage: "Điện áp", waterTankCapacity: "Dung tích bình nước", beanHopperCapacity: "Sức chứa hộc hạt", dimensionsMm: "Kích thước (mm)", width: "Chiều rộng", depth: "Chiều sâu", height: "Chiều cao", weightKg: "Khối lượng (kg)" };
+const specificationLabel = (key: string) => specificationLabels[key] ?? key;
+
+export function MachineSpecificationsView({ value }: { value: Record<string, unknown> }) {
+  if (!Object.keys(value).length) return <p className={styles.panelSubtitle}>Chưa có thông số kỹ thuật.</p>;
+  return <dl className={styles.specificationsList}>{Object.entries(value).map(([key, item]) => <div key={key}><dt>{specificationLabel(key)}</dt><dd>{item !== null && typeof item === "object" ? <MachineSpecificationsView value={item as Record<string, unknown>} /> : String(item ?? "—")}</dd></div>)}</dl>;
+}
+
+export function MachineSpecificationsFields({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const specifications = JSON.parse(value) as Record<string, unknown>;
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState("");
+  const draftInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    draftInput.current?.setCustomValidity(name || amount ? "Bấm Thêm thông số để đưa dòng này vào danh sách, hoặc xóa nội dung để bỏ qua." : "");
+  }, [name, amount]);
+  const entries = Object.entries(specifications);
+  return <section className={styles.specificationsEditor}>
+    <h3>Thông số kỹ thuật</h3>
+    {entries.map(([key, item]) => <div className={styles.specificationRow} key={key}>
+      <span>{specificationLabel(key)}</span>
+      {typeof item === "object" && item !== null ? <details><summary>Thông số chi tiết đã lưu</summary>{Array.isArray(item) ? <MachineSpecificationsView value={item as unknown as Record<string, unknown>} /> : <MachineSpecificationsFields value={JSON.stringify(item)} onChange={(next) => onChange(JSON.stringify({ ...specifications, [key]: JSON.parse(next) }))} />}</details> : <input aria-label={`Giá trị ${key}`} value={String(item ?? "")} onChange={(event) => {
+        const next = event.target.value;
+        onChange(JSON.stringify({ ...specifications, [key]: typeof item === "number" && next.trim() && Number.isFinite(Number(next)) ? Number(next) : typeof item === "boolean" && ["true", "false"].includes(next) ? next === "true" : next }));
+      }} />}
+      <button type="button" onClick={() => onChange(JSON.stringify(Object.fromEntries(entries.filter(([name]) => name !== key))))} aria-label={`Xóa thông số ${key}`}>Xóa dòng</button>
+    </div>)}
+    <div className={styles.specificationRow}>
+      <label>Tên thông số<input ref={draftInput} value={name} onChange={(event) => setName(event.target.value)} placeholder="Ví dụ: Công suất" /></label>
+      <label>Giá trị và đơn vị<input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Ví dụ: 2200 W" /></label>
+      <button type="button" onClick={() => {
+        if (!name.trim() || !amount.trim()) { setError("Nhập tên và giá trị trước khi thêm thông số."); return; }
+        if (Object.hasOwn(specifications, name.trim())) { setError("Tên thông số đã có. Hãy sửa giá trị ở dòng tương ứng."); return; }
+        onChange(JSON.stringify({ ...specifications, [name.trim()]: amount.trim() })); setName(""); setAmount(""); setError("");
+      }}>Thêm thông số</button>
+    </div>
+    {error && <p role="alert">{error}</p>}
+  </section>;
+}
 
 type CreateMachineModelFormProps = {
   onCancel: () => void;
@@ -129,42 +157,7 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
 
   return (
     <>
-      <form id="machine-model-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
-        <h2>{T.MACHINE_MODELS.CREATE_FORM_TITLE}</h2>
-        <div className={styles.operationsGrid}>
-          <label>{T.MACHINE_MODELS.MODEL_CODE} *<input required autoComplete="off" value={form.modelCode} onChange={(event) => setField("modelCode", event.target.value)} /></label>
-          <label>{T.MACHINE_MODELS.MANUFACTURER} *<input required autoComplete="organization" value={form.manufacturer} onChange={(event) => setField("manufacturer", event.target.value)} /></label>
-          <label>{T.MACHINE_MODELS.DISPLAY_NAME} *<input required value={form.displayName} onChange={(event) => setField("displayName", event.target.value)} /></label>
-          <label>{T.MACHINES.MACHINE_TYPE} *
-            <select value={form.machineType} onChange={(event) => setField("machineType", event.target.value as MachineModelForm["machineType"])}>
-              {MachineTypeSchema.options.map((machineType) => (
-                <option value={machineType} key={machineType}>
-                  {machineType === "SMART_IOT"
-                    ? `${T.MACHINES.SMART} (SMART_IOT)`
-                    : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.machineModelSpecifications}>{T.MACHINE_MODELS.SPECIFICATIONS} (JSON)
-            <textarea rows={5} spellCheck={false} value={form.specifications} onChange={(event) => setField("specifications", event.target.value)} />
-          </label>
-          <div className={styles.machineModelSpecificationsSample}>
-            <p>Mẫu minh họa cho máy pha cà phê; hãy thay bằng thông số thực tế của mẫu máy.</p>
-            <pre>{sampleSpecifications}</pre>
-            <button
-              type="button"
-              onClick={() => {
-                setField("specifications", sampleSpecifications);
-                setRequestError("");
-              }}
-            >
-              Dùng JSON mẫu
-            </button>
-          </div>
-        </div>
-        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      </form>
+      <div className={styles.machineTopActions}>
       <PageActions actions={[
         {
           id: "machine-model-create-cancel",
@@ -189,6 +182,41 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
           pendingLabel: T.MACHINE_MODELS.CREATING,
         },
       ]} />
+      </div>
+      <div className={styles.machineFormLayout}>
+      <form id="machine-model-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+        <h2>{T.MACHINE_MODELS.CREATE_FORM_TITLE}</h2>
+        <div className={styles.operationsGrid}>
+          <label>{T.MACHINE_MODELS.MODEL_CODE} *<input required autoComplete="off" value={form.modelCode} onChange={(event) => setField("modelCode", event.target.value)} /></label>
+          <label>{T.MACHINE_MODELS.MANUFACTURER} *<input required autoComplete="organization" value={form.manufacturer} onChange={(event) => setField("manufacturer", event.target.value)} /></label>
+          <label>{T.MACHINE_MODELS.DISPLAY_NAME} *<input required value={form.displayName} onChange={(event) => setField("displayName", event.target.value)} /></label>
+          <label>{T.MACHINES.MACHINE_TYPE} *
+            <select value={form.machineType} onChange={(event) => setField("machineType", event.target.value as MachineModelForm["machineType"])}>
+              {MachineTypeSchema.options.map((machineType) => (
+                <option value={machineType} key={machineType}>
+                  {machineType === "SMART_IOT"
+                    ? `${T.MACHINES.SMART} (SMART_IOT)`
+                    : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <MachineSpecificationsFields value={form.specifications} onChange={(value) => setField("specifications", value)} />
+        </div>
+        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+      </form>
+      <aside className={`${styles.panel} ${styles.machineFormSummary}`} aria-label="Kiểm tra thông tin mẫu máy">
+        <h2>Kiểm tra thông tin</h2>
+        <dl className={styles.specificationsList}>
+          <div><dt>Mã mẫu</dt><dd>{form.modelCode || "—"}</dd></div>
+          <div><dt>Tên mẫu</dt><dd>{form.displayName || "—"}</dd></div>
+          <div><dt>Nhà sản xuất</dt><dd>{form.manufacturer || "—"}</dd></div>
+          <div><dt>Loại máy</dt><dd>{form.machineType === "SMART_IOT" ? "Smart IoT" : "Máy thường"}</dd></div>
+          <div><dt>Thông số đã thêm</dt><dd>{Object.keys(JSON.parse(form.specifications)).length}</dd></div>
+        </dl>
+      </aside>
+      </div>
+
     </>
   );
 }

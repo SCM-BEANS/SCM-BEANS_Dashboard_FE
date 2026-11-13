@@ -12,7 +12,8 @@ const labels = { OBSERVING: "Đang theo dõi", REVIEW_REQUIRED: "Cần rà soát
 const formatTime = (value: string | null) => value ? `${value.slice(11, 19)} ${value.slice(0, 10).split("-").reverse().join("/")}` : "—";
 type Page = { items: OfflineViolationReview[]; page: number; size: number; hasNext: boolean };
 
-export function OfflineReviewPanel({ page, detail, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, onRefresh, onDecide }: {
+export function OfflineReviewPanel({ page, detail, selectedId, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, onRefresh, onDecide }: {
+  selectedId?: string;
   page?: Page; detail?: OfflineViolationReview; status: string; machineId?: string; machineLabels?: Record<string, string>; canDecide: boolean;
   loading?: boolean; detailLoading?: boolean; error?: string; detailError?: string;
   onFilterChange: (status: string) => void; onPageChange: (page: number) => void;
@@ -20,21 +21,23 @@ export function OfflineReviewPanel({ page, detail, status, machineId, machineLab
   onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>;
 }) {
   return <section className={styles.smartIotPanel} aria-label="Rà soát mất kết nối">
+    {selectedId ? <ButtonBar onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}
     <div className={styles.operationalOverviewPanelHeading}><h2>Rà soát mất kết nối</h2><ButtonBar onClick={onRefresh} disabled={loading}>Làm mới</ButtonBar></div>
-    <label className={styles.telemetryFieldSelector}>Trạng thái rà soát<select value={status} onChange={(event) => onFilterChange(event.target.value)}>
+    {!selectedId && <><label className={styles.reviewFilter}>Trạng thái rà soát<select value={status} onChange={(event) => onFilterChange(event.target.value)}>
       <option value="">Tất cả</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
     {loading ? <p role="status">Đang tải hồ sơ rà soát…</p> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
-      <DataTable headerVariant="admin" rows={page.items} rowKey={(row) => row.id} emptyMessage="Chưa có hồ sơ rà soát trong phạm vi đã chọn." columns={[
+      <DataTable variant="accounts" rows={page.items} rowKey={(row) => row.id} emptyMessage="Chưa có hồ sơ rà soát trong phạm vi đã chọn." columns={[
         ...(!machineId ? [{ key: "machine", header: "Máy", render: (row: OfflineViolationReview) => <span title={row.machineId}>{machineLabels?.[row.machineId] ?? row.machineId.slice(0, 8).toUpperCase()}</span> }] : []),
         { key: "time", header: "Thời điểm phát hiện", render: (row) => formatTime(row.detectedAt) },
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
         { key: "status", header: "Trạng thái", render: (row) => <span className={styles.offlineReviewStatus} data-status={row.status}>{labels[row.status]}</span> },
-        { key: "open", header: "Chi tiết", render: (row) => <ButtonBar onClick={() => onSelect(row.id)}>Xem hồ sơ</ButtonBar> },
+        { key: "open", header: "Chi tiết", render: (row) => <ButtonBar rollingLabel onClick={() => onSelect(row.id)}>Xem hồ sơ</ButtonBar> },
       ]} />
       <div className={styles.offlineReviewPagination}><ButtonBar disabled={page.page === 0 || loading} onClick={() => onPageChange(page.page - 1)}>Trang trước</ButtonBar><span>Trang {page.page + 1}</span><ButtonBar disabled={!page.hasNext || loading} onClick={() => onPageChange(page.page + 1)}>Trang sau</ButtonBar></div>
     </> : null}
+    </>}
     {detailLoading ? <p role="status">Đang tải chi tiết rà soát…</p> : null}
     {detailError ? <p className={styles.operationalOverviewErrorText} role="alert">{detailError}</p> : null}
     {detail && !detailLoading ? <OfflineReviewDetail key={detail.id} review={detail} canDecide={canDecide && !detailError} onDecide={onDecide} onClose={() => onSelect(undefined)} /> : null}
@@ -64,7 +67,7 @@ function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review:
       {review.decision ? <><div><dt>Kết quả rà soát</dt><dd>{review.decision === "NO_ACTION" ? "Không cần xử lý thêm" : "Tiếp tục theo dõi, xử lý"}</dd></div><div><dt>Nội dung</dt><dd>{review.decisionReason ?? "—"}</dd></div><div><dt>Ghi nhận lúc</dt><dd>{formatTime(review.decidedAt)}</dd></div></> : null}
     </dl>
     <EvidenceList resource="OFFLINE_REVIEW" parentId={review.id} title="Chứng từ rà soát" />
-    <p className={styles.telemetryRangeCaption}>Thời gian hiển thị theo giờ hệ thống. Kết quả rà soát không tự tạo tiền phạt hoặc công nợ.</p>
+    <p className={styles.telemetryRangeCaption}>Thời gian theo giờ máy chủ.</p>
     {canDecide && onDecide && review.status === "REVIEW_REQUIRED" ? <><PageActions actions={[{ id: "offline-review-decide", label: "Tiếp tục xác nhận", variant: "primary", priority: 50, type: "submit", form: "offline-review-decision-form", disabled: !draft.success || Boolean(fileError) || pending, disabledReason: fileError ?? "Nhập lý do hợp lệ.", pending }]} /><form id="offline-review-decision-form" className={styles.offlineReviewForm} onSubmit={(event) => { event.preventDefault(); if (draft.success && !fileError) setConfirm(true); }}>
       <label>Kết quả<select disabled={pending} value={decision} onChange={(event) => setDecision(event.target.value as typeof decision)}><option value="FOLLOW_UP">Tiếp tục theo dõi, xử lý</option><option value="NO_ACTION">Không cần xử lý thêm</option></select></label>
       <label>Lý do rà soát<textarea name="reason" required maxLength={2000} value={reason} disabled={pending} onChange={(event) => setReason(event.target.value)} /></label>

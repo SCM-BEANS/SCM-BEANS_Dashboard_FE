@@ -1,3 +1,4 @@
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -48,8 +49,8 @@ function readQuery(query: Record<string, string | string[] | undefined>, today: 
   const fromDate = scalar("fromDate", shiftDay(today, -6)), toDate = scalar("toDate", today);
   const range = OwnerAnalyticsCalendarRangeSchema.parse({ fromDate, toDate });
   const recipeName = scalar("recipeName").trim(), cleaningType = scalar("cleaningType"), cleaningStatus = scalar("cleaningStatus");
-  const brewing = OwnerBrewRecordsParamsSchema.parse({ ...range, page: page("brewPage"), ...(recipeName ? { recipeName } : {}) });
-  const cleaning = OwnerCleaningRecordsParamsSchema.parse({ ...range, page: page("cleaningPage"), ...(cleaningType ? { cleaningType } : {}), ...(cleaningStatus ? { status: cleaningStatus } : {}) });
+  const brewing = OwnerBrewRecordsParamsSchema.parse({ ...range, size: 10, page: page("brewPage"), ...(recipeName ? { recipeName } : {}) });
+  const cleaning = OwnerCleaningRecordsParamsSchema.parse({ ...range, size: 10, page: page("cleaningPage"), ...(cleaningType ? { cleaningType } : {}), ...(cleaningStatus ? { status: cleaningStatus } : {}) });
   const telemetryFrom = scalar("telemetryFrom"), telemetryTo = scalar("telemetryTo");
   if (Boolean(telemetryFrom) !== Boolean(telemetryTo)) throw new Error("Cần chọn đủ khoảng thời gian thông số.");
   const telemetry = TelemetryPointsParamsSchema.parse(telemetryFrom ? { from: telemetryFrom, to: telemetryTo } : defaultTelemetryRange);
@@ -72,12 +73,8 @@ function AnalyticsFilters({ fromDate, toDate, tab, recipeName, cleaningType, cle
     onApply({ fromDate: draft.fromDate, toDate: draft.toDate, ...(draft.fromDate !== fromDate || draft.toDate !== toDate ? { brewPage: undefined, cleaningPage: undefined } : {}), ...(tab === "history" ? { recipeName: draft.recipeName.trim() || undefined, brewPage: undefined } : tab === "cleaning" ? { cleaningType: draft.cleaningType || undefined, cleaningStatus: draft.cleaningStatus || undefined, cleaningPage: undefined } : {}) });
   };
   return <>
-    <div className={styles.operationalQuickRanges} role="group" aria-label="Khoảng ngày xem nhanh">
-      {([{ label: "Hôm nay", days: 1, offset: 0 }, { label: "Hôm qua", days: 1, offset: -1 }, { label: "7 ngày", days: 7, offset: 0 }, { label: "30 ngày", days: 30, offset: 0 }]).map((preset) => {
-        const end = shiftDay(getVietnamToday(), preset.offset), start = shiftDay(end, 1 - preset.days);
-        return <button key={preset.label} type="button" aria-pressed={fromDate === start && toDate === end} onClick={() => onApply({ fromDate: start, toDate: end, brewPage: undefined, cleaningPage: undefined })}>{preset.label}</button>;
-      })}
-    </div>
+    <div className={styles.ownerCompactFilters}>
+    <details className={styles.ownerDatePopover}><summary>{fromDate.split("-").reverse().join("/")} – {toDate.split("-").reverse().join("/")}</summary>
     <form className={styles.ownerOperationsFilters} onSubmit={apply}>
       <label>Từ ngày<input type="date" required value={draft.fromDate} onChange={(event) => setDraft({ ...draft, fromDate: event.target.value })} /></label>
       <label>Đến ngày<input type="date" required value={draft.toDate} onChange={(event) => setDraft({ ...draft, toDate: event.target.value })} /></label>
@@ -86,7 +83,13 @@ function AnalyticsFilters({ fromDate, toDate, tab, recipeName, cleaningType, cle
         <label>Kết quả<select aria-label="Kết quả" value={draft.cleaningStatus} onChange={(event) => setDraft({ ...draft, cleaningStatus: event.target.value })}><option value="">Tất cả</option><option value="COMPLETED">Hoàn tất</option><option value="FAILED">Chưa hoàn tất</option><option value="ABORTED">Bị gián đoạn</option></select></label>
       </> : null}
       <ButtonBar type="submit">Áp dụng bộ lọc</ButtonBar>
-    </form>
+    </form></details>
+    <label className={styles.ownerPeriodSelect}>Khoảng xem<select aria-label="Khoảng ngày xem nhanh" value="" onChange={(event) => {
+      const days = Number(event.target.value); if (!days) return;
+      const end = getVietnamToday();
+      onApply({ fromDate: shiftDay(end, 1 - days), toDate: end, brewPage: undefined, cleaningPage: undefined });
+    }}><option value="">Chọn khoảng</option><option value="1">Hôm nay</option><option value="7">7 ngày</option><option value="30">30 ngày</option></select></label>
+    </div>
     {error && <p className={styles.operationalOverviewErrorText} role="alert">{error}</p>}
   </>;
 }
@@ -132,7 +135,6 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
     enabled: ready && Boolean(state?.tab === "connection" && smartIot && pageVisible), retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
-  const maxDailyCups = Math.max(1, ...(cupCount.data?.dailyBreakdown.map((row) => row.cups) ?? []));
   const maxRecipeCups = Math.max(1, ...(cupCount.data?.recipeBreakdown.map((row) => row.cups) ?? []));
   const navigate = (patch: Record<string, string | undefined>) => {
     const query = { ...router.query };
@@ -149,7 +151,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const pending = cupCount.isFetching || brew.isFetching || cleaning.isFetching || compliance.isFetching || heartbeat.isFetching || points.isFetching;
 
   return <div className={shellStyles.pageContent}>
-    <div className={styles.operationalOverview}>
+    <div className={[styles.operationalOverview, shellStyles.ownerMonitoringLayout].join(" ")}>
       <ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar>
       <MachineMonitoringHeader machineId={machineId} machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" />
       {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
@@ -173,7 +175,16 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                           <section className={styles.operationalMetricGrid} aria-label="Số ly của máy"><article className={styles.operationalMetricCard}><span>Số ly trong khoảng đã chọn</span><strong>{cupCount.data.totalCups.toLocaleString("vi-VN")}</strong><small>{machine.data.serialNumber ?? "Máy đang xem"}</small></article></section>
                           <div className={styles.monitoringProductionCharts}>
                           <section className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày</h2><p>Ngày trên biểu đồ theo UTC. Tổng ly tính theo khoảng ngày Việt Nam đã chọn.</p>
-                            {cupCount.data.dailyBreakdown.length ? <div className={styles.operationalDailyChart}>{cupCount.data.dailyBreakdown.map((row) => <div key={row.date} className={styles.operationalDailyChartColumn}><strong>{row.cups.toLocaleString("vi-VN")}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${row.cups / maxDailyCups * 100}%` }} /></div><time dateTime={row.date}>{row.date.slice(5).split("-").reverse().join("/")}</time></div>)}</div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}
+                            {cupCount.data.dailyBreakdown.length ? <div className={styles.ownerProductionLine} role="img" aria-label="Biểu đồ số ly theo ngày">
+                              <ResponsiveContainer width="100%" height={280}><LineChart data={cupCount.data.dailyBreakdown} margin={{ top: 16, right: 20, bottom: 8, left: 0 }}>
+                                <CartesianGrid strokeDasharray="3 4" vertical={false} stroke="#e9e2dc" />
+                                <XAxis dataKey="date" tickFormatter={(day: string) => day.slice(5).split("-").reverse().join("/")} tickLine={false} axisLine={false} />
+                                <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={42} />
+                                <Tooltip labelFormatter={(day) => String(day).split("-").reverse().join("/")} formatter={(value) => [Number(value).toLocaleString("vi-VN") + " ly", "Số ly"]} />
+                                <Line type="linear" dataKey="cups" stroke="#bd1427" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+                              </LineChart></ResponsiveContainer>
+                              <details><summary>Xem số liệu theo ngày</summary><ul>{cupCount.data.dailyBreakdown.map((row) => <li key={row.date}>{row.date}: {row.cups.toLocaleString("vi-VN")} ly</li>)}</ul></details>
+                            </div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}
                           </section>
                           <section className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2>
                             {cupCount.data.recipeBreakdown.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh số ly theo món">{[...cupCount.data.recipeBreakdown].sort((a, b) => b.cups - a.cups).map((row) => <li key={row.recipeName}><span>{row.recipeName}</span><div><span style={{ width: `${row.cups / maxRecipeCups * 100}%` }} /></div><strong>{row.cups.toLocaleString("vi-VN")} ly</strong></li>)}</ul> : <p className={styles.monitoringEmpty}>Chưa có dữ liệu theo món.</p>}
@@ -185,7 +196,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
         </> : smartIot ? <>
           <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Thông số kỹ thuật"><TelemetryHistoryPanel range={state.telemetry} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={state.field} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /></SmartIotPanel>
-          {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel
+          {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel selectedId={reviewState?.reviewId}
             page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={machineId} canDecide={false}
             loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
             error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}

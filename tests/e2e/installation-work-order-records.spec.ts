@@ -188,9 +188,10 @@ test.describe("installation work-order paged records", () => {
     await page.setViewportSize({ width: 1600, height: 900 });
     await openWorkOrder(page, "moderator");
 
-    await expect(page.getByRole("heading", { name: "Điều phối lắp đặt" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kỹ thuật viên & lịch hẹn" })).toBeVisible();
     await expect(page.getByRole("list", { name: "Tiến độ lắp đặt" })).toBeVisible();
-    const technicianSelect = page.getByLabel("Kỹ thuật viên");
+    await page.locator("summary").filter({ hasText: /^Phân công kỹ thuật viên$/ }).click();
+    const technicianSelect = page.getByRole("combobox", { name: /^Kỹ thuật viên/ });
     await expect(technicianSelect).toContainText("Kỹ thuật viên thử nghiệm");
     await technicianSelect.selectOption(technicianId);
     await page.getByRole("button", { name: "Giao kỹ thuật viên" }).click();

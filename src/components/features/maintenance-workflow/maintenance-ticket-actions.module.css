@@ -168,3 +168,50 @@
 .showMore { justify-self: start; }
 .embeddedPanel { display: grid; gap: 1rem; min-width: 0; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.ownerTicketStatus { display:inline-flex; gap:8px; align-items:center; color:#302b29; font-size:14px; font-weight:400; }
+.ownerTicketStatus::before { content:""; width:7px; height:7px; border-radius:50%; background:#d09a28; flex:none; }
+.ownerTicketStatus[data-status=RESOLVED]::before { background:#2b8b69; }
+.ownerTicketStatus[data-status=CANCELLED]::before { background:#bd1427; }
+
+.ownerDialogScope { font-family:Arial,sans-serif; font-size:14px; color:#302b29; }
+.ownerDialogScope [role=dialog], .ownerDialogScope [role=alertdialog] { box-sizing:border-box; width:min(760px,100%); max-height:calc(100dvh - 48px); padding:24px; gap:20px; border:1px solid #e7dfd9; border-radius:14px; font-family:inherit; }
+.ownerDialogScope [role=dialog] > p:first-child, .ownerDialogScope [role=alertdialog] > p:first-child { display:none; }
+.ownerDialogScope [role=dialog] > h2, .ownerDialogScope [role=alertdialog] > h2 { font-size:22px; line-height:1.4; margin:0; }
+.ownerDialogScope [role=alertdialog] { width:min(520px,100%); }
+.ownerDialogScope [role=dialog] > div:last-child, .ownerDialogScope [role=alertdialog] > div:last-child { display:flex; flex-direction:row-reverse; gap:10px; justify-content:flex-start; }
+.ownerDialogScope [data-dialog-primary], .ownerDialogScope [role=alertdialog] > div:last-child > button { width:auto; min-width:100px; min-height:44px; padding:10px 18px; font-weight:600; }
+.ownerDialogScope [role=dialog] [data-dialog-primary] { border:1px solid #e7dfd9; background:#fff; color:#302b29; }
+.ownerDialogScope .detailGrid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 28px; }
+.ownerDialogScope .detailGrid dt { color:#706561; font-size:13px; font-weight:400; }
+.ownerDialogScope .detailGrid dd { margin:6px 0 0; color:#302b29; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.ownerDialogScope .field label { color:#514843; }
+.ownerDialogScope .field select { border-color:#e7dfd9; background:#fff; color:#302b29; min-height:44px; font:inherit; }
+.ownerDialogScope .field select:focus-visible { outline:2px solid #bd1427; outline-offset:2px; box-shadow:none; }
+.ownerDialogScope table { min-width:0; width:100%; table-layout:fixed; }
+.ownerDialogScope th,.ownerDialogScope td { overflow-wrap:anywhere; white-space:normal; font-size:13px; }
+.ownerDialogScope h3 { color:#302b29; font-size:17px; }
+@media(max-width:600px) {
+  .ownerDialogScope [role=dialog], .ownerDialogScope [role=alertdialog] { padding:20px; max-height:calc(100dvh - 32px); }
+  .ownerDialogScope .detailGrid { grid-template-columns:minmax(0,1fr); gap:14px; }
+}
+
+.operatorTicketPanel { color: #302927; font-family: Arial, Helvetica, sans-serif; }
+.operatorTicketPanel .detailGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 28px; }
+.operatorTicketPanel .detailGrid dt { color: #706561; font-size: 13px; font-weight: 400; }
+.operatorTicketPanel .detailGrid dd { color: #302927; font-size: 14px; margin-top: 7px; }
+.operatorTicketPanel .detailGrid > div:first-child { grid-column: 1 / -1; }
+.operatorTicketPanel .detailGrid > div:last-child { grid-column: 1 / -1; }
+.ticketEvidence { padding-top: 8px; }
+.ticketEvidence > summary { cursor: pointer; color: #514843; font-weight: 600; font-size: 14px; }
+.ticketEvidence[open] > summary { margin-bottom: 14px; }
+.operatorTicketPanel .form { border: 0; padding-top: 8px; }
+.operatorTicketPanel .field label { color: #514843; }
+.operatorTicketPanel .field input, .operatorTicketPanel .field select, .operatorTicketPanel .field textarea { border-color: #e2dad4; color: #302927; }
+@media (max-width: 650px) { .operatorTicketPanel .detailGrid { grid-template-columns: minmax(0, 1fr); } }
+
+.operatorTicketPanel .panelHeading h3 { color: #302927; font-size: 17px; }
+.operatorTicketPanel .detailGrid > div:first-child { color: #706561; font-size: 13px; }
+.operatorTicketPanel .panelHeading > div { width: auto; max-width: 100%; gap: 8px; }
+.operatorTicketPanel .panelHeading > div > div { gap: 8px; }
+@media (max-width: 650px) { .operatorTicketPanel .panelHeading > div { width: 100%; flex-wrap: wrap; } }

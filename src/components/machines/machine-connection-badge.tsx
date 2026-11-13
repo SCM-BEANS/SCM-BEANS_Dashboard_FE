@@ -1,3 +1,4 @@
+import { Loader2, Wifi, X } from "lucide-react";
 import styles from "./machines.module.css";
 
 export type MachineConnectionState = "ONLINE" | "OFFLINE" | "UNKNOWN" | "loading" | "error" | "not-requested" | "permission-denied";
@@ -21,6 +22,10 @@ export function MachineConnectionBadge({
 }) {
   return (
     <span className={styles.machineConnectionBadge} data-state={state} role={state === "error" ? "alert" : "status"}>
+      <span className={styles.connectionIcon} aria-hidden="true">
+        {state === "loading" ? <Loader2 className={styles.connectionSpinner} /> : <Wifi />}
+        {state === "OFFLINE" ? <X className={styles.connectionCross} /> : null}
+      </span>
       <span>{labels[state]}</span>
       {state === "error" && onRetry ? (
         <button type="button" className={styles.machineConnectionRetry} onClick={onRetry} aria-label="Tải lại trạng thái kết nối">

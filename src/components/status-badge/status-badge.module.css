@@ -34,3 +34,19 @@
   background: #eff6fc;
   color: #315d80;
 }
+
+.badge.dot {
+  min-height: 0;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  white-space: normal;
+}
+.badge.dot::before {
+  content: "";
+  flex: 0 0 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+import { ButtonBar } from "@/components/button/button-bar";
 import { buildMaintenanceRequestAssignTicketAction, buildMaintenanceRequestCreateTicketAction } from "@/components/action-bar/entity-page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -55,7 +57,24 @@ function DetailValue({ label, value, code = false }: { label: string; value: Rea
   );
 }
 
-function MaintenanceRequestDetails({ request }: { request: MaintenanceRequest }) {
+function MaintenanceRequestDetails({ request, compact = false }: { request: MaintenanceRequest; compact?: boolean }) {
+  if (compact) return <>
+    <dl className={styles.detailGrid}>
+      <DetailValue label="Khách hàng" value={request.ownerName || <TruncatedId value={request.ownerId} />} />
+      <DetailValue label="Máy" value={<TruncatedId value={request.machineId} />} />
+      <DetailValue label="Hợp đồng" value={<TruncatedId value={request.contractId} />} />
+      <DetailValue label="Ngày tạo" value={formatDate(request.createdAt)} />
+    </dl>
+    <section className={styles.issueDescription}><h3>Nội dung yêu cầu</h3><p>{request.issueDescription || "Chưa có mô tả."}</p></section>
+    <details className={styles.technicalDetails}><summary>Mã liên kết</summary>
+      <dl className={styles.sidebarFacts}>
+        <DetailValue label="Mã yêu cầu" value={request.id} code />
+        <DetailValue label="Phiếu bảo trì" value={request.maintenanceTicketId || "Chưa có"} code />
+        <DetailValue label="Phân công máy thay thế" value={request.replacementAssignmentId || "Chưa có"} code />
+      </dl>
+    </details>
+  </>;
+
   return (
     <>
       <dl className={styles.detailGrid}>
@@ -92,8 +111,10 @@ export function MaintenanceRequestDetailScreen({
   caseDetailHref: (caseId: string) => string;
   role: Extract<RepairWorkflowRole, "admin" | "moderator">;
 }) {
+  const RequestActions = role === "admin" ? PageActionsRenderer : PageActions;
   const validId = MaintenanceRequestIdSchema.safeParse(id).success;
   const queryClient = useQueryClient();
+  const [relatedView, setRelatedView] = useState<"ticket" | "evidence">("ticket");
   const [technicianId, setTechnicianId] = useState("");
   const [technicianSearchInput, setTechnicianSearchInput] = useState("");
   const [technicianSearch, setTechnicianSearch] = useState("");
@@ -122,7 +143,7 @@ export function MaintenanceRequestDetailScreen({
   const isAdmin = role === "admin";
   const techniciansQuery = useQuery({
     queryKey: ["dolores", "profiles", querySubject(role), "TECHNICIAN", "ACTIVE", "maintenance-assignment", ticketQuery.data?.id, technicianSearch, technicianPage],
-    queryFn: ({ signal }) => profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", q: technicianSearch || undefined, page: technicianPage, size: 20 }, signal),
+    queryFn: ({ signal }) => profilesApi.list({ role: "TECHNICIAN", status: "ACTIVE", q: technicianSearch || undefined, page: technicianPage, size: 10 }, signal),
     enabled: isAdmin && request?.requestType === "PREVENTIVE" && Boolean(ticketQuery.data?.id) && !ticketQuery.data?.assignedTechnicianId,
     retry: false,
   });
@@ -183,7 +204,7 @@ export function MaintenanceRequestDetailScreen({
   );
 
   return (
-    <div className={styles.pageContent}>
+    <div className={styles.pageContent} data-screen="request-detail">
       <BackButtonHeading title={messages.TECHNICAL_REQUEST_DETAIL} titleId="maintenance-request-detail-title" description={messages.TECHNICAL_DESCRIPTION} className={styles.pageHeading} back={{ label: "Quay lại danh sách yêu cầu", fallbackHref: listHref }} />
       {!validId && <p className={styles.pendingNotice} role="status">{id || "—"}: Mã yêu cầu bảo trì không hợp lệ.</p>}
       {validId && requestQuery.isPending && <p className={styles.pendingNotice} role="status">{messages.LOADING_MAINTENANCE_REQUESTS}</p>}
@@ -193,7 +214,7 @@ export function MaintenanceRequestDetailScreen({
           <button className={styles.retryButton} type="button" onClick={() => void requestQuery.refetch()}>{messages.RETRY}</button>
         </div>
       )}
-      {request && <PageActions actions={[
+      {request && <RequestActions actions={[
         ...buildMaintenanceRequestCreateTicketAction({ role, request, pending: createWorkOrder.isPending, onCreate: () => createWorkOrder.mutate() }),
         ...buildMaintenanceRequestAssignTicketAction({
           role,
@@ -204,8 +225,21 @@ export function MaintenanceRequestDetailScreen({
           onAssign: () => assignTechnician.mutate(),
         }),
       ]} />}
-      {request && !requestQuery.isError && <MaintenanceRequestDetails request={request} />}
-      {request && !requestQuery.isError && <EvidenceList resource="MAINTENANCE_REQUEST" parentId={id} title="Chứng từ yêu cầu" />}
+      {request && !requestQuery.isError && <div className={styles.requestOverview}>
+        <section className={styles.panel}><h2>Thông tin yêu cầu</h2><MaintenanceRequestDetails request={request} compact /></section>
+        <aside className={styles.panel}>
+          <h2>Tình trạng xử lý</h2>
+          <span className={styles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status)}</span>
+          <dl className={styles.sidebarFacts}>
+            <div><dt>Loại yêu cầu</dt><dd>{typeLabel(request)}</dd></div>
+            <div><dt>Lịch hẹn</dt><dd>{scheduleLabel(request)}</dd></div>
+            <div><dt>Cập nhật</dt><dd>{formatDate(request.updatedAt ?? request.createdAt)}</dd></div>
+          </dl>
+          {request.requestType === "REPAIR" && request.status === "TRIAGED" && !request.technicianId && <ButtonBar href={listHref + "/requests/" + request.id + "/assign"}>Phân công xử lý</ButtonBar>}
+          {ticketQuery.data?.repairCaseId && <ButtonBar href={caseDetailHref(ticketQuery.data.repairCaseId)} rollingLabel>Mở hồ sơ sửa chữa</ButtonBar>}
+        </aside>
+      </div>}
+
       {request?.requestType === "PREVENTIVE" && !request.maintenanceTicketId && (
         <section className={styles.pendingNotice} aria-labelledby="preventive-work-order-title">
           <h2 className={styles.sectionTitle} id="preventive-work-order-title">Lệnh bảo trì định kỳ</h2>
@@ -214,7 +248,7 @@ export function MaintenanceRequestDetailScreen({
           ) : null}
         </section>
       )}
-      {ticketQuery.data && request?.requestType === "PREVENTIVE" ? (
+      {ticketQuery.data && request?.requestType === "PREVENTIVE" && !ticketQuery.data.assignedTechnicianId ? (
         <section className={styles.pendingNotice} aria-labelledby="preventive-ticket-title">
           <h2 className={styles.sectionTitle} id="preventive-ticket-title">Phiếu bảo trì</h2>
           <p>Mã ticket: <span className={styles.codeValue}>{ticketQuery.data.id}</span></p>
@@ -262,8 +296,17 @@ export function MaintenanceRequestDetailScreen({
           ) : <p>{messages.TECHNICAL_ASSIGNMENT_ADMIN_REQUIRED}</p> : null}
         </section>
       ) : null}
-      {ticketQuery.data?.id && request ? <MaintenanceRequestTicketDetail ticketId={ticketQuery.data.id} role={role} /> : null}
-      {request && <MaintenanceRequestActions request={request as MaintenanceRequestDetails} role={role} />}
+      {request && !requestQuery.isError && <section className={styles.relatedContent} aria-label="Nội dung liên quan">
+        <nav className={styles.relatedNav} aria-label="Chứng từ và phiếu bảo trì">
+          <button type="button" aria-pressed={relatedView === "ticket"} onClick={() => setRelatedView("ticket")}>Phiếu bảo trì liên quan</button>
+          <button type="button" aria-pressed={relatedView === "evidence"} onClick={() => setRelatedView("evidence")}>Chứng từ yêu cầu</button>
+        </nav>
+        <div hidden={relatedView !== "ticket"}>
+          {ticketQuery.data?.id ? <MaintenanceRequestTicketDetail ticketId={ticketQuery.data.id} role={role} /> : <p className={styles.formHint}>Chưa có phiếu bảo trì liên quan.</p>}
+        </div>
+        <div hidden={relatedView !== "evidence"}><EvidenceList resource="MAINTENANCE_REQUEST" parentId={id} title="Chứng từ yêu cầu" /></div>
+      </section>}
+      {request && <MaintenanceRequestActions request={request as MaintenanceRequestDetails} role={role} compact />}
       {request?.requestType === "PREVENTIVE" && (
         <MaintenanceCustodyStepper
           requestId={request.id}
@@ -279,14 +322,6 @@ export function MaintenanceRequestDetailScreen({
         <p className={styles.pendingNotice} role={operatorFeedback.kind === "error" ? "alert" : "status"}>{operatorFeedback.text}</p>
       ) : null}
       {ticketQuery.isError ? <p className={styles.pendingNotice} role="alert">{getApiErrorMessage(ticketQuery.error)}</p> : null}
-      {ticketQuery.data?.repairCaseId ? (
-        <section className={styles.pendingNotice} aria-label="Hồ sơ sửa chữa liên quan">
-          <h2 className={styles.sectionTitle}>Hồ sơ sửa chữa</h2>
-          <TextLinkButton href={caseDetailHref(ticketQuery.data.repairCaseId)}>
-            Mở dòng thời gian hồ sơ sửa chữa {ticketQuery.data.repairCaseId}
-          </TextLinkButton>
-        </section>
-      ) : null}
       {request?.requestType === "REPAIR" && request.status === "TRIAGED" && !request.maintenanceTicketId && (
         <p className={styles.pendingNotice} role="status">Hồ sơ sửa chữa đang được khởi tạo sau khi phân loại yêu cầu.</p>
       )}

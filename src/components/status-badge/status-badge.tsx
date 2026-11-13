@@ -34,12 +34,14 @@ export function StatusBadge({
   children,
   status,
   tone,
+  variant = "badge",
 }: {
   children: ReactNode;
   status?: string | null;
   tone?: StatusBadgeTone;
+  variant?: "badge" | "dot";
 }) {
   const resolvedTone = tone ?? statusTone(status);
   const toneClass = resolvedTone === "neutral" ? "" : styles[resolvedTone];
-  return <span className={[styles.badge, toneClass].filter(Boolean).join(" ")}>{children}</span>;
+  return <span className={[styles.badge, toneClass, variant === "dot" && styles.dot].filter(Boolean).join(" ")}>{children}</span>;
 }

@@ -11,6 +11,7 @@ import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { SectionHeading } from "@/components/heading/section-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -27,6 +28,7 @@ import {
 } from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 import { maintenanceCustodyEventLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
+import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR } from "@/routes/path";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import styles from "./repair-workflow.module.css";
@@ -78,7 +80,9 @@ function WorkflowStep({
   title,
   status,
   children,
+  compact = false,
 }: {
+  compact?: boolean;
   title: string;
   status: WorkflowStepState;
   children?: ReactNode;
@@ -98,11 +102,50 @@ function WorkflowStep({
 
   return (
     <li className={`${styles.workflowStep} ${statusClass}`} aria-current={status === "current" ? "step" : undefined}>
-      <div className={styles.workflowStepHeading}>
-        <strong>{title}</strong>
-        <span>{statusText}</span>
-      </div>
-      {children}
+      {compact ? <details className={styles.historyDisclosure} open={status === "current"} key={status}>
+        <summary className={styles.workflowStepHeading}><strong>{title}</strong><span className={styles.historyRowMeta}>{statusText}</span></summary>
+        <div className={styles.workflowStepBody}>{children}</div>
+      </details> : <><div className={styles.workflowStepHeading}><strong>{title}</strong><span>{statusText}</span></div>{children}</>}
+    </li>
+  );
+}
+
+const operatorHistoryLabels: Record<string, string> = {
+  TRIAGE_ACCEPTED: "Tiếp nhận yêu cầu sửa chữa",
+  REPLACEMENT_PLANNED: "Lập kế hoạch thay máy",
+  CUSTODY_PRIMARY_COLLECTED: "Nhận máy chính",
+  CUSTODY_REPLACEMENT_DELIVERED: "Bàn giao máy thay thế",
+  CUSTODY_REPLACEMENT_COLLECTED: "Thu máy thay thế",
+  CUSTODY_PRIMARY_RETURNED: "Trả máy chính",
+  CUSTODY_ACKNOWLEDGED: "Xác nhận bàn giao",
+  DIAGNOSIS_RECORDED: "Ghi nhận chẩn đoán",
+  REPAIR_WORK_STARTED: "Bắt đầu sửa chữa",
+  REPAIR_WORK_COMPLETED: "Hoàn tất sửa chữa",
+  CASE_CLOSED: "Đóng hồ sơ",
+};
+
+const operatorHistoryRoles: Record<string, string> = {
+  ADMIN: "Quản trị viên",
+  MODERATOR: "Điều phối viên",
+  TECHNICIAN: "Kỹ thuật viên",
+  OWNER: "Khách hàng",
+};
+
+function AdminHistoryRow({ title, meta, status, children }: {
+  title: string;
+  meta: string;
+  status?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <li className={styles.timelineItem}>
+      <details className={styles.historyDisclosure}>
+        <summary>
+          <strong>{title}</strong>
+          <span className={styles.historyRowMeta}>{meta}{status && <> · {status}</>}</span>
+        </summary>
+        <div className={styles.historyExpanded}>{children}</div>
+      </details>
     </li>
   );
 }
@@ -133,17 +176,24 @@ export function RepairCaseDetailScreen({
   caseId,
   role,
   listHref,
+  relatedOnly = false,
 }: {
   caseId: string;
   role: RepairWorkflowRole;
   listHref: string;
+  relatedOnly?: boolean;
 }) {
+  const compactLayout = role !== "technician";
+  const operatorPaths = role === "moderator" ? PATH_MODERATOR : PATH_ADMIN;
+  const CaseActions = role === "admin" ? PageActionsRenderer : PageActions;
   const validCaseId = RepairCaseIdSchema.safeParse(caseId).success;
   const queryClient = useQueryClient();
   const subject = querySubject(role);
   const [emergencyAuthorizationId, setEmergencyAuthorizationId] = useState("");
   const [timelinePage, setTimelinePage] = useState(0);
   const [custodyPage, setCustodyPage] = useState(0);
+  const [expandedTimeline, setExpandedTimeline] = useState(false);
+  const [historyView, setHistoryView] = useState<"timeline" | "custody">("timeline");
   const [receiveMachineNotes, setReceiveMachineNotes] = useState<Record<string, string>>({});
   const [receiveMachineEvidenceReferences, setReceiveMachineEvidenceReferences] = useState<Record<string, File[]>>({});
   const [acknowledgementTexts, setAcknowledgementTexts] = useState<Record<string, string>>({});
@@ -190,7 +240,7 @@ export function RepairCaseDetailScreen({
   const releaseEvidenceReference = releaseEvidenceReferences[caseId] ?? [];
   const releaseConfirmationOpen = releaseConfirmationDialogs[caseId] ?? false;
   const setWorkScope = (value: string) => setWorkScopes((current) => ({ ...current, [caseId]: value }));
-  const dispute = useRepairCaseCostDispute(caseId);
+  const dispute = useRepairCaseCostDispute(caseId, !relatedOnly);
   const selectedAuthorization = dispute.authorizations.find(item => item.authorizationId === emergencyAuthorizationId);
   const workError = (error: unknown) => dispute.isDisputed && axios.isAxiosError(error) && error.response?.status === 409 ? "Ủy quyền này đã được sử dụng hoặc không khớp phạm vi công việc." : getApiErrorMessage(error);
   const invalidateWorkflowQueries = async () => {
@@ -238,7 +288,7 @@ export function RepairCaseDetailScreen({
   const custody = useQuery({
     queryKey: ["dolores", "repair-workflow", subject, "custody", caseId, custodyPage, 50],
     queryFn: ({ signal }) => repairCasesApi.listCustodyEvents(caseId, custodyPage, 50, signal),
-    enabled: validCaseId && repairCase.isSuccess,
+    enabled: !relatedOnly && validCaseId && repairCase.isSuccess,
     retry: false,
   });
   const custodyEvents = custody.data?.items ?? [];
@@ -623,11 +673,22 @@ export function RepairCaseDetailScreen({
   const primaryReturnAcknowledgmentStepState: WorkflowStepState = primaryReturnFinalStateConfirmed
     ? "complete"
     : primaryReturnEvent ? role === "owner" && !primaryReturnAcknowledged ? "current" : "waiting" : "locked";
+  const ownerHasPendingAcknowledgment = role === "owner" && [
+    primaryAcknowledgmentStepState, replacementAcknowledgmentStepState,
+    replacementCollectionAcknowledgmentStepState, primaryReturnAcknowledgmentStepState,
+  ].includes("current");
   const releaseStepState: WorkflowStepState = releaseReadAfterWriteConfirmed
     ? "complete"
     : releaseReplacementAssignment.isSuccess ? "waiting"
       : canSubmitRelease ? "current"
       : repairCase.data?.status === "OWNER_ACKNOWLEDGED" || releaseReplacementAssignment.isSuccess ? "waiting" : "locked";
+  const repairProgressStepGroups: WorkflowStepState[][] = [
+    [primaryCollectionStepState, primaryAcknowledgmentStepState],
+    [activationStepState, replacementDeliveryStepState, replacementAcknowledgmentStepState],
+    [diagnosisStepState, startWorkStepState, completeWorkStepState],
+    [replacementCollectionStepState, replacementCollectionAcknowledgmentStepState, primaryReturnStepState, primaryReturnAcknowledgmentStepState, releaseStepState],
+  ];
+  const currentRepairProgressIndex = repairProgressStepGroups.findIndex((steps) => !steps.every((step) => step === "complete"));
 
   const submitAcknowledgement = (event: FormEvent<HTMLFormElement>, eventId: string) => {
     event.preventDefault();
@@ -780,28 +841,199 @@ export function RepairCaseDetailScreen({
       </>
     );
   };
+  const historyActor = (actorRole: string) => compactLayout
+    ? operatorHistoryRoles[actorRole.toUpperCase()] ?? actorRole
+    : actorRole;
+
+  const timelineEvents = timeline.data?.content ?? [];
+  const previewTimeline = compactLayout && timelinePage === 0 && !expandedTimeline;
+  const renderTimelineHistory = (showHeading = true) => (
+    <>
+      {showHeading ? <SectionHeading title={M.TIMELINE_TITLE} description="Các bước xử lý được sắp theo thời gian." /> : null}
+      {timeline.isPending ? <p className={styles.notice} role="status">{M.TIMELINE_LOADING}</p> : null}
+      {timeline.isError ? <QueryError label={M.TIMELINE_ERROR} error={timeline.error} onRetry={() => void timeline.refetch()} /> : null}
+      {timeline.data?.content.length === 0 ? <p className={styles.notice} role="status">{M.TIMELINE_EMPTY}</p> : null}
+      {timeline.data && timeline.data.content.length > 0 ? (
+        <ol className={styles.timeline} aria-label={M.TIMELINE_TITLE}>
+          {(previewTimeline ? timelineEvents.slice(0, 5) : timelineEvents).map((event) => {
+            const title = maintenanceCustodyEventLabel(event.eventType);
+            const detail = timelineDetails(event.reason, event.details);
+            if (compactLayout) return (
+              <AdminHistoryRow key={event.id} title={operatorHistoryLabels[event.eventType] ?? title}
+                meta={`${formatDateTime(event.occurredAt)} · ${historyActor(event.actorRole)}`}>
+                <p>{detail === "—" ? "Không có ghi chú." : detail}</p>
+                {event.eventType === "EMERGENCY_WORK_AUTHORIZED" && <p>Phạm vi và mã ủy quyền: {event.details}</p>}
+                {event.actorId && <span>Mã người thực hiện: {event.actorId}</span>}
+              </AdminHistoryRow>
+            );
+
+            return (
+              <li className={styles.timelineItem} key={event.id}>
+                <strong>{title}</strong>
+                <p>{detail}</p>
+                {event.eventType === "EMERGENCY_WORK_AUTHORIZED" && <p>Phạm vi và mã cho phép: {event.details}</p>}
+                <span>{formatDateTime(event.occurredAt)} · {event.actorRole}{event.actorId ? ` · ${event.actorId}` : ""}</span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      {compactLayout && timelinePage === 0 && timelineEvents.length > 5 && (
+        <div className={styles.historyMore}>
+          <ButtonBar type="button" aria-expanded={expandedTimeline} onClick={() => setExpandedTimeline(!expandedTimeline)}>
+            {expandedTimeline ? "Thu gọn" : `Xem thêm ${timelineEvents.length - 5} sự kiện`}
+          </ButtonBar>
+        </div>
+      )}
+      {timeline.data && timeline.data.totalPages > 1 ? (
+        <nav className={styles.pagination} aria-label="Phân trang dòng thời gian">
+          <button className={styles.inlineButton} type="button" disabled={timeline.data.first || timeline.isFetching} onClick={() => setTimelinePage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
+          <span>{M.PAGE} {timeline.data.number + 1} / {timeline.data.totalPages}</span>
+          <button className={styles.inlineButton} type="button" disabled={timeline.data.last || timeline.isFetching} onClick={() => setTimelinePage((current) => current + 1)}>{M.NEXT}</button>
+        </nav>
+      ) : null}
+    </>
+  );
+  const renderCustodyHistory = (showHeading = true) => (
+    <>
+      {showHeading ? <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của khách hàng được lưu tại đây." /> : null}
+      {custody.isPending ? <p className={styles.notice} role="status">{M.CUSTODY_LOADING}</p> : null}
+      {custody.isError ? <QueryError label={M.CUSTODY_ERROR} error={custody.error} onRetry={() => void custody.refetch()} /> : null}
+      {custody.data?.items.length === 0 ? <p className={styles.notice} role="status">{M.CUSTODY_EMPTY}</p> : null}
+      {custody.data && custody.data.items.length > 0 ? (
+        <ol className={styles.timeline} aria-label={M.CUSTODY_TITLE}>
+          {custody.data.items.map((event) => {
+            const title = maintenanceCustodyEventLabel(event.eventType);
+            const status = event.ownerAcknowledgedAt ? M.ACKNOWLEDGED : M.AWAITING_ACKNOWLEDGMENT;
+            const statusClass = event.ownerAcknowledgedAt ? styles.acknowledged : styles.waitingAcknowledgment;
+            const acknowledgement = event.ownerAcknowledgedAt
+              ? `${status}: ${formatDateTime(event.ownerAcknowledgedAt)}${event.ownerAcknowledgement ? ` · ${event.ownerAcknowledgement}` : ""}`
+              : status;
+            if (compactLayout) return (
+              <AdminHistoryRow key={event.id} title={title}
+                meta={`${formatDateTime(event.occurredAt)} · ${historyActor(event.actorRole)}`}
+                status={<span className={statusClass}>{status}</span>}>
+                <p>{event.conditionNotes || "Không có ghi chú bàn giao."}</p>
+                <span>Mã máy: {event.machineId}</span>
+                {event.ownerAcknowledgedAt && <p className={statusClass}>{acknowledgement}</p>}
+              </AdminHistoryRow>
+            );
+
+            return (
+              <li className={styles.timelineItem} key={event.id}>
+                <strong>{title}</strong>
+                <p>{event.conditionNotes || "—"}</p>
+                <span>{formatDateTime(event.occurredAt)} · {event.actorRole} · {event.machineId}</span>
+                <span className={statusClass}>{acknowledgement}</span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      {custody.data && (custody.data.page > 0 || custody.data.hasNext) ? (
+        <nav className={styles.pagination} aria-label="Phân trang lịch sử bàn giao">
+          <button className={styles.inlineButton} type="button" disabled={custodyPage === 0 || custody.isFetching} onClick={() => setCustodyPage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
+          <span>{M.PAGE} {custody.data.page + 1}</span>
+          <button className={styles.inlineButton} type="button" disabled={!custody.data.hasNext || custody.isFetching} onClick={() => setCustodyPage((current) => current + 1)}>{M.NEXT}</button>
+        </nav>
+      ) : null}
+    </>
+  );
+
+  const renderRelatedWork = (caseData: NonNullable<typeof repairCase.data>) => (
+    <>
+      <section className={styles.panel} aria-label="Công việc liên quan">
+        <SectionHeading title="Công việc liên quan" description="Các mã liên kết và trạng thái hiện tại của ticket, máy thay thế." />
+        {ticket.isError ? <QueryError label={M.MAINTENANCE_TICKET} error={ticket.error} onRetry={() => void ticket.refetch()} /> : null}
+        {request.isError ? <QueryError label={M.REQUEST} error={request.error} onRetry={() => void request.refetch()} /> : null}
+        {assignment.isError ? <QueryError label={M.REPLACEMENT_ASSIGNMENT} error={assignment.error} onRetry={() => void assignment.refetch()} /> : null}
+        <dl className={styles.detailGrid}>
+          <DetailValue label={M.MAINTENANCE_TICKET} value={caseData.maintenanceTicketId ?? "—"} code />
+          <DetailValue label={M.TICKET_STATUS} value={
+            !caseData.maintenanceTicketId ? "—" : ticket.isPending ? "Đang tải…" : ticketStatusLabel(ticket.data?.status)
+          } />
+          <DetailValue label={M.REPLACEMENT_ASSIGNMENT} value={
+            replacementAssignmentId ?? (request.isPending || timeline.isPending ? "Đang tải…" : "—")
+          } code />
+          <DetailValue label={M.ASSIGNMENT_STATUS} value={
+            replacementAssignmentId ? (assignment.isPending ? "Đang tải…" : assignmentStatusLabel(assignment.data?.status)) : "—"
+          } />
+          <DetailValue label={M.ASSIGNMENT_MACHINE} value={assignment.data?.replacementMachineId ?? "—"} code />
+          <DetailValue label={M.START_AT} value={formatDateTime(assignment.data?.startAt)} />
+          <DetailValue label={M.END_AT} value={formatDateTime(assignment.data?.endAt)} />
+        </dl>
+      </section>
+      <EvidenceList resource="REPAIR_CASE" parentId={caseId} showSize={!relatedOnly} title="Chứng từ hồ sơ sửa chữa" />
+      {replacementAssignmentId ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} showSize={!relatedOnly} title="Chứng từ máy thay thế" /> : null}
+    </>
+  );
 
   if (!validCaseId) {
     return <div className={styles.screen}><p className={`${styles.notice} ${styles.error}`} role="alert">{M.INVALID_CASE_ID}</p></div>;
   }
 
   return (
-    <div className={styles.screen}>
-      <BackButtonHeading
-        className={styles.heading}
-        title={M.CASE_DETAIL_TITLE}
-        titleId="repair-case-detail-title"
-        description={M.CASE_DETAIL_DESCRIPTION}
-        back={{ label: "Quay lại danh sách", fallbackHref: listHref }}
-      />
+    <div className={compactLayout ? `${styles.screen} ${styles.operatorWorkspace}` : styles.screen} data-screen="repair-case" data-role={role}>
+      <div className={compactLayout ? styles.casePageHeader : undefined}>
+        <BackButtonHeading
+          className={styles.heading}
+          title={relatedOnly ? "Công việc liên quan & chứng từ" : M.CASE_DETAIL_TITLE}
+          titleId="repair-case-detail-title"
+          description={relatedOnly ? `Hồ sơ sửa chữa · ${caseId.slice(0, 8).toUpperCase()}` : compactLayout ? undefined : M.CASE_DETAIL_DESCRIPTION}
+          back={relatedOnly ? null : { label: "Quay lại danh sách", fallbackHref: listHref }}
+        />
+        {relatedOnly ? (
+          <ButtonBar href={role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseId) : operatorPaths.TECHNICAL_REPAIR_CASE_DETAIL(caseId)}>Về hồ sơ sửa chữa</ButtonBar>
+        ) : compactLayout && repairCase.isSuccess ? (
+          <ButtonBar href={role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_RELATED(caseId) : operatorPaths.TECHNICAL_REPAIR_CASE_RELATED(caseId)}>Công việc liên quan &amp; chứng từ</ButtonBar>
+        ) : null}
+      </div>
 
       {repairCase.isPending ? <p className={styles.notice} role="status">{M.CASE_LOADING}</p> : null}
       {repairCase.isError ? <QueryError label={M.CASE_NOT_FOUND} error={repairCase.error} onRetry={() => void repairCase.refetch()} /> : null}
-      {repairCase.data ? (
+      {repairCase.data && !repairCase.isError && (relatedOnly ? renderRelatedWork(repairCase.data) : (
         <>
           {(role === "admin" || role === "moderator") && <ReplacementActions repairCase={repairCase.data} refresh={invalidateWorkflowQueries} role={role} />}
           {(role === "admin" || role === "moderator" || (role === "technician" && isAssignedTechnician)) && dispute.authorizations.length > 0 && <section><h3>Ủy quyền khẩn cấp</h3>{dispute.authorizations.map(item => <p key={item.authorizationId}>{formatDateTime(item.authorizedAt)} · {({ ADMIN: "Quản trị viên", MODERATOR: "Điều phối viên" } as Record<string, string>)[item.actorRole] ?? item.actorRole} · Lý do: {item.reason || "—"} · Phạm vi công việc: {item.workScope}</p>)}</section>}
-          <section className={styles.panel} aria-label="Thông tin hồ sơ">
+          {compactLayout ? (
+            <section className={`${styles.workOrderSummary} ${styles.workOrderProgressPanel} ${styles.adminRepairProgress}`} aria-labelledby="repair-case-progress-title">
+              <div className={styles.workOrderSummaryHeading}>
+                <div><h2 id="repair-case-progress-title">Tiến độ xử lý</h2></div>
+                <span className={styles.workOrderProgressStatus} data-tone={repairCase.data.status === "CLOSED" ? "success" : repairCase.data.status === "CANCELLED" ? "danger" : undefined}>
+                  {statusLabel(repairCase.data.status)}
+                </span>
+              </div>
+              <ol className={styles.workOrderProgress} aria-label="Tiến độ hồ sơ sửa chữa">
+                {["Tiếp nhận máy", "Máy thay thế", "Chẩn đoán và sửa chữa", "Hoàn trả và kết thúc"].map((label, index) => {
+                  const terminal = repairCase.data.status === "CLOSED" || repairCase.data.status === "CANCELLED";
+                  const complete = repairCase.data.status === "CLOSED" || repairProgressStepGroups[index].every((step) => step === "complete");
+                  const current = !terminal && index === currentRepairProgressIndex;
+                  const stepClass = complete ? styles.workOrderProgressComplete : current ? styles.workOrderProgressCurrent : "";
+                  return (
+                    <li className={`${styles.workOrderProgressStep} ${stepClass}`} key={label} aria-current={current ? "step" : undefined}>
+                      <span aria-hidden="true">{complete ? "✓" : index + 1}</span>
+                      <small>{label}</small>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ) : null}
+          <div className={compactLayout ? styles.caseWorkspace : undefined} data-status={repairCase.data.status}>
+          {compactLayout ? <section className={[styles.panel, styles.caseSummary].join(" ")} aria-label="Thông tin hồ sơ">
+            <h2>Hồ sơ sửa chữa</h2>
+            <dl className={styles.detailGrid}>
+              <DetailValue label={M.CREATED_AT} value={formatDateTime(repairCase.data.createdAt)} />
+              <DetailValue label={M.CLOSED_AT} value={formatDateTime(repairCase.data.closedAt)} />
+            </dl>
+            <details className={styles.technicalDetails}><summary>Thông tin liên kết</summary><dl className={styles.detailGrid}>
+              <DetailValue label={M.CASE_ID} value={repairCase.data.id} code />
+              <DetailValue label={M.REQUEST_ID} value={repairCase.data.maintenanceRequestId} code />
+              {role !== "owner" && <DetailValue label={M.OWNER} value={repairCase.data.ownerId} code />}
+              <DetailValue label={M.CONTRACT} value={repairCase.data.contractId} code />
+              <DetailValue label={M.PRIMARY_MACHINE} value={repairCase.data.primaryMachineId} code />
+            </dl></details>
+          </section> : <>          <section className={styles.panel} aria-label="Thông tin hồ sơ">
             <SectionHeading title="Thông tin hồ sơ" description="Trạng thái do hệ thống Dolores trả về." />
             <dl className={styles.detailGrid}>
               <DetailValue label={M.CASE_ID} value={repairCase.data.id} code />
@@ -815,35 +1047,22 @@ export function RepairCaseDetailScreen({
             </dl>
           </section>
 
-          <EvidenceList resource="REPAIR_CASE" parentId={caseId} title="Chứng từ hồ sơ sửa chữa" />
-          {replacementAssignmentId ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} title="Chứng từ máy thay thế" /> : null}
+</>}
 
-          <section className={styles.panel} aria-label="Công việc liên quan">
-            <SectionHeading title="Công việc liên quan" description="Các mã liên kết và trạng thái hiện tại của ticket, máy thay thế." />
-            {ticket.isError ? <QueryError label={M.MAINTENANCE_TICKET} error={ticket.error} onRetry={() => void ticket.refetch()} /> : null}
-            {request.isError ? <QueryError label={M.REQUEST} error={request.error} onRetry={() => void request.refetch()} /> : null}
-            {assignment.isError ? <QueryError label={M.REPLACEMENT_ASSIGNMENT} error={assignment.error} onRetry={() => void assignment.refetch()} /> : null}
-            <dl className={styles.detailGrid}>
-              <DetailValue label={M.MAINTENANCE_TICKET} value={repairCase.data.maintenanceTicketId ?? "—"} code />
-              <DetailValue label={M.TICKET_STATUS} value={
-                !repairCase.data.maintenanceTicketId ? "—" : ticket.isPending ? "Đang tải…" : ticketStatusLabel(ticket.data?.status)
-              } />
-              <DetailValue label={M.REPLACEMENT_ASSIGNMENT} value={
-                request.isPending ? "Đang tải…" : request.data?.replacementAssignmentId ?? "—"
-              } code />
-              <DetailValue label={M.ASSIGNMENT_STATUS} value={
-                request.isPending ? "Đang tải…" : !request.data?.replacementAssignmentId ? "—" : assignment.isPending ? "Đang tải…" : assignmentStatusLabel(assignment.data?.status)
-              } />
-              <DetailValue label={M.ASSIGNMENT_MACHINE} value={assignment.data?.replacementMachineId ?? "—"} code />
-              <DetailValue label={M.START_AT} value={formatDateTime(assignment.data?.startAt)} />
-              <DetailValue label={M.END_AT} value={formatDateTime(assignment.data?.endAt)} />
-            </dl>
-          </section>
+          {!compactLayout && (
+            <details className={styles.technicalDetails} open>
+              <summary>Công việc liên quan &amp; chứng từ</summary>
+              {renderRelatedWork(repairCase.data)}
+            </details>
+          )}
 
-          <section className={styles.panel} aria-label={M.PROCESS_TITLE}>
-            <SectionHeading title={M.PROCESS_TITLE} description={M.PROCESS_DESCRIPTION} />
+          <section className={[styles.panel, styles.caseProcess].join(" ")} aria-label={M.PROCESS_TITLE}>
+            {!compactLayout && <SectionHeading title={M.PROCESS_TITLE} description={M.PROCESS_DESCRIPTION} />}
+            {ownerWaitingForHandover && <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p>}
+            <details className={styles.processDisclosure} open={!compactLayout || ownerHasPendingAcknowledgment}>
+              <summary>{M.PROCESS_TITLE}</summary>
             <ol className={styles.workflowSteps} aria-label={M.PROCESS_TITLE}>
-              <WorkflowStep title={M.PROCESS_PRIMARY_COLLECTION} status={primaryCollectionStepState}>
+              <WorkflowStep title={M.PROCESS_PRIMARY_COLLECTION} compact={compactLayout} status={primaryCollectionStepState}>
                 <p>{M.PROCESS_PRIMARY_COLLECTION_DESCRIPTION}</p>
                 {primaryCollectionEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.TECHNICIAN_RECEIVE_MACHINE_SUCCESS} ${formatDateTime(primaryCollectionEvent.occurredAt)} · ${primaryCollectionEvent.machineId}`}</p>
@@ -875,14 +1094,14 @@ export function RepairCaseDetailScreen({
                     {currentPrimaryCollectionError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordPrimaryCollection.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng để tiếp tục.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "receive-machine", label: M.TECHNICIAN_RECEIVE_MACHINE, variant: "primary", priority: 100, type: "submit", form: "receive-machine-form", disabled: !canSubmitReceiveMachine || !receiveMachineConditionNotes.trim() || Boolean(evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 })) || recordPrimaryCollection.isPending || currentPrimaryCollectionSuccess, disabledReason: evidenceFileError(receiveMachineEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng để tiếp tục.", pending: recordPrimaryCollection.isPending, pendingLabel: M.TECHNICIAN_RECEIVE_MACHINE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">{M.PROCESS_WAITING_FOR_TECHNICIAN}</p>
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_PRIMARY_ACKNOWLEDGMENT} status={primaryAcknowledgmentStepState}>
+              <WorkflowStep title={M.PROCESS_PRIMARY_ACKNOWLEDGMENT} compact={compactLayout} status={primaryAcknowledgmentStepState}>
                 <p>{M.PROCESS_PRIMARY_ACKNOWLEDGMENT_DESCRIPTION}</p>
                 {primaryCollectionAcknowledged ? (
                   <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(primaryCollectionEvent?.ownerAcknowledgedAt)}`}</p>
@@ -895,7 +1114,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_ACTIVATE_ASSIGNMENT} status={activationStepState}>
+              <WorkflowStep title={M.PROCESS_ACTIVATE_ASSIGNMENT} compact={compactLayout} status={activationStepState}>
                 <p>{M.PROCESS_ACTIVATE_ASSIGNMENT_DESCRIPTION}</p>
                 {assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED" ? (
                   <p className={styles.acknowledged} role="status">{`${M.ACTIVATE_SUCCESS} ${assignmentStatusLabel(assignment.data.status)}`}</p>
@@ -927,7 +1146,7 @@ export function RepairCaseDetailScreen({
                     {activateReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(activateReplacementAssignment.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: evidenceFileError(activationEvidence, { min: 1, max: 1 }) ?? "Điền lý do phê duyệt và đính kèm tệp minh chứng.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "activate-replacement", label: M.ACTIVATE_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "activate-replacement-form", disabled: Boolean(evidenceFileError(activationEvidence, { min: 1, max: 1 })) || !activationReason.trim() || activateReplacementAssignment.isPending, disabledReason: evidenceFileError(activationEvidence, { min: 1, max: 1 }) ?? "Điền lý do phê duyệt và đính kèm tệp minh chứng.", pending: activateReplacementAssignment.isPending, pendingLabel: M.ACTIVATE_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -938,7 +1157,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_REPLACEMENT_DELIVERY} status={replacementDeliveryStepState}>
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_DELIVERY} compact={compactLayout} status={replacementDeliveryStepState}>
                 <p>{M.PROCESS_REPLACEMENT_DELIVERY_DESCRIPTION}</p>
                 {replacementDeliveredEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.REPLACEMENT_DELIVERY_SUCCESS} ${formatDateTime(replacementDeliveredEvent.occurredAt)} · ${replacementDeliveredEvent.machineId}`}</p>
@@ -971,7 +1190,7 @@ export function RepairCaseDetailScreen({
                     {recordReplacementDelivery.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReplacementDelivery.error, "mutation")}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || recordReplacementDelivery.isPending, disabledReason: evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng bàn giao.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "replacement-delivery", label: M.REPLACEMENT_DELIVERY_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-delivery-form", disabled: !replacementDeliveryNotes.trim() || Boolean(evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 })) || recordReplacementDelivery.isPending, disabledReason: evidenceFileError(replacementDeliveryEvidence, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng bàn giao.", pending: recordReplacementDelivery.isPending, pendingLabel: M.REPLACEMENT_DELIVERY_SUBMITTING }]} />
                   </form>
                 ) : assignment.data?.status === "ACTIVE" ? (
                   <p className={styles.notice} role="status">
@@ -982,7 +1201,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_REPLACEMENT_ACKNOWLEDGMENT} status={replacementAcknowledgmentStepState}>
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_ACKNOWLEDGMENT} compact={compactLayout} status={replacementAcknowledgmentStepState}>
                 <p>{M.PROCESS_REPLACEMENT_ACKNOWLEDGMENT_DESCRIPTION}</p>
                 {replacementDeliveryAcknowledged ? (
                   <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(replacementDeliveredEvent?.ownerAcknowledgedAt)}`}</p>
@@ -995,7 +1214,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_DIAGNOSIS} status={diagnosisStepState}>
+              <WorkflowStep title={M.PROCESS_DIAGNOSIS} compact={compactLayout} status={diagnosisStepState}>
                 <p>{M.PROCESS_DIAGNOSIS_DESCRIPTION}</p>
                 {diagnosisStepState === "complete" ? (
                   <p className={styles.acknowledged} role="status">{M.TECHNICIAN_DIAGNOSIS_SUCCESS}</p>
@@ -1029,7 +1248,7 @@ export function RepairCaseDetailScreen({
                     {recordRepairDiagnosis.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordRepairDiagnosis.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 }) ?? "Nhập nội dung chẩn đoán và đính kèm tệp minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "repair-diagnosis", label: M.TECHNICIAN_DIAGNOSIS_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "repair-diagnosis-form", disabled: !diagnosisText.trim() || Boolean(evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 })) || isRefreshing || recordRepairDiagnosis.isSuccess, disabledReason: evidenceFileError(diagnosisEvidenceReference, { min: 1, max: 1 }) ?? "Nhập nội dung chẩn đoán và đính kèm tệp minh chứng.", pending: recordRepairDiagnosis.isPending, pendingLabel: M.TECHNICIAN_DIAGNOSIS_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1038,7 +1257,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_START_REPAIR} status={startWorkStepState}>
+              <WorkflowStep title={M.PROCESS_START_REPAIR} compact={compactLayout} status={startWorkStepState}>
                 <p>{M.PROCESS_START_REPAIR_DESCRIPTION}</p>
                 {startWorkStepState === "complete" ? (
                   <p className={styles.acknowledged} role="status">{M.TECHNICIAN_WORK_START_SUCCESS}</p>
@@ -1063,7 +1282,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(startRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <PageActions actions={[{ id: "start-repair-work", label: M.TECHNICIAN_START_WORK, variant: "primary", priority: 100, type: "submit", form: "start-repair-work-form", disabled: !workScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || isRefreshing || startRepairWork.isSuccess, disabledReason: "Nhập phạm vi công việc và chọn phê duyệt nếu có tranh chấp chi phí.", pending: startRepairWork.isPending, pendingLabel: M.TECHNICIAN_START_WORKING }]} />
+                    <CaseActions actions={[{ id: "start-repair-work", label: M.TECHNICIAN_START_WORK, variant: "primary", priority: 100, type: "submit", form: "start-repair-work-form", disabled: !workScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || isRefreshing || startRepairWork.isSuccess, disabledReason: "Nhập phạm vi công việc và chọn phê duyệt nếu có tranh chấp chi phí.", pending: startRepairWork.isPending, pendingLabel: M.TECHNICIAN_START_WORKING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1079,7 +1298,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_COMPLETE_REPAIR} status={completeWorkStepState}>
+              <WorkflowStep title={M.PROCESS_COMPLETE_REPAIR} compact={compactLayout} status={completeWorkStepState}>
                 <p>{M.PROCESS_COMPLETE_REPAIR_DESCRIPTION}</p>
                 {completeWorkStepState === "complete" ? (
                   <p className={styles.acknowledged} role="status">{M.TECHNICIAN_WORK_COMPLETION_SUCCESS}</p>
@@ -1138,7 +1357,7 @@ export function RepairCaseDetailScreen({
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{workError(completeRepairWork.error)}</p>
                     ) : null}
                     <p className={styles.notice} role="note">{M.TECHNICIAN_COST_DISPUTE_NOTICE}</p>
-                    <PageActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) || isRefreshing || completeRepairWork.isSuccess, disabledReason: evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 }) ?? "Điền phạm vi công việc, kết quả sửa chữa và đính kèm tệp minh chứng. Nếu có tranh chấp chi phí, hãy chọn phương án được duyệt.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "complete-repair-work", label: M.TECHNICIAN_COMPLETION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "complete-repair-work-form", disabled: !completionWorkScope.trim() || dispute.isLoading || dispute.isError || (dispute.isDisputed && !selectedAuthorization) || !resolutionResult.trim() || Boolean(evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 })) || isRefreshing || completeRepairWork.isSuccess, disabledReason: evidenceFileError(completionEvidenceReferenceText, { min: 1, max: 5 }) ?? "Điền phạm vi công việc, kết quả sửa chữa và đính kèm tệp minh chứng. Nếu có tranh chấp chi phí, hãy chọn phương án được duyệt.", pending: completeRepairWork.isPending, pendingLabel: M.TECHNICIAN_COMPLETION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1153,7 +1372,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION} status={replacementCollectionStepState}>
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION} compact={compactLayout} status={replacementCollectionStepState}>
                 <p>{M.PROCESS_REPLACEMENT_COLLECTION_DESCRIPTION}</p>
                 {replacementCollectionEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.REPLACEMENT_COLLECTION_SUCCESS} ${formatDateTime(replacementCollectionEvent.occurredAt)} · ${replacementCollectionEvent.machineId}`}</p>
@@ -1189,7 +1408,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "REPLACEMENT_COLLECTED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi thu hồi.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "replacement-collection", label: M.REPLACEMENT_COLLECTION_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "replacement-collection-form", disabled: !replacementCollectionCondition.trim() || Boolean(evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(replacementCollectionEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi thu hồi.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.REPLACEMENT_COLLECTION_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1201,7 +1420,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT} status={replacementCollectionAcknowledgmentStepState}>
+              <WorkflowStep title={M.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT} compact={compactLayout} status={replacementCollectionAcknowledgmentStepState}>
                 <p>{M.PROCESS_REPLACEMENT_COLLECTION_ACKNOWLEDGMENT_DESCRIPTION}</p>
                 {replacementCollectionAcknowledged ? (
                   <p className={styles.acknowledged} role="status">{`${M.ACKNOWLEDGED}: ${formatDateTime(replacementCollectionEvent?.ownerAcknowledgedAt)}`}</p>
@@ -1214,7 +1433,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN} status={primaryReturnStepState}>
+              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN} compact={compactLayout} status={primaryReturnStepState}>
                 <p>{M.PROCESS_PRIMARY_RETURN_DESCRIPTION}</p>
                 {primaryReturnEvent ? (
                   <p className={styles.acknowledged} role="status">{`${M.PRIMARY_RETURN_SUCCESS} ${formatDateTime(primaryReturnEvent.occurredAt)} · ${primaryReturnEvent.machineId}`}</p>
@@ -1250,7 +1469,7 @@ export function RepairCaseDetailScreen({
                     {recordReturnCustodyEvent.isError && recordReturnCustodyEvent.variables?.eventType === "PRIMARY_RETURNED" ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(recordReturnCustodyEvent.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
+                    <CaseActions actions={[{ id: "primary-return", label: M.PRIMARY_RETURN_SUBMIT, variant: "primary", priority: 100, type: "submit", form: "primary-return-form", disabled: !primaryReturnCondition.trim() || Boolean(evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 })) || isRefreshing, disabledReason: evidenceFileError(primaryReturnEvidenceReference, { min: 1, max: 1 }) ?? "Điền tình trạng máy và đính kèm tệp minh chứng khi trả máy chính.", pending: recordReturnCustodyEvent.isPending, pendingLabel: M.PRIMARY_RETURN_SUBMITTING }]} />
                   </form>
                 ) : (
                   <p className={styles.notice} role="status">
@@ -1262,7 +1481,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT} status={primaryReturnAcknowledgmentStepState}>
+              <WorkflowStep title={M.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT} compact={compactLayout} status={primaryReturnAcknowledgmentStepState}>
                 <p>{M.PROCESS_PRIMARY_RETURN_ACKNOWLEDGMENT_DESCRIPTION}</p>
                 {primaryReturnAcknowledged ? (
                   primaryReturnFinalStateConfirmed ? (
@@ -1279,7 +1498,7 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
 
-              <WorkflowStep title={M.PROCESS_RELEASE_ASSIGNMENT} status={releaseStepState}>
+              <WorkflowStep title={M.PROCESS_RELEASE_ASSIGNMENT} compact={compactLayout} status={releaseStepState}>
                 <p>{M.PROCESS_RELEASE_ASSIGNMENT_DESCRIPTION}</p>
                 {releaseReadAfterWriteConfirmed ? (
                   <p className={styles.acknowledged} role="status">{`${M.RELEASE_SUCCESS} ${formatDateTime(assignment.data?.releasedAt)}`}</p>
@@ -1305,7 +1524,7 @@ export function RepairCaseDetailScreen({
                     {releaseReplacementAssignment.isError ? (
                       <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(releaseReplacementAssignment.error)}</p>
                     ) : null}
-                    <PageActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) ?? "Đính kèm tệp minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
+                    <CaseActions actions={[{ id: "release-replacement", label: M.RELEASE_REVIEW_ACTION, variant: "primary", priority: 100, type: "submit", form: "release-replacement-form", disabled: Boolean(evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 })) || isRefreshing || releaseReplacementAssignment.isSuccess, disabledReason: evidenceFileError(releaseEvidenceReference, { min: 1, max: 1 }) ?? "Đính kèm tệp minh chứng để tiếp tục.", pending: releaseReplacementAssignment.isPending, pendingLabel: "Đang xử lý…" }]} />
                   </form>
                 ) : (
                   <>
@@ -1319,67 +1538,38 @@ export function RepairCaseDetailScreen({
                 )}
               </WorkflowStep>
             </ol>
+            </details>
           </section>
 
-          <section className={styles.panel} aria-label={M.TIMELINE_TITLE}>
-            <SectionHeading title={M.TIMELINE_TITLE} description="Các bước xử lý được sắp theo thời gian." />
-            {timeline.isPending ? <p className={styles.notice} role="status">{M.TIMELINE_LOADING}</p> : null}
-            {timeline.isError ? <QueryError label={M.TIMELINE_ERROR} error={timeline.error} onRetry={() => void timeline.refetch()} /> : null}
-            {timeline.data?.content.length === 0 ? <p className={styles.notice} role="status">{M.TIMELINE_EMPTY}</p> : null}
-            {timeline.data && timeline.data.content.length > 0 ? (
-              <ol className={styles.timeline} aria-label={M.TIMELINE_TITLE}>
-                {timeline.data.content.map((event) => (
-                  <li className={styles.timelineItem} key={event.id}>
-                    <strong>{maintenanceCustodyEventLabel(event.eventType)}</strong>
-                    <p>{timelineDetails(event.reason, event.details)}</p>
-                    {event.eventType === "EMERGENCY_WORK_AUTHORIZED" && <p>Phạm vi và mã cho phép: {event.details}</p>}
-                    <span>{formatDateTime(event.occurredAt)} · {event.actorRole}{event.actorId ? ` · ${event.actorId}` : ""}</span>
-                  </li>
-                ))}
-              </ol>
-            ) : null}
-            {timeline.data && timeline.data.totalPages > 1 ? (
-              <nav className={styles.pagination} aria-label="Phân trang dòng thời gian">
-                <button className={styles.inlineButton} type="button" disabled={timeline.data.first || timeline.isFetching} onClick={() => setTimelinePage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
-                <span>{M.PAGE} {timeline.data.number + 1} / {timeline.data.totalPages}</span>
-                <button className={styles.inlineButton} type="button" disabled={timeline.data.last || timeline.isFetching} onClick={() => setTimelinePage((current) => current + 1)}>{M.NEXT}</button>
-              </nav>
-            ) : null}
-          </section>
-
-          <section className={styles.panel} aria-label={M.CUSTODY_TITLE}>
-            <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của khách hàng được lưu tại đây." />
-            {ownerWaitingForHandover ? <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p> : null}
-            {custody.isPending ? <p className={styles.notice} role="status">{M.CUSTODY_LOADING}</p> : null}
-            {custody.isError ? <QueryError label={M.CUSTODY_ERROR} error={custody.error} onRetry={() => void custody.refetch()} /> : null}
-            {custody.data?.items.length === 0 ? <p className={styles.notice} role="status">{M.CUSTODY_EMPTY}</p> : null}
-            {custody.data && custody.data.items.length > 0 ? (
-              <ol className={styles.timeline} aria-label={M.CUSTODY_TITLE}>
-                {custody.data.items.map((event) => (
-                  <li className={styles.timelineItem} key={event.id}>
-                    <strong>{maintenanceCustodyEventLabel(event.eventType)}</strong>
-                    <p>{event.conditionNotes || "—"}</p>
-                    <span>{formatDateTime(event.occurredAt)} · {event.actorRole} · {event.machineId}</span>
-                    <span className={event.ownerAcknowledgedAt ? styles.acknowledged : styles.waitingAcknowledgment}>
-                      {event.ownerAcknowledgedAt
-                        ? `${M.ACKNOWLEDGED}: ${formatDateTime(event.ownerAcknowledgedAt)}${event.ownerAcknowledgement ? ` · ${event.ownerAcknowledgement}` : ""}`
-                        : M.AWAITING_ACKNOWLEDGMENT}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : null}
-            {custody.data && (custody.data.page > 0 || custody.data.hasNext) ? (
-              <nav className={styles.pagination} aria-label="Phân trang lịch sử bàn giao">
-                <button className={styles.inlineButton} type="button" disabled={custodyPage === 0 || custody.isFetching} onClick={() => setCustodyPage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
-                <span>{M.PAGE} {custody.data.page + 1}</span>
-                <button className={styles.inlineButton} type="button" disabled={!custody.data.hasNext || custody.isFetching} onClick={() => setCustodyPage((current) => current + 1)}>{M.NEXT}</button>
-              </nav>
-            ) : null}
-          </section>
+          </div>
+          {compactLayout ? (
+            <section className={`${styles.technicalDetails} ${styles.adminHistory}`} aria-labelledby="repair-case-history-title">
+              <header className={styles.adminHistoryHeader}>
+                <h2 id="repair-case-history-title">Lịch sử hồ sơ</h2>
+                <nav className={styles.relatedNav} aria-label="Lịch sử hồ sơ">
+                  <button type="button" aria-pressed={historyView === "timeline"} onClick={() => setHistoryView("timeline")}>Sự kiện</button>
+                  <button type="button" aria-pressed={historyView === "custody"} onClick={() => setHistoryView("custody")}>Bàn giao máy</button>
+                </nav>
+              </header>
+              <div className={styles.adminHistoryContent} role="region" aria-labelledby="repair-case-history-title" aria-live="polite">
+                {historyView === "timeline" ? renderTimelineHistory(false) : renderCustodyHistory(false)}
+              </div>
+            </section>
+          ) : (
+            <>
+              <details className={styles.technicalDetails} open>
+                <summary>{M.TIMELINE_TITLE}</summary>
+                {renderTimelineHistory()}
+              </details>
+              <details className={styles.technicalDetails} open>
+                <summary>{M.CUSTODY_TITLE}</summary>
+                {renderCustodyHistory()}
+              </details>
+            </>
+          )}
         </>
-      ) : null}
-      {releaseConfirmationOpen ? (
+      ))}
+      {!relatedOnly && releaseConfirmationOpen ? (
         <NotificationDialog
           variant="confirm"
           title={M.RELEASE_CONFIRM_TITLE}

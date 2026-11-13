@@ -11,19 +11,14 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
   const requestedId = isList ? "" : sectionPath.slice("menu/".length);
   const validId = GlobalRecipeIdSchema.safeParse(requestedId).success ? requestedId : "";
 
-  return (
-    <div className={styles.pageContent}>
-      <ModeratorPageHeading title="Global Menu & công thức" description="Quản lý menu dùng chung và các công thức pha chế của Dolores." />
-      {!isList && !validId ? (
-        <p className={styles.pendingNotice} role="status">{messages.INVALID_RECIPE_ID}</p>
-      ) : (
-        <RecipeManagementScreen
-          role="operator"
-          operatorRole="MODERATOR"
-          showHeading={false}
-          initialGlobalRecipeId={validId || undefined}
-        />
-      )}
-    </div>
-  );
+  if (!isList && !validId) return <div className={styles.pageContent}>
+    <ModeratorPageHeading title="Công thức pha chế" />
+    <p className={styles.pendingNotice} role="status">{messages.INVALID_RECIPE_ID}</p>
+  </div>;
+
+  return <RecipeManagementScreen
+    role="operator"
+    operatorRole="MODERATOR"
+    initialGlobalRecipeId={validId || undefined}
+  />;
 }

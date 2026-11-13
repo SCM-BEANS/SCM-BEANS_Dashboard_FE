@@ -120,3 +120,14 @@
 .locationStatus::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #80756f; }
 .locationStatus[data-status="ACTIVE"]::before { background: #32866b; }
 @media (max-width: 700px) { .locationsPanel { padding: 16px; } .locationsPanel .formGrid { grid-template-columns: minmax(0, 1fr); } }
+
+.registrationLayout[data-owner] { display:grid; grid-template-columns:minmax(0, 2fr) minmax(240px, 1fr); gap:24px; align-items:start; }
+.registrationLayout[data-owner] .formGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.registrationLayout[data-owner] .notice { grid-column:1 / -1; }
+.registrationSummary { padding:20px; border:1px solid #e9e2dc; border-radius:12px; margin-top:14px; }
+.registrationSummary h3 { margin:0 0 18px; font-size:18px; }
+.registrationSummary dl { display:grid; gap:18px; margin:0; }
+.registrationSummary dl > div { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; font-size:14px; }
+.registrationSummary dt { color:#706561; }
+.registrationSummary dd { margin:0; overflow-wrap:anywhere; font-weight:600; }
+@media(max-width:800px) { .registrationLayout[data-owner], .registrationLayout[data-owner] .formGrid { grid-template-columns:minmax(0,1fr); } }

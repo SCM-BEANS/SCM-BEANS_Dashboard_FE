@@ -8,6 +8,14 @@ import { querySubject, type RepairWorkflowRole } from "@/components/features/rep
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import styles from "./repair-cost-review-screen.module.css";
 
+const labels: Record<string, string> = {
+  PROPOSED: "Chờ xem xét", DISPUTED: "Đang tranh chấp", OWNER_ACKNOWLEDGED: "Khách hàng đã xác nhận",
+  APPROVED_PENDING_OWNER_ACK: "Chờ khách hàng xác nhận", RESOLVED_PENDING_OWNER_ACK: "Chờ xác nhận sau phân xử",
+  APPROVED_NO_OWNER_CHARGE: "Không tính phí khách hàng", COLLECTIBLE: "Đủ điều kiện thu phí", REJECTED: "Đã từ chối",
+  NORMAL_WEAR: "Hao mòn thông thường", WARRANTY_OR_MACHINE_FAULT: "Bảo hành hoặc lỗi máy", MISUSE: "Sử dụng sai cách", EXTERNAL_DAMAGE: "Hư hỏng do tác động bên ngoài", UNDETERMINED: "Chưa xác định",
+  PARTS: "Linh kiện", LABOR: "Nhân công", TRANSPORT: "Vận chuyển", OTHER: "Chi phí khác",
+  COMPANY: "Dolores", TENANT: "Khách hàng", OWNER: "Khách hàng", UNKNOWN: "Chưa xác định",
+};
 function formatAmount(value: number | string | null | undefined, currency?: string | null) {
   if (value === null || value === undefined) return "—";
   const amount = Number(value);
@@ -78,9 +86,9 @@ export function RepairCostReviewScreen({
   });
 
   return (
-    <section className={styles.pageContent} aria-labelledby="repair-cost-review-title">
+    <section className={styles.pageContent} data-role={role} aria-labelledby="repair-cost-review-title">
       <BackButtonHeading
-        back={{ label: "Quay lại thông báo", fallbackHref: listHref }}
+        back={{ label: role === "owner" ? "Quay lại thông báo" : "Về danh sách yêu cầu", fallbackHref: listHref }}
         title="Xem xét chi phí sửa chữa"
         titleId="repair-cost-review-title"
         description="Theo dõi đề xuất, quyết định và trạng thái phần chi phí sửa chữa."
@@ -96,21 +104,8 @@ export function RepairCostReviewScreen({
       ) : null}
       {review.data ? (
         <>
-          <dl className={styles.detailGrid}>
-            <div><dt>Mã xem xét</dt><dd className={styles.code}>{review.data.id}</dd></div>
-            <div><dt>Ticket</dt><dd className={styles.code}>{review.data.maintenanceTicketId}</dd></div>
-            <div><dt>Máy</dt><dd className={styles.code}>{review.data.machineId}</dd></div>
-            <div><dt>Trạng thái</dt><dd>{review.data.status}</dd></div>
-            <div><dt>Nguyên nhân đề xuất</dt><dd>{review.data.cause}</dd></div>
-            <div><dt>Trách nhiệm đề xuất</dt><dd>{review.data.proposedResponsibleParty}</dd></div>
-            <div><dt>Số tiền đề xuất</dt><dd>{formatAmount(review.data.estimatedAmount, review.data.currency)}</dd></div>
-            <div><dt>Số tiền đã duyệt</dt><dd>{formatAmount(review.data.approvedAmount, review.data.currency)}</dd></div>
-            <div><dt>Trách nhiệm đã duyệt</dt><dd>{review.data.approvedResponsibleParty ?? "Chưa quyết định"}</dd></div>
-            <div><dt>Thời điểm tạo</dt><dd>{formatDate(review.data.createdAt)}</dd></div>
-            <div><dt>Minh chứng</dt><dd>{review.data.evidenceReferences ? "Đã đính kèm minh chứng riêng tư" : "Chưa có minh chứng"}</dd></div>
-            {review.data.currentInvoiceId ? <div><dt>Hóa đơn liên quan</dt><dd className={styles.code}>{review.data.currentInvoiceId}</dd></div> : null}
-          </dl>
-          <EvidenceList resource="REPAIR_COST_REVIEW" parentId={reviewId} title="Chứng từ rà soát chi phí" />
+          <div className={styles.reviewLayout}>
+          <div className={styles.reviewMain}>
           <section className={styles.notice}>
             <h2>Chẩn đoán</h2>
             <p>{review.data.diagnosis}</p>
@@ -126,11 +121,14 @@ export function RepairCostReviewScreen({
           <section className={styles.panel}>
             <h2>Thành phần chi phí ({review.data.costComponents.length})</h2>
             <DataTable
+              variant="accounts"
+              className={styles.costTable}
+              style={{ minWidth: 0 }}
               rows={review.data.costComponents}
               rowKey={(item) => item.id}
               emptyMessage="Không có thành phần chi phí."
               columns={[
-                { key: "category", header: "Loại", render: (item) => item.category },
+                { key: "category", header: "Loại", render: (item) => labels[item.category] ?? item.category },
                 { key: "description", header: "Mô tả", render: (item) => item.description },
                 { key: "quantity", header: "Số lượng", render: (item) => item.quantity },
                 { key: "unit-price", header: "Đơn giá", render: (item) => formatAmount(item.unitPrice, review.data?.currency) },
@@ -138,8 +136,32 @@ export function RepairCostReviewScreen({
               ]}
             />
           </section>
-          <section className={styles.panel}>
-            <h2>Lịch sử quyết định ({review.data.decisions.length})</h2>
+          </div>
+          <aside className={styles.reviewSidebar}>
+            <section className={styles.panel}><h2>Tóm tắt chi phí</h2>
+          <dl className={styles.detailGrid}>
+            <div><dt>Trạng thái</dt><dd>{labels[review.data.status] ?? review.data.status}</dd></div>
+            <div><dt>Nguyên nhân đề xuất</dt><dd>{labels[review.data.cause] ?? review.data.cause}</dd></div>
+            <div><dt>Trách nhiệm đề xuất</dt><dd>{labels[review.data.proposedResponsibleParty] ?? review.data.proposedResponsibleParty}</dd></div>
+            <div><dt>Số tiền đề xuất</dt><dd>{formatAmount(review.data.estimatedAmount, review.data.currency)}</dd></div>
+            <div><dt>Số tiền đã duyệt</dt><dd>{formatAmount(review.data.approvedAmount, review.data.currency)}</dd></div>
+            <div><dt>Trách nhiệm đã duyệt</dt><dd>{review.data.approvedResponsibleParty ? labels[review.data.approvedResponsibleParty] ?? review.data.approvedResponsibleParty : "Chưa quyết định"}</dd></div>
+          </dl>            </section>
+            <ActionGate role={role} status={review.data.status} />
+          </aside>
+          </div>
+          <details className={styles.panel}><summary>Thông tin đối chiếu</summary><dl className={styles.detailGrid}>
+            <div><dt>Mã xem xét</dt><dd className={styles.code}>{review.data.id}</dd></div>
+            <div><dt>Ticket</dt><dd className={styles.code}>{review.data.maintenanceTicketId}</dd></div>
+            <div><dt>Máy</dt><dd className={styles.code}>{review.data.machineId}</dd></div>
+            <div><dt>Thời điểm tạo</dt><dd>{formatDate(review.data.createdAt)}</dd></div>
+            <div><dt>Minh chứng</dt><dd>{review.data.evidenceReferences ? "Đã đính kèm minh chứng riêng tư" : "Chưa có minh chứng"}</dd></div>
+            {review.data.currentInvoiceId ? <div><dt>Hóa đơn liên quan</dt><dd className={styles.code}>{review.data.currentInvoiceId}</dd></div> : null}</dl></details>
+          <details className={styles.panel}><summary>Chứng từ rà soát chi phí</summary>
+            <EvidenceList resource="REPAIR_COST_REVIEW" parentId={reviewId} title="Chứng từ rà soát chi phí" />
+          </details>
+          <details className={styles.panel}>
+            <summary>Lịch sử quyết định ({review.data.decisions.length})</summary>
             {review.data.decisions.length ? (
               <ol className={styles.timeline}>
                 {review.data.decisions.map((decision) => (
@@ -151,8 +173,7 @@ export function RepairCostReviewScreen({
                 ))}
               </ol>
             ) : <p>Chưa có quyết định nào.</p>}
-          </section>
-          <ActionGate role={role} status={review.data.status} />
+          </details>
         </>
       ) : null}
     </section>

@@ -5,6 +5,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { buildMaintenanceRequestActions } from "@/components/action-bar/entity-page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -29,10 +30,13 @@ function errorMessage(error: unknown): string {
 export function MaintenanceRequestActions({
   request,
   role,
+  compact = false,
 }: {
+  compact?: boolean;
   request: MaintenanceRequestDetails;
   role: Extract<RepairWorkflowRole, "admin" | "moderator">;
 }) {
+  const Actions = compact ? PageActionsRenderer : PageActions;
   const queryClient = useQueryClient();
   const [showOverdueReview, setShowOverdueReview] = useState(false);
   const [showClosureException, setShowClosureException] = useState(false);
@@ -41,7 +45,6 @@ export function MaintenanceRequestActions({
   const [candidateId, setCandidateId] = useState("");
   const [candidateError, setCandidateError] = useState("");
   const [feedback, setFeedback] = useState("");
-  const isAdmin = role === "admin";
   const eventsQuery = useQuery({
     queryKey: maintenanceCustodyEventsQueryKey(request.id),
     queryFn: ({ signal }) => maintenanceRequestsApi.getCustodyEvents(request.id, signal),
@@ -127,10 +130,7 @@ export function MaintenanceRequestActions({
   const primaryReturned = eventsQuery.data?.some((event) => event.eventType === "PRIMARY_RETURNED") ?? false;
   const candidate = replacementLookup.data;
 
-  return (
-    <section className={styles.pendingNotice} aria-labelledby="maintenance-request-actions-title">
-      <h2 className={styles.sectionTitle} id="maintenance-request-actions-title">Thao tác yêu cầu bảo trì</h2>
-      <PageActions actions={buildMaintenanceRequestActions({
+  const actions = buildMaintenanceRequestActions({
         role,
         request,
         primaryReturned,
@@ -141,7 +141,13 @@ export function MaintenanceRequestActions({
         onOverdueReview: () => setShowOverdueReview(true),
         onLinkReplacement: () => setShowLinkConfirm(true),
         onCloseException: () => setShowClosureException(true),
-      })} />
+      });
+  const hasLookup = request.requestType === "PREVENTIVE" && !request.replacementAssignmentId;
+
+  return (
+    <section hidden={compact && !actions.length && !hasLookup && !eventsQuery.isError && !feedback} className={styles.pendingNotice} aria-labelledby="maintenance-request-actions-title">
+      <h2 className={styles.sectionTitle} id="maintenance-request-actions-title">Thao tác yêu cầu bảo trì</h2>
+      {actions.length > 0 && <Actions actions={actions} />}
       {request.requestType === "PREVENTIVE" && !request.replacementAssignmentId && (
         <div className={styles.ticketAssignment}>
           <p>Kiểm tra một phân công ACTIVE theo mã để liên kết với yêu cầu này.</p>
@@ -220,5 +226,5 @@ export function MaintenanceRequestTicketDetail({
   ticketId: string;
   role: Extract<RepairWorkflowRole, "admin" | "moderator">;
 }) {
-  return <MaintenanceTicketDetailsPanel ticketId={ticketId} role={role === "admin" ? "ADMIN" : "MODERATOR"} />;
+  return <MaintenanceTicketDetailsPanel ticketId={ticketId} role={role === "admin" ? "ADMIN" : "MODERATOR"} embedded />;
 }

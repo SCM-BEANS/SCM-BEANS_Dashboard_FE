@@ -1,11 +1,10 @@
 import axios from "axios";
 import { useEffect, useId, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { evidenceApi } from "@/apis/evidence.api";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { saveBlob } from "@/lib/save-blob";
 import type { EvidenceItem, EvidenceResource } from "@/schema/evidence.schema";
 import styles from "./evidence-list.module.css";
 
@@ -51,18 +50,22 @@ export function EvidenceList({
   parentId,
   title = "Chứng từ",
   pageSize = 20,
+  showSize = true,
 }: {
   resource: EvidenceResource;
   parentId: string;
   title?: string;
   pageSize?: number;
+  showSize?: boolean;
 }) {
   const generatedId = useId();
   const headingId = `evidence-list-${generatedId.replace(/:/g, "")}`;
   const [page, setPage] = useState(0);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     setPage(0);
+    setDownloadError("");
   }, [resource, parentId]);
 
   const query = useQuery({
@@ -70,13 +73,6 @@ export function EvidenceList({
     queryFn: ({ signal }) => evidenceApi.list(resource, parentId, { page, size: pageSize }, signal),
     retry: false,
     enabled: Boolean(parentId),
-  });
-
-  const download = useMutation({
-    mutationFn: async (item: EvidenceItem) => {
-      const blob = await evidenceApi.download(resource, parentId, item.id);
-      saveBlob(blob, item.originalFilename);
-    },
   });
 
   const forbidden = axios.isAxiosError(query.error) && query.error.response?.status === 403;
@@ -97,11 +93,11 @@ export function EvidenceList({
       header: "Mục đích",
       render: (item) => purposeLabel(item.purpose),
     },
-    {
+    ...(showSize ? [{
       key: "size",
       header: "Dung lượng",
-      render: (item) => formatBytes(item.sizeBytes),
-    },
+      render: (item: EvidenceItem) => formatBytes(item.sizeBytes),
+    }] : []),
     {
       key: "uploaded-at",
       header: "Thời gian tải lên",
@@ -111,19 +107,18 @@ export function EvidenceList({
       key: "download",
       header: "Tải xuống",
       align: "right",
-      render: (item) => {
-        const pending = download.isPending && download.variables?.id === item.id;
-        return (
-          <ButtonBar
-            type="button"
-            aria-label={`Tải xuống ${item.originalFilename}`}
-            disabled={pending}
-            onClick={() => download.mutate(item)}
-          >
-            {pending ? "Đang tải…" : "Tải xuống"}
-          </ButtonBar>
-        );
-      },
+      render: (item) => (
+        <ProgressDownloadButton
+          filename={item.originalFilename}
+          download={(signal, onProgress) => {
+            setDownloadError("");
+            return evidenceApi.download(resource, parentId, item.id, signal, onProgress);
+          }}
+          onError={(error) => setDownloadError(getApiErrorMessage(error))}
+        >
+          Tải xuống
+        </ProgressDownloadButton>
+      ),
     },
   ];
 
@@ -146,8 +141,8 @@ export function EvidenceList({
             emptyMessage="Chưa có chứng từ."
             columns={columns}
           />
-          {download.isError ? (
-            <p className={styles.errorText} role="alert">{getApiErrorMessage(download.error)}</p>
+          {downloadError ? (
+            <p className={styles.errorText} role="alert">{downloadError}</p>
           ) : null}
           {showPagination ? (
             <nav className={styles.pagination} aria-label="Phân trang chứng từ">

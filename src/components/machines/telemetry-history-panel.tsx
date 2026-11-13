@@ -170,23 +170,24 @@ export function TelemetryHistoryPanel({
 
   return (
     <div className={styles.telemetryHistory}>
-      <div className={styles.telemetryRangePresets} role="group" aria-label="Chọn khoảng thời gian telemetry">
-        <button type="button" aria-pressed={activePreset === "24h"} onClick={() => selectPreset("24h")}>24 giờ</button>
-        <button type="button" aria-pressed={activePreset === "7d"} onClick={() => selectPreset("7d")}>7 ngày</button>
-        <button type="button" aria-pressed={activePreset === "30d"} onClick={() => selectPreset("30d")}>30 ngày</button>
-      </div>
+      <div className={styles.compactPeriod}>
+      <select aria-label="Kỳ thông số" value={activePreset} onChange={(event) => { if (event.target.value !== "custom") selectPreset(event.target.value as "24h" | "7d" | "30d"); }}>
+        <option value="24h">24 giờ</option><option value="7d">7 ngày</option><option value="30d">30 ngày</option><option value="custom" disabled>Tùy chọn</option>
+      </select>
+      <details className={styles.periodPicker}><summary>{range ? formatPointTime(range.from) + " – " + formatPointTime(range.to) : "Chọn thời gian"}</summary>
       <form className={styles.telemetryRangeForm} onSubmit={submitCustomRange}>
         <label>Từ ngày và giờ (UTC+7)<input type="datetime-local" required value={fromInput} onChange={(event) => { setFromInput(event.target.value); setEditingRange(true); }} /></label>
         <label>Đến ngày và giờ (UTC+7)<input type="datetime-local" required value={toInput} onChange={(event) => { setToInput(event.target.value); setEditingRange(true); }} /></label>
         <button type="submit">Áp dụng khoảng thời gian</button>
       </form>
+      </details></div>
       {rangeError ? <p className={styles.telemetryRangeError} role="alert">{rangeError}</p> : null}
-      {range ? <p className={styles.telemetryRangeCaption}>Dữ liệu từ {formatPointTime(range.from)} đến {formatPointTime(range.to)} · tối đa 100 điểm mỗi lần tải.</p> : null}
+
       {loading ? <p role="status">Đang tải lịch sử thông số…</p> : null}
       {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Thử lại</button> : null}</div> : null}
       {!loading && !error && orderedPoints.length === 0 && range ? <p className={styles.monitoringEmpty} role="status">Chưa có thông số trong khoảng thời gian này.</p> : null}
       {orderedPoints.length > 0 ? <>
-        <p className={styles.telemetryRangeCaption}>Dữ liệu đã tải: {orderedPoints.length.toLocaleString("vi-VN")} điểm · {formatPointTime(orderedPoints[0]!.timestamp)} – {formatPointTime(orderedPoints[orderedPoints.length - 1]!.timestamp)} (giờ Việt Nam){hasMore ? " · còn dữ liệu chưa tải" : ""}.</p>
+
         <div className={styles.monitoringChartToolbar}>
         {fields.length > 0 ? <label className={styles.telemetryFieldSelector}>Thông số đang xem
           <select value={field} onChange={(event) => { setSelectedField(event.target.value); onFieldChange?.(event.target.value); }}>
@@ -202,9 +203,9 @@ export function TelemetryHistoryPanel({
         {field.startsWith("total_volume_") ? <p className={styles.telemetryRangeCaption}>Thể tích nước không phải số ly pha chế.</p> : null}
         {view === "chart" && numericPoints.length > 0 ? <>
         <dl className={styles.monitoringMetricStrip}>
-          <div><dt>Gần nhất trong dữ liệu đã tải</dt><dd>{formatPointValue(numericPoints[numericPoints.length - 1]!.value)}</dd></div>
-          <div><dt>Giá trị thấp nhất</dt><dd>{formatPointValue(chartMin)}</dd></div>
-          <div><dt>Giá trị tối đa</dt><dd>{formatPointValue(chartMax)}</dd></div>
+          <div><dt>Gần nhất đã tải</dt><dd>{formatPointValue(numericPoints[numericPoints.length - 1]!.value)}</dd></div>
+          <div><dt>Thấp nhất</dt><dd>{formatPointValue(chartMin)}</dd></div>
+          <div><dt>Cao nhất</dt><dd>{formatPointValue(chartMax)}</dd></div>
         </dl>
         <figure className={styles.telemetryChart}>
           <figcaption>{fieldLabel(field)} theo thời gian{numericPoints.length > chartSource.length ? " · 500 điểm mới nhất" : ""}</figcaption>
@@ -213,7 +214,7 @@ export function TelemetryHistoryPanel({
             {chartSource.length === 1
               ? <circle cx="500" cy="100" r="6" />
               : <polyline points={chartPoints} />}
-            {chartSource.length > 1 ? chartSource.map((point, index) => <circle key={`${point.timestamp}-${index}`} cx={chartCoordinates[index]!.x} cy={chartCoordinates[index]!.y} r="4" aria-label={`${formatPointTime(point.timestamp)}: ${formatPointValue(point.value)}`}><title>{`${formatPointTime(point.timestamp)} · ${formatPointValue(point.value)}`}</title></circle>) : null}
+            {chartSource.length > 1 ? chartSource.filter((_, index) => chartSource.length <= 40 || index === 0 || index === chartSource.length - 1).map((point) => { const index = chartSource.indexOf(point); return <circle key={`${point.timestamp}-${index}`} cx={chartCoordinates[index]!.x} cy={chartCoordinates[index]!.y} r="4" aria-label={`${formatPointTime(point.timestamp)}: ${formatPointValue(point.value)}`}><title>{`${formatPointTime(point.timestamp)} · ${formatPointValue(point.value)}`}</title></circle>; }) : null}
           </svg>
           <div><span>{formatPointTime(chartSource[0]!.timestamp)}</span><span>{formatPointTime(chartSource[chartSource.length - 1]!.timestamp)}</span></div>
         </figure></> : view === "chart" ? <p className={styles.monitoringEmpty} role="status">Thông số này không phải dữ liệu số. Chọn Bảng dữ liệu để xem nội dung.</p> : null}
@@ -229,6 +230,7 @@ export function TelemetryHistoryPanel({
             { key: "sub-state", header: "Trạng thái", render: (point) => point.subState ?? "—" },
           ]}
         /></> : null}
+        {hasMore ? <p className={styles.telemetryRangeCaption}>Thống kê từ dữ liệu đã tải; còn bản ghi trong kỳ.</p> : null}
         {hasMore && onLoadMore ? <button type="button" className={styles.telemetryLoadMore} disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Đang tải…" : "Tải thêm dữ liệu"}</button> : null}
       </> : null}
     </div>

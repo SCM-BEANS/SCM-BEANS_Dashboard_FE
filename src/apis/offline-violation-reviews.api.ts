@@ -32,7 +32,7 @@ export function readOfflineReviewQuery(query: Record<string, string | string[] |
   if (page && !/^\d+$/.test(page)) throw new Error("Số trang rà soát không hợp lệ.");
   const machineId = scalar("machineId");
   if (machineId && context.machineId && machineId !== context.machineId) throw new Error("Bộ lọc không khớp máy đang xem.");
-  const params = OfflineViolationReviewListParamsSchema.parse({ ...context, ...(machineId ? { machineId } : {}), ...(scalar("reviewStatus") ? { status: scalar("reviewStatus") } : {}), page: page ? Number(page) : 0 });
+  const params = OfflineViolationReviewListParamsSchema.parse({ ...context, ...(machineId ? { machineId } : {}), ...(scalar("reviewStatus") ? { status: scalar("reviewStatus") } : {}), page: page ? Number(page) : 0, size: 10 });
   const selection = scalar("reviewId");
   return { params, reviewId: selection ? OfflineViolationReviewIdSchema.parse(selection) : undefined };
 }

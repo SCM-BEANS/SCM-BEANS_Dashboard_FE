@@ -43,3 +43,21 @@
 .timeline p { margin: 0; }
 .button:focus-visible { outline: 3px solid #b81724; outline-offset: 2px; }
 @media (max-width: 600px) { .pageContent { gap: 14px; } .panel, .notice { padding: 14px; } }
+
+.reviewLayout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); align-items: start; gap: 18px; }
+.reviewMain, .reviewSidebar { display: grid; min-width: 0; gap: 18px; }
+.reviewSidebar .detailGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.reviewSidebar .detailGrid > div { padding: 0; border: 0; background: transparent; }
+.pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) { width: min(100%, 1440px); margin: 0 auto; padding: 0 24px 32px; font-family: Arial, Helvetica, sans-serif; }
+.pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) .panel, .pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) .notice { padding: 22px; border-radius: 12px; }
+.panel > summary { cursor: pointer; font-size: 15px; font-weight: 600; color: #514843; }
+@media (max-width: 900px) { .reviewLayout { grid-template-columns: minmax(0, 1fr); } .pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) { padding: 0 12px 24px; } }
+
+.costTable table { table-layout: fixed; }
+.costTable th, .costTable td { padding: 12px 8px; overflow-wrap: anywhere; }
+.costTable th:nth-child(2), .costTable td:nth-child(2) { width: 28%; }
+.reviewSidebar .detailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+@media (max-width: 560px) {
+ .costTable table { min-width: 540px !important; }
+ .reviewSidebar .detailGrid { grid-template-columns: minmax(0, 1fr); }
+}

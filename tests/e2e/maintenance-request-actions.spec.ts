@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickPageAction, expectNoPageAction, expectNoPageActionLabel, expectPageAction, expectPageActionOrder } from "./page-actions-test-helpers";
+async function expectPageAction(page: Page, id: string) { await expect(page.locator('[data-action-id="' + id + '"]')).toBeVisible(); }
+async function expectNoPageAction(page: Page, id: string) { await expect(page.locator('[data-action-id="' + id + '"]')).toHaveCount(0); }
+async function expectNoPageActionLabel(page: Page, label: string) { await expect(page.locator('footer[aria-label^="Thao t?c"]').getByRole("button", { name: label, exact: true })).toHaveCount(0); }
+async function clickPageAction(page: Page, id: string) { await page.locator('[data-action-id="' + id + '"]').click(); }
+async function expectInlineActions(page: Page, ids: string[]) {
+  for (const id of ids) await expectPageAction(page, id);
+}
 
 const requestId = "f3000000-0000-4000-8000-000000000001";
 const ticketId = "f3000000-0000-4000-8000-000000000002";
@@ -171,7 +177,8 @@ async function openRequest(page: Page) {
     path: "/",
   }]);
   await page.goto(`/admin/technical-requests/requests/${requestId}`);
-  await expect(page.getByRole("heading", { name: "Chi tiết yêu cầu bảo trì" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chi tiết yêu cầu kỹ thuật" })).toBeVisible();
+  await page.getByRole("button", { name: "Phiếu bảo trì liên quan", exact: true }).click();
 }
 
 test.describe("maintenance request actions", () => {
@@ -180,7 +187,7 @@ test.describe("maintenance request actions", () => {
   test("records an overdue review with its required reason", async ({ page }) => {
     const api = await installMockApi(page, { status: "OVERDUE_REVIEW" });
     await openRequest(page);
-    await expectPageActionOrder(page, ["maintenance-ticket-edit", "maintenance-request-overdue-review"]);
+    await expectInlineActions(page, ["maintenance-ticket-edit", "maintenance-request-overdue-review"]);
     await expectPageAction(page, "maintenance-request-overdue-review");
     await expectNoPageAction(page, "maintenance-request-close-exception");
 
@@ -200,10 +207,11 @@ test.describe("maintenance request actions", () => {
     await openRequest(page);
     await page.getByLabel("Mã phân công máy thay thế").fill(assignmentId);
     await page.getByRole("button", { name: "Kiểm tra phân công" }).click();
-    await expectPageActionOrder(page, ["maintenance-ticket-unassign", "maintenance-request-link-replacement", "maintenance-ticket-edit"]);
+    await expectInlineActions(page, ["maintenance-ticket-unassign", "maintenance-request-link-replacement", "maintenance-ticket-edit"]);
     await expectPageAction(page, "maintenance-request-link-replacement");
     await clickPageAction(page, "maintenance-request-link-replacement");
     await page.getByRole("button", { name: "Xác nhận liên kết" }).click();
+    await page.getByText("Mã liên kết", { exact: true }).click();
     await expect(page.getByText(assignmentId)).toBeVisible();
 
     expect(api.mutations.find((item) => item.url === `/maintenance-requests/${requestId}/replacement-assignment/${assignmentId}`)).toEqual({
@@ -249,7 +257,7 @@ test.describe("maintenance request actions", () => {
 
     api.state.events = [event("PRIMARY_RETURNED")];
     await page.reload();
-    await expectPageActionOrder(page, ["maintenance-request-close-exception", "maintenance-ticket-unassign", "maintenance-ticket-edit"]);
+    await expectInlineActions(page, ["maintenance-request-close-exception", "maintenance-ticket-unassign", "maintenance-ticket-edit"]);
     await expectPageAction(page, "maintenance-request-close-exception");
     await clickPageAction(page, "maintenance-request-close-exception");
     await expect(page.getByText("Thao tác này được lưu trong lịch sử kiểm toán.")).toBeVisible();
@@ -263,3 +271,110 @@ test.describe("maintenance request actions", () => {
     });
   });
 });
+
+for (const role of ["admin", "moderator"]) {
+  test(role + " technical list requests ten rows and opens the correct profile without page overflow", async ({ page }) => {
+    await installMockApi(page, {});
+    await page.context().addCookies([{ name: "access_token", value: tokenFor(role), domain: "127.0.0.1", path: "/" }]);
+    const pages: number[] = [];
+    await page.route("**/api/dolores/v1/maintenance-requests?*", async route => {
+      const url = new URL(route.request().url());
+      expect(url.searchParams.get("size")).toBe("10");
+      const pageNumber = Number(url.searchParams.get("page"));
+      pages.push(pageNumber);
+      const rows = Array.from({ length: pageNumber === 0 ? 10 : 1 }, (_, index) => ({
+        ...maintenanceRequest({}),
+        id: pageNumber === 0 && index === 0 ? requestId : "f3000000-0000-4000-8000-" + String(100 + pageNumber * 10 + index).padStart(12, "0"),
+        ownerName: "Khách hàng kiểm thử",
+      }));
+      await route.fulfill({ status: 200, contentType: "application/json",
+        headers: { "x-page": String(pageNumber), "x-page-size": "10", "x-has-next": String(pageNumber === 0) },
+        body: JSON.stringify(rows) });
+    });
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto("/" + role + "/technical-requests");
+    await expect(page.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveCount(10);
+    const status = page.getByRole("cell", { name: "Đã xác nhận", exact: true }).first();
+    await expect(status).toBeVisible();
+    expect(await status.locator("span").evaluate(el => getComputedStyle(el, "::before").content)).toBe('""');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole("button", { name: "Tiếp", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveCount(1);
+    await page.getByRole("button", { name: "Trước", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveCount(10);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole("link", { name: "Mở hồ sơ", exact: true }).first().click();
+    await expect(page).toHaveURL(new RegExp("/requests/" + requestId + "$"));
+    expect(pages).toContain(1);
+  });
+}
+
+test("Admin cost review keeps financial gates and a compact summary on desktop and mobile", async ({ page }, testInfo) => {
+  await installMockApi(page, {});
+  await page.context().addCookies([{ name: "access_token", value: tokenFor(), domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/dolores/v1/repair-cost-reviews/" + repairCaseId, route => route.fulfill({ status: 200, json: {
+    id: repairCaseId, maintenanceTicketId: ticketId, machineId, ownerId,
+    cause: "NORMAL_WEAR", diagnosis: "Thay gioăng cụm pha.", estimatedAmount: 250000, currency: "VND",
+    proposedResponsibleParty: "COMPANY", status: "PROPOSED", createdAt: "2026-11-01T09:00:00",
+    decisions: [], approvedComponents: [], costComponents: [{ id: assignmentId, category: "PARTS", description: "Gioăng cụm pha", quantity: 1, unitPrice: 250000, amount: 250000 }],
+  } }));
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/admin/technical-requests/cost-reviews/" + repairCaseId);
+  await expect(page.getByRole("heading", { name: "Tóm tắt chi phí" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ghi quyết định" })).toBeDisabled();
+  await expect(page.getByText("Chờ xem xét", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hao mòn thông thường", { exact: true })).toBeVisible();
+  await expect(page.getByText(repairCaseId, { exact: true })).toBeHidden();
+  expect(await page.locator("table").evaluate(table => table.scrollWidth <= table.parentElement!.clientWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("cost-review-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByText("Thông tin đối chiếu", { exact: true }).click();
+  await expect(page.getByText(repairCaseId, { exact: true })).toBeVisible();
+});
+
+test("Admin request balances its overview and shows a single integrated ticket and evidence area", async ({ page }, testInfo) => {
+  await installMockApi(page, { status: "CONFIRMED" });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await openRequest(page);
+  const overview = page.getByRole("heading", { name: "Thông tin yêu cầu", exact: true }).locator("..");
+  const state = page.getByRole("heading", { name: "Tình trạng xử lý", exact: true }).locator("..");
+  const left = await overview.boundingBox(), right = await state.boundingBox();
+  expect(Math.abs(left!.height - right!.height)).toBeLessThan(2);
+  await expect(page.getByRole("heading", { name: "Thông tin phiếu bảo trì", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Phiếu bảo trì", exact: true })).toHaveCount(0);
+  const panel = page.getByRole("region", { name: "Nội dung liên quan", exact: true });
+  await panel.getByRole("button", { name: "Chứng từ yêu cầu", exact: true }).click();
+  await expect(panel.getByRole("heading", { name: "Chứng từ yêu cầu", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Thông tin phiếu bảo trì", exact: true })).toBeHidden();
+  await panel.getByRole("button", { name: "Phiếu bảo trì liên quan", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Thông tin phiếu bảo trì", exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("technical-request-updated.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const role of ["admin", "moderator"]) {
+  test(role + " closed repair case preserves the shared compact layout and expandable history", async ({ page }, testInfo) => {
+    await installMockApi(page, {});
+    await page.context().addCookies([{ name: "access_token", value: tokenFor(role), domain: "127.0.0.1", path: "/" }]);
+    await page.route("**/api/dolores/v1/repair-cases/" + repairCaseId, route => route.fulfill({ status: 200, json: {
+      id: repairCaseId, maintenanceRequestId: requestId, ownerId, contractId, primaryMachineId: machineId, status: "CLOSED",
+      timeline: [], createdAt: "2026-11-01T09:00:00", updatedAt: "2026-11-07T09:00:00", closedAt: "2026-11-07T09:00:00",
+    } }));
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await page.goto("/" + role + "/technical-requests/cases/" + repairCaseId);
+    await expect(page.getByRole("heading", { name: "Hồ sơ sửa chữa", exact: true })).toBeVisible();
+    const steps = page.getByRole("list", { name: "Quy trình xử lý", exact: true });
+    await expect(steps).toBeHidden();
+    await page.locator("summary").filter({ hasText: /^Quy trình xử lý$/ }).click();
+    await expect(steps).toBeVisible();
+    await page.locator("summary").filter({ hasText: /^Quy trình xử lý$/ }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("repair-case-updated.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}

@@ -1,3 +1,4 @@
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -110,15 +111,17 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
   const valid = Boolean(range) && Number.isSafeInteger(page) && page >= 0 && page <= 2_147_483_647;
   const [draft, setDraft] = useState({ fromDate: typeof fromDate === "string" ? fromDate : "", toDate: typeof toDate === "string" ? toDate : "" });
   const [dateError, setDateError] = useState("");
+  const [productionView, setProductionView] = useState<"line" | "bar">("line");
+  const [cleaningSelection, setCleaningSelection] = useState<string | null>(null);
   useEffect(() => setDraft({ fromDate: typeof fromDate === "string" ? fromDate : "", toDate: typeof toDate === "string" ? toDate : "" }), [fromDate, toDate]);
   const brew = useQuery({
     queryKey: ["machine-brew-records", subject, machineId, range?.from, range?.to, page],
-    queryFn: ({ signal }) => machinesApi.listBrewRecords(machineId, { ...range!, page }, signal),
+    queryFn: ({ signal }) => machinesApi.listBrewRecords(machineId, { ...range!, page, size: 10 }, signal),
     enabled: valid && kind === "history", retry: false, refetchOnWindowFocus: false,
   });
   const cleaning = useQuery({
     queryKey: ["machine-cleaning-records", subject, machineId, range?.from, range?.to, page],
-    queryFn: ({ signal }) => machinesApi.listCleaningRecords(machineId, { ...range!, page }, signal),
+    queryFn: ({ signal }) => machinesApi.listCleaningRecords(machineId, { ...range!, page, size: 10 }, signal),
     enabled: valid && kind === "cleaning", retry: false, refetchOnWindowFocus: false,
   });
   const production = useInfiniteQuery({
@@ -144,33 +147,43 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
     }
     const total = pages?.[0]?.totalElements;
     const consistent = pages?.every((item) => item.totalElements === total);
-    return { total, loaded: records.length, complete: Boolean(consistent && pages?.at(-1)?.last && records.length === total), daily: [...daily].sort(([a], [b]) => a.localeCompare(b)), recipes: [...recipes].sort((a, b) => b[1] - a[1]) };
-  }, [pages]);
+    const complete = Boolean(consistent && pages?.at(-1)?.last && records.length === total);
+    if (complete && typeof fromDate === "string" && typeof toDate === "string") {
+      for (let day = fromDate; day <= toDate; day = shiftDate(day, 1)) if (!daily.has(day)) daily.set(day, 0);
+    }
+    return { total, loaded: records.length, complete, daily: [...daily].sort(([a], [b]) => a.localeCompare(b)), recipes: [...recipes].sort((a, b) => b[1] - a[1]) };
+  }, [pages, fromDate, toDate]);
   const time = (value: string | null) => value ? new Intl.DateTimeFormat("vi-VN", { timeZone: DASHBOARD_BUSINESS_TIME_ZONE, dateStyle: "short", timeStyle: "medium" }).format(new Date(value)) : "—";
   function applyRange(next: OperationalDateRange) {
     if (!DashboardDateRangeSchema.safeParse(next).success) { setDateError("Chọn khoảng ngày hợp lệ, không sau hôm nay và tối đa 90 ngày."); return; }
     setDateError(""); onNavigate({ ...next, recordPage: undefined });
   }
   const pagination = kind === "history" ? brew.data : cleaning.data;
+  const cleaningRecord = cleaning.data?.content.find((row) => row.id === cleaningSelection);
   return <>
-    <section className={styles.operationalOverviewPanel} aria-label="Bộ lọc lịch sử máy">
-      <div className={styles.operationalQuickRanges}>{calendarPresets.map(({ key, label }) => <button type="button" key={key} onClick={() => applyRange(makePresetRange(key, businessToday()))}>{label}</button>)}</div>
-      <form className={styles.operationalDateForm} onSubmit={(event) => { event.preventDefault(); applyRange(draft); }}>
-        <label>Từ ngày<input type="date" value={draft.fromDate} max={draft.toDate || businessToday()} onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
-        <label>Đến ngày<input type="date" value={draft.toDate} min={draft.fromDate || undefined} max={businessToday()} onChange={(event) => setDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
-        <button type="submit">Áp dụng bộ lọc</button>
-      </form>
+    <div className={styles.compactPeriod} aria-label="Kỳ dữ liệu">
+      <details className={styles.periodPicker}>
+        <summary>{formatDate(String(fromDate))} – {formatDate(String(toDate))}</summary>
+        <form className={styles.operationalDateForm} onSubmit={(event) => { event.preventDefault(); applyRange(draft); }}>
+          <label>Từ ngày<input type="date" value={draft.fromDate} max={draft.toDate || businessToday()} onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
+          <label>Đến ngày<input type="date" value={draft.toDate} min={draft.fromDate || undefined} max={businessToday()} onChange={(event) => setDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
+          <button type="submit">Áp dụng</button>
+        </form>
+      </details>
+      <select aria-label="Chọn kỳ dữ liệu" value="" onChange={(event) => applyRange(makePresetRange(event.target.value as CalendarPreset, businessToday()))}>
+        <option value="" disabled>Chọn kỳ</option>{calendarPresets.map(({ key, label }) => <option value={key} key={key}>{label}</option>)}
+      </select>
       {dateError ? <p role="alert">{dateError}</p> : null}
-    </section>
+    </div>
     {!valid ? <div className={styles.operationalOverviewError} role="alert"><p>Bộ lọc lịch sử không hợp lệ.</p><ButtonBar onClick={() => onNavigate({ fromDate: undefined, toDate: undefined, recordPage: undefined })}>Đặt lại bộ lọc</ButtonBar></div>
       : selected.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(selected.error)}</p><ButtonBar onClick={() => void selected.refetch()}>Thử lại</ButtonBar></div>
         : selected.isPending ? <p role="status">Đang tải dữ liệu máy…</p>
           : kind === "production" && production.data ? <>
-            <div className={styles.operationalMetricGrid}><article className={styles.operationalMetricCard}><span>Tổng lần pha trong kỳ</span><strong>{formatCount(stats.total)}</strong><small>Máy đang xem · {formatDate(String(fromDate))} – {formatDate(String(toDate))}</small></article></div>
-            <p className={styles.operationalOverviewState}>{stats.complete ? "Đã tải đầy đủ lịch sử pha trong kỳ." : `Biểu đồ dựa trên ${formatCount(stats.loaded)}/${formatCount(stats.total)} lần pha đã tải; chưa phải phân bố toàn kỳ.`}</p>
+            <div className={styles.productionTotal}><article className={styles.operationalMetricCard}><span>Ly ghi nhận trong kỳ</span><strong>{formatCount(stats.total)} <small>ly</small></strong><small>Máy đang xem · {formatDate(String(fromDate))} – {formatDate(String(toDate))}</small></article></div>
+            {!stats.complete && <p className={styles.operationalOverviewState}>Biểu đồ từ {formatCount(stats.loaded)}/{formatCount(stats.total)} bản ghi đã tải.</p>}
             <div className={styles.monitoringProductionCharts}>
-              <section className={styles.operationalOverviewPanel}><h2>Lần pha theo ngày</h2>{stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
-              <section className={styles.operationalOverviewPanel}><h2>Lần pha theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} lần</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</section>
+              <section className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="#eee8e3" />)}<polyline fill="none" stroke="#b81724" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="#b81724"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="#706561">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
+              <section className={styles.operationalOverviewPanel}><h2>Ly theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} ly</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</section>
             </div>
             {production.hasNextPage ? <ButtonBar disabled={production.isFetching} onClick={() => void production.fetchNextPage()}>{production.isFetchingNextPage ? "Đang tải…" : "Tải thêm dữ liệu biểu đồ"}</ButtonBar> : !stats.complete ? <p role="status">Chưa tải đủ dữ liệu hoặc dữ liệu đã thay đổi. Hãy chọn khoảng ngắn hơn hoặc làm mới.</p> : null}
             <ButtonBar disabled={production.isFetching} onClick={() => void production.refetch()}>Làm mới</ButtonBar>
@@ -185,10 +198,18 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
               { key: "machine", header: "Máy", render: (row) => row.machineSerialNumber },
               { key: "type", header: "Loại vệ sinh", render: (row) => row.cleaningType === "STARTUP" ? "Đầu ngày" : "Cuối ngày" },
               { key: "status", header: "Kết quả", render: (row) => ({ COMPLETED: "Hoàn tất", FAILED: "Chưa hoàn tất", ABORTED: "Bị gián đoạn" })[row.status] },
-              { key: "notes", header: "Nội dung", render: (row) => <details><summary>Xem nội dung</summary><dl className={styles.ownerCleaningFlags}><div><dt>Kết thúc</dt><dd>{time(row.finishedAt)}</dd></div>{([ ["Đường cà phê", row.coffeeCleaned], ["Đường sữa", row.milkCleaned], ["Gia nhiệt", row.heatingCompleted], ["Xả đầu pha", row.groupheadPurged] ] as const).map(([label, done]) => <div key={label}><dt>{label}</dt><dd>{done ? "Đã thực hiện" : "Chưa thực hiện"}</dd></div>)}<div><dt>Ghi chú</dt><dd>{row.notes || "—"}</dd></div></dl></details> },
+              { key: "notes", header: "Nội dung", render: (row) => <ButtonBar onClick={() => setCleaningSelection(row.id)}>Xem chi tiết</ButtonBar> },
             ]} /> : null}
             {pagination ? <nav className={styles.ownerHistoryPagination} aria-label="Phân trang lịch sử máy"><span>{formatCount(pagination.totalElements)} bản ghi · Trang {pagination.page + 1}</span><ButtonBar disabled={pagination.first || selected.isFetching} onClick={() => onNavigate({ recordPage: String(page - 1) })}>Trang trước</ButtonBar><ButtonBar disabled={pagination.last || selected.isFetching} onClick={() => onNavigate({ recordPage: String(page + 1) })}>Trang sau</ButtonBar><ButtonBar disabled={selected.isFetching} onClick={() => void selected.refetch()}>Làm mới</ButtonBar></nav> : null}
           </section>}
+    {cleaningRecord && <NotificationDialog variant="info" title="Chi tiết vệ sinh" primaryAction={{ label: "Đóng", onClick: () => setCleaningSelection(null) }} onClose={() => setCleaningSelection(null)}>
+      <dl className={styles.cleaningDetailFields}>
+        <div><dt>Bắt đầu</dt><dd>{time(cleaningRecord.startedAt)}</dd></div>
+        <div><dt>Kết thúc</dt><dd>{time(cleaningRecord.finishedAt)}</dd></div>
+        {([["Đường cà phê", cleaningRecord.coffeeCleaned], ["Đường sữa", cleaningRecord.milkCleaned], ["Gia nhiệt", cleaningRecord.heatingCompleted], ["Xả đầu pha", cleaningRecord.groupheadPurged]] as const).map(([label, done]) => <div key={label}><dt>{label}</dt><dd>{done ? "Đã thực hiện" : "Chưa thực hiện"}</dd></div>)}
+        <div><dt>Ghi chú</dt><dd>{cleaningRecord.notes || "—"}</dd></div>
+      </dl>
+    </NotificationDialog>}
   </>;
 }
 

@@ -30,3 +30,33 @@
 .workDetails { min-width: 0; }
 .workDetails > summary { cursor: pointer; color: #675b57; font-size: 13px; padding: 12px 0; min-height: 44px; box-sizing: border-box; }
 @media (max-width: 680px) { .header { flex-direction: column; } .filter { width: 100%; } .panel { padding: 16px; } }
+
+.moderatorQueue { gap: 12px; }
+.moderatorQueue .header { align-items: center; }
+.workIdentity { display: grid; gap: 3px; }
+.workIdentity small { color: #706561; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.workIdentity .workTitle { min-width: 0; }
+@media (max-width: 680px) {
+  .moderatorQueue .header { align-items: stretch; gap: 10px; }
+}
+
+.queueBuckets { display: flex; flex-wrap: wrap; gap: 8px; }
+.queueBuckets button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #514843; cursor: pointer; font: inherit; font-size: 13px; }
+.queueBuckets button[aria-pressed="true"] { border-color: #ecc9ca; background: #f9e9ea; color: #a01520; }
+.queueBuckets button[data-bucket="OVERDUE"] strong { color: #a01520; }
+.queueBuckets strong { font-variant-numeric: tabular-nums; }
+.queueGroups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
+.queueGroup { min-width: 0; border: 1px solid #eee8e3; border-radius: 10px; overflow: hidden; }
+.queueGroup h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 0; padding: 10px 12px; background: #f8f6f3; font-size: 14px; }
+.queueGroup h3 span { color: #706561; font-size: 12px; font-weight: 400; white-space: nowrap; }
+.queueList { display: grid; margin: 0; padding: 0; list-style: none; }
+.queueList > li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(104px, auto) auto; gap: 8px 16px; align-items: center; padding: 8px 12px; }
+.queueList > li + li { border-top: 1px solid #eee8e3; }
+.queueMeta { display: grid; gap: 3px; justify-items: start; }
+.queueMeta time { color: #706561; font-size: 12px; }
+.queueList .queueOpen { white-space: nowrap; }
+@media (max-width: 1000px) { .queueGroups { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 680px) {
+  .queueList > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .queueList .workIdentity { grid-column: 1 / -1; }
+}

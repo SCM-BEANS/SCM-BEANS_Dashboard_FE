@@ -17,7 +17,7 @@ export function MachineRegistrationScreen() {
         back={{ label: "Danh sách máy của tôi", fallbackHref: PATH_CUSTOMER.MACHINES }}
         title="Đăng ký máy"
         titleId="customer-machine-registration-title"
-        description="Đăng ký máy thuộc Owner đang đăng nhập. Máy mới bắt đầu ở trạng thái Trong kho."
+        description="Nhập thông tin máy cần đăng ký vào tài khoản."
         className={styles.pageHeading}
       />
       {!checked ? <p className={styles.loadingNotice} role="status">{messages.LOADING}</p> : ownerId ? (

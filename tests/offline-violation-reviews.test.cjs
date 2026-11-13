@@ -141,8 +141,8 @@ test('offline decisions are only available to operators for REVIEW_REQUIRED reco
 });
 test('offline URL query validates scoped filters and preserves explicit paging and selection', () => {
   const { readOfflineReviewQuery } = loadTypescript('src/apis/offline-violation-reviews.api.ts', { '@/lib/http': {} });
-  assert.deepEqual(readOfflineReviewQuery({ reviewPage: '2', reviewStatus: 'REVIEW_REQUIRED', machineId, reviewId: id, keep: 'value' }), { params: { page: 2, size: 50, status: 'REVIEW_REQUIRED', machineId }, reviewId: id });
-  assert.deepEqual(readOfflineReviewQuery({}, { machineId }), { params: { page: 0, size: 50, machineId }, reviewId: undefined });
+  assert.deepEqual(readOfflineReviewQuery({ reviewPage: '2', reviewStatus: 'REVIEW_REQUIRED', machineId, reviewId: id, keep: 'value' }), { params: { page: 2, size: 10, status: 'REVIEW_REQUIRED', machineId }, reviewId: id });
+  assert.deepEqual(readOfflineReviewQuery({}, { machineId }), { params: { page: 0, size: 10, machineId }, reviewId: undefined });
   for (const query of [{ reviewPage: '-1' }, { reviewPage: ['0', '1'] }, { reviewStatus: 'OFFLINE' }, { reviewId: 'invalid' }, { machineId: 'invalid' }]) assert.throws(() => readOfflineReviewQuery(query));
   assert.throws(() => readOfflineReviewQuery({ machineId: id }, { machineId }));
 });

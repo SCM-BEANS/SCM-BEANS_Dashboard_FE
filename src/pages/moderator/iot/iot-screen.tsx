@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { telemetryApi } from "@/apis/telemetry.api";
+import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
+import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { adminStyles } from "@/pages/admin/admin-shell";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useState } from "react";
 import { useRouter } from "next/router";
@@ -13,7 +17,6 @@ import { locationsApi } from "@/apis/locations.api";
 
 import { machinesApi } from "@/apis/machines.api";
 
-import { StatusBadge } from "@/components/status-badge/status-badge";
 import { PATH_MODERATOR } from "@/routes/path";
 import machineStyles from "@/components/machines/machines.module.css";
 
@@ -211,6 +214,9 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   const router = useRouter();
   const subject = authScopedQuerySubject("MODERATOR");
   const isLocationsView = path === "iot/customer";
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const isPageVisible = usePageVisibility();
   const owners = useQuery({
     queryKey: ["dolores", "moderator", "owner-profiles"],
     queryFn: ({ signal }) => listModeratorOwners(signal),
@@ -252,6 +258,16 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     void router.push({ pathname: router.pathname, query }, undefined, { shallow: true });
   };
 
+  const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
+  const filtered = smartMachines.filter((machine) => !search || (machine.serialNumber ?? "").toLocaleLowerCase("vi").includes(search.toLocaleLowerCase("vi")));
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
+  const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
+  const heartbeats = useQueries({ queries: rows.map((machine, index) => ({
+    queryKey: ["dolores", "moderator", "telemetry", "heartbeat", subject, machine.id],
+    queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
+    enabled: !isLocationsView && !reviewView && isPageVisible && Boolean(getAuthenticatedSubjectId()),
+    retry: false, staleTime: 3_000, refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? 5_000 : false, refetchIntervalInBackground: false,
+  })) });
   if (isLocationsView) {
     return (
       <div className={styles.pageContent}>
@@ -268,22 +284,26 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     );
   }
 
-  const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
+
   return <div className={styles.pageContent}>
     <PageHeading title="Giám sát máy" description="Chọn máy để xem các lần mất kết nối và theo dõi xử lý." />
     <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
     <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
     {!reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2><ButtonBar disabled={inventory.isFetching} onClick={() => void inventory.refetch()}>Làm mới</ButtonBar></div>
-      <DataTable headerVariant="admin" rows={smartMachines} rowKey={(machine) => machine.id} emptyMessage="Chưa có máy Smart IoT trong danh sách." columns={[
+      <label className={adminStyles.machineSearch}>Tìm máy<input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm serial máy" /></label>
+      <DataTable variant="accounts" headerVariant="admin" rows={rows} rowKey={(machine) => machine.id} emptyMessage="Chưa có máy Smart IoT trong danh sách." columns={[
         { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
-        { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <StatusBadge status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</StatusBadge> : "—" },
-        { key: "open", header: "Giám sát", render: (machine) => <ButtonBar href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
+        { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
+        { key: "connection", header: "Kết nối", render: (machine) => { const result = heartbeats[rows.findIndex((item) => item.id === machine.id)]; return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
+        { key: "profile", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar> },
+        { key: "open", header: "Giám sát", render: (machine) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
       ]} />
+      <nav className={adminStyles.machinePagination} aria-label="Phân trang giám sát"><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
     </section> : null}
     {reviewView ? <>
       {inventory.isSuccess ? <section className={styles.formPanel}><label className={styles.formField} htmlFor="moderator-iot-machine">Máy cần theo dõi<select id="moderator-iot-machine" value={selectedMachineId} onChange={(event) => navigateReview({ machineId: event.target.value, reviewId: undefined, reviewPage: undefined })}><option value="">Tất cả máy</option>{smartMachines.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</option>)}</select></label>{selectedMachineId ? <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} /> : null}</section> : null}
-      {reviewFilterError ? <div className={styles.partialNotice} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigateReview({ machineId: undefined, reviewId: undefined, reviewPage: undefined, reviewStatus: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel
+      {reviewFilterError ? <div className={styles.partialNotice} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigateReview({ machineId: undefined, reviewId: undefined, reviewPage: undefined, reviewStatus: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel selectedId={reviewState?.reviewId}
         machineLabels={Object.fromEntries(smartMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))} page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={reviewState?.params.machineId} canDecide
         loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
         error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}

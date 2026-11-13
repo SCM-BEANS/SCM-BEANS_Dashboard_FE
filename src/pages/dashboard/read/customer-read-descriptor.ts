@@ -119,7 +119,7 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
   }
 
   if (sectionPath === "machines") {
-    return [link("Đăng ký máy", "/dashboard/machines/new"), link("Xem địa điểm", "/dashboard/locations", "secondary"), link("Xem lịch sử bảo trì", "/dashboard/machines/history", "secondary"), link("Xem hợp đồng", "/dashboard/contracts", "secondary")];
+    return [];
   }
   if (sectionPath === "locations") return [link("Xem máy của tôi", "/dashboard/machines", "secondary")];
   if (sectionPath === "machines/new") return [];
@@ -134,7 +134,7 @@ function getCustomerReadActions(sectionPath: string): ActionBarAction[] {
     return [link("Xem công thức pha chế", "/dashboard/menu", "secondary")];
   }
   if (sectionPath.startsWith("machines/")) {
-    return [link("Xem lịch sử bảo trì", "/dashboard/machines/history", "secondary")];
+    return [];
   }
 
   if (sectionPath === "invoices") {

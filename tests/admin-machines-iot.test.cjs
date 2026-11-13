@@ -346,10 +346,12 @@ test("shared machine connection badge keeps ONLINE, OFFLINE, UNKNOWN and request
   const { MachineConnectionBadge } = loadModule("src/components/machines/machine-connection-badge.tsx", {
     "./machines.module.css": styleMap,
   });
-  for (const state of ["ONLINE", "OFFLINE", "UNKNOWN", "error"]) {
+  for (const state of ["ONLINE", "OFFLINE", "UNKNOWN", "loading", "error", "not-requested", "permission-denied"]) {
     const markup = renderToStaticMarkup(React.createElement(MachineConnectionBadge, { state }));
     assert.match(markup, new RegExp(`data-state="${state}"`));
     assert.match(markup, new RegExp(state === "error" ? `role="alert"` : `role="status"`));
+    assert.match(markup, state === "loading" ? /lucide-loader2/ : /lucide-wifi/);
+    assert.equal(markup.includes("lucide-x"), state === "OFFLINE", "only confirmed offline carries the red cross");
   }
   assert.notEqual(
     renderToStaticMarkup(React.createElement(MachineConnectionBadge, { state: "OFFLINE" })),
@@ -439,7 +441,7 @@ test("Moderator machine detail and standalone IoT route never request telemetry 
   ]) {
     assert.ok(!/listMachinePoints/.test(readSource(screen)), `${screen} must respect the current Swagger permission boundary`);
   }
-  assert.ok(/permission-denied/.test(readSource("src/pages/moderator/machines/machine-detail-screen.tsx")));
+  assert.ok(/MACHINE_OPERATIONAL_OVERVIEW/.test(readSource("src/pages/moderator/machines/machine-detail-screen.tsx")));
 });
 
 test("Moderator IoT heartbeat polling stops on the locations route and does not share Admin cache keys", () => {

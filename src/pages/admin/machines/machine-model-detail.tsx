@@ -1,8 +1,8 @@
+import { MachineSpecificationsFields, MachineSpecificationsView } from "./create-machine-model-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { PageActions } from "@/components/action-bar/page-actions";
-import { StatusBadge } from "@/components/status-badge/status-badge";
+import { PageActionsRenderer as PageActions } from "@/components/action-bar/page-actions-renderer";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
@@ -144,39 +144,7 @@ export function MachineModelDetail({
 
   return (
     <>
-      <section className={`${styles.panel} ${styles.contractForm}`}>
-        <h2>{T.MACHINE_MODELS.DETAIL}</h2>
-        <div className={styles.operationsGrid}>
-          <div><span>{T.MACHINE_MODELS.ID}</span><strong><TruncatedId value={machineModel.id} /></strong></div>
-          <div><span>{T.MACHINE_MODELS.MODEL_CODE}</span><strong>{machineModel.modelCode}</strong></div>
-          <div><span>{T.MACHINE_MODELS.MANUFACTURER}</span><strong>{machineModel.manufacturer}</strong></div>
-          <div><span>{T.MACHINE_MODELS.DISPLAY_NAME}</span><strong>{machineModel.displayName}</strong></div>
-          <div><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineModel.machineType === "SMART_IOT" ? `${T.MACHINES.SMART} (SMART_IOT)` : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)`}</strong></div>
-          <div><span>{T.MACHINES.STATUS}</span><strong>{role === "admin"
-            ? <StatusBadge status={machineModel.active ? "ACTIVE" : "INACTIVE"}>{machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</StatusBadge>
-            : machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</strong></div>
-          <div><span>{T.MACHINE_MODELS.CREATED_AT}</span><strong>{formatDateTime(machineModel.createdAt)}</strong></div>
-          <div><span>{T.MACHINE_MODELS.UPDATED_AT}</span><strong>{formatDateTime(machineModel.updatedAt)}</strong></div>
-          <div className={styles.machineModelSpecifications}>
-            <span>{T.MACHINE_MODELS.SPECIFICATIONS}</span>
-            <pre>{JSON.stringify(machineModel.specifications, null, 2)}</pre>
-          </div>
-        </div>
-      </section>
-      {editing && <form id="machine-model-edit-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
-        <h2>Chỉnh sửa mẫu máy</h2>
-        <div className={styles.operationsGrid}>
-          <label>{T.MACHINE_MODELS.MODEL_CODE}<input required maxLength={100} value={form.modelCode} onChange={(event) => setForm((current) => ({ ...current, modelCode: event.target.value }))} /></label>
-          <label>{T.MACHINE_MODELS.MANUFACTURER}<input required maxLength={160} value={form.manufacturer} onChange={(event) => setForm((current) => ({ ...current, manufacturer: event.target.value }))} /></label>
-          <label>{T.MACHINE_MODELS.DISPLAY_NAME}<input required maxLength={160} value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} /></label>
-          <label>{T.MACHINES.MACHINE_TYPE}<select value={form.machineType} onChange={(event) => setForm((current) => ({ ...current, machineType: event.target.value as CreateMachineModelRequest["machineType"] }))}>
-            <option value="CONVENTIONAL">{T.MACHINES.CONVENTIONAL}</option><option value="SMART_IOT">{T.MACHINES.SMART}</option>
-          </select></label>
-          <label>{T.MACHINE_MODELS.SPECIFICATIONS}<textarea rows={8} value={specificationsText} onChange={(event) => setSpecificationsText(event.target.value)} /></label>
-        </div>
-        {formError && <p className={styles.operationsNotice} role="alert">{formError}</p>}
-      </form>}
-      {formError && !editing && <p className={styles.operationsNotice} role="alert">{formError}</p>}
+      <div className={styles.machineTopActions}>
       <PageActions actions={editing ? [
         {
           id: "machine-model-edit-cancel",
@@ -213,6 +181,41 @@ export function MachineModelDetail({
           confirm: { title: "Ngừng kích hoạt mẫu máy?", description: "Mẫu máy sẽ được giữ trong lịch sử và không còn dùng để đăng ký máy mới.", confirmLabel: "Ngừng kích hoạt" },
         },
       ] : []} />
+      </div>
+      <div className={editing ? `${styles.machineFormLayout} ${styles.machineModelEditingLayout}` : undefined}>
+      <section className={`${styles.panel} ${styles.contractForm}`}>
+        <h2>{T.MACHINE_MODELS.DETAIL}</h2>
+        <div className={styles.operationsGrid}>
+          <div><span>{T.MACHINE_MODELS.ID}</span><strong><TruncatedId value={machineModel.id} /></strong></div>
+          <div><span>{T.MACHINE_MODELS.MODEL_CODE}</span><strong>{machineModel.modelCode}</strong></div>
+          <div><span>{T.MACHINE_MODELS.MANUFACTURER}</span><strong>{machineModel.manufacturer}</strong></div>
+          <div><span>{T.MACHINE_MODELS.DISPLAY_NAME}</span><strong>{machineModel.displayName}</strong></div>
+          <div><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineModel.machineType === "SMART_IOT" ? `${T.MACHINES.SMART} (SMART_IOT)` : `${T.MACHINES.CONVENTIONAL} (CONVENTIONAL)`}</strong></div>
+          <div><span>{T.MACHINES.STATUS}</span><strong><span className={styles.machinePlainStatus} data-status={machineModel.active ? "AVAILABLE_FOR_RENT" : "RETIRED"}>{machineModel.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</span></strong></div>
+          <div><span>{T.MACHINE_MODELS.CREATED_AT}</span><strong>{formatDateTime(machineModel.createdAt)}</strong></div>
+          <div><span>{T.MACHINE_MODELS.UPDATED_AT}</span><strong>{formatDateTime(machineModel.updatedAt)}</strong></div>
+          <div className={styles.machineModelSpecifications}>
+            <span>{T.MACHINE_MODELS.SPECIFICATIONS}</span>
+            <MachineSpecificationsView value={machineModel.specifications} />
+          </div>
+        </div>
+      </section>
+      {editing && <form id="machine-model-edit-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+        <h2>Chỉnh sửa mẫu máy</h2>
+        <div className={styles.operationsGrid}>
+          <label>{T.MACHINE_MODELS.MODEL_CODE}<input required maxLength={100} value={form.modelCode} onChange={(event) => setForm((current) => ({ ...current, modelCode: event.target.value }))} /></label>
+          <label>{T.MACHINE_MODELS.MANUFACTURER}<input required maxLength={160} value={form.manufacturer} onChange={(event) => setForm((current) => ({ ...current, manufacturer: event.target.value }))} /></label>
+          <label>{T.MACHINE_MODELS.DISPLAY_NAME}<input required maxLength={160} value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} /></label>
+          <label>{T.MACHINES.MACHINE_TYPE}<select value={form.machineType} onChange={(event) => setForm((current) => ({ ...current, machineType: event.target.value as CreateMachineModelRequest["machineType"] }))}>
+            <option value="CONVENTIONAL">{T.MACHINES.CONVENTIONAL}</option><option value="SMART_IOT">{T.MACHINES.SMART}</option>
+          </select></label>
+          <MachineSpecificationsFields value={specificationsText} onChange={setSpecificationsText} />
+        </div>
+        {formError && <p className={styles.operationsNotice} role="alert">{formError}</p>}
+      </form>}
+      </div>
+      {formError && !editing && <p className={styles.operationsNotice} role="alert">{formError}</p>}
+
     </>
   );
 }

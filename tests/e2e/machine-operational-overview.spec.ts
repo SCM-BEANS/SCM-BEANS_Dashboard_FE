@@ -75,6 +75,26 @@ const roleCases: RoleCase[] = [
 
 const viewportWidths = [390, 768, 1023, 1024, 1440];
 
+test("Admin empty production keeps zero bars finite and history details compact", async ({ page, context }) => {
+  await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
+  const requests: string[] = [];
+  await installMockApi(page, roleCases[1], requests);
+  await page.route(`**/api/dolores/v1/machines/${machineId}/brew-records?**`, (route) => route.fulfill({
+    status: 200, contentType: "application/json", body: JSON.stringify({ content: [], number: 0, size: 100, totalElements: 0, totalPages: 0, first: true, last: true }),
+  }));
+  await page.goto(`${roleCases[1].operationsPath}?tab=production&fromDate=2026-11-01&toDate=2026-11-07`);
+  await expect(page.getByText("Ly ghi nhận trong kỳ", { exact: true })).toBeVisible();
+  await page.getByLabel("Loại biểu đồ sản lượng").selectOption("bar");
+  const bars = page.getByLabel("Biểu đồ lần pha theo ngày").locator("span");
+  await expect(bars).toHaveCount(7);
+  expect(await bars.evaluateAll((nodes) => nodes.every((node) => (node as HTMLElement).style.height === "0%"))).toBe(true);
+  await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
+  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("Đường cà phê", { exact: true })).toBeVisible();
+  expect(requests.some((path) => path.includes("cleaning-records") && path.includes("size=10"))).toBe(true);
+});
+
 function tokenFor(role: string, subject = ownerId) {
   const claims = Buffer.from(JSON.stringify({ sub: subject, roles: [role] })).toString("base64url");
   return `header.${claims}.signature`;
@@ -552,6 +572,7 @@ test.describe("Owner operations analytics and cleaning", () => {
     expect(Date.parse(cupRequest.get("to")!)).toBe(Date.parse("2026-11-06T17:00:00Z"));
     expect(cupRequest.has("ownerId")).toBe(false);
     await page.getByRole("tab", { name: "Lịch sử pha", exact: true }).click();
+    await page.locator("details").filter({ has: page.locator("form") }).locator("summary").click();
     await page.getByLabel("Món pha", { exact: true }).fill("Cappuccino");
     await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
     await expect.poll(() => new URL(page.url()).searchParams.get("recipeName")).toBe("Cappuccino");
@@ -579,6 +600,7 @@ test.describe("Owner operations analytics and cleaning", () => {
     await page.getByRole("button", { name: "Trang sau", exact: true }).click();
     await expect.poll(() => new URL(page.url()).searchParams.get("cleaningPage")).toBe("1");
     await expect(page.getByRole("cell", { name: "Hoàn tất", exact: true }).first()).toBeVisible();
+    await page.locator("details").filter({ has: page.locator("form") }).locator("summary").click();
     await page.getByLabel("Loại vệ sinh", { exact: true }).selectOption("CLOSING");
     await page.getByLabel("Kết quả", { exact: true }).selectOption("ABORTED");
     await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
@@ -871,6 +893,7 @@ test.describe("Machine provisioning Phase 01", () => {
     expect(complianceRequests()).toHaveLength(1);
     const params = new URLSearchParams(complianceRequests()[0].split("?", 2)[1]);
     expect([...params.entries()]).toEqual([["days", "30"]]);
+    await page.locator("details").filter({ has: page.locator("form") }).locator("summary").click();
     await page.getByLabel("Loại vệ sinh", { exact: true }).selectOption("CLOSING");
     await page.getByRole("button", { name: "Áp dụng bộ lọc", exact: true }).click();
     await expect.poll(() => requests.some((path) => path.startsWith("/owner/cleaning-records?") && path.includes("cleaningType=CLOSING"))).toBe(true);

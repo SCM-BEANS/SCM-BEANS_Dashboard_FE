@@ -1,4 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { telemetryApi } from "@/apis/telemetry.api";
+import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
+import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useState } from "react";
 
@@ -24,7 +27,6 @@ import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { StatusBadge } from "@/components/status-badge/status-badge";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
@@ -169,7 +171,20 @@ function MachineList({
   statusFilter: StatusFilter;
   failed: boolean;
 }) {
-  const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter);
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const subject = authScopedQuerySubject("MODERATOR");
+  const isPageVisible = usePageVisibility();
+  const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter).filter((machine) => !search || (machine.serialNumber ?? "").toLocaleLowerCase("vi").includes(search.toLocaleLowerCase("vi")));
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(visibleMachines.length / 10) - 1));
+  const rows = visibleMachines.slice(currentPage * 10, currentPage * 10 + 10);
+  const smartMachines = rows.filter((machine) => machine.machineType === "SMART_IOT");
+  const heartbeats = useQueries({ queries: smartMachines.map((machine, index) => ({
+    queryKey: ["dolores", "moderator", "telemetry", "heartbeat", subject, machine.id],
+    queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
+    enabled: isPageVisible && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3_000,
+    refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? 5_000 : false, refetchIntervalInBackground: false,
+  })) });
   const emptyMessage = failed
     ? undefined
     : statusFilter !== "ALL"
@@ -182,22 +197,27 @@ function MachineList({
 
   return (
     <div>
+      <label className={adminStyles.machineSearch}>Tìm máy<input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm serial máy" /></label>
       <DataTable
+        variant="accounts"
         headerVariant="admin"
         className={`${adminStyles.adminTable} ${adminStyles.machineInventoryTable}`}
-        rows={visibleMachines}
+        rows={rows}
         rowKey={(machine) => machine.id}
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
         columns={[
           { key: "serial", header: ADMIN_T.MACHINES.SERIAL, render: (machine) => <TextLinkButton href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.serialNumber ?? "—"}</TextLinkButton> },
-          { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machine.status ? <StatusBadge status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> : "—" },
+          { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{machineStatusLabel(machine.status)}</span> : "—" },
           { key: "connection", header: "Kết nối", render: (machine) => {
             if (machine.machineType !== "SMART_IOT") return "—";
-            return <MachineConnectionBadge state="permission-denied" />;
+            const result = heartbeats[smartMachines.findIndex((item) => item.id === machine.id)];
+            return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />;
           } },
+          { key: "open", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>Mở hồ sơ</ButtonBar> },
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
+      <nav className={adminStyles.machinePagination} aria-label="Phân trang máy"><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
     </div>
   );
 }
@@ -205,6 +225,7 @@ function MachineList({
 export function ModeratorMachinesScreen({ path }: { path: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [modelPage, setModelPage] = useState(0);
   const [creationSuccess, setCreationSuccess] = useState<{ title: string; description: string } | null>(null);
   const machineId = getMachineDetailId(path);
   const isDetail = Boolean(machineId);
@@ -341,6 +362,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const title = isMachineModelsView
     ? ADMIN_T.MACHINE_MODELS.TITLE
     : isStock ? "Máy trong kho" : isCustomer ? messages.MACHINE_OWNER_TITLE : messages.MACHINES_TITLE;
+  const currentModelPage = Math.min(modelPage, Math.max(0, Math.ceil((machineModels.data?.length ?? 0) / 10) - 1));
   const inventoryCount = visibleMachines.length;
   const countFor = (...statuses: string[]) => {
     const counts = inventorySummary.data?.statusCounts;
@@ -377,11 +399,11 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             <QueryFeedback query={machineModels} loadingMessage={messages.LOADING_MACHINES} />
             {machineModels.data?.length === 0 && <p className={styles.formHint}>{ADMIN_T.COMMON.EMPTY}</p>}
             {machineModels.data && machineModels.data.length > 0 && <>
-              <p className={adminStyles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
               <DataTable
                 headerVariant="admin"
                 className={adminStyles.adminTable}
-                rows={machineModels.data}
+                variant="accounts"
+                rows={machineModels.data.slice(currentModelPage * 10, currentModelPage * 10 + 10)}
                 rowKey={(model) => model.id}
                 columns={[
                   { key: "model-code", header: ADMIN_T.MACHINE_MODELS.MODEL_CODE, align: "center", render: (model) => (
@@ -397,12 +419,13 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                   { key: "manufacturer", header: ADMIN_T.MACHINE_MODELS.MANUFACTURER, render: (model) => model.manufacturer },
                   { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => model.displayName },
                   { key: "machine-type", header: ADMIN_T.MACHINES.MACHINE_TYPE, render: (model) => model.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL },
+                  { key: "open", header: "", render: (model) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id)}>Mở hồ sơ</ButtonBar> },
                 ]}
               />
+              <nav className={adminStyles.machinePagination} aria-label="Phân trang mẫu máy"><ButtonBar disabled={currentModelPage === 0} onClick={() => setModelPage(currentModelPage - 1)}>Trước</ButtonBar><span>Trang {currentModelPage + 1}</span><ButtonBar disabled={(currentModelPage + 1) * 10 >= machineModels.data.length} onClick={() => setModelPage(currentModelPage + 1)}>Sau</ButtonBar></nav>
             </>}
           </> : <>
             <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
-            {inventory.data && inventory.data.length > 0 && <p className={adminStyles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>}
             {inventory.data && !inventory.isError && <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} statusFilter={statusFilter} failed={inventory.isError} />}
           </>}
         </section>

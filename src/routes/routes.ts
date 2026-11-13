@@ -411,7 +411,7 @@ export function isSupportedCustomerSection(section: string): boolean {
   }
 
   if (
-    segments.length === 3 &&
+    (segments.length === 3 || (segments.length === 4 && segments[3] === "related")) &&
     segments[0] === "support" &&
     segments[1] === "repair-cases"
   ) {
@@ -536,7 +536,7 @@ export function isSupportedModeratorSection(section: string): boolean {
   }
   const costReviewDetail = /^technical-requests\/cost-reviews\/([^/]+)$/.exec(section);
   if (costReviewDetail) return RepairCostReviewIdSchema.safeParse(costReviewDetail[1]).success;
-  const repairCaseDetail = /^technical-requests\/cases\/([^/]+)$/.exec(section);
+  const repairCaseDetail = /^technical-requests\/cases\/([^/]+)(?:\/related)?$/.exec(section);
   if (repairCaseDetail) {
     return RepairCaseIdSchema.safeParse(repairCaseDetail[1]).success;
   }

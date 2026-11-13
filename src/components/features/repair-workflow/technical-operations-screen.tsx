@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 import Link from "next/link";
 
-import { ProgressDownloadButton } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -285,7 +285,8 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role, m
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
-      variant={role === "admin" ? "operations" : "moderator"}
+      variant="accounts"
+      headerVariant="admin"
       headers={[messages.TECHNICAL_ID, role === "moderator" ? "Serial number" : messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]}
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
       minWidth={760}
@@ -294,7 +295,7 @@ function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role, m
         const serialNumber = ticket.machineId ? machineSerialNumbers?.get(ticket.machineId)?.trim() : undefined;
         const machineValue = ticket.machineId
           ? role === "moderator"
-            ? serialNumber ? <ActionLink href={machineDetailHref(ticket.machineId)}>{serialNumber}</ActionLink> : "—"
+            ? <ActionLink href={machineDetailHref(ticket.machineId)}>{serialNumber || <TruncatedId value={ticket.machineId} />}</ActionLink>
             : <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
           : "—";
         return (
@@ -320,7 +321,6 @@ function MaintenanceRequestTable({
   pendingRequestId,
   pendingAccepted,
   routes,
-  role,
 }: {
   requests: MaintenanceRequest[];
   onTriage: (input: TriageInput) => void;
@@ -328,17 +328,17 @@ function MaintenanceRequestTable({
   pendingRequestId?: string;
   pendingAccepted?: boolean;
   routes: Pick<TechnicalScreenRoutes, "requestDetail" | "requestAssign">;
-  role: TechnicalScreenRoutes["role"];
 }) {
   const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
+    { key: "request", header: "Yêu cầu", render: (request: MaintenanceRequest) => <strong><TruncatedId value={request.id} /></strong> },
     { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => (
       <TextLinkButton href={routes.requestDetail(request.id)}>{requestTypeLabel(request.requestType)}</TextLinkButton>
     ) },
-    ...(role === "admin" ? [{
+    {
       key: "status",
       header: messages.TECHNICAL_STATUS,
-      render: (request: MaintenanceRequest) => <StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge>,
-    }] : []),
+      render: (request: MaintenanceRequest) => <span className={styles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status)}</span>,
+    },
     {
       key: "owner",
       header: "Khách hàng",
@@ -380,13 +380,14 @@ function MaintenanceRequestTable({
         ) : "—";
       },
     },
+    { key: "detail", header: <span className={styles.srOnly}>Hồ sơ</span>, render: (request: MaintenanceRequest) => <ButtonBar href={routes.requestDetail(request.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
   ];
 
   return (
     <DataTable
-      variant={role === "admin" ? "operations" : "moderator"}
-      {...(role === "admin" ? { headerVariant: "admin" as const } : {})}
-      style={{ minWidth: 980 }}
+      variant="accounts"
+      headerVariant="admin"
+      style={{ minWidth: 820 }}
       rows={requests}
       rowKey={(request) => request.id}
       columns={columns}
@@ -426,9 +427,9 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
   );
 
   return <div className={styles.workOrderDetail} data-role={role}>
-    {role === "moderator" && <header className={styles.workOrderPageHeading}>
+    <header className={styles.workOrderPageHeading}>
       <div>
-        <p>Moderator / Yêu cầu kỹ thuật / Lắp đặt</p>
+        <p>{role === "admin" ? "Admin" : "Moderator"} / Yêu cầu kỹ thuật / Lắp đặt</p>
         <h1>Lệnh lắp đặt · <TruncatedId value={workOrder.id} /></h1>
       </div>
       <div className={styles.workOrderPageActions}>
@@ -437,28 +438,15 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
           {isRefreshing ? "Đang tải…" : "Làm mới"}
         </button>
       </div>
-    </header>}
+    </header>
     <section
-      className={`${styles.workOrderSummary} ${role === "moderator" ? styles.workOrderProgressPanel : ""}`}
-      aria-label={role === "moderator" ? "Tiến độ lắp đặt" : undefined}
-      aria-labelledby={role === "admin" ? "work-order-summary-title" : undefined}
+      className={`${styles.workOrderSummary} ${styles.workOrderProgressPanel}`}
+      aria-label="Tiến độ lắp đặt"
     >
-      {role === "moderator" ? (
-        <div className={styles.workOrderSummaryHeading}>
+      <div className={styles.workOrderSummaryHeading}>
         <h2>Tiến độ lắp đặt</h2>
-        <div className={styles.workOrderProgressStatus} data-tone={workOrder.status === "COMPLETED" ? "success" : terminalIssue ? "danger" : "warning"}>
-          {workOrderStatusLabels[workOrder.status]}
-        </div>
-        </div>
-      ) : (
-        <div className={styles.workOrderSummaryHeading}>
-          <div>
-            <p>LỆNH LẮP ĐẶT</p>
-            <h2 id="work-order-summary-title"><TruncatedId value={workOrder.id} /></h2>
-          </div>
-          <StatusBadge status={workOrder.status}>{workOrderStatusLabels[workOrder.status]}</StatusBadge>
-        </div>
-      )}
+        <div className={styles.workOrderProgressStatus} data-tone={workOrder.status === "COMPLETED" ? "success" : terminalIssue ? "danger" : "warning"}>{workOrderStatusLabels[workOrder.status]}</div>
+      </div>
       <ol className={styles.workOrderProgress} aria-label="Tiến độ lắp đặt">
         {workOrderProgressSteps.map((label, index) => {
           const isComplete = workOrder.status === "COMPLETED" || index < activeStep;
@@ -476,37 +464,32 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
         })}
       </ol>
       {terminalIssue && <p className={styles.workOrderTerminalNotice} role="status">{workOrder.failureReason || workOrderStatusLabels[workOrder.status]}</p>}
-      {role !== "moderator" && <>
-        <dl className={styles.workOrderFacts}>
-          <div><dt>Máy</dt><dd>{workOrder.machineSerialNumber || <TruncatedId value={workOrder.machineId} />}</dd><small>{workOrder.machineModelName || workOrder.machineType}</small></div>
-          <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
-          <div><dt>Hợp đồng</dt><dd><TruncatedId value={workOrder.contractId} /></dd></div>
-          <div><dt>Kỹ thuật viên</dt><dd>{workOrder.technicianName || (workOrder.assignedTechnicianId ? <TruncatedId value={workOrder.assignedTechnicianId} /> : "Chưa phân công")}</dd></div>
-          <div><dt>Lịch hẹn</dt><dd>{formatDate(workOrder.scheduledFor)}</dd></div>
-          {workOrder.locationName && <div><dt>Địa điểm</dt><dd>{workOrder.locationName}</dd></div>}
-        </dl>
-        {milestones}
-      </>}
     </section>
-    {role === "moderator" && <div className={styles.workOrderOverviewGrid}>
+    <div className={styles.workOrderOverviewGrid}>
       <section className={`${styles.panel} ${styles.workOrderInfoPanel}`} aria-labelledby="work-order-info-title">
         <h2 id="work-order-info-title">Thông tin lắp đặt</h2>
         <dl className={styles.workOrderInfoFacts}>
           <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
           <div><dt>Hợp đồng</dt><dd><Link className={styles.tableLink} href={contractHref}><TruncatedId value={workOrder.contractId} /></Link></dd></div>
           <div><dt>Máy</dt><dd>{workOrder.machineSerialNumber || <TruncatedId value={workOrder.machineId} />}</dd></div>
-          <div><dt>Loại máy</dt><dd>{workOrder.machineModelName || workOrder.machineType || "—"}</dd></div>
+          <div><dt>Loại máy</dt><dd>{workOrder.machineModelName || (workOrder.machineType === "SMART_IOT" ? "Smart IoT" : "Máy thường")}</dd></div>
           <div><dt>Trạng thái</dt><dd>{workOrderStatusLabels[workOrder.status]}</dd></div>
           {workOrder.locationName && <div><dt>Địa điểm</dt><dd>{workOrder.locationName}</dd></div>}
         </dl>
       </section>
-      <WorkOrderDispatchPanel details={details} milestones={milestones} />
-    </div>}
-    {role === "moderator" && <InstallationWorkOrderRecords
+      {role === "moderator" ? <WorkOrderDispatchPanel details={details} milestones={milestones} /> : <section className={styles.panel}>
+        <h2>Kỹ thuật viên &amp; lịch hẹn</h2>
+        <dl className={styles.workOrderInfoFacts}>
+          <div><dt>Kỹ thuật viên</dt><dd>{workOrder.technicianName || (workOrder.assignedTechnicianId ? <TruncatedId value={workOrder.assignedTechnicianId} /> : "Chưa phân công")}</dd></div>
+          <div><dt>Lịch lắp đặt</dt><dd>{formatDate(workOrder.scheduledFor)}</dd></div>
+        </dl>{milestones}
+      </section>}
+    </div>
+    <InstallationWorkOrderRecords
       workOrderId={workOrder.id}
       renderEvidenceActions={renderEvidenceActions}
       evidenceMessage={evidenceError ? <p className={styles.workOrderFeedbackError} role="alert">{evidenceError}</p> : null}
-    />}
+    />
   </div>;
 }
 export function TechnicalOperationsScreen({
@@ -521,6 +504,7 @@ export function TechnicalOperationsScreen({
   const maintenanceRequestAssignment = /^technical-requests\/requests\/([^/]+)\/assign$/.exec(path);
   const maintenanceRequestDetail = /^technical-requests\/requests\/([^/]+)$/.exec(path);
   const repairCaseDetail = /^technical-requests\/cases\/([^/]+)$/.exec(path);
+  const repairCaseRelated = /^technical-requests\/cases\/([^/]+)\/related$/.exec(path);
   const repairCostReviewDetail = /^technical-requests\/cost-reviews\/([^/]+)$/.exec(path);
   const maintenanceRequestId = maintenanceRequestAssignment?.[1] ?? maintenanceRequestDetail?.[1] ?? "";
   const isMaintenanceRequestDetail = Boolean(maintenanceRequestDetail);
@@ -559,8 +543,8 @@ export function TechnicalOperationsScreen({
   });
   const machineSerialNumbers = new Map((historyMachines.data ?? []).map((machine) => [machine.id, machine.serialNumber] as const));
   const maintenanceRequests = useQuery({
-    queryKey: ["dolores", "maintenance-requests", querySubject(routes.role), requestFilters, requestPage, 50],
-    queryFn: ({ signal }) => maintenanceRequestsApi.listPage({ page: requestPage, size: 50, ...requestFilters }, signal),
+    queryKey: ["dolores", "maintenance-requests", querySubject(routes.role), requestFilters, requestPage, 10],
+    queryFn: ({ signal }) => maintenanceRequestsApi.listPage({ page: requestPage, size: 10, ...requestFilters }, signal),
     enabled: isTechnicalRequestList,
     retry: false,
   });
@@ -625,6 +609,10 @@ export function TechnicalOperationsScreen({
     />;
   }
 
+  if (repairCaseRelated) {
+    return <RepairCaseDetailScreen caseId={repairCaseRelated[1]} role={routes.role} listHref={routes.requests} relatedOnly />;
+  }
+
   if (repairCaseDetail) {
     return <RepairCaseDetailScreen caseId={repairCaseDetail[1]} role={routes.role} listHref={routes.requests} />;
   }
@@ -637,7 +625,7 @@ export function TechnicalOperationsScreen({
     if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
     return (
       <div className={styles.pageContent}>
-        {routes.role === "admin" && <PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} />}
+
         <QueryFeedback query={detail} loadingMessage={messages.LOADING_WORK_ORDER} />
         {detail.data && !detail.isError && <WorkOrderDetail
           details={detail.data}
@@ -660,7 +648,6 @@ export function TechnicalOperationsScreen({
   const listReady = !maintenanceRequests.isPending;
   const requestList = listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length > 0 ? (
     <>
-      {routes.role === "moderator" && <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>}
       <MaintenanceRequestTable
         requests={maintenanceRequests.data.items}
         onTriage={triage.mutate}
@@ -668,82 +655,70 @@ export function TechnicalOperationsScreen({
         pendingRequestId={triage.variables?.requestId}
         pendingAccepted={triage.variables?.accepted}
         routes={routes}
-        role={routes.role}
       />
       <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
     </>
   ) : null;
   return (
     <div className={styles.pageContent}>
-      <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
+      <PageHeading title="Yêu cầu kỹ thuật" description="Theo dõi yêu cầu bảo trì, sửa chữa và điều phối kỹ thuật viên." />
       {triageFeedback && (
         <p className={styles.pendingNotice} role={triageFeedback.type === "error" ? "alert" : "status"}>
           {triageFeedback.message}
         </p>
       )}
-      {routes.role === "admin" ? (
-        <section className={styles.panel} aria-labelledby="technical-request-list-title">
-          <h2 className={styles.sectionTitle} id="technical-request-list-title">{messages.TECHNICAL_LIST_TITLE}</h2>
-          <TableFilters
-            search={{
-              ariaLabel: "Tìm theo Owner ID",
-              maxLength: 36,
-              placeholder: "Tìm Owner ID",
-              value: requestSearchDraft,
-              onChange: setRequestSearchDraft,
-            }}
-            selects={[
-              {
-                id: "technical-request-type-filter",
-                ariaLabel: "Lọc yêu cầu theo loại",
-                value: requestTypeDraft,
-                options: [
-                  { value: "", label: "Tất cả loại yêu cầu" },
-                  { value: "REPAIR", label: "Sửa chữa" },
-                  { value: "PREVENTIVE", label: "Bảo trì định kỳ" },
-                ],
-                onChange: (value) => setRequestTypeDraft(value as MaintenanceRequest["requestType"] | ""),
-              },
-              {
-                id: "technical-request-status-filter",
-                ariaLabel: "Lọc yêu cầu theo trạng thái",
-                value: requestStatusDraft,
-                options: [
-                  { value: "", label: "Tất cả trạng thái" },
-                  ...([
-                    "REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS",
-                    "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED",
-                  ] as const).map((status) => ({ value: status, label: maintenanceRequestStatusLabel(status) })),
-                ],
-                onChange: (value) => setRequestStatusDraft(value as MaintenanceRequest["status"] | ""),
-              },
-            ]}
-            submitLabel="Tìm kiếm"
-            onSubmit={submitRequestFilters}
-          />
-          <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
-          {requestList}
-          {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-          {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
-            <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
-          ) : null}
-        </section>
-      ) : (
-        <>
-          <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
-          {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-          {requestList}
-          {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
-            <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
-          ) : null}
-        </>
-      )}
+      <section className={styles.panel} aria-labelledby="technical-request-list-title">
+        <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2><span>10 yêu cầu mỗi trang</span></div>
+        <TableFilters
+          search={{
+            ariaLabel: "Tìm theo mã khách hàng",
+            maxLength: 36,
+            placeholder: "Tìm theo mã khách hàng (UUID)",
+            value: requestSearchDraft,
+            onChange: setRequestSearchDraft,
+          }}
+          selects={[
+            {
+              id: "technical-request-type-filter",
+              ariaLabel: "Lọc yêu cầu theo loại",
+              value: requestTypeDraft,
+              options: [
+                { value: "", label: "Tất cả loại yêu cầu" },
+                { value: "REPAIR", label: "Sửa chữa" },
+                { value: "PREVENTIVE", label: "Bảo trì định kỳ" },
+              ],
+              onChange: (value) => setRequestTypeDraft(value as MaintenanceRequest["requestType"] | ""),
+            },
+            {
+              id: "technical-request-status-filter",
+              ariaLabel: "Lọc yêu cầu theo trạng thái",
+              value: requestStatusDraft,
+              options: [
+                { value: "", label: "Tất cả trạng thái" },
+                ...([
+                  "REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS",
+                  "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED",
+                ] as const).map((status) => ({ value: status, label: maintenanceRequestStatusLabel(status) })),
+              ],
+              onChange: (value) => setRequestStatusDraft(value as MaintenanceRequest["status"] | ""),
+            },
+          ]}
+          submitLabel="Tìm kiếm"
+          onSubmit={submitRequestFilters}
+        />
+        <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
+        {requestList}
+        {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+        {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
+          <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
+        ) : null}
+      </section>
       {routes.role === "moderator" ? (
         <RepairCaseListPanel
           role={routes.role}
           detailHref={routes.repairCaseDetail}
           title="Hồ sơ sửa chữa"
-          description="Mở hồ sơ để xem trạng thái, vé bảo trì, phương án máy thay thế và dòng thời gian."
+          description="Theo dõi tiến độ sửa chữa và bàn giao máy."
         />
       ) : null}
     </div>

@@ -1,9 +1,10 @@
+import { MachineSpecificationsView } from "./create-machine-model-form";
 import axios from "axios";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { locationsApi } from "@/apis/locations.api";
 import { machineCertificatesApi } from "@/apis/machine-certificates.api";
@@ -12,22 +13,17 @@ import type { MachineCertificateStatus } from "@/schema/machine-certificates.sch
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
-import { TELEMETRY_POINTS_PAGE_SIZE, telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
-import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
-import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
-import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
-import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
-import { PageActions, type PageAction } from "@/components/action-bar/page-actions";
+import type { PageAction } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { PATH_ADMIN } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
 import { MachineIdSchema } from "@/schema/machines.schema";
@@ -82,7 +78,7 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
   };
   const list = useQuery({
     queryKey: ["machine-certificates", "ADMIN", subject, machineId, status, pageNumber],
-    queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
+    queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 10, ...(status ? { status } : {}) }, signal),
     retry: false,
   });
   const detail = useQuery({
@@ -100,7 +96,7 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
       if (issuance) { setIssueBlocked(true); await list.refetch(); }
     } finally { pending.current = false; if (!controller.current?.signal.aborted) setBusy(false); }
   };
-  return <>
+  return <div className={styles.machineConnectionLayout}>
     <SmartIotPanel title="Định danh thiết bị">
       <ButtonBar disabled={busy || identity.isFetching} onClick={() => { void run(async () => { await refreshIdentity(); }); }}>Làm mới định danh</ButtonBar>
       {identity.isFetching ? <p role="status">Đang kiểm tra định danh thiết bị…</p> : identity.isSuccess ? <>
@@ -174,22 +170,20 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
       } }}
       secondaryAction={{ label: "Hủy", disabled: busy, onClick: () => setConfirmRevoke(null) }}
       onClose={() => { if (!busy) setConfirmRevoke(null); }} closeOnEscape={!busy} />}
-  </>;
+  </div>;
 }
 
 function MachineDetailContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const isPageVisible = usePageVisibility();
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
   const subject = authScopedQuerySubject("ADMIN");
   const authenticated = Boolean(getAuthenticatedSubjectId());
-  const [defaultRange] = useState(() => createTelemetryRange("24h"));
-  const rangeResult = useMemo(() => TelemetryPointsParamsSchema.safeParse(router.query.telemetryFrom || router.query.telemetryTo ? { from: router.query.telemetryFrom, to: router.query.telemetryTo } : defaultRange), [router.query.telemetryFrom, router.query.telemetryTo, defaultRange]);
-  const range = rangeResult.success ? rangeResult.data : null;
-  const setRange = (next: TelemetryRange) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: next.from, telemetryTo: next.to } }, undefined, { shallow: true }); };
-  const [detailTab, setDetailTab] = useState<"profile" | "machine-type" | "connection">("profile");
+  const detailTab = typeof router.query.tab === "string" && ["profile", "machine-type", "connection", "history"].includes(router.query.tab) ? router.query.tab : "profile";
+  const setDetailTab = (tab: string) => { void router.push({ pathname: router.pathname, query: { ...router.query, tab } }, undefined, { shallow: true }); };
+  const [ticketPage, setTicketPage] = useState(0);
+  useEffect(() => setTicketPage(0), [machineId]);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [serialDraft, setSerialDraft] = useState("");
@@ -228,8 +222,8 @@ function MachineDetailContent() {
     enabled: validId && Boolean(machine.data),
   });
   const maintenanceTickets = useQuery({
-    queryKey: ["dolores", "maintenance-tickets", { machineId }],
-    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId, page: 0, size: 100 }, signal),
+    queryKey: ["dolores", "maintenance-tickets", { machineId, page: ticketPage }],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({ machineId, page: ticketPage, size: 10 }, signal),
     enabled: validId && Boolean(machine.data),
   });
   useEffect(() => {
@@ -258,36 +252,12 @@ function MachineDetailContent() {
     },
     onError: (error: unknown) => setMachineActionError(getApiErrorMessage(error, "mutation")),
   });
-  const isSmartIot = machine.data?.machineType === "SMART_IOT";
   const beginEditing = () => {
     setDetailTab("profile");
     setLocationDraft(machine.data?.locationId ?? "");
     setEditing(true);
     setMachineActionError("");
   };
-  const heartbeat = useQuery({
-    queryKey: ["dolores", "admin", "telemetry", "heartbeat", subject, machineId],
-    queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
-    enabled: validId && authenticated && machine.isSuccess && isSmartIot && isPageVisible,
-    retry: false,
-    refetchInterval: isPageVisible ? 5_000 : false,
-    refetchIntervalInBackground: false,
-  });
-  const points = useInfiniteQuery({
-    queryKey: ["dolores", "telemetry", "points", subject, machineId, range?.from, range?.to],
-    queryFn: ({ signal, pageParam }) => {
-      if (!range) throw new Error("A telemetry time range is required.");
-      return telemetryApi.listMachinePoints(machineId, range, pageParam, signal);
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      const nextOffset = allPages.length * TELEMETRY_POINTS_PAGE_SIZE;
-      return lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && nextOffset <= 100_000 ? nextOffset : undefined;
-    },
-    enabled: validId && authenticated && machine.isSuccess && isSmartIot && isPageVisible && range !== null,
-    retry: false,
-  });
-  const telemetryPoints = useMemo(() => points.data?.pages.flatMap((page) => page) ?? [], [points.data]);
   const actionBar = (showActions: boolean) => {
     const device = machine.data;
     const changed = Boolean(device && (serialDraft !== (device.serialNumber ?? "") || regionDraft !== (device.region ?? "") || locationDraft !== (device.locationId ?? "")));
@@ -319,10 +289,10 @@ function MachineDetailContent() {
         pendingLabel: "Đang lưu",
       });
     }
-    return <>
-      <PageActions actions={actions} />
-      {showActions && device?.ownerId && <TransferMachineAction machine={device} role="admin" pageLevel />}
-    </>;
+    return <div className={styles.machineTopActions}>
+      {showActions && device?.ownerId && !editing && <TransferMachineAction machine={device} role="admin" />}
+      <PageActionsRenderer actions={actions} />
+    </div>;
   };
   const renderHeading = () => (
     <BackButtonHeading
@@ -369,15 +339,16 @@ function MachineDetailContent() {
 
   return <AdminShell>
     <div className={styles.pageContent}>
-      <BackButtonHeading
+      <div className={styles.machineDetailHeading}><BackButtonHeading
         title={`${T.MACHINES.DETAIL} · ${device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}`}
         titleId="admin-machine-detail-title"
         description={<TruncatedId value={device.id} />}
         className={styles.pageHeading}
         back={getMachineDetailBackDestination(router.query)}
       />
-      <MachineDetailView summary={[
-        { label: T.MACHINES.STATUS, value: device.status ? <StatusBadge status={device.status}>{MACHINE_STATUS_LABELS[device.status] ?? device.status}</StatusBadge> : "—" },
+      {actionBar(true)}</div>
+      <MachineDetailView className={styles.machineWorkspace} summary={[
+        { label: T.MACHINES.STATUS, value: device.status ? <span className={styles.machinePlainStatus} data-status={device.status}>{MACHINE_STATUS_LABELS[device.status] ?? device.status}</span> : "—" },
         { label: T.MACHINES.MACHINE_TYPE, value: machineTypeLabel },
         { label: T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
         { label: T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
@@ -412,42 +383,46 @@ function MachineDetailContent() {
             aria-controls="machine-connection-panel" disabled={editing}
             className={`${styles.machineViewTab} ${detailTab === "connection" ? styles.machineViewTabActive : ""}`}
             onClick={() => setDetailTab("connection")}>Thiết lập kết nối</button>
+        <button type="button" className={`${styles.machineViewTab} ${detailTab === "history" ? styles.machineViewTabActive : ""}`} role="tab" aria-selected={detailTab === "history"} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
         </div>
+
         {detailTab === "connection" ? <div id="machine-connection-panel" role="tabpanel" aria-labelledby="machine-connection-tab">
           <AdminMachineConnectionSetup key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
         </div> : detailTab === "profile" ? (
           <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
             <div className={styles.machineInventoryHeading}>
               <h2>{T.MACHINES.DETAIL}</h2>
-              <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
-                Xem dữ liệu vận hành
-              </Link>
-              {!editing && <button className={styles.accountSecondaryButton} type="button" onClick={beginEditing}>{T.MACHINES.EDIT}</button>}
+              <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Giám sát vận hành</Link>
             </div>
             <div className={styles.machineProfileGroups}>
               <section className={styles.machineProfileGroup}>
                 <h3>Nhận diện máy</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.MACHINE_ID}</span><strong><TruncatedId value={device.id} /></strong></div>
                   <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
+                  <div><span>Mẫu máy</span><strong>{typeof device.modelName === "string" && device.modelName ? device.modelName : "Chưa có thông tin"}</strong></div>
+                  <div><span>Loại máy</span><strong>{machineTypeLabel}</strong></div>
+                  <div><span>Khu vực</span><strong>{device.region ?? "—"}</strong></div>
                   <div><span>Menu đang gán</span><strong>{device.activeMenuId === undefined ? "Chưa có thông tin menu" : device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || "Menu riêng"}</strong></div>
                 </div>
               </section>
               <section className={styles.machineProfileGroup}>
                 <h3>Phân bổ và hợp đồng</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.OWNER_ID}</span><strong><TruncatedId value={device.ownerId} /></strong></div>
-                  <div><span>{T.MACHINES.TENANT_ID}</span><strong><TruncatedId value={device.tenantId} /></strong></div>
-                  <div><span>{T.MACHINES.OWNER_TYPE}</span><strong>{device.ownerType ?? "—"}</strong></div>
-                  <div><span>{T.MACHINES.REGION}</span><strong>{device.region ?? "—"}</strong></div>
+                  <div><span>Khách hàng</span><strong>{typeof device.ownerName === "string" && device.ownerName ? device.ownerName : <TruncatedId value={device.ownerId} />}</strong></div>
                   <div><span>{T.MACHINES.LOCATION}</span><strong>{!device.locationId ? "Kho" : machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? <TruncatedId value={device.locationId} /> : machineLocation.data?.name ?? <TruncatedId value={device.locationId} />}</strong></div>
-                  <div><span>{T.MACHINES.LOCATION_ID}</span><strong><TruncatedId value={device.locationId} /></strong></div>
                   <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
                   <div><span>{T.MACHINES.CONTRACT_PERIOD}</span><strong>{device.contractStartDate || device.contractEndDate ? formatDate(device.contractStartDate) + " – " + formatDate(device.contractEndDate) : "—"}</strong></div>
                   <div><span>{T.MACHINES.MONTHLY_RENTAL_FEE}</span><strong>{device.monthlyRentalFee == null ? "—" : formatNumber(device.monthlyRentalFee) + " ₫/tháng"}</strong></div>
                 </div>
               </section>
             </div>
+            <details className={styles.machineSystemDetails}><summary>Thông tin hệ thống</summary><div className={styles.operationsGrid}>
+              <div><span>Mã máy</span><strong>{device.id}</strong></div>
+              <div><span>Mã chủ sở hữu</span><strong>{device.ownerId ?? "—"}</strong></div>
+              <div><span>Mã khách thuê</span><strong>{device.tenantId ?? "—"}</strong></div>
+              <div><span>Mã cửa hàng</span><strong>{device.locationId ?? "—"}</strong></div>
+              <div><span>Loại chủ sở hữu</span><strong>{device.ownerType ?? "—"}</strong></div>
+            </div></details>
             {editing && <form id="machine-edit-form" className={styles.machineEditForm} onSubmit={submitMachineEdit}>
               <h3>{T.MACHINES.ALLOCATION_TITLE}</h3>
               <label>{T.MACHINES.SERIAL} *<input required maxLength={160} value={serialDraft} onChange={(event) => setSerialDraft(event.target.value)} /></label>
@@ -465,7 +440,7 @@ function MachineDetailContent() {
             </form>}
             {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
           </section>
-        ) : (
+        ) : detailTab === "machine-type" ? (
           <section id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
             <h2>{T.MACHINES.MACHINE_TYPE}</h2>
             <div className={styles.operationsGrid}>
@@ -495,15 +470,16 @@ function MachineDetailContent() {
                 <div className={styles.machineModelSpecifications}>
                   <span>{T.MACHINE_MODELS.SPECIFICATIONS}</span>
                   {Object.keys(machineModel.data.specifications).length > 0
-                    ? <pre>{JSON.stringify(machineModel.data.specifications, null, 2)}</pre>
+                    ? <MachineSpecificationsView value={machineModel.data.specifications} />
                     : <p>{T.MACHINE_MODELS.SPECIFICATIONS_EMPTY}</p>}
                 </div>
               </>}
             </> : <p className={styles.emptyText}>{T.MACHINES.MODEL_UNLINKED}</p>}
           </section>
-        )}
+        ) : null}
       </div>
 
+      {detailTab === "history" && <>
       <section className={styles.panel}>
         <h2>{T.MACHINES.PREVENTIVE}</h2>
         {schedule.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
@@ -517,63 +493,28 @@ function MachineDetailContent() {
       <section className={styles.panel}>
         <div className={styles.machineInventoryHeading}>
           <h2>{T.MACHINES.TICKET_HISTORY}</h2>
-          {maintenanceTickets.data && <span>{formatNumber(maintenanceTickets.data.length)} {T.MACHINES.TICKET_COUNT}</span>}
+          {maintenanceTickets.data && <span>{formatNumber(maintenanceTickets.data.items.length)} {T.MACHINES.TICKET_COUNT}</span>}
         </div>
         {maintenanceTickets.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
         {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}
-        {maintenanceTickets.data && maintenanceTickets.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+        {maintenanceTickets.data && maintenanceTickets.data.items.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {machine.data && <MachineMaintenanceTicketActions
           machineId={machineId}
-          tickets={maintenanceTickets.data ?? []}
+          tickets={maintenanceTickets.data?.items ?? []}
           role="ADMIN"
+          presentation="table"
+          previewLimit={10}
           onRefresh={() => maintenanceTickets.refetch()}
         />}
-        {maintenanceTickets.data && maintenanceTickets.data.length > 0 && <DataTable
-          headerVariant="admin"
-          rows={maintenanceTickets.data}
-          rowKey={(ticket, index) => ticket.id ?? `${ticket.machineId}-${index}`}
-          columns={[
-            { key: "ticket-id", header: T.MACHINES.TICKET_ID, render: (ticket) => <TruncatedId value={ticket.id} /> },
-            { key: "machine-id", header: T.MACHINES.MACHINE_ID, render: (ticket) => <TruncatedId value={ticket.machineId} /> },
-            { key: "status", header: T.MACHINES.STATUS, render: (ticket) => ticket.status ? <StatusBadge status={ticket.status}>{ticket.status}</StatusBadge> : "—" },
-            { key: "scheduled", header: T.MACHINES.SCHEDULED, render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline, true) },
-            { key: "technician", header: T.MACHINES.TECHNICIAN, render: (ticket) => ticket.assignedTechnicianId ? <TruncatedId value={ticket.assignedTechnicianId} /> : ticket.assignedTo ?? "—" },
-            { key: "result", header: T.MACHINES.DIAGNOSIS, render: (ticket) => ticket.resolutionResult ?? ticket.diagnosis ?? ticket.notes ?? "—" },
-            { key: "completed", header: T.MACHINES.COMPLETED, render: (ticket) => formatDate(ticket.completedAt, true) },
-          ]}
-        />}
+        {maintenanceTickets.data && <nav className={styles.machinePagination} aria-label="Phân trang bảo trì">
+          <ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar>
+          <span>Trang {ticketPage + 1} · tối đa 10 phiếu</span>
+          <ButtonBar disabled={!maintenanceTickets.data.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar>
+        </nav>}
       </section>
 
-      {isSmartIot ? <>
-        <MachineHeartbeatPanel
-          title={T.MACHINES.HEARTBEAT}
-          heartbeat={heartbeat.data}
-          loading={heartbeat.isPending}
-          error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined}
-          onRetry={() => void heartbeat.refetch()}
-          emptyMessage={T.COMMON.EMPTY}
-          retryLabel={T.COMMON.RETRY}
-        />
-        <SmartIotPanel title={T.MACHINES.TELEMETRY}>
-          <TelemetryHistoryPanel
-            range={range}
-            onRangeChange={setRange}
-            selectedField={typeof router.query.field === "string" ? router.query.field : undefined}
-            onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }}
-            points={telemetryPoints}
-            loading={points.isPending && Boolean(range)}
-            error={!range ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined}
-            onRetry={range ? () => void points.refetch() : undefined}
-            hasMore={points.hasNextPage}
-            loadingMore={points.isFetchingNextPage}
-            onLoadMore={() => void points.fetchNextPage()}
-          />
-        </SmartIotPanel>
-      </> : <section className={styles.panel}>
-        <h2>{T.MACHINES.HEARTBEAT}</h2>
-        <p className={styles.emptyText}>{device.machineType === "CONVENTIONAL" ? "Máy thường không có heartbeat hoặc telemetry IoT." : "Chưa truy vấn heartbeat vì backend chưa xác nhận loại máy là Smart IoT."}</p>
-      </section>}
       {machineId && <MachineContractHistory machineId={machineId} role="ADMIN" />}
+      </>}
         </MachineDetailView>
     </div>
     {confirmDelete && <NotificationDialog
@@ -587,7 +528,6 @@ function MachineDetailContent() {
     >
       {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
     </NotificationDialog>}
-    {actionBar(true)}
   </AdminShell>;
 }
 

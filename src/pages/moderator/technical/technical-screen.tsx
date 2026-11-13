@@ -2,6 +2,7 @@ import {
   TechnicalOperationsScreen,
   type TechnicalScreenRoutes,
 } from "@/components/features/repair-workflow/technical-operations-screen";
+import styles from "@/components/features/repair-workflow/repair-workflow.module.css";
 import { PATH_MODERATOR } from "@/routes/path";
 
 const routes: TechnicalScreenRoutes = {
@@ -15,5 +16,5 @@ const routes: TechnicalScreenRoutes = {
 };
 
 export function ModeratorTechnicalScreen({ path }: { path: string }) {
-  return <TechnicalOperationsScreen path={path} routes={routes} />;
+  return <div className={styles.operatorWorkspace}><TechnicalOperationsScreen path={path} routes={routes} /></div>;
 }

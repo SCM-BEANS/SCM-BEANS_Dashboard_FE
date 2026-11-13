@@ -101,6 +101,7 @@ export const DashboardOverviewSchema = z.object({
   usagePeriodStart: isoDate.nullish(),
   usagePeriodEnd: isoDate.nullish(),
   operationalMetrics: OperationalMetricsSchema.nullish(),
+  actionSummary: z.object({ actionableItems: nonnegativeCount, workByTimeBucket: z.record(nonnegativeCount) }).nullish(),
   financialMetrics: z.array(FinancialMetricSchema).nullish(),
   periodFinancialMetrics: z.array(PeriodFinancialMetricSchema).optional(),
 }).passthrough();

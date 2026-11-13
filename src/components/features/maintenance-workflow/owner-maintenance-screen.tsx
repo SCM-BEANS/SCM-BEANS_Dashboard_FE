@@ -1,3 +1,8 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { repairCasesApi } from "@/apis/repair-cases.api";
+import { machinesApi } from "@/apis/machines.api";
+import repairStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -35,7 +40,7 @@ function requestTypeLabel(request: MaintenanceRequest) {
   return request.requestType === "PREVENTIVE" ? "Bảo trì định kỳ" : "Sửa chữa";
 }
 
-function RequestDetail({ requestId, listHref }: { requestId: string; listHref: string }) {
+export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = false }: { requestId: string; listHref: string; support?: boolean }) {
   const queryClient = useQueryClient();
   const [appointmentAt, setAppointmentAt] = useState("");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -48,6 +53,19 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
     retry: false,
   });
   const request = requestQuery.data;
+  const repairRequest = support && request?.requestType === "REPAIR" ? request : undefined;
+  const machines = useQuery({
+    queryKey: ["owner-machines", querySubject("owner")],
+    queryFn: ({ signal }) => machinesApi.list(signal),
+    enabled: Boolean(repairRequest),
+  });
+  const machineId = repairRequest?.machineId;
+  const caseReference = useQuery({
+    queryKey: ["dolores", "repair-workflow", querySubject("owner"), "support-case", requestId, machineId],
+    queryFn: ({ signal }) => repairCasesApi.findReferenceByMaintenanceRequestId(requestId, machineId ?? "", signal),
+    enabled: Boolean(machineId && repairRequest?.maintenanceTicketId),
+    retry: false,
+  });
 
   useEffect(() => {
     if (request) setAppointmentAt(dateTimeInputValue(
@@ -74,6 +92,58 @@ function RequestDetail({ requestId, listHref }: { requestId: string; listHref: s
     event.preventDefault();
     if (canConfirm && appointmentAt) confirm.mutate();
   };
+
+  if (support) {
+    const serial = machines.data?.find((machine) => machine.id === machineId)?.serialNumber;
+    return (
+      <div className={repairStyles.operatorWorkspace}>
+        <section className={repairStyles.pageContent} aria-labelledby="owner-support-detail-title">
+          <BackButtonHeading
+            back={{ label: "Danh sách yêu cầu", fallbackHref: listHref }}
+            title="Chi tiết yêu cầu hỗ trợ"
+            titleId="owner-support-detail-title"
+            className={repairStyles.pageHeading}
+          />
+          {!validId || (requestQuery.isSuccess && !repairRequest) ? (
+            <p className={repairStyles.notice} role="status">Không tìm thấy yêu cầu hỗ trợ.</p>
+          ) : requestQuery.isPending ? (
+            <p className={repairStyles.notice} role="status">Đang tải yêu cầu…</p>
+          ) : requestQuery.isError ? (
+            <div className={repairStyles.notice} role="alert">
+              <p>{getApiErrorMessage(requestQuery.error)}</p>
+              <ButtonBar onClick={() => void requestQuery.refetch()}>Thử lại</ButtonBar>
+            </div>
+          ) : repairRequest && (
+            <div className={repairStyles.requestOverview}>
+              <section className={repairStyles.panel}>
+                <h2>Thông tin yêu cầu</h2>
+                <dl className={repairStyles.detailGrid}>
+                  <div className={repairStyles.detailItem}><dt>Mã yêu cầu</dt><dd><TruncatedId value={repairRequest.id} /></dd></div>
+                  <div className={repairStyles.detailItem}><dt>Máy</dt><dd>{serial || <TruncatedId value={repairRequest.machineId} />}</dd></div>
+                </dl>
+                <div className={repairStyles.issueDescription}>
+                  <h3>Nội dung yêu cầu</h3>
+                  <p>{repairRequest.issueDescription?.trim() || "Chưa ghi nhận nội dung."}</p>
+                </div>
+              </section>
+              <aside className={repairStyles.panel}>
+                <h2>Tình trạng xử lý</h2>
+                <span className={repairStyles.requestStatus} data-status={repairRequest.status}>
+                  {maintenanceRequestStatusLabel(repairRequest.status, repairRequest.requestType)}
+                </span>
+                <dl className={repairStyles.detailGrid}>
+                  <div className={repairStyles.detailItem}><dt>Ngày gửi</dt><dd>{formatDateTime(repairRequest.createdAt ?? repairRequest.reportedAt)}</dd></div>
+                  <div className={repairStyles.detailItem}><dt>Cập nhật</dt><dd>{formatDateTime(repairRequest.updatedAt)}</dd></div>
+                </dl>
+                {caseReference.data && <ButtonBar rollingLabel href={PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseReference.data.id)}>Mở hồ sơ sửa chữa</ButtonBar>}
+                {caseReference.isError && <ButtonBar onClick={() => void caseReference.refetch()}>Tải lại hồ sơ liên quan</ButtonBar>}
+              </aside>
+            </div>
+          )}
+        </section>
+      </div>
+    );
+  }
 
   return (
     <section className={styles.pageContent} aria-labelledby="owner-maintenance-detail-title">
@@ -144,7 +214,7 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
     retry: false,
   });
 
-  if (isDetail) return <RequestDetail requestId={requestId} listHref={PATH_CUSTOMER.MAINTENANCE} />;
+  if (isDetail) return <OwnerMaintenanceRequestDetail requestId={requestId} listHref={PATH_CUSTOMER.MAINTENANCE} />;
 
   return (
     <section className={styles.pageContent} aria-labelledby="owner-maintenance-title">

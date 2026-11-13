@@ -1,3 +1,4 @@
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ZodError } from "zod";
 import { useState, type FormEvent } from "react";
@@ -84,11 +85,12 @@ export function MachineRegistrationForm({
     create.mutate();
   };
 
+  const RegistrationActions = mode === "owner" ? PageActionsRenderer : PageActions;
   return (
-    <section className={styles.panel} aria-labelledby="machine-registration-title">
+    <section className={[styles.panel, mode === "owner" ? styles.ownerRegistration : ""].join(" ")} aria-labelledby="machine-registration-title">
       <h2 id="machine-registration-title">Đăng ký máy</h2>
       <p className={styles.description}>
-        Máy mới được tạo ở trạng thái Trong kho. {mode === "owner" ? "Owner được xác định từ phiên đăng nhập." : "Chọn một Owner mà hồ sơ Moderator hiện tại được phép xem."}
+        Máy mới được tạo ở trạng thái Trong kho. {mode === "owner" ? "Máy được đăng ký cho tài khoản đang đăng nhập." : "Chọn một Owner mà hồ sơ Moderator hiện tại được phép xem."}
       </p>
       {mode === "moderator" && <>
         {ownerProfiles.isPending && <p className={styles.notice} role="status">Đang tải Owner…</p>}
@@ -98,7 +100,7 @@ export function MachineRegistrationForm({
         </div>}
         {ownerProfiles.data && owners.length === 0 && !ownerProfiles.hasNextPage && <p className={styles.notice} role="status">Không có Owner trong phạm vi tài khoản Moderator này.</p>}
       </>}
-      <form id="machine-registration-form" className={styles.formGrid} onSubmit={submit}>
+      <div className={styles.registrationLayout} data-owner={mode === "owner" || undefined}><form id="machine-registration-form" className={styles.formGrid} onSubmit={submit}>
         {mode === "moderator" && <label className={styles.field} htmlFor="machine-owner-select">Owner *
           <select id="machine-owner-select" required value={selectedOwnerId} disabled={ownerProfiles.isPending || ownerProfiles.isError || create.isPending || blockResubmit} onChange={(event) => setSelectedOwnerId(event.target.value)}>
             <option value="">Chọn Owner</option>
@@ -127,7 +129,15 @@ export function MachineRegistrationForm({
         {mode === "moderator" && ownerProfiles.isError && <ButtonBar type="button" disabled={ownerProfiles.isFetching} onClick={() => void ownerProfiles.refetch()}>Thử tải lại Owner</ButtonBar>}
 
       </form>
-      <PageActions actions={[
+      {mode === "owner" && <aside className={styles.registrationSummary} aria-label="Tóm tắt đăng ký">
+        <h3>Kiểm tra thông tin</h3><dl>
+          <div><dt>Serial máy</dt><dd>{serialNumber.trim() || "Chưa nhập"}</dd></div>
+          <div><dt>Loại máy</dt><dd>{machineType === "SMART_IOT" ? "Smart IoT" : "Máy thường"}</dd></div>
+          <div><dt>Khu vực</dt><dd>{region.trim() || "Chưa nhập"}</dd></div>
+          <div><dt>Trạng thái ban đầu</dt><dd>Trong kho</dd></div>
+        </dl>
+      </aside>}</div>
+      <RegistrationActions actions={[
         { id: "machine-cancel", label: "Hủy", priority: 100, onClick: onCancel, disabled: create.isPending, confirm: serialNumber || region || selectedOwnerId || machineType !== "CONVENTIONAL" ? { title: "Hủy đăng ký máy?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy đăng ký" } : undefined },
         { id: "machine-register", label: "Đăng ký máy", variant: "primary", priority: 100, type: "submit", form: "machine-registration-form", disabled: create.isPending || blockResubmit || !serialNumber.trim() || !validOwnerId || (mode === "moderator" && (ownerProfiles.isPending || ownerProfiles.isError || !selectedOwnerId)), disabledReason: "Kiểm tra thông tin Owner và trạng thái yêu cầu.", pending: create.isPending, pendingLabel: "Đang đăng ký…" },
       ]} />

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer as PageActions } from "@/components/action-bar/page-actions-renderer";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { MachineCreateUnexpectedStatusError, machinesApi } from "@/apis/machines.api";
 import { CreateMachineRequestSchema, MachineTypeSchema, type CreateMachineRequest } from "@/schema/machines.schema";
@@ -140,47 +140,7 @@ export function CreateMachineForm({
 
   return (
     <>
-      <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
-        <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
-        <div className={styles.operationsGrid}>
-          <label>{T.MACHINES.CREATE_SERIAL} *<input required autoComplete="off" value={form.serialNumber} onChange={(event) => setField("serialNumber", event.target.value)} /></label>
-          <label>{T.MACHINES.CREATE_REGION}<input value={form.region} onChange={(event) => setField("region", event.target.value)} /></label>
-          <label>Loại máy *
-            <select value={form.machineType} onChange={(event) => setField("machineType", event.target.value as MachineCreateForm["machineType"])}>
-              {MachineTypeSchema.options.map((machineType) => (
-                <option value={machineType} key={machineType}>
-                  {machineType === "SMART_IOT" ? "Smart IoT (SMART_IOT)" : "Máy thường (CONVENTIONAL)"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div><span>{T.MACHINES.CREATE_INITIAL_STATUS}</span><strong>{T.MACHINES.WAREHOUSE} (IN_WAREHOUSE)</strong></div>
-          <div><span>{T.MACHINES.CREATE_INITIAL_CUPS}</span><strong>0</strong></div>
-          <label>Mẫu máy *
-            <select
-              required
-              value={form.machineModelId}
-              disabled={machineModels.isPending || machineModels.isError || !machineModels.data?.length || create.isPending || assignMachine.isPending || Boolean(pendingAssignment)}
-              onChange={(event) => setField("machineModelId", event.target.value)}
-            >
-              <option value="">{machineModels.isPending ? T.COMMON.LOADING : "Chọn mẫu máy"}</option>
-              {machineModels.data?.map((machineModel) => (
-                <option value={machineModel.id} key={machineModel.id}>
-                  {machineModel.displayName} ({machineModel.modelCode})
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {machineModels.isError && (
-          <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
-            <p>{getApiErrorMessage(machineModels.error)}</p>
-            <button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button>
-          </div>
-        )}
-        {machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
-        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      </form>
+      <div className={styles.machineTopActions}>
       <PageActions actions={[
         {
           id: "machine-create-cancel",
@@ -215,6 +175,60 @@ export function CreateMachineForm({
           pendingLabel: T.MACHINES.CREATING,
         },
       ]} />
+      </div>
+      <div className={styles.machineFormLayout}>
+      <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+        <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
+        <div className={styles.operationsGrid}>
+          <label>{T.MACHINES.CREATE_SERIAL} *<input required autoComplete="off" value={form.serialNumber} onChange={(event) => setField("serialNumber", event.target.value)} /></label>
+          <label>{T.MACHINES.CREATE_REGION}<input value={form.region} onChange={(event) => setField("region", event.target.value)} /></label>
+          <label>Loại máy *
+            <select value={form.machineType} onChange={(event) => setField("machineType", event.target.value as MachineCreateForm["machineType"])}>
+              {MachineTypeSchema.options.map((machineType) => (
+                <option value={machineType} key={machineType}>
+                  {machineType === "SMART_IOT" ? "Smart IoT (SMART_IOT)" : "Máy thường (CONVENTIONAL)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>Mẫu máy *
+            <select
+              required
+              value={form.machineModelId}
+              disabled={machineModels.isPending || machineModels.isError || !machineModels.data?.length || create.isPending || assignMachine.isPending || Boolean(pendingAssignment)}
+              onChange={(event) => setField("machineModelId", event.target.value)}
+            >
+              <option value="">{machineModels.isPending ? T.COMMON.LOADING : "Chọn mẫu máy"}</option>
+              {machineModels.data?.map((machineModel) => (
+                <option value={machineModel.id} key={machineModel.id}>
+                  {machineModel.displayName} ({machineModel.modelCode})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {machineModels.isError && (
+          <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
+            <p>{getApiErrorMessage(machineModels.error)}</p>
+            <button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button>
+          </div>
+        )}
+        {machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
+        {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
+      </form>
+      <aside className={`${styles.panel} ${styles.machineFormSummary}`} aria-label="Kiểm tra thông tin máy">
+        <h2>Kiểm tra thông tin</h2>
+        <dl className={styles.specificationsList}>
+          <div><dt>Serial</dt><dd>{form.serialNumber || "—"}</dd></div>
+          <div><dt>Mẫu máy</dt><dd>{machineModels.data?.find((model) => model.id === form.machineModelId)?.displayName ?? "—"}</dd></div>
+          <div><dt>Loại máy</dt><dd>{form.machineType === "SMART_IOT" ? "Smart IoT" : "Máy thường"}</dd></div>
+          <div><dt>Khu vực</dt><dd>{form.region || "—"}</dd></div>
+          <div><dt>Trạng thái ban đầu</dt><dd><span className={styles.machinePlainStatus} data-status="IN_WAREHOUSE">Trong kho</span></dd></div>
+          <div><dt>Số ly ban đầu</dt><dd>0</dd></div>
+        </dl>
+      </aside>
+      </div>
+
     </>
   );
 }
