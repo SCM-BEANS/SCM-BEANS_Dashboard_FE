@@ -19,6 +19,35 @@ function loadTypescript(relativePath, mocks = {}) {
 
 const notificationId = "00000000-0000-4000-8000-000000000001";
 const machineId = "00000000-0000-4000-8000-000000000003";
+
+test("notification preferences reject corrupt storage and unsupported values", () => {
+  const { parseNotificationPreferences } = loadTypescript("src/components/notifications/notification-preferences.ts");
+  const defaults = { sound: false, position: "top-right", dndUntil: 0 };
+  for (const value of [null, "broken", "null", "[]", '{"sound":"yes","position":"unknown","dndUntil":-2}']) {
+    assert.deepEqual(parseNotificationPreferences(value), defaults);
+  }
+  assert.deepEqual(parseNotificationPreferences('{"sound":true,"position":"bottom-center","dndUntil":1800000000000}'), { sound: true, position: "bottom-center", dndUntil: 1800000000000 });
+});
+
+test("business notifications use readable Vietnamese while keeping identifiers and meanings", () => {
+  const { getNotificationPresentation } = loadTypescript("src/text/notification-inbox-messages.ts");
+  const refund = getNotificationPresentation({ type: "REFUND", title: "Yêu cầu hoàn tiền cần duyệt", message: "Refund #62470020 requires Admin approval." });
+  assert.equal(refund.typeLabel, "Hoàn tiền");
+  assert.equal(refund.message, "Khoản hoàn tiền #62470020 đang chờ quản trị viên phê duyệt.");
+  const response = getNotificationPresentation({ type: "RESPONSE", title: "Owner đã phản hồi hợp đồng hết hạn", message: "Owner đã chọn CONTINUE; không tự tạo Subscription." });
+  assert.equal(response.title, "Khách hàng đã phản hồi hợp đồng hết hạn");
+  assert.equal(response.typeLabel, "Hợp đồng");
+  assert.equal(response.message, "chủ sở hữu đã chọn tiếp tục sử dụng; không tự tạo gói thuê.");
+});
+
+test("alert presentation localizes known anomaly text without inventing severity or changing unknown messages", () => {
+  const { getAlertPresentation } = loadTypescript("src/text/notification-inbox-messages.ts");
+  assert.deepEqual(getAlertPresentation({ level: "WASTAGE_ANOMALY", message: "Wastage anomaly detected: 100.00% exceeds threshold 5.0%" }), {
+    levelLabel: "Hao hụt bất thường", message: "Tỷ lệ hao hụt 100.00% vượt ngưỡng 5.0%.",
+  });
+  assert.deepEqual(getAlertPresentation({ level: "HIGH", message: "Unrecognized text" }), { levelLabel: "Cao", message: "Unrecognized text" });
+  assert.deepEqual(getAlertPresentation({ level: "NEW_TYPE", message: "Raw details" }), { levelLabel: "Cảnh báo khác", message: "Raw details" });
+});
 const schemas = loadTypescript("src/schema/notifications.schema.ts", { zod: require("zod") });
 
 test('GPS advisory uses understandable copy, preserves machine context and leaves other notifications unchanged', () => {

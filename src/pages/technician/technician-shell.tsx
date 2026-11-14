@@ -8,6 +8,7 @@ import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
@@ -106,6 +107,7 @@ export function TechnicianShell({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.shell} data-role="technician">
+        <NotificationRuntime scope="technician" />
         <Sidebar
           brand={TECHNICIAN_MESSAGES.BRAND}
           brandHref={PATH_TECHNICIAN.ROOT}

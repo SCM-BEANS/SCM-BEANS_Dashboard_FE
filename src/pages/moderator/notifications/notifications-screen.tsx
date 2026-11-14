@@ -1,17 +1,6 @@
-import Link from "next/link";
-import { NotificationInbox } from "@/components/notifications/notification-inbox";
-import { PATH_MODERATOR } from "@/routes/path";
+﻿import { NotificationManagementScreen } from "@/components/notifications/notification-management-screen";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
 export function NotificationsScreen() {
-  const messages = MODERATOR_MESSAGES.READ_SCREENS;
-  return (
-    <NotificationInbox
-      scope="moderator"
-      title={messages.NOTIFICATIONS_TITLE}
-      description={messages.NOTIFICATIONS_DESCRIPTION}
-    >
-      <Link href={PATH_MODERATOR.NOTIFICATION_ALERTS}>{messages.VIEW_ALERTS}</Link>
-    </NotificationInbox>
-  );
+  return <NotificationManagementScreen scope="moderator" scopeNotice={MODERATOR_MESSAGES.READ_SCREENS.ALERT_SCOPE_NOTICE} />;
 }

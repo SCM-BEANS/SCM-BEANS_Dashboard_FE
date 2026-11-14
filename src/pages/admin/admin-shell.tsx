@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { authApi } from "@/apis/auth.api";
@@ -82,6 +83,7 @@ export function AdminShell({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.shell}>
+        <NotificationRuntime scope="admin" />
         <AdminSidebarMenu loggingOut={loggingOut} onLogout={handleLogout} />
         <div className={styles.workspace}>
           <header className={styles.desktopHeader}>

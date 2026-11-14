@@ -6,7 +6,7 @@ export const ADMIN_MESSAGES = {
     USERS: "Tài khoản",
     STORES: "Cửa hàng",
     CONTRACTS: "Hợp đồng",
-    MACHINES: "Máy & tồn kho",
+    MACHINES: "Quản lý máy",
     TECHNICAL_REQUESTS: "Yêu cầu kỹ thuật",
     IOT: "Giám sát Smart IoT",
     MENU: "Công thức pha chế",

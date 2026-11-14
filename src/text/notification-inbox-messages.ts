@@ -33,6 +33,18 @@ const TYPE_LABELS: Record<string, string> = {
 };
 const UUID = /\b([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
+export const ALERT_LEVEL_LABELS: Record<string, string> = { CRITICAL: "Nghiêm trọng", HIGH: "Cao", MEDIUM: "Trung bình", LOW: "Thấp", INFO: "Thông tin", WASTAGE_ANOMALY: "Hao hụt bất thường" };
+
+export function getAlertPresentation(alert: { level: string; message: string }) {
+  const wastage = /^Wastage anomaly detected: ([\d.]+)% exceeds threshold ([\d.]+)%$/i.exec(alert.message);
+  return {
+    levelLabel: ALERT_LEVEL_LABELS[alert.level.toUpperCase()] ?? "Cảnh báo khác",
+    message: alert.level.toUpperCase() === "WASTAGE_ANOMALY" && wastage
+      ? `Tỷ lệ hao hụt ${wastage[1]}% vượt ngưỡng ${wastage[2]}%.`
+      : alert.message,
+  };
+}
+
 // Backend text is English/raw: show short ids, dd/MM/yyyy dates and Vietnamese role names.
 function localizeText(text: string, keepFullIds: boolean) {
   const out = text
@@ -47,9 +59,12 @@ export function getNotificationPresentation(notification: { type: string; title:
     // REPAIR_COST_REVIEW keeps full ids: the inbox extracts "Review ID: <uuid>" from the message for its link.
     const keepFullIds = notification.type === "REPAIR_COST_REVIEW";
     return {
-      title: localizeText(notification.title, true),
-      message: localizeText(notification.message, keepFullIds),
-      typeLabel: TYPE_LABELS[notification.type] ?? "Thông báo",
+      title: localizeText(notification.title, true).replace(/^chủ sở hữu/, "Khách hàng"),
+      message: localizeText(notification.message, keepFullIds)
+        .replace(/\bCONTINUE\b/g, "tiếp tục sử dụng")
+        .replace(/\bSubscription\b/g, "gói thuê")
+        .replace(/^Refund (#[a-f0-9]+) requires Admin approval\.$/i, "Khoản hoàn tiền $1 đang chờ quản trị viên phê duyệt."),
+      typeLabel: TYPE_LABELS[notification.type] ?? (/hợp đồng/i.test(notification.title) ? "Hợp đồng" : /hoàn tiền/i.test(notification.title) ? "Hoàn tiền" : /sửa chữa/i.test(notification.title) ? "Sửa chữa" : /bảo trì/i.test(notification.title) ? "Bảo trì" : "Thông báo"),
     };
   }
   const machineId = /\bMachine\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i.exec(notification.message)?.[1];
@@ -58,4 +73,14 @@ export function getNotificationPresentation(notification: { type: string; title:
     typeLabel: "Vị trí GPS",
     message: "Tại thời điểm cảnh báo, máy vẫn kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS; liên hệ kỹ thuật viên nếu tình trạng này tiếp tục.",
   };
+}
+
+export function formatNotificationDate(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  // "08:00, 11/11/2026" — numeric month avoids vi-VN's "11 thg 11," form.
+  const day = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  const time = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  return `${time}, ${day}`;
 }

@@ -8,6 +8,7 @@ import {
   FileText,
   LayoutDashboard,
   Package,
+  Receipt,
   Settings,
   Users,
   Utensils,
@@ -23,6 +24,7 @@ import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
@@ -33,6 +35,7 @@ import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import styles from "./moderator-shell.module.css";
 
 const NAV_ICONS = {
+  Receipt,
   Activity,
   Bell,
   Building2,
@@ -49,7 +52,6 @@ const NAV_ICONS = {
 } as const;
 
 const MODERATOR_SIDEBAR_ITEMS: SidebarItem[] = MODERATOR_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_MODERATOR.NOTIFICATIONS)
   .filter((item) => item.HREF !== PATH_MODERATOR.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
@@ -134,6 +136,7 @@ export function ModeratorShell({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.shell} data-role="moderator">
+        <NotificationRuntime scope="moderator" />
         <Sidebar
           brand={MODERATOR_MESSAGES.BRAND}
           brandHref={PATH_MODERATOR.ROOT}

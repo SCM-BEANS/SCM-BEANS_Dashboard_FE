@@ -57,20 +57,14 @@
 }
 
 .navItemActive {
-  background: #f9e9ea;
-  color: #b81724 !important;
+  background: #f7f5f3;
+  color: #302927 !important;
   font-weight: 600;
 }
 
-.navItemActive::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 0;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #b81724;
+.navItem:focus-visible {
+  outline: 2px solid #706561;
+  outline-offset: -2px;
 }
 
 .navItemDisabled {

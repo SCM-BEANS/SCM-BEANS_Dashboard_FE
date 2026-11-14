@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { Bell, Coffee, FileText, LayoutDashboard, MapPin, Package, Settings, Utensils, Wrench } from "lucide-react";
+import { Bell, Building2, Coffee, FileText, LayoutDashboard, MapPin, Package, Receipt, Settings, Utensils, Wrench } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -8,6 +8,7 @@ import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
+import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
@@ -24,13 +25,14 @@ const NAV_ICONS = {
   LayoutDashboard,
   MapPin,
   Package,
+  Building2,
+  Receipt,
   Settings,
   Utensils,
   Wrench,
 } as const;
 
 const CUSTOMER_SIDEBAR_ITEMS: SidebarItem[] = CUSTOMER_NAVIGATION_LINKS
-  .filter((item) => item.HREF !== PATH_CUSTOMER.NOTIFICATIONS)
   .filter((item) => item.HREF !== PATH_CUSTOMER.SETTINGS)
   .map((item) => ({
     label: item.LABEL,
@@ -109,6 +111,7 @@ export function CustomerShell({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.shell} data-role="customer">
+        <NotificationRuntime scope="customer" />
         <Sidebar
           brand={CUSTOMER_MESSAGES.BRAND}
           brandHref={PATH_CUSTOMER.ROOT}

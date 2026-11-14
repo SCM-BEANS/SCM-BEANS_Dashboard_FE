@@ -8,6 +8,7 @@ export function NotificationInbox({ back }: { back?: BackButtonDestination | nul
   return (
     <SharedNotificationInbox
       scope="customer"
+      variant="management"
       title={messages.NOTIFICATIONS_TITLE}
       description={messages.NOTIFICATIONS_DESCRIPTION}
       repairCostReviewHref={PATH_CUSTOMER.REPAIR_COST_REVIEW_DETAIL}
