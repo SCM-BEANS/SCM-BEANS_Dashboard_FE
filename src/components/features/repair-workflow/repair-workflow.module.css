@@ -1557,18 +1557,20 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 }
 .operatorWorkspace .caseProcess .workflowStep + .workflowStep { border-top: 1px solid #eee8e3; }
 .operatorWorkspace .caseProcess .workflowStep::before { top: 10px; left: 0; }
-.operatorWorkspace .caseProcess .workflowStepComplete::before { background: #edf6f1; color: #23653a; border-color: #2d8d6b; }
+.operatorWorkspace .caseProcess .workflowStepComplete::before { background: #fcf0f1; color: #b81724; border-color: #b81724; }
+.operatorWorkspace .caseProcess .workflowStepComplete .workflowStepHeading span { color: #b81724; }
 .operatorWorkspace .caseProcess .workflowStepCurrent { background: #fff8f8; }
 .casePageHeader { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 
-.adminRepairProgress .workOrderProgressComplete { color: #2d8d6b; }
-.adminRepairProgress .workOrderProgressComplete:not(:last-child)::after { background: #2d8d6b; }
-.adminRepairProgress .workOrderProgressComplete > span { border-color: #2d8d6b; background: #2d8d6b; color: #fff; }
+.adminRepairProgress .workOrderProgressComplete { color: #b81724; }
+.adminRepairProgress .workOrderProgressComplete:not(:last-child)::after { background: #b81724; }
+.adminRepairProgress .workOrderProgressComplete > span { border-color: #b81724; background: #b81724; color: #fff; }
 .adminHistoryHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .adminHistoryHeader h2 { margin: 0; color: #302927; font-size: 16px; line-height: 1.4; }
 .adminHistoryHeader .relatedNav { margin-left: auto; gap: 20px; }
 .adminHistoryHeader .relatedNav button { padding: 7px 0 8px; }
 .adminHistoryContent { min-width: 0; padding-top: 10px; }
+.adminHistoryContent .acknowledged { color: #b81724 !important; }
 .adminHistoryContent > * { min-width: 0; }
 
 .adminHistoryContent .timeline { gap: 0; }
@@ -1586,7 +1588,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
   position: absolute;
   inset: 22px auto -22px 0;
   width: 1px;
-  background: #a9cdbf;
+  background: #e7b3b9;
 }
 .adminHistoryContent .timelineItem::after {
   content: "";
@@ -1596,7 +1598,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #2d8d6b;
+  background: #b81724;
 }
 .historyDisclosure { min-width: 0; }
 .timelineItem + .timelineItem .historyDisclosure { border-top: 1px solid #eee8e3; }

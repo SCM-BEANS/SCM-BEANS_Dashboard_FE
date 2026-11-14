@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { readAllPages } from "@/lib/read-all-pages";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { buybacksApi } from "@/apis/buybacks.api";
@@ -7,7 +8,7 @@ import { machineModelsApi } from "@/apis/machine-models.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { BuybackIdSchema } from "@/schema/buybacks.schema";
+import { BuybackIdSchema, type BuybackCase } from "@/schema/buybacks.schema";
 import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 
@@ -31,6 +32,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const routeCaseId = typeof router.query.caseId === "string" ? router.query.caseId : "";
   const [selectedCaseId, setSelectedCaseId] = useState(initialCaseId ?? routeCaseId);
   const [page, setPage] = useState(0);
+  const [listFilterDraft, setListFilterDraft] = useState({ search: "", status: "" as BuybackCase["status"] | "" });
+  const [listFilters, setListFilters] = useState(listFilterDraft);
   const [proofPage, setProofPage] = useState(0);
   const [createConfirmed, setCreateConfirmed] = useState(false);
   const [currency, setCurrency] = useState("");
@@ -72,8 +75,16 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   }, [initialCaseId, routeCaseId, router.isReady]);
 
   const list = useQuery({
-    queryKey: ["dolores", role, "buybacks", subject, page],
-    queryFn: ({ signal }) => buybacksApi.list({ page, size: 20 }, signal),
+    queryKey: ["dolores", role, "buybacks", subject, page, role === "technician" ? 20 : 10, listFilters],
+    queryFn: async ({ signal }) => {
+      const status = listFilters.status || undefined;
+      if (!listFilters.search) return buybacksApi.list({ page, size: role === "technician" ? 20 : 10, ...(status ? { status } : {}) }, signal);
+      // shortcut: API chưa hỗ trợ tìm kiếm hồ sơ; chuyển sang tìm phía server khi API hỗ trợ.
+      const all = await readAllPages((index) => buybacksApi.list({ page: index, size: 100, ...(status ? { status } : {}) }, signal));
+      const search = listFilters.search.toLocaleLowerCase("vi-VN");
+      const items = all.filter((item) => [item.id, item.machineSerialNumber, item.assetSerial, item.machineModelName, item.assetModelLabel].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(search)));
+      return { items: items.slice(page * 10, page * 10 + 10), page, size: 10, hasNext: (page + 1) * 10 < items.length };
+    },
     enabled: !(isModeratorRoute && Boolean(initialCaseId))
       && !(role === "technician" && Boolean(initialCaseId)),
     retry: false,
@@ -479,6 +490,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const backHref = listHref ?? "/dashboard/buyback";
   const createFormOpen = role === "owner" && showCreateForm && !detailId;
   const showList = !createFormOpen && !(isModeratorRoute && Boolean(detailId))
+    && !((role === "owner" || role === "operator") && Boolean(detailId))
     && !(role === "technician" && Boolean(initialCaseId));
   const setAssignmentSearchAndReset = (value: string) => {
     setAssignmentSearch(value);
@@ -495,6 +507,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     || (!isExternalBuyback && caseData.status === "VALUATION_PENDING" && caseData.proposedPrice != null)
   ));
   return {
+    listFilterDraft, setListFilterDraft,
+    applyListFilters: () => { setListFilters({ ...listFilterDraft, search: listFilterDraft.search.trim() }); setPage(0); },
     role,
     operatorRole,
     initialCaseId,

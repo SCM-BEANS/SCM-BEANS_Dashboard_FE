@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
+import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
 import { MachineListView } from "@/components/machines/machine-list-view";
@@ -29,7 +31,7 @@ import { ownerAnalyticsApi } from "@/apis/owner-analytics.api";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { getVietnamToday, summarizeMachineCleaning } from "./machine-cleaning-history-panel";
-import { MachineIdSchema } from "@/schema/machines.schema";
+import { MachineIdSchema, MachineStatusSchema } from "@/schema/machines.schema";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
@@ -92,6 +94,8 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   const detailTab = (["overview", "maintenance", "contracts", "model"].includes(String(router.query.tab)) ? String(router.query.tab) : "overview") as DetailTab;
   const setDetailTab = (tab: DetailTab) => void router.push({ pathname: router.pathname, query: { ...router.query, tab } }, undefined, { shallow: true });
   const [machineSearch, setMachineSearch] = useState("");
+  const [machineStatusFilter, setMachineStatusFilter] = useState("");
+  const [machineFilterDraft, setMachineFilterDraft] = useState({ search: "", type: "ALL", status: "" });
   const [machinePage, setMachinePage] = useState(0);
   const [requestPage, setRequestPage] = useState(0);
   const [ticketPage, setTicketPage] = useState(0);
@@ -126,7 +130,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
     queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({ machineId: machineId!, page: ticketPage, size: 10 }, signal),
     enabled: ready && Boolean(machineId), retry: false,
   });
-  const visibleMachines = (list.data ?? []).filter((machine) => (machineTypeFilter === "ALL" || machine.machineType === machineTypeFilter) && (!machineSearch.trim() || [machine.serialNumber, machine.modelName, locationName(machine.locationId)].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(machineSearch.trim().toLocaleLowerCase("vi-VN")))));
+  const visibleMachines = (list.data ?? []).filter((machine) => (machineTypeFilter === "ALL" || machine.machineType === machineTypeFilter) && (!machineStatusFilter || machine.status === machineStatusFilter) && (!machineSearch.trim() || [machine.serialNumber, machine.modelName, locationName(machine.locationId)].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(machineSearch.trim().toLocaleLowerCase("vi-VN")))));
   const currentPage = Math.min(machinePage, Math.max(0, Math.ceil(visibleMachines.length / 10) - 1));
   const pageMachines = visibleMachines.slice(currentPage * 10, currentPage * 10 + 10);
   const smartIotMachines = isList ? pageMachines.filter((machine) => machine.machineType === "SMART_IOT") : [];
@@ -326,16 +330,17 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               <ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar>
               {isHistory ? <ButtonBar href="/dashboard/support/new">Gửi yêu cầu hỗ trợ</ButtonBar> : <ButtonBar variant="primary" href={PATH_CUSTOMER.MACHINE_NEW}>Đăng ký máy</ButtonBar>}
             </div></div>
-          <div className={styles.ownerInventoryToolbar}>
-            <label className={styles.ownerInventorySearch}><span className={machineStyles.visuallyHidden}>Tìm máy</span><input type="search" placeholder="Tìm serial, mẫu máy hoặc điểm bán" value={machineSearch} onChange={(event) => { setMachineSearch(event.target.value); setMachinePage(0); }} /></label>
-            <label><span className={machineStyles.visuallyHidden}>Loại máy</span><select value={machineTypeFilter} onChange={(event) => { setMachineTypeFilter(event.target.value as typeof machineTypeFilter); setMachinePage(0); }}><option value="ALL">Tất cả loại máy</option><option value="SMART_IOT">Smart IoT</option><option value="CONVENTIONAL">Máy thường</option></select></label>
+          <TableFilters search={{ ariaLabel: "Tìm máy", placeholder: "Tìm serial, mẫu máy hoặc điểm bán", value: machineFilterDraft.search, onChange: (search) => setMachineFilterDraft((current) => ({ ...current, search })) }}
+            selects={[
+              { id: "owner-machine-type", ariaLabel: "Loại máy", value: machineFilterDraft.type, onChange: (type) => setMachineFilterDraft((current) => ({ ...current, type })), options: [{ value: "ALL", label: "Tất cả loại máy" }, { value: "SMART_IOT", label: "Smart IoT" }, { value: "CONVENTIONAL", label: "Máy thường" }] },
+              { id: "owner-machine-status", ariaLabel: "Trạng thái máy", value: machineFilterDraft.status, onChange: (status) => setMachineFilterDraft((current) => ({ ...current, status })), options: [{ value: "", label: "Tất cả trạng thái" }, ...MachineStatusSchema.options.map((value) => ({ value, label: MACHINE_STATUS_LABELS[value] }))] },
+            ]} submitLabel="Tìm kiếm" onSubmit={(event) => { event.preventDefault(); setMachineSearch(machineFilterDraft.search.trim()); setMachineTypeFilter(machineFilterDraft.type as typeof machineTypeFilter); setMachineStatusFilter(machineFilterDraft.status); setMachinePage(0); }} />
             <span className={styles.ownerInventoryDate}>Vệ sinh ngày {summaryDate.split("-").reverse().join("/")}</span>
-          </div>
-          <QueryFeedback
+            <QueryFeedback
             loading={list.isPending}
             failed={list.isError}
             empty={Boolean(list.data && visibleMachines.length === 0)}
-            emptyText={machineSearch || machineTypeFilter !== "ALL" ? "Không có máy phù hợp với bộ lọc." : messages.NO_MACHINES}
+            emptyText={machineSearch || machineStatusFilter || machineTypeFilter !== "ALL" ? "Không có máy phù hợp với bộ lọc." : messages.NO_MACHINES}
           />
               {visibleMachines.length > 0 && <div ref={heartbeatTableRef}>
                 <DataTable

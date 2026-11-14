@@ -354,7 +354,7 @@ input[type="range"] { display: block; width: 100%; min-height: 44px; margin: 0 0
   #part-list { grid-row: 3; }
 }
 
-/* The existing WebGL film fills the hero behind its marketing copy. */
+/* The pre-rendered film keeps the hero independent of the interactive model loader. */
 .section.hero { padding: 0; background: #f4f3f2; color: var(--color-text); }
 .film-stage { position: relative; display: grid; width: 100%; height: 100svh; min-height: 640px; background: radial-gradient(ellipse at 76% 55%, #e4e2e0, #f4f3f2 68%); isolation: isolate; }
 .film-stage::after { position: absolute; z-index: 3; inset: 0; background: linear-gradient(90deg, rgb(244 243 242 / 94%), rgb(244 243 242 / 78%) 28%, transparent 68%); pointer-events: none; content: ""; }
@@ -367,6 +367,7 @@ input[type="range"] { display: block; width: 100%; min-height: 44px; margin: 0 0
 .hero .button { min-height: 54px; padding: 14px 24px; border-radius: 999px; white-space: nowrap; }
 .hero .button:not(.primary) { background: rgb(255 255 255 / 80%); color: var(--color-text); border-color: #d6cfca; }
 .journey-host { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; background: transparent; }
+.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .is-teaser .journey-host canvas { opacity: var(--teaser-opacity, 0); }
 .film-poster { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; opacity: 1; transition: opacity 400ms ease; }
 .film-poster p { margin: 0; padding: 12px 18px; border-radius: 12px; background: rgb(255 255 255 / 92%); color: var(--color-muted); font-size: 14px; text-align: center; }

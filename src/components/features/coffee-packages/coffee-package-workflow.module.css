@@ -356,6 +356,104 @@
   background: #fffafa;
 }
 
+.managementScreen {
+  gap: 22px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #302927;
+}
+
+.managementScreen .heading h1,
+.managementScreen .detailHeading h1 { font-size: 27px; line-height: 1.4; }
+.managementScreen .heading p,
+.managementScreen .detailHeading p { font-size: 14px; color: #706561; }
+.managementScreen .panel { padding: 22px 24px; border-color: #e9e2dc; border-radius: 16px; gap: 20px; }
+.managementScreen .panel h2 { font-size: 19px; line-height: 1.4; }
+.managementScreen .subpanel h3 { font-size: 16px; line-height: 1.4; }
+.managementScreen .panelHeading p { max-width: 72ch; font-size: 14px; }
+.managementScreen .tabs { gap: 8px; border: 0; }
+.managementScreen .tabs button { min-height: 44px; padding: 9px 16px; border: 1px solid #e9e2dc; border-radius: 9px; background: #fff; font-size: 14px; }
+.managementScreen .tabs button:hover { background: #f8f5f3; }
+.managementScreen .tabs .activeTab { background: #f9e9ea; border-color: #ecc9ca; color: #a01520; font-weight: 600; }
+.managementScreen .tableWrap { border: 0; border-radius: 0; scrollbar-width: thin; scrollbar-color: #b8aca5 #f7f5f3; }
+.managementScreen .table th { padding: 12px 14px; background: #f7f5f3; color: #625955; font-size: 13px; font-weight: 600; }
+.managementScreen .table td { padding: 14px; vertical-align: middle; font-size: 14px; }
+.managementScreen .table tbody tr:hover td { background: #fdf9f8; }
+.managementScreen .table th:last-child { text-align: right; }
+.managementScreen .table td:last-child { text-align: right; }
+.managementScreen .table td.buttonCell { display: table-cell; min-width: 190px; }
+.managementScreen .buttonCell > button { margin: 3px; }
+.managementScreen .code { font-family: inherit; font-size: 13px; }
+.managementScreen .muted { font-size: 12px; }
+.managementScreen .numeric { font-weight: 600; }
+.managementScreen .details { gap: 20px 28px; }
+.managementScreen .details > div { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.managementScreen .details dt { font-size: 13px; color: #706561; }
+.managementScreen .details dd { font-size: 14px; font-weight: 600; }
+.managementScreen .subpanel { padding: 20px; border-color: #e9e2dc; border-radius: 12px; gap: 16px; }
+.managementScreen .field { font-size: 13px; font-weight: 500; }
+.managementScreen .field input,
+.managementScreen .field select,
+.managementScreen .field textarea { min-height: 44px; border-color: #e9e2dc; border-radius: 8px; font-size: 14px; }
+.managementScreen .actionRow { justify-content: flex-end; flex-wrap: wrap; }
+.managementScreen .pagination { font-size: 13px; }
+.managementScreen .orderTable { min-width: 740px; }
+.orderTable th:first-child { width: 33%; }
+.orderTable th:nth-child(2) { width: 22%; }
+.orderCustomer { display: block; font-weight: 600; }
+.orderMeta { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 4px; color: #706561; font-size: 12px; }
+.orderQuantity { display: block; margin-top: 4px; color: #706561; font-size: 12px; }
+.ownerOrderForm .formGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(140px, .45fr); }
+.ownerOrderForm .selectedPackage { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; align-items: center; gap: 20px; }
+.packagePrice, .packageTotal { display: grid; gap: 4px; }
+.packageTotal { text-align: right; }
+.downloadAction { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 6px; vertical-align: middle; }
+.downloadError { max-width: 32ch; color: #a51e2b; font-size: 12px; white-space: normal; }
+.managementScreen .orderSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ownerOrderColumns { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); align-items: start; gap: 32px; }
+.ownerOrderInformation { display: grid; min-width: 0; gap: 16px; }
+.ownerOrderInformation > p { margin: 0; font-size: 13px; }
+.ownerOrderInformation .actionGrid { grid-template-columns: minmax(0, 1fr); }
+.ownerOrderInformation .formGrid { grid-template-columns: minmax(0, 1fr); }
+.managementScreen .ownerOrderInformation .linkedIds .details { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.ownerOrderColumns .invoiceSection { padding: 18px; background: #faf8f6; border-radius: 12px; }
+.ownerOrderColumns .invoiceSection .details { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.paymentHistory { display: grid; min-width: 0; gap: 12px; }
+.paymentHistory h4 { margin: 0; font-size: 14px; }
+.paymentHistory > p { margin: 0; font-size: 12px; }
+.proofList { display: grid; margin: 0; padding: 0; list-style: none; }
+.proofList > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px 0; }
+.proofList > li + li { border-top: 1px solid #e9e2dc; }
+.proofIdentity { display: grid; justify-items: start; min-width: 0; gap: 5px; font-size: 13px; }
+.proofIdentity > strong { max-width: 100%; overflow-wrap: anywhere; font-weight: 600; }
+.proofIdentity .orderMeta { margin: 0; }
+.proofActions { display: grid; justify-items: end; gap: 8px; }
+.proofList > li[aria-current="true"] { background: #f9e9ea; border-radius: 8px; }
+.invoiceSection { display: grid; min-width: 0; gap: 16px; }
+.invoiceSection h3 { margin: 0; font-size: 16px; }
+.managementScreen .ownerOrderDetail { gap: 18px; }
+.ownerOrderDetail .paymentSection > summary { font-size: 14px; }
+.managementScreen .paymentSection > .tableWrap { margin-top: 12px; }
+.linkedIds { min-width: 0; color: #706561; font-size: 13px; }
+.linkedIds summary { width: fit-content; padding: 10px 0; cursor: pointer; }
+.linkedIds .details { margin-top: 10px; }
+.paymentSection { min-width: 0; }
+.paymentSection > summary { width: fit-content; padding: 10px 0; cursor: pointer; font-size: 16px; font-weight: 600; }
+.paymentSection > section { margin-top: 12px; }
+.linkedIds summary:focus-visible,
+.paymentSection summary:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; border-radius: 4px; }
+
+@media (max-width: 800px) {
+  .ownerOrderColumns { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .managementScreen .orderSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ownerOrderForm .formGrid, .ownerOrderForm .selectedPackage { grid-template-columns: minmax(0, 1fr); }
+  .packageTotal { text-align: left; }
+  .managementScreen .panel { padding: 16px; }
+  .managementScreen .actionGrid { grid-template-columns: minmax(0, 1fr); }
+  .managementScreen .heading { flex-wrap: wrap; }
+}
+
 @media (max-width: 1023px) {
   .screen { padding: 0 16px 16px; }
 }
@@ -378,6 +476,9 @@
 }
 
 @media (max-width: 560px) {
+  .ownerOrderColumns .invoiceSection { padding: 14px; }
+  .proofList > li { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .managementScreen .orderSummary { grid-template-columns: minmax(0, 1fr); }
   .screen { padding-right: 14px; padding-left: 14px; }
   .heading,
   .panelHeading {

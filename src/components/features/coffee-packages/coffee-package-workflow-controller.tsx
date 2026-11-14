@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { readAllPages } from "@/lib/read-all-pages";
 import { useState } from "react";
 import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { contractsApi } from "@/apis/contracts.api";
@@ -89,6 +90,8 @@ export function useCoffeePackageWorkflowController(role: CoffeePackageRole, sele
   const ownerId = role === "OWNER" ? getAuthenticatedSubjectId() : null;
   const queryRoot = ["dolores", "coffee-packages", role, subject] as const;
   const [page, setPage] = useState(0);
+  const [orderFilterDraft, setOrderFilterDraft] = useState({ search: "", status: "", packageId: "" });
+  const [orderFilters, setOrderFilters] = useState(orderFilterDraft);
   const [selectedOrderId, setSelectedOrderId] = useState(initialOrderId);
   const [selectedRefundId, setSelectedRefundId] = useState("");
   const [success, setSuccess] = useState("");
@@ -116,8 +119,17 @@ export function useCoffeePackageWorkflowController(role: CoffeePackageRole, sele
     retry: false,
   });
   const orders = useQuery({
-    queryKey: [...queryRoot, "orders", page],
-    queryFn: ({ signal }) => coffeePackagesApi.listOrders(page, 50, signal),
+    queryKey: [...queryRoot, "orders", page, orderFilters],
+    queryFn: async ({ signal }) => {
+      if (!orderFilters.search && !orderFilters.status && !orderFilters.packageId) return coffeePackagesApi.listOrders(page, 10, signal);
+      // shortcut: API chưa hỗ trợ bộ lọc đơn; chuyển sang lọc phía server khi API bổ sung tham số.
+      const all = await readAllPages((index) => coffeePackagesApi.listOrders(index, 100, signal));
+      const search = orderFilters.search.toLocaleLowerCase("vi-VN");
+      const items = all.filter((order) => (!orderFilters.status || order.status === orderFilters.status)
+        && (!orderFilters.packageId || order.packageId === orderFilters.packageId)
+        && (!search || [order.id, order.packageName, order.packageCode, order.ownerName].some((value) => value?.toLocaleLowerCase("vi-VN").includes(search))));
+      return { items: items.slice(page * 10, page * 10 + 10), page, size: 10, hasNext: (page + 1) * 10 < items.length };
+    },
     retry: false,
   });
   const orderIdValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(selectedOrderId);
@@ -193,6 +205,8 @@ export function useCoffeePackageWorkflowController(role: CoffeePackageRole, sele
   );
 
   return {
+    orderFilterDraft, setOrderFilterDraft,
+    applyOrderFilters: () => { setOrderFilters({ ...orderFilterDraft, search: orderFilterDraft.search.trim() }); setPage(0); },
     role,
     page,
     setPage,

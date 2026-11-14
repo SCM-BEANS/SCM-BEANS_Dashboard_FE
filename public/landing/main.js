@@ -1,9 +1,5 @@
-import { COPY, STEPS, LOGIN_URL } from "./clusters.js";
+import { COPY, LOGIN_URL } from "./clusters.js";
 
-import { annotationData, createAnnotations } from "./annotations.js";
-import { createTeaser } from "./teaser.js";
-import { createSyncSection } from "./sync/section.js";
-import { createProcessSection } from "./process/section.js";
 import { createLandingTail } from "./tail/index.js";
 import { createIntroWave } from "./intro.js";
 
@@ -65,10 +61,7 @@ document.querySelectorAll("[data-login]").forEach(link => {
   else { link.href = loginUrl; link.target = "_top"; }
 });
 
-let annotations = null, partsData = null, brainData = null;
-const journeyList = document.createElement("div"); journeyList.className = "annotation-list";
-const journeyCard = document.createElement("div"); journeyCard.className = "part-card journey-part-card"; journeyCard.hidden = true;
-let viewer = null, teaser = null;
+let viewer = null;
 window.addEventListener("scroll", updateNavigation, { passive: true });
 window.addEventListener("resize", updateNavigation);
 function updateNavigation() {
@@ -100,55 +93,56 @@ function setupReveals() {
 updateNavigation(); setupReveals();
 motion.addEventListener("change", setupReveals);
 
-// The intro only covers the screen; data and models start loading underneath it straight away.
-let finishIntro;
-const introFinished = new Promise(resolve => { finishIntro = resolve; });
+// Dismiss the brand intro independently of media loading.
 function dismissIntro() {
   if (!$("intro")) return;
   document.body.style.overflow = previousOverflow;
   $("intro").remove();
-  finishIntro();
 }
-function showLoadError() {
-  $("film-poster")?.classList.add("is-error");
-  if ($("film-loading")) $("film-loading").textContent = LOAD_ERROR;
+const film = $("hero-video"), filmToggle = $("film-toggle");
+const filmViewport = matchMedia("(max-width: 800px)");
+let filmVisible = false, filmPaused = motion.matches;
+function updateFilmSource() {
+  film.poster = `/video/dolores-machine-reveal${filmViewport.matches ? "-mobile" : ""}.jpg`;
+  film.load(); updateFilm();
 }
+function updateFilm() {
+  if (filmVisible && !document.hidden && !filmPaused) void film.play().catch(() => {});
+  else film.pause();
+}
+function updateFilmButton() {
+  filmToggle.textContent = film.paused ? "▶" : "Ⅱ";
+  filmToggle.setAttribute("aria-label", film.paused ? "Phát hoạt ảnh máy pha" : "Tạm dừng hoạt ảnh máy pha");
+}
+filmToggle.addEventListener("click", () => { filmPaused = !film.paused; updateFilm(); });
+film.addEventListener("play", updateFilmButton);
+film.addEventListener("pause", updateFilmButton);
+document.addEventListener("visibilitychange", updateFilm);
+motion.addEventListener("change", () => { filmPaused = motion.matches; updateFilm(); });
+filmViewport.addEventListener("change", updateFilmSource);
+updateFilmSource();
+if (typeof IntersectionObserver !== "undefined") {
+  new IntersectionObserver(([entry]) => { filmVisible = entry.isIntersecting; updateFilm(); }).observe(film);
+} else { filmVisible = true; updateFilm(); }
+
 async function startViewer() {
   try {
-    const response = await fetch("./landing/brain.json");
+    const [{ annotationData, createAnnotations }, { createViewer }, { createSyncSection }, { createProcessSection }, response] = await Promise.all([
+      import("./annotations.js"), import("./viewer.js"), import("./sync/section.js"), import("./process/section.js"), fetch("./landing/brain.json")
+    ]);
     if (!response.ok) throw new Error("brain.json");
-    brainData = await response.json();
-    const { createViewer } = await import("./viewer.js");
-    partsData = await annotationData;
-    annotations = createAnnotations(partsData, {
+    const brainData = await response.json();
+    const partsData = await annotationData;
+    const annotations = createAnnotations(partsData, {
       highlight: meshes => viewer?.highlight(meshes),
       openDetail: () => location.assign("./machine.html")
     });
     viewer = createViewer(annotations, partsData, brainData);
-    annotations.register("journey", $("journey-host"), journeyList, journeyCard);
-    viewer.registerHost("journey", $("journey-host"), { view: STEPS[0].view, filmControlled: true });
     viewer.registerHost("sync", $("sync-host"), { modelId: "c03", view: { az: 70, el: 12 } });
     createSyncSection({ viewer, root: $("tu-may-len-nen-tang") });
     createProcessSection({ viewer, root: $("qua-trinh"), brain: brainData });
-    teaser = createTeaser({ viewer });
-    void introFinished.then(() => teaser.enable());
-    viewer.onProgress(({ modelId, percent, error }) => {
-      if (modelId === "body") {
-        if (error) showLoadError();
-        else if ($("film-loading")) $("film-loading").textContent = `Đang tải mô hình 3D… ${Math.round(percent)}%`;
-      }
-    });
-    const body = await viewer.load("body");
-    teaser.ready(body);
-    const poster = $("film-poster");
-    if (poster) {
-      poster.classList.add("is-ready");
-      setTimeout(() => poster.remove(), 400);
-    }
   } catch (error) {
-    console.warn("The landing viewer could not start. Run node serve.mjs with SCM-BEANS_Dashboard_FE next to this repo, or set DASHBOARD_PUBLIC.", error);
-    // Keep the loading message visible when the 3D film cannot start.
-    showLoadError();
+    console.warn("The interactive machine sections could not start.", error);
     for (const id of ["process-host", "sync-host"]) {
       if ($(id).querySelector(".viewer-status")) continue;
       const message = document.createElement("p");
@@ -158,5 +152,11 @@ async function startViewer() {
     }
   }
 }
-void startViewer();
+// Interactive sections load only when approached; the hero and login use exported video.
+if (typeof IntersectionObserver !== "undefined") {
+  const observer = new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting)) { observer.disconnect(); void startViewer(); }
+  }, { rootMargin: "200px" });
+  observer.observe($("qua-trinh")); observer.observe($("tu-may-len-nen-tang"));
+} else void startViewer();
 setTimeout(dismissIntro, 1400);

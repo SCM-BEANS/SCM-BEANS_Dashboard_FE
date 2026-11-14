@@ -1,4 +1,6 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { readAllPages } from "@/lib/read-all-pages";
+import { TableFilters } from "@/components/table/table-filters";
 import { ZodError } from "zod";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
@@ -35,6 +37,9 @@ export function LocationsManagementPanel({
   const queryClient = useQueryClient();
   const initialOwnerId = typeof router.query.ownerId === "string" ? router.query.ownerId : "";
   const [selectedOwnerId, setSelectedOwnerId] = useState(initialOwnerId);
+  const [filterDraft, setFilterDraft] = useState({ search: "", status: "" });
+  const [filters, setFilters] = useState(filterDraft);
+  const hasFilters = Boolean(filters.search || filters.status);
   const [form, setForm] = useState<LocationCreate>(emptyForm);
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -54,13 +59,21 @@ export function LocationsManagementPanel({
   const locations = useInfiniteQuery({
     queryKey: ["dolores", "locations", "owner", activeOwnerId],
     queryFn: ({ pageParam, signal }) => locationsApi.listPage({
-      ownerId: activeOwnerId!, page: pageParam, size: 50,
+      ownerId: activeOwnerId!, activeOnly: false, page: pageParam, size: 50,
     }, signal),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.page + 1 : undefined,
     enabled: validActiveOwner,
   });
-  const locationRows = locations.data?.pages.flatMap((page) => page.items) ?? [];
+  const filteredLocations = useQuery({
+    queryKey: ["dolores", "locations", "owner", activeOwnerId, "filtered", filters],
+    queryFn: async ({ signal }) => {
+      const all = await readAllPages((page) => locationsApi.listPage({ ownerId: activeOwnerId!, activeOnly: false, q: filters.search || undefined, page, size: 100 }, signal));
+      return all.filter((location) => !filters.status || (filters.status === "ACTIVE" ? location.active === true : location.active === false));
+    }, enabled: validActiveOwner && hasFilters, retry: false,
+  });
+  const listingState = hasFilters ? filteredLocations : locations;
+  const locationRows = hasFilters ? filteredLocations.data ?? [] : locations.data?.pages.flatMap((page) => page.items) ?? [];
   const selectedOwner = owners.find((profile) => profile.idaasUserId === activeOwnerId);
 
   const create = useMutation({
@@ -178,13 +191,16 @@ export function LocationsManagementPanel({
           <ButtonBar type="button" onClick={() => router.reload()}>Tải lại trang</ButtonBar>
         </p>}
         {successMessage && <p className={styles.notice} data-kind="success" role="status">{successMessage}</p>}
-        {locations.isPending && <p className={styles.notice} role="status">Đang tải địa điểm…</p>}
-        {locations.isError && <div className={styles.notice} role="alert">
-          <p>{getApiErrorMessage(locations.error)}</p>
-          <ButtonBar type="button" disabled={locations.isFetching} onClick={() => void locations.refetch()}>Thử tải lại</ButtonBar>
+        {!createFormOpen && <TableFilters search={{ ariaLabel: "Tìm địa điểm", placeholder: "Tìm tên hoặc địa chỉ", value: filterDraft.search, maxLength: 160, onChange: (search) => setFilterDraft((current) => ({ ...current, search })) }}
+          selects={[{ id: "location-status", ariaLabel: "Trạng thái địa điểm", value: filterDraft.status, onChange: (status) => setFilterDraft((current) => ({ ...current, status })), options: [{ value: "", label: "Tất cả trạng thái" }, { value: "ACTIVE", label: "Hoạt động" }, { value: "INACTIVE", label: "Ngừng hoạt động" }] }]}
+          submitLabel="Tìm kiếm" onSubmit={(event) => { event.preventDefault(); setFilters({ ...filterDraft, search: filterDraft.search.trim() }); }} />}
+        {listingState.isPending && <p className={styles.notice} role="status">Đang tải địa điểm…</p>}
+        {listingState.isError && <div className={styles.notice} role="alert">
+          <p>{getApiErrorMessage(listingState.error)}</p>
+          <ButtonBar type="button" disabled={listingState.isFetching} onClick={() => void listingState.refetch()}>Thử tải lại</ButtonBar>
         </div>}
-        {locations.data && locationRows.length === 0 && <p className={styles.notice} role="status">Owner chưa có địa điểm.</p>}
-        {(mode === "owner" || !createFormOpen) && locations.data && locationRows.length > 0 && <DataTable
+        {listingState.data && locationRows.length === 0 && <p className={styles.notice} role="status">Owner chưa có địa điểm.</p>}
+        {(mode === "owner" || !createFormOpen) && listingState.data && locationRows.length > 0 && <DataTable
           variant={tableVariant}
           rows={locationRows}
           rowKey={(location) => location.id}
@@ -208,7 +224,7 @@ export function LocationsManagementPanel({
             >{mode === "moderator" ? "Mở hồ sơ" : "Chi tiết"}</ButtonBar> },
           ]}
         />}
-        {locations.hasNextPage && <div className={styles.actions}>
+        {!hasFilters && locations.hasNextPage && <div className={styles.actions}>
           <ButtonBar type="button" disabled={locations.isFetchingNextPage} onClick={() => void locations.fetchNextPage()}>
             {locations.isFetchingNextPage ? "Đang tải…" : "Tải thêm địa điểm"}
           </ButtonBar>

@@ -1,3 +1,4 @@
+import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { useState } from "react";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
@@ -46,7 +47,8 @@ function machineTypeFor(machineId: string, ownerContracts: Contract[]): string {
 
 function IoTContent() {
   const router = useRouter();
-  const [machineSearch, setMachineSearch] = useState("");
+  const [filterDraft, setFilterDraft] = useState<MachineListFilterValue>({ search: "", status: "", connection: "" });
+  const [machineFilters, setMachineFilters] = useState(filterDraft);
   const [machinePage, setMachinePage] = useState(0);
   const visible = usePageVisibility();
   const ownerId = typeof router.query.ownerId === "string" ? router.query.ownerId : "";
@@ -85,14 +87,23 @@ function IoTContent() {
     queryKey: ["dolores", "machines", "inventory", subject],
     queryFn: ({ signal }) => machinesApi.list(signal),
   });
-  const smartRows = (machines.data ?? []).filter((machine) => machine.machineType === "SMART_IOT" && (machine.serialNumber ?? "").toLocaleLowerCase("vi").includes(machineSearch.toLocaleLowerCase("vi")));
-  const currentPage = Math.min(machinePage, Math.max(0, Math.ceil(smartRows.length / 10) - 1));
-  const machineRows = smartRows.slice(currentPage * 10, currentPage * 10 + 10);
-  const heartbeats = useQueries({ queries: machineRows.map((machine, index) => ({
+  const candidates = (machines.data ?? []).filter((machine) => machine.machineType === "SMART_IOT").filter((machine) => (!machineFilters.status || machine.status === machineFilters.status) && (!machineFilters.search || [machine.serialNumber, machine.modelName, machine.modelCode].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(machineFilters.search.toLocaleLowerCase("vi-VN")))));
+  const candidatePage = Math.min(machinePage, Math.max(0, Math.ceil(candidates.length / 10) - 1));
+  const heartbeatMachines = machineFilters.connection ? candidates : candidates.slice(candidatePage * 10, candidatePage * 10 + 10);
+  const heartbeats = useQueries({ queries: heartbeatMachines.map((machine, index) => ({
     queryKey: ["dolores", "admin", "telemetry", "heartbeat", subject, machine.id],
     queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
-    enabled: visible && !hasOwnerId && !reviewView && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3000, refetchInterval: visible ? 5000 : false, refetchIntervalInBackground: false,
+    enabled: visible && !hasOwnerId && !reviewView && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3000, refetchInterval: (query: { state: { error: unknown } }) => visible && !query.state.error ? (machineFilters.connection ? 30_000 : 5_000) : false, refetchIntervalInBackground: false,
   })) });
+  const getHeartbeat = (id: string) => heartbeats[heartbeatMachines.findIndex((machine) => machine.id === id)];
+  const connectionsLoading = Boolean(machineFilters.connection) && heartbeats.some((result) => result.isPending);
+  const smartRows = candidates.filter((machine) => {
+    if (!machineFilters.connection) return true;
+    const result = getHeartbeat(machine.id);
+    return machineFilters.connection === (result?.isError ? "error" : result?.data?.status);
+  });
+  const currentPage = Math.min(machinePage, Math.max(0, Math.ceil(smartRows.length / 10) - 1));
+  const machineRows = smartRows.slice(currentPage * 10, currentPage * 10 + 10);
   const contracts = useQuery({
     queryKey: ["dolores", "contracts", "all", subject],
     queryFn: ({ signal }) => contractsApi.list(signal),
@@ -199,14 +210,13 @@ function IoTContent() {
     <BackButtonHeading title="Giám sát máy" titleId="admin-iot-title" description="Chọn máy để xem kết nối, thông số và các lần mất kết nối đã ghi nhận." className={styles.pageHeading} back={null} />
     <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
     {reviewView ? offlinePanel(Object.fromEntries(allMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))) : <section className={styles.panel}>
-      <div className={styles.machineInventoryHeading}><h2>Máy Smart IoT</h2><ButtonBar disabled={machines.isFetching} onClick={() => void machines.refetch()}>Làm mới</ButtonBar></div>
-      <label className={styles.machineSearch}>Tìm máy<input value={machineSearch} onChange={(event) => { setMachineSearch(event.target.value); setMachinePage(0); }} placeholder="Tìm serial máy" /></label>
-      {machines.isPending ? <p role="status">Đang tải danh sách máy…</p> : machines.isError ? <div role="alert"><p>{getApiErrorMessage(machines.error)}</p><ButtonBar onClick={() => void machines.refetch()}>Thử lại</ButtonBar></div> : <DataTable variant="accounts" rows={machineRows} rowKey={(machine) => machine.id} emptyMessage="Chưa có máy Smart IoT trong danh sách." columns={[
+      <div className={styles.machineInventoryHeading}><h2>Máy Smart IoT</h2></div>
+      <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setMachinePage(0); }} />
+      {machines.isPending || connectionsLoading ? <p role="status">Đang tải danh sách máy…</p> : machines.isError ? <div role="alert"><p>{getApiErrorMessage(machines.error)}</p><ButtonBar onClick={() => void machines.refetch()}>Thử lại</ButtonBar></div> : <DataTable variant="accounts" rows={machineRows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
         { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={styles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
-        { key: "connection", header: "Kết nối", render: (machine) => { const result = heartbeats[machineRows.findIndex((item) => item.id === machine.id)]; return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} />; } },
-        { key: "profile", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar> },
-        { key: "open", header: "Giám sát", render: (machine) => <ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
+        { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
+        { key: "actions", header: "Thao tác", render: (machine) => <div className={machineStyles.machineRowActions}><ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar><ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar></div> },
       ]} />}
       <nav className={styles.machinePagination} aria-label="Phân trang giám sát"><span>{smartRows.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(smartRows.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setMachinePage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= smartRows.length} onClick={() => setMachinePage(currentPage + 1)}>Sau</ButtonBar></nav>
     </section>}

@@ -144,12 +144,6 @@ function InvoiceFilters({
     onApply(draft);
   }
 
-  function clear() {
-    const empty: InvoiceFilters = { ownerId: "", period: "", status: "", type: "" };
-    setDraft(empty);
-    onApply(empty);
-  }
-
     return (
       <form className={styles.listFilters} onSubmit={submit}>
         {role !== "owner" && <label>Khách hàng<select value={draft.ownerId} onChange={(event) => setDraft((current) => ({ ...current, ownerId: event.target.value }))}>
@@ -160,35 +154,15 @@ function InvoiceFilters({
         <label>Trạng thái<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as InvoiceFilters["status"] }))}>
           <option value="">Tất cả trạng thái</option>{Object.entries(messages.INVOICE_STATUSES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
-        <ButtonBar type="submit" disabled={disabled}>Tìm kiếm</ButtonBar>
-        <details className={styles.moreFilters}><summary>Bộ lọc thêm{draft.type ? " · 1" : ""}</summary>
-          <label>Loại hóa đơn<select value={draft.type} onChange={(event) => setDraft((current) => ({ ...current, type: event.target.value as InvoiceFilters["type"] }))}>
+        <label>Loại hóa đơn<select value={draft.type} onChange={(event) => setDraft((current) => ({ ...current, type: event.target.value as InvoiceFilters["type"] }))}>
             <option value="">Tất cả loại hóa đơn</option>{Object.entries(messages.INVOICE_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select></label>
-          <ButtonBar type="button" disabled={disabled} onClick={clear}>Xóa bộ lọc</ButtonBar>
-        </details>
+        <ButtonBar type="submit" disabled={disabled}>Tìm kiếm</ButtonBar>
         {role !== "owner" && customers.isPending && <p className={styles.filterFeedback} role="status">Đang tải khách hàng…</p>}
         {customers.hasNextPage && <div className={styles.filterFeedback}><ButtonBar type="button" disabled={customers.isFetchingNextPage} onClick={() => void customers.fetchNextPage()}>Tải thêm khách hàng</ButtonBar></div>}
         {customers.isError && <div className={styles.filterFeedback} role="alert">Không tải được khách hàng. <ButtonBar type="button" onClick={() => void customers.refetch()}>Thử lại</ButtonBar></div>}
       </form>
     );
-}
-
-function InvoiceProofSummary({ invoiceId, role }: { invoiceId: string; role: OperatorRole }) {
-  const [open, setOpen] = useState(false);
-  const [page, setPage] = useState(0);
-  const proofs = useQuery({
-    queryKey: [...invoiceQueryKey, querySubject(role), invoiceId, "proof-summary", page],
-    queryFn: ({ signal }) => billingApi.listPaymentProofsPage(invoiceId, { page, size: 10 }, signal),
-    enabled: open, retry: false,
-  });
-  return <details className={styles.proofSummary} onToggle={(event) => setOpen(event.currentTarget.open)}><summary>Xem chứng từ</summary>
-    {open && <>
-      <InlineQueryState pending={proofs.isPending} error={proofs.isError ? proofs.error : null} empty={proofs.data?.items.length === 0} loadingText="Đang tải chứng từ…" emptyText="Chưa có chứng từ." retry={proofs.refetch} />
-      {proofs.data && proofs.data.items.length > 0 && <p>{Object.entries(messages.PROOF_STATUSES).map(([status, label]) => `${label}: ${proofs.data.items.filter((item) => item.status === status).length}`).join(" · ")}</p>}
-      {proofs.data && (page > 0 || proofs.data.hasNext) && <Pagination page={page} hasNext={proofs.data.hasNext} disabled={proofs.isFetching} label="Phân trang tóm tắt chứng từ" onChange={setPage} />}
-    </>}
-  </details>;
 }
 
 function InvoiceStatusControls({ invoice, role }: { invoice: Invoice; role: OperatorRole }) {
@@ -207,11 +181,13 @@ function InvoiceList({
   filters,
   onApplyFilters,
   invalidFilterMessage,
+  showHeading,
 }: {
   role: InvoiceRole;
   filters: InvoiceFilters;
   onApplyFilters: (filters: InvoiceFilters) => void;
   invalidFilterMessage: string;
+  showHeading: boolean;
 }) {
   const [page, setPage] = useState(0);
   const subject = querySubject(role);
@@ -247,11 +223,13 @@ function InvoiceList({
   useEffect(() => setPage(0), [filters]);
 
   return (
-    <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
-      <div className={styles.panelHeading}>
-        <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2>{query.data && <span>{rows.length} hóa đơn trong trang</span>}</div>
+    <>
+      <header className={styles.panelHeading}>
+        {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1><p>Tra cứu hóa đơn và theo dõi thanh toán.</p></div> : <span />}
         <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
-      </div>
+      </header>
+    <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
+      <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2>{query.data && <span>{rows.length} hóa đơn trong trang</span>}</div>
       {exportReason && <p className={styles.hint}>{exportReason}</p>}
       {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}
       <InvoiceFilters role={role} initialPeriod={filters.period} onApply={onApplyFilters} disabled={query.isFetching} />
@@ -283,7 +261,6 @@ function InvoiceList({
             { key: "period", header: messages.PERIOD, render: (invoice) => periodText(invoice.period) },
             { key: "amount", header: "Số tiền", align: "right", render: (invoice) => <span className={styles.money}>{amountText(invoice.amount, invoice.currency)}</span> },
             { key: "status", header: messages.STATUS, render: (invoice) => <BillingStatus status={invoice.status} label={invoiceStatus(invoice.status)} /> },
-            ...(role === "moderator" ? [{ key: "proofs", header: "Chứng từ", render: (invoice: Invoice) => <InvoiceProofSummary invoiceId={invoice.id} role={role} /> }] : []),
             { key: "action", header: "", render: (invoice) => <ButtonBar rollingLabel href={role === "owner" ? `${PATH_CUSTOMER.INVOICE_DETAIL(invoice.id)}${router.asPath?.split("?")[0].endsWith("/refund") ? "?tab=refund" : ""}` : role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>Mở hồ sơ</ButtonBar> },
           ]}
         />
@@ -292,6 +269,7 @@ function InvoiceList({
         <Pagination page={query.data.page} hasNext={query.data.hasNext} disabled={query.isFetching} label={messages.PAGINATE_INVOICES} onChange={setPage} />
       )}
     </section>
+    </>
   );
 }
 
@@ -589,7 +567,7 @@ export function OperatorInvoicesScreen({
 
   return (
     <div className={styles.screen}>
-      {showHeading && !validInvoiceId ? (
+      {showHeading && invalidInvoiceId ? (
         <header className={styles.heading}>
           <h1>{validInvoiceId ? "Hồ sơ hóa đơn" : "Hóa đơn"}</h1>
           {!validInvoiceId && <p>Tra cứu hóa đơn và theo dõi thanh toán.</p>}
@@ -604,6 +582,7 @@ export function OperatorInvoicesScreen({
               filters={filters}
               onApplyFilters={applyInvoiceFilters}
               invalidFilterMessage={invalidFilterMessage}
+              showHeading={showHeading}
             />
           </>
         )}

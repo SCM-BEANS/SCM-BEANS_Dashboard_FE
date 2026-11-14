@@ -8,7 +8,10 @@ import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { useOwnerNames } from "@/hooks/use-owner-names";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
@@ -16,6 +19,7 @@ import { type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } f
 import { buybackStatusLabels, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import type { BuybackWorkflowController, BuybackWorkflowRole } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
+import adminStyles from "./buyback-admin.module.css";
 
 export function BuybackWorkflowLayout({
   title,
@@ -24,6 +28,7 @@ export function BuybackWorkflowLayout({
   actionBarBackHref,
   actionBarBackLabel = "Quay lại danh sách",
   children,
+  className,
 }: {
   title: string;
   description: string;
@@ -31,9 +36,10 @@ export function BuybackWorkflowLayout({
   actionBarBackHref?: string;
   actionBarBackLabel?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className={`${styles.screen} ${styles.pageContent}`} aria-labelledby="buyback-title">
+    <section className={`${styles.screen} ${styles.pageContent} ${className ?? ""}`} aria-labelledby="buyback-title">
       <BackButtonHeading
         title={title}
         titleId="buyback-title"
@@ -48,6 +54,8 @@ export function BuybackWorkflowLayout({
 
 export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowController }) {
   const { list, showList, role, operatorRole, page, setPage } = workflow;
+  const isWorkspace = role !== "technician";
+  const ownerNames = useOwnerNames(role === "operator" ? list.data?.items.map((item) => item.ownerId) ?? [] : []);
   const [acceptanceCase, setAcceptanceCase] = useState<BuybackCaseSummaryType | null>(null);
   const [valuationDecision, setValuationDecision] = useState<{ item: BuybackCaseSummaryType; approved: boolean } | null>(null);
   const [valuationReason, setValuationReason] = useState("");
@@ -345,7 +353,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         }
         if (canAssignCollectionForItem(item)) {
           return (
-            <ButtonBar className={styles.buybackDetailAction} href={caseDetailsHref(item.id)}>
+            <ButtonBar className={styles.buybackDetailAction} href={`${caseDetailsHref(item.id)}${workflow.isModeratorRoute ? "?" : "&"}view=work-order`}>
               Phân công thu máy
             </ButtonBar>
           );
@@ -384,6 +392,29 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     });
   }
 
+  if (isWorkspace) {
+    const machineColumn = listColumns.find((column) => column.key === "machine")!;
+    machineColumn.header = "Hồ sơ / thiết bị";
+    const renderMachine = machineColumn.render;
+    machineColumn.render = (item, index) => <div className={adminStyles.identity}>
+      <strong>{renderMachine(item, index)}</strong>
+      <span className={adminStyles.meta}>Hồ sơ <TruncatedId value={item.id} /> · {formatBuybackDateTime(item.updatedAt)}</span>
+    </div>;
+    listColumns.splice(0, 1);
+    if (role === "operator") listColumns.splice(1, 0, { key: "customer", header: "Khách hàng", render: (item) => ownerNames.data?.[item.ownerId] || <TruncatedId value={item.ownerId} /> });
+    listColumns.find((column) => column.key === "price")!.align = "right";
+    const statusColumn = listColumns.find((column) => column.key === "status")!;
+    statusColumn.render = (item) => <StatusBadge variant="dot" status={item.status}>{statusLabel(item)}</StatusBadge>;
+    const updatedIndex = listColumns.findIndex((column) => column.key === "updated-at");
+    listColumns.splice(updatedIndex, 1);
+    const actionColumn = listColumns.find((column) => column.key === (role === "owner" ? "owner-decision-actions" : "operator-actions"))!;
+    const renderActions = actionColumn.render;
+    actionColumn.render = (item, index) => <div className={adminStyles.rowActions}>
+      <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Xem hồ sơ</ButtonBar>
+      {renderActions(item, index)}
+    </div>;
+  }
+
   return (
     <>
       {list.isPending ? <p className={styles.notice} role="status">Đang tải hồ sơ thu mua…</p> : null}
@@ -396,20 +427,26 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       {!list.isPending && !list.isError && list.data?.items.length === 0 ? (
         <p className={styles.notice} role="status">Chưa có hồ sơ trong phạm vi tài khoản.</p>
       ) : null}
-      {list.data?.items.length ? (
-        <section className={styles.panel} aria-label="Danh sách hồ sơ thu mua">
-          <h2 className={styles.sectionTitle}>Hồ sơ</h2>
+      {isWorkspace || list.data?.items.length ? (
+        <section className={styles.panel} data-buyback-list aria-label="Danh sách hồ sơ thu mua">
+          <div className={styles.panelHeading}>
+            <div><h2 className={styles.sectionTitle}>Hồ sơ thu mua</h2>{isWorkspace ? <p>Theo dõi định giá, thu máy và tiến độ tân trang.</p> : null}</div>
+          </div>
+          {isWorkspace ? <TableFilters search={{ ariaLabel: "Tìm hồ sơ thu mua", placeholder: "Tìm mã hồ sơ, serial hoặc mẫu máy", value: workflow.listFilterDraft.search, maxLength: 160, onChange: (search) => workflow.setListFilterDraft((current) => ({ ...current, search })) }}
+            selects={[{ id: "buyback-status", ariaLabel: "Trạng thái thu mua", value: workflow.listFilterDraft.status, onChange: (status) => workflow.setListFilterDraft((current) => ({ ...current, status: status as typeof current.status })), options: [{ value: "", label: "Tất cả trạng thái" }, ...Object.entries(buybackStatusLabels).map(([value, label]) => ({ value, label }))] }]}
+            submitLabel="Tìm kiếm" onSubmit={(event) => { event.preventDefault(); workflow.applyListFilters(); }} /> : null}
           <DataTable
             columns={listColumns}
-            rows={list.data.items}
+            rows={list.data?.items ?? []}
             rowKey={(item) => item.id}
             variant={role === "owner" ? "customer" : operatorRole === "MODERATOR" ? "moderator" : "operations"}
+            {...(isWorkspace ? { headerVariant: "admin" as const } : {})}
             emptyMessage="Chưa có hồ sơ thu mua."
           />
-          <div className={styles.technicalRequestActions}>
+          <div className={isWorkspace ? adminStyles.pagination : styles.technicalRequestActions}>
             <ButtonBar type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>Trang trước</ButtonBar>
-            <span>Trang {list.data.page + 1}</span>
-            <ButtonBar type="button" disabled={!list.data.hasNext} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar>
+            <span>Trang {(list.data?.page ?? page) + 1}</span>
+            <ButtonBar type="button" disabled={!list.data?.hasNext} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar>
           </div>
         </section>
       ) : null}
@@ -551,6 +588,15 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
 
 export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWorkflowController; children?: ReactNode }) {
   const { detailId, detailValid, detail, caseData, commonError } = workflow;
+  const isWorkspace = workflow.role !== "technician";
+  const ownerNames = useOwnerNames(workflow.role === "operator" && caseData ? [caseData.ownerId] : []);
+  const assignees = caseData ? [
+    { label: "Điều phối", id: caseData.responsibleModeratorId },
+    { label: "Kiểm tra máy", id: caseData.inspectionTechnicianId },
+    { label: "Thu máy", id: caseData.collectionTechnicianId },
+    { label: "Tân trang", id: caseData.refurbishmentTechnicianId },
+  ] : [];
+  const assigneeNames = useOwnerNames(workflow.role === "operator" ? assignees.map((person) => person.id) : []);
   const detailStatusLabel =
     caseData?.status === "VALUATION_PENDING" && workflow.role === "owner"
       ? "Đang chờ duyệt"
@@ -571,27 +617,78 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
         </div>
       ) : null}
       {caseData ? (
-        <section className={styles.panel} aria-label="Chi tiết hồ sơ thu mua">
+        <section className={isWorkspace ? `${adminStyles.contractLayout} ${adminStyles.workOrderLayout}` : styles.panel} data-buyback-detail aria-label="Chi tiết hồ sơ thu mua">
+          {isWorkspace ? <div className={adminStyles.progressCard}><BuybackAdminProgress status={caseData.status} /></div> : null}
+          <div className={isWorkspace ? `${adminStyles.card} ${adminStyles.overviewCard}` : undefined} style={!isWorkspace ? { display: "contents" } : undefined}>
           <div className={styles.panelHeading}>
             <div>
-              <h2 className={styles.sectionTitle}>Hồ sơ {detailStatusLabel}</h2>
-              <p className={styles.formHint}>Trạng thái và giá trị lấy từ Dolores; mọi hành động tiếp theo kiểm tra lại ở server.</p>
+              <h2 className={styles.sectionTitle}>{isWorkspace ? "Thông tin thu mua" : `Hồ sơ ${detailStatusLabel}`}</h2>
+              {!isWorkspace ? <p className={styles.formHint}>Trạng thái và giá trị lấy từ Dolores; mọi hành động tiếp theo kiểm tra lại ở server.</p> : null}
             </div>
-            <ButtonBar type="button" onClick={() => void detail.refetch()}>Làm mới</ButtonBar>
+            <div className={adminStyles.rowActions}>
+              {isWorkspace ? <StatusBadge variant="dot" status={caseData.status}>{detailStatusLabel}</StatusBadge> : null}
+              <ButtonBar type="button" onClick={() => void detail.refetch()}>Làm mới</ButtonBar>
+            </div>
           </div>
-          <BuybackCaseSummary caseData={caseData} role={workflow.role} />
-          <EvidenceList resource="BUYBACK_CASE" parentId={caseData.id} title="Chứng từ thu mua" />
+          {isWorkspace ? <>
+            <dl className={adminStyles.summary}>
+              <div><dt>Thiết bị</dt><dd>{caseData.machineModelName ?? caseData.assetModelLabel ?? caseData.machineSerialNumber ?? caseData.assetSerial ?? "Chờ kiểm tra máy"}</dd></div>
+              <div><dt>Khách hàng</dt><dd>{workflow.role === "owner" ? "Bạn" : ownerNames.data?.[caseData.ownerId] || <TruncatedId value={caseData.ownerId} />}</dd></div>
+              <div><dt>Serial</dt><dd>{caseData.machineSerialNumber ?? caseData.assetSerial ?? "Chưa ghi nhận"}</dd></div>
+              <div><dt>Nhà sản xuất</dt><dd>{caseData.assetManufacturer || "Chưa ghi nhận"}</dd></div>
+              {workflow.role !== "owner" ? <div><dt>Giá đề xuất</dt><dd>{formatBuybackMoney(caseData.proposedPrice ?? caseData.requestedPrice, caseData.currency)}</dd></div> : null}
+              <div><dt>Giá đã duyệt</dt><dd>{formatBuybackMoney(caseData.approvedPrice, caseData.currency)}</dd></div>
+              <div><dt>Giá thu mua</dt><dd>{formatBuybackMoney(workflow.role === "owner" ? caseData.acceptedPrice ?? caseData.approvedPrice : caseData.acceptedPrice ?? caseData.approvedPrice ?? caseData.proposedPrice ?? caseData.requestedPrice, caseData.currency)}</dd></div>
+            </dl>
+          </> : <>
+            <BuybackCaseSummary caseData={caseData} role={workflow.role} />
+            <EvidenceList resource="BUYBACK_CASE" parentId={caseData.id} title="Chứng từ thu mua" />
+          </>}
+          </div>
           {caseData.status === "REGISTERED" && !caseData.registeredMachineId ? (
             <p className={`${styles.notice} ${styles.error}`} role="alert">
               Dolores trả trạng thái đã đăng ký máy nhưng chưa có mã máy. Làm mới hồ sơ để kiểm tra lại.
             </p>
           ) : null}
-          {children}
+          {isWorkspace ? <div className={adminStyles.detailBody}>
+            <div className={`${adminStyles.card} ${adminStyles.mainContent}`}>
+              {children}
+            </div>
+            <aside className={`${adminStyles.card} ${adminStyles.sidebar}`} aria-label="Thông tin hồ sơ">
+              <section><h3>Người phụ trách</h3><dl className={adminStyles.facts}>
+                {assignees.map((person) => <div key={person.label}><dt>{person.label}</dt><dd>{person.id ? assigneeNames.data?.[person.id] || <TruncatedId value={person.id} /> : "Chưa phân công"}</dd></div>)}
+                <div><dt>Ngày thu máy</dt><dd>{formatBuybackDateTime(caseData.collectedAt)}</dd></div>
+                {caseData.collectionLocation ? <div><dt>Địa điểm nhận máy</dt><dd>{caseData.collectionLocation}</dd></div> : null}
+              </dl></section>
+              <details className={adminStyles.disclosure}><summary>Thông tin đầy đủ & mã liên kết</summary><BuybackCaseSummary caseData={caseData} role={workflow.role} /></details>
+            </aside>
+          </div> : children}
           {commonError?.error ? <BuybackErrorNotice error={commonError.error} /> : null}
         </section>
       ) : null}
     </>
   );
+}
+
+function BuybackAdminProgress({ status }: { status: BuybackCase["status"] }) {
+  const stages: Record<BuybackCase["status"], number> = {
+    REQUESTED: 0, INSPECTION_PENDING: 1, VALUATION_PENDING: 1, APPROVED: 1,
+    COLLECTION_PENDING: 2, COLLECTED: 2, PAYMENT_PENDING: 2, PAID: 2,
+    REFURBISHING: 3, QA_PENDING: 3, READY_FOR_REGISTRATION: 3,
+    AVAILABLE_FOR_RENT: 4, REGISTERED: 4, REJECTED: -1, CANCELLED: -1,
+  };
+  const current = stages[status];
+  return <section className={`${styles.workOrderSummary} ${styles.workOrderProgressPanel}`} aria-label="Tiến độ thu hồi máy">
+    <div className={styles.workOrderSummaryHeading}><h2>Tiến độ thu hồi máy</h2><StatusBadge variant="dot" status={status}>{buybackStatusLabels[status]}</StatusBadge></div>
+    <ol className={`${styles.workOrderProgress} ${adminStyles.workOrderProgress}`} aria-label="Tiến độ thu hồi máy">
+      {["Tiếp nhận", "Kiểm tra & định giá", "Thu hồi & thanh toán", "Tân trang", "Hoàn tất"].map((label, index) => {
+        const complete = current >= 0 && (index < current || current === 4);
+        return <li key={label} className={[styles.workOrderProgressStep, complete ? styles.workOrderProgressComplete : "", index === current && !complete ? styles.workOrderProgressCurrent : ""].filter(Boolean).join(" ")} aria-current={index === current ? "step" : undefined}>
+          <span aria-hidden="true">{complete ? "✓" : index + 1}</span><small>{label}</small>
+        </li>;
+      })}
+    </ol>
+  </section>;
 }
 
 export function BuybackCaseSummary({ caseData, role }: { caseData: BuybackCase; role?: BuybackWorkflowRole }) {

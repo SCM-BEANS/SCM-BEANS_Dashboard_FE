@@ -4,6 +4,7 @@ import { PATH_CUSTOMER } from "@/routes/path";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import styles from "./coffee-package-workflow.module.css";
 import { OwnerOrderDetailPanel } from "./owner-order-detail-panel";
+import { CoffeeOrderProgress } from "./coffee-order-progress";
 import { OwnerRefundPanel } from "./owner-refund-panel";
 import { useCoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 
@@ -17,7 +18,7 @@ export function CoffeePackageOwnerOrderDetailScreen({ orderId }: { orderId: stri
   }, [workflow.orderRefund.data, workflow.selectedRefundId, workflow.setSelectedRefundId]);
 
   return (
-    <main className={styles.screen}>
+    <main className={`${styles.screen} ${styles.managementScreen}`}>
       <BackButtonHeading
         back={{ label: "Về danh sách đơn", fallbackHref: PATH_CUSTOMER.COFFEE_PACKAGES }}
         title="Chi tiết đơn gói cà phê"
@@ -27,6 +28,7 @@ export function CoffeePackageOwnerOrderDetailScreen({ orderId }: { orderId: stri
       />
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}
       {workflow.actionError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.actionError, "mutation")}</p> : null}
+      {workflow.selectedOrder ? <CoffeeOrderProgress order={workflow.selectedOrder} /> : null}
       <OwnerOrderDetailPanel workflow={workflow} />
       {workflow.orderRefund.isPending ? <p className={styles.notice} role="status">Đang tải thông tin hoàn tiền…</p> : null}
       {workflow.orderRefund.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.orderRefund.error)}</p> : null}

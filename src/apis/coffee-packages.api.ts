@@ -81,9 +81,13 @@ async function validatePrivateFile(file: File, fieldName: string) {
   if (!valid) throw new Error(`Nội dung tệp ${fieldName} không khớp với định dạng đã chọn.`);
 }
 
+async function privateFileContent(path: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
+  const response = await axiosClient.get<Blob>(path, { baseURL: DOLORES_API_BASE_URL, responseType: "blob", signal, onDownloadProgress: (event) => onProgress?.(event.loaded, event.total) });
+  return response.data;
+}
+
 async function downloadPrivateFile(path: string, filename: string) {
-  const response = await axiosClient.get<Blob>(path, { baseURL: DOLORES_API_BASE_URL, responseType: "blob" });
-  const url = URL.createObjectURL(response.data);
+  const url = URL.createObjectURL(await privateFileContent(path));
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
@@ -100,6 +104,16 @@ const proofPath = (id: string) => `/coffee-package-payment-proofs/${encodeURICom
 const refundPath = (id: string) => `/coffee-package-refunds/${encodeURIComponent(CoffeePackageRefundIdSchema.parse(id))}`;
 
 export const coffeePackagesApi = {
+  downloadPaymentProofContent(id: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
+    return privateFileContent(`${proofPath(id)}/content`, signal, onProgress);
+  },
+  downloadDispositionEvidenceContent(id: string, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
+    return privateFileContent(`${proofPath(id)}/disposition-evidence`, signal, onProgress);
+  },
+  downloadPayoutEvidenceContent(id: string, attemptNumber: number, signal?: AbortSignal, onProgress?: (loaded: number, total?: number) => void) {
+    const attempt = z.number().int().positive().parse(attemptNumber);
+    return privateFileContent(`${refundPath(id)}/payout-attempts/${attempt}/content`, signal, onProgress);
+  },
   async listPackages(input: { includeInactive?: boolean; page?: number; size?: number } = {}, signal?: AbortSignal) {
     const params = PAGE.parse({ page: input.page ?? 0, size: input.size ?? 50 });
     const response = await axiosClient.get<unknown>("/coffee-packages", {

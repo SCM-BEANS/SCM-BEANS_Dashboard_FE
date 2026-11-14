@@ -34,7 +34,7 @@ export function OwnerOrderFormPanel({
   };
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-package-order-title">
+    <section className={`${styles.panel} ${styles.ownerOrderForm}`} aria-labelledby="coffee-package-order-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-package-order-title">Đặt gói mới</h2>

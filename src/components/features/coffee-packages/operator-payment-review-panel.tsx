@@ -1,3 +1,5 @@
+import { coffeePackagesApi } from "@/apis/coffee-packages.api";
+import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -18,20 +20,22 @@ export function OperatorPaymentReviewPanel({ workflow }: { workflow: CoffeePacka
     setSelectedProofId("");
   };
 
+  if (workflow.selectedOrder && ["PENDING_APPROVAL", "REJECTED"].includes(workflow.selectedOrder.status)) {
+    return <section className={styles.invoiceSection}><h3>Nội dung đơn</h3><p className={styles.hint}>{workflow.selectedOrder.status === "REJECTED" ? "Đơn đã bị từ chối nên không có hóa đơn." : "Hóa đơn sẽ xuất hiện sau khi đơn được duyệt."}</p></section>;
+  }
   if (workflow.invoice.isPending) return <p className={styles.notice} role="status">Đang tải hóa đơn…</p>;
   if (workflow.invoice.isError) return <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.invoice.error)}</p>;
-  if (!workflow.invoice.data) return null;
+  if (!workflow.invoice.data) return <p className={styles.notice}>Hóa đơn sẽ xuất hiện sau khi đơn được duyệt.</p>;
 
   const invoice = workflow.invoice.data;
   return (
-    <section className={styles.subpanel} aria-labelledby="coffee-operator-invoice-title">
+    <section className={styles.invoiceSection} aria-labelledby="coffee-operator-invoice-title">
       <div>
-        <h3 id="coffee-operator-invoice-title">Hóa đơn và chứng từ thanh toán</h3>
-        <p>Đối chiếu khoản Owner khai báo với số tiền trên hóa đơn.</p>
+        <h3 id="coffee-operator-invoice-title">Nội dung đơn</h3>
       </div>
       <dl className={styles.details}>
         <div><dt>Số tiền hóa đơn</dt><dd>{formatCoffeePackageMoney(invoice.approvedAmount ?? invoice.total, invoice.currency ?? "VND")}</dd></div>
-        <div><dt>Trạng thái hóa đơn</dt><dd><StatusBadge status={invoice.status}>{coffeePackageStatusLabel(invoice.status)}</StatusBadge></dd></div>
+        <div><dt>Trạng thái hóa đơn</dt><dd><StatusBadge variant="dot" status={invoice.status}>{coffeePackageStatusLabel(invoice.status)}</StatusBadge></dd></div>
         <div><dt>Hạn thanh toán</dt><dd>{formatCoffeePackageDateTime(invoice.dueAt)}</dd></div>
         <div><dt>Đã thanh toán lúc</dt><dd>{formatCoffeePackageDateTime(invoice.paidAt)}</dd></div>
       </dl>
@@ -39,24 +43,25 @@ export function OperatorPaymentReviewPanel({ workflow }: { workflow: CoffeePacka
       {workflow.proofs.isPending ? <p className={styles.notice} role="status">Đang tải chứng từ…</p> : null}
       {workflow.proofs.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.proofs.error)}</p> : null}
       {workflow.proofs.data?.items.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead><tr><th>Tên tệp</th><th className={styles.numeric}>Số tiền khai báo</th><th>Trạng thái</th><th>Gửi lúc</th><th>Kết quả</th><th>Thao tác</th></tr></thead>
-            <tbody>{workflow.proofs.data.items.map((proof) => (
-              <tr key={proof.id} className={selectedProofId === proof.id ? styles.selectedRow : undefined}>
-                <td>{proof.originalFilename ?? "Chứng từ thanh toán"}</td>
-                <td className={styles.numeric}>{formatCoffeePackageMoney(proof.amount, invoice.currency ?? "VND")}</td>
-                <td><StatusBadge status={proof.status}>{coffeePackageStatusLabel(proof.status)}</StatusBadge></td>
-                <td>{formatCoffeePackageDateTime(proof.submittedAt)}</td>
-                <td>{proof.reviewReason ?? proof.dispositionReason ?? "Chưa có kết quả"}</td>
-                <td className={styles.buttonCell}>
-                  <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PROOF", proofId: proof.id, filename: proof.originalFilename ?? "chung-tu-goi-ca-phe" })}>Tải tệp</ButtonBar>
+        <section className={styles.paymentHistory} aria-label="Chứng từ thanh toán">
+          <h4>Chứng từ thanh toán ({workflow.proofs.data.items.length})</h4>
+          <ul className={styles.proofList}>
+            {workflow.proofs.data.items.map((proof) => (
+              <li key={proof.id} aria-current={selectedProofId === proof.id ? "true" : undefined}>
+                <div className={styles.proofIdentity}>
+                  <strong>{proof.originalFilename ?? "Chứng từ thanh toán"}</strong>
+                  <span className={styles.orderMeta}>{formatCoffeePackageMoney(proof.amount, invoice.currency ?? "VND")} · {formatCoffeePackageDateTime(proof.submittedAt)}</span>
+                  <StatusBadge variant="dot" status={proof.status}>{coffeePackageStatusLabel(proof.status)}</StatusBadge>
+                  {proof.reviewReason || proof.dispositionReason ? <span className={styles.muted}>{proof.reviewReason ?? proof.dispositionReason}</span> : null}
+                </div>
+                <div className={styles.proofActions}>
+                  <CoffeePackageDownloadButton filename={proof.originalFilename ?? "chung-tu-goi-ca-phe"} download={(signal, onProgress) => coffeePackagesApi.downloadPaymentProofContent(proof.id, signal, onProgress)} />
                   {proof.status === "SUBMITTED" ? <ButtonBar type="button" onClick={() => setSelectedProofId(proof.id)}>Đối soát</ButtonBar> : null}
-                </td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : !workflow.proofs.isPending && !workflow.proofs.isError ? <p className={styles.notice}>Chưa có chứng từ thanh toán.</p> : null}
 
       {selectedProof ? (

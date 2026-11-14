@@ -95,7 +95,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         listHref={PATH_CUSTOMER.BUYBACK}
         showCreateForm={sectionPath === "buyback/new"}
       />,
-      actions,
+      typeof router.query.caseId === "string" && router.query.caseId ? [] : actions,
     );
   }
   const maintenanceRequestDetail = /^maintenance\/([^/]+)$/.exec(sectionPath);

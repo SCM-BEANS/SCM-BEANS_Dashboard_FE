@@ -19,6 +19,7 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
   const workflow = useCoffeePackageWorkflowController(role);
   const [tab, setTab] = useState<OperatorTab>("orders");
   const isAdmin = role === "ADMIN";
+  const refreshing = workflow.orders.isFetching || workflow.packages.isFetching || workflow.refunds.isFetching || (isAdmin && workflow.exceptions.isFetching);
   const tabs: { id: OperatorTab; label: string }[] = [
     { id: "orders", label: "Đơn hàng" },
     { id: "refunds", label: "Hoàn tiền" },
@@ -27,18 +28,18 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
   ];
 
   return (
-    <main className={styles.screen}>
+    <main className={`${styles.screen} ${styles.managementScreen}`}>
       <header className={styles.heading}>
         <div>
           <h1>Gói cà phê</h1>
-          <p>Quản lý đơn hàng, thanh toán và bàn giao trong phạm vi tài khoản.</p>
+          <p>Theo dõi đơn mua cà phê, bàn giao và thanh toán.</p>
         </div>
-        <ButtonBar type="button" onClick={() => {
+        <ButtonBar rollingLabel type="button" disabled={refreshing} aria-busy={refreshing} onClick={() => {
           void workflow.orders.refetch();
           void workflow.packages.refetch();
           void workflow.refunds.refetch();
           if (isAdmin) void workflow.exceptions.refetch();
-        }}>Làm mới</ButtonBar>
+        }}>{refreshing ? "Đang tải…" : "Làm mới"}</ButtonBar>
       </header>
 
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}

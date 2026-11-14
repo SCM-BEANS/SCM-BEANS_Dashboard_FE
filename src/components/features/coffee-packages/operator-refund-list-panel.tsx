@@ -27,15 +27,19 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
       {workflow.refunds.data?.items.length ? (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
-            <thead><tr><th>Mã khoản hoàn</th><th>Khách hàng</th><th className={styles.numeric}>Số tiền</th><th>Trạng thái</th><th>Ngày tạo</th><th /></tr></thead>
+            <thead><tr><th>Khoản hoàn / khách hàng</th><th className={styles.numeric}>Số tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
             <tbody>{workflow.refunds.data.items.map((item) => (
               <tr key={item.id} className={workflow.selectedRefundId === item.id ? styles.selectedRow : undefined}>
-                <td className={styles.code}><TruncatedId value={item.id} /></td>
-                <td>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "—"}</td>
+                <td>
+                  <strong className={styles.orderCustomer}>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
+                  <div className={styles.orderMeta}>
+                    <span>Khoản hoàn <TruncatedId value={item.id} /></span>
+                    <span>{formatCoffeePackageDateTime(item.createdAt)}</span>
+                  </div>
+                </td>
                 <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, item.currency ?? "VND")}</td>
-                <td><StatusBadge status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
-                <td>{formatCoffeePackageDateTime(item.createdAt)}</td>
-                <td><ButtonBar type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar></td>
+                <td><StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
+                <td><ButtonBar rollingLabel type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar></td>
               </tr>
             ))}</tbody>
           </table>

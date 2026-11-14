@@ -439,6 +439,27 @@ export function ContractDetailScreen({ id }: { id: string }) {
             {continueContract.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
           </form>}
 
+          {contract.data.status === "ACTIVE" && <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-installation-history">
+            <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
+            <p className={adminStyles.panelSubtitle}>Theo dõi lệnh lắp đặt, danh sách kiểm tra và biên bản bàn giao của hợp đồng.</p>
+            <QueryFeedback query={installationWorkOrders} loadingMessage="Đang tải lệnh lắp đặt…" />
+            {installationWorkOrders.data && matchingInstallationOrders.length === 0 && !installationWorkOrders.isError && (
+              <p className={adminStyles.emptyText} role="status">Chưa tìm thấy lệnh lắp đặt thuộc hợp đồng này.</p>
+            )}
+            {matchingInstallationOrders.length > 0 && <DataTable
+              headerVariant="admin"
+              rows={matchingInstallationOrders}
+              rowKey={(item) => item.id}
+              columns={[
+                { key: "work-order", header: "Mã lệnh", render: (item) => <TruncatedId value={item.id} /> },
+                { key: "status", header: "Trạng thái", render: (item) => <StatusBadge variant="dot" status={item.status}>{installationWorkOrderStatus(item.status)}</StatusBadge> },
+                { key: "technician", header: "Kỹ thuật viên", render: (item) => item.assignedTechnicianId ? <TruncatedId value={item.assignedTechnicianId} /> : "Chưa phân công" },
+                { key: "scheduled", header: "Lịch hẹn", render: (item) => dateTime(item.scheduledFor) },
+                { key: "completed", header: "Hoàn tất", render: (item) => dateTime(item.completedAt) },
+                { key: "action", header: "", render: (item) => <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(item.id)}>Mở chi tiết lệnh</ButtonBar> },
+              ]}
+            />}
+          </section>}
           <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-documents">
             <h2 id="moderator-contract-documents">{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOCUMENTS}</h2>
             <QueryFeedback query={documents} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_DOCUMENTS} />
@@ -476,27 +497,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
           </div>
 
           <ContractActivationPanel contract={contract.data} />
-          {contract.data.status === "ACTIVE" && <section className={adminStyles.panel} aria-labelledby="moderator-contract-installation-history">
-            <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
-            <p className={adminStyles.panelSubtitle}>Các lệnh lắp đặt khớp với hợp đồng, máy và chủ sở hữu này. Mở chi tiết để xem checklist, bàn giao và chứng cứ.</p>
-            <QueryFeedback query={installationWorkOrders} loadingMessage="Đang tải lệnh lắp đặt…" />
-            {installationWorkOrders.data && matchingInstallationOrders.length === 0 && !installationWorkOrders.isError && (
-              <p className={adminStyles.emptyText} role="status">Chưa tìm thấy lệnh lắp đặt thuộc hợp đồng này.</p>
-            )}
-            {matchingInstallationOrders.length > 0 && <DataTable
-              headerVariant="admin"
-              rows={matchingInstallationOrders}
-              rowKey={(item) => item.id}
-              columns={[
-                { key: "work-order", header: "Mã lệnh", render: (item) => <code title={item.id}>{item.id.slice(0, 8).toUpperCase()}</code> },
-                { key: "status", header: "Trạng thái", render: (item) => installationWorkOrderStatus(item.status) },
-                { key: "technician", header: "Kỹ thuật viên", render: (item) => item.assignedTechnicianId ? <code title={item.assignedTechnicianId}>{item.assignedTechnicianId.slice(0, 8).toUpperCase()}</code> : "Chưa phân công" },
-                { key: "scheduled", header: "Lịch hẹn", render: (item) => dateTime(item.scheduledFor) },
-                { key: "completed", header: "Hoàn tất", render: (item) => dateTime(item.completedAt) },
-                { key: "action", header: "", render: (item) => <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(item.id)}>Mở chi tiết lệnh</ButtonBar> },
-              ]}
-            />}
-          </section>}
+
         </>}
       </div>
       {contract.data && <PageActions actions={buildContractDetailActions({

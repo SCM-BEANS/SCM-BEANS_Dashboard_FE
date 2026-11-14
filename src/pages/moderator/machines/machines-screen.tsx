@@ -1,9 +1,10 @@
+import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter } from "next/router";
 
@@ -97,20 +98,6 @@ function QueryFeedback({
   return null;
 }
 
-function MachineStatusFilter({ statusFilter, onChange }: { statusFilter: StatusFilter; onChange: (status: string) => void }) {
-  return (
-    <div className={adminStyles.machineFilterToolbar}>
-      <label className={adminStyles.machineFilterControl}>
-        <span className={adminStyles.machineFilterLabel}>{ADMIN_T.MACHINES.STATUS}</span>
-        <select className={adminStyles.machineStatusSelect} aria-label="Lọc máy theo trạng thái" value={statusFilter} onChange={(event) => onChange(event.target.value)}>
-          <option value="ALL">{ADMIN_T.MACHINES.FILTER_ALL} {ADMIN_T.MACHINES.STATUS.toLowerCase()}</option>
-          {MACHINE_STATUSES.map((status) => <option value={status} key={status}>{machineStatusLabel(status)}</option>)}
-        </select>
-      </label>
-    </div>
-  );
-}
-
 function PageHeading({ title, description }: { title: string; description: string }) {
   return <ModeratorPageHeading title={title} description={description} />;
 }
@@ -164,18 +151,22 @@ function MachineList({
   isCustomer,
   statusFilter,
   failed,
+  onStatusChange,
 }: {
   machines: MachineInventoryItem[];
   isStock: boolean;
   isCustomer: boolean;
   statusFilter: StatusFilter;
   failed: boolean;
+  onStatusChange: (status: string) => void;
 }) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
+  const [filterDraft, setFilterDraft] = useState<MachineListFilterValue>({ search: "", status: statusFilter === "ALL" ? "" : statusFilter, connection: "" });
+  useEffect(() => { setFilterDraft((current) => ({ ...current, status: statusFilter === "ALL" ? "" : statusFilter })); }, [statusFilter]);
   const subject = authScopedQuerySubject("MODERATOR");
   const isPageVisible = usePageVisibility();
-  const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter).filter((machine) => !search || (machine.serialNumber ?? "").toLocaleLowerCase("vi").includes(search.toLocaleLowerCase("vi")));
+  const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter).filter((machine) => !search || [machine.serialNumber, machine.modelName, machine.modelCode].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi").includes(search.toLocaleLowerCase("vi"))));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(visibleMachines.length / 10) - 1));
   const rows = visibleMachines.slice(currentPage * 10, currentPage * 10 + 10);
   const smartMachines = rows.filter((machine) => machine.machineType === "SMART_IOT");
@@ -187,7 +178,7 @@ function MachineList({
   })) });
   const emptyMessage = failed
     ? undefined
-    : statusFilter !== "ALL"
+    : statusFilter !== "ALL" || search
       ? ADMIN_T.MACHINES.NO_MATCH
     : isStock
       ? messages.MACHINE_STOCK_EMPTY
@@ -197,7 +188,7 @@ function MachineList({
 
   return (
     <div>
-      <label className={adminStyles.machineSearch}>Tìm máy<input value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} placeholder="Tìm serial máy" /></label>
+      <MachineListFilters value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setSearch(filterDraft.search.trim()); onStatusChange(filterDraft.status || "ALL"); setPage(0); }} />
       <DataTable
         variant="accounts"
         headerVariant="admin"
@@ -372,7 +363,10 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   return (
     <>
     <div className={styles.pageContent}>
+      <div className={adminStyles.summarySectionHeading}>
       <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />
+      <ButtonBar variant="primary" href={isMachineModelsView ? PATH_MODERATOR.NEW_MACHINE_MODEL : PATH_MODERATOR.NEW_MACHINE}>{isMachineModelsView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y"}</ButtonBar>
+      </div>
       <MachineListView label={title} summary={!isMachineModelsView ? <>
         <div className={adminStyles.metricsGrid}>
           <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.TOTAL}</span><strong>{inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</strong></article>
@@ -394,7 +388,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
               ? machineModels.data && <span>{machineModels.data.length} {ADMIN_T.MACHINE_MODELS.COUNT}</span>
               : inventory.data && <span className={adminStyles.machineFilterCount} aria-live="polite">{numberFormat.format(inventoryCount)} / {numberFormat.format(inventory.data.length)} máy</span>}
           </div>
-          {!isMachineModelsView && <MachineStatusFilter statusFilter={statusFilter} onChange={selectStatus} />}
           {isMachineModelsView ? <>
             <QueryFeedback query={machineModels} loadingMessage={messages.LOADING_MACHINES} />
             {machineModels.data?.length === 0 && <p className={styles.formHint}>{ADMIN_T.COMMON.EMPTY}</p>}
@@ -426,7 +419,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             </>}
           </> : <>
             <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
-            {inventory.data && !inventory.isError && <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} statusFilter={statusFilter} failed={inventory.isError} />}
+            {inventory.data && !inventory.isError && <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} statusFilter={statusFilter} failed={inventory.isError} onStatusChange={selectStatus} />}
           </>}
         </section>
       </div>
@@ -434,8 +427,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     </div>
     {!isCreateView && !isMachineModelDetail && (
       <PageActions actions={[
-        { id: "machine-create", label: ADMIN_T.MACHINES.CREATE, variant: "primary", priority: 20, href: PATH_MODERATOR.NEW_MACHINE },
-        { id: "model-create", label: "Tạo dòng máy", variant: "secondary", priority: 10, href: PATH_MODERATOR.NEW_MACHINE_MODEL },
         { id: "iot", label: ADMIN_T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_MODERATOR.IOT },
       ]} />
     )}

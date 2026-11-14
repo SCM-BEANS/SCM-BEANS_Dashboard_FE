@@ -63,7 +63,7 @@ export function OperatorRefundDetailPanel({
       {refund ? (
         <>
           <dl className={styles.details}>
-            <div><dt>Trạng thái</dt><dd><StatusBadge status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
             <div><dt>Số tiền hoàn</dt><dd>{formatCoffeePackageMoney(refund.amount, refund.currency ?? "VND")}</dd></div>
             <div><dt>Đơn hàng</dt><dd className={styles.code}>{refund.orderId ?? "—"}</dd></div>
             <div><dt>Hóa đơn</dt><dd className={styles.code}>{refund.invoiceId ?? "—"}</dd></div>

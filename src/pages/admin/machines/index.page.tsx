@@ -1,7 +1,8 @@
+import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
@@ -64,20 +65,6 @@ function machineTypeLabel(machineType: string | null | undefined): string {
   return T.MACHINES.UNCLASSIFIED;
 }
 
-function MachineStatusFilter({ statusFilter, onChange }: { statusFilter: StatusFilter; onChange: (status: string) => void }) {
-  return (
-    <div className={styles.machineFilterToolbar}>
-      <label className={styles.machineFilterControl}>
-        <span className={styles.machineFilterLabel}>{T.MACHINES.STATUS}</span>
-        <select className={styles.machineStatusSelect} aria-label="Lọc máy theo trạng thái" value={statusFilter} onChange={(event) => onChange(event.target.value)}>
-          <option value="ALL">{T.MACHINES.FILTER_ALL} trạng thái</option>
-          {STATUSES.map((status) => <option value={status} key={status}>{STATUS_FILTER_LABELS[status]}</option>)}
-        </select>
-      </label>
-    </div>
-  );
-}
-
 function MachinesContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -96,6 +83,8 @@ function MachinesContent() {
     ? requestedStatus as StatusFilter
     : "ALL";
   const [search, setSearch] = useState("");
+  const [filterDraft, setFilterDraft] = useState<MachineListFilterValue>({ search: "", status: statusFilter === "ALL" ? "" : statusFilter, connection: "" });
+  useEffect(() => { setFilterDraft((current) => ({ ...current, status: statusFilter === "ALL" ? "" : statusFilter })); }, [statusFilter]);
   const requestedPage = Number(queryValue(router.query.page));
   const page = Number.isSafeInteger(requestedPage) && requestedPage >= 0 ? requestedPage : 0;
   const [successSerialNumber, setSuccessSerialNumber] = useState("");
@@ -172,6 +161,7 @@ function MachinesContent() {
   return (
     <AdminShell>
       <div className={styles.pageContent}>
+        <div className={styles.summarySectionHeading}>
         <BackButtonHeading
           title={isCreateView
             ? T.MACHINES.CREATE_TITLE
@@ -185,6 +175,8 @@ function MachinesContent() {
           className={styles.pageHeading}
           back={getMachinesBackDestination(router.query)}
         />
+        {(isInventoryView || isMachineTypesView) && <ButtonBar variant="primary" onClick={isMachineTypesView ? navigateToCreateMachineModel : navigateToCreate}>{isMachineTypesView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y"}</ButtonBar>}
+        </div>
         {isCreateView ? (
           <CreateMachineForm onCancel={() => navigateToMachineView("inventory")} onCreated={handleMachineCreated} />
         ) : isCreateMachineModelView ? (
@@ -229,20 +221,10 @@ function MachinesContent() {
                   </span>
                 )}
               </div>
-              <div className={styles.machineListToolbar}>
-              {!isMachineTypesView && <label className={styles.machineSearch}>Tìm máy<input placeholder="Tìm serial hoặc mẫu máy" value={search} onChange={(event) => { setSearch(event.target.value); void router.replace({ pathname: router.pathname, query: { ...router.query, page: "0" } }, undefined, { shallow: true }); }} /></label>}
-              {!isMachineTypesView && <MachineStatusFilter
-                statusFilter={statusFilter}
-                onChange={(status) => {
-                  const nextStatus = status as StatusFilter;
-                  void router.push({
-                    pathname: PATH_ADMIN.MACHINES,
-                    query: nextStatus === "ALL" ? {} : { status: nextStatus },
-                  }, undefined, { shallow: true });
-                }}
-              />}
-              <ButtonBar variant="primary" onClick={isMachineTypesView ? navigateToCreateMachineModel : navigateToCreate}>{isMachineTypesView ? "Thêm mẫu máy" : "Thêm máy"}</ButtonBar>
-              </div>
+              {!isMachineTypesView && <MachineListFilters value={filterDraft} onChange={setFilterDraft} onSubmit={() => {
+                setSearch(filterDraft.search.trim());
+                void router.push({ pathname: PATH_ADMIN.MACHINES, query: { ...(filterDraft.status ? { status: filterDraft.status } : {}), page: "0" } }, undefined, { shallow: true });
+              }} />}
               {!isMachineTypesView && inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
               {!isMachineTypesView && inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
               {isMachineTypesView && machineModels.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}

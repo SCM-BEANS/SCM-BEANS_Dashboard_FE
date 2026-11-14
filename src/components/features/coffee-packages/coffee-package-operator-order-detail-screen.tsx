@@ -6,6 +6,7 @@ import type { CoffeePackageRole } from "./coffee-package-workflow-controller";
 import { useCoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import styles from "./coffee-package-workflow.module.css";
 import { OperatorOrderDetailPanel } from "./operator-order-detail-panel";
+import { CoffeeOrderProgress } from "./coffee-order-progress";
 
 type OperatorRole = Extract<CoffeePackageRole, "ADMIN" | "MODERATOR">;
 
@@ -24,7 +25,7 @@ export function CoffeePackageOperatorOrderDetailScreen({
   }, [orderId, workflow.setSelectedOrderId]);
 
   return (
-    <main className={styles.screen}>
+    <main className={`${styles.screen} ${styles.managementScreen}`}>
       <BackButtonHeading
         back={{ label: "Về danh sách đơn", fallbackHref: listHref }}
         title="Chi tiết đơn gói cà phê"
@@ -34,6 +35,7 @@ export function CoffeePackageOperatorOrderDetailScreen({
       />
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}
       {workflow.actionError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.actionError, "mutation")}</p> : null}
+      {workflow.selectedOrder ? <CoffeeOrderProgress order={workflow.selectedOrder} /> : null}
       <OperatorOrderDetailPanel workflow={workflow} />
     </main>
   );

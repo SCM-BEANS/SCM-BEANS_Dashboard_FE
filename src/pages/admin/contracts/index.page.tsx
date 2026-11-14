@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { contractsApi } from "@/apis/contracts.api";
+import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { profilesApi } from "@/apis/profiles.api";
 import { ContractIdSchema } from "@/schema/contracts.schema";
@@ -116,6 +118,12 @@ function ContractsContent() {
     },
   });
   const contract = useQuery({ queryKey: ["dolores", "contract", contractId], queryFn: ({ signal }) => contractsApi.getById(contractId, signal), enabled: view === "detail" && ContractIdSchema.safeParse(contractId).success });
+  const installationOrders = useQuery({
+    queryKey: ["dolores", "installation-work-orders-by-owner", authScopedQuerySubject("ADMIN"), contract.data?.ownerId],
+    queryFn: ({ signal }) => installationWorkOrdersApi.listByOwner(contract.data!.ownerId, signal),
+    enabled: view === "detail" && contract.data?.status === "ACTIVE" && Boolean(contract.data.ownerId),
+    retry: false,
+  });
   const policyHistory = useQuery({ queryKey: ["dolores", "contract-policy-history", contractId], queryFn: ({ signal }) => contractsApi.getPolicyHistory(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const expiry = useQuery({ queryKey: ["dolores", "contract-expiry", contractId], queryFn: ({ signal }) => contractsApi.getExpiry(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
   const documents = useQuery({ queryKey: ["dolores", "contract-documents", contractId], queryFn: ({ signal }) => contractsApi.getDocuments(contractId, signal), enabled: view === "detail" && Boolean(contract.data) });
@@ -422,6 +430,23 @@ function ContractsContent() {
             ]}
           />}
         </section>
+        {contract.data.status === "ACTIVE" && <section className={`${styles.panel} ${styles.contractDocumentsPanel}`} aria-labelledby="admin-contract-installation-orders">
+          <h2 id="admin-contract-installation-orders">Điều phối lắp đặt</h2>
+          <p className={styles.panelSubtitle}>Theo dõi lệnh lắp đặt, danh sách kiểm tra và biên bản bàn giao của hợp đồng.</p>
+          {installationOrders.isPending && <p role="status">Đang tải lệnh lắp đặt…</p>}
+          {installationOrders.isError && <div role="alert"><p>{getApiErrorMessage(installationOrders.error)}</p><ButtonBar type="button" onClick={() => void installationOrders.refetch()}>Thử lại</ButtonBar></div>}
+          {installationOrders.data && <DataTable headerVariant="admin"
+            rows={installationOrders.data.filter((order) => order.ownerId === contract.data!.ownerId && order.contractId === contract.data!.id && order.machineId === contract.data!.machineId).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))}
+            rowKey={(order) => order.id} emptyMessage="Chưa có lệnh lắp đặt thuộc hợp đồng này."
+            columns={[
+              { key: "id", header: "Mã lệnh", render: (order) => <TruncatedId value={order.id} /> },
+              { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{({ PENDING: "Chờ phân công", ASSIGNED: "Đã phân công", IN_PROGRESS: "Đang lắp đặt", COMPLETED: "Đã hoàn tất bàn giao", FAILED: "Lắp đặt chưa thành công", CANCELLED: "Đã hủy" })[order.status]}</StatusBadge> },
+              { key: "technician", header: "Kỹ thuật viên", render: (order) => order.assignedTechnicianId ? <TruncatedId value={order.assignedTechnicianId} /> : "Chưa phân công" },
+              { key: "scheduled", header: "Lịch hẹn", render: (order) => dateTime(order.scheduledFor) },
+              { key: "completed", header: "Hoàn tất", render: (order) => dateTime(order.completedAt) },
+              { key: "action", header: "", render: (order) => <ButtonBar rollingLabel href={`${PATH_ADMIN.TECHNICAL_REQUESTS}/${encodeURIComponent(order.id)}`}>Mở chi tiết lệnh</ButtonBar> },
+            ]} />}
+        </section>}
         {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={`${styles.panel} ${styles.contractLifecyclePanel}`} onSubmit={submitPolicyAmendment}>
           <h2>Điều chỉnh chính sách</h2>
           {policySnapshot ? <>

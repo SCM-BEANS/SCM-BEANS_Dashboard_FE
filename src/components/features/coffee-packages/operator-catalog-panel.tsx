@@ -16,6 +16,7 @@ export function OperatorCatalogPanel({
   isAdmin: boolean;
 }) {
   const [editingId, setEditingId] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -25,6 +26,7 @@ export function OperatorCatalogPanel({
   const packages = workflow.packages.data?.items ?? [];
 
   const resetForm = () => {
+    setFormOpen(false);
     setEditingId("");
     setCode("");
     setName("");
@@ -35,6 +37,7 @@ export function OperatorCatalogPanel({
   };
 
   const editPackage = (item: CoffeePackage) => {
+    setFormOpen(true);
     setEditingId(item.id);
     setCode(item.code ?? "");
     setName(item.name);
@@ -56,22 +59,21 @@ export function OperatorCatalogPanel({
     };
     workflow.run(editingId
       ? { type: "UPDATE_PACKAGE", packageId: editingId, input }
-      : { type: "CREATE_PACKAGE", input });
-    resetForm();
+      : { type: "CREATE_PACKAGE", input }, { onSuccess: resetForm });
   };
 
   return (
     <section className={styles.panel} aria-labelledby="coffee-operator-catalog-title">
-      <PageActions actions={isAdmin ? [...(editingId ? [{ id: "coffee-catalog-cancel", label: "Hủy chỉnh sửa", onClick: resetForm, priority: 0, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị bỏ.", confirmLabel: "Hủy chỉnh sửa" } }] : []), { id: "coffee-catalog-save", label: editingId ? "Lưu thay đổi" : "Tạo gói", priority: editingId ? 100 : 20, variant: "primary" as const, type: "submit" as const, form: "coffee-catalog-form", disabled: workflow.pending || !code.trim() || !name.trim() || !unitPrice || Number(unitPrice) < 0 || !usageDays || Number(usageDays) < 1, disabledReason: "Nhập thông tin hợp lệ cho gói.", pending: workflow.pending }] : []} />
+      <PageActions actions={isAdmin && formOpen ? [{ id: "coffee-catalog-cancel", label: "Hủy", onClick: resetForm, priority: 0, disabled: workflow.pending, confirm: { title: "Hủy chỉnh sửa?", description: "Các thay đổi chưa lưu sẽ bị bỏ.", confirmLabel: "Hủy chỉnh sửa" } }, { id: "coffee-catalog-save", label: editingId ? "Lưu thay đổi" : "Tạo gói", priority: editingId ? 100 : 20, variant: "primary" as const, type: "submit" as const, form: "coffee-catalog-form", disabled: workflow.pending || !code.trim() || !name.trim() || !unitPrice || Number(unitPrice) < 0 || !usageDays || Number(usageDays) < 1, disabledReason: "Nhập thông tin hợp lệ cho gói.", pending: workflow.pending }] : []} />
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-catalog-title">Danh mục gói cà phê</h2>
           <p>Thông tin giá bán và số ngày sử dụng của từng gói.</p>
         </div>
-        {packages.length ? <span>{packages.length} gói trong danh sách</span> : null}
+        {isAdmin && !formOpen ? <ButtonBar rollingLabel variant="primary" type="button" onClick={() => setFormOpen(true)}>Tạo gói cà phê</ButtonBar> : null}
       </div>
 
-      {isAdmin ? (
+      {isAdmin && formOpen ? (
         <form id="coffee-catalog-form" className={styles.subpanel} onSubmit={savePackage}>
           <h3>{editingId ? "Cập nhật gói" : "Tạo gói cà phê"}</h3>
           <div className={styles.formGrid}>
@@ -83,7 +85,7 @@ export function OperatorCatalogPanel({
             <label className={styles.field}><span>Mô tả</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} /></label>
           </div>
         </form>
-      ) : (
+      ) : !isAdmin ? (
         <div className={styles.permissionNotice}>
           <div>
             <h3>Quyền quản lý danh mục</h3>
@@ -96,7 +98,7 @@ export function OperatorCatalogPanel({
             Tài khoản Moderator hiện chỉ có quyền xem danh mục.
           </span>
         </div>
-      )}
+      ) : null}
 
       {workflow.packages.isPending ? <p className={styles.notice} role="status">Đang tải danh mục gói…</p> : null}
       {workflow.packages.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.packages.error)}</p> : null}
@@ -114,10 +116,10 @@ export function OperatorCatalogPanel({
                   <td>{item.description || "—"}</td>
                   <td className={styles.numeric}>{formatCoffeePackageMoney(item.unitPrice, item.currency)}</td>
                   <td className={styles.numeric}>{item.usageDays ?? "—"}</td>
-                  <td><StatusBadge status={active ? "ACTIVE" : "INACTIVE"}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</StatusBadge></td>
+                  <td><StatusBadge variant="dot" status={active ? "ACTIVE" : "INACTIVE"}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</StatusBadge></td>
                   {isAdmin ? (
                     <td className={styles.buttonCell}>
-                      <ButtonBar type="button" onClick={() => editPackage(item)}>Sửa</ButtonBar>
+                      <ButtonBar rollingLabel type="button" disabled={workflow.pending} onClick={() => editPackage(item)}>Chỉnh sửa</ButtonBar>
                       {active ? <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DEACTIVATE_PACKAGE", packageId: item.id })}>Ngừng bán</ButtonBar> : null}
                     </td>
                   ) : null}

@@ -1,3 +1,5 @@
+import { coffeePackagesApi } from "@/apis/coffee-packages.api";
+import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -42,9 +44,9 @@ export function OperatorPayoutAttemptsPanel({
                 <td>{attempt.attemptNumber}</td>
                 <td>{attempt.bankReference ?? "—"}</td>
                 <td>{formatCoffeePackageDateTime(attempt.createdAt)}</td>
-                <td><StatusBadge status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
+                <td><StatusBadge variant="dot" status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
                 <td className={styles.buttonCell}>
-                  <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PAYOUT", refundId: refund.id, attemptNumber: attempt.attemptNumber })}>Tải chứng từ</ButtonBar>
+                  <CoffeePackageDownloadButton filename="chung-tu-hoan-tien" download={(signal, onProgress) => coffeePackagesApi.downloadPayoutEvidenceContent(refund.id, attempt.attemptNumber, signal, onProgress)} />
                   {refund.status === "PAYOUT_RECORDED" && attempt.status === "RECORDED" && attempt.attemptNumber === refund.payoutAttempt ? <ButtonBar type="button" disabled={workflow.pending} onClick={() => setFailedAttemptNumber(attempt.attemptNumber)}>Ghi nhận thất bại</ButtonBar> : null}
                 </td>
               </tr>

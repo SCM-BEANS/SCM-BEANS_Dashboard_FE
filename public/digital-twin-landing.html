@@ -41,11 +41,12 @@
           </div>
         </div>
         <p class="sr-only" id="teaser-summary">Phim khoảng 22 giây, lặp lại: nắp hộp hạt và nóc máy nhấc lên, hai vỏ hông trượt ra, máy xoay, boiler và hệ ra cà phê tách khỏi thân. Máy nén chạy một chu trình, rồi các cụm ghép lại và màn hình bật.</p>
-        <div class="viewer-host journey-host" id="journey-host" aria-describedby="teaser-summary">
-          <div class="teaser-sheen" id="teaser-sheen" aria-hidden="true"></div>
-        </div>
-        <div class="film-poster" id="film-poster">
-          <p id="film-loading" role="status">Đang tải mô hình 3D… 0%</p>
+        <video class="hero-video" id="hero-video" poster="/video/dolores-machine-reveal.jpg" muted loop playsinline preload="metadata" aria-describedby="teaser-summary">
+          <source src="/video/dolores-machine-reveal-mobile.mp4" type="video/mp4" media="(max-width: 800px)">
+          <source src="/video/dolores-machine-reveal.mp4" type="video/mp4">
+        </video>
+        <div class="teaser-controls">
+          <button class="film-play" id="film-toggle" type="button" aria-label="Phát hoạt ảnh máy pha">▶</button>
         </div>
       </div>
     </section>

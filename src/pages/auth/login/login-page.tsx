@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { authApi } from "@/apis/auth.api";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -67,41 +67,39 @@ function LoginValidationSummary({ errors }: { errors: FieldErrors }) {
   </div>;
 }
 
-// Reuse the landing renderer in an isolated document; unloading the iframe releases its WebGL context.
-const LOGIN_MODEL_DOCUMENT = `<!doctype html><html lang="vi"><head><base href="/"><style>
-:root{color-scheme:light}html,body{margin:0;height:100%;background:transparent;overflow:hidden}#model{height:100%;width:100%;position:relative}canvas{display:block}.viewer-status{display:none;position:absolute;bottom:8px;width:100%;text-align:center;font:13px Arial;color:#675b57}.viewer-status.load-error{display:block}.viewer-status[hidden]{display:none}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script></head><body><div id="model"></div><script type="module">
-try {
-  const { createViewer } = await import('/landing/viewer.js');
-  const annotations = { sync(){}, render(){}, pickable(){return []}, pick(){}, setMarkers(){} };
-  const viewer = createViewer(annotations, { flows:[], stepFlows:{} }, { channels:[] }, { includeBoards:false });
-  viewer.registerHost('login', document.getElementById('model'), { modelId:'body', autoRotate:false, zoom:false, lighting:'studio', view:{az:35,el:18}, shellMode:'show', explode:0 });
-  const model = await viewer.load('body');
-  const shadow = model.holder.getObjectByName('studio-soft-shadow');
-  if (shadow) shadow.visible = false;
-  const pose = viewer.shotPose({az:35,el:18,fit:true,padding:.85});
-  if (pose) viewer.setCamera('login', pose.position, pose.target);
-} catch { document.getElementById('model').textContent = ''; }
-</script></body></html>`;
-
 function LoginHero() {
-  const [showModel, setShowModel] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const viewport = window.matchMedia("(min-width: 900px)");
-    const update = () => setShowModel(viewport.matches);
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setShowVideo(viewport.matches);
+    const updateMotion = () => setPaused(motion.matches);
     update();
+    updateMotion();
     viewport.addEventListener("change", update);
-    return () => viewport.removeEventListener("change", update);
+    motion.addEventListener("change", updateMotion);
+    return () => { viewport.removeEventListener("change", update); motion.removeEventListener("change", updateMotion); };
   }, []);
-  return <div className="login-illustration" aria-hidden="true">
-    <div className="dashboard-preview">
+  useEffect(() => {
+    const film = video.current;
+    if (!film) return;
+    if (paused) film.pause();
+    else void film.play().catch(() => setPaused(true));
+  }, [showVideo, paused]);
+  return <div className="login-illustration">
+    <div className="dashboard-preview" aria-hidden="true">
       <div className="preview-sidebar"><b>dolores.</b>{["Tổng quan", "Hợp đồng", "Máy pha", "Hóa đơn", "Hỗ trợ"].map(label => <span key={label}>{label}</span>)}</div>
       <div className="preview-main"><strong>Tổng quan vận hành</strong><div className="preview-cards"><i /><i /><i /></div>
         <div className="preview-chart">{[38, 58, 44, 78, 66, 88, 72].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div>
         <div className="preview-rows"><i /><i /><i /></div>
       </div>
     </div>
-    {showModel && <iframe title="Mô hình máy pha Dolores" className="login-model" srcDoc={LOGIN_MODEL_DOCUMENT} tabIndex={-1} />}
+    {showVideo && <>
+      <video ref={video} className="login-model" src="/video/dolores-machine-login.mp4" poster="/video/dolores-machine-login.jpg" muted loop playsInline preload="metadata" aria-hidden="true" />
+      <button className="login-film-toggle" type="button" aria-label={paused ? "Phát hoạt ảnh máy pha" : "Tạm dừng hoạt ảnh máy pha"} onClick={() => setPaused(!paused)}>{paused ? "▶" : "Ⅱ"}</button>
+    </>}
   </div>;
 }
 
@@ -718,7 +716,10 @@ export default function LoginPage() {
         .login-page .login-aside h2 span { color:var(--login-primary); }
         .login-page .login-aside > p { margin:22px 0 0; max-width:55ch; color:var(--login-muted); font-size:clamp(1rem,1.2vw,1.125rem); line-height:1.65; }
         .login-page .login-illustration { position:relative; height:clamp(320px,44vh,520px); margin-top:34px; isolation:isolate; pointer-events:none; }
-        .login-page .login-model { position:absolute; z-index:1; inset:0; width:100%; height:100%; border:0; background:transparent; }
+        .login-page .login-model { position:absolute; z-index:1; inset:0; width:100%; height:100%; border:0; background:transparent; object-fit:contain; mix-blend-mode:multiply; }
+        .login-page .login-film-toggle { position:absolute; z-index:2; right:0; bottom:0; min-width:44px; min-height:44px; border:1px solid var(--login-card-line); border-radius:50%; color:var(--login-ink); background:#fff; cursor:pointer; pointer-events:auto; }
+        .login-page .login-film-toggle:hover { background:var(--login-soft); }
+        .login-page .login-film-toggle:focus-visible { outline:2px solid var(--login-primary); outline-offset:3px; }
         .login-page .dashboard-preview { position:absolute; inset:8% 5% 24% 0; display:grid; grid-template-columns:25% 1fr; border:1px solid #e5dfda; border-radius:14px; background:var(--login-surface); box-shadow:0 12px 28px #30292712; overflow:hidden; filter:blur(4px); opacity:.5; user-select:none; }
         .login-page .preview-sidebar { display:flex; flex-direction:column; gap:16px; padding:18px 14px; border-right:1px solid #e5dfda; font-size:11px; }
         .login-page .preview-sidebar b { color:var(--login-primary); font-size:20px; }

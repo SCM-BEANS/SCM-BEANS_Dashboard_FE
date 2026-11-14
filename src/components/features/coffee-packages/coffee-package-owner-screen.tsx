@@ -35,7 +35,7 @@ export function CoffeePackageOwnerScreen() {
   }, [router, workflow.selectedOrderId]);
 
   return (
-    <main className={styles.screen}>
+    <main className={`${styles.screen} ${styles.managementScreen}`}>
       <header className={styles.heading}>
         <div>
           <h1>Gói cà phê</h1>

@@ -60,7 +60,7 @@ export async function loadOwnerLocations(signal?: AbortSignal): Promise<OwnerLoc
       const items: Awaited<ReturnType<typeof locationsApi.list>> = [];
       let page = 0;
       while (!signal?.aborted) {
-        const result = await locationsApi.listPage({ ownerId: owner.idaasUserId, page, size: 100 }, signal);
+        const result = await locationsApi.listPage({ ownerId: owner.idaasUserId, activeOnly: false, page, size: 100 }, signal);
         items.push(...result.items);
         if (!result.hasNext) break;
         if (result.page !== page) throw new Error("Dolores returned an unexpected location page index.");
@@ -87,8 +87,9 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
   const locationId = queryValue(router.query.id);
   const initialOwnerId = queryValue(router.query.ownerId);
   const search = queryValue(router.query.q).trim().slice(0, 100);
+  const storeStatus = queryValue(router.query.status);
   const [storePage, setStorePage] = useState(0);
-  useEffect(() => setStorePage(0), [search, initialOwnerId]);
+  useEffect(() => setStorePage(0), [search, initialOwnerId, storeStatus]);
   const [searchDraft, setSearchDraft] = useState(search);
   useEffect(() => setSearchDraft(search), [search]);
   const [form, setForm] = useState<StoreForm>({ ...emptyForm, ownerId: initialOwnerId });
@@ -186,10 +187,11 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       setRequestError(getApiErrorMessage(error, "mutation"));
     },
   });
-  const updateFilters = (ownerId: string, query: string) => {
+  const updateFilters = (ownerId: string, query: string, status = storeStatus) => {
     const next: Record<string, string> = {};
     if (ownerId) next.ownerId = ownerId;
     if (query) next.q = query;
+    if (status) next.status = status;
     navigate(Object.keys(next).length ? next : undefined);
   };
   const submitFilters = (event: FormEvent<HTMLFormElement>) => {
@@ -257,6 +259,8 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
   const normalizedSearch = search.toLocaleLowerCase("vi-VN");
   const visibleLocations = listing.data?.locations.filter(({ owner, location }) => {
     if (initialOwnerId && owner.idaasUserId !== initialOwnerId) return false;
+    if (storeStatus === "ACTIVE" && location.active !== true) return false;
+    if (storeStatus === "INACTIVE" && location.active !== false) return false;
     if (!normalizedSearch) return true;
     return [location.name, location.address, location.city, owner.fullName]
       .filter(Boolean)
@@ -414,6 +418,10 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
           onChange: setSearchDraft,
         }}
         selects={[{
+          id: "store-status-filter", ariaLabel: "Trạng thái cửa hàng", value: storeStatus,
+          options: [{ value: "", label: "Tất cả trạng thái" }, { value: "ACTIVE", label: "Hoạt động" }, { value: "INACTIVE", label: "Ngừng hoạt động" }],
+          onChange: (status) => updateFilters(initialOwnerId, search, status),
+        }, {
           id: "store-owner-filter",
           ariaLabel: T.STORES.OWNER,
           value: initialOwnerId,

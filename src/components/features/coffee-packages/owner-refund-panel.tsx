@@ -1,3 +1,5 @@
+import { coffeePackagesApi } from "@/apis/coffee-packages.api";
+import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -24,7 +26,7 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
   return (
     <section className={styles.panel} aria-labelledby="coffee-package-refund-title">
       <div className={styles.panelHeading}>
-        <div><h2 id="coffee-package-refund-title">Khoản hoàn tiền</h2><p className={styles.code}>{workflow.selectedRefundId}</p></div>
+        <div><h2 id="coffee-package-refund-title">Khoản hoàn tiền</h2></div>
         <ButtonBar type="button" onClick={() => void workflow.refundDetail.refetch()}>Làm mới</ButtonBar>
       </div>
       {workflow.refundDetail.isPending ? <p className={styles.notice} role="status">Đang tải khoản hoàn…</p> : null}
@@ -33,25 +35,29 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
         <>
           <dl className={styles.details}>
             <div><dt>Số tiền hoàn</dt><dd>{formatCoffeePackageMoney(refund.amount, refund.currency ?? "VND")}</dd></div>
-            <div><dt>Trạng thái</dt><dd><StatusBadge status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
-            <div><dt>Lý do</dt><dd>{refund.reason ?? "—"}</dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={refund.status}>{coffeePackageStatusLabel(refund.status)}</StatusBadge></dd></div>
             <div><dt>Đã xác nhận nhận tiền</dt><dd>{formatCoffeePackageDateTime(refund.ownerConfirmedAt)}</dd></div>
           </dl>
+          <details className={styles.paymentSection} open={refund.status === "PAYOUT_RECORDED"}>
+            <summary>Chi tiết & lịch sử hoàn tiền ({attempts.length})</summary>
+            <p className={styles.hint}>Mã khoản hoàn: {workflow.selectedRefundId}</p>
+            <p className={styles.hint}>Lý do: {refund.reason ?? "—"}</p>
           {attempts.length ? (
             <div className={styles.tableWrap}>
               <table className={styles.table}>
-                <thead><tr><th>Lần chuyển</th><th className={styles.numeric}>Số tiền</th><th>Mã giao dịch</th><th>Trạng thái</th><th>Ngày gửi</th><th /></tr></thead>
+                <thead><tr><th>Lần chuyển / giao dịch</th><th className={styles.numeric}>Số tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                 <tbody>{attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td>{attempt.attemptNumber}</td><td className={styles.numeric}>{formatCoffeePackageMoney(attempt.amount, attempt.currency ?? "VND")}</td>
-                    <td>{attempt.bankReference ?? "—"}</td><td><StatusBadge status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
-                    <td>{formatCoffeePackageDateTime(attempt.createdAt)}</td>
-                    <td><ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DOWNLOAD_PAYOUT", refundId: attempt.refundId, attemptNumber: attempt.attemptNumber })}>Tải chứng từ</ButtonBar></td>
+                    <td><strong className={styles.orderCustomer}>Lần {attempt.attemptNumber}</strong><div className={styles.orderMeta}><span>{attempt.bankReference ?? "Chưa có mã giao dịch"}</span><span>{formatCoffeePackageDateTime(attempt.createdAt)}</span></div></td>
+                    <td className={styles.numeric}>{formatCoffeePackageMoney(attempt.amount, attempt.currency ?? "VND")}</td>
+                    <td><StatusBadge variant="dot" status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
+                    <td><CoffeePackageDownloadButton filename="chung-tu-hoan-tien" download={(signal, onProgress) => coffeePackagesApi.downloadPayoutEvidenceContent(attempt.refundId, attempt.attemptNumber, signal, onProgress)} /></td>
                   </tr>
                 ))}</tbody>
               </table>
             </div>
-          ) : null}
+          ) : <p className={styles.hint}>Chưa có giao dịch hoàn tiền.</p>}
+          </details>
           {refund.status === "PAYOUT_RECORDED" && ["RECORDED", "DISPUTE_CONFIRMED"].includes(latestAttempt?.status ?? "") ? (
             <div className={styles.actionRow}><span className={styles.hint}>Kiểm tra khoản tiền đã nhận trước khi xác nhận.</span><PageActions actions={[{ id: "confirm-refund", label: "Xác nhận đã nhận tiền", variant: "primary", priority: 50, pending: workflow.pending, onClick: () => workflow.run({ type: "CONFIRM_REFUND_RECEIVED", refundId: workflow.selectedRefundId }) }]} /></div>
           ) : null}

@@ -24,9 +24,9 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
   };
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-package-order-detail-title">
+    <section className={`${styles.panel} ${styles.ownerOrderDetail}`} aria-labelledby="coffee-package-order-detail-title">
       <div className={styles.panelHeading}>
-        <div><h2 id="coffee-package-order-detail-title">Chi tiết đơn hàng</h2><p className={styles.code}>{workflow.selectedOrderId}</p></div>
+        <div><h2 id="coffee-package-order-detail-title">Đơn {workflow.selectedOrderId.slice(0, 8).toUpperCase()}</h2></div>
         <ButtonBar type="button" onClick={() => void workflow.orderDetail.refetch()}>Làm mới đơn</ButtonBar>
       </div>
       {workflow.orderDetail.isPending ? <p className={styles.notice} role="status">Đang tải thông tin đơn…</p> : null}
@@ -35,25 +35,33 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
       {order ? (
         <>
           <PageActions actions={buildCoffeeOrderReceiptActions({ role: "owner", order, pending: confirmReceipt.isPending, onConfirm: () => confirmReceipt.mutate() })} />
-          <dl className={styles.details}>
-            <div><dt>Trạng thái đơn</dt><dd><StatusBadge status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></dd></div>
-            <div><dt>Gói cà phê</dt><dd>{order.packageName ?? order.packageCode ?? "—"}</dd></div>
-            <div><dt>Mã gói</dt><dd>{order.packageCode ?? order.packageId ?? "—"}</dd></div>
-            <div><dt>Hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>
-            <div><dt>Máy</dt><dd className={styles.code}>{order.machineId ?? "—"}</dd></div>
-            <div><dt>Số lượng</dt><dd>{order.quantity ?? "—"}</dd></div>
-            <div><dt>Đơn giá</dt><dd>{formatCoffeePackageMoney(order.unitPrice, order.currency ?? "VND")}</dd></div>
-            <div><dt>Thời hạn sử dụng</dt><dd>{order.usageDays != null ? `${order.usageDays} ngày` : "—"}</dd></div>
+          <div className={styles.ownerOrderColumns}>
+          {workflow.invoice.isPending || workflow.invoice.isError || workflow.invoice.data ? <OwnerInvoicePanel workflow={workflow} /> : <p className={styles.notice}>Hóa đơn sẽ xuất hiện sau khi đơn được duyệt.</p>}
+          <div className={styles.ownerOrderInformation}>
+          <dl className={`${styles.details} ${styles.orderSummary}`}>
+            <div><dt>Trạng thái đơn</dt><dd><StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></dd></div>
+            <div><dt>Gói cà phê</dt><dd>{order.packageName ?? order.packageCode ?? "—"}<span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span></dd></div>
             <div><dt>Tổng đơn</dt><dd>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</dd></div>
             <div><dt>Ngày tạo</dt><dd>{formatCoffeePackageDateTime(order.createdAt)}</dd></div>
-            <div><dt>Cập nhật lần cuối</dt><dd>{formatCoffeePackageDateTime(order.updatedAt)}</dd></div>
-            {order.reviewNote ? <div><dt>Ghi chú xử lý</dt><dd>{order.reviewNote}</dd></div> : null}
           </dl>
+
+          <details className={styles.linkedIds}>
+            <summary>Thông tin bổ sung & mã liên kết</summary>
+            <dl className={styles.details}>
+              <div><dt>Mã đơn hàng</dt><dd className={styles.code}>{order.id}</dd></div>
+              <div><dt>Đơn giá</dt><dd>{formatCoffeePackageMoney(order.unitPrice, order.currency ?? "VND")}</dd></div>
+              <div><dt>Thời hạn sử dụng</dt><dd>{order.usageDays != null ? `${order.usageDays} ngày` : "—"}</dd></div>
+              {order.reviewNote ? <div><dt>Ghi chú xử lý</dt><dd>{order.reviewNote}</dd></div> : null}
+              <div><dt>Mã gói</dt><dd>{order.packageCode ?? order.packageId ?? "—"}</dd></div>
+              <div><dt>Hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>
+              <div><dt>Máy</dt><dd className={styles.code}>{order.machineId ?? "—"}</dd></div>
+              <div><dt>Cập nhật lần cuối</dt><dd>{formatCoffeePackageDateTime(order.updatedAt)}</dd></div>
+            </dl>
+          </details>
 
           {order.ownerReceivedAt ? <p>Đã xác nhận nhận hàng lúc {formatCoffeePackageDateTime(order.ownerReceivedAt)}</p> : null}
           {confirmReceipt.isError ? <p role="alert">{getApiErrorMessage(confirmReceipt.error)}</p> : null}
           {order.payosQrUrl ? <p className={styles.notice}>Thông tin thanh toán: <a href={order.payosQrUrl} target="_blank" rel="noreferrer">Mở liên kết thanh toán</a>{order.payosQrRef ? ` · ${order.payosQrRef}` : ""}</p> : null}
-          {workflow.invoice.isPending || workflow.invoice.isError || workflow.invoice.data ? <OwnerInvoicePanel workflow={workflow} /> : null}
 
           {order.status === "WAITING_STOCK" ? (
             <div className={styles.actionRow}>
@@ -70,16 +78,17 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
             </form>
           ) : null}
           {order.status !== "WAITING_STOCK" && !["CANCELLED", "CANCELLATION_REFUND_PENDING", "CANCELLED_REFUNDED", "REJECTED"].includes(order.status) ? (
-            <div className={styles.subpanel}>
-              <h3>Hủy đơn và yêu cầu hoàn tiền</h3>
+            <details className={styles.linkedIds}>
+              <summary>Điều kiện hủy đơn và hoàn tiền</summary>
               <p className={styles.hint}>
                 {order.status === "DELIVERED"
                   ? "Đơn đã được bàn giao nên hiện không thể hủy hoặc yêu cầu hoàn tiền."
                   : `Đơn đang ở trạng thái “${coffeePackageStatusLabel(order.status)}” nên hiện chưa thể gửi yêu cầu hủy. Tính năng này áp dụng khi đơn đang chờ hàng.`}
               </p>
-              <ButtonBar type="button" disabled>Chưa thể hủy ở trạng thái này</ButtonBar>
-            </div>
+            </details>
           ) : null}
+          </div>
+          </div>
         </>
       ) : null}
     </section>
