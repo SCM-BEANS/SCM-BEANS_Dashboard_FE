@@ -6,7 +6,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
@@ -464,22 +464,6 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
       await refresh();
     },
   });
-  const downloadEvidence = async (evidenceId: string, filename: string) => {
-    setEvidenceActionError("");
-    try {
-      const { blob } = await recallWorkOrdersApi.downloadEvidence(recallWorkOrderId, evidenceId);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = safeEvidenceFilename(filename, evidenceId);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (error) {
-      setEvidenceActionError(getApiErrorMessage(error));
-    }
-  };
   const handleFile = (file: File | null) => {
     setSelectedFile(file);
     setUploadedEvidence(null);
@@ -611,7 +595,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                   { key: "type", header: "Loại", render: (item) => item.evidenceType === "PICKUP" ? "Nhận máy" : item.evidenceType === "OWNER_HANDOVER" ? "Bàn giao Owner" : "Nhận kho" },
                   { key: "file", header: "Tệp", render: (item) => item.originalFilename },
                   { key: "uploaded", header: "Thời điểm", render: (item) => formatDateTime(item.uploadedAt) },
-                  { key: "action", header: "Thao tác", render: (item) => <ButtonBar type="button" onClick={() => void downloadEvidence(item.id, item.originalFilename)}>Tải xuống</ButtonBar> },
+                  { key: "action", header: "Thao tác", render: (item) => <ProgressDownloadButton filename={safeEvidenceFilename(item.originalFilename, item.id)} download={async (signal) => { setEvidenceActionError(""); return (await recallWorkOrdersApi.downloadEvidence(recallWorkOrderId, item.id, signal)).blob; }} onError={(error) => setEvidenceActionError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> },
                 ]} />
                 {evidenceActionError ? <p className={styles.error} role="alert">{evidenceActionError}</p> : null}
               </section>
@@ -738,7 +722,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [handoverRecipient, setHandoverRecipient] = useState("");
   const [evidenceError, setEvidenceError] = useState("");
-  const [evidenceAction, setEvidenceAction] = useState<{ id: string; action: "view" | "download" } | null>(null);
+  const [evidenceAction, setEvidenceAction] = useState<{ id: string; action: "view" } | null>(null);
   const [evidenceActionError, setEvidenceActionError] = useState("");
   const [checklistEdits, setChecklistEdits] = useState<Record<string, ChecklistEdit>>({});
   const [accessoryName, setAccessoryName] = useState("");
@@ -955,9 +939,11 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
       <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void viewEvidence(item)}>
         {evidenceAction?.id === item.id && evidenceAction.action === "view" ? "Đang mở…" : "Xem"}
       </ButtonBar>
-      <ButtonBar className={styles.evidenceActionButton} type="button" disabled={Boolean(evidenceAction)} onClick={() => void downloadEvidence(item)}>
-        {evidenceAction?.id === item.id && evidenceAction.action === "download" ? "Đang tải…" : "Tải xuống"}
-      </ButtonBar>
+      <ProgressDownloadButton filename={safeEvidenceFilename(item.originalFilename, item.id)} download={async (signal) => {
+        setEvidenceActionError("");
+        const blob = await installationWorkOrdersApi.downloadEvidence(workOrderId, item.id, signal);
+        return new Blob([blob], { type: evidenceMediaType(item.originalFilename, item.contentType, blob) });
+      }} onError={(error) => setEvidenceActionError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
     </div>
   );
   const evidenceActions = workOrder?.status === "IN_PROGRESS" ? (
@@ -1039,27 +1025,6 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 5 * 60 * 1000);
     } catch (error) {
       previewWindow.close();
-      setEvidenceActionError(getApiErrorMessage(error));
-    } finally {
-      setEvidenceAction(null);
-    }
-  }
-
-  async function downloadEvidence(item: InstallationWorkOrderDetails["evidence"][number]) {
-    setEvidenceAction({ id: item.id, action: "download" });
-    setEvidenceActionError("");
-    try {
-      const downloadedBlob = await installationWorkOrdersApi.downloadEvidence(workOrderId, item.id);
-      const type = evidenceMediaType(item.originalFilename, item.contentType, downloadedBlob);
-      const objectUrl = URL.createObjectURL(new Blob([downloadedBlob], { type }));
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = safeEvidenceFilename(item.originalFilename, item.id);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-    } catch (error) {
       setEvidenceActionError(getApiErrorMessage(error));
     } finally {
       setEvidenceAction(null);

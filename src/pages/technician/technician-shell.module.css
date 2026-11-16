@@ -22,7 +22,7 @@
 
 .shell :focus-visible,
 .accessScreen :focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -158,7 +158,7 @@
 }
 
 .machineCheckIdLink {
-  color: #b81724 !important;
+  color: var(--color-primary) !important;
   font-weight: 600;
   text-decoration: underline !important;
   text-underline-offset: 3px;
@@ -296,7 +296,7 @@
 }
 
 .accessScreen strong {
-  color: #b81724;
+  color: var(--color-primary);
   font-size: 28px;
 }
 
@@ -316,7 +316,7 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  color: #b81724;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -351,7 +351,7 @@
   }
 
   .mobileBrand {
-    color: #b81724 !important;
+    color: var(--color-primary) !important;
     font-size: 23px;
     font-weight: 700;
   }

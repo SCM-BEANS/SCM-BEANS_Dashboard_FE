@@ -12,7 +12,7 @@
 .shell *, .shell *::before, .shell *::after { box-sizing: border-box; }
 .shell button { font: inherit; }
 .shell a { color: inherit; text-decoration: none; }
-.shell :focus-visible, .accessScreen :focus-visible { outline: 3px solid #b81724; outline-offset: 3px; }
+.shell :focus-visible, .accessScreen :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 .shell a, .shell button, .shell input, .shell select, .shell textarea { transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 100ms ease; }
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
@@ -41,7 +41,7 @@
 .pendingNotice > p:last-child { margin-bottom: 0; }
 .pendingNotice[role="alert"] { border-color: #efc3c5; background: #fff7f7; color: #8c1d26; }
 .pendingNotice[role="note"] { background: #fdfbf9; }
-.tableLink { color: #b81724 !important; font-weight: 600; text-decoration: underline !important; text-underline-offset: 3px; }
+.tableLink { color: var(--color-primary) !important; font-weight: 600; text-decoration: underline !important; text-underline-offset: 3px; }
 .detailGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
 .detailItem { min-width: 0; padding: 16px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .detailItem dt { color: #706561; font-size: 13px; }
@@ -78,12 +78,12 @@
 .centerThirdColumn :global(td:nth-child(3)) { text-align: center; vertical-align: middle; font-variant-numeric: tabular-nums; }
 .triageReasonCell { min-width: 330px; vertical-align: middle !important; }
 .triageReasonInput { display: block; width: 100%; min-height: 76px; padding: 10px 12px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; line-height: 1.45; resize: vertical; }
-.triageReasonInput:focus-visible { border-color: #b81724; outline: 3px solid rgb(184 23 36 / 16%); outline-offset: 1px; }
+.triageReasonInput:focus-visible { border-color: var(--color-primary); outline: 3px solid rgb(184 23 36 / 16%); outline-offset: 1px; }
 .triageReasonActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .triageReasonActions button { flex: 1 1 130px; min-width: 130px; white-space: normal; }
 .partialNotice { padding: 14px 16px; border: 1px solid #f1d2a8; border-radius: 10px; background: #fff9ef; color: #8a4b12; font-size: 14px; line-height: 1.5; }
 .retryButton { min-height: 44px; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 8px; background: #fff; color: #302927; cursor: pointer; }
-.retryButton:hover:not(:disabled) { border-color: #b81724; background: #fdf8f7; }
+.retryButton:hover:not(:disabled) { border-color: var(--color-primary); background: #fdf8f7; }
 .retryButton:active:not(:disabled) { transform: scale(.98); }
 .retryButton:disabled { cursor: not-allowed; opacity: .55; }
 .evidenceTable :global(th:last-child), .evidenceTable :global(td:last-child) { width: 188px; min-width: 188px; }
@@ -124,11 +124,11 @@
 .proofReviewLabel span { color: #9b252d; font-size: 12px; font-weight: 600; }
 .proofReviewTextarea { display: block; width: 100%; min-height: 82px; padding: 10px 12px; border: 1px solid #e2dad4; border-radius: 8px; background: #fff; color: #302927; font: inherit; font-size: 14px; line-height: 1.5; resize: vertical; }
 .proofReviewTextarea::placeholder { color: #948983; }
-.proofReviewTextarea:focus-visible { border-color: #b81724; outline: 3px solid rgb(184 23 36 / 14%); outline-offset: 1px; }
+.proofReviewTextarea:focus-visible { border-color: var(--color-primary); outline: 3px solid rgb(184 23 36 / 14%); outline-offset: 1px; }
 .proofReviewFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
 .proofReviewCounter { margin: 0; color: #706561; font-size: 12px; line-height: 1.5; }
-.retryButton.proofReviewSubmit { min-width: 156px; border-color: #b81724; background: #b81724; color: #fff; font-weight: 700; }
-.retryButton.proofReviewSubmit:hover:not(:disabled) { border-color: #9c111d; background: #9c111d; }
+.retryButton.proofReviewSubmit { min-width: 156px; border-color: var(--color-primary); background: var(--color-primary); color: #fff; font-weight: 700; }
+.retryButton.proofReviewSubmit:hover:not(:disabled) { border-color: color-mix(in srgb, var(--color-primary) 83%, black); background: color-mix(in srgb, var(--color-primary) 83%, black); }
 .retryButton.proofReviewCancel { min-width: 76px; min-height: 38px; }
 .proofReviewError { padding: 10px 12px; margin: 0; border: 1px solid #efc3c5; border-radius: 8px; background: #fff7f7; color: #8c1d26; font-size: 13px; line-height: 1.5; }
 .invoiceListTable { box-shadow: 0 2px 12px rgb(48 41 39 / 5%); }
@@ -141,7 +141,7 @@
 .invoiceListTable :global(th:nth-child(5)), .invoiceListTable :global(td:nth-child(5)) { width: 15%; }
 .invoiceCustomerCell, .invoicePeriodCell { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
 .invoiceCustomerCell a { text-underline-offset: 4px; text-decoration-thickness: 1px; transition: color 140ms ease; }
-.invoiceCustomerCell a:hover { color: #961923 !important; }
+.invoiceCustomerCell a:hover { color: color-mix(in srgb, var(--color-primary) 80%, black) !important; }
 .invoiceCustomerCell a:focus-visible { border-radius: 3px; outline: 3px solid rgb(184 23 36 / 22%); outline-offset: 3px; }
 .invoiceCustomerCell > span, .invoicePeriodCell > span { color: #706561; font-size: 12px; line-height: 1.4; }
 .invoiceAmountCell { color: #302927 !important; font-size: 14px !important; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right !important; white-space: nowrap; }
@@ -155,7 +155,7 @@
 .invoiceStatusBadge { display: inline-flex; min-height: 30px; align-items: center; padding: 4px 11px; border: 1px solid transparent; border-radius: 999px; background: #f0eeec; color: #625953; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .invoiceStatusPaid { border-color: #d7eadb; background: #edf6ef; color: #246b3a; }
 .invoiceStatusUnpaid, .invoiceStatusPending { border-color: #f0dfc9; background: #fff6eb; color: #80512b; }
-.invoiceStatusOverdue { border-color: #f1d4d5; background: #fff0f0; color: #a01520; }
+.invoiceStatusOverdue { border-color: #f1d4d5; background: #fff0f0; color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .invoiceStatusNeutral { border-color: #e9e2dc; background: #f5f2f0; color: #706561; }
 .formPanel { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .assignmentForm { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -179,7 +179,7 @@
 .customerIdentity > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .customerIdentity strong { color: #302927; font-size: 14px; }
 .customerIdentity > div > span { color: #675b57; font-size: 13px; overflow-wrap: anywhere; }
-.customerAvatar { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #faeded; color: #a01520; font-size: 13px; font-weight: 600; }
+.customerAvatar { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; background: #faeded; color: color-mix(in srgb, var(--color-primary) 87%, black); font-size: 13px; font-weight: 600; }
 .customerStatus { display: inline-flex; align-items: center; gap: 7px; color: #514843; font: inherit; font-size: 14px; white-space: nowrap; }
 .customerStatus::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 50%; background: #80756f; }
 .customerStatus[data-status="ACTIVE"]::before { background: #32866b; }
@@ -204,7 +204,7 @@
 @media (max-width: 1100px) { .customerDetailLayout { grid-template-columns: minmax(0, 1fr); } .customerMetadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .customerToolbarIdentity { order: 1; flex-basis: 100%; } .customerAccountInfo, .customerMetadata { grid-template-columns: minmax(0, 1fr); } .customerDetailLayout form .formField { max-width: none; padding-right: 0; } }
 .formField textarea { min-height: 104px; resize: vertical; }
-.formField input:focus-visible, .formField select:focus-visible, .formField textarea:focus-visible { border-color: #b81724; }
+.formField input:focus-visible, .formField select:focus-visible, .formField textarea:focus-visible { border-color: var(--color-primary); }
 .contractForm { display: flex; flex-direction: column; gap: 18px; }
 .contractForm fieldset { display: flex; min-width: 0; flex-direction: column; gap: 18px; padding: 0; margin: 0; border: 0; }
 .contractForm fieldset:disabled { opacity: .72; }
@@ -212,7 +212,7 @@
 .contractSnapshot { padding-top: 18px; border-top: 1px solid #eee7e1; }
 .contractCheckboxGroup { display: flex; flex-wrap: wrap; gap: 14px; }
 .contractCheckboxGroup label, .contractCheckbox { display: flex; align-items: center; gap: 8px; color: #302927; font-size: 14px; font-weight: 500; }
-.contractCheckboxGroup input, .contractCheckbox input { width: 18px; min-width: 18px; min-height: 18px; margin: 0; accent-color: #b81724; }
+.contractCheckboxGroup input, .contractCheckbox input { width: 18px; min-width: 18px; min-height: 18px; margin: 0; accent-color: var(--color-primary); }
 .contractCheckbox { min-height: 42px; }
 .contractNotice { padding: 12px 14px; margin: 0; border: 1px solid #f1d2a8; border-radius: 10px; background: #fff9ef; color: #8a4b12; font-size: 14px; line-height: 1.5; }
 .contractError { border-color: #efc3c5; background: #fff4f4; color: #8c1d26; }
@@ -248,17 +248,17 @@
 .codeValue { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
 
 .accessScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; background: #f8f6f3; color: #302927; font-family: Arial, sans-serif; text-align: center; }
-.accessScreen strong { color: #b81724; font-size: 28px; }
+.accessScreen strong { color: var(--color-primary); font-size: 28px; }
 .accessScreen p { margin: 0; }
 .accessLinks { display: flex; gap: 16px; margin-top: 8px; }
-.accessLinks a { color: #b81724; }
+.accessLinks a { color: var(--color-primary); }
 
 @media (max-width: 1023px) {
   .desktopHeader { display: none; }
   .mobileBreadcrumb { display: block; padding: 4px 16px 0; background: transparent; color: #706561; font-size: 14px; }
   .shell { flex-direction: column; }
   .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: transparent; }
-  .mobileBrand { color: #b81724 !important; font-size: 23px; font-weight: 700; }
+  .mobileBrand { color: var(--color-primary) !important; font-size: 23px; font-weight: 700; }
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .mobileHeaderLink { display: inline-flex; min-height: 44px; align-items: center; color: #706561 !important; font-size: 14px; }
   .workspace :global(footer) { bottom: 0; }

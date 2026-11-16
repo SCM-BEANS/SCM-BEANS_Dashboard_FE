@@ -54,7 +54,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
                 <span>Lý do chấp nhận hoặc từ chối</span>
                 <textarea required maxLength={2000} value={workflow.ownerDecisionReason} onChange={(event) => workflow.setOwnerDecisionReason(event.target.value)} />
               </label>
-              <PageActions actions={[true, false].map((accepted) => ({ id: accepted ? "accept-price" : "reject-price", label: accepted ? "Chấp nhận giá" : "Từ chối giá", variant: accepted ? "primary" : "secondary", priority: 50, disabled: !workflow.ownerDecisionReason.trim(), disabledReason: "Nhập lý do quyết định.", pending: workflow.decideOwnerPrice.isPending, onClick: () => {
+              <PageActions actions={[true, false].map((accepted) => ({ id: accepted ? "accept-price" : "reject-price", label: accepted ? "Chấp nhận giá" : "Từ chối giá", variant: accepted ? "primary" : "secondary", priority: 50, holdToConfirm: !accepted, disabled: !workflow.ownerDecisionReason.trim(), disabledReason: "Nhập lý do quyết định.", pending: workflow.decideOwnerPrice.isPending, onClick: () => {
                   const reason = workflow.ownerDecisionReason.trim();
                   const key = workflow.operationKey(accepted ? "owner-decision-accept" : "owner-decision-reject", caseData.id, JSON.stringify({ accepted, reason }));
                   workflow.decideOwnerPrice.mutate({ id: caseData.id, accepted, reason, idempotencyKey: key, correlationId: key });

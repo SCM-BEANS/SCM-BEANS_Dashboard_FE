@@ -5,7 +5,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { billingApi } from "@/apis/billing.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
@@ -89,14 +89,6 @@ function proofStatusText(status: PaymentProof["status"]): string {
   return "Chờ đối soát";
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const safeFilename = filename.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180) || "billing-export";
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl; anchor.download = safeFilename;
-  document.body.appendChild(anchor); anchor.click(); anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-}
 type InvoiceFilters = Pick<InvoiceListParams, "ownerId" | "status" | "type" | "period">;
 
 export function AdminInvoiceListScreen() {
@@ -162,7 +154,7 @@ export function AdminInvoiceListScreen() {
           <h1>Hóa đơn & đối soát</h1>
         </header>
 
-        <section className={pageStyles.billingPanel} aria-labelledby="admin-invoice-list-title">
+        <section className={`${pageStyles.billingPanel} ${pageStyles.invoiceListPanel}`} aria-labelledby="admin-invoice-list-title">
           <h2 id="admin-invoice-list-title">Danh sách hóa đơn</h2>
 
           <div className={pageStyles.filterControls}>
@@ -291,7 +283,6 @@ function InvoiceStatusActions({ invoice }: { invoice: Invoice }) {
 
 function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[]; invoiceId: string }) {
   const queryClient = useQueryClient();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [reviewSelection, setReviewSelection] = useState<{ proofId: string; approve: boolean } | null>(null);
   const [reason, setReason] = useState("");
   const [downloadError, setDownloadError] = useState("");
@@ -307,18 +298,6 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
       ]);
     },
   });
-
-  const download = async (proof: PaymentProof) => {
-    setDownloadingId(proof.id);
-    setDownloadError("");
-    try {
-      downloadBlob(await billingApi.downloadPaymentProofContent(proof.id), proof.originalFilename || proof.id);
-    } catch (error) {
-      setDownloadError(getApiErrorMessage(error));
-    } finally {
-      setDownloadingId(null);
-    }
-  };
 
   return (
     <section className={pageStyles.billingPanel} aria-labelledby="admin-payment-proofs-title">
@@ -339,7 +318,7 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
               key: "actions",
               header: "Thao tác",
               render: (proof) => <div className={pageStyles.proofActions}>
-                <ButtonBar type="button" disabled={downloadingId === proof.id} onClick={() => void download(proof)}>{downloadingId === proof.id ? "Đang tải…" : "Tải chứng từ"}</ButtonBar>
+                <ProgressDownloadButton filename={proof.originalFilename || proof.id} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải chứng từ</ProgressDownloadButton>
                 {proof.status === "SUBMITTED" && <div>
                   <div className={pageStyles.actionGroup}>
                     <ButtonBar type="button" disabled={review.isPending} onClick={() => { setReviewSelection({ proofId: proof.id, approve: true }); setReason(""); }}>Duyệt</ButtonBar>

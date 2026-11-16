@@ -1,9 +1,11 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/router";
 import { createPortal } from "react-dom";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
@@ -16,6 +18,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { maintenanceAlertLevelLabel, maintenanceTicketStatusLabel, maintenanceTicketOriginLabel } from "./maintenance-status-labels";
 import {
   MaintenanceTicketDetailsPatchRequestSchema,
+  MaintenanceTicketIdSchema,
   type MaintenanceTicket,
   type MaintenanceTicketDetailsPatchRequest,
 } from "@/schema/machines.schema";
@@ -189,15 +192,13 @@ function CreateMaintenanceTicketDialog({
 export function MaintenanceTicketDetailsPanel({
   ticketId,
   role,
-  onClose,
   onRefresh,
   embedded = false,
 }: {
   ticketId: string;
   role: MaintenanceTicketActionRole;
-  onClose?: () => void;
   onRefresh?: () => unknown;
-  /** Render without the panel frame and heading, e.g. inside a dialog that already shows the title. */
+  /** Render without the panel frame and heading when the parent supplies them. */
   embedded?: boolean;
 }) {
   const queryClient = useQueryClient();
@@ -208,10 +209,11 @@ export function MaintenanceTicketDetailsPanel({
   const [feedback, setFeedback] = useState("");
   const [detailsDirty, setDetailsDirty] = useState(false);
   const formId = "maintenance-ticket-details-form";
+  const validId = MaintenanceTicketIdSchema.safeParse(ticketId).success;
   const ticketQuery = useQuery({
     queryKey: maintenanceTicketDetailQueryKey(ticketId),
     queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(ticketId, signal),
-    enabled: Boolean(ticketId),
+    enabled: validId,
     retry: false,
   });
   const ticket = ticketQuery.data;
@@ -277,16 +279,16 @@ export function MaintenanceTicketDetailsPanel({
     <section className={[embedded ? styles.embeddedPanel : styles.detailPanel, modernEmbedded ? styles.operatorTicketPanel : ""].join(" ")} aria-labelledby={embedded ? undefined : "maintenance-ticket-detail-title"}>
       {!embedded && <div className={styles.panelHeading}>
         <h3 id="maintenance-ticket-detail-title">Chi tiết phiếu bảo trì</h3>
-        {onClose && <ButtonBar type="button" onClick={onClose}>Đóng chi tiết</ButtonBar>}
       </div>}
-      {ticketQuery.isPending && <p className={styles.notice} role="status">Đang tải chi tiết phiếu…</p>}
-      {ticketQuery.isError && (
+      {!validId && <p className={styles.error} role="alert">Mã phiếu bảo trì không hợp lệ.</p>}
+      {validId && ticketQuery.isPending && <p className={styles.notice} role="status">Đang tải chi tiết phiếu…</p>}
+      {validId && ticketQuery.isError && (
         <div className={styles.errorBlock} role="alert">
           <p>{getApiErrorMessage(ticketQuery.error)}</p>
           <ButtonBar type="button" onClick={() => void ticketQuery.refetch()}>Thử lại</ButtonBar>
         </div>
       )}
-      {ticket && !ticketQuery.isError && (
+      {validId && ticket && !ticketQuery.isError && (
         <>
           {canManage && <div className={modernEmbedded ? styles.panelHeading : undefined}>{modernEmbedded && <h3>Thông tin phiếu bảo trì</h3>}<TicketActions actions={buildMaintenanceTicketDetailActions({
             role,
@@ -353,10 +355,39 @@ export function MaintenanceTicketDetailsPanel({
   );
 }
 
+export function MaintenanceTicketDetailsPage({
+  ticketId,
+  role,
+  backHref,
+  backLabel,
+  headingClassName,
+}: {
+  ticketId: string;
+  role: MaintenanceTicketActionRole;
+  backHref: string;
+  backLabel: string;
+  headingClassName: string;
+}) {
+  return (
+    <div className={styles.ticketDetailPage}>
+      <BackButtonHeading
+        title="Chi tiết phiếu bảo trì"
+        titleId="maintenance-ticket-detail-page-title"
+        className={headingClassName}
+        back={{ fallbackHref: backHref, label: backLabel }}
+      />
+      <section className={styles.detailPanel} aria-labelledby="maintenance-ticket-detail-page-title">
+        <MaintenanceTicketDetailsPanel key={ticketId} ticketId={ticketId} role={role} embedded />
+      </section>
+    </div>
+  );
+}
+
 export function MachineMaintenanceTicketActions({
   machineId,
   tickets,
   role,
+  ticketHref,
   onRefresh,
   presentation = "cards",
   previewLimit = 5,
@@ -364,14 +395,15 @@ export function MachineMaintenanceTicketActions({
   machineId: string;
   tickets: MaintenanceTicket[];
   role: MaintenanceTicketActionRole;
+  ticketHref: (ticketId: string) => string;
   onRefresh?: () => unknown;
-  /** "table": compact table with a row limit; ticket details open in a dialog instead of expanding inline. */
+  /** "table": compact table with a row limit. */
   presentation?: "cards" | "table";
   previewLimit?: number;
 }) {
+  const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [createPending, setCreatePending] = useState(false);
-  const [activeTicketId, setActiveTicketId] = useState("");
   const [showAll, setShowAll] = useState(false);
   const isTable = presentation === "table";
   const sortedTickets = isTable
@@ -399,7 +431,7 @@ export function MachineMaintenanceTicketActions({
               { key: "status", header: "Trạng thái", render: (ticket) => role === "OWNER" ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
               { key: "due", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
               { key: "origin", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype || ticket.source ? maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!) : "—" },
-              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <ButtonBar rollingLabel onClick={() => setActiveTicketId(ticket.id!)}>Xem chi tiết</ButtonBar> : null },
+              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <ButtonBar rollingLabel href={ticketHref(ticket.id)}>Xem chi tiết</ButtonBar> : null },
             ]}
           />
           {sortedTickets.length > previewLimit && (
@@ -409,16 +441,6 @@ export function MachineMaintenanceTicketActions({
           )}
         </>
       )}
-      {isTable && activeTicketId && overlay(
-        <NotificationDialog
-          variant="info"
-          title="Chi tiết phiếu bảo trì"
-          onClose={() => setActiveTicketId("")}
-          primaryAction={{ label: "Đóng", onClick: () => setActiveTicketId("") }}
-        >
-          <MaintenanceTicketDetailsPanel ticketId={activeTicketId} role={role} onRefresh={onRefresh} embedded />
-        </NotificationDialog>
-      )}
       {!isTable && tickets.length > 0 && (
         <div className={styles.ticketCards} aria-label="Phiếu bảo trì của máy">
           {tickets.map((ticket, index) => (
@@ -427,18 +449,10 @@ export function MachineMaintenanceTicketActions({
                 <p>{formatDate(ticket.scheduledDueAt ?? ticket.completedAt)}</p>
                 {ticket.preventiveSubtype || ticket.source ? <p>{maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!)}</p> : null}
               </div>
-              {ticket.id && <button type="button" className={styles.ticketLink} aria-expanded={activeTicketId === ticket.id} onClick={() => setActiveTicketId((current) => current === ticket.id ? "" : ticket.id!)}>Xem chi tiết</button>}
+              {ticket.id && <ButtonBar className={styles.ticketLink} rollingLabel href={ticketHref(ticket.id)}>Xem chi tiết</ButtonBar>}
             </article>
           ))}
         </div>
-      )}
-      {!isTable && activeTicketId && (
-        <MaintenanceTicketDetailsPanel
-          ticketId={activeTicketId}
-          role={role}
-          onClose={() => setActiveTicketId("")}
-          onRefresh={onRefresh}
-        />
       )}
       {creating && overlay(
         <CreateMaintenanceTicketDialog
@@ -447,7 +461,7 @@ export function MachineMaintenanceTicketActions({
           onPendingChange={setCreatePending}
           onCreated={(ticket) => {
             setCreating(false);
-            if (ticket.id) setActiveTicketId(ticket.id);
+            if (ticket.id) void router.push(ticketHref(ticket.id));
             void onRefresh?.();
           }}
         />

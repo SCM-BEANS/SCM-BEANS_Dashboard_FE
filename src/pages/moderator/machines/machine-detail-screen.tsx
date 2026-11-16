@@ -415,6 +415,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
             machineId={machineId}
             tickets={tickets.data?.items ?? []}
             role="MODERATOR"
+            ticketHref={(ticketId) => PATH_MODERATOR.MACHINE_HISTORY_TICKET(ticketId, machineId)}
             presentation="table"
             previewLimit={10}
             onRefresh={() => tickets.refetch()}

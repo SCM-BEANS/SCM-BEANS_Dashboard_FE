@@ -214,7 +214,7 @@ export function ContractInstallationRequestScreen({
           {documents.isSuccess && !hasMainContract && (
             <div className={`${styles.contractNotice} ${styles.installationPrerequisite}`} role="note">
               <p>Cần tải lên tài liệu MAIN_CONTRACT chưa lưu trữ trước khi tạo lệnh.</p>
-              <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Mở chi tiết hợp đồng</ButtonBar>
+              <ButtonBar rollingLabel href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Mở chi tiết hợp đồng</ButtonBar>
             </div>
           )}
 
@@ -250,7 +250,7 @@ export function ContractInstallationRequestScreen({
                 ? <p>Kỹ thuật viên đã hoàn tất bàn giao. Mở lại hợp đồng để tiếp tục kích hoạt.</p>
                 : <p>Hợp đồng này đã có lệnh đang mở nên không thể tạo lệnh trùng.</p>}
               <div className={styles.installationActions}>
-                <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(currentWorkOrder.id)}>Mở chi tiết lệnh</ButtonBar>
+                <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(currentWorkOrder.id)}>Mở chi tiết lệnh</ButtonBar>
                 <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
               </div>
             </section>
@@ -296,7 +296,7 @@ export function ContractInstallationRequestScreen({
                 ? <p>Kỹ thuật viên sẽ hoàn thành checklist và bàn giao trên tài khoản của họ. Hợp đồng chỉ được kích hoạt sau khi lệnh chuyển sang COMPLETED.</p>
                 : <p>API đã tạo lệnh nhưng trạng thái trả về chưa phải ASSIGNED. Hãy kiểm tra lại lệnh trước khi tiếp tục.</p>}
               <div className={styles.installationActions}>
-                <ButtonBar href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(createWorkOrder.data.id)}>Mở chi tiết lệnh</ButtonBar>
+                <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(createWorkOrder.data.id)}>Mở chi tiết lệnh</ButtonBar>
                 <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
               </div>
             </section>

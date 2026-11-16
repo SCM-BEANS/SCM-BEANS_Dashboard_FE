@@ -109,7 +109,7 @@
 
 .tabs .activeTab {
   background: #fff;
-  color: #b7192a;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -166,7 +166,7 @@
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: #b7192a;
+  border-color: var(--color-primary);
   outline: 3px solid rgb(183 25 42 / 12%);
 }
 
@@ -375,7 +375,7 @@
 .managementScreen .tabs { gap: 8px; border: 0; }
 .managementScreen .tabs button { min-height: 44px; padding: 9px 16px; border: 1px solid #e9e2dc; border-radius: 9px; background: #fff; font-size: 14px; }
 .managementScreen .tabs button:hover { background: #f8f5f3; }
-.managementScreen .tabs .activeTab { background: #f9e9ea; border-color: #ecc9ca; color: #a01520; font-weight: 600; }
+.managementScreen .tabs .activeTab { background: #f9e9ea; border-color: #ecc9ca; color: color-mix(in srgb, var(--color-primary) 87%, black); font-weight: 600; }
 .managementScreen .tableWrap { border: 0; border-radius: 0; scrollbar-width: thin; scrollbar-color: #b8aca5 #f7f5f3; }
 .managementScreen .table th { padding: 12px 14px; background: #f7f5f3; color: #625955; font-size: 13px; font-weight: 600; }
 .managementScreen .table td { padding: 14px; vertical-align: middle; font-size: 14px; }
@@ -442,7 +442,7 @@
 .paymentSection > summary { width: fit-content; padding: 10px 0; cursor: pointer; font-size: 16px; font-weight: 600; }
 .paymentSection > section { margin-top: 12px; }
 .linkedIds summary:focus-visible,
-.paymentSection summary:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; border-radius: 4px; }
+.paymentSection summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 4px; }
 
 @media (max-width: 800px) {
   .ownerOrderColumns { grid-template-columns: minmax(0, 1fr); gap: 20px; }

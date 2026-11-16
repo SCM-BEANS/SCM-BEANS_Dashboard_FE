@@ -46,7 +46,7 @@ test('hold-to-confirm fills in 1.2 seconds and backs off faster when released', 
   assert.equal(advanceHoldProgress(0.5, 125, false), 0.25);
   assert.equal(advanceHoldProgress(0.1, 1000, false), 0);
 
-  const html = renderToStaticMarkup(React.createElement(ButtonBar, { type: 'button', holdToConfirm: true, children: 'Xác nhận xóa' }));
+  const html = renderToStaticMarkup(React.createElement(ButtonBar, { type: 'button', holdToConfirm: true }, 'Xác nhận xóa'));
   assert.match(html, /aria-describedby=/);
   assert.match(html, /Nhấn giữ 1,2 giây để xác nhận/);
   assert.doesNotMatch(html, /aria-description=/);
@@ -69,7 +69,7 @@ const proof = {
   objectKey: 'private/payment-proofs/should-not-render',
 };
 
-function makeScreen(queryResults) {
+function makeScreen(queryResults, routerQuery = {}) {
   const queryOptions = [];
   const invoiceRequests = [];
   const customerOptions = [];
@@ -91,8 +91,8 @@ function makeScreen(queryResults) {
     React.createElement('thead', null, React.createElement('tr', null, columns.map((column) => React.createElement('th', { key: column.key }, column.header)))),
     React.createElement('tbody', null, rows.map((row, rowIndex) => React.createElement('tr', { key: String(rowIndex) },
       columns.map((column) => React.createElement('td', { key: column.key }, column.render(row, rowIndex)))))));
-  const module = loadTypescript('src/components/features/billing/operator-invoices-screen.tsx', {
-    'next/router': { useRouter: () => ({ push: async () => {} }) },
+  const screenModule = loadTypescript('src/components/features/billing/operator-invoices-screen.tsx', {
+    'next/router': { useRouter: () => ({ push: async () => {}, query: routerQuery }) },
     '@/components/action-bar/page-actions': { PageActions: () => null },
     '@/components/action-bar/entity-page-actions': loadTypescript('src/components/action-bar/entity-page-actions.ts'),
     '@/components/action-bar/page-actions-renderer': { PageActionsRenderer: ({ actions }) => React.createElement('div', null, actions.map((action) => React.createElement('button', { key: action.id, disabled: action.disabled, onClick: action.onClick }, action.label))) },
@@ -110,7 +110,7 @@ function makeScreen(queryResults) {
     '@/apis/profiles.api': { profilesApi: {} },
     '@/hooks/use-owner-names': { useOwnerNames: (ids) => { ownerLookups.push(ids); return { data: { [ownerId]: 'Khách hàng kiểm thử' } }; } },
     '@/components/button/button-bar': {
-      ButtonBar: ({ children, href, rollingLabel, variant, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, ...(href ? { href } : {}) }, children),
+      ButtonBar: ({ children, href, rollingLabel, variant, holdToConfirm, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, ...(href ? { href } : {}), ...(holdToConfirm ? { 'data-hold-to-confirm': 'true' } : {}) }, children),
       ProgressDownloadButton: ({ children, filename }) => React.createElement('button', { 'aria-label': `${children} ${filename}`, 'data-download-effect': true }, children),
     },
     '@/lib/api-errors': { getApiErrorMessage: (error) => String(error?.message ?? ''), isUncertainApiMutation: () => false },
@@ -137,8 +137,8 @@ function makeScreen(queryResults) {
     invoiceRequests,
     customerOptions,
     ownerLookups,
-    render: (props) => renderToStaticMarkup(React.createElement(module.OperatorInvoicesScreen, props)),
-    renderExport: (props) => renderToStaticMarkup(React.createElement(module.InvoiceExportJobScreen, props)),
+    render: (props) => renderToStaticMarkup(React.createElement(screenModule.OperatorInvoicesScreen, props)),
+    renderExport: (props) => renderToStaticMarkup(React.createElement(screenModule.InvoiceExportJobScreen, props)),
   };
 }
 
@@ -169,7 +169,7 @@ test('operator invoice list is paged, uses the Admin route, and does not fan out
   assert.equal(screen.customerOptions[0].getNextPageParam({ page: 2, totalPages: 3 }), undefined);
 });
 
-test('operator invoice detail displays private proof metadata and exposes review only while submitted', () => {
+test('operator invoice detail lists proof metadata and opens moderator review through a separate URL', () => {
   const screen = makeScreen(new Map([
     [JSON.stringify(['billing', 'operator', 'invoices', 'moderator:test-subject', 'detail', invoiceId]), {
       data: invoice, isPending: false, isError: false, error: null, isSuccess: true, refetch: async () => {},
@@ -186,20 +186,35 @@ test('operator invoice detail displays private proof metadata and exposes review
 
   const html = screen.render({ role: 'moderator', invoiceId });
   assert.match(html, /transfer\.pdf/);
-  assert.match(html, /Duyệt chứng từ/);
-  assert.match(html, /Từ chối chứng từ/);
-  assert.match(html, /Tải xuống/);
-  assert.match(html, /Xem chứng từ/);
+  assert.doesNotMatch(html, /Duyệt chứng từ|Từ chối chứng từ|Tải xuống|Xem chứng từ/);
   assert.match(html, /Thông tin tệp/);
   assert.match(html, /aria-label="Nội dung hồ sơ hóa đơn"/);
   assert.doesNotMatch(html, /aria-label="Phân trang dòng phí"/);
   assert.doesNotMatch(html, /aria-label="Phân trang chứng từ thanh toán"/);
   assert.match(html, /Xử lý hóa đơn/);
   assert.match(html, /Hủy hóa đơn/);
-  assert.match(html, /data-download-effect="true"/);
-  assert.match(html, new RegExp(`/moderator/invoices`));
+  assert.match(html, new RegExp(`/moderator/invoices/${invoiceId}\\?paymentProofId=${proofId}&amp;paymentProofPage=0`));
   assert.doesNotMatch(html, /private\/payment-proofs\/should-not-render/);
   assert.equal(screen.queryOptions.find((query) => query.queryKey.includes('proof-preview')).enabled, false);
+});
+
+test('moderator payment proof URL opens a standalone detail with review actions and a return link', () => {
+  const screen = makeScreen(new Map([
+    [JSON.stringify(['billing', 'operator', 'invoices', 'moderator:test-subject', 'detail', invoiceId]), {
+      data: invoice, isPending: false, isError: false, error: null, isSuccess: true, refetch: async () => {},
+    }],
+    [JSON.stringify(['billing', 'operator', 'invoices', 'moderator:test-subject', invoiceId, 'proofs', 0]), {
+      data: { items: [proof], page: 0, size: 50, hasNext: false },
+      isPending: false, isError: false, error: null, isFetching: false, refetch: async () => {},
+    }],
+  ]), { paymentProofId: proofId });
+
+  const html = screen.render({ role: 'moderator', invoiceId });
+  assert.match(html, /aria-labelledby="moderator-payment-proof-detail-title"/);
+  assert.match(html, /transfer\.pdf/);
+  assert.match(html, new RegExp(`href="/moderator/invoices/${invoiceId}"`));
+  assert.match(html, /data-hold-to-confirm="true"/);
+  assert.match(html, /<textarea/);
 });
 
 test('export stays visible while invoices are loading and ready exports use the shared download effect', () => {

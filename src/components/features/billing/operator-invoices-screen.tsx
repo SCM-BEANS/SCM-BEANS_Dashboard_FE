@@ -279,10 +279,13 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   const [linePage, setLinePage] = useState(0);
   const [proofPage, setProofPage] = useState(0);
   const [reviewDraft, setReviewDraft] = useState<ReviewDraft | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
   const [downloadError, setDownloadError] = useState("");
   const [previewProof, setPreviewProof] = useState<PaymentProof | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const router = useRouter();
+  const paymentProofId = typeof router.query.paymentProofId === "string" ? router.query.paymentProofId : "";
+  const paymentProofPage = typeof router.query.paymentProofPage === "string" ? router.query.paymentProofPage : "";
   const [section, setSection] = useState<"proofs" | "refund">((typeof router.query?.refundId === "string" || router.query?.tab === "refund") ? "refund" : "proofs");
 
   const invoice = useQuery({
@@ -294,6 +297,10 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   useEffect(() => {
     if (typeof router.query?.refundId === "string" || router.query?.tab === "refund") setSection("refund");
   }, [router.query?.refundId, router.query?.tab]);
+  useEffect(() => {
+    setProofPage(/^\d+$/.test(paymentProofPage) ? Number(paymentProofPage) : 0);
+    setReviewReason("");
+  }, [paymentProofId, paymentProofPage]);
   const lineItems = useQuery({
     queryKey: [...scopedInvoiceQueryKey, invoiceId, "lines", linePage],
     queryFn: ({ signal }) => billingApi.listInvoiceLineItemsPage(invoiceId, { page: linePage, size: PAGE_SIZE }, signal),
@@ -337,6 +344,9 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         queryClient.invalidateQueries({ queryKey: scopedInvoiceQueryKey }),
         queryClient.invalidateQueries({ queryKey: [...scopedInvoiceQueryKey, invoiceId, "proofs"] }),
       ]);
+      if (role === "moderator" && paymentProofId) {
+        await router.push(`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}${proofPage ? `?paymentProofPage=${proofPage}` : ""}`, undefined, { shallow: true });
+      }
     },
     onError: async (error: unknown) => {
       const needsRefresh = isUncertainApiMutation(error) || (axios.isAxiosError(error) && error.response?.status === 409);
@@ -356,6 +366,57 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   }
 
   const record = invoice.data;
+  const selectedProof = proofs.data?.items.find((proof) => proof.id === paymentProofId);
+  if (role === "moderator" && paymentProofId) {
+    const proofListHref = `${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}${proofPage ? `?paymentProofPage=${proofPage}` : ""}`;
+    return (
+      <div className={styles.detailStack}>
+        <header className={styles.panelHeading}>
+          <div className={styles.heading}>
+            <h1>Hồ sơ chứng từ thanh toán</h1>
+            <p className={styles.detailSubtitle}>{record.id.slice(0, 8).toUpperCase()} · Kỳ {periodText(record.period)}</p>
+          </div>
+          <ButtonBar href={proofListHref}>Về danh sách chứng từ</ButtonBar>
+        </header>
+        <InlineQueryState
+          pending={proofs.isPending || proofs.isFetching && !selectedProof}
+          error={proofs.isError ? proofs.error : null}
+          empty={Boolean(proofs.data && !selectedProof)}
+          loadingText={messages.LOADING_PROOFS}
+          emptyText="Không tìm thấy chứng từ trên trang danh sách hiện tại. Hãy quay lại danh sách để mở hồ sơ."
+          retry={proofs.refetch}
+        />
+        {selectedProof ? <section className={styles.panel} aria-labelledby="moderator-payment-proof-detail-title">
+          <h2 id="moderator-payment-proof-detail-title">{selectedProof.originalFilename}</h2>
+          <dl className={styles.detailGrid}>
+            <div><dt>Trạng thái</dt><dd><BillingStatus status={selectedProof.status} label={messages.PROOF_STATUSES[selectedProof.status]} /></dd></div>
+            <div><dt>Số tiền trên chứng từ</dt><dd>{selectedProof.amount == null ? "Chưa có dữ liệu" : amountText(selectedProof.amount, selectedProof.currency ?? record.currency)}</dd></div>
+            <div><dt>Đã gửi lúc</dt><dd>{dateTimeText(selectedProof.submittedAt)}</dd></div>
+            <div><dt>Đã xử lý lúc</dt><dd>{dateTimeText(selectedProof.reviewedAt)}</dd></div>
+            <div><dt>Tên tệp</dt><dd>{selectedProof.originalFilename}</dd></div>
+            <div><dt>Mã thanh toán</dt><dd>{selectedProof.paymentId}</dd></div>
+            {selectedProof.reviewReason ? <div><dt>Lý do xử lý trước đó</dt><dd>{selectedProof.reviewReason}</dd></div> : null}
+          </dl>
+          <div className={styles.proofActions}>
+            <ProgressDownloadButton filename={selectedProof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(selectedProof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải chứng từ</ProgressDownloadButton>
+          </div>
+          {downloadError ? <p className={styles.errorText} role="alert">{downloadError}</p> : null}
+          {selectedProof.status === "SUBMITTED" ? <>
+            <label className={styles.reasonField} htmlFor="moderator-payment-proof-review-reason">
+              <span>{messages.REVIEW_REASON_FIELD}</span>
+              <textarea id="moderator-payment-proof-review-reason" value={reviewReason} maxLength={1000} required disabled={review.isPending} onChange={(event) => setReviewReason(event.target.value)} />
+            </label>
+            {!reviewReason.trim() ? <p className={styles.hint}>{messages.REVIEW_REASON_REQUIRED}</p> : null}
+            <div className={styles.filterActions}>
+              <ButtonBar variant="primary" type="button" disabled={!reviewReason.trim() || review.isPending} onClick={() => review.mutate({ proofId: selectedProof.id, approve: true, reason: reviewReason.trim() })}>Duyệt chứng từ</ButtonBar>
+              <ButtonBar variant="danger" type="button" holdToConfirm disabled={!reviewReason.trim() || review.isPending} onClick={() => review.mutate({ proofId: selectedProof.id, approve: false, reason: reviewReason.trim() })}>Từ chối chứng từ</ButtonBar>
+            </div>
+            {review.isError && review.variables?.proofId === selectedProof.id ? <p className={styles.errorText} role="alert">{getApiErrorMessage(review.error, "mutation") || messages.REVIEW_ERROR}</p> : null}
+          </> : null}
+        </section> : null}
+      </div>
+    );
+  }
   return (
     <div className={styles.detailStack}>
       <div className={styles.panelHeading}>
@@ -437,14 +498,16 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
                 header: messages.PROOF_ACTIONS,
                 render: (proof) => (
                   <div className={styles.proofActions}>
-                    <ButtonBar type="button" onClick={() => setPreviewProof(proof)}>Xem chứng từ</ButtonBar>
-                    <ProgressDownloadButton filename={proof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
+                    {role === "moderator" ? <ButtonBar rollingLabel href={`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}?paymentProofId=${encodeURIComponent(proof.id)}&paymentProofPage=${proofPage}`}>Mở hồ sơ</ButtonBar> : <>
+                      <ButtonBar type="button" onClick={() => setPreviewProof(proof)}>Xem chứng từ</ButtonBar>
+                      <ProgressDownloadButton filename={proof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
                     {role !== "owner" && proof.status === "SUBMITTED" ? (
                       <>
                         <ButtonBar type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: true, reason: "" })}>{messages.APPROVE_PROOF}</ButtonBar>
                         <ButtonBar variant="danger" type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: false, reason: "" })}>{messages.REJECT_PROOF}</ButtonBar>
                       </>
                     ) : null}
+                    </>}
                   </div>
                 ),
               },

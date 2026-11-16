@@ -33,8 +33,8 @@
 }
 
 .modeButton[aria-pressed="true"] {
-  border-color: #b91222;
-  background: #b91222;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -152,7 +152,7 @@
   justify-content: center;
   box-sizing: border-box;
   padding: 8px 12px;
-  border: 1px solid #b91222;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
   font: inherit;
   font-size: 0.85rem;
@@ -162,14 +162,14 @@
 }
 
 .runButton {
-  background: #b91222;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .stopButton,
 .replayButton {
   background: #fff;
-  color: #b91222;
+  color: var(--color-primary);
 }
 
 .runButton:disabled,
@@ -235,7 +235,7 @@
 
 .errorMessage,
 .faultLabel {
-  color: #b91222;
+  color: var(--color-primary);
 }
 
 .errorMessage {
@@ -277,7 +277,7 @@
 }
 
 .currentStep {
-  color: #b91222;
+  color: var(--color-primary);
   font-weight: 700;
 }
 

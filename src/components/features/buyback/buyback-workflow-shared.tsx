@@ -511,6 +511,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             + " đã được duyệt."}
           primaryAction={{
             label: ownerDecision.accepted ? "Chấp nhận giá" : "Từ chối giá",
+            holdToConfirm: !ownerDecision.accepted,
             pending: workflow.decideOwnerPrice.isPending,
             pendingLabel: "Đang gửi quyết định…",
             disabled: !ownerDecisionReason.trim(),

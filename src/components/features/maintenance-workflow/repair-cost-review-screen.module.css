@@ -24,9 +24,9 @@
 .button, .disabledButton {
   min-height: 42px;
   padding: 0 14px;
-  border: 1px solid #b81724;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
-  background: #b81724;
+  background: var(--color-primary);
   color: #fff;
   font: inherit;
   font-weight: 600;
@@ -41,7 +41,7 @@
 .timeline strong { color: #302927; }
 .timeline span { color: #706561; font-size: 12px; }
 .timeline p { margin: 0; }
-.button:focus-visible { outline: 3px solid #b81724; outline-offset: 2px; }
+.button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 @media (max-width: 600px) { .pageContent { gap: 14px; } .panel, .notice { padding: 14px; } }
 
 .reviewLayout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); align-items: start; gap: 18px; }

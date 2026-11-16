@@ -89,7 +89,7 @@
 
 .toggleButton[aria-pressed="true"],
 .layerButton[aria-pressed="true"] {
-  border-color: #b91222;
+  border-color: var(--color-primary);
   background: #fae9eb;
   color: #9f101e;
 }
@@ -113,8 +113,8 @@
 
 .primaryButton,
 .retryButton {
-  border-color: #b91222;
-  background: #b91222;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -124,8 +124,8 @@
 }
 
 .outlineButton {
-  border-color: #b91222;
-  color: #b91222;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .outlineButton:hover:not(:disabled) {
@@ -173,7 +173,7 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid #b91222;
+  border: 2px solid var(--color-primary);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 800ms linear infinite;
@@ -204,7 +204,7 @@
   align-items: center;
   justify-content: center;
   padding: 8px 20px;
-  border: 1px solid #b91222;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
   font: inherit;
   font-size: 0.875rem;

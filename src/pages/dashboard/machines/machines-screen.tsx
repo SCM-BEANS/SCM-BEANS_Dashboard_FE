@@ -23,7 +23,7 @@ import machineStyles from "@/components/machines/machines.module.css";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
-import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { telemetryApi } from "@/apis/telemetry.api";
@@ -215,6 +215,21 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
     : !activeScope?.isSuccess ? "Đang kiểm tra…" : !activeContract || cups.data?.activeMachineCount === 0 ? "Ngoài phạm vi dữ liệu"
       : cups.isError ? "Không tải được" : cups.data ? `${cups.data.totalCups.toLocaleString("vi-VN")} ly` : "Đang tải…";
 
+  const maintenanceTicketId = router.query.maintenanceTicketId;
+  if (ready && machineId && maintenanceTicketId !== undefined) {
+    return (
+      <section className={[styles.pageContent, styles.machineWorkspace].join(" ")} aria-labelledby="maintenance-ticket-detail-page-title">
+        <MaintenanceTicketDetailsPage
+          ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
+          role="OWNER"
+          backHref={`${PATH_CUSTOMER.MACHINE_DETAIL(machineId)}?tab=maintenance`}
+          backLabel="Về lịch sử bảo trì"
+          headingClassName={styles.pageHeading}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className={[styles.pageContent, styles.machineWorkspace].join(" ")} aria-labelledby="customer-screen-title">
       <div className={styles.machineHeading}><BackButtonHeading
@@ -285,6 +300,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   machineId={machineId}
                   tickets={maintenanceTickets.data?.items ?? []}
                   role="OWNER"
+                  ticketHref={(ticketId) => `${PATH_CUSTOMER.MACHINE_DETAIL(machineId)}?tab=maintenance&maintenanceTicketId=${encodeURIComponent(ticketId)}`}
                   presentation="table"
                   previewLimit={10}
                   onRefresh={() => maintenanceTickets.refetch()}

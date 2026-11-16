@@ -175,7 +175,7 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
           {task.dateLabel} {formatDate(task.date)}
         </p>
       </div>
-      {task.href ? <TextLinkButton href={task.href}>Mở việc</TextLinkButton> : null}
+      {task.href ? compact ? <TextLinkButton href={task.href}>Mở việc</TextLinkButton> : <ButtonBar rollingLabel href={task.href}>Mở việc</ButtonBar> : null}
     </article>
   );
 }
@@ -305,7 +305,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
                 key: "action",
                 header: "",
                 align: "right",
-                render: (task) => task.href ? <TextLinkButton href={task.href}>Mở việc</TextLinkButton> : "—",
+                render: (task) => task.href ? <ButtonBar rollingLabel href={task.href}>Mở việc</ButtonBar> : "—",
               },
             ]}
           />

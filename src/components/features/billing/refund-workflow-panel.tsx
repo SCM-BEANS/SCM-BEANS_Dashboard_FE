@@ -223,7 +223,7 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
       <PageActionsRenderer actions={actions} />
       {mutation.isError && !pending ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(mutation.error, "mutation")}</p> : null}
       {pending ? <NotificationDialog variant="confirm" title={`${commandLabels[pending.action]}?`} description={pending.action === "receipt" ? `Số tiền thực nhận: ${refundMoney(pending.receivedAmount)}. ${pending.received ? "Bạn đã chọn đã nhận tiền." : "Bạn đã chọn chưa nhận tiền hoặc có vấn đề."}` : `Khoản hoàn ${data ? refundMoney(data.amount) : ""}. ${"reason" in pending ? pending.reason : "Kiểm tra thông tin trước khi xác nhận."}`}
-        primaryAction={{ label: commandLabels[pending.action], pending: mutation.isPending, pendingLabel: "Đang xử lý…", onClick: () => mutation.mutate(pending) }}
+        primaryAction={{ label: commandLabels[pending.action], holdToConfirm: pending.action === "reject", pending: mutation.isPending, pendingLabel: "Đang xử lý…", onClick: () => mutation.mutate(pending) }}
         secondaryAction={{ label: "Quay lại", disabled: mutation.isPending, onClick: () => setPending(null) }} onClose={() => { if (!mutation.isPending) setPending(null); }} closeOnEscape={!mutation.isPending}>
         {mutation.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(mutation.error, "mutation")}</p> : null}
       </NotificationDialog> : null}

@@ -68,8 +68,8 @@
 .filters input:focus-visible,
 .filters select:focus-visible,
 .filters button:focus-visible {
-  border-color: #b81724;
-  outline: 3px solid #b8172433;
+  border-color: var(--color-primary);
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
   outline-offset: 2px;
 }
 

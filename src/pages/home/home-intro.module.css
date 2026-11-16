@@ -46,7 +46,7 @@
 }
 
 .wordmark {
-  color: #b81724;
+  color: var(--color-primary);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 40px;
   font-weight: 700;

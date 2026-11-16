@@ -7,7 +7,7 @@ import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-ba
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { PATH_MODERATOR } from "@/routes/path";
-import { MaintenanceTicketDetailsPanel } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
@@ -649,14 +649,7 @@ export function TechnicalOperationsScreen({
   if (historyTicketRoute) {
     const ticketId = historyTicketRoute[2];
     const historyHref = historyMachineId ? PATH_MODERATOR.MACHINE_HISTORY_DETAIL(historyMachineId) : PATH_MODERATOR.MACHINE_HISTORY;
-    return (
-      <div className={styles.pageContent}>
-        <BackButtonHeading className={styles.pageHeading} titleId="machine-history-ticket-title" title="Chi tiết phiếu bảo trì" back={{ fallbackHref: historyHref, label: "Về lịch sử máy" }} />
-        <section className={styles.panel} aria-labelledby="machine-history-ticket-title">
-          <MaintenanceTicketDetailsPanel key={ticketId} ticketId={ticketId} role="MODERATOR" embedded />
-        </section>
-      </div>
-    );
+    return <div className={styles.pageContent}><MaintenanceTicketDetailsPage key={ticketId} ticketId={ticketId} role={routes.role === "admin" ? "ADMIN" : "MODERATOR"} backHref={historyHref} backLabel="Về lịch sử máy" headingClassName={styles.pageHeading} /></div>;
   }
 
   if (isMachineHistory) {

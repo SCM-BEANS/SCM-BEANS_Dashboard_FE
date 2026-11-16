@@ -42,7 +42,7 @@
   height: 76px;
   place-items: center;
   border-radius: 50%;
-  color: #b81724;
+  color: var(--color-primary);
   background: #fff;
   box-shadow: 0 8px 26px rgb(48 41 39 / 12%);
 }

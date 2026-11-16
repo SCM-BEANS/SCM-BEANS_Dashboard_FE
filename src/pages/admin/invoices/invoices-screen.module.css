@@ -5,6 +5,8 @@
   background: #fff;
 }
 
+.invoiceListPanel { padding: 0; border: 0; border-radius: 0; background: transparent; }
+
 .billingPanel h2 {
   margin: 0 0 12px;
   color: #302927;
@@ -33,7 +35,7 @@
   gap: 8px;
 }
 
-.filterControls { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #eee8e3; }
+.filterControls { margin-bottom: 18px; padding-bottom: 0; border-bottom: 0; }
 
 .invoiceTable :global(table) {
   min-width: 980px;

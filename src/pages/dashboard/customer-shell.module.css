@@ -22,7 +22,7 @@
 
 .shell :focus-visible,
 .accessScreen :focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -357,7 +357,7 @@
   border: 1px solid #e1d8d2;
   border-radius: 8px;
   background: #fff;
-  color: #a9101c !important;
+  color: color-mix(in srgb, var(--color-primary) 92%, black) !important;
   font: inherit;
   font-weight: 600;
   text-decoration: none;
@@ -376,8 +376,8 @@
 }
 
 .primaryButton {
-  border-color: #b81724;
-  background: #b81724;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #fff !important;
 }
 
@@ -526,7 +526,7 @@
   padding: 3px 8px;
   border-radius: 999px;
   background: #f9e9ea;
-  color: #a9101c;
+  color: color-mix(in srgb, var(--color-primary) 92%, black);
   font-size: 12px;
   font-weight: 700;
   text-transform: capitalize;
@@ -552,7 +552,7 @@
 }
 
 .accessScreen strong {
-  color: #b81724;
+  color: var(--color-primary);
   font-size: 28px;
 }
 
@@ -572,7 +572,7 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  color: #b81724;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -607,7 +607,7 @@
   }
 
   .mobileBrand {
-    color: #b81724 !important;
+    color: var(--color-primary) !important;
     font-size: 23px;
     font-weight: 700;
   }
@@ -710,7 +710,7 @@
 .ownerInventorySearch { flex:1 1 340px; }
 .ownerInventoryToolbar > label:not(:first-child) { flex:0 1 220px; }
 .ownerInventoryDate { color:#706561; font-size:13px; margin-left:auto; }
-.ownerInventoryToolbar input:focus-visible,.ownerInventoryToolbar select:focus-visible { outline:2px solid #bd1427; outline-offset:2px; }
+.ownerInventoryToolbar input:focus-visible,.ownerInventoryToolbar select:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 .ownerProfileLayout > section { display:flex; flex-wrap:wrap; padding:16px 20px; border:1px solid #e7dfd9; border-radius:12px; background:#fff; gap:20px; }
 .ownerProfileLayout > section > article { flex:1 1 180px; padding:0; border:0; background:none; }
 .ownerProfileLayout > section > article > strong { font-size:18px; }
@@ -729,7 +729,7 @@
 .ownerExtraDetails .detailGrid { margin-top:18px; }
 .ownerProfileLayout > div > div[role=tablist] { border-bottom:0; padding:0; gap:20px; margin-bottom:20px; }
 .ownerProfileLayout > div > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerProfileLayout > div > div[role=tablist] > button[aria-selected=true] { border-bottom-color:#bd1427; color:#bd1427; background:none; }
+.ownerProfileLayout > div > div[role=tablist] > button[aria-selected=true] { border-bottom-color:var(--color-primary); color:var(--color-primary); background:none; }
 .ownerListLinks { display:flex; gap:16px; flex-wrap:wrap; margin-left:auto; }
 .ownerMaintenanceSummary { display:flex; flex-wrap:wrap; gap:24px; margin:18px 0 24px; }
 .ownerMaintenanceSummary > article { border:0; padding:0; background:none; min-width:150px; }
@@ -742,7 +742,7 @@
 .ownerMonitoringLayout > header { padding-right:120px; }
 .ownerMonitoringLayout > div[role=tablist] { border-bottom:0; padding:0; gap:20px; }
 .ownerMonitoringLayout > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerMonitoringLayout > div[role=tablist] > button[aria-selected=true] { border-bottom-color:#bd1427; background:none; color:#bd1427; }
+.ownerMonitoringLayout > div[role=tablist] > button[aria-selected=true] { border-bottom-color:var(--color-primary); background:none; color:var(--color-primary); }
 @media(max-width:600px) { .ownerMonitoringLayout > button:first-child { position:static; align-self:flex-end; } .ownerMonitoringLayout > header { padding-right:0; } }
 
 .ownerProfileRows > div { border:0; border-radius:0; background:none; box-shadow:none; }
@@ -752,7 +752,7 @@
 .ownerProfileNavigation { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; border-bottom:0; }
 .ownerProfileNavigation > div[role=tablist][role=tablist] { border-bottom:0; gap:20px; margin:0; padding:0; flex-wrap:wrap; }
 .ownerProfileNavigation > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerProfileNavigation > div[role=tablist] > button[aria-selected=true] { color:#bd1427; background:none; border-bottom-color:#bd1427; }
+.ownerProfileNavigation > div[role=tablist] > button[aria-selected=true] { color:var(--color-primary); background:none; border-bottom-color:var(--color-primary); }
 .ownerContextActions,.ownerSectionHeading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
 .ownerContextActions { padding-bottom:8px; }
 .ownerSectionHeading { margin-bottom:16px; }
@@ -766,7 +766,7 @@
 .ownerRelatedMenu > nav { position:absolute; right:0; top:calc(100% + 6px); z-index:30; display:flex; flex-direction:column; min-width:200px; padding:8px; gap:4px; background:#fff; border:1px solid #e7dfd9; border-radius:10px; box-shadow:0 6px 18px #302b2914; }
 .ownerRelatedMenu > nav > a { display:block; padding:12px; border-radius:6px; }
 .ownerRelatedMenu > nav > a:hover { background:#f8f5f2; }
-.ownerRelatedMenu summary:focus-visible { outline:2px solid #bd1427; outline-offset:3px; }
+.ownerRelatedMenu summary:focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
 .ownerInventoryTitle { align-items:center; }
 .ownerCleaningCell { min-width:180px; display:grid; gap:8px; font-size:13px; }
 .ownerCleaningCell > div { display:grid; grid-template-columns:60px minmax(0,1fr); align-items:center; gap:10px; }

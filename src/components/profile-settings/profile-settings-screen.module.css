@@ -241,7 +241,7 @@
 }
 
 .phoneForm input:focus-visible {
-  border-color: #b81724;
+  border-color: var(--color-primary);
   outline: 3px solid rgb(184 23 36 / 14%);
   outline-offset: 1px;
 }

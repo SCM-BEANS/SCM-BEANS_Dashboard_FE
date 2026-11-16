@@ -33,9 +33,9 @@
 .button, .disabledButton {
   min-height: 42px;
   padding: 0 14px;
-  border: 1px solid #b81724;
+  border: 1px solid var(--color-primary);
   border-radius: 8px;
-  background: #b81724;
+  background: var(--color-primary);
   color: #fff;
   font: inherit;
   font-weight: 600;
@@ -49,5 +49,5 @@
 .success { border-color: #b6d9bd; background: #f3fbf5; color: #23653a; }
 .hint { color: #706561 !important; font-size: 12px !important; }
 .link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-.button:focus-visible, .link:focus-visible { outline: 3px solid #b81724; outline-offset: 2px; }
+.button:focus-visible, .link:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 @media (max-width: 600px) { .pageContent { gap: 14px; } .panel, .notice { padding: 14px; } }

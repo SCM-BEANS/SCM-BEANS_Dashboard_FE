@@ -12,5 +12,6 @@ export interface PageAction {
   describedBy?: string;
   pending?: boolean;
   pendingLabel?: string;
+  holdToConfirm?: boolean;
   confirm?: { title: string; description: string; confirmLabel: string };
 }

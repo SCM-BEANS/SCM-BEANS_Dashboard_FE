@@ -261,7 +261,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                 <section className={styles.dataPanel} aria-labelledby="owner-termination-link-title">
                   <h2 id="owner-termination-link-title">Hồ sơ chấm dứt hợp đồng</h2>
                   <p>Theo dõi lịch thu hồi máy và xác nhận tình trạng bàn giao trong hồ sơ riêng.</p>
-                  <ButtonBar href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
+                  <ButtonBar rollingLabel href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
                 </section>
               ) : null}
             </div>

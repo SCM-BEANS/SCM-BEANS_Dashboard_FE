@@ -13,7 +13,7 @@
 .screen :global(th) { font-size: 13px; font-weight: 600; }
 .screen :global(td) { vertical-align: middle; font-size: 14px; }
 .screen :global(td a) { color: #302927; text-decoration: none; }
-.screen :global(td a:hover) { color: #a01520; }
+.screen :global(td a:hover) { color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .screen :global(form) { min-width: 0; }
 .screen :global(h3) { font-size: 16px; }
 .identity { display: grid; gap: 4px; min-width: 0; }
@@ -26,7 +26,7 @@
 .summary dd { margin: 8px 0 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
 .disclosure { min-width: 0; }
 .disclosure > summary { width: fit-content; min-height: 44px; padding: 10px 0; color: #514843; font-size: 14px; font-weight: 600; cursor: pointer; }
-.disclosure > summary:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; border-radius: 4px; }
+.disclosure > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 4px; }
 .disclosure > :not(summary) { margin-top: 12px; }
 .disclosure :global(dl) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .disclosure :global(dl > div) { padding: 0; border: 0; background: transparent; }
@@ -43,7 +43,7 @@
 .paymentPanel { display: grid; min-width: 0; gap: 12px; }
 .imageDisclosure { color: #514843; font-size: 13px; }
 .imageDisclosure summary { width: fit-content; min-height: 44px; padding: 10px 0; cursor: pointer; }
-.imageDisclosure summary:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+.imageDisclosure summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .requestLayout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); align-items: stretch; gap: 18px; }
 .requestFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 0; }
 .requestFacts dt { font-size: 13px; color: #706561; }
@@ -63,9 +63,9 @@
 .relatedEvidence > section { padding: 0; border: 0; border-radius: 0; }
 .recordTabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #e9e2dc; }
 .recordTabs button { min-height: 44px; padding: 9px 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #625955; font: inherit; cursor: pointer; }
-.recordTabs button[aria-pressed="true"] { border-bottom-color: #b81724; color: #b81724; font-weight: 600; }
+.recordTabs button[aria-pressed="true"] { border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
 .recordTabs button:hover { background: #faf6f4; }
-.recordTabs button:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+.recordTabs button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .workOrderLayout .overviewCard { grid-column: 1; grid-row: 2; align-self: stretch; align-content: start; }
 .workOrderLayout .sidebar { grid-column: 2; grid-row: 2; align-self: stretch; align-content: start; }
 .workOrderLayout .mainContent { grid-column: 1 / -1; grid-row: 3; }
@@ -90,7 +90,7 @@
 .progress li strong { font-weight: 500; }
 .progress li[data-state="done"] { color: #286b52; }
 .progress li[data-state="done"] > span { border-color: #36866a; background: #36866a; color: #fff; }
-.progress li[data-state="current"] { color: #a01520; }
-.progress li[data-state="current"] > span { border-color: #b81724; color: #a01520; }
+.progress li[data-state="current"] { color: color-mix(in srgb, var(--color-primary) 87%, black); }
+.progress li[data-state="current"] > span { border-color: var(--color-primary); color: color-mix(in srgb, var(--color-primary) 87%, black); }
 @media (max-width: 1000px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .progress { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
 @media (max-width: 600px) { .screen [data-buyback-list], .card { padding: 16px; } .summary, .disclosure :global(dl) { grid-template-columns: minmax(0, 1fr); } .progress { grid-template-columns: minmax(0, 1fr); } }

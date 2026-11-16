@@ -16,7 +16,7 @@ const rendererCode = ts.transpileModule(rendererSource, { compilerOptions: { mod
 const rendererModule = { exports: {} };
 const rendererMocks = {
   'next/router': { useRouter: () => ({ push: () => Promise.resolve(true) }) },
-  '@/components/button/button-bar': { ButtonBar: ({ children, href, variant, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, href, 'data-variant': variant }, children) },
+  '@/components/button/button-bar': { ButtonBar: ({ children, href, variant, holdToConfirm, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, href, 'data-variant': variant, ...(holdToConfirm ? { 'data-hold-to-confirm': 'true' } : {}) }, children) },
   '@/components/notification-dialog/notification-dialog': { NotificationDialog: () => null },
   './page-actions.module.css': { default: { action: 'action', container: 'container', danger: 'danger', menu: 'menu', menuItem: 'menuItem', pendingHint: 'pendingHint', popup: 'popup', right: 'right', visuallyHidden: 'visuallyHidden' } },
 };
@@ -27,7 +27,7 @@ const mocks = {
   './page-actions-registry': { PageActionsRegistryContext: React.createContext(null) },
   './page-actions-renderer': rendererModule.exports,
   'next/router': { useRouter: () => ({ push: () => Promise.resolve(true) }) },
-  '@/components/button/button-bar': { ButtonBar: ({ children, href, variant, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, href, 'data-variant': variant }, children) },
+  '@/components/button/button-bar': { ButtonBar: ({ children, href, variant, holdToConfirm, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, href, 'data-variant': variant, ...(holdToConfirm ? { 'data-hold-to-confirm': 'true' } : {}) }, children) },
   '@/components/notification-dialog/notification-dialog': { NotificationDialog: () => null },
   './page-actions.module.css': { default: {} },
 };
@@ -106,3 +106,7 @@ test('pending action locks siblings and uses pending label', () => {
   assert.equal((html.match(/disabled=""/g) || []).length, 2);
 });
 test('empty actions render nothing', () => assert.equal(render([]), ''));
+test('page actions preserve hold-to-confirm on the shared button', () => {
+  const html = render([{ id: 'reject', label: 'Reject', variant: 'danger', holdToConfirm: true }]);
+  assert.match(html, /data-hold-to-confirm="true"/);
+});

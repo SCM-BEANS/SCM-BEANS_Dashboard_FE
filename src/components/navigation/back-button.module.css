@@ -16,11 +16,11 @@
 
 .button:hover {
   background: #f8e9e9;
-  color: #b81724;
+  color: var(--color-primary);
 }
 
 .button:focus-visible {
-  outline: 2px solid #b81724;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

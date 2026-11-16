@@ -30,23 +30,23 @@
 }
 
 .button:focus-visible {
-  outline: 3px solid var(--color-primary, #b81724);
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
 .primary {
   color: #fff;
-  border-color: var(--color-primary, #b81724);
-  background: var(--color-primary, #b81724);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .primary:hover {
-  border-color: #981421;
-  background: #981421;
+  border-color: color-mix(in srgb, var(--color-primary) 82%, black);
+  background: color-mix(in srgb, var(--color-primary) 82%, black);
 }
 
 .secondary {
-  color: var(--color-primary, #b81724);
+  color: var(--color-primary);
   border-color: var(--color-border, #e9e2dc);
   background: #fff;
 }
@@ -79,13 +79,13 @@
 .text {
   min-height: 44px;
   padding: 0 2px;
-  color: var(--color-primary, #b81724);
+  color: var(--color-primary);
   border-color: transparent;
   background: transparent;
 }
 
 .text:hover {
-  color: #981421;
+  color: color-mix(in srgb, var(--color-primary) 82%, black);
 }
 
 .icon {

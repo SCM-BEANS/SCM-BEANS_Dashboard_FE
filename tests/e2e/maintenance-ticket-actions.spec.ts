@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickPageAction, expectNoPageAction, expectNonPrimaryPageAction, expectPageAction, expectPageActionOrder, expectPrimaryPageAction, pageActionBar } from "./page-actions-test-helpers";
+import { clickPageAction, expectPageActionOrder, pageActionBar } from "./page-actions-test-helpers";
 
 const machineId = "f2000000-0000-4000-8000-000000000001";
 const ownerId = "f2000000-0000-4000-8000-000000000002";
@@ -30,6 +30,11 @@ type MockTicket = {
 const roleCases: RoleCase[] = [
   { label: "Admin", claim: "admin", machinePath: `/admin/machines/${machineId}` },
   { label: "Moderator", claim: "moderator", machinePath: `/moderator/machines/${machineId}` },
+];
+const historyRoleCases: RoleCase[] = [
+  ...roleCases,
+  { label: "Owner", claim: "owner", subject: ownerId, machinePath: `/dashboard/machines/${machineId}` },
+  { label: "Technician", claim: "technician", subject: technicianId, machinePath: `/technician/machine-check/${machineId}` },
 ];
 
 function tokenFor(role: string, subject?: string) {
@@ -135,6 +140,11 @@ async function openMachine(page: Page, role: RoleCase) {
   }]);
   await page.goto(role.machinePath);
   await expect(page.locator("main h1")).toBeVisible();
+  if (role.claim === "admin" || role.claim === "moderator") {
+    await page.getByRole("tab", { name: "Hợp đồng & bảo trì" }).click();
+  } else if (role.claim === "owner") {
+    await page.getByRole("tab", { name: "Bảo trì & hỗ trợ" }).click();
+  }
 }
 
 async function installTechnicianMockApi(page: Page) {
@@ -191,17 +201,19 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       const api = await installMockApi(page);
       await openMachine(page, role);
 
-      await expectPrimaryPageAction(page, "maintenance-ticket-create");
-      if (role.claim === "admin") await expectNonPrimaryPageAction(page, "machine-edit");
-      await clickPageAction(page, "maintenance-ticket-create");
+      await expect(page.getByRole("button", { name: "Tạo phiếu bảo trì", exact: true })).toBeVisible();
+      if (role.claim === "admin") await expect(page.getByRole("button", { name: "Chỉnh sửa máy", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Tạo phiếu bảo trì", exact: true }).click();
       await expect(page.getByRole("alertdialog")).toBeVisible();
       await expect(page.getByLabel("Mức cảnh báo")).toHaveValue("Warning");
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
-      await expect(page.getByRole("row").filter({ has: page.getByRole("cell", { name: createdTicketId, exact: true }) })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Xem chi tiết" }).last()).toBeVisible();
+      await expect(page).toHaveURL(new RegExp(createdTicketId));
+      await expect(page.getByText(createdTicketId, { exact: true })).toBeVisible();
 
-      await clickPageAction(page, "maintenance-ticket-create");
+      await page.goBack();
+      await expect(page.locator("main h1")).toBeVisible();
+      await page.getByRole("button", { name: "Tạo phiếu bảo trì", exact: true }).click();
       await page.getByRole("button", { name: "Tạo phiếu", exact: true }).click();
       await expect(page.getByRole("alert").getByText("Máy chưa có đúng một hợp đồng đang hiệu lực nên chưa thể tạo phiếu bảo trì.")).toBeVisible();
 
@@ -214,39 +226,41 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
       const api = await installMockApi(page);
       await openMachine(page, role);
 
-      await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
-      await expectPageAction(page, "maintenance-ticket-overdue-review");
-      await expectPageAction(page, "maintenance-ticket-unassign");
+      await page.getByRole("link", { name: "Xem chi tiết" }).first().click();
+      await expect(page).toHaveURL(new RegExp(assignedTicketId));
+      await expect(page.getByRole("button", { name: "Rà soát quá hạn", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Hủy phân công", exact: true })).toBeVisible();
 
-      await clickPageAction(page, "maintenance-ticket-edit");
-      await expectPrimaryPageAction(page, "maintenance-ticket-save");
+      await page.getByRole("button", { name: "Chỉnh sửa chi tiết", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Lưu thay đổi", exact: true })).toBeVisible();
       await expect(page.locator('input[type="datetime-local"]')).toHaveValue("2026-11-07T10:00");
       await page.locator('input[type="datetime-local"]').fill("2026-11-10T09:30");
       await page.getByLabel("Mức cảnh báo").selectOption("Critical");
-      await clickPageAction(page, "maintenance-ticket-save");
+      await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
       await expect(page.getByText("Đã cập nhật chi tiết phiếu bảo trì.")).toBeVisible();
 
-      await clickPageAction(page, "maintenance-ticket-edit");
+      await page.getByRole("button", { name: "Chỉnh sửa chi tiết", exact: true }).click();
       await page.getByLabel("Hướng dẫn xử lý").fill("Giữ nguyên hướng dẫn mới.");
       api.setConflictOnNextPatch();
-      await clickPageAction(page, "maintenance-ticket-save");
+      await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
       await expect(page.getByText("Phiếu đã được cập nhật bởi người khác, hãy tải lại.")).toBeVisible();
       await expect(page.getByLabel("Hướng dẫn xử lý")).toBeVisible();
 
-      await clickPageAction(page, "maintenance-ticket-cancel-edit");
+      await page.getByRole("button", { name: "Hủy chỉnh sửa", exact: true }).click();
       await page.getByRole("alertdialog").getByRole("button", { name: "Hủy chỉnh sửa", exact: true }).click();
-      await clickPageAction(page, "maintenance-ticket-overdue-review");
+      await page.getByRole("button", { name: "Rà soát quá hạn", exact: true }).click();
       await page.locator("#reason-dialog-input").fill("Đã thống nhất lịch mới với Owner.");
       await page.getByRole("button", { name: "Xác nhận" }).click();
-      await expectNoPageAction(page, "maintenance-ticket-overdue-review");
+      await expect(page.getByRole("button", { name: "Rà soát quá hạn", exact: true })).toHaveCount(0);
 
-      await clickPageAction(page, "maintenance-ticket-unassign");
+      await page.getByRole("button", { name: "Hủy phân công", exact: true }).click();
       await page.getByRole("alertdialog").getByRole("button", { name: "Hủy phân công", exact: true }).click();
-      await expectNoPageAction(page, "maintenance-ticket-unassign");
+      await expect(page.getByRole("button", { name: "Hủy phân công", exact: true })).toHaveCount(0);
 
-      await page.getByRole("button", { name: "Xem chi tiết" }).last().click();
-      await expectNoPageAction(page, "maintenance-ticket-overdue-review");
-      await expectNoPageAction(page, "maintenance-ticket-unassign");
+      await page.getByRole("button", { name: "Về lịch sử máy" }).click();
+      await page.getByRole("link", { name: "Xem chi tiết" }).last().click();
+      await expect(page.getByRole("button", { name: "Rà soát quá hạn", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Hủy phân công", exact: true })).toHaveCount(0);
 
       const patchCalls = api.calls.filter((call) => call.method === "PATCH");
       expect(patchCalls).toHaveLength(2);
@@ -268,13 +282,40 @@ test.describe("maintenance ticket actions shared across operator roles", () => {
     });
   }
 
-  test("Owner sees machine transfer and maintenance ticket creation in the shared footer", async ({ page }) => {
+  for (const role of historyRoleCases) {
+    test(`${role.label} opens a history ticket on its own URL and supports direct loading`, async ({ page }) => {
+      await installMockApi(page);
+      await openMachine(page, role);
+      await page.getByRole("link", { name: "Xem chi tiết" }).first().click();
+
+      await expect(page).toHaveURL(new RegExp(assignedTicketId));
+      await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
+      await expect(page.getByText(assignedTicketId, { exact: true })).toBeVisible();
+      const backLabel = role.claim === "owner" ? "Về lịch sử bảo trì" : "Về lịch sử máy";
+      await expect(page.getByRole("button", { name: backLabel })).toBeVisible();
+
+      const ticketUrl = page.url();
+      await page.goto(ticketUrl);
+      await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
+      await expect(page.getByText(assignedTicketId, { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: backLabel }).click();
+      await expect(page.locator("main h1")).toBeVisible();
+    });
+  }
+
+  test("invalid ticket IDs show an error without opening the detail request", async ({ page }) => {
+    await installMockApi(page);
+    await openMachine(page, roleCases[0]);
+    await page.goto(`/admin/machines/${machineId}?tab=history&maintenanceTicketId=invalid`);
+    await expect(page.getByRole("alert").getByText("Mã phiếu bảo trì không hợp lệ.")).toBeVisible();
+  });
+
+  test("Owner can create a ticket from machine maintenance history", async ({ page }) => {
     await installMockApi(page);
     await openMachine(page, { label: "Owner", claim: "owner", subject: ownerId, machinePath: `/dashboard/machines/${machineId}` });
 
-    await expectPageAction(page, "machine-transfer-location");
-    await expectPrimaryPageAction(page, "maintenance-ticket-create");
-    await clickPageAction(page, "maintenance-ticket-create");
+    await expect(page.getByRole("button", { name: "Tạo phiếu bảo trì", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Tạo phiếu bảo trì", exact: true }).click();
     await expect(page.getByRole("alertdialog")).toBeVisible();
   });
 
@@ -329,7 +370,8 @@ test.describe("maintenance ticket evidence", () => {
     await installMockApi(page);
     await mockTicketEvidence(page, "files");
     await openMachine(page, roleCases[0]);
-    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    await page.getByRole("link", { name: "Xem chi tiết" }).first().click();
+    await page.locator("summary").filter({ hasText: "Chứng từ phiếu bảo trì" }).click();
     const section = page.getByRole("region", { name: "Chứng từ phiếu bảo trì" });
     await expect(section).toBeVisible();
     await expect(section.getByText("bien-ban.pdf")).toBeVisible();
@@ -346,7 +388,8 @@ test.describe("maintenance ticket evidence", () => {
     await installMockApi(page);
     await mockTicketEvidence(page, "empty");
     await openMachine(page, roleCases[0]);
-    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    await page.getByRole("link", { name: "Xem chi tiết" }).first().click();
+    await page.locator("summary").filter({ hasText: "Chứng từ phiếu bảo trì" }).click();
     const section = page.getByRole("region", { name: "Chứng từ phiếu bảo trì" });
     await expect(section.getByText("Chưa có chứng từ.")).toBeVisible();
   });
@@ -355,7 +398,7 @@ test.describe("maintenance ticket evidence", () => {
     await installMockApi(page);
     await mockTicketEvidence(page, "forbidden");
     await openMachine(page, roleCases[0]);
-    await page.getByRole("button", { name: "Xem chi tiết" }).first().click();
+    await page.getByRole("link", { name: "Xem chi tiết" }).first().click();
     await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Chứng từ phiếu bảo trì" })).toHaveCount(0);
   });

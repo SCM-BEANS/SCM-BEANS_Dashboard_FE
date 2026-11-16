@@ -26,13 +26,13 @@
 }
 
 .tab:focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 .activeTab {
-  border-bottom-color: #b81724;
-  color: #b81724;
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -100,6 +100,6 @@
   .panel { padding: 14px; }
   .tabs { display: grid; grid-template-columns: 1fr; border: 0; }
   .tab { border: 1px solid var(--border-subtle, #dce3e8); border-radius: 9px; text-align: left; }
-  .activeTab { border-color: #b81724; color: #b81724; }
+  .activeTab { border-color: var(--color-primary); color: var(--color-primary); }
   .pagination { flex-wrap: wrap; justify-content: center; }
 }

@@ -20,7 +20,7 @@ import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
-import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import type { PageAction } from "@/components/action-bar/page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
@@ -148,15 +148,7 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
           if (!controller.current?.signal.aborted) { if (selected === id) setSelected(""); await list.refetch(); }
         }
       }); }}
-      onDownload={(id, format) => { void run(async () => {
-        const bundle = await machineCertificatesApi.download(machineId, id, format, controller.current?.signal);
-        if (controller.current?.signal.aborted) return;
-        const url = URL.createObjectURL(bundle.blob);
-        try {
-          const anchor = document.createElement("a"); anchor.href = url; anchor.download = bundle.filename;
-          document.body.appendChild(anchor); anchor.click(); anchor.remove();
-        } finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
-      }); }} />
+      onDownload={async (id, format, signal) => (await machineCertificatesApi.download(machineId, id, format, signal)).blob} />
     {confirmRevoke && <NotificationDialog variant="confirm" title="Thu hồi định danh thiết bị?"
       description={<>Thu hồi mã <strong>{confirmRevoke.deviceId}</strong> của máy <strong>{serialNumber ?? machineId}</strong>. Mã này sẽ không thể được sử dụng lại.</>}
       primaryAction={{ label: "Thu hồi định danh", disabled: busy || !identityResolved || !identity.isSuccess || identity.data.id !== confirmRevoke.id, onClick: () => {
@@ -178,6 +170,8 @@ function MachineDetailContent() {
   const queryClient = useQueryClient();
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
+  const maintenanceTicketId = router.query.maintenanceTicketId;
+  const isMaintenanceTicketDetail = router.isReady && maintenanceTicketId !== undefined;
   const subject = authScopedQuerySubject("ADMIN");
   const authenticated = Boolean(getAuthenticatedSubjectId());
   const detailTab = typeof router.query.tab === "string" && ["profile", "machine-type", "connection", "history"].includes(router.query.tab) ? router.query.tab : "profile";
@@ -194,7 +188,7 @@ function MachineDetailContent() {
   const machine = useQuery({
     queryKey: ["dolores", "machines", "detail", machineId, subject],
     queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    enabled: validId && authenticated,
+    enabled: validId && authenticated && !isMaintenanceTicketDetail,
   });
   const machineModelId = machine.data?.modelId ?? "";
   const machineModel = useQuery({
@@ -327,6 +321,15 @@ function MachineDetailContent() {
     {renderHeading()}
     <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p></div>
   </div>{actionBar(false)}</AdminShell>;
+  if (isMaintenanceTicketDetail) return <AdminShell><div className={styles.pageContent}>
+    <MaintenanceTicketDetailsPage
+      ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
+      role="ADMIN"
+      backHref={`${PATH_ADMIN.MACHINE_DETAIL(machineId)}?tab=history`}
+      backLabel="Về lịch sử máy"
+      headingClassName={styles.pageHeading}
+    />
+  </div></AdminShell>;
   if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
@@ -502,6 +505,7 @@ function MachineDetailContent() {
           machineId={machineId}
           tickets={maintenanceTickets.data?.items ?? []}
           role="ADMIN"
+          ticketHref={(ticketId) => `${PATH_ADMIN.MACHINE_DETAIL(machineId)}?tab=history&maintenanceTicketId=${encodeURIComponent(ticketId)}`}
           presentation="table"
           previewLimit={10}
           onRefresh={() => maintenanceTickets.refetch()}

@@ -16,10 +16,13 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <InAppHistoryProvider>
-        <Component {...pageProps} />
-        <DevQuickLoginControls floating />
-      </InAppHistoryProvider>
+      <>
+        <style jsx global>{`:root { --color-primary: #b81724; }`}</style>
+        <InAppHistoryProvider>
+          <Component {...pageProps} />
+          <DevQuickLoginControls floating />
+        </InAppHistoryProvider>
+      </>
     </QueryClientProvider>
   );
 }

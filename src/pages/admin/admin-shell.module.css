@@ -12,7 +12,7 @@
 .shell *, .shell *::before, .shell *::after { box-sizing: border-box; }
 .shell button { font: inherit; }
 .shell a { color: inherit; text-decoration: none; }
-.shell :focus-visible, .accessScreen :focus-visible { outline: 3px solid #b81724; outline-offset: 3px; }
+.shell :focus-visible, .accessScreen :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
@@ -67,7 +67,7 @@
 .overviewCupMetricFooter { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: auto; }
 .overviewCupMetricFooter small { display: flex; min-width: 0; flex-direction: column; gap: 3px; color: #706561; font-size: 12px; line-height: 1.4; }
 .overviewCupMetricFooter small strong { display: block; overflow-wrap: anywhere; color: #302927; font-size: 12px; font-weight: 600; }
-.overviewReportLink { display: inline-flex; align-items: center; gap: 5px; color: #b81724 !important; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.overviewReportLink { display: inline-flex; align-items: center; gap: 5px; color: var(--color-primary) !important; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .overviewReportLink:hover { text-decoration: underline !important; }
 .overviewRangeControls { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 16px; padding: 14px; border: 1px solid #eee8e3; border-radius: 12px; background: #fdfcfb; }
 .overviewRangeHeading { display: flex; flex-direction: column; gap: 4px; }
@@ -75,7 +75,7 @@
 .overviewRangeHeading p { margin: 0; color: #706561; font-size: 13px; line-height: 1.45; }
 .overviewQuickRanges { display: flex; flex-wrap: wrap; gap: 8px; }
 .overviewQuickRanges button { min-height: 44px; padding: 0 13px; border: 1px solid #e9e2dc; border-radius: 9px; background: white; color: #514843; font-size: 13px; font-weight: 600; cursor: pointer; }
-.overviewQuickRanges button[aria-pressed="true"] { border-color: #b81724; background: #f9e9ea; color: #a01520; }
+.overviewQuickRanges button[aria-pressed="true"] { border-color: var(--color-primary); background: #f9e9ea; color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .overviewRangeForm { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .overviewRangeField { display: flex; min-width: 190px; flex-direction: column; gap: 6px; }
 .overviewRangeField > label { color: #706561; font-size: 13px; font-weight: 600; }
@@ -83,11 +83,11 @@
 .overviewDateControl { display: flex; min-width: 0; }
 .overviewDateControl > input { width: 100%; min-width: 0; flex: 1; border-radius: 9px 0 0 9px; }
 .overviewCalendarPicker { position: relative; display: inline-flex; width: 44px; min-width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid #e9e2dc; border-left: 0; border-radius: 0 9px 9px 0; background: white; color: #706561; cursor: pointer; }
-.overviewCalendarPicker:focus-within { outline: 3px solid #b8172433; outline-offset: 2px; }
+.overviewCalendarPicker:focus-within { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 .overviewCalendarPicker input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; opacity: 0; cursor: pointer; }
 .overviewRangeForm input:disabled { background: #f7f5f3; color: #706561; }
-.overviewApplyRange { min-height: 44px; padding: 0 14px; border: 1px solid #b81724; border-radius: 9px; background: #b81724; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
-.overviewApplyRange:hover { background: #a01520; }
+.overviewApplyRange { min-height: 44px; padding: 0 14px; border: 1px solid var(--color-primary); border-radius: 9px; background: var(--color-primary); color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.overviewApplyRange:hover { background: color-mix(in srgb, var(--color-primary) 87%, black); }
 .overviewApplyRange:disabled { opacity: .5; cursor: not-allowed; }
 .overviewAppliedRange { margin: 0; color: #706561; font-size: 13px; line-height: 1.5; }
 .overviewAppliedRange strong { color: #302927; }
@@ -100,13 +100,13 @@
 }
 .pageContent button:not(:disabled):active { transform: translateY(1px); }
 .pageContent a { transition: color 140ms ease; }
-.pageContent a:active { color: #a01520; }
+.pageContent a:active { color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .pageContent input:not(:disabled), .pageContent select:not(:disabled), .pageContent textarea:not(:disabled) {
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 .pageContent input:focus-visible, .pageContent select:focus-visible, .pageContent textarea:focus-visible {
-  border-color: #b81724;
-  box-shadow: 0 0 0 2px #b8172426;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 .financeGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .financeGrid div { display: flex; flex-direction: column; gap: 6px; }
@@ -121,7 +121,7 @@
 .reportActivePeriod strong { color: #302927; font-size: 14px; }
 .reportQuickRanges { display: flex; flex-wrap: wrap; gap: 8px; }
 .reportQuickRanges button { min-height: 44px; padding: 0 13px; border: 1px solid #e9e2dc; border-radius: 9px; background: white; color: #514843; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 100ms ease; }
-.reportQuickRanges button[aria-pressed="true"] { border-color: #b81724; background: #f9e9ea; color: #a01520; }
+.reportQuickRanges button[aria-pressed="true"] { border-color: var(--color-primary); background: #f9e9ea; color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .reportQuickRanges button:not(:disabled):hover { background: #f7f5f3; }
 .reportQuickRanges button:disabled { opacity: .5; cursor: not-allowed; }
 .reportQuickRanges button:not(:disabled):active { transform: translateY(1px); }
@@ -132,12 +132,12 @@
 .reportDateControl > input { width: 100%; min-width: 0; min-height: 44px; flex: 1; padding: 0 12px; border: 1px solid #e9e2dc; border-right: 0; border-radius: 9px 0 0 9px; background: white; color: #302927; font: inherit; font-size: 14px; }
 .reportDateControl > input[aria-invalid="true"] { border-color: #a9382a; }
 .reportCalendarPicker { position: relative; display: inline-flex; width: 44px; min-width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid #e9e2dc; border-radius: 0 9px 9px 0; background: white; color: #706561; cursor: pointer; }
-.reportCalendarPicker:focus-within { outline: 3px solid #b8172433; outline-offset: 2px; }
+.reportCalendarPicker:focus-within { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 .reportCalendarPicker input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; opacity: 0; cursor: pointer; }
 .reportRangeActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; grid-column: 1 / -1; }
 .reportApplyButton, .reportDefaultButton { min-height: 44px; padding: 0 15px; border: 1px solid #e9e2dc; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.reportApplyButton { border-color: #b81724; background: #b81724; color: white; }
-.reportApplyButton:not(:disabled):hover { background: #a01520; }
+.reportApplyButton { border-color: var(--color-primary); background: var(--color-primary); color: white; }
+.reportApplyButton:not(:disabled):hover { background: color-mix(in srgb, var(--color-primary) 87%, black); }
 .reportDefaultButton { background: white; color: #302927; }
 .reportDefaultButton:hover { background: #f7f5f3; }
 .reportApplyButton:disabled { opacity: .5; cursor: not-allowed; }
@@ -176,12 +176,12 @@
   padding: 0 16px; border: 1px solid #e9e2dc; border-radius: 10px; font: inherit;
   font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
-.accountPrimaryButton { border-color: #b81724; background: #b81724; color: white; }
+.accountPrimaryButton { border-color: var(--color-primary); background: var(--color-primary); color: white; }
 .accountSecondaryButton { background: white; color: #302927; }
 .accountPrimaryButton:disabled, .accountSecondaryButton:disabled { cursor: not-allowed; opacity: .45; }
-.accountPrimaryButton:not(:disabled):hover { background: #a01520; }
+.accountPrimaryButton:not(:disabled):hover { background: color-mix(in srgb, var(--color-primary) 87%, black); }
 .accountSecondaryButton:not(:disabled):hover { background: #f7f5f3; }
-.accountTextButton { min-height: 40px; border: 0; background: transparent; color: #b81724; font: inherit; font-weight: 600; cursor: pointer; }
+.accountTextButton { min-height: 40px; border: 0; background: transparent; color: var(--color-primary); font: inherit; font-weight: 600; cursor: pointer; }
 .accountTextButton:hover { text-decoration: underline; }
 .accountInlineWarning { margin: 12px 0; color: #9a301d; font-size: 14px; line-height: 1.5; }
 .accountPagination, .accountPagination > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -249,28 +249,28 @@
 .machineViewTab { min-height: 36px; padding: 0 14px; border: 1px solid #e9e2dc; border-bottom: 0; border-radius: 9px 9px 0 0; background: #f8f6f4; color: #706561; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .machineViewTab:hover { color: #302927; }
 .machineViewTabActive { position: relative; z-index: 1; background: white; color: #302927; }
-.machineViewTab:focus-visible { outline: 3px solid #b8172433; outline-offset: 2px; }
+.machineViewTab:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 .machineFilterCount { padding: 5px 10px; border: 1px solid #eee8e3; border-radius: 999px; background: #f8f6f4; color: #706561; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .machineFilterToolbar { display: flex; align-items: center; margin-bottom: 18px; }
 .machineFilterControl { display: inline-flex; align-items: center; gap: 12px; }
 .machineFilterLabel { color: #706561; font-size: 13px; font-weight: 600; }
 .machineStatusSelect { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; font-size: 14px; cursor: pointer; }
-.machineStatusSelect:focus-visible { border-color: #b81724; outline: 3px solid #b8172433; outline-offset: 2px; }
+.machineStatusSelect:focus-visible { border-color: var(--color-primary); outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 .operationsNotice { padding: 14px 16px; border-radius: 10px; background: #fff2e6; color: #693c2c; font-size: 14px; line-height: 1.5; }
 .operationsNotice button { min-height: 36px; margin-left: 8px; padding: 0 10px; border: 1px solid #e9e2dc; border-radius: 8px; background: white; color: #302927; cursor: pointer; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .accessScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; background: #f8f6f3; color: #302927; font-family: Arial, sans-serif; text-align: center; }
-.accessScreen strong { color: #b81724; font-size: 28px; }
+.accessScreen strong { color: var(--color-primary); font-size: 28px; }
 .accessScreen p { margin: 0; }
 .accessLinks { display: flex; gap: 16px; margin-top: 8px; }
-.accessLinks a { color: #b81724; }
+.accessLinks a { color: var(--color-primary); }
 
 @media (max-width: 1023px) {
   .desktopHeader { display: none; }
   .shell { flex-direction: column; }
   .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: transparent; }
-  .mobileBrand { color: #b81724 !important; font-size: 23px; font-weight: 700; }
+  .mobileBrand { color: var(--color-primary) !important; font-size: 23px; font-weight: 700; }
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .pageActions { flex-wrap: nowrap; }
   .pageActions button { white-space: nowrap; }
@@ -349,7 +349,7 @@
 .summaryFilters { position: relative; flex-shrink: 0; }
 .summaryFilters > summary { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 14px; border: 1px solid #e9e0da; border-radius: 9px; background: #fff; color: #514843; cursor: pointer; font-size: 13px; list-style: none; }
 .summaryFilters > summary::-webkit-details-marker { display: none; }
-.summaryFilters > summary:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
+.summaryFilters > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .summaryFilterPopover { position: absolute; z-index: 20; right: 0; top: calc(100% + 8px); width: min(540px, calc(100vw - 48px)); padding: 18px; border: 1px solid #e9e0da; border-radius: 12px; background: #fff; box-shadow: 0 8px 26px #30292712; }
 .summaryFilters .overviewRangeControls { flex-direction: row; flex-wrap: wrap; align-items: flex-end; margin: 0; padding: 0; border: 0; background: transparent; }
 .summaryFilters .overviewQuickRanges { flex: 1; align-self: flex-end; }
@@ -367,7 +367,7 @@
 .summarySectionHeading { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .summarySectionHeading h2 { margin: 0; font-size: 16px; }
 .summarySectionHeading > span, .summarySectionHeading > a { font-size: 12px; color: #675b57; }
-.summarySectionHeading > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: #b81724; }
+.summarySectionHeading > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: var(--color-primary); }
 .summaryColumn td > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
 .summaryValue { display: block; font-size: 32px; color: #302927; font-variant-numeric: tabular-nums; }
 .summaryValue small { font-size: 14px; color: #675b57; font-weight: 400; }
@@ -424,7 +424,7 @@
 .userIdentityCell > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .userIdentityCell strong { color: #302927; font-size: 14px; }
 .userIdentityCell > div > span { color: #675b57; font-size: 13px; overflow-wrap: anywhere; }
-.userAvatar { display: inline-flex; flex: 0 0 36px; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 50%; background: #faeded; color: #a01520; font-size: 13px; font-weight: 600; }
+.userAvatar { display: inline-flex; flex: 0 0 36px; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 50%; background: #faeded; color: color-mix(in srgb, var(--color-primary) 87%, black); font-size: 13px; font-weight: 600; }
 .userStatus { display: inline-flex; align-items: center; gap: 7px; color: #514843; font: inherit; font-size: 14px; white-space: nowrap; }
 .userStatus::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 50%; background: #80756f; }
 .userStatus[data-status="ACTIVE"]::before { background: #32866b; }
@@ -446,7 +446,7 @@
 .userMetadata dd { margin: 0; color: #302927; font-size: 14px; overflow-wrap: anywhere; }
 .userTechnicalDetails > summary { cursor: pointer; color: #675b57; font-size: 13px; min-height: 44px; padding: 12px 0; box-sizing: border-box; }
 .userTechnicalDetails[open] { margin-bottom: 16px; }
-.userPage :is(a, button, summary):focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
+.userPage :is(a, button, summary):focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 @media (max-width: 1100px) { .userCreateLayout, .userDetailLayout { grid-template-columns: minmax(0, 1fr); } .userMetadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .userPageHeading { align-items: flex-start; flex-direction: column; } .userToolbarIdentity { order: 1; flex-basis: 100%; } .userMetadata { grid-template-columns: minmax(0, 1fr); } .userInlineActions > * { flex: 1; } }
 
@@ -512,7 +512,7 @@
 .machinePlainStatus::before { content: ""; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #888; }
 .machinePlainStatus[data-status="IN_WAREHOUSE"]::before, .machinePlainStatus[data-status="AVAILABLE_FOR_RENT"]::before, .machinePlainStatus[data-status="DEPLOYED_CONTRACT_OWNER"]::before, .machinePlainStatus[data-status="DEPLOYED_STORE_OWNER"]::before { background: #2c8b69; }
 .machinePlainStatus[data-status="PENDING_ACTIVATION"]::before, .machinePlainStatus[data-status="UNDER_MAINTENANCE"]::before, .machinePlainStatus[data-status="REFURBISHING"]::before, .machinePlainStatus[data-status="PENDING_QA"]::before { background: #ca8b20; }
-.machinePlainStatus[data-status="RETIRED"]::before { background: #b81724; }
+.machinePlainStatus[data-status="RETIRED"]::before { background: var(--color-primary); }
 .machineInventoryTable.machineInventoryTable { border: 0; border-radius: 0; }
 .machineInventoryTable.machineInventoryTable :global(table) { min-width: 0; table-layout: auto; }
 .machineListToolbar { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin: 16px 0 20px; }
@@ -548,7 +548,7 @@
 .machineTopActions > div { width: auto; }
 .machineInventoryGroup .machineViewTabs { align-self: stretch; max-width: 100%; margin: 0 0 18px; gap: 18px; border-bottom: 1px solid #e9e2dc; flex-wrap: wrap; }
 .machineInventoryGroup .machineViewTab { min-height: 44px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; }
-.machineInventoryGroup .machineViewTabActive { color: #b81724; border-bottom-color: #b81724; background: transparent; }
+.machineInventoryGroup .machineViewTabActive { color: var(--color-primary); border-bottom-color: var(--color-primary); background: transparent; }
 .machineInventoryHeading .machineFilterCount { padding: 0; border: 0; border-radius: 0; background: none; font-size: 14px; font-weight: 400; }
 @media (max-width: 1000px) { .machineFormLayout, .machineWorkspace .machineProfileGroups { grid-template-columns: 1fr; } }
 .machineInventoryTable.machineInventoryTable :global(td) { height: 48px; padding: 6px 12px; }
@@ -592,7 +592,7 @@
 .invoiceSnapshotTitle { margin: 0 0 6px; font-weight: 600; font-size: 14px; }
 .invoiceSnapshotCaption { margin: 0; color: #706561; font-size: 13px; }
 .invoiceSnapshotBar { display: flex; gap: 2px; height: 10px; margin: 12px 0; border-radius: 8px; overflow: hidden; }
-.invoiceSnapshot [data-group="overdue"] { background: #b81724; }
+.invoiceSnapshot [data-group="overdue"] { background: var(--color-primary); }
 .invoiceSnapshot [data-group="waiting"] { background: #ad751f; }
 .invoiceSnapshot [data-group="paid"] { background: #36866a; }
 .invoiceSnapshot [data-group="other"] { background: #80756f; }

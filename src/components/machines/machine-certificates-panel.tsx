@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ButtonBar } from "@/components/button/button-bar";
+import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import type { MachineCertificate, MachineCertificateDetail, MachineCertificatePage, MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { SmartIotPanel } from "./smart-iot-panel";
 import styles from "./machines.module.css";
@@ -25,7 +26,7 @@ export type MachineCertificatesPanelProps = {
   onStatusChange: (status: "" | MachineCertificateStatus) => void;
   onPageChange: (page: number) => void;
   onRefresh: () => void;
-  onDownload: (id: string, format: "zip" | "json") => void;
+  onDownload: (id: string, format: "zip" | "json", signal: AbortSignal) => Promise<Blob>;
   onDelete: (id: string) => void;
 };
 
@@ -38,6 +39,7 @@ function formatDate(value: string) {
 
 export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
   const [deleting, setDeleting] = useState<MachineCertificate | null>(null);
+  const [downloadError, setDownloadError] = useState("");
   const detail = !props.error && props.detail?.id === props.selectedCertificateId ? props.detail : undefined;
 
   return <SmartIotPanel title="Chứng chỉ kết nối">
@@ -63,12 +65,13 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
           { key: "issued", header: "Ngày phát hành", render: (item) => formatDate(item.issuedAt) },
           { key: "expires", header: "Ngày hết hạn", render: (item) => formatDate(item.expiresAt) },
           { key: "actions", header: "Thao tác", render: (item) => <div className={styles.telemetryRangePresets}>
-            <ButtonBar disabled={props.busy} onClick={() => props.onSelect(item.id)}>Xem chi tiết</ButtonBar>
-            <ButtonBar disabled={props.busy} onClick={() => props.onDownload(item.id, "zip")}>Tải ZIP</ButtonBar>
-            <ButtonBar disabled={props.busy} onClick={() => props.onDownload(item.id, "json")}>Tải JSON</ButtonBar>
+            <ButtonBar rollingLabel disabled={props.busy} onClick={() => props.onSelect(item.id)}>Xem chi tiết</ButtonBar>
+            <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.zip`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "zip", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải ZIP</ProgressDownloadButton>
+            <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.json`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "json", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải JSON</ProgressDownloadButton>
             <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(item)}>Xóa chứng chỉ</ButtonBar>
           </div> },
         ]} />}
+    {downloadError && <p className={styles.telemetryError} role="alert">{downloadError}</p>}
     {props.page && !props.error && <div className={styles.telemetryRangePresets}>
       <ButtonBar disabled={props.busy || props.loading || props.page.first} onClick={() => props.onPageChange(props.pageNumber - 1)}>Trang trước</ButtonBar>
       <span>Trang {props.pageNumber + 1} / {Math.max(1, props.page.totalPages)}</span>

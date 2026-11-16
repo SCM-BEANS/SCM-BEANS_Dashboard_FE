@@ -82,7 +82,7 @@ export function PageActionsRenderer({ actions }: { actions: readonly PageAction[
     const label = action.pending && action.pendingLabel ? action.pendingLabel : action.label;
     const button = action.href && !disabled && !action.confirm
       ? <ButtonBar key={action.id} {...common} href={action.href} onClick={() => { if (inMenu) setOpen(false); }}>{label}</ButtonBar>
-      : <ButtonBar key={action.id} {...common} type={action.confirm ? "button" : action.type ?? "button"} form={action.form} disabled={disabled} onClick={click}>{label}</ButtonBar>;
+      : <ButtonBar key={action.id} {...common} type={action.confirm ? "button" : action.type ?? "button"} form={action.form} holdToConfirm={action.holdToConfirm} disabled={disabled} onClick={click}>{label}</ButtonBar>;
     if (inMenu) return button;
     return <span className={styles.action} key={action.id} tabIndex={disabled && disabledReason ? 0 : undefined}>
       {button}

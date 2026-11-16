@@ -45,15 +45,15 @@
   }
 }
 
-.button.button.primary { background: #b81724; border-color: #b81724; color: white; }
-.button.button.primary:hover:not(:disabled) { background: #90121c; border-color: #90121c; }
-.button.button.danger { background: white; border-color: #b81724; color: #b81724; }
-.button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: #90121c; }
+.button.button.primary { background: var(--color-primary); border-color: var(--color-primary); color: white; }
+.button.button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 78%, black); border-color: color-mix(in srgb, var(--color-primary) 78%, black); }
+.button.button.danger { background: white; border-color: var(--color-primary); color: var(--color-primary); }
+.button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: color-mix(in srgb, var(--color-primary) 78%, black); }
 
 .button.button.holdToConfirm { position: relative; overflow: hidden; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; }
-.button.button.primary.holdToConfirm .holdFill { background: #90121c; }
+.button.button.primary.holdToConfirm .holdFill { background: color-mix(in srgb, var(--color-primary) 78%, black); }
 .holdContent { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: inherit; }
-.holdFill { position: absolute; z-index: 2; inset: 0; display: inline-flex; align-items: center; justify-content: center; gap: inherit; overflow: hidden; border-radius: inherit; background: #b81724; color: #fff; pointer-events: none; clip-path: inset(0 calc(100% - var(--hold-progress, 0%)) 0 0 round 9px); }
+.holdFill { position: absolute; z-index: 2; inset: 0; display: inline-flex; align-items: center; justify-content: center; gap: inherit; overflow: hidden; border-radius: inherit; background: var(--color-primary); color: #fff; pointer-events: none; clip-path: inset(0 calc(100% - var(--hold-progress, 0%)) 0 0 round 9px); }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .button.button.holdToConfirm[data-holding="true"] { transform: scale(.97); animation: holdToConfirmShake .12s linear infinite; animation-play-state: var(--hold-shake, paused); }
 @keyframes holdToConfirmShake { 0%,100% { translate: 0 0; } 25% { translate: -.6px .3px; } 75% { translate: .6px -.3px; } }
@@ -74,7 +74,7 @@
 .progressDownload { display: inline-flex; position: relative; vertical-align: middle; }
 .progressDownloadButton { --progress: var(--download-progress, 0); position: relative; display: inline-flex; width: 132px; height: 44px; align-items: center; justify-content: center; padding: 0; overflow: hidden; isolation: isolate; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: width .6s cubic-bezier(.2,.8,.2,1), border-radius .6s cubic-bezier(.2,.8,.2,1), transform .5s cubic-bezier(.34,1.45,.64,1), background-color .4s ease, color .4s ease; }
 .progressDownloadButton:hover { border-color: #d8cec7; background: #f7f5f3; }
-.progressDownloadButton:focus-visible { outline: 2px solid #b81724; outline-offset: 3px; }
+.progressDownloadButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .progressDownloadButton:active { transform: scale(.97); }
 .progressDownloadTrack { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; background: #f7eeee; opacity: 0; transition: opacity .4s ease; }
 .progressDownloadBar { position: absolute; inset: 0; border-radius: inherit; background: #edc9cd; transform: scaleX(var(--progress)); transform-origin: 0 50%; transition: transform .12s linear, opacity .3s ease; }
@@ -82,7 +82,7 @@
 @keyframes progressDownloadShine { from { background-position: 120% 0; } to { background-position: -100% 0; } }
 .progressDownloadIdle, .progressDownloadRun, .progressDownloadDone { position: absolute; z-index: 1; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity .35s cubic-bezier(.2,.8,.2,1), transform .5s cubic-bezier(.2,.8,.2,1); }
 .progressDownloadIdle { gap: 9px; }
-.progressDownloadIcon { display: grid; width: 28px; height: 28px; place-items: center; overflow: hidden; border-radius: 50%; background: #f8eeee; color: #b81724; }
+.progressDownloadIcon { display: grid; width: 28px; height: 28px; place-items: center; overflow: hidden; border-radius: 50%; background: #f8eeee; color: var(--color-primary); }
 .progressDownloadIcon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .progressDownloadArrow { transition: transform .5s cubic-bezier(.2,.8,.2,1); }
 .progressDownloadButton:hover .progressDownloadArrow { animation: progressDownloadDrop 1s cubic-bezier(.2,.8,.2,1) infinite; }
@@ -99,7 +99,7 @@
 .progressDownload[data-state="run"] .progressDownloadButton { width: 166px; border-color: #e2b5ba; background: #fff; color: #302927; }
 .progressDownload[data-state="run"] .progressDownloadTrack { opacity: 1; }
 .progressDownload[data-state="run"] .progressDownloadBar { transform: scaleX(var(--progress)); }
-.progressDownload[data-state="run"][data-progress-known="false"] .progressDownloadBar { width: 38%; transform: none; animation: progressDownloadIndeterminate 1.2s ease-in-out infinite; background: #b81724; }
+.progressDownload[data-state="run"][data-progress-known="false"] .progressDownloadBar { width: 38%; transform: none; animation: progressDownloadIndeterminate 1.2s ease-in-out infinite; background: var(--color-primary); }
 @keyframes progressDownloadIndeterminate { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
 .progressDownload[data-state="run"] .progressDownloadArrow { transform: translateY(24px); }
 .progressDownload[data-state="run"] .progressDownloadIdle { opacity: 0; transform: translateY(-10px); }

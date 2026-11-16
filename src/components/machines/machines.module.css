@@ -41,7 +41,7 @@
 .ownerOperationsTabs button[aria-pressed="true"] {
   border-color: #d9a6aa;
   background: #fae9eb;
-  color: #b91222;
+  color: var(--color-primary);
   font-weight: 650;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .ownerMachineLink:hover {
-  color: #b91222;
+  color: var(--color-primary);
 }
 
 .ownerOperationsTabs button:focus-visible,
@@ -225,7 +225,7 @@
 .machineListFilterButton[aria-pressed="true"] {
   border-color: #d9a6aa;
   background: #fae9eb;
-  color: #b91222;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -289,7 +289,7 @@
 .monitoringRecipeBars li { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(80px, 2fr) auto; align-items: center; gap: 16px; }
 .monitoringRecipeBars li > span { overflow-wrap: anywhere; }
 .monitoringRecipeBars li > div { height: 12px; border-radius: 3px; background: #f1eae5; overflow: hidden; }
-.monitoringRecipeBars li > div > span { display: block; height: 100%; background: #b91222; border-radius: inherit; }
+.monitoringRecipeBars li > div > span { display: block; height: 100%; background: var(--color-primary); border-radius: inherit; }
 .monitoringRecipeBars strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .offlineReviewStatus { display: inline-flex; padding: 4px 9px; border: 1px solid #e3d9d2; border-radius: 5px; background: #f8f6f3; color: #665e59; font-size: 0.875rem; white-space: nowrap; }
 .offlineReviewStatus[data-status="REVIEW_REQUIRED"] { color: #8a4b0f; border-color: #eed6b4; background: #fff7eb; }
@@ -309,7 +309,7 @@
 }
 
 .operationalOverviewBack a:hover {
-  color: #b91222;
+  color: var(--color-primary);
 }
 
 .operationalOverviewHeading {
@@ -381,7 +381,7 @@
 .operationalQuickRanges button[aria-pressed="true"] {
   border-color: #d9a6aa;
   background: #fae9eb;
-  color: #b91222;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -537,7 +537,7 @@
   width: 100%;
   min-height: 2px;
   border-radius: 4px 4px 0 0;
-  background: #c21b2b;
+  background: var(--color-primary);
 }
 
 @media (max-width: 680px) {
@@ -794,7 +794,7 @@
 .telemetryRangePresets button[aria-pressed="true"] {
   border-color: #d9a6aa;
   background: #fae9eb;
-  color: #b91222;
+  color: var(--color-primary);
   font-weight: 650;
 }
 
@@ -898,7 +898,7 @@
 
 .telemetryChart svg polyline {
   fill: none;
-  stroke: #b91222;
+  stroke: var(--color-primary);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 4;
@@ -906,7 +906,7 @@
 }
 
 .telemetryChart svg circle {
-  fill: #b91222;
+  fill: var(--color-primary);
 }
 
 .telemetryChart > div {
@@ -955,12 +955,12 @@
 
 .historyFilter { display: grid; gap: 6px; justify-items: start; color: #786e69; }
 .historyFilter select { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
-.historyFilter select:focus-visible { outline: 3px solid #b8172433; outline-offset: 2px; }
+.historyFilter select:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 
 .copyIdRow { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .copyIdButton { padding: 2px 10px; border: 1px solid #e9e2dc; border-radius: 999px; background: #fff; color: #302927; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-.copyIdButton:hover { border-color: #b81724; color: #b81724; }
-.copyIdButton:focus-visible { outline: 2px solid #b81724; outline-offset: 2px; }
+.copyIdButton:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.copyIdButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .ownerDetailTabPanel[hidden] { display: none; }
 .truncateLine { display: block; max-width: 36ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -972,7 +972,7 @@
 .connectionIcon { position: relative; display: inline-flex; flex: 0 0 22px; width: 22px; height: 22px; align-items: center; color: #807974; }
 .connectionIcon > svg { width: 20px; height: 20px; stroke-width: 2; }
 .machineConnectionBadge[data-state="ONLINE"] .connectionIcon { color: #23815b; filter: drop-shadow(0 0 3px #2c8b6940); }
-.machineConnectionBadge[data-state="OFFLINE"] .connectionIcon { color: #b81724; }
+.machineConnectionBadge[data-state="OFFLINE"] .connectionIcon { color: var(--color-primary); }
 .connectionIcon > .connectionCross { position: absolute; width: 11px; height: 11px; right: -2px; bottom: -1px; background: #fff; border-radius: 50%; stroke-width: 3; }
 .connectionSpinner { animation: connectionSpin 1s linear infinite; }
 .compactPeriod { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 10px; margin-bottom: 12px; }
@@ -998,7 +998,7 @@
 .offlineReviewStatus[data-status="REVIEWED"]::before, .offlineReviewStatus[data-status="CLEARED"]::before { background: #23815b; }
 .ownerOperationsTabs.ownerOperationsTabs { border-bottom: 1px solid #e9e2dc; gap: 16px; }
 .ownerOperationsTabs.ownerOperationsTabs button { background: none; border: 0; border-radius: 0; border-bottom: 2px solid transparent; min-height: 44px; }
-.ownerOperationsTabs.ownerOperationsTabs button[aria-selected="true"], .ownerOperationsTabs.ownerOperationsTabs button[aria-pressed="true"] { background: none; border-bottom-color: #b81724; color: #b81724; }
+.ownerOperationsTabs.ownerOperationsTabs button[aria-selected="true"], .ownerOperationsTabs.ownerOperationsTabs button[aria-pressed="true"] { background: none; border-bottom-color: var(--color-primary); color: var(--color-primary); }
 @media (max-width: 700px) { .cleaningDetailFields { grid-template-columns: 1fr; } .compactPeriod { justify-content: flex-start; } }
 @keyframes connectionSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .connectionSpinner { animation: none; } }
@@ -1010,6 +1010,6 @@
 .ownerPeriodSelect { display:flex; align-items:center; gap:8px; font-size:14px; }
 .ownerPeriodSelect select { min-height:44px; border:1px solid #e7dfd9; border-radius:9px; padding:8px 12px; background:#fff; color:#302b29; font:inherit; }
 .ownerProductionLine { min-width:0; }
-.ownerDatePopover summary:focus-visible { outline:2px solid #bd1427; outline-offset:3px; }
+.ownerDatePopover summary:focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
 @media(max-width:700px) { .ownerCompactFilters { justify-content:flex-start; } .ownerDatePopover[open] > form { position:static; width:100%; box-sizing:border-box; margin-top:8px; } }
 .machineRowActions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }

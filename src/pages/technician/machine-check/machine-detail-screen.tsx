@@ -17,7 +17,7 @@ import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel } from "@/components/machines/telemetry-history-panel";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -94,10 +94,9 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
   const [notice, setNotice] = useState("");
   const locked = useRef(false);
   const alive = useRef(true);
-  const downloadController = useRef<AbortController | null>(null);
   useEffect(() => {
     alive.current = true;
-    return () => { alive.current = false; downloadController.current?.abort(); };
+    return () => { alive.current = false; };
   }, []);
   const identity = useQuery({
     queryKey: ["machine-device-identity", "TECHNICIAN", subject, machineId],
@@ -124,7 +123,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
     const [result, identityResult] = await Promise.all([certificates.refetch(), identity.refetch()]);
     if (alive.current && result.isSuccess && identityResult.isSuccess) { setIssueBlocked(false); setActionError(""); }
   }
-  async function act(action: "issue" | "delete" | "download", id = "", format: "zip" | "json" = "zip") {
+  async function act(action: "issue" | "delete", id = "") {
     if (locked.current || action === "issue" && (issueBlocked || !certificates.isSuccess || !identityAllowsIssue)) return;
     locked.current = true; setBusy(true); setActionError(""); setNotice("");
     try {
@@ -140,17 +139,6 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
         if (selectedCertificateId === id) setSelectedCertificateId("");
         setNotice("Đã xóa chứng chỉ khỏi hệ thống.");
         await certificates.refetch();
-      } else {
-        const controller = new AbortController();
-        downloadController.current = controller;
-        const bundle = await machineCertificatesApi.download(machineId, id, format, controller.signal);
-        if (!alive.current || controller.signal.aborted) return;
-        const url = URL.createObjectURL(bundle.blob);
-        const anchor = document.createElement("a");
-        try {
-          anchor.href = url; anchor.download = bundle.filename;
-          document.body.appendChild(anchor); anchor.click();
-        } finally { anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 0); }
       }
     } catch (error) {
       if (!alive.current) return;
@@ -188,7 +176,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
     onIssue={() => void act("issue")} onSelect={(id) => { if (id === selectedCertificateId) void detail.refetch(); else setSelectedCertificateId(id); }}
     onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelectedCertificateId(""); }}
     onPageChange={(next) => { setPageNumber(next); setSelectedCertificateId(""); }}
-    onRefresh={() => void refresh()} onDownload={(id, format) => void act("download", id, format)}
+    onRefresh={() => void refresh()} onDownload={async (id, format, signal) => (await machineCertificatesApi.download(machineId, id, format, signal)).blob}
     onDelete={(id) => void act("delete", id)}
   /></>;
 }
@@ -203,13 +191,15 @@ export function TechnicianMachineDetailScreen() {
   const telemetryRange = rangeResult.success ? rangeResult.data : null;
   const setTelemetryRange = (range: { from: string; to: string }) => { void router.push({ pathname: router.pathname, query: { ...router.query, telemetryFrom: range.from, telemetryTo: range.to } }, undefined, { shallow: true }); };
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
+  const maintenanceTicketId = router.query.maintenanceTicketId;
+  const isMaintenanceTicketDetail = router.isReady && maintenanceTicketId !== undefined;
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
   const authenticated = Boolean(getAuthenticatedSubjectId());
   const machineQueryKey = ["dolores", "machines", "technician-detail", subject, machineId] as const;
   const machine = useQuery({
     queryKey: machineQueryKey,
     queryFn: ({ signal }) => machinesApi.getById(machineId, signal),
-    enabled: validId && authenticated, retry: false,
+    enabled: validId && authenticated && !isMaintenanceTicketDetail, retry: false,
   });
   const maintenanceTickets = useQuery({
     queryKey: ["dolores", "technician", "machine-tickets", machineId],
@@ -276,6 +266,18 @@ export function TechnicianMachineDetailScreen() {
       {actionBar()}
     </TechnicianShell>;
   }
+
+  if (isMaintenanceTicketDetail) return <TechnicianShell pageTitle="Chi tiết phiếu bảo trì">
+    <section className={styles.pageContent}>
+      <MaintenanceTicketDetailsPage
+        ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
+        role="TECHNICIAN"
+        backHref={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machineId)}
+        backLabel="Về lịch sử máy"
+        headingClassName={styles.pageHeading}
+      />
+    </section>
+  </TechnicianShell>;
 
   if (machine.isPending) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
@@ -347,6 +349,7 @@ export function TechnicianMachineDetailScreen() {
             machineId={machineId}
             tickets={maintenanceTickets.data ?? []}
             role="TECHNICIAN"
+            ticketHref={(ticketId) => `${PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machineId)}?maintenanceTicketId=${encodeURIComponent(ticketId)}`}
             onRefresh={() => maintenanceTickets.refetch()}
           />
         </section>

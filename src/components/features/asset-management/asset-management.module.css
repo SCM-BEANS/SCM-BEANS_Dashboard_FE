@@ -55,7 +55,7 @@
 
 .field input:focus-visible,
 .field select:focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
 }
 

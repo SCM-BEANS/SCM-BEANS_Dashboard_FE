@@ -378,7 +378,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
                     {beginRecovery.isPending ? "Đang mở thu hồi…" : "Bắt đầu thu hồi máy"}
                   </ButtonBar>
                   <label className={styles.rejectField}>Lý do từ chối<textarea value={receiptReason} maxLength={1000} onChange={(event) => setReceiptReason(event.target.value)} placeholder="Nhập lý do nếu yêu cầu chưa thể xử lý" /></label>
-                  <ButtonBar type="button" disabled={!receiptReason.trim() || rejectCase.isPending} onClick={() => rejectCase.mutate(receiptReason.trim())}>Từ chối hồ sơ</ButtonBar>
+                  <ButtonBar type="button" holdToConfirm disabled={!receiptReason.trim() || rejectCase.isPending} onClick={() => rejectCase.mutate(receiptReason.trim())}>Từ chối hồ sơ</ButtonBar>
                 </>
               ) : null}
               {caseData.status === "APPROVED" ? (
