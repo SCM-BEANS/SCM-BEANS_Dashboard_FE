@@ -135,6 +135,8 @@ export const PATH_MODERATOR =  {
   NEW_TECHNICAL_REQUEST: MODERATOR_ROOT + "/technical-requests/new",
   TECHNICAL_REQUEST_DETAIL: (id: string) => MODERATOR_ROOT + "/technical-requests/" + encodeURIComponent(id),
   TECHNICAL_REQUEST_TYPE: (kind: string) => MODERATOR_ROOT + "/technical-requests/new/" + encodeURIComponent(kind),
+  MACHINE_HISTORY_TICKET: (id: string, machineId?: string) => MODERATOR_ROOT + "/machine-history"
+    + (machineId ? "/" + encodeURIComponent(machineId) : "") + "/tickets/" + encodeURIComponent(id),
   MACHINE_HISTORY: MODERATOR_ROOT + "/machine-history",
   MACHINE_HISTORY_DETAIL: (id: string) => MODERATOR_ROOT + "/machine-history/" + encodeURIComponent(id),
   BUYBACK: MODERATOR_ROOT + "/buyback",

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { PATH_MODERATOR } from "@/routes/path";
+import { MaintenanceTicketDetailsPanel } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
@@ -40,6 +42,7 @@ import { TableFilters } from "@/components/table/table-filters";
 import type { MaintenanceRequestListParams } from "@/apis/maintenance-requests.api";
 
 import styles from "./repair-workflow.module.css";
+import filterStyles from "@/components/table/table-filters.module.css";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
@@ -274,39 +277,39 @@ function WorkOrderDispatchPanel({ details, milestones }: { details: Installation
     </section>
   );
 }
-function MaintenanceTicketTable({ tickets, machineId, machineDetailHref, role, machineSerialNumbers }: {
+function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers, ticketHref }: {
 
   tickets: MaintenanceTicket[];
   machineId?: string;
-  machineDetailHref: (id: string) => string;
   role: Extract<RepairWorkflowRole, "admin" | "moderator">;
   machineSerialNumbers?: ReadonlyMap<string, string | null | undefined>;
+  ticketHref: (id: string) => string;
 }) {
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
       variant="accounts"
       headerVariant="admin"
-      headers={[messages.TECHNICAL_ID, role === "moderator" ? "Serial number" : messages.TECHNICAL_MACHINE_ID, messages.TECHNICAL_STATUS, messages.TECHNICAL_DATE, messages.TECHNICAL_NOTES]}
+      headers={["Máy / phiếu bảo trì", messages.TECHNICAL_STATUS, "Thời gian", messages.TECHNICAL_NOTES, "Thao tác"]}
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
-      minWidth={760}
+      minWidth={800}
     >
       {visibleTickets.map((ticket, index) => {
         const serialNumber = ticket.machineId ? machineSerialNumbers?.get(ticket.machineId)?.trim() : undefined;
         const machineValue = ticket.machineId
           ? role === "moderator"
-            ? <ActionLink href={machineDetailHref(ticket.machineId)}>{serialNumber || <TruncatedId value={ticket.machineId} />}</ActionLink>
-            : <ActionLink href={machineDetailHref(ticket.machineId)}><TruncatedId value={ticket.machineId} /></ActionLink>
+            ? <strong>{serialNumber || <TruncatedId value={ticket.machineId} />}</strong>
+            : <strong><TruncatedId value={ticket.machineId} /></strong>
           : "—";
         return (
           <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-            <td className={styles.codeValue}>{ticket.id ? <TruncatedId value={ticket.id} /> : "—"}</td>
-            <td>{machineValue}</td>
+            <td><div className={styles.historyMachineCell}>{machineValue}<span>Phiếu {ticket.id ? <TruncatedId value={ticket.id} /> : "chưa có mã"}</span></div></td>
             <td>{ticket.status
-              ? <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
+              ? <StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
               : "—"}</td>
             <td>{formatDate(ticketDate(ticket))}</td>
-            <td>{ticketNotes(ticket) ?? "—"}</td>
+            <td><p className={styles.historyNotes} title={ticketNotes(ticket) || undefined}>{ticketNotes(ticket) || "Chưa có ghi nhận"}</p></td>
+            <td>{ticket.id ? <ButtonBar rollingLabel href={ticketHref(ticket.id)}>Xem phiếu</ButtonBar> : "—"}</td>
           </tr>
         );
       })}
@@ -513,26 +516,31 @@ export function TechnicalOperationsScreen({
   const workOrderId = path.startsWith("technical-requests/") ? path.slice("technical-requests/".length) : "";
   const isDetail = Boolean(workOrderId) && !workOrderId.includes("/") && !["list", "new"].includes(workOrderId) && !isUnsupportedWrite;
   const validWorkOrderId = InstallationWorkOrderIdSchema.safeParse(workOrderId).success;
-  const historyMachineId = path.startsWith("machine-history/") ? path.slice("machine-history/".length) : "";
+  const historyTicketRoute = /^machine-history(?:\/([^/]+))?\/tickets\/([^/]+)$/.exec(path);
+  const historyMachineId = historyTicketRoute ? historyTicketRoute[1] ?? "" : path.startsWith("machine-history/") ? path.slice("machine-history/".length) : "";
   const validHistoryMachineId = MachineIdSchema.safeParse(historyMachineId).success;
-  const shouldLoadHistory = isMachineHistory && (!historyMachineId || validHistoryMachineId);
+  const shouldLoadHistory = isMachineHistory && !historyTicketRoute && (!historyMachineId || validHistoryMachineId);
   const [ticketPage, setTicketPage] = useState(0);
+  const [historyDraft, setHistoryDraft] = useState({ machineId: "", status: "" as "" | "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" });
+  const [historyFilters, setHistoryFilters] = useState(historyDraft);
+  useEffect(() => { setTicketPage(0); setHistoryDraft({ machineId: "", status: "" }); setHistoryFilters({ machineId: "", status: "" }); }, [historyMachineId]);
   const [requestPage, setRequestPage] = useState(0);
   const [requestSearchDraft, setRequestSearchDraft] = useState("");
   const [requestStatusDraft, setRequestStatusDraft] = useState<MaintenanceRequest["status"] | "">("");
   const [requestTypeDraft, setRequestTypeDraft] = useState<MaintenanceRequest["requestType"] | "">("");
   const [requestFilters, setRequestFilters] = useState<MaintenanceRequestListParams>({});
   const tickets = useQuery({
-    queryKey: ["dolores", "maintenance-tickets", querySubject(routes.role), historyMachineId, ticketPage, 50],
+    queryKey: ["dolores", "maintenance-tickets", querySubject(routes.role), historyMachineId, historyFilters, ticketPage, 10],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({
       page: ticketPage,
-      size: 50,
-      ...(validHistoryMachineId ? { machineId: historyMachineId } : {}),
+      size: 10,
+      ...(validHistoryMachineId ? { machineId: historyMachineId } : historyFilters.machineId ? { machineId: historyFilters.machineId } : {}),
+      ...(historyFilters.status ? { status: historyFilters.status } : {}),
     }, signal),
     enabled: shouldLoadHistory,
     retry: false,
   });
-  const shouldLoadMachineSerials = shouldLoadHistory && routes.role === "moderator" && Boolean(tickets.data?.items.some((ticket) => ticket.machineId));
+  const shouldLoadMachineSerials = shouldLoadHistory && routes.role === "moderator";
   const historyMachines = useQuery({
     queryKey: ["dolores", "machine-history", "serial-numbers", querySubject(routes.role), historyMachineId || "all"],
     queryFn: async ({ signal }) => validHistoryMachineId
@@ -638,9 +646,42 @@ export function TechnicalOperationsScreen({
     );
   }
 
+  if (historyTicketRoute) {
+    const ticketId = historyTicketRoute[2];
+    const historyHref = historyMachineId ? PATH_MODERATOR.MACHINE_HISTORY_DETAIL(historyMachineId) : PATH_MODERATOR.MACHINE_HISTORY;
+    return (
+      <div className={styles.pageContent}>
+        <BackButtonHeading className={styles.pageHeading} titleId="machine-history-ticket-title" title="Chi tiết phiếu bảo trì" back={{ fallbackHref: historyHref, label: "Về lịch sử máy" }} />
+        <section className={styles.panel} aria-labelledby="machine-history-ticket-title">
+          <MaintenanceTicketDetailsPanel key={ticketId} ticketId={ticketId} role="MODERATOR" embedded />
+        </section>
+      </div>
+    );
+  }
+
   if (isMachineHistory) {
     if (historyMachineId && !validHistoryMachineId) return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><p className={styles.pendingNotice} role="status">{historyMachineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
-    return <div className={styles.pageContent}><PageHeading title={historyMachineId ? "Lịch sử phiếu của máy" : messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />{shouldLoadMachineSerials && <QueryFeedback query={historyMachines} loadingMessage={messages.LOADING_MACHINES} />}{tickets.data && !tickets.isError && <><MaintenanceTicketTable tickets={tickets.data.items} machineId={historyMachineId || undefined} machineDetailHref={routes.machineDetail} role={routes.role} machineSerialNumbers={machineSerialNumbers} /><RepairWorkflowPagination page={tickets.data.page} hasNext={tickets.data.hasNext} isFetching={tickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" onPageChange={setTicketPage} /></>}</div>;
+    return <div className={styles.pageContent}>
+      <BackButtonHeading className={styles.pageHeading} titleId="machine-history-title" title="Lịch sử máy" description="Tra cứu phiếu bảo trì và các lần xử lý của máy." back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
+      <section className={styles.panel} aria-labelledby="machine-history-list-title">
+        <div className={styles.listHeading}><h2 id="machine-history-list-title">Phiếu bảo trì</h2><span>{tickets.isSuccess ? `${tickets.data.items.length} phiếu trên trang · ` : ""}10 phiếu mỗi trang</span></div>
+        <form className={`${filterStyles.filters} ${styles.historyFilters}`} onSubmit={(event) => { event.preventDefault(); setHistoryFilters(historyDraft); setTicketPage(0); }}>
+          <select aria-label="Lọc theo máy" value={historyMachineId || historyDraft.machineId} disabled={Boolean(historyMachineId) || historyMachines.isPending || historyMachines.isError} onChange={(event) => setHistoryDraft((value) => ({ ...value, machineId: event.target.value }))}>
+            <option value="">Tất cả máy</option>{historyMachineId && !historyMachines.data?.some((machine) => machine.id === historyMachineId) ? <option value={historyMachineId}>Máy đang xem</option> : null}{historyMachines.data?.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber || machine.id}</option>)}
+          </select>
+          <select aria-label="Lọc trạng thái phiếu" value={historyDraft.status} onChange={(event) => setHistoryDraft((value) => ({ ...value, status: event.target.value as typeof historyDraft.status }))}>
+            <option value="">Tất cả trạng thái</option>{["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"].map((status) => <option key={status} value={status}>{maintenanceTicketStatusLabel(status)}</option>)}
+          </select>
+          <button type="submit" disabled={tickets.isFetching}>Tìm kiếm</button>
+        </form>
+        {shouldLoadMachineSerials && <QueryFeedback query={historyMachines} loadingMessage={messages.LOADING_MACHINES} />}
+        <QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />
+        {tickets.data && !tickets.isError && <>
+          <MaintenanceTicketTable tickets={tickets.data.items} machineId={historyMachineId || historyFilters.machineId || undefined} role={routes.role} machineSerialNumbers={machineSerialNumbers} ticketHref={(id) => PATH_MODERATOR.MACHINE_HISTORY_TICKET(id, historyMachineId || undefined)} />
+          <RepairWorkflowPagination page={tickets.data.page} hasNext={tickets.data.hasNext} isFetching={tickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" onPageChange={setTicketPage} />
+        </>}
+      </section>
+    </div>;
   }
 
   if (!isTechnicalRequestList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;

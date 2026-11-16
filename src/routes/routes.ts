@@ -7,7 +7,7 @@ import {
 } from "./path";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
-import { MachineIdSchema, MaintenanceRequestIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
+import { MachineIdSchema, MaintenanceRequestIdSchema, MaintenanceTicketIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
 import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { RepairCostReviewIdSchema } from "@/schema/repair-cost-reviews.schema";
@@ -513,6 +513,11 @@ const moderatorExactPaths = new Set([
 export function isSupportedModeratorSection(section: string): boolean {
   if (section && (section.startsWith("/") || section.endsWith("/") || section.includes("//"))) {
     return false;
+  }
+  const historyTicket = /^machine-history(?:\/([^/]+))?\/tickets\/([^/]+)$/.exec(section);
+  if (historyTicket) {
+    return (!historyTicket[1] || MachineIdSchema.safeParse(historyTicket[1]).success)
+      && MaintenanceTicketIdSchema.safeParse(historyTicket[2]).success;
   }
   const machineOperations = /^machines\/([^/]+)\/operations$/.exec(section);
   if (machineOperations) {
