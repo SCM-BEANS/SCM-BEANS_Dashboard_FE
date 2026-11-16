@@ -12,6 +12,7 @@ node_modules/
 /.next/
 /.next-playwright/
 /.next-cleaning-review/
+/.next-technician-ui/
 /out/
 
 # production
