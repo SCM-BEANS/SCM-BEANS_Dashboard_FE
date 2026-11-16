@@ -47,7 +47,7 @@ import {
   type WaterFlowPlayback,
 } from "./material-effects/WaterFlowEffect";
 import { createWaterFlowBounds } from "./material-effects/waterFlowRuntime";
-import { getPartGroupForNodeName, type DigitalTwinPresentation, type PartGroupId } from "./presentation/part-groups";
+import { getPartGroupForNodeName, getPresentationOpacity, type DigitalTwinPresentation, type PartGroupId } from "./presentation/part-groups";
 
 const COFFEE_MACHINE_MODEL_URL =
   "/models/digital-twin/body/coffee_machine_03_v2.glb";
@@ -150,7 +150,8 @@ interface CameraFocusTransition {
 function getObjectPartGroup(object: THREE.Object3D): PartGroupId {
   let current: THREE.Object3D | null = object;
   while (current) {
-    const group = getPartGroupForNodeName(current.name);
+    const sourceName = typeof current.userData.name === "string" ? current.userData.name : current.name;
+    const group = getPartGroupForNodeName(sourceName);
     if (group !== "other") return group;
     current = current.parent;
   }
@@ -219,26 +220,25 @@ function applyPresentationVisualState(
       const clones = originals.map((original) => {
         const clone = original.clone();
         state.clonedMaterials.add(clone);
-        state.originalOpacities.set(clone, original.opacity);
+        state.originalOpacities.set(clone, groupIsFocused ? 1 : original.opacity);
         state.originalDepthWrite.set(clone, original.depthWrite);
         const material = clone as THREE.MeshStandardMaterial;
         if (material.color instanceof THREE.Color) {
-          if (groupIsFocused) material.color.lerp(new THREE.Color("#b91222"), 0.38);
-          else if (focus.size > 0) material.color.lerp(new THREE.Color("#898989"), 0.55);
+          if (groupIsFocused) material.color.lerp(new THREE.Color("#b91222"), 0.18);
+          else if (focus.size > 0) material.color.lerp(new THREE.Color("#898989"), 0.25);
         }
         if (groupIsFocused && material.emissive instanceof THREE.Color) {
           material.emissive.copy(new THREE.Color("#b91222"));
-          material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.35);
+          material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.12);
         }
-        const opacityFactor = focus.size > 0 && !groupIsFocused ? 0.35 : 1;
-        setMaterialOpacity(clone, original.opacity * opacityFactor, original.transparent, original.depthWrite);
+        setMaterialOpacity(clone, getPresentationOpacity(original.opacity, group, groupIsFocused, focus.size > 0), groupIsFocused ? false : original.transparent, groupIsFocused ? true : original.depthWrite);
         return clone;
       });
       state.materials.set(object, originalMaterials);
       object.material = Array.isArray(originalMaterials) ? clones : clones[0];
-      if (group === "shell") {
+      if (group === "shell" || group === "frame") {
         state.shellMaterials.set(object, clones);
-        state.shellOpacityFactors.set(object, groupIsFocused ? 1 : focus.size > 0 ? 0.35 : 1);
+        state.shellOpacityFactors.set(object, getPresentationOpacity(1, group, groupIsFocused, focus.size > 0));
       }
     });
   }
@@ -250,7 +250,7 @@ function applyGhostShellOpacity(
 ) {
   for (const [mesh, materials] of state.shellMaterials) {
     const ghosted = ghostedMeshes.has(mesh);
-    const factor = ghosted ? 0.12 : state.shellOpacityFactors.get(mesh) ?? 1;
+    const factor = ghosted ? 0.04 : state.shellOpacityFactors.get(mesh) ?? 1;
     for (const material of materials) {
       const originalOpacity = state.originalOpacities.get(material) ?? 1;
       const original = state.materials.get(mesh);
@@ -274,7 +274,7 @@ function findOccludingShellMeshes(
   const shellMeshes: THREE.Mesh[] = [];
   for (const root of roots) {
     root?.traverse((object) => {
-      if (object instanceof THREE.Mesh && getObjectPartGroup(object) === "shell") shellMeshes.push(object);
+      if (object instanceof THREE.Mesh && ["shell", "frame"].includes(getObjectPartGroup(object))) shellMeshes.push(object);
     });
   }
   if (!focusBounds || focusBounds.isEmpty()) return new Set(shellMeshes);
@@ -516,6 +516,10 @@ function isClusterGuideNode(node: THREE.Object3D) {
 function createCompressorDisplayClone(source: THREE.Group) {
   const display = source.clone(true);
   display.visible = true;
+  // The body asset already supplies the housing; this embedded copy would cover the moving parts.
+  display.getObjectByName("body_may-1")?.traverse((node) => {
+    if (node instanceof THREE.Mesh && getObjectPartGroup(node) === "frame") node.visible = false;
+  });
 
   const sourceNodes: THREE.Object3D[] = [];
   source.traverse((node) => {
@@ -1321,7 +1325,9 @@ function BodyScene({
       const stage = DIGITAL_TWIN_OPERATION_STAGES.find(
         (candidate) => candidate.phase === operationEvent.phase,
       );
-      if (stage?.motion?.runtime === "cluster-03") {
+      if (presentation?.mechanismPose) {
+        operationMotionProgressRef.current = presentation.mechanismPose;
+      } else if (stage?.motion?.runtime === "cluster-03") {
         operationMotionProgressRef.current = {
           main: THREE.MathUtils.lerp(
             stage.motion.mainProgressRange[0],
@@ -1346,7 +1352,9 @@ function BodyScene({
       return;
     }
 
-    if (operationCycleIdRef.current !== null) {
+    if (presentation?.holdMechanism) {
+      runtime.apply(operationMotionProgressRef.current.main, operationMotionProgressRef.current.lower);
+    } else if (operationCycleIdRef.current !== null) {
       runtime.apply(0, 1);
       operationCycleIdRef.current = null;
       operationMotionProgressRef.current = { main: 0, lower: 1 };
@@ -1475,10 +1483,17 @@ function BodyScene({
     const fitHeight = perspectiveCamera
       ? maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(perspectiveCamera.fov * 0.5)))
       : maxSize;
-    const distance = Math.max(maxSize * 1.6, fitHeight * 1.6);
+    // Keep the focus camera outside the housing instead of zooming through its panels.
+    const machineRadius = bounds?.getBoundingSphere(new THREE.Sphere()).radius ?? 0;
+    const minimumDistance = perspectiveCamera
+      ? machineRadius * 0.85 / Math.sin(THREE.MathUtils.degToRad(perspectiveCamera.fov * 0.5))
+      : machineRadius * 2;
+    const distance = Math.max(maxSize * 1.6, fitHeight * 1.6, minimumDistance);
     const controls = controlsRef.current;
     const fromTarget = controls?.target.clone() ?? new THREE.Vector3();
-    const direction = camera.position.clone().sub(fromTarget);
+    const direction = bounds ? center.clone().sub(bounds.getCenter(new THREE.Vector3())) : camera.position.clone().sub(fromTarget);
+    direction.y = 0;
+    if (direction.lengthSq() > 0.0001) direction.normalize().setY(0.22);
     if (direction.lengthSq() < 0.0001) direction.set(0, 0.22, 1);
     direction.normalize();
     const toPosition = center.clone().addScaledVector(direction, distance);
@@ -1504,7 +1519,7 @@ function BodyScene({
       fromTarget,
       toTarget: center,
     };
-  }, [camera, cameraResetVersion, compressorDisplayRoot, model, presentation]);
+  }, [bounds, camera, cameraResetVersion, compressorDisplayRoot, model, presentation]);
 
   const presentationLabelPosition = useMemo<[number, number, number] | null>(() => {
     if (!presentation?.label) return null;
@@ -1534,12 +1549,14 @@ function BodyScene({
               anchor={MAYXOAY_COFFEE_SKETCH18_CALIBRATION.anchor}
               targetNode={coffeeTargetNode}
               target={MAYXOAY_COFFEE_BOX_NEN_TARGET}
+              continuous={presentation?.continuousEffects}
               playback={coffeePlayback}
             />
           ) : null}
           {enableWaterEffect && waterOutletNode ? (
             <WaterFlowEffect
               sourceNode={waterOutletNode}
+              continuous={presentation?.continuousEffects}
               playback={waterPlayback}
             />
           ) : null}

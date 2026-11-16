@@ -124,6 +124,7 @@ export function updateWaterFlowInstances({
   config,
   progress,
   elapsedMs,
+  continuous = false,
   branches,
   scratch,
 }: {
@@ -132,6 +133,7 @@ export function updateWaterFlowInstances({
   config: WaterFlowTestConfig;
   progress: number;
   elapsedMs?: number;
+  continuous?: boolean;
   branches: readonly WaterFlowBranch[];
   scratch: WaterFlowRuntimeScratch;
 }) {
@@ -152,7 +154,10 @@ export function updateWaterFlowInstances({
     const branch = branches[particle.branchIndex % branches.length];
     const emissionTimeMs =
       particle.emissionOffset * Math.max(config.durationMs, 1);
-    const particleAgeMs = effectiveElapsedMs - emissionTimeMs;
+    const elapsedSinceEmission = effectiveElapsedMs - emissionTimeMs;
+    const particleAgeMs = continuous && elapsedSinceEmission >= 0
+      ? elapsedSinceEmission % Math.max(config.durationMs, config.particleTravelDurationMs, 1)
+      : elapsedSinceEmission;
     const hasEmitted = particleAgeMs >= 0;
     const travelProgress = hasEmitted
       ? THREE.MathUtils.clamp(particleAgeMs / travelDurationMs, 0, 1)

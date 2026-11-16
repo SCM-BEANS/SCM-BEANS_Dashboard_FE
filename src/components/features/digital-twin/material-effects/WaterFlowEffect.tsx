@@ -22,11 +22,13 @@ export interface WaterFlowPlayback {
 interface WaterFlowEffectProps {
   sourceNode: THREE.Object3D | null;
   playback: WaterFlowPlayback;
+  continuous?: boolean;
 }
 
 export function WaterFlowEffect({
   sourceNode,
   playback,
+  continuous = false,
 }: WaterFlowEffectProps) {
   const waterMeshRef = useRef<THREE.InstancedMesh>(null);
   const runtimeRef = useRef({
@@ -134,12 +136,13 @@ export function WaterFlowEffect({
       config: WATER_FLOW_TEST_CONFIG,
       progress,
       elapsedMs: runtime.elapsedMs,
+      continuous,
       branches,
       scratch: runtimeScratch,
     });
 
     if (
-      runtime.elapsedMs >=
+      !continuous && runtime.elapsedMs >=
       WATER_FLOW_TEST_CONFIG.durationMs +
         WATER_FLOW_TEST_CONFIG.particleTravelDurationMs
     ) {

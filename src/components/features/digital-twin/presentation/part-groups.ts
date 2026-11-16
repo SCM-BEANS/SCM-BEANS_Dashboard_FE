@@ -6,6 +6,7 @@ export const PART_GROUP_NODE_PREFIXES = {
     "CV05_Mattruoc-1",
   ],
   frame: [
+    "body_may-1",
     "HK01_TamDe-1",
     "HK03_TamTren-1",
     "HK04_TamL-1",
@@ -21,7 +22,7 @@ export const PART_GROUP_NODE_PREFIXES = {
   ],
   hopper: ["Assem_HopCafe-1"],
   grinder: ["Mayxoay1-1", "Mayphacafe-1"],
-  brewUnit: ["Final"],
+  brewUnit: ["Final", "arm_right_1-1", "gac_coffee-1", "arm_left_1-1", "truc_nen-1", "arm_left_2-1", "oc_left-1", "truc_chinh-1", "arm_left_3-1", "gear_motor_chinh-1", "head_nen-1", "wiper_gear-1", "oc_right-1", "arm_right_3-1", "arm_right_2-1", "gear_motor_nen-1", "gear_nen-1", "box_nen-1"],
   output: ["Assem_HeRaCafe-1"],
   water: [
     "Assem_HeNhiet02-1",
@@ -77,6 +78,10 @@ export interface DigitalTwinPresentation {
   effects?: { water?: boolean; coffee?: boolean; grinderSpin?: boolean };
   active?: boolean;
   stepId?: string;
+  /** Schematic phase pose, independent of the timed simulation player. */
+  mechanismPose?: { main: number; lower: number };
+  holdMechanism?: boolean;
+  continuousEffects?: boolean;
 }
 
 export function getPartGroupForNodeName(name: string): PartGroupId {
@@ -86,4 +91,10 @@ export function getPartGroupForNodeName(name: string): PartGroupId {
     }
   }
   return "other";
+}
+
+export function getPresentationOpacity(original: number, group: PartGroupId, focused: boolean, hasFocus: boolean) {
+  if (!hasFocus) return original;
+  if (focused) return 1;
+  return original * (group === "shell" ? 0.08 : group === "frame" ? 0.4 : 0.72);
 }

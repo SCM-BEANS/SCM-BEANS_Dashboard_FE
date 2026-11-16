@@ -190,6 +190,8 @@ export function BodyModelViewer({
   return (
     <div
       className={styles.viewer}
+      data-operation-phase={operationEvent?.phase ?? "idle"}
+      data-operation-sequence={operationEvent?.sequence}
       style={{
         height: "var(--admin-machine-viewer-height, min(62vh, 700px))",
       }}

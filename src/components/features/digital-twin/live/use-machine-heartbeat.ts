@@ -4,7 +4,8 @@ import { usePageVisibility } from "@/components/machines/machine-heartbeat-visib
 import type { MachineHeartbeat } from "@/schema/telemetry.schema";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 
-const HEARTBEAT_REFRESH_INTERVAL_MS = 10_000;
+// shortcut: Latest REST polling can miss subsecond states; use an event stream when the API exposes one.
+const HEARTBEAT_REFRESH_INTERVAL_MS = 1_000;
 
 export function useMachineHeartbeat({
   machineId,
@@ -14,7 +15,7 @@ export function useMachineHeartbeat({
   enabled: boolean;
 }): {
   heartbeat: MachineHeartbeat | undefined;
-  stale: boolean;
+  receivedAt: number;
   isLoading: boolean;
   error: unknown;
   refetch: () => Promise<unknown>;
@@ -24,7 +25,7 @@ export function useMachineHeartbeat({
   const query = useQuery({
     queryKey: ["digital-twin-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
-    enabled,
+    enabled: enabled && pageVisible,
     retry: false,
     refetchInterval: enabled && pageVisible ? HEARTBEAT_REFRESH_INTERVAL_MS : false,
     refetchIntervalInBackground: false,
@@ -32,9 +33,7 @@ export function useMachineHeartbeat({
 
   return {
     heartbeat: query.data,
-    stale: !query.isPending && (
-      !query.data || query.data.status === "OFFLINE" || query.data.status === "UNKNOWN"
-    ),
+    receivedAt: query.dataUpdatedAt,
     isLoading: query.isPending,
     error: query.error,
     refetch: query.refetch,

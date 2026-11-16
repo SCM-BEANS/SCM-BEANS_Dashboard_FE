@@ -337,16 +337,6 @@
   font-size: 0.75rem;
 }
 
-.offlineOverlay {
-  position:absolute; z-index:15; bottom:120px; left:14px; right:14px;
-  display:flex; flex-wrap:wrap; gap:6px; padding:10px 14px;
-  border:1px solid #e9e2dc; border-radius:9px; background:rgb(255 255 255 / 94%);
-  color:#625853; font-size:0.875rem; line-height:1.4; pointer-events:none;
-}
-.offlineOverlay time {
-  font-weight: 500;
-}
-
 @media (max-width: 1023px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
@@ -368,5 +358,3 @@
     padding: 12px;
   }
 }
-
-@media(max-width:700px) { .offlineOverlay { bottom:182px; } }

@@ -27,6 +27,7 @@ interface CoffeeGroundEffectProps {
   targetNode: THREE.Object3D | null;
   target: MaterialEffectSurfaceTarget;
   playback: CoffeeGroundPlayback;
+  continuous?: boolean;
 }
 
 const LOCAL_UP = new THREE.Vector3(0, 1, 0);
@@ -38,6 +39,7 @@ export function CoffeeGroundEffect({
   targetNode,
   target,
   playback,
+  continuous = false,
 }: CoffeeGroundEffectProps) {
   const coffeeMeshRef = useRef<THREE.InstancedMesh>(null);
   const runtimeRef = useRef({
@@ -177,7 +179,7 @@ export function CoffeeGroundEffect({
       // window so the last emitted grounds can still reach box_nen-1.
       runtime.elapsedMs += Math.min(Math.max(deltaSeconds, 0), 0.1) * 1000;
       runtime.completed =
-        runtime.elapsedMs >=
+        !continuous && runtime.elapsedMs >=
         Math.max(
           MAYXOAY_COFFEE_EFFECT.durationMs +
             MAYXOAY_COFFEE_EFFECT.particleTravelDurationMs,
@@ -195,6 +197,7 @@ export function CoffeeGroundEffect({
       effect: MAYXOAY_COFFEE_EFFECT,
       progress,
       elapsedMs: runtime.elapsedMs,
+      continuous,
       anchorPosition: anchorPositionRef.current,
       anchorQuaternion: anchorQuaternionRef.current,
       scratch: runtimeScratch,

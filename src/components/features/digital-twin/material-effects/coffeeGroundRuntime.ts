@@ -123,6 +123,7 @@ export function updateCoffeeGroundInstances({
   effect,
   progress,
   elapsedMs,
+  continuous = false,
   anchorPosition,
   anchorQuaternion,
   scratch,
@@ -135,6 +136,7 @@ export function updateCoffeeGroundInstances({
   effect: MaterialEffectCoffeeConfig;
   progress: number;
   elapsedMs?: number;
+  continuous?: boolean;
   anchorPosition: THREE.Vector3;
   anchorQuaternion: THREE.Quaternion;
   scratch: CoffeeGroundRuntimeScratch;
@@ -163,7 +165,10 @@ export function updateCoffeeGroundInstances({
     const particle = particles[index];
     const emissionTimeMs =
       particle.emissionOffset * Math.max(effect.durationMs, 1);
-    const particleAgeMs = effectiveElapsedMs - emissionTimeMs;
+    const elapsedSinceEmission = effectiveElapsedMs - emissionTimeMs;
+    const particleAgeMs = continuous && elapsedSinceEmission >= 0
+      ? elapsedSinceEmission % Math.max(effect.durationMs, effect.particleTravelDurationMs, 1)
+      : elapsedSinceEmission;
     const hasEmitted = particleAgeMs >= 0;
     const travelProgress = hasEmitted
       ? THREE.MathUtils.clamp(

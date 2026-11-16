@@ -25,7 +25,7 @@ function readGlbNodeNames(relativePath) {
   return new Set((json.nodes ?? []).map((node) => node.name).filter(Boolean));
 }
 
-const { PART_GROUP_NODE_PREFIXES, getPartGroupForNodeName } = loadTypescript(
+const { PART_GROUP_NODE_PREFIXES, getPartGroupForNodeName, getPresentationOpacity } = loadTypescript(
   "src/components/features/digital-twin/presentation/part-groups.ts",
 );
 const bodyNames = readGlbNodeNames("public/models/digital-twin/body/coffee_machine_03_v2.glb");
@@ -46,4 +46,16 @@ test("part groups point to node names that exist in the body or Cluster 03 GLB",
 test("unmapped model nodes are assigned to other", () => {
   assert.equal(getPartGroupForNodeName("node-that-is-not-mapped"), "other");
   assert.equal(getPartGroupForNodeName("Mayxoay1-1"), "grinder");
+  assert.equal(getPartGroupForNodeName("head_nen-1"), "brewUnit");
+  assert.equal(getPartGroupForNodeName("arm_right_1-1"), "brewUnit");
+  assert.equal(getPartGroupForNodeName("body_may-1"), "frame", "the stationary housing must not hide the moving brew mechanism");
+});
+
+test("active mechanisms are opaque and surroundings remain readable", () => {
+  assert.equal(getPresentationOpacity(.25, "brewUnit", true, true), 1);
+  assert.equal(getPresentationOpacity(1, "water", true, true), 1);
+  assert.equal(getPresentationOpacity(1, "frame", false, true), .4);
+  assert.equal(getPresentationOpacity(1, "grinder", false, true), .72);
+  assert.equal(getPresentationOpacity(1, "shell", false, true), .08);
+  assert.equal(getPresentationOpacity(.25, "shell", false, false), .25);
 });

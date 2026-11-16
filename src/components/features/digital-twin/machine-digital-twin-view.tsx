@@ -20,6 +20,7 @@ import {
   CLUSTER_03_ROOT_FRAME_URL,
 } from "./digital-twin-model-config";
 import { useMachineHeartbeat } from "./live/use-machine-heartbeat";
+import { useLiveBrewState } from "./live/use-live-brew-state";
 import { buildBrewScript, buildDefaultBrewScript, type BrewScript } from "./script/build-brew-script";
 import { parseProcedure } from "./script/parse-procedure";
 import { useBrewScriptPlayer } from "./script/use-brew-script-player";
@@ -134,16 +135,15 @@ export function MachineDigitalTwinView({
   const [mode, setMode] = useState<Mode>(smartMachine ? "live" : "simulation");
   const [selectedRecipeId, setSelectedRecipeId] = useState(DEFAULT_RECIPE_ID);
   const [simulationPending, setSimulationPending] = useState(false);
-  const [recentRecords, setRecentRecords] = useState<OwnerBrewRecord[]>([]);
-  const [pendingRecords, setPendingRecords] = useState<OwnerBrewRecord[]>([]);
-  const seenRecordIdsRef = useRef(new Set<string>());
-  const baselineReadyRef = useRef(false);
-  const processingRecordIdsRef = useRef(new Set<string>());
+  const [replayRecord, setReplayRecord] = useState<OwnerBrewRecord | null>(null);
+  const runVersion = useRef(0);
   const pageVisible = usePageVisibility();
   const subject = authScopedQuerySubject("OWNER");
   const liveEnabled = smartMachine && mode === "live";
   const heartbeat = useMachineHeartbeat({ machineId, enabled: liveEnabled });
   const player = useBrewScriptPlayer(machineId);
+  const { play: playScript, stop: stopScript } = player;
+  const live = useLiveBrewState(machineId, heartbeat.heartbeat, liveEnabled && pageVisible, heartbeat.error, heartbeat.receivedAt);
   const [lastDishName, setLastDishName] = useState<string | null>(null);
   useEffect(() => {
     if (player.script?.name) setLastDishName(player.script.name);
@@ -217,15 +217,13 @@ export function MachineDigitalTwinView({
     refetchIntervalInBackground: false,
   });
 
+  useEffect(() => { setMode(smartMachine ? "live" : "simulation"); setReplayRecord(null); }, [machineId, smartMachine]);
   useEffect(() => {
-    setMode(smartMachine ? "live" : "simulation");
-    setRecentRecords([]);
-    setPendingRecords([]);
-    seenRecordIdsRef.current = new Set();
-    processingRecordIdsRef.current = new Set();
-    baselineReadyRef.current = false;
-    player.stop();
-  }, [machineId, player.stop, smartMachine]);
+    runVersion.current += 1;
+    stopScript();
+    setSimulationPending(false);
+    return () => { runVersion.current += 1; };
+  }, [machineId, mode, stopScript]);
 
   useEffect(() => {
     const catalog = recipeCatalogQuery.data;
@@ -237,41 +235,8 @@ export function MachineDigitalTwinView({
     );
   }, [activeMenuId, recipeCatalogQuery.data]);
 
-  useEffect(() => {
-    const page = recordsQuery.data;
-    if (!page) return;
-    const newest = sortNewest(page.content);
-    setRecentRecords(newest.slice(0, 5));
-    if (!baselineReadyRef.current) {
-      for (const record of newest) seenRecordIdsRef.current.add(record.id);
-      baselineReadyRef.current = true;
-      return;
-    }
-
-    const fresh = newest.filter((record) => !seenRecordIdsRef.current.has(record.id));
-    if (fresh.length === 0) return;
-    for (const record of fresh) seenRecordIdsRef.current.add(record.id);
-    setPendingRecords((current) => {
-      const ids = new Set(current.map((record) => record.id));
-      return [...current, ...fresh.filter((record) => !ids.has(record.id))];
-    });
-  }, [recordsQuery.data]);
-
-  useEffect(() => {
-    if (!liveEnabled || recipeCatalogQuery.isPending || pendingRecords.length === 0) return;
-    const batch = pendingRecords.filter((record) => !processingRecordIdsRef.current.has(record.id));
-    if (batch.length === 0) return;
-    for (const record of batch) processingRecordIdsRef.current.add(record.id);
-    const batchIds = new Set(batch.map((record) => record.id));
-    setPendingRecords((current) => current.filter((record) => !batchIds.has(record.id)));
-
-    void (async () => {
-      for (const record of [...batch].sort((left, right) => Date.parse(left.brewedAt) - Date.parse(right.brewedAt))) {
-        const script = await resolveRecipeScript(record.recipeName);
-        player.queue(script, "server");
-      }
-    })();
-  }, [liveEnabled, pendingRecords, player.queue, recipeCatalogQuery.isPending, resolveRecipeScript]);
+  const recentRecords = useMemo(() => sortNewest(recordsQuery.data?.content ?? []).slice(0, 5), [recordsQuery.data]);
+  const liveRecipeName = live.recipeName || recipeCatalogQuery.data?.find(recipe => recipe.id === live.recipeId)?.name;
 
   const timeLabel = formatVietnamTime(heartbeat.heartbeat?.lastSeenAt);
   const metrics = getMetricEntries(heartbeat.heartbeat?.metricsJson);
@@ -280,34 +245,54 @@ export function MachineDigitalTwinView({
     ? "loading"
     : heartbeat.error
       ? "error"
-      : heartbeat.heartbeat?.status ?? "UNKNOWN";
+      : liveEnabled && heartbeat.heartbeat?.status === "ONLINE" && !live.connected
+        ? "UNKNOWN"
+        : heartbeat.heartbeat?.status ?? "UNKNOWN";
   const note = !smartMachine
     ? LIVE_T.digital_twin_live_conventional_note
     : mode === "live"
       ? T.live_replay_note
       : LIVE_T.digital_twin_live_note_simulation;
-  const catalog = recipeCatalogQuery.data ?? [];
+  const catalog = useMemo(() => recipeCatalogQuery.data ?? [], [recipeCatalogQuery.data]);
   const selectedRecipe = useMemo(
     () => catalog.find((recipe) => recipe.id === selectedRecipeId),
     [catalog, selectedRecipeId],
   );
 
   const handleSimulationRun = useCallback(async () => {
+    const version = runVersion.current;
     setSimulationPending(true);
     try {
       const script = selectedRecipe
         ? await fetchScriptForRecipe(selectedRecipe)
         : buildDefaultBrewScript();
-      player.play(script, "test");
+      if (version === runVersion.current) playScript(script, "test");
     } finally {
-      setSimulationPending(false);
+      if (version === runVersion.current) setSimulationPending(false);
     }
-  }, [fetchScriptForRecipe, player.play, selectedRecipe]);
+  }, [fetchScriptForRecipe, playScript, selectedRecipe]);
 
-  const handleReplay = useCallback(async (record: OwnerBrewRecord) => {
-    const script = await resolveRecipeScript(record.recipeName);
-    player.play(script, "server");
-  }, [player.play, resolveRecipeScript]);
+  const handleReplay = useCallback((record: OwnerBrewRecord) => {
+    setReplayRecord(record);
+    setMode("simulation");
+  }, []);
+  useEffect(() => {
+    if (mode !== "simulation" || !replayRecord) return;
+    let cancelled = false;
+    setSimulationPending(true);
+    void resolveRecipeScript(replayRecord.recipeName).then(script => {
+      if (cancelled) return;
+      playScript(script, "server");
+      setReplayRecord(null);
+      setSimulationPending(false);
+    });
+    return () => { cancelled = true; };
+  }, [mode, replayRecord, resolveRecipeScript, playScript]);
+
+  const viewerPresentation = useMemo(() => {
+    const presentation = liveEnabled ? live.presentation : player.presentation;
+    return presentation ? { ...presentation, label: undefined } : undefined;
+  }, [liveEnabled, live.presentation, player.presentation]);
 
   const stepList = player.script?.steps ?? [];
   const currentStepIndex = player.status === "running" ? player.stepIndex : -1;
@@ -349,23 +334,11 @@ export function MachineDigitalTwinView({
               compressorModelUrls={CLUSTER_03_MODEL_URLS}
               compressorRootFrameUrl={CLUSTER_03_ROOT_FRAME_URL}
               compressorMotionDefinitionUrls={CLUSTER_03_MOTION_URLS}
-              operationEvent={player.event}
+              operationEvent={liveEnabled ? live.event : player.event}
               operationSource="external"
-              presentation={player.presentation}
+              presentation={viewerPresentation}
               showElectricalLayer={false}
             />
-            {liveEnabled && heartbeat.stale ? (
-              <div className={styles.offlineOverlay} role="status">
-                {timeLabel ? (
-                  <>
-                    <span>{LIVE_T.digital_twin_live_disconnected} — {LIVE_T.digital_twin_live_disconnected_at}</span>
-                    <time dateTime={heartbeat.heartbeat?.lastSeenAt ?? undefined}>{timeLabel}</time>
-                  </>
-                ) : (
-                  <span>{LIVE_T.digital_twin_live_never_seen}</span>
-                )}
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -386,6 +359,10 @@ export function MachineDigitalTwinView({
                 ) : (
                   <>
                     <MachineConnectionBadge state={displayConnectionState} />
+                    {live.delayed ? <>
+                      <StatusBadge tone="warning" variant="dot">{T.telemetry_delayed}</StatusBadge>
+                      <p className={styles.lastSeen}>{T.telemetry_waiting}</p>
+                    </> : null}
                     <p className={styles.lastSeen}>
                       {LIVE_T.digital_twin_live_last_seen}: {timeLabel ?? LIVE_T.digital_twin_live_no_signal}
                     </p>
@@ -393,35 +370,12 @@ export function MachineDigitalTwinView({
                 )}
               </section>
 
-              <section className={styles.panelSection}>
-                <h3>{brewingHeading}</h3>
-                {player.status === "running" && stepList.length > 0 ? (
-                  <ol className={styles.stepList}>
-                    {stepList.map((step, index) => {
-                      const current = index === currentStepIndex;
-                      const complete = currentStepIndex >= 0 && index < currentStepIndex;
-                      const label = step.valueText ? step.label + " " + step.valueText : step.label;
-                      return (
-                        <li
-                          key={step.id}
-                          className={[
-                            styles.step,
-                            current ? styles.currentStep : "",
-                            complete ? styles.completeStep : "",
-                          ].filter(Boolean).join(" ")}
-                          aria-current={current ? "step" : undefined}
-                        >
-                          <span className={styles.stepMarker} aria-hidden="true">
-                            {complete ? "✓" : current ? "●" : "○"}
-                          </span>
-                          <span>{label}</span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                ) : (
-                  <p className={styles.stateMessage}>{T.ready}</p>
-                )}
+              <section className={styles.panelSection} aria-label={T.current_step} data-live-brew-state={live.state ?? "UNKNOWN"}>
+                <h3>{live.fresh ? T.current_step : T.last_observed_step}</h3>
+                <p className={styles.stateMessage} role="status">{live.label}</p>
+                {liveRecipeName ? <p className={styles.stateMessage}>{T.now_brewing}: {liveRecipeName}</p> : null}
+                {live.recipeStep !== null ? <p className={styles.stateMessage}>{T.step_count}: {live.recipeStep}</p> : null}
+                {live.simulated ? <p className={styles.stateMessage}>{T.telemetry_test_data}</p> : null}
               </section>
 
               <section className={styles.panelSection}>
@@ -518,8 +472,8 @@ export function MachineDigitalTwinView({
                   <button
                     type="button"
                     className={styles.stopButton}
-                    disabled={player.status !== "running"}
-                    onClick={player.stop}
+                    disabled={player.status !== "running" && !simulationPending}
+                    onClick={() => { runVersion.current += 1; setReplayRecord(null); setSimulationPending(false); stopScript(); }}
                   >
                     {T.stop_recipe}
                   </button>
