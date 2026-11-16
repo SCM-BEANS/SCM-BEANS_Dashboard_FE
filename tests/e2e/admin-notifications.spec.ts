@@ -1,10 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function setup(page: Page, failList = false, failRead = false, role: "admin" | "moderator" | "owner" = "admin", path?: string) {
+async function setup(page: Page, failList = false, failRead = false, role: "admin" | "moderator" | "owner" | "technician" = "admin", path?: string) {
   const subject = "00000000-0000-4000-8000-000000000001";
   const notifications = Array.from({ length: 12 }, (_, index) => ({
     id: `00000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`,
-    title: `Thông báo kiểm tra ${index + 1}`, message: `Nội dung thông báo ${index + 1} dành cho quản trị viên.`,
+    title: `Thông báo kiểm tra ${index + 1}`, message: index % 2 ? `Nội dung thông báo ${index + 1} dành cho quản trị viên.` : `Hợp đồng ${subject} sẽ hết hạn vào 2026-11-22.`,
     type: index % 2 ? "MAINTENANCE" : "CONTRACT_EXPIRING", ownerId: subject,
     read: index % 2 === 1, createdAt: index < 8 ? "2026-11-14T08:00:00Z" : "2020-11-12T08:00:00Z",
   }));
@@ -13,6 +13,9 @@ async function setup(page: Page, failList = false, failRead = false, role: "admi
     notifications[0].title = "Chi phí sửa chữa cần xem xét";
     notifications[0].message = `Review ID: ${subject}`;
   }
+  notifications[4].type = "REPAIR_COST_REVIEW";
+  notifications[4].title = "Chi phí sửa chữa cần xem xét";
+  notifications[4].message = `Review ID: ${subject}`;
   const alerts = [{ id: subject, machineId: subject, level: "HIGH", message: "Máy cần được kiểm tra kết nối", acknowledged: false, ts: "2026-11-14T08:00:00Z" }, { id: "00000000-0000-4000-8000-000000000002", machineId: subject, level: "WASTAGE_ANOMALY", message: "Wastage anomaly detected: 100.00% exceeds threshold 5.0%", acknowledged: false, ts: "2026-11-13T08:00:00Z" }];
   await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: [role], sub: subject })).toString("base64url")}.signature`, url: test.info().project.use.baseURL as string }]);
   let writes = 0;
@@ -34,13 +37,14 @@ async function setup(page: Page, failList = false, failRead = false, role: "admi
   return { writes: () => writes, alertReads: () => alertReads };
 }
 
-test("admin notifications paginate, filter and mark read only through explicit action", async ({ page }) => {
+test("admin notifications paginate, filter and mark unread items when opened", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   const api = await setup(page);
   const panel = page.getByRole("region", { name: "Danh sách thông báo", exact: true });
   await expect(panel.locator("article")).toHaveCount(10);
   const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
   await expect(detail).toBeVisible();
+  await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000001");
   const feedBox = (await panel.boundingBox())!;
   expect((await detail.boundingBox())!.x).toBeGreaterThan(feedBox.x + feedBox.width);
   await expect(panel.getByRole("heading", { name: "Trước đó", exact: true })).toBeVisible();
@@ -53,7 +57,6 @@ test("admin notifications paginate, filter and mark read only through explicit a
   await expect(detail.getByRole("heading", { name: "Thông báo kiểm tra 2", exact: true })).toBeVisible();
   await expect(detail).toBeFocused();
   expect(api.writes()).toBe(0);
-  await page.screenshot({ path: ".playwright-cli/notifications-list-verified.png" });
   await panel.getByRole("button", { name: "Trang sau", exact: true }).click();
   await expect(panel.locator("article")).toHaveCount(2);
   await panel.getByRole("textbox", { name: "Tìm thông báo" }).fill("kiểm tra 12");
@@ -66,21 +69,17 @@ test("admin notifications paginate, filter and mark read only through explicit a
   await expect(panel.getByRole("button", { name: /Thông báo kiểm tra 12/ })).toBeFocused();
   expect(api.writes()).toBe(0);
   await panel.getByRole("textbox", { name: "Tìm thông báo" }).fill("");
-  await panel.getByRole("button", { name: "Chưa đọc", exact: true }).click();
   await panel.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
-  await expect(panel.locator("article")).toHaveCount(6);
-  const menu = panel.locator("article").first().locator("details");
-  await menu.locator("summary").click();
-  await expect(menu.getByRole("button", { name: "Đánh dấu đã đọc", exact: true })).toBeVisible();
-  await menu.locator("summary").press("Escape");
-  await expect(menu).not.toHaveAttribute("open", "");
-  await menu.locator("summary").click();
-  await menu.getByRole("button", { name: "Đánh dấu đã đọc", exact: true }).click();
+  await panel.locator("article").first().getByRole("button").click();
+  await expect(detail.getByText("Đã đọc", { exact: true })).toBeVisible();
+  expect(api.writes()).toBe(1);
+  await panel.getByRole("button", { name: "Đã đọc", exact: true }).click();
+  await expect(panel.locator("article")).toHaveCount(7);
+  await panel.getByRole("button", { name: "Chưa đọc", exact: true }).click();
   await expect(panel.locator("article")).toHaveCount(5);
   await panel.getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true }).click();
   await expect(panel.getByText("Không có thông báo phù hợp với bộ lọc.")).toBeVisible();
   expect(api.writes()).toBe(2);
-  await page.screenshot({ path: ".playwright-cli/notifications-empty-verified.png" });
 });
 
 test("alerts occupy their own view and remain usable on a narrow screen", async ({ page }) => {
@@ -93,7 +92,6 @@ test("alerts occupy their own view and remain usable on a narrow screen", async 
   await expect(alertFeed.locator("article")).toHaveCount(2);
   await expect(page.getByRole("table")).toHaveCount(0);
   await expect(alertDetail.getByText("Máy cần được kiểm tra kết nối", { exact: true })).toBeVisible();
-  await page.screenshot({ path: ".playwright-cli/notifications-alerts-verified.png" });
   await page.getByRole("button", { name: "Xác nhận cảnh báo", exact: true }).click();
   await expect(alertDetail.getByText("Đã xác nhận", { exact: true })).toBeVisible();
   expect(api.writes()).toBe(1);
@@ -116,18 +114,30 @@ test("alerts occupy their own view and remain usable on a narrow screen", async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("region", { name: "Danh sách thông báo", exact: true }).locator("article").first().getByRole("button").click();
   await expect(page.getByRole("complementary", { name: "Chi tiết thông báo" })).toBeFocused();
-  await page.screenshot({ path: ".playwright-cli/notifications-mobile-detail.png" });
 });
 
 test("failed mark-read preserves unread state and offers an error", async ({ page }) => {
   const api = await setup(page, false, true);
   const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
-  await detail.getByRole("button", { name: "Đánh dấu đã đọc", exact: true }).click();
+  await page.getByRole("region", { name: "Danh sách thông báo", exact: true }).locator("article").first().getByRole("button").click();
   await expect(page.getByRole("region", { name: "Danh sách thông báo", exact: true }).getByRole("alert")).toContainText("Không thể cập nhật thông báo.");
   await expect(detail.getByText("Chưa đọc", { exact: true })).toBeVisible();
-  await expect(detail.getByRole("button", { name: "Đánh dấu đã đọc", exact: true })).toBeEnabled();
   expect(api.writes()).toBe(1);
 });
+
+for (const role of ["admin", "moderator"] as const) {
+  test(`${role} opens a repair cost review at its role-specific profile`, async ({ page }) => {
+    const api = await setup(page, false, false, role);
+    const feed = page.getByRole("region", { name: "Danh sách thông báo", exact: true });
+    const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
+    await feed.getByRole("button", { name: /Chi phí sửa chữa cần xem xét/ }).click();
+    await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute(
+      "href",
+      role === "admin" ? "/admin/technical-requests/cost-reviews/00000000-0000-4000-8000-000000000001" : "/moderator/technical-requests/cost-reviews/00000000-0000-4000-8000-000000000001",
+    );
+    expect(api.writes()).toBe(1);
+  });
+}
 
 test("a failed list is an error with retry, not an empty inbox", async ({ page }) => {
   await setup(page, true);
@@ -156,13 +166,13 @@ for (const role of ["moderator", "owner"] as const) {
     await expect(feed.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(253, 248, 247)");
     if (role === "owner") {
       await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toHaveCount(0);
-      await expect(detail.getByRole("link", { name: "Mở chi tiết xem xét chi phí" })).toHaveAttribute("href", "/dashboard/repair-cost-reviews/00000000-0000-4000-8000-000000000001");
+      await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/dashboard/repair-cost-reviews/00000000-0000-4000-8000-000000000001");
       expect(api.alertReads()).toBe(0);
     } else {
       await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toBeVisible();
+      if (role === "moderator") await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/moderator/contracts/00000000-0000-4000-8000-000000000001");
     }
-    await page.screenshot({ path: `.playwright-cli/${role}-notifications-aligned.png` });
-    await detail.getByRole("button", { name: "Đánh dấu đã đọc", exact: true }).click();
+    await feed.locator("article").nth(2).getByRole("button").click();
     await expect(detail.getByText("Đã đọc", { exact: true })).toBeVisible();
     expect(api.writes()).toBe(1);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -177,6 +187,33 @@ for (const role of ["moderator", "owner"] as const) {
     await expect(page).toHaveURL(new RegExp(notificationHref + "$"));
   });
 }
+
+test("technician uses the management inbox without alerts and filters both read states", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  const api = await setup(page, false, false, "technician");
+  await expect(page).toHaveURL(/\/technician\/notifications$/);
+  const feed = page.getByRole("region", { name: "Danh sách thông báo", exact: true });
+  const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
+  await expect(feed.locator("article")).toHaveCount(10);
+  await expect(detail).toBeVisible();
+  expect((await detail.boundingBox())!.x).toBeGreaterThan((await feed.boundingBox())!.x + (await feed.boundingBox())!.width);
+  await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toHaveCount(0);
+  expect(api.alertReads()).toBe(0);
+  await feed.getByRole("button", { name: "Đã đọc", exact: true }).click();
+  await expect(feed.locator("article")).toHaveCount(6);
+  await feed.getByRole("button", { name: "Tất cả", exact: true }).click();
+  await feed.locator("article").first().getByRole("button").click();
+  await expect(detail.getByText("Đã đọc", { exact: true })).toBeVisible();
+  expect(api.writes()).toBe(1);
+  await feed.getByRole("button", { name: "Chưa đọc", exact: true }).click();
+  await expect(feed.locator("article")).toHaveCount(5);
+  await feed.getByRole("button", { name: "Đã đọc", exact: true }).click();
+  await expect(feed.locator("article")).toHaveCount(7);
+  await feed.getByRole("button", { name: "Chưa đọc", exact: true }).click();
+  await feed.getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true }).click();
+  await expect(feed.getByText("Không có thông báo phù hợp với bộ lọc.")).toBeVisible();
+  expect(api.writes()).toBe(2);
+});
 
 test("moderator alert deep link opens the new alert list directly and preserves acknowledgement", async ({ page }) => {
   const api = await setup(page, false, false, "moderator", "/moderator/notifications/alerts");

@@ -1,3 +1,8 @@
+import { useEffect, useState } from "react";
+import { ButtonBar } from "@/components/button/button-bar";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { PATH_TECHNICIAN } from "@/routes/path";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/table/data-table";
@@ -98,12 +103,15 @@ function technicianMachineId(sectionPath: string) {
 
 export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: string }) {
   const machineId = technicianMachineId(sectionPath);
+  const [ticketPage, setTicketPage] = useState(0);
+  const [requestPage, setRequestPage] = useState(0);
+  useEffect(() => { setTicketPage(0); setRequestPage(0); }, [machineId]);
   const tickets = useQuery({
-    queryKey: ["dolores", "technician", "maintenance-tickets", machineId],
-    queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({
+    queryKey: ["dolores", "technician", "maintenance-tickets", machineId, ticketPage],
+    queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({
       ...(machineId ? { machineId } : {}),
-      page: 0,
-      size: 100,
+      page: ticketPage,
+      size: 10,
     }, signal),
   });
   const requests = useQuery({
@@ -120,7 +128,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
     queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId!, signal),
     enabled: Boolean(machineId),
   });
-  const filteredTickets = (tickets.data ?? []).filter((ticket) => !machineId || ticket.machineId === machineId);
+  const filteredTickets = (tickets.data?.items ?? []).filter((ticket) => !machineId || ticket.machineId === machineId);
   const filteredRequests = (requests.data ?? []).filter((request) => !machineId || request.machineId === machineId);
   const title = machineId ? TECHNICIAN_MESSAGES.WORKFLOWS.HISTORY_DETAIL_TITLE : TECHNICIAN_MESSAGES.WORKFLOWS.HISTORY_TITLE;
   const isLoading = tickets.isPending || requests.isPending || (machineId && (machine.isPending || schedule.isPending));
@@ -158,32 +166,37 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
               rowKey={(ticket) => ticket.id ?? `${ticket.machineId}-${ticket.status}-${ticket.scheduledDueAt}`}
               emptyMessage="Chưa có phiếu bảo trì trong phạm vi được giao."
               columns={[
-                { key: "machine", header: "Mã máy", render: (ticket) => ticket.machineId ?? "—" },
-                { key: "status", header: "Trạng thái", render: (ticket) => ticket.status ? maintenanceStatusLabels[ticket.status] : "—" },
-                { key: "type", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype ?? ticket.source ?? "—" },
+                { key: "machine", header: "Mã máy", render: (ticket) => ticket.machineId ? <TruncatedId value={ticket.machineId} /> : "—" },
+                { key: "status", header: "Trạng thái", render: (ticket) => <StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{ticket.status ? maintenanceStatusLabels[ticket.status] : "—"}</StatusBadge> },
                 { key: "date", header: "Lịch / hoàn tất", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
+                { key: "action", header: "Thao tác", align: "right", render: ticket => ticket.id ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(ticket.id)}>Xem phiếu</ButtonBar> : "—" },
               ]}
-              variant="moderator"
+              variant="accounts"
+              headerVariant="admin"
             />
           ) : null}
+          <div className={shellStyles.pagination}><span>Trang {ticketPage + 1}</span><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={!tickets.data?.hasNext || tickets.isFetching} onClick={() => setTicketPage(value => value + 1)}>Trang sau</ButtonBar></div>
         </section>
         <section className={tableStyles.panel} aria-labelledby="technician-maintenance-requests-title">
           <h2 id="technician-maintenance-requests-title">Yêu cầu bảo trì và sửa chữa</h2>
           {requests.isSuccess ? (
             <DataTable
-              rows={filteredRequests}
+              rows={filteredRequests.slice(requestPage * 10, (requestPage + 1) * 10)}
               rowKey={(request) => request.id}
               emptyMessage="Chưa có yêu cầu liên quan trong phạm vi được giao."
               columns={[
-                { key: "id", header: "Mã yêu cầu", render: (request) => request.id },
-                { key: "machine", header: "Mã máy", render: (request) => request.machineId },
+                { key: "id", header: "Mã yêu cầu", render: (request) => <TruncatedId value={request.id} /> },
+                { key: "machine", header: "Mã máy", render: (request) => <TruncatedId value={request.machineId} /> },
                 { key: "type", header: "Loại", render: (request) => request.requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì định kỳ" },
-                { key: "status", header: "Trạng thái", render: (request) => requestStatusLabels[request.status] },
+                { key: "status", header: "Trạng thái", render: (request) => <StatusBadge variant="dot" status={request.status}>{requestStatusLabels[request.status]}</StatusBadge> },
                 { key: "description", header: "Mô tả", render: (request) => request.issueDescription?.trim() || "—" },
+                { key: "action", header: "Thao tác", align: "right", render: (request) => <ButtonBar rollingLabel href={`/technician/history/requests/${request.id}`}>Mở yêu cầu</ButtonBar> },
               ]}
-              variant="moderator"
+              variant="accounts"
+              headerVariant="admin"
             />
           ) : null}
+          <div className={shellStyles.pagination}><span>Trang {requestPage + 1}</span><ButtonBar disabled={requestPage === 0} onClick={() => setRequestPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={(requestPage + 1) * 10 >= filteredRequests.length} onClick={() => setRequestPage(value => value + 1)}>Trang sau</ButtonBar></div>
         </section>
       </section>
     </TechnicianShell>

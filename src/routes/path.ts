@@ -203,7 +203,6 @@ export const PATH_CUSTOMER =  {
   MAINTENANCE_DETAIL: (id: string) => CUSTOMER_ROOT + "/maintenance/" + encodeURIComponent(id),
   REPAIR_COST_REVIEW_DETAIL: (id: string) => CUSTOMER_ROOT + "/repair-cost-reviews/" + encodeURIComponent(id),
   BUYBACK: `${CUSTOMER_ROOT}/buyback`,
-  RECALLS: `${CUSTOMER_ROOT}/contracts/recall`,
   RECALL_DETAIL: (id: string) => `${CUSTOMER_ROOT}/contracts/recall/${encodeURIComponent(id)}`,
   BUYBACK_NEW: `${CUSTOMER_ROOT}/buyback/new`,
   BUYBACK_DOCUMENTS: `${CUSTOMER_ROOT}/buyback/documents`,

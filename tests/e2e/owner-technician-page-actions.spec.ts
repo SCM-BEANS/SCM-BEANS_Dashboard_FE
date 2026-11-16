@@ -1,13 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { expectPrimaryPageAction, pageActionBar } from "./page-actions-test-helpers";
 
-test("technician maintenance ticket links to its repair workflow from the action bar", async ({ page }) => {
+test("technician maintenance ticket keeps one repair link and omits duplicate handover panels", async ({ page }) => {
   const id = "f4000000-0000-4000-8000-000000000001";
   const claims = Buffer.from(JSON.stringify({ roles: ["technician"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
   await page.route("**/api/**", (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/maintenance-tickets/${id}`) ? { id, machineId: id, status: "IN_PROGRESS", repairCaseId: id } : [] }));
   await page.goto(`/technician/tasks/maintenance-tickets/${id}`);
-  await expect(pageActionBar(page).getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveAttribute("href", `/technician/tasks/repair-cases/${id}`);
+  await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveAttribute("href", `/technician/tasks/repair-cases/${id}`);
+  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toBeInViewport();
+  await expect(page.locator("footer").getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Bàn giao máy", exact: true })).toHaveCount(0);
 });
 
 test("recall depot review places approval last and rejection in the bar", async ({ page }) => {

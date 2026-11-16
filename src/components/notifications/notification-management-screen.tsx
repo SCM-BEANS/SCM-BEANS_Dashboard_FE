@@ -13,7 +13,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { ALERT_LEVEL_LABELS, getAlertPresentation } from "@/text/notification-inbox-messages";
 import styles from "@/components/notifications/notification-management.module.css";
 
-export function NotificationManagementScreen({ scope, initialSection = "notifications", scopeNotice }: { scope: "admin" | "moderator"; initialSection?: "notifications" | "alerts"; scopeNotice?: string }) {
+export function NotificationManagementScreen({ scope, initialSection = "notifications", scopeNotice }: { scope: "admin" | "moderator" | "technician"; initialSection?: "notifications" | "alerts"; scopeNotice?: string }) {
   const [draft, setDraft] = useState({ search: "", level: "", status: "" });
   const [filters, setFilters] = useState(draft);
   const [page, setPage] = useState(0);
@@ -22,6 +22,7 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
   const alerts = useQuery({
     queryKey: ["dolores", "alerts", authScopedQuerySubject(scope.toUpperCase())],
     queryFn: ({ signal }) => notificationsApi.listAlerts(signal),
+    enabled: scope !== "technician",
     retry: false,
   });
   const filtered = (alerts.data ?? []).map((alert) => {
@@ -36,8 +37,9 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
   const selected = alerts.isSuccess && selectedId !== null ? rows.find((alert) => alert.id === selectedId) ?? rows[0] : undefined;
 
   return <NotificationInbox scope={scope} variant="management" initialSection={initialSection} title="Thông báo"
-    description="Theo dõi thông báo hệ thống và các cảnh báo từ máy." showOwnerId={scope === "admin"} onRefreshExtra={() => alerts.refetch()}>
-    <div className={styles.workspace} data-detail={Boolean(selected)}>
+    description={scope === "technician" ? "Thông báo tài khoản và cập nhật công việc được giao cho bạn." : "Theo dõi thông báo hệ thống và các cảnh báo từ máy."}
+    showOwnerId={scope === "admin"} onRefreshExtra={scope === "technician" ? undefined : () => alerts.refetch()}>
+    {scope !== "technician" ? <div className={styles.workspace} data-detail={Boolean(selected)}>
       <section className={styles.feed} aria-labelledby="alerts-list-title">
         <div className={styles.panelHeading}><div><h2 id="alerts-list-title">Cảnh báo máy</h2><p>{alerts.isSuccess ? `${alerts.data.filter((alert) => !alert.acknowledged).length} chưa xác nhận · ${filtered.length} cảnh báo trong danh sách` : "Theo dõi cảnh báo và tình trạng xử lý của máy."}</p></div></div>
         {scopeNotice ? <p className={styles.scopeNote} role="note">{scopeNotice}</p> : null}
@@ -64,6 +66,6 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
         <dl className={styles.detailFacts}><div><dt>Máy liên quan</dt><dd><TruncatedId value={selected.machineId} /></dd></div>{selected.title !== selected.levelLabel ? <div><dt>Mức độ</dt><dd>{selected.levelLabel}</dd></div> : null}</dl>
         {!selected.acknowledged && ["HIGH", "CRITICAL"].includes(selected.level.toUpperCase()) ? <footer className={styles.detailActions}><AlertAcknowledgementButton key={selected.id} id={selected.id} level={selected.level} /></footer> : !selected.acknowledged ? <p className={styles.detailHint}>Cảnh báo này chỉ để theo dõi, không yêu cầu xác nhận.</p> : null}
       </aside> : null}
-    </div>
+    </div> : null}
   </NotificationInbox>;
 }

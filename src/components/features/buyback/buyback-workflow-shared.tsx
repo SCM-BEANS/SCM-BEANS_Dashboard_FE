@@ -215,7 +215,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     {
       key: "case-id",
       header: "Mã hồ sơ",
-      render: (item) => <TextLinkButton href={caseDetailsHref(item.id)}><TruncatedId value={item.id} /></TextLinkButton>,
+      render: (item) => role === "technician" ? <TruncatedId value={item.id} /> : <TextLinkButton href={caseDetailsHref(item.id)}><TruncatedId value={item.id} /></TextLinkButton>,
     },
     {
       key: "machine",
@@ -237,7 +237,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     {
       key: "status",
       header: "Trạng thái",
-      render: (item) => <span className={styles.buybackStatus}>{statusLabel(item)}</span>,
+      render: (item) => <StatusBadge variant="dot" status={item.status}>{statusLabel(item)}</StatusBadge>,
     },
     {
       key: "updated-at",
@@ -246,6 +246,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     },
   ];
   if (role === "technician") {
+    listColumns.push({ key: "open", header: "Thao tác", align: "right", render: (item) => <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Mở hồ sơ</ButtonBar> });
     listColumns.push({
       key: "accept",
       header: "",
@@ -310,6 +311,12 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         );
       },
     });
+  }
+  if (role === "technician") {
+    const acceptColumn = listColumns.pop()!;
+    const openColumn = listColumns.find((column) => column.key === "open")!;
+    const renderOpen = openColumn.render;
+    openColumn.render = (item, index) => <div className={styles.technicalRequestActions}>{renderOpen(item, index)}{acceptColumn.render(item, index)}</div>;
   }
   if (role === "operator" && (operatorRole === "ADMIN" || operatorRole === "MODERATOR")) {
     listColumns.push({
@@ -439,8 +446,8 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             columns={listColumns}
             rows={list.data?.items ?? []}
             rowKey={(item) => item.id}
-            variant={role === "owner" ? "customer" : operatorRole === "MODERATOR" ? "moderator" : "operations"}
-            {...(isWorkspace ? { headerVariant: "admin" as const } : {})}
+            variant={role === "technician" ? "accounts" : role === "owner" ? "customer" : operatorRole === "MODERATOR" ? "moderator" : "operations"}
+            headerVariant="admin"
             emptyMessage="Chưa có hồ sơ thu mua."
           />
           <div className={isWorkspace ? adminStyles.pagination : styles.technicalRequestActions}>
@@ -589,7 +596,7 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
 
 export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWorkflowController; children?: ReactNode }) {
   const { detailId, detailValid, detail, caseData, commonError } = workflow;
-  const isWorkspace = workflow.role !== "technician";
+  const isWorkspace = true;
   const ownerNames = useOwnerNames(workflow.role === "operator" && caseData ? [caseData.ownerId] : []);
   const assignees = caseData ? [
     { label: "Điều phối", id: caseData.responsibleModeratorId },
@@ -654,6 +661,7 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
           {isWorkspace ? <div className={adminStyles.detailBody}>
             <div className={`${adminStyles.card} ${adminStyles.mainContent}`}>
               {children}
+              {workflow.role === "technician" ? <EvidenceList resource="BUYBACK_CASE" parentId={caseData.id} title="Chứng từ thu mua" /> : null}
             </div>
             <aside className={`${adminStyles.card} ${adminStyles.sidebar}`} aria-label="Thông tin hồ sơ">
               <section><h3>Người phụ trách</h3><dl className={adminStyles.facts}>

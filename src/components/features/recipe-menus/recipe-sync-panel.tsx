@@ -41,7 +41,7 @@ function menuError(error: unknown) {
   return getRecipeApiErrorMessage(error, "mutation");
 }
 
-export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetrySync, syncing = false, onBusyChange }: { machineId: string; subject: string; onChanged?: () => Promise<unknown>; onRetrySync?: () => void; syncing?: boolean; onBusyChange?: (busy: boolean) => void }) {
+export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetrySync, syncing = false, onBusyChange, hideForbidden = false }: { machineId: string; subject: string; onChanged?: () => Promise<unknown>; onRetrySync?: () => void; syncing?: boolean; onBusyChange?: (busy: boolean) => void; hideForbidden?: boolean }) {
   const client = useQueryClient();
   const [selectedMenu, setSelectedMenu] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,6 +90,7 @@ export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetryS
       locked.current = false; setBusy(false); onBusyChange?.(false);
     }
   };
+  if (hideForbidden && (isStatus(current.error, 403) || isStatus(menus.error, 403))) return null;
   return <section className={styles.recipeMenuDetail} aria-label="Menu đang gán cho máy">
     <div className={styles.panelHeading}><h3>Menu của máy</h3><ButtonBar disabled={busy || current.isFetching} onClick={() => void refresh()}>Kiểm tra menu</ButtonBar></div>
     {current.isPending ? <p role="status">Đang tải menu của máy…</p> : null}

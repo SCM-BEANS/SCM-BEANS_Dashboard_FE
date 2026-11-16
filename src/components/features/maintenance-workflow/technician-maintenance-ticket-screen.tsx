@@ -3,9 +3,9 @@ import { useState, type FormEvent } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { ButtonBar } from "@/components/button/button-bar";
 import { buildTechnicianMaintenanceTicketActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
-import { MaintenanceCustodyStepper } from "@/components/features/repair-workflow/maintenance-custody-stepper";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MaintenanceTicketIdSchema, type MaintenanceTicket } from "@/schema/machines.schema";
@@ -79,18 +79,19 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
     }
     recordParts.mutate();
   };
-  const canStart = ticket?.status === "ASSIGNED" && !ticket.repairCaseId;
   const canRecordParts = ticket?.status === "IN_PROGRESS" && !ticket.repairCaseId;
 
   return (
     <section className={styles.pageContent} aria-labelledby="technician-maintenance-ticket-title">
-      <BackButtonHeading
+      <div className={styles.pageHeader}><BackButtonHeading
         back={{ label: "Danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
         title="Chi tiết phiếu bảo trì"
         titleId="technician-maintenance-ticket-title"
-        description="Cập nhật tiến độ và vật tư cho ticket được giao."
+        description="Cập nhật tiến độ và vật tư cho phiếu bảo trì được giao."
         className={styles.pageHeading}
       />
+      {ticket?.repairCaseId ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Mở hồ sơ sửa chữa</ButtonBar> : null}
+      </div>
       {!validId ? <p className={styles.notice} role="alert">Mã ticket bảo trì không hợp lệ.</p> : null}
       {validId && ticketQuery.isPending ? <p className={styles.notice} role="status">Đang tải ticket…</p> : null}
       {validId && ticketQuery.isError ? (
@@ -101,7 +102,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
       ) : null}
       {ticket ? (
         <>
-          <PageActions actions={ticket.repairCaseId ? [{ id: "open-repair-case", label: "Mở hồ sơ sửa chữa", variant: "secondary", href: PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId) }] : buildTechnicianMaintenanceTicketActions({
+          <PageActions actions={ticket.repairCaseId ? [] : buildTechnicianMaintenanceTicketActions({
             role: "TECHNICIAN",
             status: ticket.status ?? "",
             hasRepairCase: Boolean(ticket.repairCaseId),
@@ -112,9 +113,9 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
             onStart: () => startWork.mutate(),
           })} />
           <dl className={styles.detailGrid}>
-            <div><dt>Mã ticket</dt><dd className={styles.code}>{ticket.id ?? "—"}</dd></div>
+            <div><dt>Mã phiếu</dt><dd className={styles.code}>{ticket.id ?? "—"}</dd></div>
             <div><dt>Thiết bị</dt><dd className={styles.code}>{ticket.machineId ?? "—"}</dd></div>
-            <div><dt>Trạng thái</dt><dd><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
             <div><dt>Nguồn</dt><dd>{ticket.source ?? "—"}</dd></div>
             <div><dt>Lịch dự kiến</dt><dd>{formatDateTime(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline)}</dd></div>
             <div><dt>Kỹ thuật viên được giao</dt><dd className={styles.code}>{ticket.assignedTechnicianId ?? "—"}</dd></div>
@@ -122,18 +123,6 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
             <div><dt>Chi phí vật tư</dt><dd>{ticket.partsCost ?? "Chưa ghi nhận"}</dd></div>
           </dl>
           {ticket.actionableInstructions ? <p className={styles.notice}>{ticket.actionableInstructions}</p> : null}
-          {ticket.repairCaseId ? (
-            <div className={styles.notice}>
-              <p>Ticket này thuộc quy trình RepairCase; hãy dùng timeline và các bước của hồ sơ sửa chữa.</p>
-              <a className={styles.link} href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Mở hồ sơ sửa chữa</a>
-            </div>
-          ) : null}
-          {canStart ? (
-            <section className={styles.panel}>
-              <h2>Bắt đầu công việc</h2>
-              <p>Trạng thái chuyển sang đang thực hiện sau khi server xác nhận.</p>
-            </section>
-          ) : null}
           {canRecordParts ? (
             <form id="maintenance-ticket-parts-form" className={styles.panel} onSubmit={submitParts}>
               <h2>Ghi nhận vật tư</h2>
@@ -151,9 +140,6 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
               <button className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Gửi đề xuất chi phí</button>
               <p className={styles.hint} id="maintenance-evidence-block">Cần API lưu trữ minh chứng riêng tư được liên kết với ticket.</p>
             </div>
-          ) : null}
-          {ticket.maintenanceRequestId ? (
-            <MaintenanceCustodyStepper requestId={ticket.maintenanceRequestId} role="technician" initialTicket={ticket} />
           ) : null}
         </>
       ) : null}

@@ -33,10 +33,11 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
 
   return (
     <BuybackWorkflowLayout
+      className={styles.operatorWorkspace}
       title="Đánh giá máy thu mua"
       description={caseId
         ? "Ghi nhận tình trạng và giá trị thẩm định cho hồ sơ được giao cho bạn."
-        : "Danh sách chỉ gồm hồ sơ buyback được Dolores giao cho tài khoản Technician hiện tại."}
+        : "Kiểm tra, định giá và tân trang các máy được phân công."}
       back={caseId ? { label: "Danh sách đánh giá", fallbackHref: listHref } : null}
       actionBarBackHref={caseId ? listHref : PATH_TECHNICIAN.TASKS}
       actionBarBackLabel={caseId ? "Về danh sách đánh giá" : "Về công việc"}

@@ -3,6 +3,7 @@ import { RepairCaseDetailScreen } from "@/components/features/repair-workflow/re
 import { PATH_TECHNICIAN } from "@/routes/path";
 import { RepairCaseIdSchema } from "@/schema/machines.schema";
 import { TechnicianShell } from "@/pages/technician/technician-shell";
+import styles from "@/pages/technician/technician-shell.module.css";
 
 type TechnicianRepairCasePageProps = { caseId: string };
 
@@ -17,7 +18,7 @@ export default function TechnicianRepairCasePage({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   return (
     <TechnicianShell pageTitle="Chi tiết hồ sơ sửa chữa">
-      <RepairCaseDetailScreen caseId={caseId} role="technician" listHref={PATH_TECHNICIAN.TASKS} />
+      <div className={styles.pageContent}><RepairCaseDetailScreen caseId={caseId} role="technician" listHref={PATH_TECHNICIAN.TASKS} /></div>
     </TechnicianShell>
   );
 }

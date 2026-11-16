@@ -86,8 +86,8 @@
   min-height: 100%;
   flex-direction: column;
   gap: 22px;
-  padding: 0 32px 32px;
-  margin: -4px auto 0;
+  padding: 20px 32px 40px;
+  margin: 0 auto;
 }
 
 .pageHeading {
@@ -98,7 +98,7 @@
 
 .pageHeading h1 {
   margin: 0;
-  font-size: 27px;
+  font-size: 28px;
   line-height: 1.4;
 }
 
@@ -381,7 +381,7 @@
 
   .pageContent {
     gap: 16px;
-    padding: 0 16px 80px;
+    padding: 16px 16px 80px;
   }
 
   .pageHeading h1 {
@@ -396,7 +396,7 @@
 
 @media (max-width: 600px) {
   .pageContent {
-    padding: 0 14px 80px;
+    padding: 16px 14px 80px;
   }
 
   .pageHeading h1 {
@@ -405,3 +405,19 @@
 }
 
 .main { padding-bottom: var(--action-bar-height, 0px); }
+
+.pageContent { min-width: 0; font-size: 14px; line-height: 1.55; }
+.pageHeading h1 { overflow-wrap: anywhere; }
+.machineCheckPanel { padding: 22px; }
+.machineDetailField strong { font-weight: 600; font-size: 14px; }
+.machineDetailField span { font-size: 13px; }
+.machineDetailGrid { gap: 20px 28px; }
+.filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 18px 0; }
+.filters input, .filters select { min-height: 44px; min-width: 0; padding: 10px 14px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
+.filters input { flex: 1 1 240px; }
+.filters select { flex: 0 1 240px; }
+.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 18px; color: #706561; }
+.secondaryDetails { margin-top: 22px; }
+.secondaryDetails summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
+.secondaryDetails[open] summary { margin-bottom: 14px; }
+@media (max-width: 600px) { .machineCheckPanel { padding: 16px; } .filters select { flex: 1 1 100%; } }

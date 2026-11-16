@@ -175,21 +175,12 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
   const exactScreen = screens[sectionPath];
   if (exactScreen) return { ...exactScreen, back: getCustomerWorkflowBack(sectionPath) };
 
-  if (sectionPath === "contracts/recall") {
-    return {
-      title: "Thu hồi máy",
-      description: "Xác nhận bàn giao máy và theo dõi trạng thái thu hồi hợp đồng.",
-      reason: "Lệnh thu hồi được lọc theo Owner đã đăng nhập.",
-      back: { label: "Hợp đồng", fallbackHref: PATH_CUSTOMER.CONTRACTS },
-    };
-  }
-
   if (/^contracts\/recall\/[0-9a-f-]{36}$/i.test(sectionPath)) {
     return {
       title: "Chi tiết thu hồi máy",
       description: "Xác nhận bàn giao evidence cho lệnh thu hồi trong phạm vi Owner.",
       reason: "Dolores kiểm tra quyền Owner cho từng lệnh thu hồi.",
-      back: { label: "Danh sách thu hồi", fallbackHref: PATH_CUSTOMER.RECALLS },
+      back: { label: "Hợp đồng", fallbackHref: PATH_CUSTOMER.CONTRACTS },
     };
   }
 

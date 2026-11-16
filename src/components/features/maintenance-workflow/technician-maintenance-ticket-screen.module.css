@@ -1,23 +1,28 @@
-.pageContent { display: grid; min-width: 0; gap: 18px; }
+.pageContent { display: flex; flex-direction: column; width: min(100%, 1440px); margin: 0 auto; padding: 20px 32px 40px; min-width: 0; gap: 22px; font-size: 14px; line-height: 1.55; }
 .pageHeading { min-width: 0; }
+.pageHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .detailGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
   margin: 0;
+  padding: 22px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
 }
-.detailGrid > div, .panel, .notice {
+.panel, .notice {
   min-width: 0;
   padding: 16px;
   border: 1px solid #e9e2dc;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
 }
 .detailGrid dt { color: #706561; font-size: 13px; }
 .detailGrid dd { overflow-wrap: anywhere; margin: 6px 0 0; color: #302927; font-size: 14px; font-weight: 600; }
 .code { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
-.panel { display: grid; justify-items: start; gap: 10px; max-width: 640px; }
+.panel { display: grid; justify-items: start; gap: 10px; width: 100%; }
 .panel h2, .notice h2 { margin: 0; color: #302927; font-size: 17px; }
 .panel p, .notice p { margin: 0; color: #514843; font-size: 14px; line-height: 1.55; }
 .panel label { color: #514843; font-size: 14px; font-weight: 600; }
@@ -50,4 +55,13 @@
 .hint { color: #706561 !important; font-size: 12px !important; }
 .link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .button:focus-visible, .link:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
-@media (max-width: 600px) { .pageContent { gap: 14px; } .panel, .notice { padding: 14px; } }
+@media (max-width: 600px) { .pageContent { padding: 16px 14px 80px; gap: 14px; } .panel, .notice { padding: 14px; } }
+
+.detailGrid > div { min-width: 0; }
+.pageHeading h1 { font-size: 28px; margin: 0; overflow-wrap: anywhere; }
+.pageHeading p { color: #706561; font-size: 14px; line-height: 1.55; }
+.code { font-family: inherit; font-size: 13px; }
+.panel, .notice { padding: 22px; }
+.panel textarea, .panel input { width: 100%; }
+.panel textarea { min-height: 100px; resize: vertical; }
+@media (max-width: 600px) { .detailGrid { grid-template-columns: minmax(0, 1fr); padding: 16px; } .panel, .notice { padding: 16px; } }

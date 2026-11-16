@@ -2,7 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 
 async function setup(page: Page, role = "admin", failRead = false) {
   const subject = "00000000-0000-4000-8000-000000000001";
-  const items = Array.from({ length: 3 }, (_, index) => ({ id: `00000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`, title: `Thông báo mới ${index + 1}`, message: `Nội dung đầy đủ của thông báo ${index + 1}.`, type: index === 2 ? "MAINTENANCE" : "CONTRACT_EXPIRING", read: false, createdAt: `2026-11-14T0${index + 1}:00:00Z` }));
+  const contractId = "00000000-0000-4000-8000-000000000009";
+  const items = Array.from({ length: 3 }, (_, index) => ({ id: `00000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`, title: `Thông báo mới ${index + 1}`, message: index === 2 ? `Machine ${subject} is online but not reporting valid GPS coordinates.` : `Hợp đồng ${contractId} sẽ hết hạn vào 2026-11-22.`, type: index === 2 ? "MACHINE_GPS_SIGNAL_MISSING" : "CONTRACT_EXPIRING", read: false, createdAt: `2026-11-14T0${index + 1}:00:00Z` }));
   const writes: string[] = [];
   await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: [role], sub: subject })).toString("base64url")}.signature`, url: test.info().project.use.baseURL as string }]);
   await page.route("**/api/**", async (route) => {
@@ -24,7 +25,7 @@ async function setup(page: Page, role = "admin", failRead = false) {
   return { writes, add: () => { const index = items.length; items.push({ ...items[0], id: `00000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`, title: `Thông báo mới ${index + 1}`, read: false, createdAt: "2026-11-14T09:00:00Z" }); } };
 }
 
-test("drawer opens without read writes; clicking and filtered mark-all update only intended records", async ({ page }) => {
+test("opening unread records marks them read and exposes only evidence-backed profile links", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   const api = await setup(page);
   const bell = page.getByRole("button", { name: /Danh sách thông báo: .*chưa đọc/ }).first();
@@ -38,12 +39,17 @@ test("drawer opens without read writes; clicking and filtered mark-all update on
   expect(api.writes).toHaveLength(0);
   await drawer.getByRole("button", { name: /Thông báo mới 2/ }).click();
   await expect(drawer.getByText("2 chưa đọc", { exact: true })).toBeVisible();
+  await expect(drawer.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000009");
+  expect(api.writes).toHaveLength(1);
   await drawer.getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true }).click();
   await expect(drawer.getByText("1 chưa đọc", { exact: true })).toBeVisible();
   expect(api.writes).toHaveLength(2);
   await drawer.getByRole("button", { name: "Tất cả", exact: true }).click();
   await expect(drawer.getByRole("img", { name: "Chưa đọc", exact: true })).toHaveCount(1);
-  await page.screenshot({ path: ".playwright-cli/notification-drawer-desktop.png" });
+  await drawer.getByRole("button", { name: /chưa gửi được vị trí GPS/ }).click();
+  await expect(drawer.getByText("0 chưa đọc", { exact: true })).toBeVisible();
+  await expect(drawer.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/machines/00000000-0000-4000-8000-000000000001");
+  expect(api.writes).toHaveLength(3);
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
   await expect(bell).toBeFocused();
@@ -60,7 +66,6 @@ test("new notifications create one toast, auto-dismiss without read changes, and
   await expect(toasts.locator("article")).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Danh sách thông báo: 4 chưa đọc", exact: true }).first()).toBeVisible();
   await page.clock.runFor(250);
-  await page.screenshot({ path: ".playwright-cli/notification-toast-desktop.png" });
   await page.clock.runFor(3100);
   await expect(toasts).toHaveCount(0);
   expect(api.writes).toHaveLength(0);
@@ -94,7 +99,7 @@ for (const role of ["moderator", "owner"]) test(`${role} drawer fits mobile, set
   const api = await setup(page, role, true);
   await page.getByRole("button", { name: /Danh sách thông báo:/ }).last().click();
   const drawer = page.getByRole("dialog", { name: "Thông báo", exact: true });
-  await drawer.getByRole("button", { name: /Thông báo mới 3/ }).click();
+  await drawer.getByRole("button", { name: /chưa gửi được vị trí GPS/ }).click();
   await expect(drawer.getByRole("alert")).toContainText("Chưa cập nhật được trạng thái");
   await expect(drawer.getByRole("img", { name: "Chưa đọc", exact: true })).toHaveCount(3);
   await drawer.getByRole("button", { name: "Cài đặt thông báo", exact: true }).click();
@@ -107,7 +112,6 @@ for (const role of ["moderator", "owner"]) test(`${role} drawer fits mobile, set
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.width).toBeLessThanOrEqual(390);
   expect(await drawer.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
-  await page.screenshot({ path: `.playwright-cli/notification-drawer-${role}-mobile.png` });
   await page.reload();
   await page.getByRole("button", { name: /Danh sách thông báo:/ }).last().click();
   await drawer.getByRole("button", { name: "Cài đặt thông báo", exact: true }).click();

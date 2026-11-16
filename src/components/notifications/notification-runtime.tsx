@@ -1,16 +1,57 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { notificationsApi } from "@/apis/notifications.api";
 import type { Notification } from "@/schema/notifications.schema";
 import { authScopedQuerySubject } from "@/lib/query-subject";
+import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { formatNotificationDate, getNotificationPresentation } from "@/text/notification-inbox-messages";
 import type { NotificationScope } from "./notification-inbox";
 import { NotificationTypeIcon } from "./notification-type-icon";
 import { playNotificationSound, prepareNotificationSound, useNotificationPreferences } from "./notification-preferences";
 import styles from "./notification-center.module.css";
+
+export function useMarkNotificationAsRead(scope: NotificationScope) {
+  const client = useQueryClient();
+  const subject = authScopedQuerySubject(scope === "customer" ? "OWNER" : scope.toUpperCase());
+  const queryKey = ["notifications", scope, subject] as const;
+  return useMutation({
+    mutationFn: (id: string) => notificationsApi.markAsRead(id),
+    onSuccess: () => client.invalidateQueries({ queryKey }),
+    retry: false,
+  });
+}
+
+export function getNotificationRecordHref(scope: NotificationScope, notification: Notification) {
+  const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+  if (notification.type === "CONTRACT_EXPIRING") {
+    const id = new RegExp(`Hợp đồng\\s+(${uuid})`, "i").exec(notification.message)?.[1];
+    if (!id) return null;
+    if (scope === "admin") return PATH_ADMIN.CONTRACT_DETAIL(id);
+    if (scope === "moderator") return PATH_MODERATOR.CONTRACT_DETAIL(id);
+    if (scope === "customer") return PATH_CUSTOMER.CONTRACT_DETAIL(id);
+    return null;
+  }
+  if (notification.type === "REPAIR_COST_REVIEW") {
+    const id = new RegExp(`Review ID:\\s*(${uuid})`, "i").exec(notification.message)?.[1];
+    if (!id) return null;
+    if (scope === "admin") return PATH_ADMIN.TECHNICAL_COST_REVIEW_DETAIL(id);
+    if (scope === "moderator") return PATH_MODERATOR.TECHNICAL_COST_REVIEW_DETAIL(id);
+    if (scope === "customer") return PATH_CUSTOMER.REPAIR_COST_REVIEW_DETAIL(id);
+    return null;
+  }
+  if (notification.type === "MACHINE_GPS_SIGNAL_MISSING") {
+    const id = new RegExp(`Machine\\s+(${uuid})`, "i").exec(notification.message)?.[1];
+    if (!id) return null;
+    if (scope === "admin") return PATH_ADMIN.MACHINE_DETAIL(id);
+    if (scope === "moderator") return PATH_MODERATOR.MACHINE_DETAIL(id);
+    if (scope === "customer") return PATH_CUSTOMER.MACHINE_DETAIL(id);
+    return PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(id);
+  }
+  return null;
+}
 
 function NotificationToast({ notification, dismiss }: { notification: Notification; dismiss: () => void }) {
   const [paused, setPaused] = useState(false);

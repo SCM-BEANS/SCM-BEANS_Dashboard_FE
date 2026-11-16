@@ -78,14 +78,7 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
     return <RecallWorkOrdersScreen
       role="owner"
       workOrderId={recallDetail[1]}
-      backHref={PATH_CUSTOMER.RECALLS}
-    />;
-  }
-  if (sectionPath === "contracts/recall") {
-    return <RecallWorkOrdersScreen
-      role="owner"
       backHref={PATH_CUSTOMER.CONTRACTS}
-      onOpen={(id) => void router.push(PATH_CUSTOMER.RECALL_DETAIL(id))}
     />;
   }
   if (sectionPath === "maintenance") return <OwnerMaintenanceScreen />;

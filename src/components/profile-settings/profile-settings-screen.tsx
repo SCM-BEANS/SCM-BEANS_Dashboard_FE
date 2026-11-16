@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, CheckCircle2, Fingerprint, Mail, Phone, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { CalendarDays, CheckCircle2, Fingerprint, Mail, Phone, RefreshCw, UserRound, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
 import { profilesApi } from "@/apis/profiles.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -21,8 +21,8 @@ const profileStatusLabels: Record<Profile["status"], string> = {
 const profileRoleLabels: Record<string, string> = {
   ADMIN: "Admin",
   MODERATOR: "Moderator",
-  OWNER: "Owner",
-  TECHNICIAN: "Technician",
+  OWNER: "Khách hàng",
+  TECHNICIAN: "Kỹ thuật viên",
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -46,6 +46,16 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
   const queryClient = useQueryClient();
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [phone, setPhone] = useState("");
+  const [activeSection, setActiveSection] = useState("profile-personal-title");
+  useEffect(() => {
+    const syncSection = () => {
+      const section = window.location.hash.slice(1);
+      setActiveSection(["profile-personal-title", "profile-contact-title", "profile-account-title"].includes(section) ? section : "profile-personal-title");
+    };
+    syncSection();
+    window.addEventListener("hashchange", syncSection);
+    return () => window.removeEventListener("hashchange", syncSection);
+  }, []);
   const profile = useQuery({
     queryKey: ["dolores", "profiles", "me"],
     queryFn: ({ signal }) => profilesApi.getCurrent(signal),
@@ -74,7 +84,17 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
         className={styles.pageHeading}
       />
 
-      <section className={styles.profileCard} aria-labelledby="profile-settings-heading">
+      <div className={styles.settingsLayout}>
+        <nav className={styles.sectionNav} aria-label="Các mục hồ sơ">
+          <h2>Hồ sơ của tôi</h2>
+          {[
+            { id: "profile-personal-title", label: "Thông tin cá nhân", icon: UserRound },
+            { id: "profile-contact-title", label: "Thông tin liên hệ", icon: Phone },
+            { id: "profile-account-title", label: "Tài khoản", icon: Fingerprint },
+          ].map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={activeSection === id ? "location" : undefined} onClick={() => setActiveSection(id)}><Icon size={17} aria-hidden="true" />{label}</a>)}
+        </nav>
+      <section className={styles.profileCard} aria-labelledby="profile-details-title">
+        <h2 id="profile-details-title" className={styles.cardTitle}>Hồ sơ của tôi</h2>
         {profile.isPending ? <p className={styles.loading} role="status">Đang tải hồ sơ…</p> : null}
         {profile.isError ? (
           <div className={styles.notice} role="alert">
@@ -92,7 +112,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                 {getInitials(currentProfile.fullName, currentProfile.email)}
               </div>
               <div className={styles.identity}>
-                <h2 id="profile-details-title">{currentProfile.fullName || "Chưa cập nhật họ tên"}</h2>
+                <h3>{currentProfile.fullName || "Chưa cập nhật họ tên"}</h3>
                 <p className={styles.identityEmail}>{currentProfile.email || "Chưa có email"}</p>
                 <div className={styles.identityBadges}>
                   {currentProfile.roles.length ? currentProfile.roles.map((role) => (
@@ -100,25 +120,29 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                       {profileRoleLabels[role] ?? role}
                     </span>
                   )) : <span className={styles.roleBadge}>Chưa có vai trò</span>}
-                  <StatusBadge status={currentProfile.status}>{profileStatusLabels[currentProfile.status]}</StatusBadge>
-                  <span className={currentProfile.emailVerified ? styles.verifiedBadge : styles.unverifiedBadge}>
-                    {currentProfile.emailVerified ? <CheckCircle2 aria-hidden="true" size={15} /> : null}
-                    {currentProfile.emailVerified ? "Email đã xác minh" : "Email chưa xác minh"}
-                  </span>
+                  <StatusBadge variant="dot" status={currentProfile.status}>{profileStatusLabels[currentProfile.status]}</StatusBadge>
                 </div>
               </div>
             </header>
 
             <div className={styles.profileSections}>
+              <section className={styles.detailSection} aria-labelledby="profile-personal-title">
+                <div className={styles.sectionHeading}><h3 id="profile-personal-title">Thông tin cá nhân</h3></div>
+                <dl className={styles.detailGrid}>
+                  <div className={styles.detailItem}><dt>Họ và tên</dt><dd>{currentProfile.fullName || "Chưa cập nhật"}</dd></div>
+                  <div className={styles.detailItem}><dt>Vai trò</dt><dd>{currentProfile.roles.map(role => profileRoleLabels[role] ?? role).join(", ") || "Chưa có vai trò"}</dd></div>
+                </dl>
+              </section>
               <section className={styles.detailSection} aria-labelledby="profile-contact-title">
                 <div className={styles.sectionHeading}>
                   <h3 id="profile-contact-title">Thông tin liên hệ</h3>
-                  <p>Email được đồng bộ từ hệ thống tài khoản; số điện thoại được quản lý trên Dolores.</p>
+                  {canUpdatePhone && !isEditingPhone ? <ButtonBar type="button" onClick={() => { updatePhone.reset(); setPhone(currentProfile.phone ?? ""); setIsEditingPhone(true); }}><Pencil size={14} aria-hidden="true" />Chỉnh sửa</ButtonBar> : null}
                 </div>
                 <dl className={styles.detailGrid}>
                   <div className={styles.detailItem}>
                     <dt><span className={styles.detailIcon}><Mail aria-hidden="true" size={19} /></span>Email</dt>
                     <dd>{currentProfile.email || "Chưa có email"}</dd>
+                    <p className={styles.phoneHelp}>{currentProfile.emailVerified ? <CheckCircle2 size={13} aria-hidden="true" /> : null}{currentProfile.emailVerified ? "Email đã xác minh" : "Email chưa xác minh"}</p>
                   </div>
                   <div className={styles.detailItem}>
                     <dt><span className={styles.detailIcon}><Phone aria-hidden="true" size={19} /></span>Số điện thoại</dt>
@@ -159,21 +183,9 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
                       ) : (
                         <>
                             <span>{currentProfile.phone || "Chưa cập nhật"}</span>
-                          {canUpdatePhone ? (
-                            <button
-                              className={styles.editPhoneButton}
-                              type="button"
-                              onClick={() => {
-                                updatePhone.reset();
-                                setPhone(currentProfile.phone ?? "");
-                                setIsEditingPhone(true);
-                              }}
-                            >
-                              Cập nhật số điện thoại
-                            </button>
-                          ) : (
+                          {!canUpdatePhone ? (
                             <p className={styles.phoneHelp}>Liên hệ Admin để cập nhật số điện thoại.</p>
-                          )}
+                          ) : null}
                           {updatePhone.isSuccess ? <p className={styles.phoneSuccess} role="status">Đã cập nhật số điện thoại.</p> : null}
                         </>
                       )}
@@ -185,7 +197,6 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
               <section className={styles.detailSection} aria-labelledby="profile-account-title">
                 <div className={styles.sectionHeading}>
                   <h3 id="profile-account-title">Thông tin tài khoản</h3>
-                  <p>Mã định danh và lịch sử hồ sơ của bạn.</p>
                 </div>
                 <dl className={styles.detailGrid}>
                   <div className={styles.detailItem}>
@@ -206,6 +217,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
           </>
         ) : null}
       </section>
+      </div>
     </div>
   );
 }

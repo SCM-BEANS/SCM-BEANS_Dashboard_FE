@@ -3,8 +3,10 @@ import { useState } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY, technicianWorkItemsApi } from "@/apis/technician-work-items.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { TechnicianWorkItem, TechnicianWorkType } from "@/schema/technician-work-items.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
@@ -26,12 +28,13 @@ type AssignedTask = {
   locationAddress: string | null;
   summary: string | null;
   status: string;
+  statusCode: string;
   dateLabel: string;
   date: string | null;
   href?: string;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 const messages = T.WORKFLOWS;
 const categoryLabels: Record<TaskCategory, string> = {
   installation: messages.FILTER_INSTALLATION,
@@ -138,6 +141,7 @@ function createTasks(items: TechnicianWorkItem[]): AssignedTask[] {
       locationAddress: item.locationAddress ?? null,
       summary: item.summary ?? null,
       status: formatStatus(item.status),
+      statusCode: item.status,
       dateLabel: item.scheduledAt ? (category === "recall" ? "Lịch nhận" : "Dự kiến") : "Cập nhật",
       date: item.scheduledAt ?? item.createdAt ?? null,
       href: taskDetailPath(item),
@@ -151,7 +155,7 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
       <div className={styles.taskContent}>
         <div className={styles.taskLabels}>
           <span className={styles.categoryBadge}>{categoryLabels[task.category]}</span>
-          <span className={styles.statusBadge}>{task.status}</span>
+          <StatusBadge variant="dot" status={task.statusCode} tone={task.statusCode === "RESOLVED" ? "success" : undefined}>{task.status}</StatusBadge>
         </div>
         <p className={styles.taskMachine}>
           Máy <code title={task.machineId}>{task.serialNumber || shortReference(task.machineId)}</code>
@@ -160,7 +164,7 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
         {task.summary ? <p className={styles.taskSummary}>{task.summary}</p> : null}
         {!compact && (task.ownerName || task.locationName || task.locationAddress) ? (
           <p className={styles.taskMeta}>
-            {task.ownerName ? <span>Owner: {task.ownerName}</span> : null}
+            {task.ownerName ? <span>Khách hàng: {task.ownerName}</span> : null}
             {task.locationName ? <span>{task.locationName}</span> : null}
             {task.locationAddress ? <span>{task.locationAddress}</span> : null}
           </p>
@@ -184,7 +188,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [page, setPage] = useState(0);
   const tasksQuery = useQuery({
-    queryKey: [...TECHNICIAN_WORK_ITEMS_QUERY_KEY, page, PAGE_SIZE, filter],
+    queryKey: [...TECHNICIAN_WORK_ITEMS_QUERY_KEY, authScopedQuerySubject("TECHNICIAN"), page, PAGE_SIZE, filter],
     queryFn: ({ signal }) => technicianWorkItemsApi.list({
       page,
       size: PAGE_SIZE,
@@ -250,36 +254,22 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
       <section className={styles.panel} aria-labelledby="technician-task-list-title">
         <div className={styles.panelHeading}>
           <h2 id="technician-task-list-title">{filter === "all" ? "Danh sách công việc" : categoryLabels[filter]}</h2>
-          <span className={styles.totalCount}>{tasksQuery.data ? tasksQuery.data.items.length : "—"}</span>
+          <span className={styles.helperText}>{tasksQuery.data ? tasksQuery.data.items.length : "—"} công việc trên trang · 10 việc mỗi trang</span>
         </div>
         {tasksQuery.isError ? <div className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)} <ButtonBar type="button" onClick={() => void refreshTasks()}>{messages.TASKS_RETRY}</ButtonBar></div> : null}
         {isLoading ? <p className={styles.loading} role="status">Đang tải công việc…</p> : null}
         {tasksQuery.data ? (
           <DataTable
-            variant="standard"
+            variant="accounts"
+            headerVariant="admin"
             rows={tasks}
             rowKey={(task) => task.key}
-            emptyMessage={tasksQuery.isError ? undefined : "Không có việc trong mục này."}
+            emptyMessage={tasksQuery.isError ? undefined : "Chưa có công việc đang mở được phân công cho bạn. Công việc đã hoàn tất được lưu trong lịch sử máy hoặc danh sách thu hồi."}
             columns={[
               {
-                key: "type",
-                header: "Loại việc",
-                render: (task) => <span className={styles.categoryBadge}>{categoryLabels[task.category]}</span>,
-              },
-              {
-                key: "machine",
-                header: "Máy",
-                render: (task) => (
-                  <div className={styles.tableCellStack}>
-                    <strong>{task.serialNumber || shortReference(task.machineId)}</strong>
-                    {task.machineType ? <span>{task.machineType === "SMART_IOT" ? "Smart IoT" : task.machineType}</span> : null}
-                  </div>
-                ),
-              },
-              {
                 key: "work",
-                header: "Công việc",
-                render: (task) => task.summary || "—",
+                header: "Công việc / máy",
+                render: (task) => <div className={styles.tableCellStack}><strong>{categoryLabels[task.category]} · {task.serialNumber || shortReference(task.machineId)}</strong><span className={styles.tableSubtext}>{task.summary || task.modelName || `Mã việc ${shortReference(task.id)}`}</span></div>,
               },
               {
                 key: "owner",
@@ -289,7 +279,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
               {
                 key: "status",
                 header: "Trạng thái",
-                render: (task) => <span className={styles.statusBadge}>{task.status}</span>,
+                render: (task) => <StatusBadge variant="dot" status={task.statusCode} tone={task.statusCode === "RESOLVED" ? "success" : undefined}>{task.status}</StatusBadge>,
               },
               {
                 key: "schedule",
@@ -316,9 +306,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
             {tasksQuery.data.hasNext ? " · còn trang tiếp theo" : ""}
           </p>
         ) : null}
-      </section>
-
-      <div className={styles.panel}>
+      <div className={styles.pagination}>
         <ButtonBar type="button" disabled={page === 0 || isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>
           Trang trước
         </ButtonBar>
@@ -326,6 +314,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
           Trang sau
         </ButtonBar>
       </div>
+      </section>
     </section>
   );
 }

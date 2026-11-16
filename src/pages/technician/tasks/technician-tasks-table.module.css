@@ -12,8 +12,8 @@
   gap: 9px;
   padding: 0 14px;
   border: 1px solid #ded5cf;
-  border-radius: 6px;
-  background: #f0ece8;
+  border-radius: 10px;
+  background: #fff;
   color: #514843;
   cursor: pointer;
   font: inherit;
@@ -59,9 +59,9 @@
 
 .panel {
   min-width: 0;
-  padding: 18px;
+  padding: 22px;
   border: 1px solid #e9e2dc;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -283,3 +283,10 @@
     transition: none;
   }
 }
+
+.pagination { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.tableCellStack { max-width: 420px; overflow-wrap: anywhere; }
+.tableCellStack > span { color: #706561; font-size: 13px; }
+.categoryBadge { background: #f7f5f3; color: #514843; font-weight: 400; }
+.helperText { line-height: 1.5; }
+.error { padding: 14px; border-radius: 10px; background: #fff6f6; color: #8c1d26; }

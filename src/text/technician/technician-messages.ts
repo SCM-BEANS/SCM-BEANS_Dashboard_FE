@@ -1,14 +1,14 @@
 export const TECHNICIAN_MESSAGES = {
   BRAND: "Dolores.",
-  ROLE: "Technician",
+  ROLE: "Kỹ thuật viên",
   NAVIGATION: {
     TASKS: "Việc được giao",
-    MACHINE_CHECK: "Check máy",
+    MACHINE_CHECK: "Kiểm tra máy",
     HISTORY: "Lịch sử máy",
     NOTIFICATIONS: "Thông báo",
     SETTINGS: "Cài đặt",
-    NAVIGATION_LABEL: "Điều hướng Technician",
-    ALL_PAGES_LABEL: "Tất cả trang Technician",
+    NAVIGATION_LABEL: "Điều hướng kỹ thuật viên",
+    ALL_PAGES_LABEL: "Tất cả trang kỹ thuật viên",
     OPEN_MENU: "Mở menu điều hướng",
     CLOSE_MENU: "Đóng menu",
     LOGOUT: "Đăng xuất",

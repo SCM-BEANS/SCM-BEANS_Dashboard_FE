@@ -5,7 +5,6 @@
   FILTER_UNREAD: "Chưa đọc",
   UNREAD_COUNT: "Thông báo chưa đọc",
   MARK_ALL: "Đánh dấu tất cả đã đọc",
-  MARK_ONE: "Đánh dấu đã đọc",
   MARKING: "Đang cập nhật…",
   REFRESH: "Làm mới",
   READ: "Đã đọc",
@@ -30,6 +29,9 @@ const TYPE_LABELS: Record<string, string> = {
   INSTALLATION_WORK_ORDER: "Lắp đặt",
   REPAIR_COST_REVIEW: "Sửa chữa",
   MAINTENANCE: "Bảo trì",
+  REFUND: "Hoàn tiền",
+  RESPONSE: "Hợp đồng",
+  INFO: "Thông báo",
 };
 const UUID = /\b([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
@@ -56,7 +58,7 @@ function localizeText(text: string, keepFullIds: boolean) {
 
 export function getNotificationPresentation(notification: { type: string; title: string; message: string }) {
   if (notification.type !== "MACHINE_GPS_SIGNAL_MISSING") {
-    // REPAIR_COST_REVIEW keeps full ids: the inbox extracts "Review ID: <uuid>" from the message for its link.
+    // REPAIR_COST_REVIEW keeps full ids so its profile link can use the Review ID.
     const keepFullIds = notification.type === "REPAIR_COST_REVIEW";
     return {
       title: localizeText(notification.title, true).replace(/^chủ sở hữu/, "Khách hàng"),
@@ -64,7 +66,7 @@ export function getNotificationPresentation(notification: { type: string; title:
         .replace(/\bCONTINUE\b/g, "tiếp tục sử dụng")
         .replace(/\bSubscription\b/g, "gói thuê")
         .replace(/^Refund (#[a-f0-9]+) requires Admin approval\.$/i, "Khoản hoàn tiền $1 đang chờ quản trị viên phê duyệt."),
-      typeLabel: TYPE_LABELS[notification.type] ?? (/hợp đồng/i.test(notification.title) ? "Hợp đồng" : /hoàn tiền/i.test(notification.title) ? "Hoàn tiền" : /sửa chữa/i.test(notification.title) ? "Sửa chữa" : /bảo trì/i.test(notification.title) ? "Bảo trì" : "Thông báo"),
+      typeLabel: TYPE_LABELS[notification.type] ?? "Thông báo",
     };
   }
   const machineId = /\bMachine\s+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i.exec(notification.message)?.[1];

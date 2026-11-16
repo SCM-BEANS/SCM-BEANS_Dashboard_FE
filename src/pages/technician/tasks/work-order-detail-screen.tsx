@@ -22,8 +22,18 @@ import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages"
 import { TechnicianShell } from "../technician-shell";
 import shellStyles from "../technician-shell.module.css";
 import styles from "./work-order-detail-screen.module.css";
+import workflowStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 const messages = T.WORKFLOWS;
+
+function WorkProgress({ title, labels, current, status, statusLabel }: { title: string; labels: string[]; current: number; status: string; statusLabel: string }) {
+  return <section className={`${styles.panel} ${workflowStyles.workOrderProgressPanel}`} aria-label={title}>
+    <div className={workflowStyles.workOrderSummaryHeading}><h2>{title}</h2><StatusBadge variant="dot" status={status}>{statusLabel}</StatusBadge></div>
+    <ol className={workflowStyles.workOrderProgress}>{labels.map((label, index) => <li key={label} className={[workflowStyles.workOrderProgressStep, index < current ? workflowStyles.workOrderProgressComplete : "", index === current ? workflowStyles.workOrderProgressCurrent : ""].join(" ")} aria-current={index === current ? "step" : undefined}><span aria-hidden="true">{index < current ? "✓" : index + 1}</span><small>{label}</small></li>)}</ol>
+  </section>;
+}
 const detailQueryKey = (workOrderId: string) => ["dolores", "installation-work-orders", "id", workOrderId] as const;
 const assignedQueryKey = TECHNICIAN_WORK_ITEMS_QUERY_KEY;
 const MAX_EVIDENCE_BYTES = 20 * 1024 * 1024;
@@ -71,7 +81,7 @@ function DetailValue({ label, value, code = false }: { label: string; value: str
   return (
     <div className={styles.detailItem}>
       <dt>{label}</dt>
-      <dd className={code ? styles.codeValue : undefined}>{value}</dd>
+      <dd className={code ? styles.codeValue : undefined}>{code && value.length === 36 ? <TruncatedId value={value} /> : value}</dd>
     </div>
   );
 }
@@ -488,6 +498,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
         {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
         {order ? (
           <>
+            <WorkProgress title="Tiến độ thu hồi" labels={["Phân công", "Nhận máy", "Xác nhận bàn giao", "Tiếp nhận tại kho"]} current={order.status === "RECEIVED_AT_DEPOT" ? 4 : ["CUSTODY_VERIFICATION_PENDING", "RECEIPT_REVIEW_PENDING"].includes(order.status) ? 3 : order.status === "OWNER_ACK_PENDING" ? 2 : order.status === "PICKUP_IN_PROGRESS" ? 1 : ["FAILED", "CANCELLED", "LEGACY_REVIEW_REQUIRED"].includes(order.status) ? -1 : 0} status={order.status} statusLabel={recallStatusLabels[order.status]} />
             <section className={styles.panel} aria-labelledby="technician-recall-overview-title">
               <h2 id="technician-recall-overview-title">Thông tin lệnh thu hồi</h2>
               <dl className={styles.detailGrid}>
@@ -1062,6 +1073,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
 
         {detailData && workOrder && !details.isError && (
           <>
+            <WorkProgress title="Tiến độ lắp đặt" labels={["Tạo lệnh", "Đã phân công", "Đang lắp đặt", "Hoàn tất bàn giao"]} current={workOrder.status === "COMPLETED" ? 4 : workOrder.status === "IN_PROGRESS" ? 2 : workOrder.status === "ASSIGNED" ? 1 : workOrder.status === "PENDING" ? 0 : -1} status={workOrder.status} statusLabel={statusLabels[workOrder.status]} />
             <section className={styles.panel} aria-labelledby="work-order-overview-title">
               <h2 id="work-order-overview-title">Thông tin lệnh lắp đặt</h2>
               <dl className={styles.detailGrid}>

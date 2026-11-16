@@ -27,6 +27,7 @@ import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages"
 import { TechnicianShell } from "../technician-shell";
 import styles from "../technician-shell.module.css";
 
+function isForbidden(error: unknown) { return axios.isAxiosError(error) && error.response?.status === 403; }
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -73,14 +74,17 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
   ] as const;
 
   return (
+    <>
     <div className={styles.machineDetailGrid}>
-      {fields.map(([label, value]) => (
+      {[2, 4, 10, 6, 7, 3].map(index => fields[index]).map(([label, value]) => (
         <div className={styles.machineDetailField} key={label}>
           <span>{label}</span>
           <strong>{value || "—"}</strong>
         </div>
       ))}
     </div>
+    <details className={styles.secondaryDetails}><summary>Thông tin bổ sung & mã liên kết</summary><div className={styles.machineDetailGrid}>{fields.filter((_, index) => ![2, 4, 10, 6, 7, 3].includes(index)).map(([label, value]) => <div className={styles.machineDetailField} key={label}><span>{label}</span><strong>{value || "—"}</strong></div>)}</div></details>
+    </>
   );
 }
 
@@ -156,6 +160,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
       if (alive.current) setBusy(false);
     }
   }
+  if (isForbidden(identity.error) || isForbidden(certificates.error)) return null;
   return <>
     <SmartIotPanel title="Định danh thiết bị">
       {identity.isPending ? <p role="status">Đang tải định danh…</p>
@@ -212,7 +217,7 @@ export function TechnicianMachineDetailScreen() {
     queryKey: ["technician-machine-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
     enabled: smartIot && pageVisible, retry: false,
-    refetchInterval: smartIot && pageVisible ? 5_000 : false, refetchIntervalInBackground: false,
+    refetchInterval: query => smartIot && pageVisible && !isForbidden(query.state.error) ? 5_000 : false, refetchIntervalInBackground: false,
   });
   const points = useInfiniteQuery({
     queryKey: ["technician-machine-telemetry", subject, machineId, telemetryRange],
@@ -326,14 +331,9 @@ export function TechnicianMachineDetailScreen() {
           </div>
         )}
         <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-profile-title">
-          <h2 id="technician-machine-profile-title">{T.MACHINE_CHECK.TABLE_TITLE}</h2>
+          <h2 id="technician-machine-profile-title">Thông tin máy</h2>
           <MachineDetailFields machine={device} />
-          <MachineContractHistory machineId={machineId} role="TECHNICIAN" />
-          {device.status !== "IN_WAREHOUSE" ? (
-            <p className={styles.pendingNotice} role="status">
-              Chỉ xác nhận sẵn sàng cho máy đang ở trạng thái Trong kho. Máy hiện tại không đủ điều kiện.
-            </p>
-          ) : null}
+          <details className={styles.secondaryDetails}><summary>Lịch sử hợp đồng</summary><MachineContractHistory machineId={machineId} role="TECHNICIAN" /></details>
         </section>
         <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-tickets-title">
           <h2 id="technician-machine-tickets-title">Phiếu bảo trì</h2>
@@ -354,12 +354,12 @@ export function TechnicianMachineDetailScreen() {
           />
         </section>
         <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
-        <MachineActiveMenuPanel key={`menu:${subject}:${machineId}`} machineId={machineId} subject={subject} onChanged={() => machine.refetch()} />
+        <MachineActiveMenuPanel hideForbidden key={`menu:${subject}:${machineId}`} machineId={machineId} subject={subject} onChanged={() => machine.refetch()} />
         {smartIot ? <>
-          <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
-          <SmartIotPanel title="Lịch sử thông số">
+          {!isForbidden(heartbeat.error) && <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />}
+          {!isForbidden(points.error) && <SmartIotPanel title="Lịch sử thông số">
             <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
-          </SmartIotPanel>
+          </SmartIotPanel>}
         </> : null}
       </section>
       {actionBar()}

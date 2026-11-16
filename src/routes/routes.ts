@@ -220,7 +220,6 @@ export const CUSTOMER_NAVIGATION_LINKS = [
     ICON: "Wrench"
   },
   { LABEL: CUSTOMER_MESSAGES.NAVIGATION.MAINTENANCE, HREF: PATH_CUSTOMER.MAINTENANCE, ICON: "Wrench" },
-  { LABEL: CUSTOMER_MESSAGES.NAVIGATION.RECALLS, HREF: PATH_CUSTOMER.RECALLS, ICON: "Package" },
   {
     LABEL: CUSTOMER_MESSAGES.NAVIGATION.MENU,
     HREF: PATH_CUSTOMER.MENU,
@@ -429,6 +428,8 @@ export function isSupportedCustomerSection(section: string): boolean {
 }
 
 export function isSupportedTechnicianSection(section: string): boolean {
+  const historyRequest = /^history\/requests\/([^/]+)$/.exec(section);
+  if (historyRequest) return MaintenanceRequestIdSchema.safeParse(historyRequest[1]).success;
   if (!isWellFormedSection(section)) return false;
   const pathname = section ? `${PATH_TECHNICIAN.ROOT}/${section}` : PATH_TECHNICIAN.ROOT;
   if (technicianExactPaths.has(pathname)) return true;
@@ -437,7 +438,7 @@ export function isSupportedTechnicianSection(section: string): boolean {
   if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "retrieval") {
     return isUuidRouteSegment(segments[2]);
   }
-  if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "repair-cases") {
+  if ((segments.length === 3 || (segments.length === 4 && segments[3] === "related")) && segments[0] === "tasks" && segments[1] === "repair-cases") {
     return isUuidRouteSegment(segments[2]);
   }
   if (segments.length === 3 && segments[0] === "tasks" && segments[1] === "maintenance-tickets") {

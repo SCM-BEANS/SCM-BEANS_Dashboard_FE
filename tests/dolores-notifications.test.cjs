@@ -11,10 +11,10 @@ function loadTypescript(relativePath, mocks = {}) {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
-  const module = { exports: {} };
+  const testModule = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
-  new Function("require", "exports", "module", outputText)(mockedRequire, module.exports, module);
-  return module.exports;
+  new Function("require", "exports", "module", outputText)(mockedRequire, testModule.exports, testModule);
+  return testModule.exports;
 }
 
 const notificationId = "00000000-0000-4000-8000-000000000001";
@@ -38,6 +38,8 @@ test("business notifications use readable Vietnamese while keeping identifiers a
   assert.equal(response.title, "Khách hàng đã phản hồi hợp đồng hết hạn");
   assert.equal(response.typeLabel, "Hợp đồng");
   assert.equal(response.message, "chủ sở hữu đã chọn tiếp tục sử dụng; không tự tạo gói thuê.");
+  assert.equal(getNotificationPresentation({ type: "INFO", title: "Update", message: "Details" }).typeLabel, "Thông báo");
+  assert.equal(getNotificationPresentation({ type: "NEW_TYPE", title: "Hợp đồng sắp hết hạn", message: "Details" }).typeLabel, "Thông báo");
 });
 
 test("alert presentation localizes known anomaly text without inventing severity or changing unknown messages", () => {

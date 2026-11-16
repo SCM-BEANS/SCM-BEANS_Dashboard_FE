@@ -76,10 +76,13 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
         ) : null}
       </div>
       {screen.fields?.length ? (
+        <details className={styles.secondaryDetails}>
+        <summary>Thông tin cần chuẩn bị</summary>
         <fieldset className={styles.workflowFields} disabled aria-label={screen.title}>
           <legend>{TECHNICIAN_MESSAGES.WORKFLOWS.FIELDS_TITLE}</legend>
           {screen.fields.map(renderField)}
         </fieldset>
+        </details>
       ) : null}
       <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
     </section>

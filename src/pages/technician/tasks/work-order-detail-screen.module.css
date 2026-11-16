@@ -3,9 +3,9 @@
   min-width: 0;
   flex-direction: column;
   gap: 16px;
-  padding: 20px;
+  padding: 22px;
   border: 1px solid #e9e2dc;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -167,6 +167,7 @@
 }
 
 .backLink {
+  order: -1;
   align-self: flex-start;
   width: fit-content;
 }
@@ -237,3 +238,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.detailItem dd { font-weight: 600; }
+.codeValue { font-family: inherit; font-size: 13px !important; font-weight: 400 !important; }
+.panel summary { cursor: pointer; font-weight: 600; }
+.eventList { font-size: 14px; }
+.formField textarea { min-height: 100px; resize: vertical; }
+.formField input, .formField textarea, .formField select, .tableControl { border-radius: 10px; }

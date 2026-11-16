@@ -1,7 +1,6 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useRef, useState, type ReactNode } from "react";
 import { MoreHorizontal, Search, X } from "lucide-react";
-import Link from "next/link";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -12,6 +11,7 @@ import { notificationsApi } from "@/apis/notifications.api";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { formatNotificationDate as formatDate, getNotificationPresentation, NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
+import { getNotificationRecordHref, useMarkNotificationAsRead } from "./notification-runtime";
 import styles from "./notification-inbox.module.css";
 import { NotificationBell } from "./notification-bell";
 import { NotificationTypeIcon } from "./notification-type-icon";
@@ -31,21 +31,7 @@ export interface NotificationInboxProps {
   back?: BackButtonDestination | null;
   showOwnerId?: boolean;
   onRefreshExtra?: () => Promise<unknown>;
-  repairCostReviewHref?: (reviewId: string) => string;
   children?: ReactNode;
-}
-
-function RepairCostReviewNotificationLink({
-  notification,
-  hrefForReview,
-}: {
-  notification: { type: string; message: string };
-  hrefForReview: (reviewId: string) => string;
-}) {
-  if (notification.type !== "REPAIR_COST_REVIEW") return null;
-  const match = /(?:^|\s)Review ID:\s*([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:$|\s)/i.exec(notification.message);
-  if (!match) return null;
-  return <Link className={styles.viewAllLink} href={hrefForReview(match[1])}>Mở chi tiết xem xét chi phí</Link>;
 }
 
 export { formatNotificationDate as formatDate } from "@/text/notification-inbox-messages";
@@ -74,7 +60,6 @@ function NotificationInboxContent({
   back = null,
   showOwnerId = false,
   onRefreshExtra,
-  repairCostReviewHref,
   children,
 }: NotificationInboxProps) {
   const queryClient = useQueryClient();
@@ -101,17 +86,17 @@ function NotificationInboxContent({
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey });
   };
-  const markOne = useMutation({
-    mutationFn: (id: string) => notificationsApi.markAsRead(id),
-    retry: false,
-    onSuccess: refresh,
-  });
+  const markOne = useMarkNotificationAsRead(scope);
   const markAll = useMutation({
     mutationFn: () => notificationsApi.markAllAsRead(),
     retry: false,
     onSuccess: refresh,
   });
-  const notifications = list.data?.map((notification) => ({ ...notification, ...getNotificationPresentation(notification) }));
+  const notifications = list.data?.map((notification) => ({
+    ...notification,
+    ...getNotificationPresentation(notification),
+    recordHref: getNotificationRecordHref(scope, notification),
+  }));
 
   if (variant === "management") {
     const filtered = (notifications ?? []).filter((item) => (!filters.type || item.typeLabel === filters.type)
@@ -121,8 +106,9 @@ function NotificationInboxContent({
     const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
     const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
     const selected = list.isSuccess && selectedId !== null ? rows.find((item) => item.id === selectedId) ?? rows[0] : undefined;
-    const selectNotification = (id: string, focusDetail = false) => {
-      setSelectedId(id);
+    const selectNotification = (notification: { id: string; read: boolean }, focusDetail = false) => {
+      setSelectedId(notification.id);
+      if (!notification.read && !markOne.isPending) markOne.mutate(notification.id);
       if (focusDetail || window.matchMedia("(max-width: 1100px)").matches) requestAnimationFrame(() => { detailRef.current?.focus(); detailRef.current?.scrollIntoView({ behavior: "instant", block: "nearest" }); });
     };
     return <div className={management.screen}>
@@ -142,7 +128,7 @@ function NotificationInboxContent({
         <form className={management.feedFilters} onSubmit={(event) => { event.preventDefault(); setFilters((value) => ({ ...value, search: draft.search.trim() })); setPage(0); setSelectedId(undefined); }}>
           <label className={management.search}><Search size={18} aria-hidden="true" /><input aria-label="Tìm thông báo" placeholder="Tìm thông báo" value={draft.search} onChange={(event) => setDraft((value) => ({ ...value, search: event.target.value }))} /><button type="submit" aria-label="Tìm kiếm"><Search size={18} aria-hidden="true" /></button></label>
           <select aria-label="Loại thông báo" value={filters.type} onChange={(event) => { setFilters((value) => ({ ...value, type: event.target.value })); setPage(0); setSelectedId(undefined); }}><option value="">Tất cả loại</option>{Array.from(new Set(notifications?.map((item) => item.typeLabel) ?? [])).map((value) => <option key={value} value={value}>{value}</option>)}</select>
-          <div className={management.readFilters} role="group" aria-label="Trạng thái thông báo">{[{ value: "", label: "Tất cả" }, { value: "unread", label: messages.UNREAD }].map((option) => <button key={option.value} type="button" aria-pressed={filters.read === option.value} onClick={() => { setFilters((value) => ({ ...value, read: option.value })); setPage(0); setSelectedId(undefined); }}>{option.label}</button>)}</div>
+          <div className={management.readFilters} role="group" aria-label="Trạng thái thông báo">{[{ value: "", label: "Tất cả" }, { value: "unread", label: messages.UNREAD }, { value: "read", label: messages.READ }].map((option) => <button key={option.value} type="button" aria-pressed={filters.read === option.value} onClick={() => { setFilters((value) => ({ ...value, read: option.value })); setPage(0); setSelectedId(undefined); }}>{option.label}</button>)}</div>
         </form>
         {unreadCount.isError ? <p className={management.error} role="alert">{messages.COUNT_ERROR} {getApiErrorMessage(unreadCount.error)}</p> : null}
         {markOne.isError || markAll.isError ? <p className={management.error} role="alert">{messages.MARK_ERROR} {getApiErrorMessage(markOne.error ?? markAll.error, "mutation")}</p> : null}
@@ -151,13 +137,13 @@ function NotificationInboxContent({
           {rows.map((notification, index) => <Fragment key={notification.id}>
             {(index === 0 || notificationDay(notification.createdAt) !== notificationDay(rows[index - 1].createdAt)) ? <h3 className={management.dayHeading}>{notificationDay(notification.createdAt)}</h3> : null}
             <article className={management.item} data-selected={selected?.id === notification.id}>
-              <button id={`notification-open-${notification.id}`} type="button" className={management.openNotification} aria-pressed={selected?.id === notification.id} aria-controls={selected ? "notification-detail" : undefined} onClick={() => selectNotification(notification.id)}>
+              <button id={`notification-open-${notification.id}`} type="button" className={management.openNotification} aria-pressed={selected?.id === notification.id} aria-controls={selected ? "notification-detail" : undefined} onClick={() => selectNotification(notification)}>
                 <NotificationTypeIcon label={notification.typeLabel} /><span className={management.rowContent}><strong>{notification.title}</strong><span className={management.preview}>{notification.message}</span><time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time></span>
               </button>
               {!notification.read ? <span className={management.unreadDot} role="img" aria-label="Chưa đọc" /> : null}
               <details className={management.rowMenu} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false; }}>
                 <summary aria-label={`Thao tác thông báo: ${notification.title}`}><MoreHorizontal size={20} aria-hidden="true" /></summary>
-                <div className={management.menuContent}><button type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); selectNotification(notification.id, true); }}>Xem chi tiết</button>{!notification.read ? <button type="button" disabled={markOne.isPending || markAll.isPending} onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); markOne.mutate(notification.id); }}>{markOne.isPending && markOne.variables === notification.id ? messages.MARKING : messages.MARK_ONE}</button> : <span>Đã đọc</span>}</div>
+                <div className={management.menuContent}><button type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); selectNotification(notification, true); }}>Xem chi tiết</button></div>
               </details>
             </article>
           </Fragment>)}
@@ -169,8 +155,7 @@ function NotificationInboxContent({
         <h3>{selected.title}</h3>
         <section className={management.detailContent} aria-label="Nội dung thông báo"><h4>Nội dung</h4><p className={management.detailBody}>{selected.message}</p></section>
         <dl className={management.detailFacts}><div><dt>Loại thông báo</dt><dd>{selected.typeLabel}</dd></div>{showOwnerId && selected.ownerId ? <div><dt>{messages.OWNER_ID}</dt><dd><TruncatedId value={selected.ownerId} /></dd></div> : null}</dl>
-        {repairCostReviewHref || !selected.read ? <footer className={management.detailActions}>{repairCostReviewHref ? <RepairCostReviewNotificationLink notification={selected} hrefForReview={repairCostReviewHref} /> : null}
-          {!selected.read ? <ButtonBar variant="primary" disabled={markOne.isPending || markAll.isPending} onClick={() => markOne.mutate(selected.id)}>{markOne.isPending && markOne.variables === selected.id ? messages.MARKING : messages.MARK_ONE}</ButtonBar> : null}</footer> : null}
+        {selected.recordHref ? <footer className={management.detailActions}><ButtonBar href={selected.recordHref} rollingLabel>Mở hồ sơ</ButtonBar></footer> : null}
       </aside> : null}</div> : children}
     </div>;
   }
@@ -269,17 +254,7 @@ function NotificationInboxContent({
                 </div>
                 <h3>{notification.title}</h3>
                 <p>{notification.message}</p>
-                {repairCostReviewHref ? <RepairCostReviewNotificationLink notification={notification} hrefForReview={repairCostReviewHref} /> : null}
-                {!notification.read && (
-                  <button
-                    className={styles.button}
-                    disabled={markOne.isPending}
-                    onClick={() => markOne.mutate(notification.id)}
-                    type="button"
-                  >
-                    {markOne.isPending && markOne.variables === notification.id ? messages.MARKING : messages.MARK_ONE}
-                  </button>
-                )}
+                {notification.recordHref ? <ButtonBar href={notification.recordHref} rollingLabel>Mở hồ sơ</ButtonBar> : null}
               </article>
             ))}
           </div>

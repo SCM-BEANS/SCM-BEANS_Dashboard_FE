@@ -28,7 +28,7 @@ import {
 } from "@/schema/machines.schema";
 import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 import { maintenanceCustodyEventLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
-import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR } from "@/routes/path";
+import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import styles from "./repair-workflow.module.css";
@@ -183,8 +183,9 @@ export function RepairCaseDetailScreen({
   listHref: string;
   relatedOnly?: boolean;
 }) {
-  const compactLayout = role !== "technician";
-  const operatorPaths = role === "moderator" ? PATH_MODERATOR : PATH_ADMIN;
+  const compactLayout = true;
+  const caseHref = role === "technician" ? PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(caseId) : role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseId) : (role === "moderator" ? PATH_MODERATOR : PATH_ADMIN).TECHNICAL_REPAIR_CASE_DETAIL(caseId);
+  const relatedHref = role === "technician" ? `${caseHref}/related` : role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_RELATED(caseId) : (role === "moderator" ? PATH_MODERATOR : PATH_ADMIN).TECHNICAL_REPAIR_CASE_RELATED(caseId);
   const CaseActions = role === "admin" ? PageActionsRenderer : PageActions;
   const validCaseId = RepairCaseIdSchema.safeParse(caseId).success;
   const queryClient = useQueryClient();
@@ -282,7 +283,7 @@ export function RepairCaseDetailScreen({
   const assignment = useQuery({
     queryKey: ["dolores", "repair-workflow", subject, "assignment", replacementAssignmentId],
     queryFn: ({ signal }) => replacementAssignmentsApi.getById(replacementAssignmentId!, signal),
-    enabled: Boolean(replacementAssignmentId),
+    enabled: Boolean(replacementAssignmentId) && !(role === "technician" && ["CLOSED", "CANCELLED"].includes(repairCase.data?.status ?? "")),
     retry: false,
   });
   const custody = useQuery({
@@ -631,7 +632,7 @@ export function RepairCaseDetailScreen({
     : primaryCollectionEvent
       ? role === "owner" ? "current" : "waiting"
       : "locked";
-  const activationStepState: WorkflowStepState = assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED"
+  const activationStepState: WorkflowStepState = repairCase.data?.status === "CLOSED" || assignment.data?.status === "ACTIVE" || assignment.data?.status === "RELEASED"
     ? "complete"
     : canActivateAssignment
       ? "current"
@@ -677,7 +678,7 @@ export function RepairCaseDetailScreen({
     primaryAcknowledgmentStepState, replacementAcknowledgmentStepState,
     replacementCollectionAcknowledgmentStepState, primaryReturnAcknowledgmentStepState,
   ].includes("current");
-  const releaseStepState: WorkflowStepState = releaseReadAfterWriteConfirmed
+  const releaseStepState: WorkflowStepState = repairCase.data?.status === "CLOSED" || releaseReadAfterWriteConfirmed
     ? "complete"
     : releaseReplacementAssignment.isSuccess ? "waiting"
       : canSubmitRelease ? "current"
@@ -946,13 +947,13 @@ export function RepairCaseDetailScreen({
         <SectionHeading title="Công việc liên quan" description="Các mã liên kết và trạng thái hiện tại của ticket, máy thay thế." />
         {ticket.isError ? <QueryError label={M.MAINTENANCE_TICKET} error={ticket.error} onRetry={() => void ticket.refetch()} /> : null}
         {request.isError ? <QueryError label={M.REQUEST} error={request.error} onRetry={() => void request.refetch()} /> : null}
-        {assignment.isError ? <QueryError label={M.REPLACEMENT_ASSIGNMENT} error={assignment.error} onRetry={() => void assignment.refetch()} /> : null}
+        {assignment.isError && !(role === "technician" && axios.isAxiosError(assignment.error) && assignment.error.response?.status === 403) ? <QueryError label={M.REPLACEMENT_ASSIGNMENT} error={assignment.error} onRetry={() => void assignment.refetch()} /> : null}
         <dl className={styles.detailGrid}>
           <DetailValue label={M.MAINTENANCE_TICKET} value={caseData.maintenanceTicketId ?? "—"} code />
           <DetailValue label={M.TICKET_STATUS} value={
             !caseData.maintenanceTicketId ? "—" : ticket.isPending ? "Đang tải…" : ticketStatusLabel(ticket.data?.status)
           } />
-          <DetailValue label={M.REPLACEMENT_ASSIGNMENT} value={
+          {(role !== "technician" || assignment.isSuccess) && <><DetailValue label={M.REPLACEMENT_ASSIGNMENT} value={
             replacementAssignmentId ?? (request.isPending || timeline.isPending ? "Đang tải…" : "—")
           } code />
           <DetailValue label={M.ASSIGNMENT_STATUS} value={
@@ -961,10 +962,11 @@ export function RepairCaseDetailScreen({
           <DetailValue label={M.ASSIGNMENT_MACHINE} value={assignment.data?.replacementMachineId ?? "—"} code />
           <DetailValue label={M.START_AT} value={formatDateTime(assignment.data?.startAt)} />
           <DetailValue label={M.END_AT} value={formatDateTime(assignment.data?.endAt)} />
+          </>}
         </dl>
       </section>
-      <EvidenceList resource="REPAIR_CASE" parentId={caseId} showSize={!relatedOnly} title="Chứng từ hồ sơ sửa chữa" />
-      {replacementAssignmentId ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} showSize={!relatedOnly} title="Chứng từ máy thay thế" /> : null}
+      <EvidenceList resource="REPAIR_CASE" parentId={caseId} showSize={false} title="Chứng từ hồ sơ sửa chữa" />
+      {replacementAssignmentId && role !== "technician" ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} showSize={false} title="Chứng từ máy thay thế" /> : null}
     </>
   );
 
@@ -983,9 +985,9 @@ export function RepairCaseDetailScreen({
           back={relatedOnly ? null : { label: "Quay lại danh sách", fallbackHref: listHref }}
         />
         {relatedOnly ? (
-          <ButtonBar href={role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseId) : operatorPaths.TECHNICAL_REPAIR_CASE_DETAIL(caseId)}>Về hồ sơ sửa chữa</ButtonBar>
+          <ButtonBar href={caseHref}>Về hồ sơ sửa chữa</ButtonBar>
         ) : compactLayout && repairCase.isSuccess ? (
-          <ButtonBar href={role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_RELATED(caseId) : operatorPaths.TECHNICAL_REPAIR_CASE_RELATED(caseId)}>Công việc liên quan &amp; chứng từ</ButtonBar>
+          <ButtonBar href={relatedHref}>Công việc liên quan &amp; chứng từ</ButtonBar>
         ) : null}
       </div>
 
@@ -1059,7 +1061,7 @@ export function RepairCaseDetailScreen({
           <section className={[styles.panel, styles.caseProcess].join(" ")} aria-label={M.PROCESS_TITLE}>
             {!compactLayout && <SectionHeading title={M.PROCESS_TITLE} description={M.PROCESS_DESCRIPTION} />}
             {ownerWaitingForHandover && <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p>}
-            <details className={styles.processDisclosure} open={!compactLayout || ownerHasPendingAcknowledgment}>
+            <details className={styles.processDisclosure} open={role === "technician" || ownerHasPendingAcknowledgment}>
               <summary>{M.PROCESS_TITLE}</summary>
             <ol className={styles.workflowSteps} aria-label={M.PROCESS_TITLE}>
               <WorkflowStep title={M.PROCESS_PRIMARY_COLLECTION} compact={compactLayout} status={primaryCollectionStepState}>

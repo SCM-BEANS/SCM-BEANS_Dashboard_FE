@@ -1565,6 +1565,8 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .operatorWorkspace .caseProcess .workflowStepComplete::before { background: #fcf0f1; color: var(--color-primary); border-color: var(--color-primary); }
 .operatorWorkspace .caseProcess .workflowStepComplete .workflowStepHeading span { color: var(--color-primary); }
 .operatorWorkspace .caseProcess .workflowStepCurrent { background: #fff8f8; }
+.operatorWorkspace .caseProcess .historyDisclosure > summary::after { content: ""; margin-left: 0; }
+.operatorWorkspace .caseProcess .historyDisclosure > summary { align-items: center; }
 .casePageHeader { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 
 .adminRepairProgress .workOrderProgressComplete { color: var(--color-primary); }
