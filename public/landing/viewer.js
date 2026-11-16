@@ -213,7 +213,7 @@ function prepare(gltf, id, data, requestRender) {
   return { annotations, holder, machineFrame, decor, revealGroups, revealEntries, revealDecor, woodDecor, revealBoxes, revealOffsets: {}, revealOpacity: {}, rootOffset: root.position.clone(), entries: [...entries.values()], box, center: box.getCenter(new THREE.Vector3()), radius: box.getSize(new THREE.Vector3()).length() / 2, nodeMap, initialMatrices };
 }
 
-export function createViewer(annotations, data, brainData, { includeBoards = true } = {}) {
+export function createViewer(annotations, data, brainData, { includeBoards = true, capturePixelRatio } = {}) {
   // The standalone compressor uses Z-up CAD; reuse its installed orientation for this presentation only.
   const syncPresentation = new THREE.Group();
   syncPresentation.quaternion.setFromRotationMatrix(COMPRESSOR_FIT);
@@ -337,7 +337,7 @@ export function createViewer(annotations, data, brainData, { includeBoards = tru
     if (!width || !height) return;
     // The full-bleed film renders at a lower pixel ratio, lowered further if playback runs slow.
     // Only the full-bleed teaser trims its resolution (and only while it plays slowly); the other stages render sharp.
-    const ratio = active.name === "journey" ? Math.min(devicePixelRatio, width > 1400 ? 1.25 : 1.5, filmScale) : Math.min(devicePixelRatio, 1.75);
+    const ratio = capturePixelRatio ?? (active.name === "journey" ? Math.min(devicePixelRatio, width > 1400 ? 1.25 : 1.5, filmScale) : Math.min(devicePixelRatio, 1.75));
     if (renderer.getPixelRatio() !== ratio) { renderer.setPixelRatio(ratio); composer.setPixelRatio(ratio); }
     renderer.setSize(width, height, false); composer.setSize(width, height);
     const scale = coarsePointer.matches ? .5 : 1;
@@ -807,7 +807,7 @@ export function createViewer(annotations, data, brainData, { includeBoards = tru
         if (t === 1) outlineTween = null;
       }
     }
-    if (active.name === "journey" && active.state.filmPlaying && previous && now - previous < 250) {
+    if (!capturePixelRatio && active.name === "journey" && active.state.filmPlaying && previous && now - previous < 250) {
       slowFrames = now - previous > 28 ? slowFrames + 1 : Math.max(0, slowFrames - 1);
       fastFrames = now - previous < 20 ? fastFrames + 1 : 0;
       if (slowFrames > 45 && filmScale > .75) { filmScale -= .25; slowFrames = 0; fastFrames = 0; resize(); }

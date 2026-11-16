@@ -1,11 +1,13 @@
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
 const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
+const outputDir = process.env.MARKETING_VIDEO_OUTPUT || "public/video";
 const browser = await chromium.launch({ channel: "chrome", args: ["--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"] });
 await mkdir(".playwright-cli/marketing-video", { recursive: true });
+await mkdir(outputDir, { recursive: true });
 
 try {
   for (const mode of ["reveal", "reveal-mobile", "login"]) {
@@ -23,7 +25,7 @@ try {
       const data = await (await fetch("/landing/parts.json")).json();
       const brain = await (await fetch("/landing/brain.json")).json();
       const annotations = { sync() {}, render() {}, pickable() { return []; }, pick() {}, setMarkers() {} };
-      const viewer = createViewer(annotations, data, brain, { includeBoards: false });
+      const viewer = createViewer(annotations, data, brain, { includeBoards: false, capturePixelRatio: 2 });
       const hostName = mode.startsWith("reveal") ? "journey" : "login";
       viewer.registerHost(hostName, document.getElementById(`${hostName}-host`), { modelId: "body", autoRotate: false, zoom: false, lighting: "studio", view: { az: 35, el: 18 }, shellMode: "show", explode: 0, filmControlled: mode.startsWith("reveal") });
       const body = await viewer.load("body");
@@ -37,11 +39,13 @@ try {
     }, mode);
     await page.waitForFunction((mode) => window.captureViewer.isActive(mode.startsWith("reveal") ? "journey" : "login"), mode, { timeout: 120000 });
     console.log(`Recording ${mode}…`);
-    const bytes = await page.evaluate(async (mode) => {
+    const download = page.waitForEvent("download");
+    await page.evaluate(async (mode) => {
       const source = document.querySelector("canvas");
       const output = document.createElement("canvas");
-      output.width = innerWidth; output.height = innerHeight;
+      output.width = innerWidth * 1.5; output.height = innerHeight * 1.5;
       const context = output.getContext("2d");
+      context.imageSmoothingQuality = "high";
       let frame;
       function draw() {
         context.fillStyle = mode.startsWith("reveal") ? "#f4f3f2" : "#ffffff";
@@ -51,7 +55,7 @@ try {
         frame = requestAnimationFrame(draw);
       }
       const chunks = [];
-      const recorder = new MediaRecorder(output.captureStream(30), { mimeType: "video/webm;codecs=vp9", videoBitsPerSecond: 5000000 });
+      const recorder = new MediaRecorder(output.captureStream(30), { mimeType: "video/webm;codecs=vp9", videoBitsPerSecond: 14000000 });
       const finished = new Promise((resolve) => { recorder.onstop = resolve; });
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       window.captureViewer.requestRender();
@@ -64,14 +68,17 @@ try {
       }
       await new Promise((resolve) => setTimeout(resolve, mode.startsWith("reveal") ? 22000 : 10000));
       recorder.stop(); await finished; cancelAnimationFrame(frame);
-      return Array.from(new Uint8Array(await new Blob(chunks).arrayBuffer()));
+      const link = document.createElement("a");
+      link.download = mode + ".webm";
+      link.href = URL.createObjectURL(new Blob(chunks, { type: recorder.mimeType }));
+      link.click();
     }, mode);
     const intermediate = `.playwright-cli/marketing-video/${mode}.webm`;
-    const destination = `public/video/dolores-machine-${mode}.mp4`;
-    await writeFile(intermediate, Buffer.from(bytes));
-    const loop = mode === "login" ? ["-filter_complex", "[0:v]split[forward][reverse];[reverse]reverse[back];[forward][back]concat=n=2:v=1:a=0,crop=600:600[out]", "-map", "[out]"] : [];
-    execFileSync(ffmpeg, ["-y", "-i", intermediate, ...loop, "-an", "-r", "30", "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart", destination], { stdio: "ignore" });
-    execFileSync(ffmpeg, ["-y", "-ss", "1.5", "-i", destination, "-frames:v", "1", "-update", "1", `public/video/dolores-machine-${mode}.jpg`], { stdio: "ignore" });
+    const destination = `${outputDir}/dolores-machine-${mode}.mp4`;
+    await (await download).saveAs(intermediate);
+    const loop = mode === "login" ? ["-filter_complex", "[0:v]split[forward][reverse];[reverse]reverse[back];[forward][back]concat=n=2:v=1:a=0[out]", "-map", "[out]"] : [];
+    execFileSync(ffmpeg, ["-y", "-i", intermediate, ...loop, "-an", "-r", "30", "-c:v", "libx264", "-preset", "medium", "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", destination], { stdio: "ignore" });
+    execFileSync(ffmpeg, ["-y", "-ss", "1.5", "-i", destination, "-frames:v", "1", "-update", "1", `${outputDir}/dolores-machine-${mode}.jpg`], { stdio: "ignore" });
     console.log(`Saved ${destination}`);
     await page.close();
   }
