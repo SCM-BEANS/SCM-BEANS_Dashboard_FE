@@ -225,7 +225,6 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
       <section className={shellStyles.pageContent} aria-labelledby="technician-repair-case-title">
         <header className={shellStyles.pageHeading}>
           <h1 id="technician-repair-case-title">Chi tiết sửa chữa</h1>
-          <p>Theo dõi bàn giao, chẩn đoán và xử lý hồ sơ được giao.</p>
           <div className={styles.backLink}>
             <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>

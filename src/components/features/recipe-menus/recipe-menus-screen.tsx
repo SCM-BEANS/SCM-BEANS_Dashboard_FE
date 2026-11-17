@@ -309,7 +309,6 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
       <div>
         {view === "global" && !library && !editing ? <ButtonBar className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</ButtonBar> : null}
         <h1 id="recipe-management-title" tabIndex={-1}>{view !== "global" || library ? "Công thức pha chế" : mode === "create" ? "Thêm công thức" : mode === "edit" ? "Chỉnh sửa công thức" : operatorScreen === "detail" ? detail.data?.name ?? "Chi tiết công thức" : activeMenu}</h1>
-        {view === "global" && library ? <p>Quản lý menu và công thức dùng chung.</p> : null}
         {view === "global" && mode === "create" ? <p>Menu đích: {activeMenu}</p> : null}
         {view === "global" && mode !== "create" && detail.data && (mode === "edit" || operatorScreen === "detail") ? <p>{editing ? detail.data.name : detailMenu} · Phiên bản v{detail.data.revision}</p> : null}
       </div>
@@ -330,8 +329,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           </>}
       </div> : null}
     </header> : null}
-    {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title"
-      description="Khám phá công thức Dolores và lưu món yêu thích vào menu riêng." className={styles.pageHeading} back={null} /> : null}
+    {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title" className={styles.pageHeading} back={null} /> : null}
     {owner && !library ? <div><ButtonBar onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</ButtonBar></div> : null}
     {showNavigation && (library || view !== "global") ? <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
       <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</button>

@@ -87,7 +87,6 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
         back={{ label: "Danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
         title="Chi tiết phiếu bảo trì"
         titleId="technician-maintenance-ticket-title"
-        description="Cập nhật tiến độ và vật tư cho phiếu bảo trì được giao."
         className={styles.pageHeading}
       />
       {ticket?.repairCaseId ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Mở hồ sơ sửa chữa</ButtonBar> : null}

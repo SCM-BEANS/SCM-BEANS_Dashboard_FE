@@ -343,7 +343,6 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
       <header className={styles.header}>
         <div>
           <h2 id={`action-items-${role.toLowerCase()}`}>Công việc cần xử lý</h2>
-          {!queueView && <p>{compact ? "Số công việc trên trang hiện tại" : "Theo dõi công việc và mở hồ sơ để xử lý."}</p>}
         </div>
         {!queueView && <label className={styles.filter}>
           <span>Thời hạn</span>

@@ -22,8 +22,7 @@ export function OperatorOrderListPanel({
   return (
     <section className={styles.panel} aria-labelledby="coffee-operator-orders-title">
       <div className={styles.panelHeading}>
-        <div><h2 id="coffee-operator-orders-title">Đơn gói cà phê</h2><p>Theo dõi thanh toán, tình trạng hàng và bàn giao cho khách hàng.</p></div>
-        {workflow.orders.data ? <span>{workflow.orders.data.items.length} đơn trong trang</span> : null}
+        <div><h2 id="coffee-operator-orders-title">Đơn gói cà phê</h2></div>
       </div>
       <CoffeeOrderFilters workflow={workflow} />
       {workflow.orders.isPending ? <p className={styles.notice} role="status">Đang tải đơn hàng…</p> : null}

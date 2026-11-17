@@ -5,6 +5,7 @@ import { ownerMachineStatusLabel } from "@/components/machines/machine-status-la
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { MachineSectionTabs } from "@/components/machines/operational-overview";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import twinStyles from "@/components/features/digital-twin/machine-digital-twin-view.module.css";
 import { ButtonBar } from "@/components/button/button-bar";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -219,7 +220,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   const maintenanceTicketId = router.query.maintenanceTicketId;
   if (ready && machineId && maintenanceTicketId !== undefined) {
     return (
-      <section className={[styles.pageContent, styles.machineWorkspace].join(" ")} aria-labelledby="maintenance-ticket-detail-page-title">
+      <section className={[styles.pageContent, styles.machineWorkspace, detailTab === "model" ? twinStyles.workspace : ""].join(" ")} aria-labelledby="maintenance-ticket-detail-page-title">
         <MaintenanceTicketDetailsPage
           ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
           role="OWNER"
@@ -232,24 +233,23 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   }
 
   return (
-    <section className={[styles.pageContent, styles.machineWorkspace].join(" ")} aria-labelledby="customer-screen-title">
-      <div className={styles.machineHeading}><BackButtonHeading
+    <section className={[styles.pageContent, styles.machineWorkspace, detailTab === "model" ? twinStyles.workspace : ""].join(" ")} aria-labelledby="customer-screen-title">
+      <div className={`${styles.machineHeading} ${detailTab === "model" ? twinStyles.heading : ""}`}><BackButtonHeading
         back={back ?? null}
         title={machineId ? "Hồ sơ máy" + (detail.data?.serialNumber ? " · " + detail.data.serialNumber : "") : isHistory ? messages.MACHINE_HISTORY_TITLE : messages.MACHINES_TITLE}
         titleId="customer-screen-title"
-        description={machineId ? undefined : isHistory ? "Theo dõi hợp đồng và bảo trì của từng máy." : "Theo dõi máy, kết nối và lịch bảo trì."}
         className={styles.pageHeading}
       />
       </div>
       {machineId ? (
-        <MachineDetailView className={styles.ownerProfileLayout} summary={detail.data ? [
+        <MachineDetailView className={styles.ownerProfileLayout} summary={detail.data && detailTab !== "model" ? [
           { label: "Kết nối", value: isSmartIot ? <MachineConnectionBadge state={heartbeat.isError ? "error" : heartbeat.isPending ? "loading" : heartbeat.data?.status ?? "not-requested"} /> : "Không áp dụng" },
           { label: summaryDate === getVietnamToday() ? "Số ly hôm nay" : `Số ly ngày ${summaryDate.split("-").reverse().join("/")}`, value: countLabel },
         ] : []}>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
           {detail.data ? (
             <>
-              <div className={styles.ownerProfileNavigation}><MachineSectionTabs label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} /><div className={styles.ownerContextActions}>{isSmartIot && <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Xem vận hành</ButtonBar>}<ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar></div></div>
+              <div className={`${styles.ownerProfileNavigation} ${detailTab === "model" ? twinStyles.navigation : ""}`}><MachineSectionTabs label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} /><div className={styles.ownerContextActions}>{isSmartIot && <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Xem vận hành</ButtonBar>}<ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar></div></div>
               <div className={`${machineStyles.machineDetailSections} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("overview")} role="tabpanel" aria-labelledby="owner-machine-tab-overview" hidden={detailTab !== "overview"}>
               <div className={styles.ownerOverviewColumns}>
                 <section className={styles.dataPanel} aria-labelledby="owner-machine-profile">

@@ -113,7 +113,7 @@ function NotificationInboxContent({
     };
     return <div className={management.screen}>
       <header className={management.heading}>
-        <BackButtonHeading back={back} title={title ?? "Thông báo"} titleId="notification-inbox-title" description={description ?? "Theo dõi thông báo và cảnh báo máy trong hệ thống."} />
+        <BackButtonHeading back={back} title={title ?? "Thông báo"} titleId="notification-inbox-title" description={description} />
         <ButtonBar disabled={list.isFetching || unreadCount.isFetching} onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}>{list.isFetching || unreadCount.isFetching ? "Đang làm mới…" : messages.REFRESH}</ButtonBar>
       </header>
       {children ? <div className={management.tabs} role="group" aria-label="Phạm vi thông báo">

@@ -13,7 +13,6 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
           <h2 id="coffee-package-orders-title">Đơn gói cà phê của tôi</h2>
           <p>Chọn một đơn để xem hóa đơn, chứng từ và các bước tiếp theo.</p>
         </div>
-        {workflow.orders.data ? <span>{workflow.orders.data.items.length} đơn trong trang</span> : null}
       </div>
       <CoffeeOrderFilters workflow={workflow} />
       {workflow.orders.isPending ? <p className={styles.notice} role="status">Đang tải đơn hàng…</p> : null}

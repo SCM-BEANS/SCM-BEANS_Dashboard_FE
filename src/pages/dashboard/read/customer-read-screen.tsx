@@ -78,7 +78,6 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
         back={screen.back}
         title={screen.title}
         titleId="customer-screen-title"
-        description={screen.description}
         className={styles.pageHeading}
       />
       {screen.availability === "unavailable" ? (

@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { isAxiosError } from "axios";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { contractsApi } from "@/apis/contracts.api";
+import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { billingApi } from "@/apis/billing.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -130,6 +132,7 @@ export function ContractTerminationScreen({
   const [pendingRequest, setPendingRequest] = useState<TerminationCaseRequest | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState("");
   const [formError, setFormError] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const validId = ContractIdSchema.safeParse(contractId).success;
   const contract = useQuery({
     queryKey: ["dolores", "contracts", "id", contractId],
@@ -150,8 +153,16 @@ export function ContractTerminationScreen({
     retry: false,
   });
   const requestTermination = useMutation({
-    mutationFn: (input: TerminationCaseRequest) => contractsApi.requestTermination(contractId, input),
+    mutationFn: (input: TerminationCaseRequest) => {
+      if (!canCreateCase || activeCaseId) throw new Error("Hợp đồng đã có hồ sơ hoặc chưa kiểm tra xong hồ sơ hiện có.");
+      if (readSavedCaseId()) {
+        void existingCase.refetch();
+        throw new Error("Hợp đồng đã có hồ sơ chấm dứt.");
+      }
+      return contractsApi.requestTermination(contractId, input);
+    },
     onSuccess: async (created) => {
+      try { window.localStorage.setItem(caseStorageKey, created.id); } catch { /* Continue with the confirmed server result. */ }
       setPendingRequest(null);
       setCreatedCaseId(created.id);
       void router.replace({ pathname: router.pathname, query: { ...router.query, caseId: created.id } }, undefined, { shallow: true, scroll: false });
@@ -189,13 +200,45 @@ export function ContractTerminationScreen({
     ?? "";
   const requestedCaseId = typeof router.query.caseId === "string" ? router.query.caseId : "";
   const invalidCaseId = requestedCaseId !== "" && !TerminationCaseIdSchema.safeParse(requestedCaseId).success;
-  const activeCaseId = (invalidCaseId ? "" : requestedCaseId) || createdCaseId || expiry.data?.terminationCaseId || latestRecallCaseId;
-  const canCreateCase = role !== "OWNER"
+  const linkedCaseId = createdCaseId || expiry.data?.terminationCaseId || latestRecallCaseId || (invalidCaseId ? "" : requestedCaseId);
+  const caseStorageKey = `dolores:termination-case:${querySubject(role === "ADMIN" ? "admin" : role === "MODERATOR" ? "moderator" : "owner")}:${contractId}`;
+  function readSavedCaseId() {
+    try { return window.localStorage.getItem(caseStorageKey) || ""; } catch { return ""; }
+  }
+  const existingCase = useQuery({
+    queryKey: ["dolores", "contract-termination-existing", caseStorageKey, linkedCaseId],
+    queryFn: async ({ signal }) => {
+      // shortcut: The API has no contract-to-case lookup; persist only verified references in this browser.
+      const id = linkedCaseId || readSavedCaseId();
+      if (!id) return null;
+      const result = await terminationCasesApi.getById(TerminationCaseIdSchema.parse(id), signal).catch(error => {
+        if (linkedCaseId || !isAxiosError(error) || error.response?.status !== 404) throw error;
+        // Expiry and recall lookups succeeded without a link; discard only this stale browser reference.
+        if (readSavedCaseId() === id) window.localStorage.removeItem(caseStorageKey);
+        return null;
+      });
+      if (!result) return null;
+      if (result.contractId !== contractId) throw new Error("Hồ sơ chấm dứt không thuộc hợp đồng này.");
+      try { window.localStorage.setItem(caseStorageKey, result.id); } catch { /* The verified case remains available for this visit. */ }
+      return result;
+    },
+    enabled: Boolean(contract.data) && router.isReady && (Boolean(linkedCaseId) || (expiry.isSuccess && recallOrders.isSuccess)) && !invalidCaseId,
+    retry: false,
+  });
+  const activeCaseId = linkedCaseId || existingCase.data?.id || "";
+  const canOfferCreation = role !== "OWNER"
     && contract.data?.status === "ACTIVE"
     && expiry.isSuccess
     && recallOrders.isSuccess
+    && !contract.isFetching
+    && !expiry.isFetching
+    && !recallOrders.isFetching
     && !invalidCaseId
-    && !activeCaseId;
+    && !activeCaseId
+    && existingCase.isSuccess
+    && !existingCase.isFetching
+    && !existingCase.data;
+  const canCreateCase = canOfferCreation && showCreate;
   const detailHref = role === "ADMIN"
     ? PATH_ADMIN.CONTRACT_DETAIL(contractId)
     : role === "MODERATOR"
@@ -206,7 +249,7 @@ export function ContractTerminationScreen({
     <section className={styles.page} aria-labelledby="termination-page-title">
       <BackButtonHeading
         back={{ label: "Về chi tiết hợp đồng", fallbackHref: backHref || detailHref }}
-        title="Chấm dứt hợp đồng"
+        title={activeCaseId ? "Chi tiết hồ sơ chấm dứt hợp đồng" : "Chấm dứt hợp đồng"}
         titleId="termination-page-title"
         description="Theo dõi yêu cầu, thu hồi máy và các bước xử lý liên quan đến hợp đồng."
         className={styles.heading}
@@ -214,6 +257,9 @@ export function ContractTerminationScreen({
 
       {!validId ? <p className={styles.error} role="alert">Mã hợp đồng không hợp lệ.</p> : null}
       {invalidCaseId ? <p className={styles.error} role="alert">Mã hồ sơ chấm dứt trong đường dẫn không hợp lệ.</p> : null}
+      {existingCase.isFetching ? <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p> : null}
+      {existingCase.isError ? <div className={styles.error} role="alert"><p>Không xác minh được hồ sơ hiện có. Chưa thể tạo hồ sơ mới.</p><p>{getApiErrorMessage(existingCase.error)}</p><ButtonBar onClick={() => void existingCase.refetch()}>Thử lại</ButtonBar></div> : null}
+      {canOfferCreation && !showCreate ? <section className={styles.contractCard}><h2>Hồ sơ chấm dứt hợp đồng</h2><p>Chưa có hồ sơ được liên kết trong dữ liệu hiện tại.</p><ButtonBar onClick={() => setShowCreate(true)}>Tạo hồ sơ chấm dứt</ButtonBar></section> : null}
       {contract.isPending && validId ? <p className={styles.notice} role="status">Đang tải thông tin hợp đồng…</p> : null}
       {contract.isError ? (
         <div className={styles.error} role="alert">
@@ -221,7 +267,6 @@ export function ContractTerminationScreen({
           <ButtonBar type="button" onClick={() => void contract.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
-
       {role !== "OWNER" && contract.data?.status === "ACTIVE" && expiry.isPending ? (
         <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p>
       ) : null}
@@ -314,6 +359,7 @@ export function ContractTerminationScreen({
           primaryAction={{
             label: "Tạo hồ sơ",
             pending: requestTermination.isPending,
+            disabled: !canCreateCase,
             pendingLabel: "Đang tạo…",
             onClick: () => requestTermination.mutate(pendingRequest),
           }}

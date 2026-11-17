@@ -31,7 +31,6 @@ import { ContractInstallationRequestScreen } from "@/pages/moderator/contracts/c
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getContractsBackDestination } from "../admin-back-destination";
 import {
-  ADMIN_CONTRACT_LIST_DESCRIPTION,
   ADMIN_CONTRACT_LIST_TITLE,
 } from "@/components/table/constants/contract-table.constants";
 
@@ -307,17 +306,11 @@ function ContractsContent() {
     {isContractList ? <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
       <div>
         <h1 id="admin-contracts-title">{ADMIN_CONTRACT_LIST_TITLE}</h1>
-        <p>{ADMIN_CONTRACT_LIST_DESCRIPTION}</p>
       </div>
       <ButtonBar variant="primary" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
     </div> : <BackButtonHeading
       title={pageTitle}
       titleId="admin-contracts-title"
-      description={view === "create"
-        ? T.CONTRACTS.CREATE_DESCRIPTION
-        : isContractList
-          ? ADMIN_CONTRACT_LIST_DESCRIPTION
-          : T.CONTRACTS.DESCRIPTION}
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
     />}
@@ -432,7 +425,6 @@ function ContractsContent() {
         </section>
         {contract.data.status === "ACTIVE" && <section className={`${styles.panel} ${styles.contractDocumentsPanel}`} aria-labelledby="admin-contract-installation-orders">
           <h2 id="admin-contract-installation-orders">Điều phối lắp đặt</h2>
-          <p className={styles.panelSubtitle}>Theo dõi lệnh lắp đặt, danh sách kiểm tra và biên bản bàn giao của hợp đồng.</p>
           {installationOrders.isPending && <p role="status">Đang tải lệnh lắp đặt…</p>}
           {installationOrders.isError && <div role="alert"><p>{getApiErrorMessage(installationOrders.error)}</p><ButtonBar type="button" onClick={() => void installationOrders.refetch()}>Thử lại</ButtonBar></div>}
           {installationOrders.data && <DataTable headerVariant="admin"

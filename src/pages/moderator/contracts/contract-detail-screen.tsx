@@ -313,7 +313,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
         <BackButtonHeading
           title={contract.data ? `${T.CONTRACTS.DETAIL} · ${contract.data.id.slice(0, 8).toUpperCase()}` : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DETAIL_TITLE}
           titleId="moderator-contract-detail-title"
-          description={T.CONTRACTS.DESCRIPTION}
           className={styles.pageHeading}
           back={{ label: "Danh sách hợp đồng", fallbackHref: PATH_MODERATOR.CONTRACTS }}
         />
@@ -441,7 +440,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
 
           {contract.data.status === "ACTIVE" && <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-installation-history">
             <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
-            <p className={adminStyles.panelSubtitle}>Theo dõi lệnh lắp đặt, danh sách kiểm tra và biên bản bàn giao của hợp đồng.</p>
             <QueryFeedback query={installationWorkOrders} loadingMessage="Đang tải lệnh lắp đặt…" />
             {installationWorkOrders.data && matchingInstallationOrders.length === 0 && !installationWorkOrders.isError && (
               <p className={adminStyles.emptyText} role="status">Chưa tìm thấy lệnh lắp đặt thuộc hợp đồng này.</p>

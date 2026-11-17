@@ -17,7 +17,6 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-refunds-title">Hoàn tiền</h2>
-          <p>Theo dõi phê duyệt, chứng từ chuyển khoản và trạng thái hoàn tiền.</p>
         </div>
         {workflow.refunds.data ? <span>{workflow.refunds.data.items.length} khoản trong danh sách</span> : null}
       </div>

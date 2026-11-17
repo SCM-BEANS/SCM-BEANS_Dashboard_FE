@@ -14,7 +14,7 @@ import { moderatorStyles as styles } from "../moderator-shell";
 import { adminStyles } from "@/pages/admin/admin-shell";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
-import { ADMIN_CONTRACT_LIST_DESCRIPTION, ADMIN_CONTRACT_LIST_TITLE } from "@/components/table/constants/contract-table.constants";
+import { ADMIN_CONTRACT_LIST_TITLE } from "@/components/table/constants/contract-table.constants";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { ModeratorPageHeading } from "../moderator-page-heading";
 
@@ -88,7 +88,6 @@ export function ContractListScreen() {
       <div className={`${adminStyles.pageHeading} ${adminStyles.userPageHeading}`}>
         <div>
           <h1 id="moderator-contracts-title">{ADMIN_CONTRACT_LIST_TITLE}</h1>
-          <p>{ADMIN_CONTRACT_LIST_DESCRIPTION}</p>
         </div>
         <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CONTRACT}>{T.CONTRACTS.CREATE}</ButtonBar>
       </div>
@@ -155,7 +154,7 @@ export function ContractHistoryScreen({ id }: { id: string }) {
 
   return (
     <div className={`${styles.pageContent} ${adminStyles.userPage}`}>
-      <ModeratorPageHeading title="Lịch sử hợp đồng" description="Các hợp đồng gắn với cùng máy." />
+      <ModeratorPageHeading title="Lịch sử hợp đồng" />
       {!validId && <div className={adminStyles.notice} role="alert">Mã hợp đồng không hợp lệ.</div>}
       {validId && <QueryFeedback query={contract} loadingMessage={T.COMMON.LOADING} />}
       {contract.data && !contract.data.machineId && <p className={adminStyles.emptyText} role="status">Hợp đồng này chưa gắn với máy.</p>}

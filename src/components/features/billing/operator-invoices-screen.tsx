@@ -218,18 +218,18 @@ function InvoiceList({
     mutationFn: () => billingApi.createExport({ format: "CSV", ...(role !== "owner" ? { ownerId: typeof ownerId === "string" ? ownerId : undefined } : {}), invoiceIds: rows.map((invoice) => invoice.id) }),
     onSuccess: (job) => role === "owner" ? router.push(`${PATH_CUSTOMER.INVOICES}?exportId=${encodeURIComponent(job.id)}`) : router.push(role === "admin" ? PATH_ADMIN.BILLING_EXPORT_JOB(job.id) : `/moderator/invoices/exports/${encodeURIComponent(job.id)}`),
   });
-  const exportReason = query.isFetching ? "Đang tải danh sách hóa đơn." : !rows.length ? "Chưa có hóa đơn để xuất." : role !== "owner" && !ownerId ? "Chọn một khách hàng để xuất các hóa đơn trong trang." : undefined;
+  const exportReason = query.isFetching ? "Đang tải danh sách hóa đơn." : !rows.length ? "Chưa có hóa đơn để xuất." : role !== "owner" && !ownerId ? "" : undefined;
 
   useEffect(() => setPage(0), [filters]);
 
   return (
     <>
       <header className={styles.panelHeading}>
-        {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1><p>Tra cứu hóa đơn và theo dõi thanh toán.</p></div> : <span />}
+        {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1></div> : <span />}
         <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
       </header>
     <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
-      <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2>{query.data && <span>{rows.length} hóa đơn trong trang</span>}</div>
+      <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2></div>
       {exportReason && <p className={styles.hint}>{exportReason}</p>}
       {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}
       <InvoiceFilters role={role} initialPeriod={filters.period} onApply={onApplyFilters} disabled={query.isFetching} />
@@ -420,7 +420,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   return (
     <div className={styles.detailStack}>
       <div className={styles.panelHeading}>
-        <div className={styles.heading}><h1>Hồ sơ hóa đơn</h1><p className={styles.detailSubtitle}>{record.id.slice(0, 8).toUpperCase()} · {record.ownerName || (typeof ownerId === "string" ? ownerNames.data?.[ownerId] : null) || "Khách hàng"} · Kỳ {periodText(record.period)}</p></div>
+        <div className={styles.heading}><h1>Hồ sơ hóa đơn</h1></div>
         <ButtonBar href={invoiceListPath(role)}>Về danh sách</ButtonBar>
       </div>
       <div className={styles.invoiceLayout}>
@@ -459,8 +459,11 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         <div className={styles.total}><span>Tổng tiền hóa đơn</span><strong>{amountText(record.amount, record.currency)}</strong></div>
       </section>
       <aside className={styles.panel} aria-label="Thanh toán">
-        <h2>Thanh toán</h2><span className={styles.hint}>Tổng tiền hóa đơn</span><strong className={styles.amount}>{amountText(record.amount, record.currency)}</strong>
-        <BillingStatus status={record.status} label={invoiceStatus(record.status)} />
+        <h2>Thanh toán</h2>
+        <div className={styles.paymentAmountRow}>
+          <strong className={styles.amount}>{amountText(record.amount, record.currency)}</strong>
+          <BillingStatus status={record.status} label={invoiceStatus(record.status)} />
+        </div>
         <dl className={styles.paymentFacts}><div><dt>Hạn thanh toán</dt><dd>{dateText(record.dueDate)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{record.paidAt ? dateTimeText(record.paidAt) : "Chưa ghi nhận"}</dd></div></dl>
         {role === "moderator" && <InvoiceStatusControls invoice={record} role={role} />}
       </aside>
@@ -473,7 +476,6 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
       {role === "owner" && <div hidden={section !== "proofs"}>{["PENDING", "UNPAID", "OVERDUE"].includes(record.status.toUpperCase()) ? paymentForm : null}</div>}
       <section hidden={section !== "proofs"} className={styles.panel} aria-labelledby="operator-payment-proofs">
         <h2 id="operator-payment-proofs">{messages.PAYMENT_PROOFS}</h2>
-        {role !== "owner" && <p className={styles.hint}>{messages.REVIEW_HELP}</p>}
         <InlineQueryState
           pending={proofs.isPending}
           error={proofs.isError ? proofs.error : null}
@@ -489,7 +491,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
             rows={proofs.data.items}
             rowKey={(proof) => proof.id}
             columns={[
-              { key: "file", header: messages.PROOF_FILENAME, render: (proof) => <div className={styles.invoiceIdentity}><span className={styles.proofFilename} title={proof.originalFilename}>{proof.originalFilename}</span><details><summary>Thông tin tệp</summary><p className={styles.breakText}>{proof.originalFilename}</p><p className={styles.breakText}>{messages.PAYMENT_ID}: {proof.paymentId}</p><p>{new Intl.NumberFormat("vi-VN").format(proof.sizeBytes)} bytes</p>{proof.reviewReason && <p>{messages.REVIEW_REASON}: {proof.reviewReason}</p>}</details></div> },
+              { key: "file", header: messages.PROOF_FILENAME, render: (proof) => <span className={styles.proofFilename} title={proof.originalFilename}>{proof.originalFilename}</span> },
               { key: "status", header: messages.STATUS, render: (proof) => <BillingStatus status={proof.status} label={messages.PROOF_STATUSES[proof.status]} /> },
               { key: "submitted", header: messages.SUBMITTED_AT, render: (proof) => <time className={styles.proofDate} dateTime={proof.submittedAt}>{dateText(proof.submittedAt)}<small>{new Date(proof.submittedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</small></time> },
               ...(role !== "admin" ? [{ key: "proof-amount", header: "Số tiền trên chứng từ", align: "right" as const, render: (proof: PaymentProof) => <span className={styles.money}>{proof.amount == null ? "Chưa có dữ liệu" : amountText(proof.amount, proof.currency ?? record.currency)}</span> }] : []),
@@ -582,7 +584,7 @@ export function InvoiceExportJobScreen({ jobId, routerReady, role }: { jobId: st
   const filename = `dolores-invoices.${job.data?.format === "PDF" ? "pdf" : "csv"}`;
   const statusLabels = { QUEUED: "Đang chờ", PROCESSING: "Đang xử lý", COMPLETED: "Đã sẵn sàng", FAILED: "Thất bại" };
   return <div className={styles.screen}>
-    <header className={styles.panelHeading}><div className={styles.heading}><h1>Xuất danh sách hóa đơn</h1><p>Theo dõi yêu cầu xuất và tải tệp khi sẵn sàng.</p></div><ButtonBar href={backHref}>Về danh sách</ButtonBar></header>
+    <header className={styles.panelHeading}><div className={styles.heading}><h1>Xuất danh sách hóa đơn</h1></div><ButtonBar href={backHref}>Về danh sách</ButtonBar></header>
     {!routerReady ? <p role="status">Đang tải…</p> : !valid ? <p className={`${styles.notice} ${styles.error}`} role="alert">Mã xuất dữ liệu không hợp lệ.</p> : <>
       <InlineQueryState pending={job.isPending} error={job.isError ? job.error : null} loadingText="Đang tải trạng thái xuất dữ liệu…" retry={job.refetch} />
       {job.data && !job.isError && <section className={`${styles.panel} ${styles.exportPanel}`}>
@@ -633,7 +635,6 @@ export function OperatorInvoicesScreen({
       {showHeading && invalidInvoiceId ? (
         <header className={styles.heading}>
           <h1>{validInvoiceId ? "Hồ sơ hóa đơn" : "Hóa đơn"}</h1>
-          {!validInvoiceId && <p>Tra cứu hóa đơn và theo dõi thanh toán.</p>}
         </header>
       ) : null}
       {validInvoiceId ? <InvoiceDetail key={`${querySubject(role)}:${validInvoiceId}`} invoiceId={validInvoiceId} role={role} paymentForm={paymentForm} /> :

@@ -210,7 +210,6 @@ export function MaintenanceRequestAssignmentScreen({
       <BackButtonHeading
         title={messages.TECHNICAL_ASSIGNMENT_TITLE}
         titleId="maintenance-request-assignment-title"
-        description={messages.TECHNICAL_ASSIGNMENT_DESCRIPTION}
         className={styles.pageHeading}
         back={{ label: "Quay lại danh sách yêu cầu", fallbackHref: listHref }}
       />

@@ -244,6 +244,8 @@
 .operationsButtons { margin-top: 20px; }
 .machineInventoryHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .machineInventoryHeading h2 { margin: 0; }
+.machineInventoryActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.machineInventoryActions > div { width: auto; }
 .machineInventoryGroup { display: flex; min-width: 0; flex-direction: column; }
 .machineViewTabs { position: relative; z-index: 1; display: inline-flex; max-width: calc(100% - 44px); align-self: flex-start; gap: 4px; margin: 0 0 -1px 22px; padding: 0; }
 .machineViewTab { min-height: 36px; padding: 0 14px; border: 1px solid #e9e2dc; border-bottom: 0; border-radius: 9px 9px 0 0; background: #f8f6f4; color: #706561; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -479,7 +481,8 @@
 .contractOverviewHeading h2 { margin: 0; }
 .contractOverviewPanel .operationsGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 22px; }
 .contractExpiryPanel { grid-column: 2; grid-row: 2; }
-.contractExpiryPanel .operationsGrid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.contractExpiryPanel .operationsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.contractExpiryPanel .operationsGrid > div:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .contractHistoryPanel { grid-column: 1; grid-row: 2; min-width: 0; }
 .contractLifecyclePanel, .contractDocumentsPanel { grid-column: 1 / -1; min-width: 0; }
 .contractHistoryPanel :global(table), .contractDocumentsPanel :global(table) { min-width: 620px; }
@@ -530,10 +533,11 @@
 .machineSystemDetails summary { min-height: 44px; cursor: pointer; color: #706561; }
 .machineSystemDetails .operationsGrid { padding-top: 14px; }
 .machineFormSummary { min-width: 0; }
-.machineConnectionLayout { display: grid; grid-template-columns: minmax(250px, .8fr) minmax(0, 2fr); gap: 20px; align-items: start; }
-.machineConnectionLayout > section { min-width: 0; }
-.machineConnectionLayout .operationsGrid { grid-template-columns: 1fr; gap: 14px; margin: 18px 0; }
-@media (max-width: 1250px) { .machineConnectionLayout { grid-template-columns: 1fr; } }
+.machineConnectionLayout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.machineConnectionLayout > section { display: grid; gap: 14px; min-width: 0; }
+.machineConnectionLayout > section + section { padding-top: 20px; border-top: 1px solid #e9e2dc; }
+.machineConnectionLayout > section > h3 { margin: 0; font-size: 1rem; }
+.machineConnectionLayout .operationsGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; margin: 0; }
 .machineFormLayout > form { min-width: 0; }
 .machineModelEditingLayout > form { order: -1; }
 .machineModelEditingLayout > section { align-self: start; }

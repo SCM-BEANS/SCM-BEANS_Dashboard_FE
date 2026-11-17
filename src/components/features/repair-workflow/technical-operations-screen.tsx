@@ -101,7 +101,7 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
+function PageHeading({ title, description }: { title: string; description?: string }) {
   return <BackButtonHeading title={title} titleId="technical-operations-heading" description={description} className={styles.pageHeading} back={null} />;
 }
 
@@ -595,7 +595,7 @@ export function TechnicalOperationsScreen({
   if (isUnsupportedWrite) {
     return (
       <div className={styles.pageContent}>
-        <PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} />
+        <PageHeading title={messages.TECHNICAL_TITLE} />
         {routes.role === "moderator" && <>
           <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
           <p className={styles.pendingNotice} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
@@ -630,7 +630,7 @@ export function TechnicalOperationsScreen({
   }
 
   if (isDetail) {
-    if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
+    if (!validWorkOrderId) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_WORK_ORDER_DETAIL} /><p className={styles.pendingNotice} role="status">{workOrderId}: {messages.TECHNICAL_LEGACY_ID}</p></div>;
     return (
       <div className={styles.pageContent}>
 
@@ -655,9 +655,9 @@ export function TechnicalOperationsScreen({
   if (isMachineHistory) {
     if (historyMachineId && !validHistoryMachineId) return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><p className={styles.pendingNotice} role="status">{historyMachineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
     return <div className={styles.pageContent}>
-      <BackButtonHeading className={styles.pageHeading} titleId="machine-history-title" title="Lịch sử máy" description="Tra cứu phiếu bảo trì và các lần xử lý của máy." back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
+      <BackButtonHeading className={styles.pageHeading} titleId="machine-history-title" title="Lịch sử máy" back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
       <section className={styles.panel} aria-labelledby="machine-history-list-title">
-        <div className={styles.listHeading}><h2 id="machine-history-list-title">Phiếu bảo trì</h2><span>{tickets.isSuccess ? `${tickets.data.items.length} phiếu trên trang · ` : ""}10 phiếu mỗi trang</span></div>
+        <div className={styles.listHeading}><h2 id="machine-history-list-title">Phiếu bảo trì</h2></div>
         <form className={`${filterStyles.filters} ${styles.historyFilters}`} onSubmit={(event) => { event.preventDefault(); setHistoryFilters(historyDraft); setTicketPage(0); }}>
           <select aria-label="Lọc theo máy" value={historyMachineId || historyDraft.machineId} disabled={Boolean(historyMachineId) || historyMachines.isPending || historyMachines.isError} onChange={(event) => setHistoryDraft((value) => ({ ...value, machineId: event.target.value }))}>
             <option value="">Tất cả máy</option>{historyMachineId && !historyMachines.data?.some((machine) => machine.id === historyMachineId) ? <option value={historyMachineId}>Máy đang xem</option> : null}{historyMachines.data?.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber || machine.id}</option>)}
@@ -677,7 +677,7 @@ export function TechnicalOperationsScreen({
     </div>;
   }
 
-  if (!isTechnicalRequestList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} description={messages.TECHNICAL_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
+  if (!isTechnicalRequestList) return <div className={styles.pageContent}><PageHeading title={messages.TECHNICAL_TITLE} /><p className={styles.pendingNotice} role="status">{messages.TECHNICAL_DETAIL_UNAVAILABLE}</p></div>;
 
   const listReady = !maintenanceRequests.isPending;
   const requestList = listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length > 0 ? (
@@ -695,14 +695,14 @@ export function TechnicalOperationsScreen({
   ) : null;
   return (
     <div className={styles.pageContent}>
-      <PageHeading title="Yêu cầu kỹ thuật" description="Theo dõi yêu cầu bảo trì, sửa chữa và điều phối kỹ thuật viên." />
+      <PageHeading title="Yêu cầu kỹ thuật" />
       {triageFeedback && (
         <p className={styles.pendingNotice} role={triageFeedback.type === "error" ? "alert" : "status"}>
           {triageFeedback.message}
         </p>
       )}
       <section className={styles.panel} aria-labelledby="technical-request-list-title">
-        <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2><span>10 yêu cầu mỗi trang</span></div>
+        <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2></div>
         <TableFilters
           search={{
             ariaLabel: "Tìm theo mã khách hàng",
@@ -752,7 +752,7 @@ export function TechnicalOperationsScreen({
           role={routes.role}
           detailHref={routes.repairCaseDetail}
           title="Hồ sơ sửa chữa"
-          description="Theo dõi tiến độ sửa chữa và bàn giao máy."
+          description=""
         />
       ) : null}
     </div>

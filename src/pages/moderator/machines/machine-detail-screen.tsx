@@ -4,13 +4,11 @@ import { MachineContractHistory } from "@/components/machines/machine-contract-h
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { locationsApi } from "@/apis/locations.api";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
-import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
@@ -231,10 +229,6 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
     },
     onError: (error: unknown) => setActionError(getApiErrorMessage(error, "mutation")),
   });
-  const status = device?.status ? MACHINE_STATUS_LABELS[device.status] : "Chưa có trạng thái";
-  const machineType = device?.machineType === "SMART_IOT"
-    ? ADMIN_T.MACHINES.SMART
-    : device?.machineType === "CONVENTIONAL" ? ADMIN_T.MACHINES.CONVENTIONAL : ADMIN_T.MACHINES.UNCLASSIFIED;
   const locationScopeMismatch = Boolean(device && location.data && device.ownerId && location.data.ownerId !== device.ownerId);
   const currentStatus = device?.status;
   const statusFilter = typeof router.query.status === "string" ? router.query.status : "";
@@ -284,13 +278,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
       {heading}
       <QueryFeedback query={machine} loadingMessage={messages.LOADING_MACHINE} />
       {device && <>
-        <MachineDetailView className={adminStyles.machineWorkspace} summary={[
-          { label: ADMIN_T.MACHINES.STATUS, value: <span className={adminStyles.machinePlainStatus} data-status={device.status ?? undefined}>{status}</span> },
-          { label: ADMIN_T.MACHINES.MACHINE_TYPE, value: machineType },
-          { label: ADMIN_T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
-          { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
-        ]}>
-        {device.ownerId && <TransferMachineAction machine={device} role="moderator" pageLevel />}
+        <MachineDetailView className={adminStyles.machineWorkspace} summary={[]}>
 
         <div className={adminStyles.machineInventoryGroup}>
           <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
@@ -302,27 +290,24 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
             <section id="moderator-machine-profile-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-profile-tab">
               <div className={adminStyles.machineInventoryHeading}>
                 <h2>{ADMIN_T.MACHINES.DETAIL}</h2>
-                <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>
-                  Xem dữ liệu vận hành
-                </ButtonBar>
-                {!editing && <button className={adminStyles.accountSecondaryButton} type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</button>}
+                <div className={adminStyles.machineInventoryActions}>
+                  {!editing && device.ownerId && <TransferMachineAction machine={device} role="moderator" />}
+                  {!editing && <button className={adminStyles.accountSecondaryButton} type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</button>}
+                </div>
               </div>
               <div className={adminStyles.machineProfileGroups}>
                 <section className={adminStyles.machineProfileGroup}>
                   <h3>Nhận diện máy</h3>
                   <div className={adminStyles.machineProfileFields}>
                     <Field label={ADMIN_T.MACHINES.MACHINE_ID} value={device.id} />
-                    <Field label={ADMIN_T.MACHINES.SERIAL} value={device.serialNumber ?? "—"} />
                   </div>
                 </section>
                 <section className={adminStyles.machineProfileGroup}>
                   <h3>Phân bổ và hợp đồng</h3>
                   <div className={adminStyles.machineProfileFields}>
-                    <Field label={ADMIN_T.MACHINES.OWNER_ID} value={device.ownerId ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.TENANT_ID} value={device.tenantId ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.OWNER_TYPE} value={device.ownerType ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.REGION} value={device.region ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.LOCATION} value={!device.locationId ? "Kho" : locationScopeMismatch ? device.locationId : location.data?.name ?? device.locationId} />
                     <Field label={ADMIN_T.MACHINES.LOCATION_ID} value={device.locationId ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.DEPLOYED_AT} value={formatDate(device.deployedAt)} />
                     <Field label={ADMIN_T.MACHINES.CONTRACT_PERIOD} value={device.contractStartDate || device.contractEndDate ? `${formatDateOnly(device.contractStartDate)} – ${formatDateOnly(device.contractEndDate)}` : "—"} />
@@ -362,25 +347,26 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
           ) : detailTab === "machine-type" ? (
             <section id="moderator-machine-type-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-type-tab">
               <h2>{ADMIN_T.MACHINES.MACHINE_TYPE}</h2>
-              <div className={adminStyles.machineProfileFields}>
-                <Field label={ADMIN_T.MACHINES.MACHINE_TYPE} value={machineType} />
-                <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_AT} value={formatDate(device.machineTypeMappedAt)} />
-                <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_BY} value={device.machineTypeMappedBy ?? "—"} />
-                <Field label={ADMIN_T.MACHINES.TYPE_MAPPING_REASON} value={device.machineTypeMappingReason ?? "—"} />
-                <Field label={ADMIN_T.MACHINE_MODELS.ID} value={machineModelId || ADMIN_T.MACHINES.MODEL_UNASSIGNED} />
-                <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_AT} value={formatDate(device.modelMappedAt)} />
-                <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_BY} value={device.modelMappedBy ?? "—"} />
-                <Field label={ADMIN_T.MACHINES.MODEL_MAPPING_REASON} value={device.modelMappingReason ?? "—"} />
-              </div>
+              <div className={adminStyles.machineProfileGroups}>
+                <section className={adminStyles.machineProfileGroup}>
+                  <h3>Lịch sử phân loại và gán mẫu</h3>
+                  <div className={adminStyles.machineProfileFields}>
+                    <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_AT} value={formatDate(device.machineTypeMappedAt)} />
+                    <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_BY} value={device.machineTypeMappedBy ?? "—"} />
+                    <Field label={ADMIN_T.MACHINES.TYPE_MAPPING_REASON} value={device.machineTypeMappingReason ?? "—"} />
+                    <Field label={ADMIN_T.MACHINE_MODELS.ID} value={machineModelId || ADMIN_T.MACHINES.MODEL_UNASSIGNED} />
+                    <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_AT} value={formatDate(device.modelMappedAt)} />
+                    <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_BY} value={device.modelMappedBy ?? "—"} />
+                    <Field label={ADMIN_T.MACHINES.MODEL_MAPPING_REASON} value={device.modelMappingReason ?? "—"} />
+                  </div>
+                </section>
+                <section className={adminStyles.machineProfileGroup}>
+                  <h3>{ADMIN_T.MACHINE_MODELS.DETAIL}</h3>
               {machineModelId ? <>
                 <QueryFeedback query={machineModel} loadingMessage={messages.LOADING_MACHINE} />
                 {machineModel.data && <>
-                  <h3>{ADMIN_T.MACHINE_MODELS.DETAIL}</h3>
                   <div className={adminStyles.machineProfileFields}>
-                    <Field label={ADMIN_T.MACHINE_MODELS.MODEL_CODE} value={machineModel.data.modelCode} />
-                    <Field label={ADMIN_T.MACHINE_MODELS.MANUFACTURER} value={machineModel.data.manufacturer} />
                     <Field label={ADMIN_T.MACHINE_MODELS.DISPLAY_NAME} value={machineModel.data.displayName} />
-                    <Field label={ADMIN_T.MACHINES.MACHINE_TYPE} value={machineModel.data.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL} />
                     <Field label={ADMIN_T.MACHINE_MODELS.ACTIVE} value={machineModel.data.active ? ADMIN_T.MACHINE_MODELS.ACTIVE : ADMIN_T.MACHINE_MODELS.INACTIVE} />
                     <Field label={ADMIN_T.MACHINE_MODELS.CREATED_AT} value={formatDate(machineModel.data.createdAt)} />
                     <Field label={ADMIN_T.MACHINE_MODELS.UPDATED_AT} value={formatDate(machineModel.data.updatedAt)} />
@@ -391,23 +377,17 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                   </div>
                 </>}
               </> : <p className={adminStyles.emptyText}>{ADMIN_T.MACHINES.MODEL_UNLINKED}</p>}
+                </section>
+              </div>
             </section>
           ) : null}
         </div>
 
-        {detailTab === "history" && <div id="moderator-machine-history-panel" role="tabpanel" aria-labelledby="moderator-machine-history-tab"><section className={adminStyles.panel}>
-          <h2>{ADMIN_T.MACHINES.PREVENTIVE}</h2>
-          <QueryFeedback query={schedule} loadingMessage={messages.LOADING_MACHINE_SCHEDULE} />
-          {schedule.data && !schedule.isError && <div className={adminStyles.machineProfileFields}>
-            <Field label={ADMIN_T.MACHINES.NEXT_MAINTENANCE} value={formatDate(schedule.data.nextPreventiveMaintenanceAt)} />
-            <Field label={ADMIN_T.MACHINES.CUPS} value={formatNumber(schedule.data.cupsServedSinceLastDescale)} />
-          </div>}
-        </section>
-
+        {detailTab === "history" && <div id="moderator-machine-history-panel" role="tabpanel" aria-labelledby="moderator-machine-history-tab">
+        {schedule.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><button type="button" onClick={() => void schedule.refetch()}>{messages.RETRY}</button></div>}
         <section className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
             <h2>{ADMIN_T.MACHINES.TICKET_HISTORY}</h2>
-            {tickets.data && <span>{formatNumber(tickets.data.items.length)} {ADMIN_T.MACHINES.TICKET_COUNT}</span>}
           </div>
           <QueryFeedback query={tickets} loadingMessage={messages.LOADING_MACHINE_TICKETS} />
           {tickets.data && !tickets.isError && tickets.data.items.length === 0 && <p className={adminStyles.emptyText}>{ADMIN_T.COMMON.EMPTY}</p>}

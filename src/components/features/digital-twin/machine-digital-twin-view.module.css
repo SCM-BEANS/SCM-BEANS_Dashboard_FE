@@ -6,7 +6,7 @@
 .modeRow {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .modeSwitch {
@@ -53,9 +53,9 @@
 .layout {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 28%);
+  grid-template-columns: minmax(0, 1fr) 320px;
   align-items: start;
-  gap: 16px;
+  gap: 20px;
 }
 
 .viewerColumn,
@@ -337,24 +337,54 @@
   font-size: 0.75rem;
 }
 
-@media (max-width: 1023px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
+
+.viewerFrame { overflow: hidden; border: 1px solid #e9e2dc; border-radius: 12px; background: #f6f3ef; }
+.viewerHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; }
+.caption { color: #625853; font-size: 13px; }
+.modeSwitch { background: white; padding: 3px; gap: 2px; border-radius: 9px; }
+.sidePanel { padding: 22px; gap: 30px; border: 1px solid #e9e2dc; border-radius: 12px; background: white; }
+.panelSection { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.panelSection h3 { color: #625853; font-size: 14px; margin: 0 0 8px; }
+.stepTitle { margin: 8px 0; font-size: 24px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.recipeLine { margin: 0; color: #625853; font-size: 15px; overflow-wrap: anywhere; }
+.lastSeen, .stateMessage { color: #625853; font-size: 13px; }
+.moreButton { display: flex; justify-content: space-between; align-items: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: #302b29; font: inherit; font-weight: 600; cursor: pointer; }
+.moreButton:focus-visible, .details summary:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.details summary { display: flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.details summary::after { content: '+'; margin-left: auto; }
+.details[open] > summary::after { content: '-'; }
+.alertSummary { display: flex; align-items: baseline; gap: 8px; margin: 0; color: #625853; font-size: 13px; overflow-wrap: anywhere; }
+.alertSummary::before { content: ''; width: 8px; height: 8px; flex: 0 0 8px; background: #807974; border-radius: 50%; }
+.alertSummary[data-tone="success"]::before { background: #287348; }
+.alertSummary[data-tone="warning"]::before { background: #976016; }
+.alertSummary[data-tone="danger"] { color: var(--color-primary); }
+.alertSummary[data-tone="danger"]::before { background: var(--color-primary); }
+.sidePanel [data-state] { font-size: 18px; font-weight: 600; }
+.sidePanel [data-state] > span:first-child { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #807974; filter: none; }
+.sidePanel [data-state] > span:first-child svg { display: none; }
+.sidePanel [data-state="ONLINE"] > span:first-child { background: #287348; }
+.sidePanel [data-state="OFFLINE"] > span:first-child, .sidePanel [data-state="error"] > span:first-child { background: var(--color-primary); }
+.sidePanel [data-state="reconnecting"] > span:first-child { background: #976016; }
+.sidePanel [data-state] button { min-width: 44px; min-height: 44px; }
+@media (max-width: 1400px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 292px; gap: 16px; }
+  .sidePanel { padding: 20px; }
+  .caption { display: none; }
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .viewerHeader { padding: 10px; }
+  .sidePanel { padding: 14px; gap: 12px; }
+  .stepTitle { font-size: 20px; margin: 4px 0; }
+  .sidePanel [data-state] { font-size: 17px; }
 }
 
-@media (max-width: 480px) {
-  .modeSwitch {
-    width: 100%;
-  }
-
-  .modeButton {
-    min-width: 0;
-    flex: 1 1 0;
-    padding-inline: 8px;
-  }
-
-  .panelSection {
-    padding: 12px;
-  }
+.workspace.workspace { width: 100%; padding-inline: 36px; gap: 16px; }
+.heading.heading { margin-bottom: 0; }
+.navigation.navigation { margin-bottom: 0; }
+@media (max-width: 1400px) { .workspace.workspace { padding-inline: 24px; } }
+@media (max-width: 900px) {
+  .workspace.workspace { padding-inline: 16px; }
+  .navigation.navigation > div[role="tablist"] { gap: 16px; }
+  .navigation.navigation > div[role="tablist"] > button { font-size: 13px; padding-inline: 2px; }
 }

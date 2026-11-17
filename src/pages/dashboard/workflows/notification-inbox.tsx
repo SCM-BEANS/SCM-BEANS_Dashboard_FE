@@ -9,7 +9,6 @@ export function NotificationInbox({ back }: { back?: BackButtonDestination | nul
       scope="customer"
       variant="management"
       title={messages.NOTIFICATIONS_TITLE}
-      description={messages.NOTIFICATIONS_DESCRIPTION}
       back={back}
     />
   );

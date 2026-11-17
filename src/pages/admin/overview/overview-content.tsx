@@ -419,7 +419,6 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
       <div className={`${styles.pageHeading} ${styles.summaryHeading}`}>
         <div>
           <h1>{ADMIN_MESSAGES.OVERVIEW.TITLE}</h1>
-          {moderator && <p>Theo dõi hoạt động của máy, hóa đơn và công việc cần xử lý.</p>}
         </div>
         <details ref={filterRef} className={styles.summaryFilters} onKeyDown={event => { if (event.key === "Escape" && filterRef.current) { filterRef.current.open = false; filterRef.current.querySelector("summary")?.focus(); } }}>
           <summary aria-label="Chọn kỳ báo cáo"><CalendarDays size={15} aria-hidden="true" />{usagePeriod}</summary>

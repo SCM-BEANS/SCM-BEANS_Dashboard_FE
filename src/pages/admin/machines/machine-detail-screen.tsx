@@ -1,7 +1,6 @@
 import { MachineSpecificationsView } from "./create-machine-model-form";
 import axios from "axios";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -15,11 +14,8 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
-import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
-import { StatusBadge } from "@/components/status-badge/status-badge";
-import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
 import { TransferMachineAction } from "@/components/features/locations/transfer-machine-action";
 import type { PageAction } from "@/components/action-bar/page-actions";
@@ -96,59 +92,79 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
       if (issuance) { setIssueBlocked(true); await list.refetch(); }
     } finally { pending.current = false; if (!controller.current?.signal.aborted) setBusy(false); }
   };
-  return <div className={styles.machineConnectionLayout}>
-    <SmartIotPanel title="Định danh thiết bị">
-      <ButtonBar disabled={busy || identity.isFetching} onClick={() => { void run(async () => { await refreshIdentity(); }); }}>Làm mới định danh</ButtonBar>
-      {identity.isFetching ? <p role="status">Đang kiểm tra định danh thiết bị…</p> : identity.isSuccess ? <>
-        <div className={styles.operationsGrid}>
-          <div><span>Mã thiết bị đang hoạt động</span><strong>{identity.data.deviceId}</strong></div>
-          <div><span>Máy</span><strong>{serialNumber ?? machineId}</strong></div>
-        </div>
-        <ButtonBar variant="danger" disabled={busy || identityBlocked} onClick={() => setConfirmRevoke({ id: identity.data.id, deviceId: identity.data.deviceId })}>Thu hồi định danh</ButtonBar>
-      </> : identityAbsent ? <p>Chưa có định danh đang hoạt động.</p> : <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(identity.error)}</p>}
-      {identityAbsent && !identity.isFetching && <form className={styles.machineEditForm} onSubmit={(event) => {
-        event.preventDefault();
-        if (identityBlocked || !identityResolved) return;
-        void run(async () => {
-          setIdentityBlocked(true);
-          try {
-            await machinesApi.provisionDeviceIdentity(machineId, { deviceId });
-            if (!controller.current?.signal.aborted) setNotice("Đã đăng ký định danh thiết bị. Đang kiểm tra lại dữ liệu.");
-          } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
-        });
-      }}>
-        <label>Mã thiết bị<input required maxLength={255} value={deviceId} disabled={busy} onChange={(event) => setDeviceId(event.target.value)} /></label>
-        <ButtonBar type="submit" disabled={busy || identityBlocked || !deviceId.trim()}>Đăng ký định danh</ButtonBar>
-        <p>Mã đã sử dụng không thể dùng lại sau khi thu hồi. Để cấp chứng chỉ hiện tại, mã thiết bị cần trùng serial máy.</p>
-      </form>}
-      {identityBlocked && <p className={styles.accountInlineWarning} role="alert">Chưa xác minh được định danh hiện tại. Hãy làm mới định danh trước khi thao tác tiếp.</p>}
-      {identityMismatch && <p className={styles.accountInlineWarning} role="alert">Mã thiết bị khác serial máy. Chưa thể phát hành chứng chỉ; cần bộ phận vận hành kiểm tra. Định danh hiện tại được giữ nguyên.</p>}
-      {!serialNumber?.trim() && <p className={styles.accountInlineWarning}>Máy chưa có serial để phát hành chứng chỉ.</p>}
+  return <>
+    <SmartIotPanel title="Thiết lập kết nối">
+      <div className={styles.machineConnectionLayout}>
+        <section>
+          <h3>Định danh thiết bị</h3>
+          {identity.isFetching ? <p role="status">Đang kiểm tra định danh thiết bị…</p> : identity.isSuccess ? <>
+            <div className={styles.operationsGrid}>
+              <div><span>Mã thiết bị đang hoạt động</span><strong>{identity.data.deviceId}</strong></div>
+              <div><span>Máy</span><strong>{serialNumber ?? machineId}</strong></div>
+            </div>
+            <ButtonBar variant="danger" disabled={busy || identityBlocked} onClick={() => setConfirmRevoke({ id: identity.data.id, deviceId: identity.data.deviceId })}>Thu hồi định danh</ButtonBar>
+          </> : identityAbsent ? <p>Chưa có định danh đang hoạt động.</p> : <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(identity.error)}</p>}
+          {identityAbsent && !identity.isFetching && <form className={styles.machineEditForm} onSubmit={(event) => {
+            event.preventDefault();
+            if (identityBlocked || !identityResolved) return;
+            void run(async () => {
+              setIdentityBlocked(true);
+              try {
+                await machinesApi.provisionDeviceIdentity(machineId, { deviceId });
+                if (!controller.current?.signal.aborted) setNotice("Đã đăng ký định danh thiết bị. Đang kiểm tra lại dữ liệu.");
+              } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
+            });
+          }}>
+            <label>Mã thiết bị<input required maxLength={255} value={deviceId} disabled={busy} onChange={(event) => setDeviceId(event.target.value)} /></label>
+            <ButtonBar type="submit" disabled={busy || identityBlocked || !deviceId.trim()}>Đăng ký định danh</ButtonBar>
+            <p>Mã đã sử dụng không thể dùng lại sau khi thu hồi. Để cấp chứng chỉ hiện tại, mã thiết bị cần trùng serial máy.</p>
+          </form>}
+          {identityBlocked && <p className={styles.accountInlineWarning} role="alert">Chưa xác minh được định danh hiện tại. Tải lại trang để kiểm tra trước khi thao tác tiếp.</p>}
+          {identityMismatch && <p className={styles.accountInlineWarning} role="alert">Mã thiết bị khác serial máy. Chưa thể phát hành chứng chỉ; cần bộ phận vận hành kiểm tra. Định danh hiện tại được giữ nguyên.</p>}
+          {!serialNumber?.trim() && <p className={styles.accountInlineWarning}>Máy chưa có serial để phát hành chứng chỉ.</p>}
+        </section>
+        <section>
+          <h3>Chứng chỉ kết nối</h3>
+          <MachineCertificatesPanel
+            page={list.data}
+            detail={detail.data}
+            status={status}
+            pageNumber={pageNumber}
+            selectedCertificateId={selected}
+            loading={list.isFetching}
+            detailLoading={Boolean(selected) && detail.isFetching}
+            error={list.isError ? getApiErrorMessage(list.error) : undefined}
+            detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
+            actionError={actionError}
+            notice={notice}
+            busy={busy}
+            issueBlocked={issueBlocked || !list.isSuccess || !canIssue}
+            embedded
+            showRefresh={false}
+            onSelect={(id) => { if (id === selected) void detail.refetch(); else setSelected(id); }}
+            onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelected(""); }}
+            onPageChange={(next) => { setPageNumber(next); setSelected(""); }}
+            onRefresh={() => { void run(async () => { const result = await list.refetch(); await refreshIdentity(); if (result.isSuccess) setIssueBlocked(false); }); }}
+            onIssue={() => { if (!issueBlocked && canIssue && list.isSuccess) void run(async () => {
+              try {
+                const issued = await machineCertificatesApi.issue(machineId);
+                if (controller.current?.signal.aborted) return;
+                setSelected(issued.id); setNotice("Đã phát hành chứng chỉ."); await list.refetch();
+              } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
+            }, true); }}
+            onDelete={(id) => { void run(async () => {
+              try {
+                await machineCertificatesApi.delete(machineId, id);
+                if (!controller.current?.signal.aborted) setNotice("Đã xóa chứng chỉ.");
+              } finally {
+                if (!controller.current?.signal.aborted) { if (selected === id) setSelected(""); await list.refetch(); }
+              }
+            }); }}
+            onDownload={async (id, format, signal) => (await machineCertificatesApi.download(machineId, id, format, signal)).blob}
+          />
+        </section>
+      </div>
     </SmartIotPanel>
-    <MachineCertificatesPanel page={list.data} detail={detail.data} status={status} pageNumber={pageNumber}
-      selectedCertificateId={selected} loading={list.isFetching} detailLoading={Boolean(selected) && detail.isFetching}
-      error={list.isError ? getApiErrorMessage(list.error) : undefined}
-      detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined}
-      actionError={actionError} notice={notice} busy={busy} issueBlocked={issueBlocked || !list.isSuccess || !canIssue}
-      onSelect={(id) => { if (id === selected) void detail.refetch(); else setSelected(id); }} onStatusChange={(next) => { setStatus(next); setPageNumber(0); setSelected(""); }}
-      onPageChange={(next) => { setPageNumber(next); setSelected(""); }}
-      onRefresh={() => { void run(async () => { const result = await list.refetch(); await refreshIdentity(); if (result.isSuccess) setIssueBlocked(false); }); }}
-      onIssue={() => { if (!issueBlocked && canIssue && list.isSuccess) void run(async () => {
-        try {
-          const issued = await machineCertificatesApi.issue(machineId);
-          if (controller.current?.signal.aborted) return;
-          setSelected(issued.id); setNotice("Đã phát hành chứng chỉ."); await list.refetch();
-        } finally { if (!controller.current?.signal.aborted) await refreshIdentity(); }
-      }, true); }}
-      onDelete={(id) => { void run(async () => {
-        try {
-          await machineCertificatesApi.delete(machineId, id);
-          if (!controller.current?.signal.aborted) setNotice("Đã xóa chứng chỉ.");
-        } finally {
-          if (!controller.current?.signal.aborted) { if (selected === id) setSelected(""); await list.refetch(); }
-        }
-      }); }}
-      onDownload={async (id, format, signal) => (await machineCertificatesApi.download(machineId, id, format, signal)).blob} />
     {confirmRevoke && <NotificationDialog variant="confirm" title="Thu hồi định danh thiết bị?"
       description={<>Thu hồi mã <strong>{confirmRevoke.deviceId}</strong> của máy <strong>{serialNumber ?? machineId}</strong>. Mã này sẽ không thể được sử dụng lại.</>}
       primaryAction={{ label: "Thu hồi định danh", disabled: busy || !identityResolved || !identity.isSuccess || identity.data.id !== confirmRevoke.id, onClick: () => {
@@ -162,7 +178,7 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
       } }}
       secondaryAction={{ label: "Hủy", disabled: busy, onClick: () => setConfirmRevoke(null) }}
       onClose={() => { if (!busy) setConfirmRevoke(null); }} closeOnEscape={!busy} />}
-  </div>;
+  </>;
 }
 
 function MachineDetailContent() {
@@ -195,13 +211,6 @@ function MachineDetailContent() {
     queryKey: ["dolores", "machine-models", "detail", machineModelId],
     queryFn: ({ signal }) => machineModelsApi.getById(machineModelId, signal),
     enabled: validId && detailTab === "machine-type" && Boolean(machineModelId),
-    retry: false,
-  });
-  const machineLocationId = machine.data?.locationId ?? "";
-  const machineLocation = useQuery({
-    queryKey: ["dolores", "locations", "detail", machineLocationId],
-    queryFn: ({ signal }) => locationsApi.getById(machineLocationId, signal),
-    enabled: Boolean(machineLocationId) && LocationIdSchema.safeParse(machineLocationId).success,
     retry: false,
   });
   const locations = useQuery({
@@ -252,16 +261,15 @@ function MachineDetailContent() {
     setEditing(true);
     setMachineActionError("");
   };
-  const actionBar = (showActions: boolean) => {
+  const actionBar = () => {
     const device = machine.data;
     const changed = Boolean(device && (serialDraft !== (device.serialNumber ?? "") || regionDraft !== (device.region ?? "") || locationDraft !== (device.locationId ?? "")));
     const actions: PageAction[] = [];
-    if (validId && device?.machineType === "SMART_IOT") actions.push({ id: "machine-view-iot", label: T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_ADMIN.IOT });
-    if (showActions && device && !editing) {
+    if (device && !editing) {
       actions.push({ id: "machine-delete", label: "Xóa máy", variant: "danger", priority: 0, pending: deleteMachine.isPending, pendingLabel: "Đang xóa máy", onClick: () => { setMachineActionError(""); setConfirmDelete(true); } });
       actions.push({ id: "machine-edit", label: T.MACHINES.EDIT, variant: "primary", priority: 10, onClick: beginEditing });
     }
-    if (showActions && device && editing) {
+    if (device && editing) {
       actions.push({
         id: "machine-cancel-edit",
         label: T.MACHINES.CANCEL_EDIT,
@@ -283,8 +291,8 @@ function MachineDetailContent() {
         pendingLabel: "Đang lưu",
       });
     }
-    return <div className={styles.machineTopActions}>
-      {showActions && device?.ownerId && !editing && <TransferMachineAction machine={device} role="admin" />}
+    return <div className={styles.machineInventoryActions}>
+      {device?.ownerId && !editing && <TransferMachineAction machine={device} role="admin" />}
       <PageActionsRenderer actions={actions} />
     </div>;
   };
@@ -316,11 +324,11 @@ function MachineDetailContent() {
     });
   };
 
-  if (!router.isReady) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(false)}</AdminShell>;
+  if (!router.isReady) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
   if (!validId) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
     <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p></div>
-  </div>{actionBar(false)}</AdminShell>;
+  </div></AdminShell>;
   if (isMaintenanceTicketDetail) return <AdminShell><div className={styles.pageContent}>
     <MaintenanceTicketDetailsPage
       ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
@@ -330,32 +338,25 @@ function MachineDetailContent() {
       headingClassName={styles.pageHeading}
     />
   </div></AdminShell>;
-  if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div>{actionBar(true)}</AdminShell>;
+  if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
             <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar type="button" onClick={() => void machine.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>
-  </div>{actionBar(true)}</AdminShell>;
-  if (!machine.data) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div>{actionBar(false)}</AdminShell>;
+  </div></AdminShell>;
+  if (!machine.data) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<p className={styles.emptyText}>{T.MACHINES.NOT_FOUND}</p></div></AdminShell>;
 
   const device = machine.data;
   const machineTypeLabel = device.machineType === "SMART_IOT" ? T.MACHINES.SMART : device.machineType === "CONVENTIONAL" ? T.MACHINES.CONVENTIONAL : T.MACHINES.UNCLASSIFIED;
-
   return <AdminShell>
     <div className={styles.pageContent}>
       <div className={styles.machineDetailHeading}><BackButtonHeading
         title={`${T.MACHINES.DETAIL} · ${device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}`}
         titleId="admin-machine-detail-title"
-        description={<TruncatedId value={device.id} />}
         className={styles.pageHeading}
         back={getMachineDetailBackDestination(router.query)}
       />
-      {actionBar(true)}</div>
-      <MachineDetailView className={styles.machineWorkspace} summary={[
-        { label: T.MACHINES.STATUS, value: device.status ? <span className={styles.machinePlainStatus} data-status={device.status}>{MACHINE_STATUS_LABELS[device.status] ?? device.status}</span> : "—" },
-        { label: T.MACHINES.MACHINE_TYPE, value: machineTypeLabel },
-        { label: T.MACHINES.CUPS, value: formatNumber(schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale) },
-        { label: T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
-      ]}>
+      </div>
+      <MachineDetailView className={styles.machineWorkspace} summary={[]}>
 
       <div className={styles.machineInventoryGroup}>
         <div className={styles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
@@ -395,13 +396,12 @@ function MachineDetailContent() {
           <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
             <div className={styles.machineInventoryHeading}>
               <h2>{T.MACHINES.DETAIL}</h2>
-              <Link className={styles.accountSecondaryButton} href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Giám sát vận hành</Link>
+              {actionBar()}
             </div>
             <div className={styles.machineProfileGroups}>
               <section className={styles.machineProfileGroup}>
                 <h3>Nhận diện máy</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.SERIAL}</span><strong>{device.serialNumber ?? "—"}</strong></div>
                   <div><span>Mẫu máy</span><strong>{typeof device.modelName === "string" && device.modelName ? device.modelName : "Chưa có thông tin"}</strong></div>
                   <div><span>Loại máy</span><strong>{machineTypeLabel}</strong></div>
                   <div><span>Khu vực</span><strong>{device.region ?? "—"}</strong></div>
@@ -411,8 +411,6 @@ function MachineDetailContent() {
               <section className={styles.machineProfileGroup}>
                 <h3>Phân bổ và hợp đồng</h3>
                 <div className={styles.machineProfileFields}>
-                  <div><span>Khách hàng</span><strong>{typeof device.ownerName === "string" && device.ownerName ? device.ownerName : <TruncatedId value={device.ownerId} />}</strong></div>
-                  <div><span>{T.MACHINES.LOCATION}</span><strong>{!device.locationId ? "Kho" : machineLocation.data?.ownerId && device.ownerId && machineLocation.data.ownerId !== device.ownerId ? <TruncatedId value={device.locationId} /> : machineLocation.data?.name ?? <TruncatedId value={device.locationId} />}</strong></div>
                   <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
                   <div><span>{T.MACHINES.CONTRACT_PERIOD}</span><strong>{device.contractStartDate || device.contractEndDate ? formatDate(device.contractStartDate) + " – " + formatDate(device.contractEndDate) : "—"}</strong></div>
                   <div><span>{T.MACHINES.MONTHLY_RENTAL_FEE}</span><strong>{device.monthlyRentalFee == null ? "—" : formatNumber(device.monthlyRentalFee) + " ₫/tháng"}</strong></div>
@@ -446,26 +444,27 @@ function MachineDetailContent() {
         ) : detailTab === "machine-type" ? (
           <section id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
             <h2>{T.MACHINES.MACHINE_TYPE}</h2>
-            <div className={styles.operationsGrid}>
-              <div><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineTypeLabel}</strong></div>
-              <div><span>{T.MACHINES.TYPE_MAPPED_AT}</span><strong>{formatDate(device.machineTypeMappedAt, true)}</strong></div>
-              <div><span>{T.MACHINES.TYPE_MAPPED_BY}</span><strong>{device.machineTypeMappedBy ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.TYPE_MAPPING_REASON}</span><strong>{device.machineTypeMappingReason ?? "—"}</strong></div>
-              <div><span>{T.MACHINE_MODELS.ID}</span><strong>{device.modelId ?? T.MACHINES.MODEL_UNASSIGNED}</strong></div>
-              <div><span>{T.MACHINES.MODEL_MAPPED_AT}</span><strong>{formatDate(device.modelMappedAt, true)}</strong></div>
-              <div><span>{T.MACHINES.MODEL_MAPPED_BY}</span><strong>{device.modelMappedBy ?? "—"}</strong></div>
-              <div><span>{T.MACHINES.MODEL_MAPPING_REASON}</span><strong>{device.modelMappingReason ?? "—"}</strong></div>
-            </div>
+            <div className={styles.machineProfileGroups}>
+              <section className={styles.machineProfileGroup}>
+                <h3>Lịch sử phân loại và gán mẫu</h3>
+                <div className={styles.machineProfileFields}>
+                  <div><span>{T.MACHINES.TYPE_MAPPED_AT}</span><strong>{formatDate(device.machineTypeMappedAt, true)}</strong></div>
+                  <div><span>{T.MACHINES.TYPE_MAPPED_BY}</span><strong>{device.machineTypeMappedBy ?? "—"}</strong></div>
+                  <div><span>{T.MACHINES.TYPE_MAPPING_REASON}</span><strong>{device.machineTypeMappingReason ?? "—"}</strong></div>
+                  <div><span>{T.MACHINE_MODELS.ID}</span><strong>{device.modelId ?? T.MACHINES.MODEL_UNASSIGNED}</strong></div>
+                  <div><span>{T.MACHINES.MODEL_MAPPED_AT}</span><strong>{formatDate(device.modelMappedAt, true)}</strong></div>
+                  <div><span>{T.MACHINES.MODEL_MAPPED_BY}</span><strong>{device.modelMappedBy ?? "—"}</strong></div>
+                  <div><span>{T.MACHINES.MODEL_MAPPING_REASON}</span><strong>{device.modelMappingReason ?? "—"}</strong></div>
+                </div>
+              </section>
+              <section className={styles.machineProfileGroup}>
+                <h3>{T.MACHINE_MODELS.DETAIL}</h3>
             {device.modelId ? <>
               {machineModel.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
               {machineModel.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModel.error)}</p><button type="button" onClick={() => void machineModel.refetch()}>{T.COMMON.RETRY}</button></div>}
               {machineModel.data && <>
-                <h3>{T.MACHINE_MODELS.DETAIL}</h3>
-                <div className={styles.operationsGrid}>
-                  <div><span>{T.MACHINE_MODELS.MODEL_CODE}</span><strong>{machineModel.data.modelCode}</strong></div>
-                  <div><span>{T.MACHINE_MODELS.MANUFACTURER}</span><strong>{machineModel.data.manufacturer}</strong></div>
+                <div className={styles.machineProfileFields}>
                   <div><span>{T.MACHINE_MODELS.DISPLAY_NAME}</span><strong>{machineModel.data.displayName}</strong></div>
-                  <div><span>{T.MACHINES.MACHINE_TYPE}</span><strong>{machineModel.data.machineType === "SMART_IOT" ? T.MACHINES.SMART : T.MACHINES.CONVENTIONAL}</strong></div>
                   <div><span>{T.MACHINE_MODELS.ACTIVE}</span><strong>{machineModel.data.active ? T.MACHINE_MODELS.ACTIVE : T.MACHINE_MODELS.INACTIVE}</strong></div>
                   <div><span>{T.MACHINE_MODELS.CREATED_AT}</span><strong>{formatDate(machineModel.data.createdAt, true)}</strong></div>
                   <div><span>{T.MACHINE_MODELS.UPDATED_AT}</span><strong>{formatDate(machineModel.data.updatedAt, true)}</strong></div>
@@ -478,25 +477,17 @@ function MachineDetailContent() {
                 </div>
               </>}
             </> : <p className={styles.emptyText}>{T.MACHINES.MODEL_UNLINKED}</p>}
+              </section>
+            </div>
           </section>
         ) : null}
       </div>
 
       {detailTab === "history" && <>
-      <section className={styles.panel}>
-        <h2>{T.MACHINES.PREVENTIVE}</h2>
-        {schedule.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-        {schedule.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><button type="button" onClick={() => void schedule.refetch()}>{T.COMMON.RETRY}</button></div>}
-        {schedule.data && <div className={styles.operationsGrid}>
-          <div><span>{T.MACHINES.NEXT_MAINTENANCE}</span><strong>{formatDate(schedule.data.nextPreventiveMaintenanceAt, true)}</strong></div>
-          <div><span>{T.MACHINES.CUPS}</span><strong>{formatNumber(schedule.data.cupsServedSinceLastDescale)}</strong></div>
-        </div>}
-      </section>
-
+      {schedule.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><ButtonBar type="button" onClick={() => void schedule.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       <section className={styles.panel}>
         <div className={styles.machineInventoryHeading}>
           <h2>{T.MACHINES.TICKET_HISTORY}</h2>
-          {maintenanceTickets.data && <span>{formatNumber(maintenanceTickets.data.items.length)} {T.MACHINES.TICKET_COUNT}</span>}
         </div>
         {maintenanceTickets.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
         {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}

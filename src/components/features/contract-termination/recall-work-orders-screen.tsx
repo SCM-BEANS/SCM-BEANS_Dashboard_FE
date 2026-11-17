@@ -181,7 +181,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   if (!id) {
     return (
       <div className={styles.pageContent}>
-        <BackButtonHeading title="Thu hồi máy" titleId="recall-list-title" description="Theo dõi lịch nhận máy, xác nhận bàn giao và duyệt nhận tại kho." className={styles.pageHeading} back={null} />
+        <BackButtonHeading title="Thu hồi máy" titleId="recall-list-title" className={styles.pageHeading} back={null} />
         <section className={styles.panel} aria-labelledby="recall-list-title">
           <div className={viewStyles.heading}><h2>Danh sách lệnh thu hồi</h2>{refreshButton}</div>
           {list.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
@@ -225,7 +225,6 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
       <BackButtonHeading
         title="Chi tiết thu hồi máy"
         titleId="recall-detail-title"
-        description="Theo dõi nhận máy, bàn giao và tiếp nhận tại kho."
         className={styles.pageHeading}
         back={{
           label: "Danh sách thu hồi",

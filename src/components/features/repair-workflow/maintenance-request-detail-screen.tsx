@@ -205,7 +205,7 @@ export function MaintenanceRequestDetailScreen({
 
   return (
     <div className={styles.pageContent} data-screen="request-detail">
-      <BackButtonHeading title={messages.TECHNICAL_REQUEST_DETAIL} titleId="maintenance-request-detail-title" description={messages.TECHNICAL_DESCRIPTION} className={styles.pageHeading} back={{ label: "Quay lại danh sách yêu cầu", fallbackHref: listHref }} />
+      <BackButtonHeading title={messages.TECHNICAL_REQUEST_DETAIL} titleId="maintenance-request-detail-title" className={styles.pageHeading} back={{ label: "Quay lại danh sách yêu cầu", fallbackHref: listHref }} />
       {!validId && <p className={styles.pendingNotice} role="status">{id || "—"}: Mã yêu cầu bảo trì không hợp lệ.</p>}
       {validId && requestQuery.isPending && <p className={styles.pendingNotice} role="status">{messages.LOADING_MAINTENANCE_REQUESTS}</p>}
       {validId && requestQuery.isError && (

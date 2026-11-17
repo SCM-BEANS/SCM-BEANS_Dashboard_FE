@@ -32,7 +32,6 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
       <header className={styles.heading}>
         <div>
           <h1>Gói cà phê</h1>
-          <p>Theo dõi đơn mua cà phê, bàn giao và thanh toán.</p>
         </div>
         <ButtonBar rollingLabel type="button" disabled={refreshing} aria-busy={refreshing} onClick={() => {
           void workflow.orders.refetch();

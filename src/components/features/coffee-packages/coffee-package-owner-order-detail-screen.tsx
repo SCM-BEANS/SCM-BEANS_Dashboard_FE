@@ -23,7 +23,6 @@ export function CoffeePackageOwnerOrderDetailScreen({ orderId }: { orderId: stri
         back={{ label: "Về danh sách đơn", fallbackHref: PATH_CUSTOMER.COFFEE_PACKAGES }}
         title="Chi tiết đơn gói cà phê"
         titleId="coffee-package-order-page-title"
-        description="Xem thông tin đơn, hóa đơn, chứng từ thanh toán và trạng thái hoàn tiền."
         className={styles.detailHeading}
       />
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}

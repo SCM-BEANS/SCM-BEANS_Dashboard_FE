@@ -150,7 +150,6 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
         back={{ label: "Danh sách bảo trì", fallbackHref: listHref }}
         title="Chi tiết bảo trì"
         titleId="owner-maintenance-detail-title"
-        description="Xem lịch và trạng thái bảo trì thiết bị của bạn."
         className={styles.pageHeading}
       />
       {!validId ? <p className={styles.notice} role="alert">Mã yêu cầu bảo trì không hợp lệ.</p> : null}
@@ -234,11 +233,10 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
         back={null}
         title="Lịch bảo trì"
         titleId="owner-maintenance-title"
-        description="Theo dõi yêu cầu bảo trì định kỳ và xác nhận lịch hẹn."
         className={styles.pageHeading}
       />
       <section className={styles.panel} aria-labelledby="maintenance-list-title">
-      <div className={styles.panelHeading}><h2 id="maintenance-list-title">Danh sách bảo trì</h2><span>10 lịch mỗi trang</span></div>
+      <div className={styles.panelHeading}><h2 id="maintenance-list-title">Danh sách bảo trì</h2></div>
       <form className={styles.filters} onSubmit={event => { event.preventDefault(); setFilters(draft); setPage(0); }}>
         <select aria-label="Máy bảo trì" value={draft.machineId} onChange={event => setDraft(value => ({ ...value, machineId: event.target.value }))}><option value="">Tất cả máy</option>{machines.data?.map(machine => <option key={machine.id} value={machine.id}>{machine.serialNumber || machine.id}</option>)}</select>
         <select aria-label="Trạng thái bảo trì" value={draft.status} onChange={event => setDraft(value => ({ ...value, status: event.target.value }))}><option value="">Tất cả trạng thái</option>{(["REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED"] as const).map(status => <option key={status} value={status}>{maintenanceRequestStatusLabel(status)}</option>)}</select>

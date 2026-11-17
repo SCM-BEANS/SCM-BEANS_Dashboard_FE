@@ -63,7 +63,7 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
+function PageHeading({ title, description }: { title: string; description?: string }) {
   return <ModeratorPageHeading title={title} description={description} />;
 }
 
@@ -282,7 +282,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   if (isLocationsView) {
     return (
       <div className={styles.pageContent}>
-        <PageHeading title={messages.LOCATIONS_TITLE} description={messages.OWNER_LOCATIONS_DESCRIPTION} />
+        <PageHeading title={messages.LOCATIONS_TITLE} />
         <QueryFeedback query={owners} loadingMessage={messages.LOADING_OWNERS} />
         {owners.data && !owners.isError && <>
           <QueryFeedback query={locationBatch} loadingMessage={messages.OWNER_LOCATION_LOADING} />
@@ -297,7 +297,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
 
 
   return <div className={styles.pageContent}>
-    <PageHeading title="Giám sát máy" description="Chọn máy để xem các lần mất kết nối và theo dõi xử lý." />
+    <PageHeading title="Giám sát máy" />
     <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
     <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
     {!reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
@@ -318,7 +318,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
         loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
         error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}
         onFilterChange={(status) => navigateReview({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigateReview({ reviewPage: String(page), reviewId: undefined })} onSelect={(id) => navigateReview({ reviewId: id })}
-        onRefresh={() => { if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }}
         onDecide={async (id, body, files) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, reviewContext, files); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), reviewDetail.refetch()]); } }}
       />}
     </> : null}

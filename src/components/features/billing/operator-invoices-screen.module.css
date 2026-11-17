@@ -30,7 +30,6 @@
 .detailGrid dd { overflow-wrap: anywhere; margin: 5px 0 0; color: #302927; font-size: 14px; font-weight: 600; }
 .rowActions { display: flex; min-width: 190px; flex-wrap: wrap; gap: 6px; }
 .rowActions button { min-height: 34px; padding: 0 9px; font-size: 12px; }
-.breakText { overflow-wrap: anywhere; }
 .proofTable table { table-layout: fixed; min-width: 1040px; }
 .proofTable th:nth-child(1) { width: 34%; }
 .proofTable th:nth-child(2) { width: 17%; }
@@ -65,9 +64,7 @@
 .listTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; }
 .listTitle > span { color: #706561; font-size: 13px; }
 .invoiceIdentity { display: grid; gap: 5px; min-width: 0; }
-.invoiceIdentity small, .invoiceIdentity summary { color: #706561; font-size: 13px; }
-.invoiceIdentity summary { cursor: pointer; }
-.invoiceIdentity details p { margin: 7px 0; font-size: 13px; }
+.invoiceIdentity small { color: #706561; font-size: 13px; }
 .status { display: inline-flex; align-items: center; gap: 8px; color: #514843; font-size: 14px; white-space: nowrap; }
 .status i { width: 7px; height: 7px; flex: none; border-radius: 50%; background: #938d88; }
 .status[data-status="PAID"] i, .status[data-status="APPROVED"] i, .status[data-status="COMPLETED"] i { background: #2d8a63; }
@@ -84,10 +81,11 @@
 .moreFilters[open] summary { grid-column: 1 / -1; }
 .moreFilters[open] > button { justify-self: start; }
 .filterFeedback { grid-column: 1 / -1; margin: 0; color: #706561; font-size: 13px; }
-.invoiceLayout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr); gap: 20px; align-items: start; }
+.invoiceLayout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 .invoiceMain .detailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-bottom: 6px; }
 .detailSubtitle { margin: 0; color: #706561; font-size: 14px; }
-.paymentFacts { display: grid; gap: 14px; margin: 8px 0 0; }
+.paymentFacts { display: grid; gap: 14px; margin: auto 0 0; padding-top: 20px; }
+.paymentAmountRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .statusControls { display: grid; gap: 10px; margin-top: 6px; }
 .statusControls h3 { margin: 0; font-size: 14px; }
 .proofSummary { min-width: 130px; max-width: 220px; font-size: 13px; }
@@ -112,7 +110,7 @@
 .proofPreview { display: block; width: 100%; height: auto; max-height: 55vh; object-fit: contain; margin-bottom: 14px; }
 object.proofPreview { height: 55vh; }
 @media (max-width: 1100px) { .listFilters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .invoiceLayout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1100px) { .invoiceLayout { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 920px) {
   .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -127,5 +125,6 @@ object.proofPreview { height: 55vh; }
   .rowActions { min-width: 0; }
   .listFilters, .invoiceMain .detailGrid, .proofUpload { grid-template-columns: minmax(0, 1fr); }
   .panelHeading { align-items: flex-start; flex-wrap: wrap; }
+  .paymentAmountRow { align-items: flex-start; flex-wrap: wrap; }
   .exportFacts > div { grid-template-columns: minmax(0, 1fr); gap: 5px; }
 }

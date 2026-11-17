@@ -61,7 +61,7 @@ export function InvoiceRefundPanel({ invoice, role }: {
   const initialRefund = created?.id === refundId ? created : items.find((item) => item.id === refundId);
   return (
     <section className={styles.panel} aria-label="Hoàn khoản thanh toán dư">
-      <div className={styles.heading}><div><h2>Hoàn khoản thanh toán dư</h2><p className={styles.hint}>Dùng cho khoản đã thanh toán vượt số tiền cần thu.</p></div>{canCreate && <ButtonBar aria-expanded={creating} aria-controls={createFormId} onClick={() => setCreating((value) => !value)}>{creating ? "Đóng biểu mẫu" : "Tạo yêu cầu hoàn tiền"}</ButtonBar>}</div>
+      <div className={styles.heading}><h2>Hoàn khoản thanh toán dư</h2>{canCreate && <ButtonBar aria-expanded={creating} aria-controls={createFormId} onClick={() => setCreating((value) => !value)}>{creating ? "Đóng biểu mẫu" : "Tạo yêu cầu hoàn tiền"}</ButtonBar>}</div>
       {canCreate ? <form id={createFormId} hidden={!creating} className={`${styles.form} ${styles.createForm}`} onSubmit={submit}><div className={styles.grid}>
           <label>Số tiền đề nghị hoàn (VND) *<input required type="number" min="0.01" step="any" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
           <label>Lý do *<textarea required maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} /></label>
@@ -76,11 +76,9 @@ export function InvoiceRefundPanel({ invoice, role }: {
       </form>
       </details>
       <details className={styles.tool}><summary>Khoản hoàn quá hạn</summary>
-        <p className={styles.hint}>Danh sách này chỉ gồm khoản hoàn quá hạn, không phải toàn bộ lịch sử hoàn tiền.</p>
         {overdue.isLoading ? <p role="status">Đang tải khoản hoàn quá hạn…</p> : null}
         {overdue.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(overdue.error)}</p> : null}
         <ul className={styles.queue}>{items.map((item) => <li key={item.id}><button type="button" onClick={() => open(item.id)}><strong>{refundMoney(item.amount)}</strong><span>{refundStatusLabels[item.status]}</span><span>{item.id.slice(0, 8).toUpperCase()}</span></button></li>)}</ul>
-        {overdue.isSuccess && !items.length ? <p className={styles.hint}>Không có khoản hoàn quá hạn của hóa đơn trong trang này.</p> : null}
         <div className={styles.actions}>{(page > 0 || overdue.data?.hasNext) && <><ButtonBar disabled={page === 0 || overdue.isFetching} onClick={() => setPage((value) => value - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={!overdue.data?.hasNext || overdue.isFetching} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar></>}<ButtonBar disabled={overdue.isFetching} onClick={() => void overdue.refetch()}>Làm mới</ButtonBar></div>
       </details>
       </div>

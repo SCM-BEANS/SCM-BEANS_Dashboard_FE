@@ -49,7 +49,6 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
         back={screen.back ?? null}
         title={screen.title}
         titleId="technician-screen-title"
-        description={screen.description}
         className={styles.pageHeading}
       />
       {screen.filters?.length ? (

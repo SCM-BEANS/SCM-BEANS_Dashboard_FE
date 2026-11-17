@@ -83,66 +83,22 @@ function formatAxisValue(value: number) {
   }).format(value);
 }
 
-export function TelemetryHistoryPanel({
-  range,
-  onRangeChange,
-  points,
-  loading,
-  error,
-  onRetry,
-  hasMore,
-  loadingMore,
-  onLoadMore,
-  selectedField: controlledField,
-  onFieldChange,
-}: {
-  range: TelemetryRange | null;
+export function TelemetryRangeFilter({ range, onRangeChange }: {
+  range: TelemetryRange;
   onRangeChange: (range: TelemetryRange) => void;
-  points: TelemetryPoint[];
-  loading: boolean;
-  error?: string;
-  onRetry?: () => void;
-  hasMore?: boolean;
-  loadingMore?: boolean;
-  onLoadMore?: () => void;
-  selectedField?: string;
-  onFieldChange?: (field: string) => void;
 }) {
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
-  const [selectedField, setSelectedField] = useState("");
   const [rangeError, setRangeError] = useState("");
   const [editingRange, setEditingRange] = useState(false);
-  const [view, setView] = useState<"chart" | "table">("chart");
-  const duration = range ? Date.parse(range.to) - Date.parse(range.from) : 0;
+  const duration = Date.parse(range.to) - Date.parse(range.from);
   const activePreset = editingRange ? "custom" : duration === 86_400_000 ? "24h" : duration === 7 * 86_400_000 ? "7d" : duration === 30 * 86_400_000 ? "30d" : "custom";
 
   useEffect(() => {
-    if (!range) return;
     setFromInput(toDateTimeLocal(range.from));
     setToInput(toDateTimeLocal(range.to));
     setEditingRange(false);
   }, [range]);
-
-  const orderedPoints = useMemo(
-    () => [...points].sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp)),
-    [points],
-  );
-  const fields = useMemo(() => [...new Set(orderedPoints.map((point) => point.field))].sort(), [orderedPoints]);
-  const preferredField = controlledField ?? selectedField;
-  const field = fields.includes(preferredField) ? preferredField : fields.find((name) => fieldInfo(name).group === "Nhiệt độ") ?? fields.find((name) => fieldInfo(name).group !== fieldGroups[3]) ?? fields[0] ?? "";
-  const numericPoints = orderedPoints.filter((point) => point.field === field && typeof point.value === "number" && Number.isFinite(point.value));
-  const chartSource = numericPoints.slice(-500);
-  const chartMin = chartSource.reduce((minimum, point) => Math.min(minimum, point.value as number), Number.POSITIVE_INFINITY);
-  const chartMax = chartSource.reduce((maximum, point) => Math.max(maximum, point.value as number), Number.NEGATIVE_INFINITY);
-  const chartStart = chartSource.length ? Date.parse(chartSource[0]!.timestamp) : 0;
-  const chartEnd = chartSource.length ? Date.parse(chartSource[chartSource.length - 1]!.timestamp) : 0;
-  const chartCoordinates = chartSource.map((point) => {
-    const x = chartEnd === chartStart ? 500 : ((Date.parse(point.timestamp) - chartStart) / (chartEnd - chartStart)) * 1000;
-    const y = chartMax === chartMin ? 100 : 180 - (((point.value as number) - chartMin) / (chartMax - chartMin)) * 160;
-    return { x, y };
-  });
-  const chartPoints = chartCoordinates.map(({ x, y }) => `${x},${y}`).join(" ");
 
   const selectPreset = (preset: TelemetryRangePreset) => {
     const nextRange = createTelemetryRange(preset);
@@ -165,23 +121,78 @@ export function TelemetryHistoryPanel({
     }
     setEditingRange(false);
     setRangeError("");
+    event.currentTarget.closest("details")?.removeAttribute("open");
     onRangeChange({ from, to });
   };
 
-  return (
-    <div className={styles.telemetryHistory}>
-      <div className={styles.compactPeriod}>
-      <select aria-label="Kỳ thông số" value={activePreset} onChange={(event) => { if (event.target.value !== "custom") selectPreset(event.target.value as "24h" | "7d" | "30d"); }}>
-        <option value="24h">24 giờ</option><option value="7d">7 ngày</option><option value="30d">30 ngày</option><option value="custom" disabled>Tùy chọn</option>
-      </select>
-      <details className={styles.periodPicker}><summary>{range ? formatPointTime(range.from) + " – " + formatPointTime(range.to) : "Chọn thời gian"}</summary>
+  return <div className={styles.compactPeriod}>
+    <select aria-label="Kỳ thông số" value={activePreset} onChange={(event) => { if (event.target.value !== "custom") selectPreset(event.target.value as TelemetryRangePreset); }}>
+      <option value="24h">24 giờ</option><option value="7d">7 ngày</option><option value="30d">30 ngày</option><option value="custom" disabled>Tùy chọn</option>
+    </select>
+    <details className={styles.periodPicker}><summary>{formatPointTime(range.from)} – {formatPointTime(range.to)}</summary>
       <form className={styles.telemetryRangeForm} onSubmit={submitCustomRange}>
         <label>Từ ngày và giờ (UTC+7)<input type="datetime-local" required value={fromInput} onChange={(event) => { setFromInput(event.target.value); setEditingRange(true); }} /></label>
         <label>Đến ngày và giờ (UTC+7)<input type="datetime-local" required value={toInput} onChange={(event) => { setToInput(event.target.value); setEditingRange(true); }} /></label>
-        <button type="submit">Áp dụng khoảng thời gian</button>
+        <button type="submit">Áp dụng</button>
       </form>
-      </details></div>
-      {rangeError ? <p className={styles.telemetryRangeError} role="alert">{rangeError}</p> : null}
+    </details>
+    {rangeError ? <p className={styles.telemetryRangeError} role="alert">{rangeError}</p> : null}
+  </div>;
+}
+
+export function TelemetryHistoryPanel({
+  range,
+  onRangeChange,
+  points,
+  loading,
+  error,
+  onRetry,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+  selectedField: controlledField,
+  onFieldChange,
+  showRangeFilter = true,
+}: {
+  range: TelemetryRange | null;
+  onRangeChange: (range: TelemetryRange) => void;
+  points: TelemetryPoint[];
+  loading: boolean;
+  error?: string;
+  onRetry?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
+  selectedField?: string;
+  onFieldChange?: (field: string) => void;
+  showRangeFilter?: boolean;
+}) {
+  const [selectedField, setSelectedField] = useState("");
+  const [view, setView] = useState<"chart" | "table">("chart");
+
+  const orderedPoints = useMemo(
+    () => [...points].sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp)),
+    [points],
+  );
+  const fields = useMemo(() => [...new Set(orderedPoints.map((point) => point.field))].sort(), [orderedPoints]);
+  const preferredField = controlledField ?? selectedField;
+  const field = fields.includes(preferredField) ? preferredField : fields.find((name) => fieldInfo(name).group === "Nhiệt độ") ?? fields.find((name) => fieldInfo(name).group !== fieldGroups[3]) ?? fields[0] ?? "";
+  const numericPoints = orderedPoints.filter((point) => point.field === field && typeof point.value === "number" && Number.isFinite(point.value));
+  const chartSource = numericPoints.slice(-500);
+  const chartMin = chartSource.reduce((minimum, point) => Math.min(minimum, point.value as number), Number.POSITIVE_INFINITY);
+  const chartMax = chartSource.reduce((maximum, point) => Math.max(maximum, point.value as number), Number.NEGATIVE_INFINITY);
+  const chartStart = chartSource.length ? Date.parse(chartSource[0]!.timestamp) : 0;
+  const chartEnd = chartSource.length ? Date.parse(chartSource[chartSource.length - 1]!.timestamp) : 0;
+  const chartCoordinates = chartSource.map((point) => {
+    const x = chartEnd === chartStart ? 500 : ((Date.parse(point.timestamp) - chartStart) / (chartEnd - chartStart)) * 1000;
+    const y = chartMax === chartMin ? 100 : 180 - (((point.value as number) - chartMin) / (chartMax - chartMin)) * 160;
+    return { x, y };
+  });
+  const chartPoints = chartCoordinates.map(({ x, y }) => `${x},${y}`).join(" ");
+
+  return (
+    <div className={styles.telemetryHistory}>
+      {showRangeFilter && range ? <TelemetryRangeFilter range={range} onRangeChange={onRangeChange} /> : null}
 
       {loading ? <p role="status">Đang tải lịch sử thông số…</p> : null}
       {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Thử lại</button> : null}</div> : null}

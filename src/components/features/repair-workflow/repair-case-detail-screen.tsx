@@ -850,7 +850,7 @@ export function RepairCaseDetailScreen({
   const previewTimeline = compactLayout && timelinePage === 0 && !expandedTimeline;
   const renderTimelineHistory = (showHeading = true) => (
     <>
-      {showHeading ? <SectionHeading title={M.TIMELINE_TITLE} description="Các bước xử lý được sắp theo thời gian." /> : null}
+      {showHeading ? <SectionHeading title={M.TIMELINE_TITLE} /> : null}
       {timeline.isPending ? <p className={styles.notice} role="status">{M.TIMELINE_LOADING}</p> : null}
       {timeline.isError ? <QueryError label={M.TIMELINE_ERROR} error={timeline.error} onRetry={() => void timeline.refetch()} /> : null}
       {timeline.data?.content.length === 0 ? <p className={styles.notice} role="status">{M.TIMELINE_EMPTY}</p> : null}
@@ -897,7 +897,7 @@ export function RepairCaseDetailScreen({
   );
   const renderCustodyHistory = (showHeading = true) => (
     <>
-      {showHeading ? <SectionHeading title={M.CUSTODY_TITLE} description="Biên nhận bàn giao và xác nhận của khách hàng được lưu tại đây." /> : null}
+      {showHeading ? <SectionHeading title={M.CUSTODY_TITLE} /> : null}
       {custody.isPending ? <p className={styles.notice} role="status">{M.CUSTODY_LOADING}</p> : null}
       {custody.isError ? <QueryError label={M.CUSTODY_ERROR} error={custody.error} onRetry={() => void custody.refetch()} /> : null}
       {custody.data?.items.length === 0 ? <p className={styles.notice} role="status">{M.CUSTODY_EMPTY}</p> : null}
@@ -944,7 +944,7 @@ export function RepairCaseDetailScreen({
   const renderRelatedWork = (caseData: NonNullable<typeof repairCase.data>) => (
     <>
       <section className={styles.panel} aria-label="Công việc liên quan">
-        <SectionHeading title="Công việc liên quan" description="Các mã liên kết và trạng thái hiện tại của ticket, máy thay thế." />
+        <SectionHeading title="Công việc liên quan" />
         {ticket.isError ? <QueryError label={M.MAINTENANCE_TICKET} error={ticket.error} onRetry={() => void ticket.refetch()} /> : null}
         {request.isError ? <QueryError label={M.REQUEST} error={request.error} onRetry={() => void request.refetch()} /> : null}
         {assignment.isError && !(role === "technician" && axios.isAxiosError(assignment.error) && assignment.error.response?.status === 403) ? <QueryError label={M.REPLACEMENT_ASSIGNMENT} error={assignment.error} onRetry={() => void assignment.refetch()} /> : null}
@@ -981,7 +981,7 @@ export function RepairCaseDetailScreen({
           className={styles.heading}
           title={relatedOnly ? "Công việc liên quan & chứng từ" : M.CASE_DETAIL_TITLE}
           titleId="repair-case-detail-title"
-          description={relatedOnly ? `Hồ sơ sửa chữa · ${caseId.slice(0, 8).toUpperCase()}` : compactLayout ? undefined : M.CASE_DETAIL_DESCRIPTION}
+          description={relatedOnly ? `Hồ sơ sửa chữa · ${caseId.slice(0, 8).toUpperCase()}` : undefined}
           back={relatedOnly ? null : { label: "Quay lại danh sách", fallbackHref: listHref }}
         />
         {relatedOnly ? (
@@ -1036,7 +1036,7 @@ export function RepairCaseDetailScreen({
               <DetailValue label={M.PRIMARY_MACHINE} value={repairCase.data.primaryMachineId} code />
             </dl></details>
           </section> : <>          <section className={styles.panel} aria-label="Thông tin hồ sơ">
-            <SectionHeading title="Thông tin hồ sơ" description="Trạng thái do hệ thống Dolores trả về." />
+            <SectionHeading title="Thông tin hồ sơ" />
             <dl className={styles.detailGrid}>
               <DetailValue label={M.CASE_ID} value={repairCase.data.id} code />
               <DetailValue label={M.STATUS} value={statusLabel(repairCase.data.status)} />
@@ -1059,7 +1059,7 @@ export function RepairCaseDetailScreen({
           )}
 
           <section className={[styles.panel, styles.caseProcess].join(" ")} aria-label={M.PROCESS_TITLE}>
-            {!compactLayout && <SectionHeading title={M.PROCESS_TITLE} description={M.PROCESS_DESCRIPTION} />}
+            {!compactLayout && <SectionHeading title={M.PROCESS_TITLE} />}
             {ownerWaitingForHandover && <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p>}
             <details className={styles.processDisclosure} open={role === "technician" || ownerHasPendingAcknowledgment}>
               <summary>{M.PROCESS_TITLE}</summary>

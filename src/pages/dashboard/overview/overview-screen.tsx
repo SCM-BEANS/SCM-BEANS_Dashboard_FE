@@ -222,7 +222,6 @@ export function OverviewScreen() {
     <section className={commonStyles.pageContent + " " + styles.ownerOverview} aria-labelledby="customer-screen-title">
       <header className={commonStyles.pageHeading}>
         <h1 id="customer-screen-title">{messages.OVERVIEW_TITLE}</h1>
-        <p>{messages.OVERVIEW_DESCRIPTION}</p>
       </header>
 
       {overviewQuery.isPending || overviewQuery.isError ? (

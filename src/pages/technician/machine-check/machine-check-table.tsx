@@ -29,7 +29,6 @@ export function MachineCheckTable() {
     <section className={styles.pageContent} aria-labelledby="technician-machine-check-title">
       <header className={styles.pageHeading}>
         <h1 id="technician-machine-check-title">{T.NAVIGATION.MACHINE_CHECK}</h1>
-        <p>{T.ROUTES.MACHINE_CHECK_DESCRIPTION}</p>
       </header>
       <section className={styles.machineCheckPanel}>
         <h2>{T.MACHINE_CHECK.TABLE_TITLE}</h2>

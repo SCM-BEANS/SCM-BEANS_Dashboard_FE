@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
 import { Component, useCallback, useMemo, useState, type ReactNode } from "react";
 import { DIGITAL_TWIN_MESSAGES, DIGITAL_TWIN_RECIPE_TWIN_MESSAGES as T } from "@/text/digital-twin/digital-twin-messages";
 import styles from "./digital-twin-viewer.module.css";
@@ -24,6 +25,8 @@ type ViewerStatus = "loading" | "ready" | "error";
 const NO_EXCLUDED_NODE_NAMES: readonly string[] = [];
 
 export interface BodyModelViewerProps {
+  ownerLayout?: boolean;
+  partsTarget?: HTMLElement | null;
   interactive?: boolean;
   modelRotationY?: number;
   excludedNodeNames?: readonly string[];
@@ -71,6 +74,8 @@ class CanvasErrorBoundary extends Component<
 }
 
 export function BodyModelViewer({
+  ownerLayout = false,
+  partsTarget,
   interactive = true,
   modelRotationY = 0,
   excludedNodeNames = NO_EXCLUDED_NODE_NAMES,
@@ -105,24 +110,26 @@ export function BodyModelViewer({
   const [coffeeRunRequest, setCoffeeRunRequest] = useState(0);
   const [waterRunRequest, setWaterRunRequest] = useState(0);
   const [waterResetRequest, setWaterResetRequest] = useState(0);
+  const [ghostShells, setGhostShells] = useState(true);
   const [autoCamera, setAutoCamera] = useState(true);
   const [layers, setLayers] = useState<Record<PartGroupId, boolean>>({ ...DEFAULT_PART_LAYERS });
 
   const canvasPresentation = useMemo<DigitalTwinPresentation | undefined>(() => {
-    if (!presentation) return undefined;
+    if (!presentation && !ownerLayout) return undefined;
     return {
+      focus: [],
       ...presentation,
       layers: { ...layers },
       autoCamera,
-      ghostShells: Boolean(presentation.active),
+      ghostShells: ownerLayout ? ghostShells : Boolean(presentation?.active),
     };
-  }, [autoCamera, layers, presentation]);
+  }, [autoCamera, ghostShells, layers, ownerLayout, presentation]);
 
   const markManualCameraInput = useCallback((target: EventTarget | null) => {
-    if (!presentation || !(target instanceof Element)) return;
+    if ((!presentation && !ownerLayout) || !(target instanceof Element)) return;
     if (target.closest(`.${styles.toolbar}`) || !target.closest("canvas")) return;
     setAutoCamera(false);
-  }, [presentation]);
+  }, [ownerLayout, presentation]);
 
   const handleLoadStart = useCallback(() => setStatus("loading"), []);
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -189,43 +196,45 @@ export function BodyModelViewer({
 
   return (
     <div
-      className={styles.viewer}
+      className={`${styles.viewer} ${ownerLayout ? styles.ownerViewer : ""}`}
       data-operation-phase={operationEvent?.phase ?? "idle"}
       data-operation-sequence={operationEvent?.sequence}
-      style={{
+      style={ownerLayout ? undefined : {
         height: "var(--admin-machine-viewer-height, min(62vh, 700px))",
       }}
       onPointerDownCapture={(event) => markManualCameraInput(event.target)}
       onWheelCapture={(event) => markManualCameraInput(event.target)}
     >
-      <CanvasErrorBoundary key={attempt} onError={handleError}>
-        <BodyModelCanvas
-          interactive={interactive}
-          onLoadStart={handleLoadStart}
-          onReady={handleReady}
-          onError={handleError}
-          canvasLabel={DIGITAL_TWIN_MESSAGES.digital_twin_body_canvas_label}
-          modelRotationY={modelRotationY}
-          cameraResetVersion={cameraResetVersion}
-          zoomLevel={zoomLevel}
-          excludedNodeNames={excludedNodeNames}
-          includeMayxoayNode={includeMayxoayNode}
-          enableCoffeeEffect={enableCoffeeEffect}
-          coffeeRunRequest={coffeeRunRequest}
-          enableWaterEffect={enableWaterEffect}
-          waterRunRequest={waterRunRequest}
-          waterResetRequest={waterResetRequest}
-          includeCompressorMotion={includeCompressorMotion}
-          compressorModelUrls={compressorModelUrls}
-          compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
-          compressorRootFrameUrl={compressorRootFrameUrl}
-          compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
-          compressorRunning={compressorRunning}
-          operationEvent={operationEvent}
-          onOperationError={handleOperationError}
-          presentation={canvasPresentation}
-        />
-      </CanvasErrorBoundary>
+      <div className={ownerLayout ? styles.ownerScene : undefined} style={ownerLayout ? undefined : { height: "100%" }}>
+        <CanvasErrorBoundary key={attempt} onError={handleError}>
+          <BodyModelCanvas
+            interactive={interactive}
+            onLoadStart={handleLoadStart}
+            onReady={handleReady}
+            onError={handleError}
+            canvasLabel={DIGITAL_TWIN_MESSAGES.digital_twin_body_canvas_label}
+            modelRotationY={modelRotationY}
+            cameraResetVersion={cameraResetVersion}
+            zoomLevel={zoomLevel}
+            excludedNodeNames={excludedNodeNames}
+            includeMayxoayNode={includeMayxoayNode}
+            enableCoffeeEffect={enableCoffeeEffect}
+            coffeeRunRequest={coffeeRunRequest}
+            enableWaterEffect={enableWaterEffect}
+            waterRunRequest={waterRunRequest}
+            waterResetRequest={waterResetRequest}
+            includeCompressorMotion={includeCompressorMotion}
+            compressorModelUrls={compressorModelUrls}
+            compressorAttachedModelDefinitions={compressorAttachedModelDefinitions}
+            compressorRootFrameUrl={compressorRootFrameUrl}
+            compressorMotionDefinitionUrls={compressorMotionDefinitionUrls}
+            compressorRunning={compressorRunning}
+            operationEvent={operationEvent}
+            onOperationError={handleOperationError}
+            presentation={canvasPresentation}
+          />
+        </CanvasErrorBoundary>
+      </div>
 
       {interactive ? (
         <div className={styles.toolbar}>
@@ -252,15 +261,17 @@ export function BodyModelViewer({
         <span className={styles.separator} aria-hidden="true" />
         <button
           type="button"
-          aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
-          title={DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
+          aria-label={ownerLayout ? T.camera_reset : DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
+          title={ownerLayout ? T.camera_reset : DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
           disabled={status !== "ready"}
           onClick={handleReset}
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
-          <span aria-hidden="true">↺</span>
+          {ownerLayout ? T.camera_reset : <span aria-hidden="true">↺</span>}
         </button>
-        {presentation ? (
+        {ownerLayout ? (
+          <button type="button" aria-pressed={ghostShells} onClick={() => setGhostShells(value => !value)} className={`${styles.toolbarButton} ${styles.ghostButton}`}>{T.ghost_shells} {"\u00b7"} {ghostShells ? T.on : T.off}</button>
+        ) : presentation ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -314,7 +325,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {!presentation && enableCoffeeEffect ? (
+        {!ownerLayout && !presentation && enableCoffeeEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -329,7 +340,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {!presentation && enableWaterEffect ? (
+        {!ownerLayout && !presentation && enableWaterEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -354,7 +365,7 @@ export function BodyModelViewer({
             </button>
           </>
         ) : null}
-        {!presentation && enableOperationTest && operationSource !== "external" ? (
+        {!ownerLayout && !presentation && enableOperationTest && operationSource !== "external" ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
             <button
@@ -378,6 +389,17 @@ export function BodyModelViewer({
         </div>
       ) : null}
 
+      {ownerLayout && partsTarget ? createPortal(
+        <div className={styles.partControls}>
+          <label><input type="checkbox" checked={layers.shell} onChange={() => toggleLayer("shell")} />{T.layer_shell}</label>
+          <label><input type="checkbox" checked={layers.frame} onChange={() => toggleLayer("frame")} />{T.layer_frame}</label>
+          <label><input type="checkbox" checked={layers.water} onChange={() => toggleLayer("water")} />{T.layer_water}</label>
+          <label><input type="checkbox" checked={brewAssemblyOn} onChange={toggleBrewAssembly} />{T.layer_brew_unit}</label>
+          <label><input type="checkbox" checked={layers.waste} onChange={() => toggleLayer("waste")} />{T.layer_waste}</label>
+          <label><input type="checkbox" checked={autoCamera} onChange={() => setAutoCamera(value => !value)} />{T.auto_follow}</label>
+        </div>, partsTarget,
+      ) : null}
+
       {status === "loading" ? (
         <div
           className={styles.loadingOverlay}
@@ -388,13 +410,13 @@ export function BodyModelViewer({
           <div className={styles.loadingContent}>
             <span aria-hidden="true" className={styles.spinner} />
             <span className={styles.loadingText}>
-              {DIGITAL_TWIN_MESSAGES.digital_twin_body_loading}
+              {ownerLayout ? T.model_loading : DIGITAL_TWIN_MESSAGES.digital_twin_body_loading}
             </span>
           </div>
         </div>
       ) : null}
 
-      {status === "ready" ? (
+      {status === "ready" && !ownerLayout ? (
         <>
           <div
             role="status"
@@ -422,14 +444,14 @@ export function BodyModelViewer({
         >
           <div className={styles.errorContent}>
             <p className={styles.errorText}>
-              {DIGITAL_TWIN_MESSAGES.digital_twin_body_load_error}
+              {ownerLayout ? T.model_error : DIGITAL_TWIN_MESSAGES.digital_twin_body_load_error}
             </p>
             <button
               type="button"
               onClick={handleRetry}
               className={styles.retryButton}
             >
-              {DIGITAL_TWIN_MESSAGES.digital_twin_retry}
+              {ownerLayout ? T.model_retry : DIGITAL_TWIN_MESSAGES.digital_twin_retry}
             </button>
           </div>
         </div>

@@ -57,7 +57,6 @@ export const BILLING_MESSAGES = {
   REVIEW_TITLE: "Xác nhận đối soát chứng từ",
   REVIEW_REASON_FIELD: "Lý do quyết định",
   REVIEW_REASON_REQUIRED: "Nhập lý do để tiếp tục đối soát.",
-  REVIEW_HELP: "Đối chiếu số tiền trên tệp chứng từ với tổng hóa đơn trước khi quyết định.",
   APPROVE_CONFIRMATION: "Chứng từ sẽ được ghi nhận là đã duyệt.",
   REJECT_CONFIRMATION: "Chứng từ sẽ được ghi nhận là không được duyệt.",
   CONFIRM_REVIEW: "Gửi quyết định",

@@ -331,7 +331,6 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
     <div className={`${styles.pageHeading} ${styles.userPageHeading}`}><BackButtonHeading
       title={title}
       titleId="admin-stores-title"
-      description={view === "list" || view === "create" ? "Quản lý cửa hàng và thông tin liên hệ của khách hàng." : undefined}
       className={styles.pageHeading}
       back={view === "edit" && locationId ? {
         label: "Về chi tiết",

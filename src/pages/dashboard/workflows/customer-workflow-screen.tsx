@@ -143,7 +143,6 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
         back={screen.back ?? null}
         title={screen.title}
         titleId="customer-workflow-title"
-        description={screen.description}
         className={styles.pageHeading}
       />
       <div className={styles.workflowStatus} role="status" aria-describedby="customer-workflow-reason">

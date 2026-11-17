@@ -30,7 +30,6 @@ export function CoffeePackageOperatorOrderDetailScreen({
         back={{ label: "Về danh sách đơn", fallbackHref: listHref }}
         title="Chi tiết đơn gói cà phê"
         titleId="coffee-package-operator-order-title"
-        description="Xem trạng thái đơn, hóa đơn, chứng từ thanh toán và các bước xử lý tiếp theo."
         className={styles.detailHeading}
       />
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}

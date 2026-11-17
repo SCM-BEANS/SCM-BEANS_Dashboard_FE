@@ -19,7 +19,6 @@ export function LocationsScreen() {
         back={locationId ? { label: "Về danh sách địa điểm", fallbackHref: PATH_CUSTOMER.LOCATIONS } : null}
         title="Địa điểm của tôi"
         titleId="customer-locations-title"
-        description="Xem và tạo địa điểm trong phạm vi Owner đang đăng nhập."
         className={styles.pageHeading}
       />
       {!checked ? <p className={styles.loadingNotice} role="status">{messages.LOADING}</p> : ownerId ? locationId ? (

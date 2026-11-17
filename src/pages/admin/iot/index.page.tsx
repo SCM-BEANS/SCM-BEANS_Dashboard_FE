@@ -74,7 +74,6 @@ function IoTContent() {
     loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
     error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}
     onFilterChange={(status) => navigateReview({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigateReview({ reviewPage: String(page), reviewId: undefined })} onSelect={(id) => navigateReview({ reviewId: id })}
-    onRefresh={() => { if (reviewsEnabled) { void reviews.refetch(); if (reviewState?.reviewId) void reviewDetail.refetch(); } }}
     onDecide={async (id, body, files) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, reviewContext, files); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), reviewDetail.refetch()]); } }}
   />;
 
@@ -123,7 +122,6 @@ function IoTContent() {
       <BackButtonHeading
         title={T.IOT.OWNER_DETAIL}
         titleId="admin-iot-owner-title"
-        description={T.IOT.DESCRIPTION}
         className={styles.pageHeading}
         back={getIotBackDestination(router.query)}
       />
@@ -143,7 +141,6 @@ function IoTContent() {
         <BackButtonHeading
           title={profile.data ? `${T.IOT.OWNER_DETAIL}: ${profile.data.fullName}` : T.IOT.OWNER_DETAIL}
           titleId="admin-iot-owner-title"
-          description={T.IOT.DESCRIPTION}
           className={styles.pageHeading}
           back={getIotBackDestination(router.query)}
         />
@@ -207,7 +204,7 @@ function IoTContent() {
   }
 
   return <AdminShell><div className={styles.pageContent}>
-    <BackButtonHeading title="Giám sát máy" titleId="admin-iot-title" description="Chọn máy để xem kết nối, thông số và các lần mất kết nối đã ghi nhận." className={styles.pageHeading} back={null} />
+    <BackButtonHeading title="Giám sát máy" titleId="admin-iot-title" className={styles.pageHeading} back={null} />
     <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
     {reviewView ? offlinePanel(Object.fromEntries(allMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))) : <section className={styles.panel}>
       <div className={styles.machineInventoryHeading}><h2>Máy Smart IoT</h2></div>

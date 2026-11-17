@@ -37,7 +37,6 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
   const selected = alerts.isSuccess && selectedId !== null ? rows.find((alert) => alert.id === selectedId) ?? rows[0] : undefined;
 
   return <NotificationInbox scope={scope} variant="management" initialSection={initialSection} title="Thông báo"
-    description={scope === "technician" ? "Thông báo tài khoản và cập nhật công việc được giao cho bạn." : "Theo dõi thông báo hệ thống và các cảnh báo từ máy."}
     showOwnerId={scope === "admin"} onRefreshExtra={scope === "technician" ? undefined : () => alerts.refetch()}>
     {scope !== "technician" ? <div className={styles.workspace} data-detail={Boolean(selected)}>
       <section className={styles.feed} aria-labelledby="alerts-list-title">

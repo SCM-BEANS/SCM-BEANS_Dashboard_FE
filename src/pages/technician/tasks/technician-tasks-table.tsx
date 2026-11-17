@@ -215,7 +215,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         <div className={styles.panelHeading}>
           <div>
             <h2 id="technician-work-updates-title">Công việc được giao cập nhật</h2>
-            <p className={styles.helperText}>Công việc đang được giao trực tiếp cho tài khoản kỹ thuật viên.</p>
           </div>
           <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Xem tất cả</TextLinkButton>
         </div>
@@ -226,7 +225,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         ) : !isLoading && !tasksQuery.isError ? (
           <p className={styles.emptyState}>Chưa có công việc được giao.</p>
         ) : null}
-        {tasksQuery.data?.hasNext ? <p className={styles.helperText}>Danh sách còn công việc ở các trang tiếp theo.</p> : null}
       </section>
     );
   }
@@ -235,7 +233,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
     <section className={shellStyles.pageContent} aria-labelledby="technician-tasks-title">
       <header className={shellStyles.pageHeading}>
         <h1 id="technician-tasks-title">{T.NAVIGATION.TASKS}</h1>
-        <p>Các công việc được phân công cho bạn.</p>
       </header>
       <div className={styles.filterBar} role="group" aria-label={messages.FILTER_LABEL_TASKS}>
         {filters.map((item) => (
@@ -254,7 +251,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
       <section className={styles.panel} aria-labelledby="technician-task-list-title">
         <div className={styles.panelHeading}>
           <h2 id="technician-task-list-title">{filter === "all" ? "Danh sách công việc" : categoryLabels[filter]}</h2>
-          <span className={styles.helperText}>{tasksQuery.data ? tasksQuery.data.items.length : "—"} công việc trên trang · 10 việc mỗi trang</span>
         </div>
         {tasksQuery.isError ? <div className={styles.queryNotice} role="alert">{getApiErrorMessage(tasksQuery.error)} <ButtonBar type="button" onClick={() => void refreshTasks()}>{messages.TASKS_RETRY}</ButtonBar></div> : null}
         {isLoading ? <p className={styles.loading} role="status">Đang tải công việc…</p> : null}
@@ -302,7 +298,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         ) : null}
         {tasksQuery.data ? (
           <p className={styles.helperText}>
-            Trang {tasksQuery.data.page + 1} · {tasksQuery.data.items.length} công việc trong trang
+            Trang {tasksQuery.data.page + 1}
             {tasksQuery.data.hasNext ? " · còn trang tiếp theo" : ""}
           </p>
         ) : null}

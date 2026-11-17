@@ -61,7 +61,6 @@ export function SupportRequestsListScreen() {
         <header className={repairStyles.casePageHeader}>
           <div className={repairStyles.pageHeading}>
             <h1 id="customer-support-title">{messages.SUPPORT_TITLE}</h1>
-            <p>{messages.SUPPORT_DESCRIPTION}</p>
           </div>
           <ButtonBar href={PATH_CUSTOMER.SUPPORT_NEW} variant="primary">Gửi yêu cầu mới</ButtonBar>
         </header>

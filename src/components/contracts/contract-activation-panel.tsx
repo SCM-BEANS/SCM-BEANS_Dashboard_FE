@@ -166,7 +166,7 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
   }, [contract.id, terms, contract.contractTermsSnapshot, effectiveStartDate]);
 
   if (contract.status === "ACTIVE") {
-    return <section className={styles.panel} role="status"><h2>Hợp đồng đã kích hoạt</h2><p>Máy đã được triển khai theo hợp đồng này.</p></section>;
+    return null;
   }
   if (contract.status !== "DRAFT") return null;
 

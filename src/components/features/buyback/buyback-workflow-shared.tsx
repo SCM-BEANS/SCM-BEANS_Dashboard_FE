@@ -31,7 +31,7 @@ export function BuybackWorkflowLayout({
   className,
 }: {
   title: string;
-  description: string;
+  description?: string;
   back?: BackButtonDestination | null;
   actionBarBackHref?: string;
   actionBarBackLabel?: string;
@@ -437,7 +437,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       {isWorkspace || list.data?.items.length ? (
         <section className={styles.panel} data-buyback-list aria-label="Danh sách hồ sơ thu mua">
           <div className={styles.panelHeading}>
-            <div><h2 className={styles.sectionTitle}>Hồ sơ thu mua</h2>{isWorkspace ? <p>Theo dõi định giá, thu máy và tiến độ tân trang.</p> : null}</div>
+            <div><h2 className={styles.sectionTitle}>Hồ sơ thu mua</h2></div>
           </div>
           {isWorkspace ? <TableFilters search={{ ariaLabel: "Tìm hồ sơ thu mua", placeholder: "Tìm mã hồ sơ, serial hoặc mẫu máy", value: workflow.listFilterDraft.search, maxLength: 160, onChange: (search) => workflow.setListFilterDraft((current) => ({ ...current, search })) }}
             selects={[{ id: "buyback-status", ariaLabel: "Trạng thái thu mua", value: workflow.listFilterDraft.status, onChange: (status) => workflow.setListFilterDraft((current) => ({ ...current, status: status as typeof current.status })), options: [{ value: "", label: "Tất cả trạng thái" }, ...Object.entries(buybackStatusLabels).map(([value, label]) => ({ value, label }))] }]}

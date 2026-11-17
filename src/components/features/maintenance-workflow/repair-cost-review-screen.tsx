@@ -91,7 +91,6 @@ export function RepairCostReviewScreen({
         back={{ label: role === "owner" ? "Quay lại thông báo" : "Về danh sách yêu cầu", fallbackHref: listHref }}
         title="Xem xét chi phí sửa chữa"
         titleId="repair-cost-review-title"
-        description="Theo dõi đề xuất, quyết định và trạng thái phần chi phí sửa chữa."
         className={styles.pageHeading}
       />
       {!validId ? <p className={styles.notice} role="alert">Mã xem xét chi phí không hợp lệ.</p> : null}

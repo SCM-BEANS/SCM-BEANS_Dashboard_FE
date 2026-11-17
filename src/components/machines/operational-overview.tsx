@@ -16,16 +16,15 @@ import styles from "./machines.module.css";
 
 export type OperationalDateRange = { fromDate: string; toDate: string };
 
-export function MachineMonitoringHeader({ machineLabel, machineId, backHref, tabs, activeTab, onTabChange, idPrefix = "monitoring" }: {
-  machineLabel?: string; machineId: string; backHref: string;
+export function MachineMonitoringHeader({ machineLabel, backHref, tabs, activeTab, onTabChange, idPrefix = "monitoring" }: {
+  machineLabel?: string; backHref: string;
   tabs: readonly { value: string; label: string }[]; activeTab: string;
   onTabChange: (tab: string) => void; idPrefix?: string;
 }) {
   return <>
     <div className={styles.operationalOverviewBack}><Link href={backHref}>← Về hồ sơ máy</Link></div>
     <header className={styles.operationalOverviewHeading}>
-      <h1 id="machine-operational-overview-title">Giám sát vận hành</h1>
-      <p className={styles.monitoringIdentity}><strong>{machineLabel ?? "Máy đang xem"}</strong><span title={machineId}>{machineId.slice(0, 8).toUpperCase()}</span></p>
+      <h1 id="machine-operational-overview-title">Giám sát vận hành <span className={styles.monitoringMachineName}>{machineLabel ?? "Máy đang xem"}</span></h1>
     </header>
     <MachineSectionTabs label="Dữ liệu vận hành máy" tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} idPrefix={idPrefix} />
   </>;
@@ -46,9 +45,9 @@ export function MachineSectionTabs({ label, tabs, activeTab, onTabChange, idPref
     }}>{tab.label}</button>)}
   </div>;
 }
-type CalendarPreset = "TODAY" | "YESTERDAY" | "THIS_WEEK" | "LAST_WEEK" | "LAST_30_DAYS" | "THIS_MONTH";
+export type CalendarPreset = "TODAY" | "YESTERDAY" | "THIS_WEEK" | "LAST_WEEK" | "LAST_30_DAYS" | "THIS_MONTH";
 
-const calendarPresets: { key: CalendarPreset; label: string }[] = [
+export const calendarPresets: { key: CalendarPreset; label: string }[] = [
   { key: "TODAY", label: "Hôm nay" },
   { key: "YESTERDAY", label: "Hôm qua" },
   { key: "THIS_WEEK", label: "Tuần này" },
@@ -57,7 +56,7 @@ const calendarPresets: { key: CalendarPreset; label: string }[] = [
   { key: "THIS_MONTH", label: "Tháng này" },
 ];
 
-function businessToday(): string {
+export function businessToday(): string {
   const parts = new Intl.DateTimeFormat("en", {
     timeZone: DASHBOARD_BUSINESS_TIME_ZONE,
     year: "numeric",
@@ -74,7 +73,7 @@ function shiftDate(date: string, amount: number): string {
   return value.toISOString().slice(0, 10);
 }
 
-function makePresetRange(preset: CalendarPreset, today: string): OperationalDateRange {
+export function makePresetRange(preset: CalendarPreset, today: string): OperationalDateRange {
   const date = new Date(`${today}T00:00:00Z`);
   const mondayOffset = (date.getUTCDay() + 6) % 7;
   const monday = shiftDate(today, -mondayOffset);
@@ -155,8 +154,8 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
   }, [pages, fromDate, toDate]);
   const time = (value: string | null) => value ? new Intl.DateTimeFormat("vi-VN", { timeZone: DASHBOARD_BUSINESS_TIME_ZONE, dateStyle: "short", timeStyle: "medium" }).format(new Date(value)) : "—";
   function applyRange(next: OperationalDateRange) {
-    if (!DashboardDateRangeSchema.safeParse(next).success) { setDateError("Chọn khoảng ngày hợp lệ, không sau hôm nay và tối đa 90 ngày."); return; }
-    setDateError(""); onNavigate({ ...next, recordPage: undefined });
+    if (!DashboardDateRangeSchema.safeParse(next).success) { setDateError("Chọn khoảng ngày hợp lệ, không sau hôm nay và tối đa 90 ngày."); return false; }
+    setDateError(""); onNavigate({ ...next, recordPage: undefined }); return true;
   }
   const pagination = kind === "history" ? brew.data : cleaning.data;
   const cleaningRecord = cleaning.data?.content.find((row) => row.id === cleaningSelection);
@@ -164,7 +163,7 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
     <div className={styles.compactPeriod} aria-label="Kỳ dữ liệu">
       <details className={styles.periodPicker}>
         <summary>{formatDate(String(fromDate))} – {formatDate(String(toDate))}</summary>
-        <form className={styles.operationalDateForm} onSubmit={(event) => { event.preventDefault(); applyRange(draft); }}>
+        <form className={styles.operationalDateForm} onSubmit={(event) => { event.preventDefault(); if (applyRange(draft)) event.currentTarget.closest("details")?.removeAttribute("open"); }}>
           <label>Từ ngày<input type="date" value={draft.fromDate} max={draft.toDate || businessToday()} onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
           <label>Đến ngày<input type="date" value={draft.toDate} min={draft.fromDate || undefined} max={businessToday()} onChange={(event) => setDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
           <button type="submit">Áp dụng</button>
@@ -185,8 +184,7 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
               <section className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="#eee8e3" />)}<polyline fill="none" stroke="#b81724" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="#b81724"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="#706561">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
               <section className={styles.operationalOverviewPanel}><h2>Ly theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} ly</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</section>
             </div>
-            {production.hasNextPage ? <ButtonBar disabled={production.isFetching} onClick={() => void production.fetchNextPage()}>{production.isFetchingNextPage ? "Đang tải…" : "Tải thêm dữ liệu biểu đồ"}</ButtonBar> : !stats.complete ? <p role="status">Chưa tải đủ dữ liệu hoặc dữ liệu đã thay đổi. Hãy chọn khoảng ngắn hơn hoặc làm mới.</p> : null}
-            <ButtonBar disabled={production.isFetching} onClick={() => void production.refetch()}>Làm mới</ButtonBar>
+            {production.hasNextPage ? <ButtonBar disabled={production.isFetching} onClick={() => void production.fetchNextPage()}>{production.isFetchingNextPage ? "Đang tải…" : "Tải thêm dữ liệu biểu đồ"}</ButtonBar> : !stats.complete ? <p role="status">Chưa tải đủ dữ liệu hoặc dữ liệu đã thay đổi. Hãy chọn khoảng ngày ngắn hơn để tải đủ dữ liệu.</p> : null}
           </> : <section className={styles.operationalOverviewPanel}>
             <h2>{kind === "history" ? "Lịch sử từng lần pha" : "Lịch sử vệ sinh"}</h2>
             {kind === "history" && brew.data ? <DataTable rows={brew.data.content} rowKey={(row) => row.id} emptyMessage="Chưa có lần pha trong khoảng đã chọn." columns={[

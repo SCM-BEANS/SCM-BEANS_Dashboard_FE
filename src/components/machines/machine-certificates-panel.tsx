@@ -20,6 +20,8 @@ export type MachineCertificatesPanelProps = {
   notice?: string;
   busy: boolean;
   issueBlocked: boolean;
+  embedded?: boolean;
+  showRefresh?: boolean;
   selectedCertificateId?: string;
   onIssue: () => void;
   onSelect: (id: string) => void;
@@ -42,7 +44,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
   const [downloadError, setDownloadError] = useState("");
   const detail = !props.error && props.detail?.id === props.selectedCertificateId ? props.detail : undefined;
 
-  return <SmartIotPanel title="Chứng chỉ kết nối">
+  const content = <>
     <div className={styles.monitoringChartToolbar}>
       <label className={styles.telemetryFieldSelector}>Trạng thái chứng chỉ
         <select value={props.status} disabled={props.busy} onChange={(event) => props.onStatusChange(event.target.value as "" | MachineCertificateStatus)}>
@@ -51,7 +53,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
         </select>
       </label>
       <div className={styles.telemetryRangePresets}>
-        <ButtonBar disabled={props.busy || props.loading} onClick={props.onRefresh}>Làm mới</ButtonBar>
+        {props.showRefresh !== false && <ButtonBar disabled={props.busy || props.loading} onClick={props.onRefresh}>Làm mới</ButtonBar>}
         <ButtonBar variant="primary" disabled={props.busy || props.loading || props.issueBlocked || Boolean(props.error)} onClick={props.onIssue}>Phát hành chứng chỉ</ButtonBar>
       </div>
     </div>
@@ -91,5 +93,6 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
       primaryAction={{ label: "Xóa chứng chỉ", holdToConfirm: true, disabled: props.busy, onClick: () => { props.onDelete(deleting.id); setDeleting(null); } }}
       secondaryAction={{ label: "Hủy", disabled: props.busy, onClick: () => setDeleting(null) }}
       onClose={() => { if (!props.busy) setDeleting(null); }} closeOnEscape={!props.busy} />}
-  </SmartIotPanel>;
+  </>;
+  return props.embedded ? content : <SmartIotPanel title="Chứng chỉ kết nối">{content}</SmartIotPanel>;
 }

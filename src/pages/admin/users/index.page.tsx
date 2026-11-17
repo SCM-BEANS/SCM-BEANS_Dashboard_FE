@@ -91,7 +91,6 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
         <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
           <div>
           <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : view === "create" ? T.FORM.CREATE_TITLE : T.LIST.TITLE}</h1>
-          {view === "list" && <p>Tra cứu tài khoản và quản lý quyền truy cập.</p>}
           {view === "create" && <p>{T.FORM.CREATE_DESCRIPTION}</p>}
           </div>
           {view === "list" && <ButtonBar variant="primary" onClick={() => navigate({ view: "create", id: null, contractPage: null })}>{T.LIST.CREATE}</ButtonBar>}

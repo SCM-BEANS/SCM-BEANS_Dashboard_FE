@@ -186,7 +186,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
         back={back ?? null}
         title={contractId ? "Hồ sơ hợp đồng" : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : "Hợp đồng"}
         titleId="customer-screen-title"
-        description={contractId ? `Hợp đồng · ${contractId.slice(0, 8).toUpperCase()}` : "Tra cứu hợp đồng thuê máy và theo dõi quá trình thực hiện."}
+        description={contractId ? `Hợp đồng · ${contractId.slice(0, 8).toUpperCase()}` : undefined}
         className={styles.pageHeading}
       />
       {contractId ? (
@@ -260,7 +260,6 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
               {hasTerminationCase || (recallOrders.isError && detail.data.status === "ACTIVE") ? (
                 <section className={styles.dataPanel} aria-labelledby="owner-termination-link-title">
                   <h2 id="owner-termination-link-title">Hồ sơ chấm dứt hợp đồng</h2>
-                  <p>Theo dõi lịch thu hồi máy và xác nhận tình trạng bàn giao trong hồ sơ riêng.</p>
                   <ButtonBar rollingLabel href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
                 </section>
               ) : null}

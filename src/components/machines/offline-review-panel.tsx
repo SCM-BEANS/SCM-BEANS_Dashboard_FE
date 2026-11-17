@@ -5,30 +5,66 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { EvidenceList } from "@/components/evidence/evidence-list";
+import { businessToday, calendarPresets, getDefaultOperationalRange, makePresetRange, type CalendarPreset } from "./operational-overview";
+import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { OfflineViolationReviewDecisionRequestSchema, type OfflineViolationReview, type OfflineViolationReviewDecisionRequest } from "@/schema/offline-violation-reviews.schema";
 import styles from "./machines.module.css";
 
 const labels = { OBSERVING: "Đang theo dõi", REVIEW_REQUIRED: "Cần rà soát", REVIEWED: "Đã rà soát", CLEARED: "Đã kết thúc theo dõi" };
 const formatTime = (value: string | null) => value ? `${value.slice(11, 19)} ${value.slice(0, 10).split("-").reverse().join("/")}` : "—";
+const formatDate = (value: string) => value ? value.split("-").reverse().join("/") : "…";
 type Page = { items: OfflineViolationReview[]; page: number; size: number; hasNext: boolean };
 
-export function OfflineReviewPanel({ page, detail, selectedId, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, onRefresh, onDecide }: {
+export function OfflineReviewPanel({ page, detail, selectedId, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, showDateFilter = false, onDecide }: {
   selectedId?: string;
   page?: Page; detail?: OfflineViolationReview; status: string; machineId?: string; machineLabels?: Record<string, string>; canDecide: boolean;
   loading?: boolean; detailLoading?: boolean; error?: string; detailError?: string;
   onFilterChange: (status: string) => void; onPageChange: (page: number) => void;
-  onSelect: (id: string | undefined) => void; onRefresh: () => void;
+  onSelect: (id: string | undefined) => void; showDateFilter?: boolean;
   onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>;
 }) {
-  return <section className={styles.smartIotPanel} aria-label="Rà soát mất kết nối">
+  const [dateDraft, setDateDraft] = useState(getDefaultOperationalRange);
+  const [dateFilter, setDateFilter] = useState(getDefaultOperationalRange);
+  const [dateError, setDateError] = useState("");
+  const filteredItems = page?.items.filter((item) => {
+    const detectedDate = item.detectedAt.slice(0, 10);
+    return (!dateFilter.fromDate || detectedDate >= dateFilter.fromDate)
+      && (!dateFilter.toDate || detectedDate <= dateFilter.toDate);
+  });
+  return <>
+    {showDateFilter && !selectedId ? <div className={styles.compactPeriod}>
+      <details className={styles.periodPicker}>
+        <summary>{dateFilter.fromDate || dateFilter.toDate ? `${formatDate(dateFilter.fromDate)} – ${formatDate(dateFilter.toDate)}` : "Ngày phát hiện · trang hiện tại"}</summary>
+        <form className={styles.operationalDateForm} onSubmit={(event) => {
+          event.preventDefault();
+          const parsed = DashboardDateRangeSchema.safeParse(dateDraft);
+          if (!parsed.success) { setDateError("Chọn khoảng ngày hợp lệ, không sau hôm nay và tối đa 90 ngày."); return; }
+          setDateError(""); setDateDraft(parsed.data); setDateFilter(parsed.data); onPageChange(0); event.currentTarget.closest("details")?.removeAttribute("open");
+        }}>
+          <label>Từ ngày<input type="date" required value={dateDraft.fromDate} max={dateDraft.toDate || businessToday()} onChange={(event) => setDateDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
+          <label>Đến ngày<input type="date" required value={dateDraft.toDate} min={dateDraft.fromDate || undefined} max={businessToday()} onChange={(event) => setDateDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
+          <button type="submit">Áp dụng</button>
+          {dateError ? <p role="alert">{dateError}</p> : null}
+        </form>
+      </details>
+      <select aria-label="Chọn kỳ dữ liệu" value="" onChange={(event) => {
+        if (!event.target.value) return;
+        const range = makePresetRange(event.target.value as CalendarPreset, businessToday());
+        setDateError(""); setDateDraft(range); setDateFilter(range); onPageChange(0);
+      }}>
+        <option value="">Chọn kỳ</option>{calendarPresets.map(({ key, label }) => <option value={key} key={key}>{label}</option>)}
+      </select>
+    </div> : null}
+    <section className={styles.smartIotPanel} aria-label="Rà soát mất kết nối">
     {selectedId ? <ButtonBar onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}
-    <div className={styles.operationalOverviewPanelHeading}><h2>Rà soát mất kết nối</h2><ButtonBar onClick={onRefresh} disabled={loading}>Làm mới</ButtonBar></div>
-    {!selectedId && <><label className={styles.reviewFilter}>Trạng thái rà soát<select value={status} onChange={(event) => onFilterChange(event.target.value)}>
+    <div className={styles.operationalOverviewPanelHeading}><h2>Rà soát mất kết nối</h2></div>
+    {!selectedId && <><div className={styles.offlineReviewFilters}><label className={styles.reviewFilter}>Trạng thái rà soát<select value={status} onChange={(event) => onFilterChange(event.target.value)}>
       <option value="">Tất cả</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>
+    </div>
     {loading ? <p role="status">Đang tải hồ sơ rà soát…</p> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
-      <DataTable variant="accounts" rows={page.items} rowKey={(row) => row.id} emptyMessage="Chưa có hồ sơ rà soát trong phạm vi đã chọn." columns={[
+      <DataTable variant="accounts" rows={filteredItems ?? []} rowKey={(row) => row.id} emptyMessage={dateFilter.fromDate || dateFilter.toDate ? "Không có hồ sơ phù hợp trên trang đang xem." : "Chưa có hồ sơ rà soát trong phạm vi đã chọn."} columns={[
         ...(!machineId ? [{ key: "machine", header: "Máy", render: (row: OfflineViolationReview) => <span title={row.machineId}>{machineLabels?.[row.machineId] ?? row.machineId.slice(0, 8).toUpperCase()}</span> }] : []),
         { key: "time", header: "Thời điểm phát hiện", render: (row) => formatTime(row.detectedAt) },
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
@@ -41,7 +77,8 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
     {detailLoading ? <p role="status">Đang tải chi tiết rà soát…</p> : null}
     {detailError ? <p className={styles.operationalOverviewErrorText} role="alert">{detailError}</p> : null}
     {detail && !detailLoading ? <OfflineReviewDetail key={detail.id} review={detail} canDecide={canDecide && !detailError} onDecide={onDecide} onClose={() => onSelect(undefined)} /> : null}
-  </section>;
+    </section>
+  </>;
 }
 
 function OfflineReviewDetail({ review, canDecide, onDecide, onClose }: { review: OfflineViolationReview; canDecide: boolean; onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>; onClose: () => void }) {

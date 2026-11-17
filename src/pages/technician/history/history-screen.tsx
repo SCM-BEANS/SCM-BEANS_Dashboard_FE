@@ -140,7 +140,6 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
           back={machineId ? { label: "Lịch sử máy", fallbackHref: "/technician/history" } : null}
           title={title}
           titleId="technician-machine-history-title"
-          description={machineId ? "Lịch sử bảo trì và yêu cầu trên máy được giao cho bạn." : "Theo dõi các phiếu bảo trì và yêu cầu kỹ thuật trong phạm vi được giao."}
           className={shellStyles.pageHeading}
         />
         {isLoading ? <p className={shellStyles.pendingNotice} role="status">Đang tải lịch sử…</p> : null}

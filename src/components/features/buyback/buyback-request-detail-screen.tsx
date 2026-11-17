@@ -24,7 +24,6 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
   const item = query.data;
   const names = useOwnerNames(item && role !== "OWNER" ? [item.ownerId, item.responsibleModeratorId] : []);
   return <BuybackWorkflowLayout className={styles.screen} title="Chi tiết yêu cầu kỹ thuật"
-    description="Thông tin yêu cầu thu mua máy, tình trạng xử lý và các tài liệu liên quan."
     back={{ label: "Về danh sách thu mua", fallbackHref: listHref }}>
     {!validId ? <p role="alert">Mã hồ sơ không hợp lệ.</p> : null}
     {validId && query.isPending ? <p role="status">Đang tải yêu cầu…</p> : null}

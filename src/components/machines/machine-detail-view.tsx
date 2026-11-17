@@ -12,14 +12,14 @@ export function MachineDetailView({ children, summary, className }: MachineDetai
 
   return (
     <div className={classNames}>
-      <section className={styles.machineDetailSummary} aria-label="Tóm tắt máy">
+      {summary.length > 0 ? <section className={styles.machineDetailSummary} aria-label="Tóm tắt máy">
         {summary.map((metric) => (
           <article className={styles.machineDetailMetric} key={metric.label}>
             <span>{metric.label}</span>
             <strong>{metric.value}</strong>
           </article>
         ))}
-      </section>
+      </section> : null}
       <div className={styles.machineDetailSections}>{children}</div>
     </div>
   );

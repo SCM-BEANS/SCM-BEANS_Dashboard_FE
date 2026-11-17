@@ -98,7 +98,7 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
+function PageHeading({ title, description }: { title: string; description?: string }) {
   return <ModeratorPageHeading title={title} description={description} />;
 }
 
@@ -273,7 +273,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     retry: false,
   });
   if (isUnsupported) {
-    return <div className={styles.pageContent}><PageHeading title={messages.MACHINES_TITLE} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="status">{messages.MACHINE_UNAVAILABLE_ACTION}</p></div>;
+    return <div className={styles.pageContent}><PageHeading title={messages.MACHINES_TITLE} /><p className={styles.pendingNotice} role="status">{messages.MACHINE_UNAVAILABLE_ACTION}</p></div>;
   }
 
   if (isCreateView) {
@@ -286,7 +286,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       <div className={styles.pageContent}>
         <PageHeading
           title={isCreateMachine ? ADMIN_T.MACHINES.CREATE_TITLE : ADMIN_T.MACHINE_MODELS.CREATE_TITLE}
-          description={messages.MACHINES_DESCRIPTION}
         />
         {isCreateMachine ? (
           <CreateMachineForm
@@ -327,7 +326,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
 
   if (isMachineModelDetail) {
     if (!validMachineModelDetailId) {
-      return <div className={styles.pageContent}><PageHeading title={ADMIN_T.MACHINE_MODELS.DETAIL} description={messages.MACHINES_DESCRIPTION} /><p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p></div>;
+      return <div className={styles.pageContent}><PageHeading title={ADMIN_T.MACHINE_MODELS.DETAIL} /><p className={styles.pendingNotice} role="alert">{API_ERROR_MESSAGES.INVALID_RESPONSE}</p></div>;
     }
     return (
       <div className={styles.pageContent}>
@@ -364,7 +363,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     <>
     <div className={styles.pageContent}>
       <div className={adminStyles.summarySectionHeading}>
-      <PageHeading title={title} description={messages.MACHINES_DESCRIPTION} />
+      <PageHeading title={title} />
       <ButtonBar variant="primary" href={isMachineModelsView ? PATH_MODERATOR.NEW_MACHINE_MODEL : PATH_MODERATOR.NEW_MACHINE}>{isMachineModelsView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y"}</ButtonBar>
       </div>
       <MachineListView label={title} summary={!isMachineModelsView ? <>

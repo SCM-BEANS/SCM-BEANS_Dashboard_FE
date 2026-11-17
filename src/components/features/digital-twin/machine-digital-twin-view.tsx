@@ -4,6 +4,7 @@ import { notificationsApi } from "@/apis/notifications.api";
 import { ownerAnalyticsApi } from "@/apis/owner-analytics.api";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { recipesApi } from "@/apis/recipes.api";
+import { ButtonBar } from "@/components/button/button-bar";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { isTemporaryTelemetryError, pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { StatusBadge, type StatusBadgeTone } from "@/components/status-badge/status-badge";
@@ -110,7 +111,7 @@ function alertTone(level: string): StatusBadgeTone {
 function sortOpenAlerts(alerts: Alert[], machineId: string) {
   return alerts
     .filter((alert) => alert.machineId === machineId && !alert.acknowledged)
-    .sort((left, right) => Date.parse(right.ts) - Date.parse(left.ts))
+    .sort((left, right) => Number(alertTone(right.level) === "danger") - Number(alertTone(left.level) === "danger") || Date.parse(right.ts) - Date.parse(left.ts))
     .slice(0, 5);
 }
 
@@ -132,9 +133,12 @@ export function MachineDigitalTwinView({
   activeMenuId: string | null;
 }) {
   const smartMachine = machineType === "SMART_IOT";
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [partsTarget, setPartsTarget] = useState<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<Mode>(smartMachine ? "live" : "simulation");
   const [selectedRecipeId, setSelectedRecipeId] = useState(DEFAULT_RECIPE_ID);
   const [simulationPending, setSimulationPending] = useState(false);
+  const [simulationStopped, setSimulationStopped] = useState(false);
   const [replayRecord, setReplayRecord] = useState<OwnerBrewRecord | null>(null);
   const runVersion = useRef(0);
   const pageVisible = usePageVisibility();
@@ -221,6 +225,7 @@ export function MachineDigitalTwinView({
   useEffect(() => {
     runVersion.current += 1;
     stopScript();
+    setSimulationStopped(true);
     setSimulationPending(false);
     return () => { runVersion.current += 1; };
   }, [machineId, mode, stopScript]);
@@ -240,7 +245,9 @@ export function MachineDigitalTwinView({
 
   const timeLabel = formatVietnamTime(heartbeat.heartbeat?.lastSeenAt);
   const metrics = getMetricEntries(heartbeat.heartbeat?.metricsJson);
+  const errorCode = metrics.find(([key]) => key === "error_code")?.[1];
   const openAlerts = sortOpenAlerts(alertsQuery.data ?? [], machineId);
+  const criticalAlert = openAlerts.find(alert => alertTone(alert.level) === "danger");
   const displayConnectionState = heartbeat.isLoading
     ? "loading"
     : live.reconnecting
@@ -252,11 +259,6 @@ export function MachineDigitalTwinView({
           : heartbeat.error
             ? "error"
             : heartbeat.heartbeat?.status ?? "UNKNOWN";
-  const note = !smartMachine
-    ? LIVE_T.digital_twin_live_conventional_note
-    : mode === "live"
-      ? T.live_replay_note
-      : LIVE_T.digital_twin_live_note_simulation;
   const catalog = useMemo(() => recipeCatalogQuery.data ?? [], [recipeCatalogQuery.data]);
   const selectedRecipe = useMemo(
     () => catalog.find((recipe) => recipe.id === selectedRecipeId),
@@ -270,7 +272,10 @@ export function MachineDigitalTwinView({
       const script = selectedRecipe
         ? await fetchScriptForRecipe(selectedRecipe)
         : buildDefaultBrewScript();
-      if (version === runVersion.current) playScript(script, "test");
+      if (version === runVersion.current) {
+        setSimulationStopped(false);
+        playScript(script, "test");
+      }
     } finally {
       if (version === runVersion.current) setSimulationPending(false);
     }
@@ -286,6 +291,7 @@ export function MachineDigitalTwinView({
     setSimulationPending(true);
     void resolveRecipeScript(replayRecord.recipeName).then(script => {
       if (cancelled) return;
+      setSimulationStopped(false);
       playScript(script, "server");
       setReplayRecord(null);
       setSimulationPending(false);
@@ -303,35 +309,37 @@ export function MachineDigitalTwinView({
 
   return (
     <section className={styles.root} data-owner-twin-layout>
-      {smartMachine ? (
-        <div className={styles.modeRow}>
-          <div className={styles.modeSwitch} role="group" aria-label="Chế độ xem máy">
-            <button
-              type="button"
-              className={styles.modeButton}
-              aria-pressed={mode === "live"}
-              onClick={() => setMode("live")}
-            >
-              {LIVE_T.digital_twin_live_mode_live}
-            </button>
-            <button
-              type="button"
-              className={styles.modeButton}
-              aria-pressed={mode === "simulation"}
-              onClick={() => setMode("simulation")}
-            >
-              {LIVE_T.digital_twin_live_mode_simulation}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <p className={styles.note}>{note}</p>
-
       <div className={styles.layout}>
         <div className={styles.viewerColumn}>
           <div className={styles.viewerFrame}>
+            <header className={styles.viewerHeader}>
+              {smartMachine ? (
+                <div className={styles.modeRow}>
+                  <div className={styles.modeSwitch} role="group" aria-label={T.mode_label}>
+                    <button
+                      type="button"
+                      className={styles.modeButton}
+                      aria-pressed={mode === "live"}
+                      onClick={() => setMode("live")}
+                    >
+                      {LIVE_T.digital_twin_live_mode_live}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.modeButton}
+                      aria-pressed={mode === "simulation"}
+                      onClick={() => setMode("simulation")}
+                    >
+                      {LIVE_T.digital_twin_live_mode_simulation}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <span className={styles.caption}>{T.camera_hint}</span>
+            </header>
             <BodyModelViewer
+              ownerLayout
+              partsTarget={partsTarget}
               enableCoffeeEffect
               enableWaterEffect
               includeCompressorMotion
@@ -376,77 +384,94 @@ export function MachineDigitalTwinView({
 
               <section className={styles.panelSection} aria-label={T.current_step} data-live-brew-state={live.state ?? "UNKNOWN"}>
                 <h3>{live.fresh ? T.current_step : T.last_observed_step}</h3>
-                <p className={styles.stateMessage} role="status">{live.label}</p>
-                {liveRecipeName ? <p className={styles.stateMessage}>{T.now_brewing}: {liveRecipeName}</p> : null}
-                {live.recipeStep !== null ? <p className={styles.stateMessage}>{T.step_count}: {live.recipeStep}</p> : null}
+                <p className={styles.stepTitle} role="status">{live.label}</p>
+                <p className={styles.recipeLine}>{[liveRecipeName, live.recipeStep !== null ? `${T.step_count} ${live.recipeStep}` : null].filter(Boolean).join(" \u00b7 ")}</p>
                 {live.simulated ? <p className={styles.stateMessage}>{T.telemetry_test_data}</p> : null}
               </section>
 
-              <section className={styles.panelSection}>
-                <h3>{T.recent_cups}</h3>
-                {recordsQuery.isError ? (
-                  <p className={styles.errorMessage} role="alert">{T.live_history_error}</p>
-                ) : recentRecords.length === 0 ? (
-                  <p className={styles.stateMessage}>{T.no_recent_cups}</p>
-                ) : (
-                  <ol className={styles.recentList}>
-                    {recentRecords.map((record) => (
-                      <li className={styles.recentItem} key={record.id}>
-                        <div className={styles.recentCopy}>
-                          <strong>{record.recipeName}</strong>
-                          <time dateTime={record.brewedAt}>{formatVietnamTime(record.brewedAt) ?? record.brewedAt}</time>
-                        </div>
-                        <button type="button" className={styles.replayButton} onClick={() => void handleReplay(record)}>
-                          {T.replay}
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                <p className={styles.delayNote}>{T.brew_delay_note}</p>
-              </section>
-
-              {metrics.length > 0 ? (
-                <section className={styles.panelSection}>
-                  <h3>{LIVE_T.digital_twin_live_metrics}</h3>
-                  <dl className={styles.metricsList}>
-                    {metrics.map(([key, value]) => (
-                      <div className={styles.metricRow} key={key}>
-                        <dt>{key}</dt>
-                        <dd>{value === null ? "null" : String(value)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              ) : null}
-
               {!isForbiddenError(alertsQuery.error) ? (
-                <section className={styles.panelSection}>
-                  <h3>{LIVE_T.digital_twin_live_alerts}</h3>
-                  {alertsQuery.isPending ? (
-                    <p className={styles.stateMessage} role="status">{LIVE_T.digital_twin_live_alerts_loading}</p>
-                  ) : alertsQuery.isError ? (
-                    <p className={styles.errorMessage} role="alert">{LIVE_T.digital_twin_live_alerts_error}</p>
-                  ) : openAlerts.length === 0 ? (
-                    <p className={styles.stateMessage}>{LIVE_T.digital_twin_live_alerts_empty}</p>
+                <p className={styles.alertSummary} data-tone={criticalAlert ? "danger" : alertsQuery.isSuccess ? (openAlerts.length ? "warning" : "success") : "neutral"} role={criticalAlert ? "alert" : undefined}>
+                  {criticalAlert?.message ?? (alertsQuery.isError ? LIVE_T.digital_twin_live_alerts_error : alertsQuery.isPending ? LIVE_T.digital_twin_live_alerts_loading : openAlerts.length ? `${LIVE_T.digital_twin_live_alerts}: ${openAlerts.length}` : LIVE_T.digital_twin_live_alerts_empty)}
+                </p>
+              ) : null}
+              <button type="button" className={styles.moreButton} aria-expanded={moreOpen} aria-controls="digital-twin-more" onClick={() => setMoreOpen(value => !value)}>{T.more}<span aria-hidden="true">{moreOpen ? "\u2212" : "+"}</span></button>
+              <div id="digital-twin-more" hidden={!moreOpen}>
+                <details className={styles.details}>
+                  <summary>{T.recent_cups}</summary>
+
+                  {recordsQuery.isError ? (
+                    <p className={styles.errorMessage} role="alert">{T.live_history_error}</p>
+                  ) : recentRecords.length === 0 ? (
+                    <p className={styles.stateMessage}>{T.no_recent_cups}</p>
                   ) : (
-                    <ul className={styles.alertList}>
-                      {openAlerts.map((alert) => (
-                        <li className={styles.alertItem} key={alert.id}>
-                          <StatusBadge tone={alertTone(alert.level)}>{alert.level}</StatusBadge>
-                          <p>{alert.message}</p>
-                          <time dateTime={alert.ts}>{formatVietnamTime(alert.ts) ?? LIVE_T.digital_twin_live_no_signal}</time>
+                    <ol className={styles.recentList}>
+                      {recentRecords.map((record) => (
+                        <li className={styles.recentItem} key={record.id}>
+                          <div className={styles.recentCopy}>
+                            <strong>{record.recipeName}</strong>
+                            <time dateTime={record.brewedAt}>{formatVietnamTime(record.brewedAt) ?? record.brewedAt}</time>
+                          </div>
+                          <ButtonBar type="button" className={styles.replayButton} onClick={() => void handleReplay(record)}>
+                            {T.replay}
+                          </ButtonBar>
                         </li>
                       ))}
-                    </ul>
+                    </ol>
                   )}
-                </section>
-              ) : null}
+                  <p className={styles.delayNote}>{T.brew_delay_note}</p>
+                </details>
+                <details className={styles.details}>
+                  <summary>{LIVE_T.digital_twin_live_metrics}</summary>
+                  {metrics.length === 0 ? <p className={styles.stateMessage}>{T.metrics_empty}</p> : null}
+                  <dl className={styles.metricsList}>
+                    {live.recipeStep !== null ? <div className={styles.metricRow}><dt>{T.reported_step}</dt><dd>{live.recipeStep}</dd></div> : null}
+                    {errorCode !== undefined ? <div className={styles.metricRow}><dt>{T.error_code}</dt><dd>{errorCode === 0 ? T.no_error : String(errorCode)}</dd></div> : null}
+                  </dl>
+                  <details className={styles.details}>
+                    <summary>{T.diagnostics}</summary>
+                    <dl className={styles.metricsList}>
+                      {metrics.map(([key, value]) => (
+                        <div className={styles.metricRow} key={key}>
+                          <dt>{key}</dt>
+                          <dd>{value === null ? "null" : String(value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
+                </details>
+                <details className={styles.details}>
+                  <summary>{T.parts}</summary>
+                  <div ref={setPartsTarget} />
+                </details>
+                {!isForbiddenError(alertsQuery.error) ? (
+                  <details className={styles.details}>
+                    <summary>{LIVE_T.digital_twin_live_alerts}</summary>
+                    {alertsQuery.isPending ? (
+                      <p className={styles.stateMessage} role="status">{LIVE_T.digital_twin_live_alerts_loading}</p>
+                    ) : alertsQuery.isError ? (
+                      <p className={styles.errorMessage} role="alert">{LIVE_T.digital_twin_live_alerts_error}</p>
+                    ) : openAlerts.length === 0 ? (
+                      <p className={styles.stateMessage}>{LIVE_T.digital_twin_live_alerts_empty}</p>
+                    ) : (
+                      <ul className={styles.alertList}>
+                        {openAlerts.map((alert) => (
+                          <li className={styles.alertItem} key={alert.id}>
+                            <StatusBadge tone={alertTone(alert.level)}>{alert.level}</StatusBadge>
+                            <p>{alert.message}</p>
+                            <time dateTime={alert.ts}>{formatVietnamTime(alert.ts) ?? LIVE_T.digital_twin_live_no_signal}</time>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </details>
+                ) : null}
+              </div>
             </>
           ) : (
             <>
               <section className={styles.panelSection}>
-                <h3>{T.recipe_select}</h3>
+                <h3>{T.simulation_heading}</h3>
+                <p className={styles.stateMessage}>{LIVE_T.digital_twin_live_note_simulation}</p>
                 <label className={styles.selectLabel} htmlFor="digital-twin-recipe-select">{T.recipe_select}</label>
                 <select
                   id="digital-twin-recipe-select"
@@ -465,53 +490,58 @@ export function MachineDigitalTwinView({
                   <p className={styles.stateMessage}>{T.recipe_unavailable}</p>
                 ) : null}
                 <div className={styles.simulationActions}>
-                  <button
+                  <ButtonBar
                     type="button"
+                    variant="primary"
                     className={styles.runButton}
                     disabled={simulationPending || player.status === "running"}
                     onClick={() => void handleSimulationRun()}
                   >
                     {T.run_recipe}
-                  </button>
-                  <button
+                  </ButtonBar>
+                  <ButtonBar
                     type="button"
                     className={styles.stopButton}
                     disabled={player.status !== "running" && !simulationPending}
-                    onClick={() => { runVersion.current += 1; setReplayRecord(null); setSimulationPending(false); stopScript(); }}
+                    onClick={() => { runVersion.current += 1; setReplayRecord(null); setSimulationPending(false); setSimulationStopped(true); stopScript(); }}
                   >
                     {T.stop_recipe}
-                  </button>
+                  </ButtonBar>
                 </div>
               </section>
               <section className={styles.panelSection}>
                 <h3>{brewingHeading}</h3>
-                {player.status === "running" && stepList.length > 0 ? (
-                  <ol className={styles.stepList}>
-                    {stepList.map((step, index) => {
-                      const current = index === currentStepIndex;
-                      const complete = currentStepIndex >= 0 && index < currentStepIndex;
-                      const label = step.valueText ? step.label + " " + step.valueText : step.label;
-                      return (
-                        <li
-                          key={step.id}
-                          className={[
-                            styles.step,
-                            current ? styles.currentStep : "",
-                            complete ? styles.completeStep : "",
-                          ].filter(Boolean).join(" ")}
-                          aria-current={current ? "step" : undefined}
-                        >
-                          <span className={styles.stepMarker} aria-hidden="true">
-                            {complete ? "✓" : current ? "●" : "○"}
-                          </span>
-                          <span>{label}</span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                ) : (
-                  <p className={styles.stateMessage}>{T.ready}</p>
-                )}
+                <p className={styles.stepTitle} role="status">{player.status === "running" ? stepList[currentStepIndex]?.label : lastDishName ? simulationStopped ? T.simulation_stopped : T.simulation_complete : T.ready}</p>
+                <details className={styles.details}><summary>{T.procedure}</summary>
+                  {player.status === "running" && stepList.length > 0 ? (
+                    <ol className={styles.stepList}>
+                      {stepList.map((step, index) => {
+                        const current = index === currentStepIndex;
+                        const complete = currentStepIndex >= 0 && index < currentStepIndex;
+                        const label = step.valueText ? step.label + " " + step.valueText : step.label;
+                        return (
+                          <li
+                            key={step.id}
+                            className={[
+                              styles.step,
+                              current ? styles.currentStep : "",
+                              complete ? styles.completeStep : "",
+                            ].filter(Boolean).join(" ")}
+                            aria-current={current ? "step" : undefined}
+                          >
+                            <span className={styles.stepMarker} aria-hidden="true">
+                              {complete ? "✓" : current ? "●" : "○"}
+                            </span>
+                            <span>{label}</span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  ) : (
+                    <p className={styles.stateMessage}>{T.ready}</p>
+                  )}
+                </details>
+                <details className={styles.details}><summary>{T.parts}</summary><div ref={setPartsTarget} /></details>
               </section>
             </>
           )}

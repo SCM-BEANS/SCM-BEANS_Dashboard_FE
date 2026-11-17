@@ -39,7 +39,6 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
     <BuybackWorkflowLayout
       className={adminStyles.screen}
       title={caseData ? `Lệnh thu mua · ${caseData.id.slice(0, 8).toUpperCase()}` : "Đề nghị thu mua máy cũ"}
-      description="Theo dõi việc kiểm tra máy, giá Dolores duyệt, quyết định của bạn và tiến độ thu mua."
       back={workflow.detailId ? { label: "Về yêu cầu kỹ thuật", fallbackHref: `${listHref}?caseId=${encodeURIComponent(workflow.detailId)}` } : null}
     >
       <BuybackCaseList workflow={workflow} />
