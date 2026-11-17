@@ -266,32 +266,6 @@ function applyGhostShellOpacity(
   }
 }
 
-function findOccludingShellMeshes(
-  roots: readonly (THREE.Object3D | null)[],
-  camera: THREE.Camera,
-  focusBounds: THREE.Box3 | null,
-) {
-  const shellMeshes: THREE.Mesh[] = [];
-  for (const root of roots) {
-    root?.traverse((object) => {
-      if (object instanceof THREE.Mesh && ["shell", "frame"].includes(getObjectPartGroup(object))) shellMeshes.push(object);
-    });
-  }
-  if (!focusBounds || focusBounds.isEmpty()) return new Set(shellMeshes);
-
-  try {
-    const center = focusBounds.getCenter(new THREE.Vector3());
-    const direction = center.sub(camera.position);
-    const distance = direction.length();
-    if (!Number.isFinite(distance) || distance <= 0) return new Set(shellMeshes);
-    const raycaster = new THREE.Raycaster(camera.position, direction.normalize(), 0, distance);
-    const hits = raycaster.intersectObjects(shellMeshes, false);
-    return new Set(hits.map((hit) => hit.object).filter((object): object is THREE.Mesh => object instanceof THREE.Mesh));
-  } catch {
-    return new Set(shellMeshes);
-  }
-}
-
 function collectModelResources(root: THREE.Object3D): ModelResources {
   const resources: ModelResources = {
     geometries: new Set(),
@@ -787,7 +761,6 @@ function BodyScene({
   const compressorPosePairsRef = useRef<CompressorPosePair[]>([]);
   const operationVisualStateRef = useRef<OperationVisualState | null>(null);
   const presentationVisualStateRef = useRef<PresentationVisualState | null>(null);
-  const lastOcclusionUpdateAtRef = useRef(0);
   const cameraFocusTransitionRef = useRef<CameraFocusTransition | null>(null);
   const grinderNodeRef = useRef<THREE.Object3D | null>(null);
   const grinderOriginalRotationRef = useRef<THREE.Euler | null>(null);
@@ -1252,12 +1225,10 @@ function BodyScene({
     const roots = [model, compressorDisplayRoot] as const;
     try {
       applyPresentationVisualState(roots, presentation, state);
-      const focusBounds = getPartGroupBounds(roots, presentation.focus);
       const ghosted = presentation.ghostShells
-        ? findOccludingShellMeshes(roots, camera, focusBounds)
+        ? new Set(state.shellMaterials.keys())
         : new Set<THREE.Mesh>();
       applyGhostShellOpacity(state, ghosted);
-      lastOcclusionUpdateAtRef.current = Date.now();
     } catch (error) {
       restorePresentationState();
       onOperationError(error);
@@ -1391,19 +1362,6 @@ function BodyScene({
     } else if (grinderWasSpinningRef.current && grinder && originalRotation) {
       grinder.rotation.copy(originalRotation);
       grinderWasSpinningRef.current = false;
-    }
-
-    if (presentation?.ghostShells && presentation.active && model) {
-      const now = Date.now();
-      if (now - lastOcclusionUpdateAtRef.current >= 200) {
-        const roots = [model, compressorDisplayRoot] as const;
-        const visibleFocus = presentation.focus.filter((group) => presentation.layers[group]);
-        const focusBounds = getPartGroupBounds(roots, visibleFocus);
-        const ghosted = findOccludingShellMeshes(roots, camera, focusBounds);
-        const state = presentationVisualStateRef.current;
-        if (state) applyGhostShellOpacity(state, ghosted);
-        lastOcclusionUpdateAtRef.current = now;
-      }
     }
 
     const transition = cameraFocusTransitionRef.current;

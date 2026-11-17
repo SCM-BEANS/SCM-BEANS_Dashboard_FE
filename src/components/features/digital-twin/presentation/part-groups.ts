@@ -1,6 +1,7 @@
 export const PART_GROUP_NODE_PREFIXES = {
   shell: [
     "CV01_Mattrai-1",
+    "CV02_Matphai-1",
     "CV03_Matsau-1",
     "CV04_Mattren-1",
     "CV05_Mattruoc-1",

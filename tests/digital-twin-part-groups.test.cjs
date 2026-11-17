@@ -49,6 +49,7 @@ test("unmapped model nodes are assigned to other", () => {
   assert.equal(getPartGroupForNodeName("head_nen-1"), "brewUnit");
   assert.equal(getPartGroupForNodeName("arm_right_1-1"), "brewUnit");
   assert.equal(getPartGroupForNodeName("body_may-1"), "frame", "the stationary housing must not hide the moving brew mechanism");
+  assert.equal(getPartGroupForNodeName("CV02_Matphai-1"), "shell", "the right panel must be ghosted just like the left panel");
 });
 
 test("active mechanisms are opaque and surroundings remain readable", () => {
