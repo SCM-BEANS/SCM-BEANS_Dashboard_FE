@@ -3,6 +3,8 @@ import {
   getBackendApiSelection,
   getExplicitBackendApiSelection,
   preferLocalBackendApis,
+  fetchBackendUpstream,
+  isUpstreamTimeout,
 } from "@/lib/server/backend-api-selection";
 
 export const config = {
@@ -108,15 +110,15 @@ async function fetchUpstream(
   method: string,
   headers: Headers,
   body: Buffer | undefined,
-): Promise<Response> {
-  return fetch(target, {
+  mode: "remote" | "local",
+) {
+  return fetchBackendUpstream(target, {
     method,
     headers,
     body: body ? new Uint8Array(body) : undefined,
     redirect: "manual",
     cache: "no-store",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
+  }, mode, REQUEST_TIMEOUT_MS);
 }
 
 export default async function handler(
@@ -153,18 +155,19 @@ export default async function handler(
   }
 
   const headers = buildRequestHeaders(req);
-  let upstream: Response;
+  let result: Awaited<ReturnType<typeof fetchUpstream>>;
 
   try {
-    upstream = await fetchUpstream(
+    result = await fetchUpstream(
       buildTarget(selection.doloresBaseUrl, segments, req.url),
       method,
       headers,
       body,
+      selection.mode,
     );
-  } catch {
-    if (provisioningRequest || selection.mode !== "remote") {
-      res.status(502).json({ error: "Dolores API is unavailable" });
+  } catch (error) {
+    if (provisioningRequest || selection.mode !== "remote" || process.env.BACKEND_API_MODE?.trim().toLowerCase() === "remote") {
+      res.status(isUpstreamTimeout(error) ? 504 : 502).json({ error: "Dolores API is unavailable" });
       return;
     }
 
@@ -173,24 +176,25 @@ export default async function handler(
     const localSelection = preferLocalBackendApis();
 
     if (method !== "GET" && method !== "HEAD") {
-      res.status(502).json({ error: "Remote Dolores API is unavailable" });
+      res.status(isUpstreamTimeout(error) ? 504 : 502).json({ error: "Remote Dolores API is unavailable" });
       return;
     }
 
     try {
-      upstream = await fetchUpstream(
+      result = await fetchUpstream(
         buildTarget(localSelection.doloresBaseUrl, segments, req.url),
         method,
         headers,
         body,
+        localSelection.mode,
       );
-    } catch {
-      res.status(502).json({ error: "Dolores API is unavailable" });
+    } catch (error) {
+      res.status(isUpstreamTimeout(error) ? 504 : 502).json({ error: "Dolores API is unavailable" });
       return;
     }
   }
 
-  const responseBody = Buffer.from(await upstream.arrayBuffer());
+  const { upstream, responseBody } = result;
   res.status(upstream.status);
   upstream.headers.forEach((value, name) => {
     if (!responseHeadersToSkip.has(name.toLowerCase())) {

@@ -11,9 +11,16 @@ function loadRoute(fetchImpl, env = {}) {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   });
+  const backendFile = join(__dirname, '..', 'src/lib/server/backend-api-selection.ts');
+  const backendSource = ts.transpileModule(readFileSync(backendFile, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const backend = { exports: {} };
+  new Function('require', 'exports', 'module', 'fetch', 'process', backendSource)(require, backend.exports, backend, fetchImpl, { env });
+  const mockedRequire = id => id === '@/lib/server/backend-api-selection' ? backend.exports : require(id);
   const loaded = { exports: {} };
   new Function('require', 'exports', 'module', 'fetch', 'process', outputText)(
-    require,
+    mockedRequire,
     loaded.exports,
     loaded,
     fetchImpl,

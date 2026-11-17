@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { isTemporaryTelemetryError } from "@/components/machines/machine-heartbeat-visibility";
 import type { MachineHeartbeat } from "@/schema/telemetry.schema";
 import type { DigitalTwinCycleEvent, DigitalTwinCyclePhase } from "@/schema/digital-twin-cycle.schema";
 import { DIGITAL_TWIN_LIVE_STATE_LABELS as LABELS } from "@/text/digital-twin/digital-twin-messages";
@@ -95,7 +96,7 @@ export function liveBrewPresentation(state: State | null, machineId: string, rec
 }
 
 export function liveHeartbeatConnected(heartbeat: MachineHeartbeat | undefined, machineId: string, now: number, error?: unknown) {
-  if (error || !heartbeat || heartbeat.machineId !== machineId || heartbeat.status !== "ONLINE") return false;
+  if ((error && !isTemporaryTelemetryError(error)) || !heartbeat || heartbeat.machineId !== machineId || heartbeat.status !== "ONLINE") return false;
   // The server evaluates liveness independently from the latest brewing measurement.
   const evaluated = Date.parse(heartbeat.evaluatedAt ?? heartbeat.lastSeenAt ?? "");
   const age = now - evaluated;
@@ -124,5 +125,5 @@ export function useLiveBrewState(machineId: string, heartbeat: MachineHeartbeat 
   const view = useMemo(() => liveBrewView(usable, fresh), [usable, fresh]);
   // Keep camera/material work tied to a step change rather than every heartbeat.
   const presentation = useMemo(() => liveBrewPresentation(view.state, machineId, view.recipeStep, fresh), [view.state, machineId, view.recipeStep, fresh]);
-  return { ...view, presentation, connected, fresh, delayed: Boolean(usable && !fresh) };
+  return { ...view, presentation, connected, fresh, reconnecting: connected && isTemporaryTelemetryError(error), delayed: Boolean(usable && !fresh) };
 }

@@ -5,7 +5,7 @@ import { ownerAnalyticsApi } from "@/apis/owner-analytics.api";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { recipesApi } from "@/apis/recipes.api";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
-import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { isTemporaryTelemetryError, pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { StatusBadge, type StatusBadgeTone } from "@/components/status-badge/status-badge";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import type { Machine } from "@/schema/machines.schema";
@@ -140,7 +140,7 @@ export function MachineDigitalTwinView({
   const pageVisible = usePageVisibility();
   const subject = authScopedQuerySubject("OWNER");
   const liveEnabled = smartMachine && mode === "live";
-  const heartbeat = useMachineHeartbeat({ machineId, enabled: liveEnabled });
+  const heartbeat = useMachineHeartbeat({ machineId, enabled: smartMachine, intervalMs: liveEnabled ? 1_000 : 5_000 });
   const player = useBrewScriptPlayer(machineId);
   const { play: playScript, stop: stopScript } = player;
   const live = useLiveBrewState(machineId, heartbeat.heartbeat, liveEnabled && pageVisible, heartbeat.error, heartbeat.receivedAt);
@@ -201,7 +201,7 @@ export function MachineDigitalTwinView({
     },
     enabled: liveEnabled && pageVisible,
     retry: false,
-    refetchInterval: liveEnabled && pageVisible ? BREW_RECORD_REFRESH_INTERVAL_MS : false,
+    refetchInterval: query => liveEnabled && pageVisible ? pollingInterval(query, BREW_RECORD_REFRESH_INTERVAL_MS) : false,
     refetchIntervalInBackground: false,
   });
 
@@ -211,8 +211,8 @@ export function MachineDigitalTwinView({
     enabled: liveEnabled && pageVisible,
     retry: false,
     refetchInterval: (query) =>
-      liveEnabled && pageVisible && !isForbiddenError(query.state.error)
-        ? ALERT_REFRESH_INTERVAL_MS
+      liveEnabled && pageVisible
+        ? pollingInterval(query, ALERT_REFRESH_INTERVAL_MS)
         : false,
     refetchIntervalInBackground: false,
   });
@@ -243,11 +243,15 @@ export function MachineDigitalTwinView({
   const openAlerts = sortOpenAlerts(alertsQuery.data ?? [], machineId);
   const displayConnectionState = heartbeat.isLoading
     ? "loading"
-    : heartbeat.error
-      ? "error"
-      : liveEnabled && heartbeat.heartbeat?.status === "ONLINE" && !live.connected
-        ? "UNKNOWN"
-        : heartbeat.heartbeat?.status ?? "UNKNOWN";
+    : live.reconnecting
+      ? "reconnecting"
+      : heartbeat.error && !isTemporaryTelemetryError(heartbeat.error)
+        ? "error"
+        : liveEnabled && heartbeat.heartbeat && !live.connected
+          ? "OFFLINE"
+          : heartbeat.error
+            ? "error"
+            : heartbeat.heartbeat?.status ?? "UNKNOWN";
   const note = !smartMachine
     ? LIVE_T.digital_twin_live_conventional_note
     : mode === "live"
@@ -351,7 +355,7 @@ export function MachineDigitalTwinView({
                   <p className={styles.stateMessage} role="status">
                     {LIVE_T.digital_twin_live_connecting}
                   </p>
-                ) : heartbeat.error ? (
+                ) : displayConnectionState === "error" ? (
                   <>
                     <MachineConnectionBadge state="error" onRetry={() => void heartbeat.refetch()} />
                     <p className={styles.errorMessage} role="alert">{LIVE_T.digital_twin_live_error}</p>

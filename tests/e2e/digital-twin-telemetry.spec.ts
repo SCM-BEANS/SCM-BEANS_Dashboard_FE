@@ -17,7 +17,7 @@ test("owner live 3D follows telemetry packets, ignores brew history and old pack
     if (path === `/machines/${machineId}`) body = { id: machineId, ownerId, serialNumber: "LIVE-TEST-001", machineType: "SMART_IOT", status: "DEPLOYED_CONTRACT_OWNER" };
     else if (path.endsWith("heartbeats/latest")) {
       reads++;
-      if (unavailable) { status = 503; body = { message: "Service unavailable" }; }
+      if (unavailable) { status = 502; body = { message: "Service unavailable" }; }
       else body = { machineId, status: online ? "ONLINE" : "OFFLINE", evaluatedAt: new Date(Date.now() + serverOffset).toISOString(), lastSeenAt: new Date(Date.now() + serverOffset).toISOString(), deviceReportedAt: new Date((deviceTime ?? Date.now()) + serverOffset).toISOString(), brewState: `BREW_STATE_${state}`, sequenceNumber: sequence, metricsJson: { fsm_state: state, recipe_step: 3, recipe_name: "Espresso", simulated: true } };
     } else if (path === "/owner/brew-records") body = { content: records, page: 0, size: 100, totalElements: records.length, totalPages: Math.ceil(records.length / 100), first: true, last: true };
     else if (path === "/notifications/unread-count") body = { unreadCount: 0 };
@@ -37,7 +37,7 @@ test("owner live 3D follows telemetry packets, ignores brew history and old pack
   const before = reads;
   records.push({ id: ownerId, eventId: ownerId, machineId, machineSerialNumber: "LIVE-TEST-001", recipeName: "Espresso", brewedAt: new Date(Date.now() - 1000).toISOString(), receivedAt: new Date().toISOString() });
   await expect(page.getByRole("button", { name: "Xem lại", exact: true })).toBeVisible({ timeout: 12_000 });
-  expect(reads - before).toBeGreaterThanOrEqual(3);
+  await expect.poll(() => reads - before).toBeGreaterThanOrEqual(3);
   await expect(viewer).toHaveAttribute("data-operation-phase", "grinding");
   await expect(viewer).toHaveAttribute("data-operation-sequence", "20");
 
@@ -53,7 +53,7 @@ test("owner live 3D follows telemetry packets, ignores brew history and old pack
   await expect(viewer).toHaveAttribute("data-operation-phase", "extraction");
   await expect(live.getByText("Đang chiết xuất", { exact: true })).toBeVisible();
   await live.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: ".playwright-cli/digital-twin-live-telemetry.png" });
+  await page.screenshot({ path: test.info().outputPath("digital-twin-live-telemetry.png") });
   // A temporary offline heartbeat must not erase the extraction step or require a reload.
   online = false;
   await expect(page.getByText("D\u1eef li\u1ec7u \u0111ang ch\u1eadm", { exact: true })).toBeVisible();
@@ -69,8 +69,10 @@ test("owner live 3D follows telemetry packets, ignores brew history and old pack
   await expect(viewer).toHaveAttribute("data-operation-sequence", "1");
   await expect(live).toHaveAttribute("data-live-brew-state", "GRINDING");
   unavailable = true;
-  await expect(page.getByRole("tabpanel", { name: "Xem m\u00e1y 3D" }).locator('[data-state="error"]')).toBeVisible();
+  await expect(page.getByRole("tabpanel", { name: "Xem m\u00e1y 3D" }).locator('[data-state="reconnecting"]')).toBeVisible();
   await expect(live).toHaveAttribute("data-live-brew-state", "GRINDING");
+  await expect(live.getByRole("heading", { name: "B\u01b0\u1edbc hi\u1ec7n t\u1ea1i", exact: true })).toBeVisible();
+  await expect(viewer).toHaveAttribute("data-operation-phase", "grinding");
   unavailable = false; state = "ERROR"; sequence = 2;
   await expect(viewer).toHaveAttribute("data-operation-phase", "fault");
   state = "IDLE"; sequence = 3;

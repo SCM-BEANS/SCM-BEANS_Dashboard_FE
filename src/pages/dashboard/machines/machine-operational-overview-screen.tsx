@@ -13,7 +13,7 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
 import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
-import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
 import { OwnerAnalyticsCalendarRangeSchema, OwnerBrewRecordsParamsSchema, OwnerCleaningRecordsParamsSchema, type OwnerAnalyticsContext } from "@/schema/owner-analytics.schema";
@@ -127,7 +127,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   const cupCount = useQuery({ queryKey: ["owner-cup-count", subject, machineId, state?.range], queryFn: ({ signal }) => ownerAnalyticsApi.getCupCount({ ...state!.range, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "brewing", retry: false, refetchOnWindowFocus: false });
   const brew = useQuery({ queryKey: ["owner-brew-history", subject, machineId, state?.brewing], queryFn: ({ signal }) => ownerAnalyticsApi.listBrewRecords({ ...state!.brewing, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "history", retry: false, refetchOnWindowFocus: false });
   const cleaning = useQuery({ queryKey: ["owner-cleaning-history", subject, machineId, state?.cleaning], queryFn: ({ signal }) => ownerAnalyticsApi.listCleaningRecords({ ...state!.cleaning, machineId }, signal, context), enabled: analyticsEnabled && state?.tab === "cleaning", retry: false, refetchOnWindowFocus: false });
-  const heartbeat = useQuery({ queryKey: ["owner-machine-heartbeat", subject, machineId], queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal), enabled: ready && Boolean(state?.tab === "connection" && smartIot && pageVisible), retry: false, refetchInterval: state?.tab === "connection" && pageVisible ? 5_000 : false, refetchIntervalInBackground: false });
+  const heartbeat = useQuery({ queryKey: ["owner-machine-heartbeat", subject, machineId], queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal), enabled: ready && Boolean(state?.tab === "connection" && smartIot && pageVisible), retry: false, refetchInterval: query => state?.tab === "connection" && pageVisible ? pollingInterval(query, 5_000) : false, refetchIntervalInBackground: false });
   const points = useInfiniteQuery({
     queryKey: ["owner-machine-telemetry-points", subject, machineId, state?.telemetry.from, state?.telemetry.to],
     queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, state!.telemetry, pageParam, signal), initialPageParam: 0,

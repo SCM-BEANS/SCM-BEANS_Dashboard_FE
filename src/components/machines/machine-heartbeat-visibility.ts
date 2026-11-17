@@ -95,3 +95,35 @@ export async function staggerHeartbeatRequest(index: number, signal: AbortSignal
     throw error;
   }
 }
+
+
+type PollQuery = { state: { error: unknown; errorUpdateCount: number; dataUpdatedAt: number } };
+const pollFailures = new WeakMap<PollQuery, { errors: number; dataUpdatedAt: number; count: number }>();
+
+export function pollingInterval(query: PollQuery, normalMs: number): number {
+  const { error, errorUpdateCount, dataUpdatedAt } = query.state;
+  if (!error) {
+    pollFailures.delete(query);
+    return normalMs;
+  }
+  const previous = pollFailures.get(query);
+  const count = previous && previous.dataUpdatedAt === dataUpdatedAt
+    ? previous.count + Math.max(0, errorUpdateCount - previous.errors)
+    : 1;
+  pollFailures.set(query, { errors: errorUpdateCount, dataUpdatedAt, count });
+  const status = (error as { response?: { status?: number } }).response?.status;
+  if (status === 403 || status === 404) return Math.max(normalMs, 15_000);
+  return normalMs <= 1_000
+    ? [2_000, 5_000, 10_000][Math.min(count - 1, 2)]!
+    : Math.min(normalMs * 2 ** Math.min(count, 3), normalMs <= 5_000 ? 10_000 : normalMs * 4);
+}
+
+export function isTemporaryTelemetryError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const failure = error as { isAxiosError?: boolean; response?: { status?: number }; name?: string; message?: string; code?: string };
+  const status = failure.response?.status;
+  return status === 502 || status === 504 || (!failure.response && (
+    failure.isAxiosError === true || ["TypeError", "AbortError", "TimeoutError"].includes(failure.name ?? "") ||
+    ["ERR_NETWORK", "ECONNABORTED", "ETIMEDOUT"].includes(failure.code ?? "")
+  ));
+}

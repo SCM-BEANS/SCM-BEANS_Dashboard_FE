@@ -4,15 +4,15 @@ const { join } = require('node:path');
 const test = require('node:test');
 const ts = require('typescript');
 
-function loadHandler(mocks) {
-  const fileName = join(__dirname, '..', 'src/pages/api/dolores/v1/[...path].page.ts');
+function loadHandler(mocks, route = "src/pages/api/dolores/v1/[...path].page.ts") {
+  const fileName = join(__dirname, '..', route);
   const source = readFileSync(fileName, 'utf8');
   const { outputText } = ts.transpileModule(source, {
     fileName,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.hasOwn(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => id === '@/lib/server/backend-api-selection' ? { ...loadBackendSelection(), ...mocks[id] } : Object.hasOwn(mocks, id) ? mocks[id] : require(id);
   new Function('require', 'exports', 'module', outputText)(mockedRequire, loaded.exports, loaded);
   return loaded.exports.default;
 }
@@ -249,12 +249,13 @@ test('explicit backend selection bypasses health auto-selection and requires a c
     process.env.IDAAS_API_IP_URL = 'http://remote.test:4000/api/v1';
     process.env.DOLORES_API_IP_URL = 'http://remote.test:8082';
     delete process.env.DOLORES_API_URL;
-    const { getExplicitBackendApiSelection } = loadBackendSelection();
+    const { getExplicitBackendApiSelection, getBackendApiSelection } = loadBackendSelection();
     assert.equal(typeof getExplicitBackendApiSelection, 'function');
     process.env.BACKEND_API_MODE = 'local';
     assert.equal((await getExplicitBackendApiSelection()).doloresBaseUrl, 'http://local.test:8082');
     process.env.BACKEND_API_MODE = 'remote';
     assert.equal((await getExplicitBackendApiSelection()).doloresBaseUrl, 'http://remote.test:8082');
+    assert.equal((await getBackendApiSelection()).doloresBaseUrl, 'http://remote.test:8082', 'ordinary API reads also bypass health probes in forced remote mode');
     for (const mode of [undefined, 'auto', 'unexpected']) {
       if (mode === undefined) delete process.env.BACKEND_API_MODE;
       else process.env.BACKEND_API_MODE = mode;
@@ -273,4 +274,120 @@ test('explicit backend selection bypasses health auto-selection and requires a c
       else process.env[key] = previous[key];
     }
   }
+});
+
+
+test('forced remote telemetry failure never switches to localhost and the next poll recovers remotely', async () => {
+  const previousMode = process.env.BACKEND_API_MODE;
+  const originalFetch = global.fetch;
+  let fallbackCalls = 0;
+  const urls = [];
+  const handler = loadHandler({ '@/lib/server/backend-api-selection': {
+    getBackendApiSelection: async () => ({ doloresBaseUrl: 'http://remote.test', mode: 'remote' }),
+    preferLocalBackendApis: () => { fallbackCalls++; return { doloresBaseUrl: 'http://local.test', mode: 'local' }; },
+  } });
+  try {
+    process.env.BACKEND_API_MODE = 'remote';
+    global.fetch = async url => {
+      urls.push(String(url));
+      if (urls.length === 1) throw new Error('temporary network failure');
+      return upstreamResponse('heartbeat');
+    };
+    const segments = ['telemetry-query', 'machines', machineId, 'heartbeats', 'latest'];
+    const failed = proxyResponse();
+    await handler(proxyRequest(segments), failed);
+    assert.equal(failed.statusCode, 502);
+    const recovered = proxyResponse();
+    await handler(proxyRequest(segments), recovered);
+    assert.equal(recovered.statusCode, 200);
+    assert.equal(fallbackCalls, 0);
+    assert.equal(urls.length, 2);
+    assert.ok(urls.every(url => url.startsWith('http://remote.test/')));
+  } finally {
+    global.fetch = originalFetch;
+    if (previousMode === undefined) delete process.env.BACKEND_API_MODE;
+    else process.env.BACKEND_API_MODE = previousMode;
+  }
+});
+
+for (const route of ['src/pages/api/dolores/v1/[...path].page.ts', 'src/pages/api/v1/[...path].page.ts']) {
+  test(`${route}: bounded remote retry, timeout/body errors, safe logs and no local fallback`, async () => {
+    const originalFetch = global.fetch, originalLog = console.error, previousMode = process.env.BACKEND_API_MODE;
+    const logs = [], calls = [];
+    const remote = { doloresBaseUrl: 'http://remote.test', idaasBaseUrl: 'http://remote.test/api/v1', mode: 'remote' };
+    const handler = loadHandler({ '@/lib/server/backend-api-selection': {
+      getBackendApiSelection: async () => remote,
+      preferLocalBackendApis: () => { throw new Error('must never fall back'); },
+    } }, route);
+    const connection = () => Object.assign(new TypeError('fetch failed ?secret-query Bearer test-token'), { cause: { code: 'ECONNRESET' } });
+    console.error = (...args) => logs.push(args);
+    process.env.BACKEND_API_MODE = 'remote';
+    try {
+      for (const method of ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+        calls.length = 0;
+        global.fetch = async (url, options) => {
+          calls.push({ url: String(url), signal: options.signal });
+          if (calls.length === 1) throw connection();
+          return upstreamResponse('recovered');
+        };
+        const res = proxyResponse();
+        await handler(proxyRequest(['telemetry-query', 'machines', machineId, 'heartbeats', 'latest'], method, '?secret-query=test-token'), res);
+        assert.equal(calls.length, ['GET', 'HEAD'].includes(method) ? 2 : 1);
+        assert.equal(res.statusCode, ['GET', 'HEAD'].includes(method) ? 200 : 502);
+        assert.equal(res.headers.get('cache-control'), 'no-store');
+        if (calls.length === 2) assert.equal(calls[0].signal, calls[1].signal, 'retry shares original deadline');
+        assert.ok(calls.every(call => call.url.startsWith('http://remote.test/')));
+      }
+      for (const status of [401, 403, 404, 500, 502, 504]) {
+        let count = 0;
+        global.fetch = async () => { count++; return { ...upstreamResponse(), status }; };
+        const res = proxyResponse();
+        await handler(proxyRequest(['machines', machineId]), res);
+        assert.equal(count, 1);
+        assert.equal(res.statusCode, status);
+      }
+      for (const bodyFailure of [false, true]) {
+        for (const name of ['TimeoutError', 'AbortError', 'TypeError']) {
+          let count = 0;
+          const failure = Object.assign(new Error('secret-query test-token'), { name, ...(bodyFailure ? { cause: { code: 'ECONNRESET' } } : {}) });
+          global.fetch = async () => {
+            count++;
+            if (!bodyFailure) throw failure;
+            return { ...upstreamResponse(), arrayBuffer: async () => { throw failure; } };
+          };
+          const res = proxyResponse();
+          await handler(proxyRequest(['machines', machineId]), res);
+          assert.equal(count, 1, 'never retry after HTTP or for an unclassified failure');
+          assert.equal(res.statusCode, name === 'TypeError' ? 502 : 504);
+          assert.equal(res.headers.get('cache-control'), 'no-store');
+        }
+      }
+      let attempts = 0;
+      global.fetch = async () => { attempts++; throw connection(); };
+      const failed = proxyResponse();
+      await handler(proxyRequest(['machines', machineId]), failed);
+      assert.equal(attempts, 2);
+      assert.equal(failed.statusCode, 502);
+      assert.ok(logs.length > 0);
+      assert.doesNotMatch(JSON.stringify(logs), /secret-query|test-token|authorization|cookie/i);
+      assert.equal(logs[0][1].error.cause.code, 'ECONNRESET');
+      assert.equal(logs[0][1].origin, 'http://remote.test');
+      assert.equal(typeof logs[0][1].elapsedMs, 'number');
+    } finally {
+      global.fetch = originalFetch; console.error = originalLog;
+      if (previousMode === undefined) delete process.env.BACKEND_API_MODE; else process.env.BACKEND_API_MODE = previousMode;
+    }
+  });
+}
+
+test('remote retry is skipped when the original timeout has no room for its delay', async () => {
+  const { fetchBackendUpstream } = loadBackendSelection();
+  const originalFetch = global.fetch, originalLog = console.error;
+  let calls = 0;
+  global.fetch = async () => { calls++; throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } }); };
+  console.error = () => {};
+  try {
+    await assert.rejects(fetchBackendUpstream(new URL('http://remote.test/api/v1/machines'), { method: 'GET' }, 'remote', 200));
+    assert.equal(calls, 1);
+  } finally { global.fetch = originalFetch; console.error = originalLog; }
 });

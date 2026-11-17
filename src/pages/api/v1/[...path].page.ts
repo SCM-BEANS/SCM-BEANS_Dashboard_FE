@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   getBackendApiSelection,
   preferLocalBackendApis,
+  fetchBackendUpstream,
+  isUpstreamTimeout,
 } from "@/lib/server/backend-api-selection";
 
 export const config = {
@@ -60,6 +62,7 @@ async function readBody(req: NextApiRequest): Promise<Buffer> {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
   const segments = getPath(req);
   if (!segments) {
     res.status(400).json({ error: "Invalid API path" });
@@ -97,16 +100,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const upstream = await fetch(target, {
+    const result = await fetchBackendUpstream(target, {
       method,
       headers,
       body: body ? new Uint8Array(body) : undefined,
       redirect: "manual",
       cache: "no-store",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+    }, selection.mode, REQUEST_TIMEOUT_MS);
+    const { upstream } = result;
 
-    let responseBody = Buffer.from(await upstream.arrayBuffer());
+    let responseBody = result.responseBody;
     let genericErrorBody = false;
     const isAuthTokenResponse =
       method === "POST" &&
@@ -147,8 +150,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (cookies.length) res.setHeader("Set-Cookie", cookies);
     res.setHeader("Cache-Control", "no-store");
     res.end(responseBody);
-  } catch {
-    if (selection.mode === "remote") preferLocalBackendApis();
-    res.status(502).json({ error: "IDaaS API is unavailable" });
+  } catch (error) {
+    if (selection.mode === "remote" && process.env.BACKEND_API_MODE?.trim().toLowerCase() !== "remote") preferLocalBackendApis();
+    res.status(isUpstreamTimeout(error) ? 504 : 502).json({ error: "IDaaS API is unavailable" });
   }
 }

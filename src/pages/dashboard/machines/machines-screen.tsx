@@ -18,7 +18,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
-import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { pollingInterval, staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import machineStyles from "@/components/machines/machines.module.css";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import { machinesApi } from "@/apis/machines.api";
@@ -145,7 +145,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
       enabled: ready && isPageVisible,
       retry: false,
       staleTime: 3_000,
-      refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? 5_000 : false,
+      refetchInterval: (query: Parameters<typeof pollingInterval>[0]) => isPageVisible ? pollingInterval(query, 5_000) : false,
       refetchIntervalInBackground: false,
     })),
   });
@@ -186,9 +186,10 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
   const heartbeat = useQuery({
     queryKey: ["owner-machine-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId!, signal),
+    staleTime: 900,
     enabled: Boolean(ready && isSmartIot && isPageVisible),
     retry: false,
-    refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? 5_000 : false,
+    refetchInterval: query => isPageVisible && detailTab !== "model" ? pollingInterval(query, 5_000) : false,
     refetchIntervalInBackground: false,
   });
   const cleaningLabel = (id: string, type: "startup" | "closing") => {

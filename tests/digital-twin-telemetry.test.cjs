@@ -7,13 +7,15 @@ const ts = require("typescript");
 function load(path, mocks = {}) {
   const fileName = join(__dirname, "..", path);
   const { outputText } = ts.transpileModule(readFileSync(fileName, "utf8"), { fileName, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
-  const module = { exports: {} };
-  new Function("require", "exports", "module", outputText)(id => Object.hasOwn(mocks, id) ? mocks[id] : require(id), module.exports, module);
-  return module.exports;
+  const loaded = { exports: {} };
+  new Function("require", "exports", "module", outputText)(id => Object.hasOwn(mocks, id) ? mocks[id] : require(id), loaded.exports, loaded);
+  return loaded.exports;
 }
+const polling = load("src/components/machines/machine-heartbeat-visibility.ts");
 const messages = load("src/text/digital-twin/digital-twin-messages.ts");
 const parts = load("src/components/features/digital-twin/presentation/part-groups.ts");
 const { recentLiveHeartbeat, selectLiveHeartbeat, liveBrewView, liveHeartbeatConnected, telemetryMetrics } = load("src/components/features/digital-twin/live/use-live-brew-state.ts", {
+  "@/components/machines/machine-heartbeat-visibility": polling,
   "@/text/digital-twin/digital-twin-messages": messages, "../presentation/part-groups": parts,
 });
 const { DigitalTwinCycleEventSchema } = load("src/schema/digital-twin-cycle.schema.ts");
@@ -161,4 +163,45 @@ test("server ONLINE can remain valid while brewing measurements pause after comp
   assert.deepEqual(view.presentation.effects, {});
   assert.equal(liveHeartbeatConnected(completed, machineId, now + 11000), false, "an expired API evaluation must not imply online forever");
   assert.equal(liveHeartbeatConnected({ ...completed, status: "OFFLINE" }, machineId, now), false);
+});
+
+
+test("polling backs off consecutive failures and returns to normal immediately on success", () => {
+  for (const normal of [1000, 5000, 15000]) {
+    const query = { state: { error: new TypeError('fetch failed'), errorUpdateCount: 1, dataUpdatedAt: 1 } };
+    const intervals = [];
+    for (let i = 1; i <= 5; i++) {
+      query.state.errorUpdateCount = i;
+      intervals.push(polling.pollingInterval(query, normal));
+      assert.equal(polling.pollingInterval(query, normal), intervals.at(-1), 're-evaluation does not count another failure');
+    }
+    if (normal === 1000) assert.deepEqual(intervals, [2000, 5000, 10000, 10000, 10000]);
+    else assert.ok(intervals[0] > normal);
+    if (normal <= 5000) assert.ok(intervals.every(interval => interval <= 10000));
+    query.state.error = null; query.state.dataUpdatedAt++;
+    assert.equal(polling.pollingInterval(query, normal), normal);
+    query.state.error = new TypeError('next outage'); query.state.errorUpdateCount++;
+    assert.equal(polling.pollingInterval(query, normal), intervals[0]);
+    for (const status of [403, 404]) {
+      query.state.error = { response: { status } };
+      assert.ok(polling.pollingInterval(query, normal) >= 15000);
+    }
+  }
+});
+
+test("brief network/502/504 errors keep the observed step fresh until liveness expires", () => {
+  const packet = { ...heartbeat('MAIN_EXTRACTION'), evaluatedAt: new Date(now).toISOString() };
+  for (const error of [new TypeError('fetch failed'), { isAxiosError: true }, { response: { status: 502 } }, { response: { status: 504 } }]) {
+    assert.equal(polling.isTemporaryTelemetryError(error), true);
+    const fresh = liveHeartbeatConnected(packet, machineId, now + 5000, error);
+    assert.equal(fresh, true);
+    const view = liveBrewView(packet, fresh);
+    assert.equal(view.state, 'MAIN_EXTRACTION');
+    assert.equal(view.active, true);
+    assert.equal(view.presentation.holdMechanism, false);
+    assert.equal(liveHeartbeatConnected(packet, machineId, now + 10001, error), false);
+    assert.equal(liveHeartbeatConnected({ ...packet, status: 'OFFLINE' }, machineId, now, error), false);
+  }
+  assert.equal(liveHeartbeatConnected(packet, machineId, now, { response: { status: 403 } }), false);
+  assert.equal(messages.MACHINE_RECONNECTING_LABEL, '\u0110ang k\u1ebft n\u1ed1i l\u1ea1i\u2026');
 });

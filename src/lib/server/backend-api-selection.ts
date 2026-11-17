@@ -101,11 +101,13 @@ export function getExplicitBackendApiSelection(): BackendApiSelection {
 
 export async function getBackendApiSelection(): Promise<BackendApiSelection> {
   const urls = getConfiguredUrls();
+  const configuredMode = process.env.BACKEND_API_MODE?.trim().toLowerCase();
+  if (configuredMode === "remote") return getExplicitBackendApiSelection();
 
   // Local development can force both services onto the Docker pair even while
   // the remote servers are healthy. This keeps authentication and API data in
   // the same local environment for end-to-end testing.
-  if (process.env.BACKEND_API_MODE?.trim().toLowerCase() === "local") {
+  if (configuredMode === "local") {
     return createSelection("local", urls);
   }
 
@@ -166,4 +168,37 @@ export function preferLocalBackendApis(): BackendApiSelection {
   };
   selectionState.cachedSelection = selection;
   return selection;
+}
+
+export function isUpstreamTimeout(error: unknown) {
+  return error instanceof Error && ["AbortError", "TimeoutError"].includes(error.name);
+}
+
+// Share one deadline across fetch, retry delay and response-body consumption.
+export async function fetchBackendUpstream(target: URL, init: RequestInit, mode: BackendApiSelection["mode"], timeoutMs: number) {
+  const startedAt = Date.now();
+  const signal = AbortSignal.timeout(timeoutMs);
+  for (let attempt = 0; ; attempt++) {
+    let receivedResponse = false;
+    try {
+      const upstream = await fetch(target, { ...init, signal });
+      receivedResponse = true;
+      const responseBody = Buffer.from(await upstream.arrayBuffer());
+      return { upstream, responseBody };
+    } catch (error) {
+      const failure = error as { name?: string; code?: string; cause?: { code?: string } } | null;
+      const code = failure?.cause?.code ?? failure?.code;
+      console.error("backend_proxy_error", {
+        method: init.method ?? "GET", path: target.pathname, origin: target.origin, mode,
+        elapsedMs: Date.now() - startedAt,
+        error: { name: failure?.name, cause: { code: failure?.cause?.code } },
+      });
+      const transient = typeof code === "string" && (
+        ["ECONNRESET", "ECONNREFUSED", "ENETUNREACH", "EHOSTUNREACH", "ETIMEDOUT"].includes(code) || code.startsWith("UND_ERR_")
+      );
+      if (receivedResponse || attempt > 0 || mode !== "remote" || !["GET", "HEAD"].includes(init.method ?? "GET") || !transient || isUpstreamTimeout(error) || signal.aborted || Date.now() - startedAt + 300 >= timeoutMs) throw error;
+      await new Promise<void>(resolve => setTimeout(resolve, 300));
+      signal.throwIfAborted();
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { telemetryApi } from "@/apis/telemetry.api";
-import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import type { MachineHeartbeat } from "@/schema/telemetry.schema";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 
@@ -10,9 +10,11 @@ const HEARTBEAT_REFRESH_INTERVAL_MS = 1_000;
 export function useMachineHeartbeat({
   machineId,
   enabled,
+  intervalMs = HEARTBEAT_REFRESH_INTERVAL_MS,
 }: {
   machineId: string;
   enabled: boolean;
+  intervalMs?: number;
 }): {
   heartbeat: MachineHeartbeat | undefined;
   receivedAt: number;
@@ -23,11 +25,12 @@ export function useMachineHeartbeat({
   const pageVisible = usePageVisibility();
   const subject = authScopedQuerySubject("OWNER");
   const query = useQuery({
-    queryKey: ["digital-twin-heartbeat", subject, machineId],
+    queryKey: ["owner-machine-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
     enabled: enabled && pageVisible,
     retry: false,
-    refetchInterval: enabled && pageVisible ? HEARTBEAT_REFRESH_INTERVAL_MS : false,
+    staleTime: 900,
+    refetchInterval: query => enabled && pageVisible ? pollingInterval(query, intervalMs) : false,
     refetchIntervalInBackground: false,
   });
 

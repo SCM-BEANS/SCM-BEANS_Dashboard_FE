@@ -149,3 +149,5 @@ export const DIGITAL_TWIN_LIVE_STATE_LABELS = {
   COMPLETE: "Đã hoàn tất pha",
   ERROR: "Máy đang báo lỗi",
 } as const;
+
+export const MACHINE_RECONNECTING_LABEL = "\u0110ang k\u1ebft n\u1ed1i l\u1ea1i\u2026";

@@ -6,7 +6,7 @@ import { notificationsApi } from "@/apis/notifications.api";
 import type { Notification } from "@/schema/notifications.schema";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_ADMIN, PATH_CUSTOMER, PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
-import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
+import { pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { formatNotificationDate, getNotificationPresentation } from "@/text/notification-inbox-messages";
 import type { NotificationScope } from "./notification-inbox";
 import { NotificationTypeIcon } from "./notification-type-icon";
@@ -78,8 +78,8 @@ export function NotificationRuntime({ scope }: { scope: NotificationScope }) {
   const [toasts, setToasts] = useState<Notification[]>([]);
   const seen = useRef<Set<string> | null>(null);
   // The API exposes list/count reads; polling is shared with both responsive bell buttons.
-  const list = useQuery({ queryKey: [...queryKey, false], queryFn: ({ signal }) => notificationsApi.list(signal), enabled: visible, refetchInterval: visible ? 15_000 : false, staleTime: 15_000, retry: false });
-  useQuery({ queryKey: [...queryKey, "unread-count"], queryFn: ({ signal }) => notificationsApi.unreadCount(signal), enabled: visible, refetchInterval: visible ? 15_000 : false, retry: false });
+  const list = useQuery({ queryKey: [...queryKey, false], queryFn: ({ signal }) => notificationsApi.list(signal), enabled: visible, refetchInterval: query => visible ? pollingInterval(query, 15_000) : false, staleTime: 15_000, retry: false });
+  useQuery({ queryKey: [...queryKey, "unread-count"], queryFn: ({ signal }) => notificationsApi.unreadCount(signal), enabled: visible, refetchInterval: query => visible ? pollingInterval(query, 15_000) : false, retry: false });
   useEffect(() => { seen.current = null; setToasts([]); }, [subject]);
   useEffect(() => {
     if (!preferences.sound || dnd) return;
