@@ -398,7 +398,6 @@ function MaintenanceRequestTable({
         ) : "—";
       },
     },
-    { key: "detail", header: <span className={styles.srOnly}>Hồ sơ</span>, render: (request: MaintenanceRequest) => <ButtonBar href={routes.requestDetail(request.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
   ];
 
   return (

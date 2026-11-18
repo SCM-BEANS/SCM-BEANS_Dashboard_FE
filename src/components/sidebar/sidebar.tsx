@@ -1,6 +1,6 @@
-import { LogOut, type LucideIcon } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { SettingsMenu } from "./settings-menu";
 import { getActiveNavigationItem } from "./navigation-route";
 import styles from "./sidebar.module.css";
@@ -20,6 +20,7 @@ export type SidebarNavigationProps = {
   navigationLabel: string;
   className?: string;
   onNavigate?: () => void;
+  id?: string;
 };
 
 export type SidebarLogoutProps = {
@@ -31,7 +32,7 @@ export type SidebarLogoutProps = {
 
 export function SidebarLogoutButton({ label, pendingLabel, pending, onLogout }: SidebarLogoutProps) {
   return (
-    <button className={styles.logoutButton} type="button" onClick={() => void onLogout()} disabled={pending}>
+    <button className={styles.logoutButton} type="button" aria-label={pending ? pendingLabel : label} onClick={() => void onLogout()} disabled={pending}>
       <LogOut size={18} aria-hidden="true" />
       <span>{pending ? pendingLabel : label}</span>
     </button>
@@ -45,11 +46,12 @@ export function SidebarNavigation({
   navigationLabel,
   className = styles.sidebarNav,
   onNavigate,
+  id,
 }: SidebarNavigationProps) {
   const activeItem = getActiveNavigationItem(items, pathname, rootHref);
 
   return (
-    <nav className={className} aria-label={navigationLabel}>
+    <nav id={id} className={className} aria-label={navigationLabel}>
       {items.map((item) => {
         const Icon = item.icon;
         const active = activeItem === item;
@@ -66,6 +68,7 @@ export function SidebarNavigation({
         return item.enabled === false ? (
           <span
             className={className}
+            aria-label={item.label}
             aria-disabled="true"
             title={item.title}
             key={item.href}
@@ -75,6 +78,8 @@ export function SidebarNavigation({
         ) : (
           <Link
             href={item.href}
+            aria-label={item.label}
+            title={item.label}
             className={className}
             aria-current={active ? "page" : undefined}
             key={item.href}
@@ -111,11 +116,22 @@ export function Sidebar({
   logout?: SidebarLogoutProps;
   footer?: ReactNode;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const navId = useId();
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  const toggleLabel = collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng";
+
   return (
-    <aside className={styles.sidebar}>
-      <Link className={styles.brand} href={brandHref}>{brand}</Link>
+    <aside className={styles.sidebar} data-collapsed={collapsed}>
+      <div className={styles.brandRow}>
+        <Link className={styles.brand} href={brandHref}>{brand}</Link>
+        <button type="button" className={styles.collapseButton} aria-label={toggleLabel} title={toggleLabel} aria-controls={navId} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)}>
+          <ToggleIcon size={20} aria-hidden="true" />
+        </button>
+      </div>
       <p className={styles.roleLabel}>{roleLabel}</p>
       <SidebarNavigation
+        id={navId}
         items={items}
         pathname={pathname}
         rootHref={rootHref}
@@ -123,7 +139,7 @@ export function Sidebar({
       />
       {footer}
       {settingsHref && logout ? (
-        <SettingsMenu settingsHref={settingsHref} logout={logout} variant="wide" />
+        <SettingsMenu settingsHref={settingsHref} logout={logout} variant="wide" compact={collapsed} />
       ) : logout && <SidebarLogoutButton {...logout} />}
     </aside>
   );

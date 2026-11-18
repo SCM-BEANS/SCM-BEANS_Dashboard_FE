@@ -1,4 +1,5 @@
 import { machineStatusLabel } from "@/components/machines/machine-status-labels";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -52,7 +53,7 @@ export function MachineCheckTable() {
             rowKey={(machine) => machine.id}
             emptyMessage={T.MACHINE_CHECK.EMPTY}
             columns={[
-              { key: "machine", header: "Máy", render: (machine) => <strong>{machine.serialNumber || machine.id}</strong> },
+              { key: "machine", header: "Máy", render: (machine) => <TextLinkButton href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>{machine.serialNumber || machine.id}</TextLinkButton> },
               { key: "owner-id", header: "Khách hàng", render: (machine) => (
                 (typeof machine.ownerName === "string" && machine.ownerName.trim() ? machine.ownerName.trim() : "")
                   || (machine.ownerId ? ownerNames.data?.[machine.ownerId] : undefined)
@@ -60,7 +61,6 @@ export function MachineCheckTable() {
               ) },
               { key: "status", header: T.MACHINE_CHECK.STATUS, render: (machine) => <StatusBadge variant="dot" status={machine.status}>{machineStatusLabel(machine.status)}</StatusBadge> },
               { key: "machine-type", header: T.MACHINE_CHECK.MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Máy thường" : "—" },
-              { key: "action", header: "Thao tác", align: "right", render: machine => <ButtonBar rollingLabel href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar> },
             ]}
           />
         )}

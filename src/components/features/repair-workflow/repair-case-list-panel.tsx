@@ -55,7 +55,7 @@ export function RepairCaseListPanel({
       key: "case-id",
       header: M.CASE_ID,
       render: (repairCase) => (
-        role === "owner" ? <TruncatedId value={repairCase.id} /> : <TextLinkButton href={detailHref(repairCase.id)}><TruncatedId value={repairCase.id} /></TextLinkButton>
+        <TextLinkButton href={detailHref(repairCase.id)}><TruncatedId value={repairCase.id} /></TextLinkButton>
       ),
     },
     { key: "request-id", header: M.REQUEST_ID, render: (repairCase) => <TruncatedId value={repairCase.maintenanceRequestId} /> },
@@ -69,11 +69,6 @@ export function RepairCaseListPanel({
     { key: "machine", header: M.MACHINE, render: (repairCase) => <TruncatedId value={repairCase.primaryMachineId} /> },
     { key: "status", header: M.STATUS, render: (repairCase) => role === "owner" ? <span className={styles.requestStatus} data-status={repairCase.status}>{statusLabel(repairCase.status)}</span> : statusLabel(repairCase.status) },
     { key: "updated-at", header: M.UPDATED_AT, render: (repairCase) => formatDateTime(repairCase.updatedAt) },
-    ...(role === "owner" ? [{
-      key: "actions",
-      header: "",
-      render: (repairCase: RepairCaseSummary) => <ButtonBar rollingLabel href={detailHref(repairCase.id)}>Mở hồ sơ</ButtonBar>,
-    }] : []),
   ];
 
   return (

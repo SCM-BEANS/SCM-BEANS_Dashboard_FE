@@ -1,5 +1,6 @@
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { telemetryApi } from "@/apis/telemetry.api";
+import { MaintenancePriorityPanel } from "@/components/machines/maintenance-priority-panel";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { adminStyles } from "@/pages/admin/admin-shell";
@@ -230,15 +231,16 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     enabled: isLocationsView && !owners.isPending && !owners.isError,
     retry: false,
   });
+  const priorityView = !isLocationsView && router.query.view === "priority";
   const inventory = useQuery({
     queryKey: ["dolores", "machines", subject],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isLocationsView,
+    enabled: !isLocationsView && !priorityView,
     retry: false,
   });
   const selectedMachineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const validSelectedId = MachineIdSchema.safeParse(selectedMachineId).success;
-  const reviewView = router.query.view === "reviews" || Boolean(selectedMachineId) || typeof router.query.reviewId === "string" || typeof router.query.reviewStatus === "string";
+  const reviewView = !priorityView && (router.query.view === "reviews" || Boolean(selectedMachineId) || typeof router.query.reviewId === "string" || typeof router.query.reviewStatus === "string");
   const selectedMachine = useQuery({
     queryKey: ["dolores", "machines", "id", subject, selectedMachineId],
     queryFn: ({ signal }) => machinesApi.getById(selectedMachineId, signal),
@@ -265,7 +267,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   const heartbeats = useQueries({ queries: heartbeatMachines.map((machine, index) => ({
     queryKey: ["dolores", "moderator", "telemetry", "heartbeat", subject, machine.id],
     queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
-    enabled: !isLocationsView && !reviewView && isPageVisible && Boolean(getAuthenticatedSubjectId()),
+    enabled: !isLocationsView && !reviewView && !priorityView && isPageVisible && Boolean(getAuthenticatedSubjectId()),
     retry: false, staleTime: 3_000, refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? (machineFilters.connection ? 30_000 : 5_000) : false, refetchIntervalInBackground: false,
   })) });
   const getHeartbeat = (id: string) => heartbeats[heartbeatMachines.findIndex((machine) => machine.id === id)];
@@ -296,9 +298,14 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
 
   return <div className={styles.pageContent}>
     <PageHeading title="Giám sát máy" />
-    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
-    <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
-    {!reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
+    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát">
+      <button type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button>
+      <button type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</button>
+      <button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button>
+    </div>
+    {priorityView && <MaintenancePriorityPanel subject={subject} enabled={router.isReady && Boolean(getAuthenticatedSubjectId())} machineHref={id => `${PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(id)}?tab=health&from=priority`} />}
+    {!priorityView && <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />}
+    {!priorityView && !reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2></div>
       <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
       {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[

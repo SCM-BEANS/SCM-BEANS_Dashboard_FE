@@ -1,4 +1,5 @@
 ﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { Fragment, useRef, useState, type ReactNode } from "react";
 import { MoreHorizontal, Search, X } from "lucide-react";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -152,10 +153,9 @@ function NotificationInboxContent({
       </section>{selected ? <aside id="notification-detail" ref={detailRef} tabIndex={-1} className={management.detailPane} aria-labelledby="notification-detail-title">
         <header><h2 id="notification-detail-title">Chi tiết thông báo</h2><button className={management.closeDetail} aria-label="Đóng chi tiết thông báo" onClick={() => { document.getElementById(`notification-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></button></header>
         <div className={management.detailMeta}><span className={management.readState} data-unread={!selected.read}>{selected.read ? messages.READ : messages.UNREAD}</span><time dateTime={selected.createdAt ?? undefined}>{formatDate(selected.createdAt)}</time></div>
-        <h3>{selected.title}</h3>
+        <h3>{selected.recordHref ? <TextLinkButton href={selected.recordHref}>{selected.title}</TextLinkButton> : selected.title}</h3>
         <section className={management.detailContent} aria-label="Nội dung thông báo"><h4>Nội dung</h4><p className={management.detailBody}>{selected.message}</p></section>
         <dl className={management.detailFacts}><div><dt>Loại thông báo</dt><dd>{selected.typeLabel}</dd></div>{showOwnerId && selected.ownerId ? <div><dt>{messages.OWNER_ID}</dt><dd><TruncatedId value={selected.ownerId} /></dd></div> : null}</dl>
-        {selected.recordHref ? <footer className={management.detailActions}><ButtonBar href={selected.recordHref} rollingLabel>Mở hồ sơ</ButtonBar></footer> : null}
       </aside> : null}</div> : children}
     </div>;
   }
@@ -252,9 +252,8 @@ function NotificationInboxContent({
                   )}
                   <time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time>
                 </div>
-                <h3>{notification.title}</h3>
+                <h3>{notification.recordHref ? <TextLinkButton href={notification.recordHref}>{notification.title}</TextLinkButton> : notification.title}</h3>
                 <p>{notification.message}</p>
-                {notification.recordHref ? <ButtonBar href={notification.recordHref} rollingLabel>Mở hồ sơ</ButtonBar> : null}
               </article>
             ))}
           </div>

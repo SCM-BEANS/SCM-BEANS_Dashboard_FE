@@ -1,9 +1,10 @@
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useState } from "react";
 import { telemetryApi } from "@/apis/telemetry.api";
+import { MaintenancePriorityPanel } from "@/components/machines/maintenance-priority-panel";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { usePageVisibility, staggerHeartbeatRequest } from "@/components/machines/machine-heartbeat-visibility";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { contractsApi } from "@/apis/contracts.api";
@@ -55,7 +56,8 @@ function IoTContent() {
   const hasOwnerId = ownerId.length > 0;
   const validOwnerId = router.isReady && ProfileIdSchema.safeParse(ownerId).success;
   const subject = authScopedQuerySubject("ADMIN");
-  const reviewView = router.query.view === "reviews" || typeof router.query.reviewId === "string" || typeof router.query.reviewStatus === "string";
+  const priorityView = !hasOwnerId && router.query.view === "priority";
+  const reviewView = !priorityView && (router.query.view === "reviews" || typeof router.query.reviewId === "string" || typeof router.query.reviewStatus === "string");
   let reviewState: ReturnType<typeof readOfflineReviewQuery> | undefined;
   let reviewFilterError: string | undefined;
   try { reviewState = readOfflineReviewQuery(router.query, validOwnerId ? { ownerId } : {}); }
@@ -85,6 +87,7 @@ function IoTContent() {
   const machines = useQuery({
     queryKey: ["dolores", "machines", "inventory", subject],
     queryFn: ({ signal }) => machinesApi.list(signal),
+    enabled: !priorityView,
   });
   const candidates = (machines.data ?? []).filter((machine) => machine.machineType === "SMART_IOT").filter((machine) => (!machineFilters.status || machine.status === machineFilters.status) && (!machineFilters.search || [machine.serialNumber, machine.modelName, machine.modelCode].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(machineFilters.search.toLocaleLowerCase("vi-VN")))));
   const candidatePage = Math.min(machinePage, Math.max(0, Math.ceil(candidates.length / 10) - 1));
@@ -92,7 +95,7 @@ function IoTContent() {
   const heartbeats = useQueries({ queries: heartbeatMachines.map((machine, index) => ({
     queryKey: ["dolores", "admin", "telemetry", "heartbeat", subject, machine.id],
     queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
-    enabled: visible && !hasOwnerId && !reviewView && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3000, refetchInterval: (query: { state: { error: unknown } }) => visible && !query.state.error ? (machineFilters.connection ? 30_000 : 5_000) : false, refetchIntervalInBackground: false,
+    enabled: visible && !hasOwnerId && !reviewView && !priorityView && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3000, refetchInterval: (query: { state: { error: unknown } }) => visible && !query.state.error ? (machineFilters.connection ? 30_000 : 5_000) : false, refetchIntervalInBackground: false,
   })) });
   const getHeartbeat = (id: string) => heartbeats[heartbeatMachines.findIndex((machine) => machine.id === id)];
   const connectionsLoading = Boolean(machineFilters.connection) && heartbeats.some((result) => result.isPending);
@@ -185,12 +188,11 @@ function IoTContent() {
               rows={ownerMachines}
               rowKey={(machine) => machine.id}
               columns={[
-                { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => machine.serialNumber ?? <TruncatedId value={machine.id} /> },
+                { key: "serial", header: T.MACHINES.SERIAL, align: "center", render: (machine) => <TextLinkButton href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? <TruncatedId value={machine.id} />}</TextLinkButton> },
                 { key: "type", header: T.IOT.MACHINE_TYPE_CONTRACT, render: (machine) => machineTypeFor(machine.id, ownerContracts) },
                 { key: "status", header: T.MACHINES.STATUS, render: (machine) => machine.status ? <span className={styles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
                 { key: "region", header: T.MACHINES.REGION, render: (machine) => machine.region ?? "—" },
                 { key: "deployed", header: T.MACHINES.DEPLOYED_AT, align: "center", render: (machine) => machine.deployedAt ? new Date(machine.deployedAt).toLocaleDateString("vi-VN") : "—" },
-                { key: "actions", header: T.MACHINES.OPEN_DETAIL, render: (machine) => <ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{T.MACHINES.OPEN_DETAIL}</ButtonBar> },
               ]}
             />}
             {smartMachineIds.size === 0 && ownerMachines.length > 0 && <p className={styles.panelSubtitle}>{T.IOT.NO_SMART_MACHINES}</p>}
@@ -203,19 +205,24 @@ function IoTContent() {
 
   return <AdminShell><div className={styles.pageContent}>
     <BackButtonHeading title="Giám sát máy" titleId="admin-iot-title" className={styles.pageHeading} back={null} />
-    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát"><button type="button" aria-pressed={!reviewView} onClick={() => navigateReview({ view: "machines", reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Máy Smart IoT</button><button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button></div>
-    {reviewView ? offlinePanel(Object.fromEntries(allMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))) : <section className={styles.panel}>
+    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát">
+      <button type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button>
+      <button type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</button>
+      <button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button>
+    </div>
+    {priorityView && <MaintenancePriorityPanel subject={subject} enabled={router.isReady && Boolean(getAuthenticatedSubjectId())} machineHref={machineId => ({ pathname: `${PATH_ADMIN.MACHINES}/[machineId]/operations`, query: { machineId, tab: "health", from: "priority" } })} />}
+    {!priorityView && (reviewView ? offlinePanel(Object.fromEntries(allMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))) : <section className={styles.panel}>
       <div className={styles.machineInventoryHeading}><h2>Máy Smart IoT</h2></div>
       <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setMachinePage(0); }} />
       {machines.isPending || connectionsLoading ? <p role="status">Đang tải danh sách máy…</p> : machines.isError ? <div role="alert"><p>{getApiErrorMessage(machines.error)}</p><ButtonBar onClick={() => void machines.refetch()}>Thử lại</ButtonBar></div> : <DataTable rows={machineRows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
-        { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
+        { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={styles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
         { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
-        { key: "actions", header: "Thao tác", render: (machine) => <div className={machineStyles.machineRowActions}><ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar><ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar></div> },
+        { key: "actions", header: "Thao tác", render: (machine) => <ButtonBar href={PATH_ADMIN.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar> },
       ]} />}
       <nav className={styles.machinePagination} aria-label="Phân trang giám sát"><span>{smartRows.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(smartRows.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setMachinePage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= smartRows.length} onClick={() => setMachinePage(currentPage + 1)}>Sau</ButtonBar></nav>
-    </section>}
-  </div><PageActions actions={[{ id: "iot-machines", label: "Kho máy", variant: "secondary", href: PATH_ADMIN.MACHINES }, { id: "iot-reports", label: "Báo cáo tổng hợp", variant: "secondary", href: PATH_ADMIN.REPORTS }]} /></AdminShell>;
+    </section>)}
+  </div>{!priorityView && <PageActions actions={[{ id: "iot-machines", label: "Kho máy", variant: "secondary", href: PATH_ADMIN.MACHINES }, { id: "iot-reports", label: "Báo cáo tổng hợp", variant: "secondary", href: PATH_ADMIN.REPORTS }]} />}</AdminShell>;
 }
 
 export default function IoTPage() {

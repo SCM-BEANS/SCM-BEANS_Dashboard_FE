@@ -119,9 +119,6 @@ function MachinesContent() {
   const navigateToMachineTypes = () => {
     void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "types" } }, undefined, { shallow: true });
   };
-  const navigateToMachineModelDetail = (id: string) => {
-    void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "model-detail", id } }, undefined, { shallow: true });
-  };
   const handleMachineModelCreated = (modelCode: string) => {
     setSuccessMachineModelCode(modelCode);
     void router.push({ pathname: PATH_ADMIN.MACHINES, query: { view: "types" } }, undefined, { shallow: true });
@@ -237,20 +234,10 @@ function MachinesContent() {
                   rows={machineModels.data.slice(modelPage * 10, modelPage * 10 + 10)}
                   rowKey={(machineModel) => machineModel.id}
                   columns={[
-                    { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, align: "left", render: (machineModel) => (
-                      <button
-                        className={styles.accountTextButton}
-                        type="button"
-                        aria-label={`Xem chi tiết mẫu máy ${machineModel.modelCode}`}
-                        onClick={() => navigateToMachineModelDetail(machineModel.id)}
-                      >
-                        {machineModel.modelCode}
-                      </button>
-                    ) },
+                    { key: "model-code", header: T.MACHINE_MODELS.MODEL_CODE, render: (machineModel) => machineModel.modelCode },
                     { key: "manufacturer", header: T.MACHINE_MODELS.MANUFACTURER, render: (machineModel) => machineModel.manufacturer },
-                    { key: "display-name", header: T.MACHINE_MODELS.DISPLAY_NAME, render: (machineModel) => machineModel.displayName },
+                    { key: "display-name", header: T.MACHINE_MODELS.DISPLAY_NAME, render: (machineModel) => <TextLinkButton shallow href={{ pathname: PATH_ADMIN.MACHINES, query: { view: "model-detail", id: machineModel.id } }}>{machineModel.displayName || machineModel.modelCode}</TextLinkButton> },
                     { key: "machine-type", header: T.MACHINES.MACHINE_TYPE, render: (machineModel) => machineTypeLabel(machineModel.machineType) },
-                    { key: "open", header: "", render: (machineModel) => <ButtonBar rollingLabel onClick={() => navigateToMachineModelDetail(machineModel.id)}>Mở hồ sơ</ButtonBar> },
                   ]}
                 />
                 <nav className={styles.machinePagination} aria-label="Phân trang mẫu máy">

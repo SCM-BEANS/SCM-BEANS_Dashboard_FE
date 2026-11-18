@@ -3,6 +3,69 @@ import { MachineIdSchema } from "@/schema/machines.schema";
 
 const dateTimeSchema = z.string().datetime({ offset: true });
 const countSchema = z.number().int().nonnegative();
+const connectionStatusSchema = z.enum(["ONLINE", "OFFLINE", "UNKNOWN"]);
+const healthStatusSchema = z.enum(["STABLE", "MONITOR", "INSPECT", "INSUFFICIENT_DATA"]);
+const scoreSchema = z.number().finite().min(0).max(100);
+const measurementSchema = z.number().finite().nonnegative().nullish();
+const subsystemFields = {
+  score: scoreSchema.nullish(),
+  condition: z.string().nullish(),
+  evidence: z.string().nullish(),
+};
+const subsystemSchema = z.object({ ...subsystemFields, status: healthStatusSchema });
+
+export const MachineHealthSchema = z.object({
+  machineId: MachineIdSchema,
+  serialNumber: z.string().nullish(),
+  connectionStatus: connectionStatusSchema,
+  overallStatus: healthStatusSchema,
+  evaluatedAt: dateTimeSchema.nullish(),
+  dataQuality: z.object({
+    evaluatedCycles14d: countSchema,
+    recentIncidents7d: countSchema,
+    stuckSensorDetected: z.boolean(),
+    sufficientHistory: z.boolean(),
+  }),
+  subsystems: z.object({
+    thermal: subsystemSchema,
+    hydraulics: subsystemSchema,
+    kinematics: subsystemSchema,
+    milk: z.object({ ...subsystemFields, status: healthStatusSchema.or(z.literal("DISABLED")) }),
+  }),
+  brewStability: z.array(z.object({
+    recipeName: z.string(),
+    brewCount: countSchema,
+    meanYieldMl: measurementSchema,
+    yieldCvPct: measurementSchema,
+    meanDurationSec: measurementSchema,
+    durationCvPct: measurementSchema,
+    stabilityStatus: z.enum(["STABLE", "VARIABLE", "UNSTABLE", "INSUFFICIENT_DATA"]),
+  })),
+  cleaningHygiene: z.object({
+    lastCleanedAt: dateTimeSchema.nullish(),
+    cupsSinceLastClean: countSchema.nullish(),
+    overdue: z.boolean().nullish(),
+    note: z.string().nullish(),
+  }),
+  recommendations: z.array(z.string()),
+  processStabilityDisclaimer: z.string().nullish(),
+});
+
+export const MachineMaintenancePriorityQueueSchema = z.array(z.object({
+  machineId: MachineIdSchema,
+  serialNumber: z.string().nullish(),
+  location: z.string().nullish(),
+  priorityScore: scoreSchema,
+  overallStatus: healthStatusSchema,
+  connectionStatus: connectionStatusSchema,
+  activeAlerts: countSchema,
+  cupsLast14d: countSchema,
+  cleaningOverdue: z.boolean(),
+  primaryReason: z.string().nullish(),
+  recommendedFirstCheck: z.string().nullish(),
+}));
+
+export type MachineHealth = z.infer<typeof MachineHealthSchema>;
 
 export const HeartbeatHealthSchema = z.object({
   osLoadAvg1m: z.number().nullish(),
@@ -21,7 +84,7 @@ export const HeartbeatHealthSchema = z.object({
 
 export const MachineHeartbeatSchema = z.object({
   machineId: MachineIdSchema,
-  status: z.enum(["ONLINE", "OFFLINE", "UNKNOWN"]),
+  status: connectionStatusSchema,
   evaluatedAt: dateTimeSchema.nullish(),
   livenessStreamEntryId: z.string().nullish(),
   lastSeenAt: dateTimeSchema.nullish(),

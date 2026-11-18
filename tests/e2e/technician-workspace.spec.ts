@@ -31,11 +31,11 @@ test("technician tasks paginate on the server and keep mobile content inside the
 test("machine search applies on submit and opens a dedicated profile", async ({ page }) => {
   await page.route("**/api/**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith("/machines") ? [{ id, serialNumber: "DOLORES-001", status: "IN_WAREHOUSE", machineType: "SMART_IOT", ownerName: "Khách hàng" }] : [] }));
   await page.goto("/technician/machine-check");
-  await expect(page.getByRole("link", { name: "Xem hồ sơ", exact: true })).toHaveAttribute("href", `/technician/machine-check/${id}`);
+  await expect(page.getByRole("link", { name: "DOLORES-001", exact: true })).toHaveAttribute("href", `/technician/machine-check/${id}`);
   await page.getByRole("textbox", { name: "Tìm máy", exact: true }).fill("missing");
-  await expect(page.getByRole("link", { name: "Xem hồ sơ", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "DOLORES-001", exact: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Xem hồ sơ", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "DOLORES-001", exact: true })).toHaveCount(0);
 });
 
 test("technician work details show the shared progress and maintenance layout", async ({ page }) => {

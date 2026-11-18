@@ -1,5 +1,4 @@
 import { TextLinkButton } from "@/components/button/text-link-button";
-import { ButtonBar } from "@/components/button/button-bar";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { type Contract } from "@/schema/contracts.schema";
 import { CONTRACT_TABLE_HEADERS } from "@/components/table/constants/contract-table.constants";
@@ -13,7 +12,6 @@ interface ContractTableProps {
   headerVariant?: "admin";
   ownerName?: (ownerId: string) => string;
   ownerHeader?: string;
-  showContractIdColumn?: boolean;
   ownerHref?: (contractId: string) => string;
 }
 
@@ -24,7 +22,6 @@ export function ContractTable({
   headerVariant,
   ownerName,
   ownerHeader,
-  showContractIdColumn = true,
   ownerHref,
 }: ContractTableProps) {
   const renderOwner = (contract: Contract) => {
@@ -48,7 +45,7 @@ export function ContractTable({
     key: "contract",
     header: headerVariant === "admin" ? "Hợp đồng" : CONTRACT_TABLE_HEADERS.contract,
     render: (contract) => headerVariant === "admin"
-      ? <strong><span title={contract.id} aria-label={contract.id}>{contract.id.slice(0, 8).toUpperCase()}</span></strong>
+      ? <TextLinkButton href={contractHref(contract.id)} title={contract.id}>{contract.id.slice(0, 8).toUpperCase()}</TextLinkButton>
       : <TextLinkButton href={contractHref(contract.id)}><TruncatedId value={contract.id} /></TextLinkButton>,
   };
   const ownerColumn: DataTableColumn<Contract> = {
@@ -86,24 +83,15 @@ export function ContractTable({
         : statusContent;
     },
   };
-  const actionColumn: DataTableColumn<Contract> = {
-    key: "action",
-    header: "",
-    render: (contract) => <ButtonBar
-      href={contractHref(contract.id)}
-      rollingLabel
-      aria-label={`Mở hồ sơ hợp đồng ${contract.id}`}
-    >Mở hồ sơ</ButtonBar>,
-  };
   const columns: DataTableColumn<Contract>[] = headerVariant === "admin"
-    ? [contractColumn, ownerColumn, typeColumn, statusColumn, actionColumn]
-    : [contractColumn, ownerColumn, periodColumn, typeColumn, statusColumn, actionColumn];
+    ? [contractColumn, ownerColumn, typeColumn, statusColumn]
+    : [contractColumn, ownerColumn, periodColumn, typeColumn, statusColumn];
 
   return (
     <DataTable
       rows={contracts}
       rowKey={(contract) => contract.id}
-      columns={columns.filter((column) => showContractIdColumn || column.key !== "contract")}
+      columns={columns}
     />
   );
 }

@@ -47,7 +47,7 @@ export function MachineHeartbeatPanel({
       onRetry={onRetry}
     >
       {heartbeat && !error ? <>
-        <div className={styles.monitoringHeartbeatSummary}><div><span className={styles.telemetryRangeCaption}>Kết nối hiện tại</span><MachineConnectionBadge state={heartbeat.status} /></div><div><span className={styles.telemetryRangeCaption}>Tín hiệu gần nhất · Giờ Việt Nam</span><strong>{heartbeat.lastSeenAt ? formatHeartbeatDate(heartbeat.lastSeenAt) : "Chưa ghi nhận"}</strong></div><div><span className={styles.telemetryRangeCaption}>Thông số sức khỏe</span><strong>{health ? "Có dữ liệu đã ghi nhận" : "Chưa có dữ liệu"}</strong></div></div>
+        <div className={styles.monitoringHeartbeatSummary}><div><span className={styles.telemetryRangeCaption}>Kết nối hiện tại</span><MachineConnectionBadge state={heartbeat.status} /></div><div><span className={styles.telemetryRangeCaption}>Tín hiệu gần nhất · Giờ Việt Nam</span><strong>{heartbeat.lastSeenAt ? formatHeartbeatDate(heartbeat.lastSeenAt) : "Chưa ghi nhận"}</strong></div><div><span className={styles.telemetryRangeCaption}>Thông số thiết bị</span><strong>{health ? "Có dữ liệu đã ghi nhận" : "Chưa có dữ liệu"}</strong></div></div>
         {heartbeat.status === "UNKNOWN" ? <p className={styles.telemetryRangeCaption}>Chưa đủ tín hiệu để xác định máy đang kết nối hay mất kết nối.</p> : null}
         {hasHeartbeatDetails ? <p className={styles.telemetryRangeCaption}>{heartbeat.evaluatedAt ? `Đánh giá lúc ${formatHeartbeatDate(heartbeat.evaluatedAt)}` : ""}{heartbeat.deviceReportedAt ? ` · Thiết bị báo lúc ${formatHeartbeatDate(heartbeat.deviceReportedAt)}` : ""}</p> : null}
         <dl className={styles.machineHeartbeatFields}>
@@ -56,16 +56,16 @@ export function MachineHeartbeatPanel({
           <div><dt>Kinh độ</dt><dd>{hasGps ? heartbeat.longitude!.toFixed(6) : "—"}</dd></div>
         </dl>
         {!hasGps && heartbeat.status === "ONLINE" ? <p className={styles.telemetryRangeCaption}>Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS.</p> : null}
-        {health ? <details open><summary>Sức khỏe ghi nhận gần nhất</summary>
+        {health ? <details open><summary>Thông số thiết bị ghi nhận gần nhất</summary>
           {heartbeat.status !== "ONLINE" || !heartbeat.healthReportedAt ? <p>Dữ liệu đã ghi nhận, không phản ánh tình trạng hiện tại của máy.</p> : <p>Thông số tại lần ghi nhận bên dưới, không phải dữ liệu đo liên tục.</p>}
           <dl className={styles.machineHeartbeatFields}>
-          <div><dt>Thời điểm ghi nhận sức khỏe</dt><dd>{heartbeat.healthReportedAt ? formatHeartbeatDate(heartbeat.healthReportedAt) : "Chưa ghi nhận thời điểm"}</dd></div>
-          {health?.ramUsedMb != null || health?.ramTotalMb != null ? <div><dt>Sức khỏe · RAM</dt><dd>{health.ramUsedMb ?? "—"} / {health.ramTotalMb ?? "—"} MB</dd></div> : null}
-          {health?.wifiRssiDbm != null ? <div><dt>Sức khỏe · Wi-Fi RSSI</dt><dd>{health.wifiRssiDbm} dBm</dd></div> : null}
-          {health?.netbirdWireguardLatencyMs != null ? <div><dt>Sức khỏe · Độ trễ</dt><dd>{health.netbirdWireguardLatencyMs} ms</dd></div> : null}
-          {health?.osLoadAvg1m != null ? <div><dt>Sức khỏe · Tải hệ thống (1 phút)</dt><dd>{health.osLoadAvg1m}</dd></div> : null}
-          {health?.firmwareVersion ? <div><dt>Sức khỏe · Firmware</dt><dd>{health.firmwareVersion}</dd></div> : null}
-          {health?.edgeAppVersion ? <div><dt>Sức khỏe · Ứng dụng Edge</dt><dd>{health.edgeAppVersion}</dd></div> : null}
+          <div><dt>Thời điểm ghi nhận thông số</dt><dd>{heartbeat.healthReportedAt ? formatHeartbeatDate(heartbeat.healthReportedAt) : "Chưa ghi nhận thời điểm"}</dd></div>
+          {health?.ramUsedMb != null || health?.ramTotalMb != null ? <div><dt>RAM</dt><dd>{health.ramUsedMb ?? "—"} / {health.ramTotalMb ?? "—"} MB</dd></div> : null}
+          {health?.wifiRssiDbm != null ? <div><dt>Wi-Fi RSSI</dt><dd>{health.wifiRssiDbm} dBm</dd></div> : null}
+          {health?.netbirdWireguardLatencyMs != null ? <div><dt>Độ trễ</dt><dd>{health.netbirdWireguardLatencyMs} ms</dd></div> : null}
+          {health?.osLoadAvg1m != null ? <div><dt>Tải hệ thống (1 phút)</dt><dd>{health.osLoadAvg1m}</dd></div> : null}
+          {health?.firmwareVersion ? <div><dt>Firmware</dt><dd>{health.firmwareVersion}</dd></div> : null}
+          {health?.edgeAppVersion ? <div><dt>Ứng dụng Edge</dt><dd>{health.edgeAppVersion}</dd></div> : null}
           </dl></details> : null}
       </> : null}
     </SmartIotPanel>

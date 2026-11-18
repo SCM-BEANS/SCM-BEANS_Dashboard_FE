@@ -397,7 +397,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                     </TextLinkButton>
                   ) },
                   { key: "manufacturer", header: ADMIN_T.MACHINE_MODELS.MANUFACTURER, render: (model) => model.manufacturer },
-                  { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => model.displayName },
+                  { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => model.displayName || model.modelCode },
                   { key: "machine-type", header: ADMIN_T.MACHINES.MACHINE_TYPE, render: (model) => model.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL },
                 ]}
               />

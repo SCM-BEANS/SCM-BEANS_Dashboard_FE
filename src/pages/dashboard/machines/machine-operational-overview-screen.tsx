@@ -10,6 +10,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { MachineHealthPanel } from "@/components/machines/machine-health-panel";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
 import { MachineMonitoringHeader } from "@/components/machines/operational-overview";
@@ -27,7 +28,7 @@ import { getVietnamToday, MachineCleaningHistoryPanel } from "./machine-cleaning
 import styles from "@/components/machines/machines.module.css";
 import shellStyles from "../customer-shell.module.css";
 
-const tabs = [{ value: "brewing", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Thông số kỹ thuật" }, { value: "cleaning", label: "Vệ sinh" }] as const;
+const tabs = [{ value: "brewing", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Thông số kỹ thuật" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }] as const;
 type Tab = typeof tabs[number]["value"];
 const shiftDay = (day: string, amount: number) => new Date(Date.parse(`${day}T00:00:00Z`) + amount * 86_400_000).toISOString().slice(0, 10);
 
@@ -110,7 +111,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
   let reviewFilterError: string | undefined;
   try { reviewState = readOfflineReviewQuery(router.query, { machineId }); } catch { reviewFilterError = "Bộ lọc rà soát không hợp lệ. Hãy đặt lại bộ lọc để tiếp tục."; }
   const machine = useQuery({ queryKey: ["owner-machine", subject, machineId], queryFn: ({ signal }) => machinesApi.getById(machineId, signal), enabled: ready, retry: false });
-  const contracts = useQuery({ queryKey: ["owner-machine-active-contract", subject, machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal, "ACTIVE"), enabled: ready && machine.isSuccess, retry: false });
+  const contracts = useQuery({ queryKey: ["owner-machine-active-contract", subject, machineId], queryFn: ({ signal }) => contractsApi.getMachineHistory(machineId, signal, "ACTIVE"), enabled: ready && machine.isSuccess && state?.tab !== "health", retry: false });
   const activeContract = contracts.data?.find((record) => record.machineId === machineId && record.status === "ACTIVE" && (!machine.data?.ownerId || record.ownerId === machine.data.ownerId));
   const smartIot = machine.data?.machineType === "SMART_IOT";
   const complianceEnabled = ready && machine.isSuccess && smartIot && state?.tab === "cleaning";
@@ -152,15 +153,18 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
 
   return <div className={shellStyles.pageContent}>
     <div className={[styles.operationalOverview, shellStyles.ownerMonitoringLayout].join(" ")}>
-      <ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar>
+      {state?.tab !== "health" && <ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar>}
       <MachineMonitoringHeader machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" />
       {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
       {!router.isReady || machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
       {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
       {parsed.error && router.isReady ? <div className={styles.operationalOverviewError} role="alert"><p>{parsed.error}</p><ButtonBar onClick={() => navigate({ tab: "brewing", fromDate: today, toDate: today, brewPage: undefined, cleaningPage: undefined, recipeName: undefined, cleaningType: undefined, cleaningStatus: undefined, complianceDays: undefined, telemetryFrom: undefined, telemetryTo: undefined, field: undefined })}>Đặt lại bộ lọc</ButtonBar></div> : null}
       {state && machine.isSuccess ? <div id="owner-operations-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={`owner-operations-tab-${state.tab}`}>
+        {state.tab === "health" ? smartIot
+          ? <MachineHealthPanel key={machineId} machineId={machineId} subject={subject} onOpenCleaning={() => navigate({ tab: "cleaning" })} />
+          : <p className={styles.monitoringEmpty}>Đánh giá sức khỏe chỉ có cho máy Smart IoT.</p> : null}
         {state.tab === "cleaning" && smartIot ? <MachineCleaningCompliancePanel data={compliance.data} days={state.complianceDays} loading={compliance.isPending} refreshing={compliance.isFetching} error={compliance.isError ? getApiErrorMessage(compliance.error) : undefined} onDaysChange={(days) => navigate({ complianceDays: String(days) })} onRefresh={() => void compliance.refetch()} /> : null}
-        {state.tab !== "connection" ? <>
+        {state.tab === "health" ? null : state.tab !== "connection" ? <>
           <section className={styles.operationalOverviewPanel} aria-label="Bộ lọc dữ liệu vận hành">
             <AnalyticsFilters fromDate={state.fromDate} toDate={state.toDate} tab={state.tab} recipeName={state.brewing.recipeName ?? ""} cleaningType={state.cleaning.cleaningType ?? ""} cleaningStatus={state.cleaning.status ?? ""} onApply={navigate} />
           </section>
@@ -194,7 +198,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                   </> : state.tab === "history" ? <MachineBrewHistoryPanel data={brew.data} loading={brew.isPending} error={brew.isError ? getApiErrorMessage(brew.error) : undefined} onRetry={() => void brew.refetch()} onPageChange={(page) => navigate({ brewPage: String(page) })} />
                   : <MachineCleaningHistoryPanel data={cleaning.data} loading={cleaning.isPending} error={cleaning.isError ? getApiErrorMessage(cleaning.error) : undefined} onRetry={() => void cleaning.refetch()} onPageChange={(page) => navigate({ cleaningPage: String(page) })} />}
         </> : smartIot ? <>
-          <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
+          <MachineHeartbeatPanel title="Kết nối & thông số thiết bị" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />
           <SmartIotPanel title="Thông số kỹ thuật"><TelemetryHistoryPanel range={state.telemetry} onRangeChange={(range) => navigate({ telemetryFrom: range.from, telemetryTo: range.to })} selectedField={state.field} onFieldChange={(field) => navigate({ field })} points={telemetryPoints} loading={points.isPending} error={points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={() => void points.refetch()} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} /></SmartIotPanel>
           {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel key={machineId} showDateFilter selectedId={reviewState?.reviewId}
             page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={machineId} canDecide={false}

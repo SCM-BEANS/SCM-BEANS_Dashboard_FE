@@ -16,13 +16,13 @@ import styles from "./machines.module.css";
 
 export type OperationalDateRange = { fromDate: string; toDate: string };
 
-export function MachineMonitoringHeader({ machineLabel, backHref, tabs, activeTab, onTabChange, idPrefix = "monitoring" }: {
-  machineLabel?: string; backHref: string;
+export function MachineMonitoringHeader({ machineLabel, backHref, backLabel = "Về hồ sơ máy", tabs, activeTab, onTabChange, idPrefix = "monitoring" }: {
+  machineLabel?: string; backHref: string; backLabel?: string;
   tabs: readonly { value: string; label: string }[]; activeTab: string;
   onTabChange: (tab: string) => void; idPrefix?: string;
 }) {
   return <>
-    <div className={styles.operationalOverviewBack}><Link href={backHref}>← Về hồ sơ máy</Link></div>
+    <div className={styles.operationalOverviewBack}><Link href={backHref}>← {backLabel}</Link></div>
     <header className={styles.operationalOverviewHeading}>
       <h1 id="machine-operational-overview-title">Giám sát vận hành <span className={styles.monitoringMachineName}>{machineLabel ?? "Máy đang xem"}</span></h1>
     </header>

@@ -5,7 +5,6 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
-import type { CoffeePackageOrder } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
 import { useOwnerNames } from "@/hooks/use-owner-names";
@@ -35,7 +34,7 @@ export function OperatorOrderListPanel({
       {workflow.orders.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.orders.error)}</p> : null}
       {!workflow.orders.isPending && !workflow.orders.isError && workflow.orders.data?.items.length === 0 ? <p className={styles.notice}>Chưa có đơn gói cà phê trong phạm vi này.</p> : null}
       {workflow.orders.data?.items.length ? (
-        <DataTable equalColumns={isAdmin} rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
+        <DataTable rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
           {
             key: "order",
             header: isAdmin ? "Khách hàng" : "Đơn hàng / khách hàng",
@@ -49,7 +48,7 @@ export function OperatorOrderListPanel({
                   {isAdmin ? (
                     <TextLinkButton href={PATH_ADMIN.COFFEE_PACKAGE_ORDER_DETAIL(order.id)}>{customerName}</TextLinkButton>
                   ) : (
-                    <strong className={styles.orderCustomer}>{customerName}</strong>
+                    <TextLinkButton onClick={() => onOpenOrder(order.id)}>{customerName}</TextLinkButton>
                   )}
                   <div className={styles.orderMeta}>
                     {!isAdmin ? <span>Đơn <TruncatedId value={order.id} /></span> : null}
@@ -63,15 +62,8 @@ export function OperatorOrderListPanel({
             {order.packageName ?? order.packageCode ?? "—"}
             <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
           </> },
-          { key: "amount", header: "Thành tiền", align: isAdmin ? "left" : "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
+          { key: "amount", header: "Thành tiền", align: "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
           { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge> },
-          ...(isAdmin ? [] : [{
-            key: "actions",
-            header: "Thao tác",
-            render: (order: CoffeePackageOrder) => (
-              <ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Mở đơn</ButtonBar>
-            ),
-          }]),
         ]} />
       ) : null}
       {workflow.orders.data ? (

@@ -79,6 +79,8 @@
   flex-wrap: wrap;
 }
 
+.panel > .panelHeading + form { margin-bottom: 0; }
+
 .panelHeading > span {
   color: #746b67;
   font-size: 0.9rem;
@@ -314,10 +316,10 @@
 .managementScreen .panel h2 { font-size: 19px; line-height: 1.4; }
 .managementScreen .subpanel h3 { font-size: 16px; line-height: 1.4; }
 .managementScreen .panelHeading p { max-width: 72ch; font-size: 14px; }
-.managementScreen .tabs { gap: 8px; border: 0; }
-.managementScreen .tabs button { min-height: 44px; padding: 9px 16px; border: 1px solid #e9e2dc; border-radius: 9px; background: #fff; font-size: 14px; }
-.managementScreen .tabs button:hover { background: #f8f5f3; }
-.managementScreen .tabs .activeTab { background: #f9e9ea; border-color: #ecc9ca; color: color-mix(in srgb, var(--color-primary) 87%, black); font-weight: 600; }
+.managementScreen .tabs { gap: 18px; border-bottom: 1px solid #e9e2dc; }
+.managementScreen .tabs button { min-height: 44px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; font-size: 14px; }
+.managementScreen .tabs button:hover { color: var(--color-primary); }
+.managementScreen .tabs .activeTab { background: transparent; border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
 .managementScreen .code { font-family: inherit; font-size: 13px; }
 .managementScreen .muted { font-size: 12px; }
 .managementScreen .details { gap: 20px 28px; }

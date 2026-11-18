@@ -44,7 +44,7 @@ test("admin notifications paginate, filter and mark unread items when opened", a
   await expect(panel.locator("article")).toHaveCount(10);
   const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
   await expect(detail).toBeVisible();
-  await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000001");
+  await expect(detail.getByRole("heading", { level: 3 }).getByRole("link")).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000001");
   const feedBox = (await panel.boundingBox())!;
   expect((await detail.boundingBox())!.x).toBeGreaterThan(feedBox.x + feedBox.width);
   await expect(panel.getByRole("heading", { name: "Trước đó", exact: true })).toBeVisible();
@@ -131,7 +131,7 @@ for (const role of ["admin", "moderator"] as const) {
     const feed = page.getByRole("region", { name: "Danh sách thông báo", exact: true });
     const detail = page.getByRole("complementary", { name: "Chi tiết thông báo" });
     await feed.getByRole("button", { name: /Chi phí sửa chữa cần xem xét/ }).click();
-    await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute(
+    await expect(detail.getByRole("heading", { level: 3 }).getByRole("link")).toHaveAttribute(
       "href",
       role === "admin" ? "/admin/technical-requests/cost-reviews/00000000-0000-4000-8000-000000000001" : "/moderator/technical-requests/cost-reviews/00000000-0000-4000-8000-000000000001",
     );
@@ -166,11 +166,11 @@ for (const role of ["moderator", "owner"] as const) {
     await expect(feed.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(253, 248, 247)");
     if (role === "owner") {
       await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toHaveCount(0);
-      await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/dashboard/repair-cost-reviews/00000000-0000-4000-8000-000000000001");
+      await expect(detail.getByRole("heading", { level: 3 }).getByRole("link")).toHaveAttribute("href", "/dashboard/repair-cost-reviews/00000000-0000-4000-8000-000000000001");
       expect(api.alertReads()).toBe(0);
     } else {
       await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toBeVisible();
-      if (role === "moderator") await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/moderator/contracts/00000000-0000-4000-8000-000000000001");
+      if (role === "moderator") await expect(detail.getByRole("heading", { level: 3 }).getByRole("link")).toHaveAttribute("href", "/moderator/contracts/00000000-0000-4000-8000-000000000001");
     }
     await feed.locator("article").nth(2).getByRole("button").click();
     await expect(detail.getByText("Đã đọc", { exact: true })).toBeVisible();

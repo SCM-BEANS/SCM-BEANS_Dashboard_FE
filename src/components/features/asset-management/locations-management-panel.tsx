@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { readAllPages } from "@/lib/read-all-pages";
 import { TableFilters } from "@/components/table/table-filters";
 import { ZodError } from "zod";
@@ -201,23 +202,25 @@ export function LocationsManagementPanel({
           rows={locationRows}
           rowKey={(location) => location.id}
           columns={[
-            { key: "name", header: "Tên địa điểm", render: (location) => <strong>{location.name}</strong> },
+            { key: "name", header: "Tên địa điểm", render: (location) => (
+              <TextLinkButton
+                shallow
+                href={{
+                  pathname: router.pathname,
+                  query: {
+                    ...router.query,
+                    id: location.id,
+                    ...(mode === "moderator" && activeOwnerId ? { ownerId: activeOwnerId } : {}),
+                  },
+                }}
+              >
+                {location.name}
+              </TextLinkButton>
+            ) },
             { key: "address", header: "Địa chỉ", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
             { key: "machines", header: "Số máy", render: (location) => location.machineCount ?? "—" },
             { key: "status", header: "Trạng thái", render: (location) => location.active == null ? "—" : mode === "owner" ? <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> : <span className={styles.locationStatus} data-status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</span> },
             ...(mode === "owner" ? [{ key: "id", header: "UUID", render: (location: typeof locationRows[number]) => <span className={styles.code}><TruncatedId value={location.id} /></span> }] : []),
-            { key: "actions", header: "", render: (location) => <ButtonBar
-              type="button"
-              rollingLabel={mode === "moderator"}
-              onClick={() => void router.push({
-                pathname: router.pathname,
-                query: {
-                  ...router.query,
-                  id: location.id,
-                  ...(mode === "moderator" && activeOwnerId ? { ownerId: activeOwnerId } : {}),
-                },
-              }, undefined, { shallow: true })}
-            >{mode === "moderator" ? "Mở hồ sơ" : "Chi tiết"}</ButtonBar> },
           ]}
         />}
         {!hasFilters && locations.hasNextPage && <div className={styles.actions}>

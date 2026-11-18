@@ -1,30 +1,30 @@
 .container {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
 }
 
 .table {
   width: 100%;
-  min-width: 760px;
+  min-width: 32rem;
+  --table-cell-inline: 12px;
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
   font-size: 14px;
 }
 
-.equalColumns {
-  table-layout: fixed;
-  overflow-wrap: anywhere;
-}
-
 .table th {
-  padding: 12px 10px;
+  padding: 12px var(--table-cell-inline);
   background: #f7f5f3;
   color: #706561;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: .01em;
 }
+
+.table th, .table td { overflow-wrap: anywhere; }
 
 .table th:first-child {
   border-top-left-radius: 8px;
@@ -47,9 +47,9 @@
 }
 
 .table td {
-  padding: 11px 10px;
+  padding: 12px var(--table-cell-inline);
+  vertical-align: middle;
   border-bottom: 1px solid #f0ece8;
-  overflow-wrap: anywhere;
 }
 
 .contractStatus {

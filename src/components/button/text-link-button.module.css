@@ -1,3 +1,4 @@
+button.link,
 .action {
   appearance: none;
   padding: 0;
@@ -8,24 +9,27 @@
   cursor: pointer;
 }
 
-.link:link,
-.link:visited,
+.link.link,
 .action {
   color: #302927;
   font-weight: 700;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 38%, transparent);
+  text-underline-offset: 3px;
 }
 
-.link:hover,
-.action:hover {
-  color: #302927;
-  text-decoration: none;
+.link.link:hover,
+.link.link:focus-visible,
+.action:enabled:hover,
+.action:focus-visible {
+  color: var(--color-primary, #b81724);
+  text-decoration-color: currentColor;
 }
 
 .link:focus-visible,
 .action:focus-visible {
   outline: 2px solid #302927;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 .action:disabled {

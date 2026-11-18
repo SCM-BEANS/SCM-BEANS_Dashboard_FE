@@ -246,7 +246,6 @@ function InvoiceList({
       />
       {query.data && query.data.items.length > 0 && (
         <DataTable
-          equalColumns={isModerator}
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
@@ -260,7 +259,14 @@ function InvoiceList({
                 }
                 return (
                   <div className={styles.invoiceIdentity}>
-                    <strong title={invoice.id}>{invoice.id.slice(0, 8).toUpperCase()}</strong>
+                    <TextLinkButton
+                      title={invoice.id}
+                      href={role === "owner"
+                        ? `${PATH_CUSTOMER.INVOICE_DETAIL(invoice.id)}${router.asPath?.split("?")[0].endsWith("/refund") ? `?tab=refund` : ""}`
+                        : PATH_ADMIN.INVOICE_DETAIL(invoice.id)}
+                    >
+                      {invoice.id.slice(0, 8).toUpperCase()}
+                    </TextLinkButton>
                     <small>{typeLabel}</small>
                   </div>
                 );
@@ -278,20 +284,6 @@ function InvoiceList({
             { key: "period", header: messages.PERIOD, render: (invoice) => periodText(invoice.period) },
             { key: "amount", header: "Số tiền", align: isModerator ? "left" : "right", render: (invoice) => <span className={styles.money}>{amountText(invoice.amount, invoice.currency)}</span> },
             { key: "status", header: messages.STATUS, render: (invoice) => <BillingStatus status={invoice.status} label={invoiceStatus(invoice.status)} /> },
-            ...(isModerator ? [] : [{
-              key: "action",
-              header: "",
-              render: (invoice: Invoice) => (
-                <ButtonBar
-                  rollingLabel
-                  href={role === "owner"
-                    ? `${PATH_CUSTOMER.INVOICE_DETAIL(invoice.id)}${router.asPath?.split("?")[0].endsWith("/refund") ? "?tab=refund" : ""}`
-                    : PATH_ADMIN.INVOICE_DETAIL(invoice.id)}
-                >
-                  Mở hồ sơ
-                </ButtonBar>
-              ),
-            }]),
           ]}
         />
       )}

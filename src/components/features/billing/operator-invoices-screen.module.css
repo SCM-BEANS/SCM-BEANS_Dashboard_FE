@@ -33,8 +33,7 @@
 .proofFilename { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .proofDate { display: grid; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .proofDate small { color: #706561; font-size: inherit; }
-.proofActions { display: grid; grid-template-columns: max-content max-content; gap: 8px; align-items: start; }
-.proofActions > * { justify-self: start; }
+.proofActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .proofActions button { min-height: 40px; padding-inline: 12px; font-size: 13px; }
 .proofUpload { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
 .proofUpload label { display: grid; gap: 7px; min-width: 0; color: #706561; font-size: 13px; }

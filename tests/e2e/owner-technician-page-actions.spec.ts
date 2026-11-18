@@ -8,10 +8,10 @@ test("technician maintenance ticket keeps one repair link and omits duplicate ha
   await page.route("**/api/**", (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/maintenance-tickets/${id}`) ? { id, machineId: id, status: "IN_PROGRESS", repairCaseId: id } : [] }));
   await page.goto(`/technician/tasks/maintenance-tickets/${id}`);
   await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveCount(1);
-  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveAttribute("href", `/technician/tasks/repair-cases/${id}`);
-  await expect(page.getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toBeInViewport();
-  await expect(page.locator("footer").getByRole("link", { name: "Mở hồ sơ sửa chữa" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Hồ sơ sửa chữa", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Hồ sơ sửa chữa", exact: true })).toHaveAttribute("href", `/technician/tasks/repair-cases/${id}`);
+  await expect(page.getByRole("link", { name: "Hồ sơ sửa chữa", exact: true })).toBeInViewport();
+  await expect(page.locator("footer").getByRole("link", { name: "Hồ sơ sửa chữa", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Bàn giao máy", exact: true })).toHaveCount(0);
 });
 

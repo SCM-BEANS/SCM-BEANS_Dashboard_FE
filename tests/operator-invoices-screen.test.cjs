@@ -109,6 +109,7 @@ function makeScreen(queryResults, routerQuery = {}) {
     } },
     '@/apis/profiles.api': { profilesApi: {} },
     '@/hooks/use-owner-names': { useOwnerNames: (ids) => { ownerLookups.push(ids); return { data: { [ownerId]: 'Khách hàng kiểm thử' } }; } },
+    '@/components/button/text-link-button': { TextLinkButton: ({ children, ...props }) => React.createElement('a', props, children) },
     '@/components/button/button-bar': {
       ButtonBar: ({ children, href, rollingLabel, variant, holdToConfirm, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, ...(href ? { href } : {}), ...(holdToConfirm ? { 'data-hold-to-confirm': 'true' } : {}) }, children),
       ProgressDownloadButton: ({ children, filename }) => React.createElement('button', { 'aria-label': `${children} ${filename}`, 'data-download-effect': true }, children),
@@ -163,8 +164,7 @@ test('operator invoice list is paged, uses the Admin route, and does not fan out
   assert.deepEqual(screen.queryOptions[0].queryKey, ['billing', 'operator', 'invoices', 'admin:test-subject', filters, 0]);
   await screen.queryOptions[0].queryFn({ signal: undefined });
   assert.equal(screen.invoiceRequests[0].size, 10);
-  assert.match(html, /data-variant="accounts"/);
-  assert.match(html, /Mở hồ sơ/);
+  assert.match(html, new RegExp(`<a [^>]*title="${invoiceId}"[^>]*>${invoiceId.slice(0, 8).toUpperCase()}</a>`));
   assert.equal(screen.customerOptions[0].getNextPageParam({ page: 0, totalPages: 3 }), 1);
   assert.equal(screen.customerOptions[0].getNextPageParam({ page: 2, totalPages: 3 }), undefined);
 });
@@ -187,7 +187,7 @@ test('operator invoice detail lists proof metadata and opens moderator review th
   const html = screen.render({ role: 'moderator', invoiceId });
   assert.match(html, /transfer\.pdf/);
   assert.doesNotMatch(html, /Duyệt chứng từ|Từ chối chứng từ|Tải xuống|Xem chứng từ/);
-  assert.match(html, /Thông tin tệp/);
+  assert.match(html, /Tên tệp/);
   assert.match(html, /aria-label="Nội dung hồ sơ hóa đơn"/);
   assert.doesNotMatch(html, /aria-label="Phân trang dòng phí"/);
   assert.doesNotMatch(html, /aria-label="Phân trang chứng từ thanh toán"/);

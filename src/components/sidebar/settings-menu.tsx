@@ -9,10 +9,12 @@ export function SettingsMenu({
   settingsHref,
   logout,
   variant,
+  compact = false,
 }: {
   settingsHref: string;
   logout: SidebarLogoutProps;
   variant: "icon" | "wide";
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -23,7 +25,7 @@ export function SettingsMenu({
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
     >
       <button
-        className={variant === "wide" ? styles.wideButton : styles.iconButton}
+        className={variant === "wide" && !compact ? styles.wideButton : styles.iconButton}
         type="button"
         aria-label="Cài đặt"
         title="Cài đặt"
@@ -32,10 +34,10 @@ export function SettingsMenu({
         onClick={() => setOpen((current) => !current)}
       >
         <Settings aria-hidden="true" size={variant === "wide" ? 18 : 20} />
-        {variant === "wide" && <span>Cài đặt</span>}
+        {variant === "wide" && !compact && <span>Cài đặt</span>}
       </button>
       {open && (
-        <div className={`${styles.menu} ${variant === "wide" ? styles.menuUp : styles.menuDown}`} role="menu">
+        <div className={`${styles.menu} ${variant === "wide" ? styles.menuUp : styles.menuDown} ${compact ? styles.compactMenu : ""}`} role="menu">
           <Link className={styles.menuItem} role="menuitem" href={settingsHref} onClick={() => setOpen(false)}>
             <User aria-hidden="true" size={16} />
             Hồ sơ

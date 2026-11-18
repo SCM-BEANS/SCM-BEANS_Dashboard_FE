@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
@@ -441,13 +442,12 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
           rows={visibleLocations.slice(currentStorePage * 10, currentStorePage * 10 + 10)}
           rowKey={({ location }) => location.id}
           columns={[
-            { key: "name", header: T.STORES.NAME, render: ({ location }) => (
-              <strong>{location.name}</strong>
+            { key: "name", header: T.STORES.NAME, render: ({ owner, location }) => (
+              <TextLinkButton href={locationDetailHref(location.id, owner.idaasUserId)}>{location.name}</TextLinkButton>
             ) },
             { key: "owner", header: T.STORES.OWNER, render: ({ owner }) => owner.fullName },
             { key: "address", header: T.STORES.ADDRESS, render: ({ location }) => [location.address, location.city].filter(Boolean).join(", ") || "—" },
             { key: "status", header: "Trạng thái", render: ({ location }) => location.active == null ? "—" : <span className={styles.userStatus} data-status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</span> },
-            { key: "open", header: "", render: ({ owner, location }) => <ButtonBar rollingLabel href={locationDetailHref(location.id, owner.idaasUserId)}>Mở hồ sơ</ButtonBar> },
           ]}
         />}
       </>}
