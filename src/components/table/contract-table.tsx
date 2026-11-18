@@ -102,11 +102,9 @@ export function ContractTable({
   return (
     <DataTable
       variant="accounts"
-      className={styles.contractTable}
       rows={contracts}
       rowKey={(contract) => contract.id}
       columns={columns.filter((column) => showContractIdColumn || column.key !== "contract")}
-
     />
   );
 }

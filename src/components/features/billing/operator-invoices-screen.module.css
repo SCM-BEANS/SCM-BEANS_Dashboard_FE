@@ -30,17 +30,6 @@
 .detailGrid dd { overflow-wrap: anywhere; margin: 5px 0 0; color: #302927; font-size: 14px; font-weight: 600; }
 .rowActions { display: flex; min-width: 190px; flex-wrap: wrap; gap: 6px; }
 .rowActions button { min-height: 34px; padding: 0 9px; font-size: 12px; }
-.proofTable table { table-layout: fixed; min-width: 1040px; }
-.proofTable th:nth-child(1) { width: 34%; }
-.proofTable th:nth-child(2) { width: 17%; }
-.proofTable th:nth-child(3) { width: 16%; }
-.proofTable th:last-child { width: 33%; }
-.proofTableWithAmount th:nth-child(1) { width: 27%; }
-.proofTableWithAmount th:nth-child(2) { width: 14%; }
-.proofTableWithAmount th:nth-child(3) { width: 13%; }
-.proofTableWithAmount th:nth-child(4) { width: 14%; }
-.proofTableWithAmount th:last-child { width: 32%; }
-.proofTable td { vertical-align: top; }
 .proofFilename { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .proofDate { display: grid; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .proofDate small { color: #706561; font-size: inherit; }

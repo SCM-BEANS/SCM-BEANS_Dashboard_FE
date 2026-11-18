@@ -45,25 +45,7 @@
 .panel { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: white; }
 .panel h2 { margin: 0 0 14px; font-size: 19px; }
 .panelSubtitle, .emptyText { margin: 0 0 14px; color: #706561; font-size: 14px; line-height: 1.5; }
-.adminTable { scrollbar-color: #b8aca5 #f7f5f3; scrollbar-width: thin; }
-.adminTable::-webkit-scrollbar { height: 8px; }
-.adminTable::-webkit-scrollbar-track { border-radius: 8px; background: #f7f5f3; }
-.adminTable::-webkit-scrollbar-thumb { border-radius: 8px; background: #b8aca5; }
 .adminTableHint { display: none; }
-.machineInventoryTable :global(table) { min-width: 1120px; table-layout: fixed; }
-.machineInventoryTable :global(th:nth-child(1)),
-.machineInventoryTable :global(td:nth-child(1)) { width: 25%; }
-.machineInventoryTable :global(th:nth-child(2)),
-.machineInventoryTable :global(td:nth-child(2)) { width: 25%; }
-.machineInventoryTable :global(th:nth-child(3)),
-.machineInventoryTable :global(td:nth-child(3)) { width: 25%; }
-.machineInventoryTable :global(th:nth-child(4)),
-.machineInventoryTable :global(td:nth-child(4)) { width: 25%; }
-.overviewDailyTable :global(table) { min-width: 0; table-layout: fixed; }
-.overviewDailyTable :global(thead th:first-child),
-.overviewDailyTable :global(tbody td:first-child) { width: 56%; }
-.overviewDailyTable :global(thead th:nth-child(2)),
-.overviewDailyTable :global(tbody td:nth-child(2)) { width: 44%; text-align: center; }
 .overviewCupMetricFooter { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: auto; }
 .overviewCupMetricFooter small { display: flex; min-width: 0; flex-direction: column; gap: 3px; color: #706561; font-size: 12px; line-height: 1.4; }
 .overviewCupMetricFooter small strong { display: block; overflow-wrap: anywhere; color: #302927; font-size: 12px; font-weight: 600; }
@@ -92,9 +74,6 @@
 .overviewAppliedRange { margin: 0; color: #706561; font-size: 13px; line-height: 1.5; }
 .overviewAppliedRange strong { color: #302927; }
 .overviewRangeControls .accountInlineWarning { margin: 0; }
-@media (hover: hover) {
-  .adminTable :global(tbody tr:hover td) { background: #fdf9f8; }
-}
 .pageContent button:not(:disabled) {
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 100ms ease;
 }
@@ -152,13 +131,7 @@
 .reportFinanceMetric strong { overflow-wrap: anywhere; color: #302927; font-size: 20px; line-height: 1.3; }
 .reportFinanceMetricOverdue { border-color: #f0d2d0; background: #fff9f8; }
 .reportFinanceMetricOverdue span, .reportFinanceMetricOverdue strong { color: #a9382a; }
-.reportDailyTable :global(table) { width: 100%; min-width: 0 !important; table-layout: fixed; }
-.reportDailyTable :global(th:first-child), .reportDailyTable :global(td:first-child) { width: 44%; }
-.reportDailyTable :global(th:last-child), .reportDailyTable :global(td:last-child) { text-align: center; }
-.reportInvoiceTable :global(table) { min-width: 900px; }
-.reportInvoiceTable :global(th:first-child), .reportInvoiceTable :global(td:first-child) { width: 220px; }
 .reportInvoiceId { display: block; max-width: 280px; overflow-wrap: anywhere; color: #514843; font-size: 12px; font-variant-numeric: tabular-nums; }
-.reportInvoiceLineItemsTable :global(table) { min-width: 820px; }
 .reportInvoiceDetailGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
 .reportInvoiceDetailField { display: flex; min-width: 0; flex-direction: column; gap: 6px; padding: 13px; border: 1px solid #eee8e3; border-radius: 12px; background: #fdfcfb; }
 .reportInvoiceDetailField dt { color: #706561; font-size: 13px; line-height: 1.4; }
@@ -370,7 +343,6 @@
 .summarySectionHeading h2 { margin: 0; font-size: 16px; }
 .summarySectionHeading > span, .summarySectionHeading > a { font-size: 12px; color: #675b57; }
 .summarySectionHeading > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: var(--color-primary); }
-.summaryColumn td > a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
 .summaryValue { display: block; font-size: 32px; color: #302927; font-variant-numeric: tabular-nums; }
 .summaryValue small { font-size: 14px; color: #675b57; font-weight: 400; }
 .summaryProfit .summaryValue { font-size: clamp(32px, 3vw, 46px); }
@@ -419,9 +391,6 @@
 .userSectionHeading { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }
 .userSectionHeading h2 { margin: 0; }
 .userSectionHeading > span { color: #675b57; font-size: 13px; }
-.userListPanel :global(table) { min-width: 680px; width: 100%; }
-.userListPanel :global(th), .userListPanel :global(td) { text-align: left; vertical-align: middle; }
-.userListPanel :global(td) { padding-top: 10px; padding-bottom: 10px; }
 .userIdentityCell { display: flex; gap: 12px; align-items: center; min-width: 240px; }
 .userIdentityCell > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .userIdentityCell strong { color: #302927; font-size: 14px; }
@@ -471,9 +440,6 @@
 @media (max-width: 600px) { .storeLayout > .panel { padding: 18px; } .storeInfoGrid, .storeAddressFields, .storeOwner dl { grid-template-columns: minmax(0, 1fr); } }
 
 .contractListPanel { border: 0; border-radius: 0; }
-.contractListPanel :global(table) { width: 100%; border: 0; border-radius: 0; outline: 0; }
-.contractListPanel :global(th), .contractListPanel :global(td) { text-align: left; vertical-align: middle; }
-.contractListPanel :global(td) { padding-top: 12px; padding-bottom: 12px; }
 .contractListCount { color: #675b57; font-size: 13px; }
 .contractDetailLayout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .9fr); align-items: start; gap: 18px; }
 .contractOverviewPanel { grid-column: 1 / -1; }
@@ -485,7 +451,6 @@
 .contractExpiryPanel .operationsGrid > div:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .contractHistoryPanel { grid-column: 1; grid-row: 2; min-width: 0; }
 .contractLifecyclePanel, .contractDocumentsPanel { grid-column: 1 / -1; min-width: 0; }
-.contractHistoryPanel :global(table), .contractDocumentsPanel :global(table) { min-width: 620px; }
 @media (max-width: 980px) {
   .contractDetailLayout { grid-template-columns: minmax(0, 1fr); }
   .contractExpiryPanel, .contractHistoryPanel { grid-column: 1; grid-row: auto; }
@@ -516,8 +481,6 @@
 .machinePlainStatus[data-status="IN_WAREHOUSE"]::before, .machinePlainStatus[data-status="AVAILABLE_FOR_RENT"]::before, .machinePlainStatus[data-status="DEPLOYED_CONTRACT_OWNER"]::before, .machinePlainStatus[data-status="DEPLOYED_STORE_OWNER"]::before { background: #2c8b69; }
 .machinePlainStatus[data-status="PENDING_ACTIVATION"]::before, .machinePlainStatus[data-status="UNDER_MAINTENANCE"]::before, .machinePlainStatus[data-status="REFURBISHING"]::before, .machinePlainStatus[data-status="PENDING_QA"]::before { background: #ca8b20; }
 .machinePlainStatus[data-status="RETIRED"]::before { background: var(--color-primary); }
-.machineInventoryTable.machineInventoryTable { border: 0; border-radius: 0; }
-.machineInventoryTable.machineInventoryTable :global(table) { min-width: 0; table-layout: auto; }
 .machineListToolbar { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin: 16px 0 20px; }
 .machineListToolbar .machineSearch { flex: 1; min-width: 220px; max-width: none; margin: 0; }
 .machineListToolbar .machineFilterToolbar { margin: 0; }
@@ -555,9 +518,6 @@
 .machineInventoryGroup .machineViewTabActive { color: var(--color-primary); border-bottom-color: var(--color-primary); background: transparent; }
 .machineInventoryHeading .machineFilterCount { padding: 0; border: 0; border-radius: 0; background: none; font-size: 14px; font-weight: 400; }
 @media (max-width: 1000px) { .machineFormLayout, .machineWorkspace .machineProfileGroups { grid-template-columns: 1fr; } }
-.machineInventoryTable.machineInventoryTable :global(td) { height: 48px; padding: 6px 12px; }
-.machineInventoryTable.machineInventoryTable :global(td:last-child) { width: 130px; }
-.machineInventoryTable.machineInventoryTable :global(th), .machineInventoryTable.machineInventoryTable :global(td) { width: auto; white-space: normal; overflow-wrap: anywhere; text-align: left; padding: 14px 12px; }
 @media (max-width: 700px) { .specificationRow { grid-template-columns: 1fr; gap: 8px; } .machinePagination { flex-wrap: wrap; } }
 
 .machineDetailHeading { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }

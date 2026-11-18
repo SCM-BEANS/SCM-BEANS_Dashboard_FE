@@ -192,7 +192,6 @@ function MachineList({
       <DataTable
         variant="accounts"
         headerVariant="admin"
-        className={`${adminStyles.adminTable} ${adminStyles.machineInventoryTable}`}
         rows={rows}
         rowKey={(machine) => machine.id}
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
@@ -393,7 +392,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             {machineModels.data && machineModels.data.length > 0 && <>
               <DataTable
                 headerVariant="admin"
-                className={adminStyles.adminTable}
                 variant="accounts"
                 rows={machineModels.data.slice(currentModelPage * 10, currentModelPage * 10 + 10)}
                 rowKey={(model) => model.id}

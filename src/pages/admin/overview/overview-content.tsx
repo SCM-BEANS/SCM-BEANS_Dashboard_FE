@@ -343,7 +343,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
           </ResponsiveContainer>
         </div>
         <details className={styles.summaryDetails}><summary>Xem số liệu theo ngày</summary>
-          <DataTable headerVariant="admin" variant="standard" className={`${styles.adminTable} ${styles.overviewDailyTable}`} headers={["Ngày", "Số ly hợp lệ"]}>
+          <DataTable headerVariant="admin" variant="standard" headers={["Ngày", "Số ly hợp lệ"]}>
             {days.map((day, index) => <tr key={`${day.date}-${index}`}><td>{formatDateOnly(day.date)}</td><td>{count(day.cups)}</td></tr>)}
           </DataTable>
         </details>

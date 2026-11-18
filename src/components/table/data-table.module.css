@@ -11,7 +11,8 @@
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
   font-size: 14px;
 }
@@ -94,6 +95,14 @@
   letter-spacing: .01em;
 }
 
+.table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.table th:last-child {
+  border-top-right-radius: 8px;
+}
+
 .table tbody tr {
   transition: background-color 140ms ease;
 }
@@ -124,14 +133,6 @@
   padding: 11px 10px;
 }
 
-.contractTable {
-  overflow-x: auto;
-}
-
-.contractTable :global(table) {
-  min-width: 820px;
-}
-
 .contractStatus {
   display: inline-flex;
   align-items: center;
@@ -159,11 +160,6 @@
   padding: 15px 10px;
 }
 
-.adminHeader {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
 .table.adminHeader th {
   padding: 14px 16px;
   background: #f4f0ed;
@@ -174,14 +170,6 @@
   text-wrap: balance;
   vertical-align: middle;
   border-bottom: 1px solid #e6ddd8;
-}
-
-.table.adminHeader th:first-child {
-  border-top-left-radius: 8px;
-}
-
-.table.adminHeader th:last-child {
-  border-top-right-radius: 8px;
 }
 
 .table.adminHeader td {

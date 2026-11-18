@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -24,25 +25,18 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
       {workflow.refunds.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.refunds.error)}</p> : null}
       {!workflow.refunds.isPending && !workflow.refunds.isError && workflow.refunds.data?.items.length === 0 ? <p className={styles.notice}>Chưa có khoản hoàn tiền trong phạm vi này.</p> : null}
       {workflow.refunds.data?.items.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead><tr><th>Khoản hoàn / khách hàng</th><th className={styles.numeric}>Số tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-            <tbody>{workflow.refunds.data.items.map((item) => (
-              <tr key={item.id} className={workflow.selectedRefundId === item.id ? styles.selectedRow : undefined}>
-                <td>
-                  <strong className={styles.orderCustomer}>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
-                  <div className={styles.orderMeta}>
-                    <span>Khoản hoàn <TruncatedId value={item.id} /></span>
-                    <span>{formatCoffeePackageDateTime(item.createdAt)}</span>
-                  </div>
-                </td>
-                <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, item.currency ?? "VND")}</td>
-                <td><StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
-                <td><ButtonBar rollingLabel type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+        <DataTable variant="accounts" rows={workflow.refunds.data.items} rowKey={(item) => item.id} columns={[
+          { key: "refund", header: "Khoản hoàn / khách hàng", render: (item) => <>
+            <strong className={styles.orderCustomer}>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
+            <div className={styles.orderMeta}>
+              <span>Khoản hoàn <TruncatedId value={item.id} /></span>
+              <span>{formatCoffeePackageDateTime(item.createdAt)}</span>
+            </div>
+          </> },
+          { key: "amount", header: "Số tiền", align: "right", render: (item) => formatCoffeePackageMoney(item.amount, item.currency ?? "VND") },
+          { key: "status", header: "Trạng thái", render: (item) => <StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge> },
+          { key: "actions", header: "Thao tác", render: (item) => <ButtonBar rollingLabel type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar> },
+        ]} />
       ) : null}
     </section>
   );

@@ -444,7 +444,6 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         {lineItems.data?.items.length ? (
           <DataTable
             variant="accounts"
-            style={{ minWidth: 400 }}
             rows={lineItems.data.items}
             rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`}
             columns={[
@@ -487,7 +486,6 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         {proofs.data?.items.length ? (
           <DataTable
             variant="accounts"
-            className={`${styles.proofTable} ${role !== "admin" ? styles.proofTableWithAmount : ""}`}
             rows={proofs.data.items}
             rowKey={(proof) => proof.id}
             columns={[

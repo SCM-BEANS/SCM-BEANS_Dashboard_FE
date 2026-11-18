@@ -49,16 +49,6 @@
   font-size: 12px !important;
 }
 
-.evidenceTable :global(th:last-child),
-.evidenceTable :global(td:last-child) {
-  width: 188px;
-  min-width: 188px;
-}
-
-.evidenceTable :global(td:last-child) {
-  white-space: nowrap;
-}
-
 .evidenceActions {
   display: flex;
   flex-wrap: nowrap;

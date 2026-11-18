@@ -90,14 +90,12 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
       ) : (
         <DataTable
           variant="moderator"
-          className={styles.paymentProofTable}
-          minWidth={1240}
           headers={["Chứng từ", messages.PROOF_STATUS, messages.PROOF_AMOUNT, messages.PROOF_SUBMITTED_AT, messages.PROOF_CONTENT, messages.PROOF_ACTION]}
         >
           {proofs.map((proof) => (
             <Fragment key={proof.id}>
               <tr>
-                <td className={styles.proofFilenameCell}>
+                <td>
                   <div className={styles.proofFilePreview}>
                     {isPreviewableInvoicePaymentProofImage(proof.contentType) ? (
                       <InvoicePaymentProofImagePreview proof={proof} />
@@ -115,7 +113,7 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
                 </td>
                 <td>{proof.amount == null ? messages.PROOF_AMOUNT_UNAVAILABLE : amountText(proof.amount, proof.currency ?? currency)}</td>
                 <td><time dateTime={proof.submittedAt}>{formatProofSubmittedAt(proof.submittedAt)}</time></td>
-                <td className={styles.proofContentCell}>
+                <td>
                   {proof.reviewedAt && proof.reviewReason?.trim()
                     ? proof.reviewReason
                     : proof.status === "SUBMITTED"
@@ -141,7 +139,7 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
                 </td>
               </tr>
               {reviewSelection?.proofId === proof.id && (
-                <tr className={styles.proofReviewRow}>
+                <tr>
                   <td colSpan={6}>
                     <section className={styles.proofReviewPanel} aria-labelledby={`payment-proof-review-title-${proof.id}`}>
                       <div className={styles.proofReviewHeader}>

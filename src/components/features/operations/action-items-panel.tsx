@@ -415,7 +415,6 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
           rows={items.data.items}
           rowKey={(item) => item.actionKey}
           columns={compact && role === "ADMIN" ? columns.filter(column => ["work", "status", "action"].includes(column.key)) : columns}
-          style={{ minWidth: compact && role === "ADMIN" ? 0 : 1040 }}
           emptyMessage="Không có công việc trong khoảng thời hạn này."
         />
         </details>

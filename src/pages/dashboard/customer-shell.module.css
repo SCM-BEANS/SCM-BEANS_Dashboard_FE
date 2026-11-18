@@ -407,36 +407,6 @@
   line-height: 1.55;
 }
 
-.paymentProofTable :global(table) {
-  min-width: 960px;
-  table-layout: fixed;
-}
-
-.paymentProofTable :global(th:nth-child(1)),
-.paymentProofTable :global(td:nth-child(1)) { width: 26%; }
-.paymentProofTable :global(th:nth-child(2)),
-.paymentProofTable :global(td:nth-child(2)) { width: 12%; }
-.paymentProofTable :global(th:nth-child(3)),
-.paymentProofTable :global(td:nth-child(3)) { width: 16%; }
-.paymentProofTable :global(th:nth-child(4)),
-.paymentProofTable :global(td:nth-child(4)) { width: 19%; }
-.paymentProofTable :global(th:nth-child(5)),
-.paymentProofTable :global(td:nth-child(5)) { width: 27%; }
-.paymentProofTable :global(td) {
-  vertical-align: top;
-  overflow-wrap: anywhere;
-}
-.paymentProofTable :global(td:nth-child(2)),
-.paymentProofTable :global(td:nth-child(3)),
-.paymentProofTable :global(td:nth-child(4)) { font-variant-numeric: tabular-nums; }
-.paymentProofTable :global(th:nth-child(2)),
-.paymentProofTable :global(td:nth-child(2)),
-.paymentProofTable :global(th:nth-child(3)),
-.paymentProofTable :global(td:nth-child(3)),
-.paymentProofTable :global(th:nth-child(4)),
-.paymentProofTable :global(td:nth-child(4)) { text-align: center; }
-.paymentProofTable :global(td:nth-child(4)) { white-space: nowrap; }
-
 .paymentProofFilename {
   display: block;
   min-width: 0;
@@ -681,7 +651,6 @@
 .contractTerms { margin-top: 22px; color: #514843; }
 .contractTerms summary { cursor: pointer; font-weight: 600; }
 .contractTerms p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
-.contractList table { width: 100%; border: 0; border-radius: 0; }
 @media (max-width: 1000px) { .contractLayout { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) { .contractFilters, .contractOverview .detailGrid { grid-template-columns: minmax(0, 1fr); } .contractListHeading { flex-wrap: wrap; gap: 8px; } }
 

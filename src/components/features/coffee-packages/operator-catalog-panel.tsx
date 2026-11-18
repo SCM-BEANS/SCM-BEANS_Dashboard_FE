@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackage, CoffeePackageUpsertRequest } from "@/schema/coffee-packages.schema";
@@ -104,30 +105,33 @@ export function OperatorCatalogPanel({
       {workflow.packages.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.packages.error)}</p> : null}
       {!workflow.packages.isPending && !workflow.packages.isError && packages.length === 0 ? <p className={styles.notice}>Chưa có gói cà phê trong danh mục.</p> : null}
       {packages.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead><tr><th>Mã gói</th><th>Tên gói</th><th>Mô tả</th><th className={styles.numeric}>Đơn giá</th><th className={styles.numeric}>Ngày sử dụng</th><th>Trạng thái</th>{isAdmin ? <th>Thao tác</th> : null}</tr></thead>
-            <tbody>{packages.map((item) => {
+        <DataTable
+          variant="accounts"
+          rows={packages}
+          rowKey={(item) => item.id}
+          columns={[
+            { key: "code", header: "Mã gói", render: (item) => <span className={styles.code}>{item.code ?? "—"}</span> },
+            { key: "name", header: "Tên gói", render: (item) => item.name },
+            { key: "description", header: "Mô tả", render: (item) => item.description || "—" },
+            { key: "unitPrice", header: "Đơn giá", align: "right", render: (item) => formatCoffeePackageMoney(item.unitPrice, item.currency) },
+            { key: "usageDays", header: "Ngày sử dụng", align: "right", render: (item) => item.usageDays ?? "—" },
+            { key: "status", header: "Trạng thái", render: (item) => {
               const active = item.active !== false && item.status?.toUpperCase() !== "INACTIVE";
-              return (
-                <tr key={item.id} className={editingId === item.id ? styles.selectedRow : undefined}>
-                  <td className={styles.code}>{item.code ?? "—"}</td>
-                  <td>{item.name}</td>
-                  <td>{item.description || "—"}</td>
-                  <td className={styles.numeric}>{formatCoffeePackageMoney(item.unitPrice, item.currency)}</td>
-                  <td className={styles.numeric}>{item.usageDays ?? "—"}</td>
-                  <td><StatusBadge variant="dot" status={active ? "ACTIVE" : "INACTIVE"}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</StatusBadge></td>
-                  {isAdmin ? (
-                    <td className={styles.buttonCell}>
-                      <ButtonBar rollingLabel type="button" disabled={workflow.pending} onClick={() => editPackage(item)}>Chỉnh sửa</ButtonBar>
-                      {active ? <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DEACTIVATE_PACKAGE", packageId: item.id })}>Ngừng bán</ButtonBar> : null}
-                    </td>
-                  ) : null}
-                </tr>
-              );
-            })}</tbody>
-          </table>
-        </div>
+              return <StatusBadge variant="dot" status={active ? "ACTIVE" : "INACTIVE"}>{coffeePackageStatusLabel(active ? "ACTIVE" : "INACTIVE")}</StatusBadge>;
+            } },
+            ...(isAdmin ? [{
+              key: "actions",
+              header: "Thao tác",
+              render: (item: CoffeePackage) => {
+                const active = item.active !== false && item.status?.toUpperCase() !== "INACTIVE";
+                return <>
+                  <ButtonBar rollingLabel type="button" disabled={workflow.pending} onClick={() => editPackage(item)}>Chỉnh sửa</ButtonBar>
+                  {active ? <ButtonBar type="button" disabled={workflow.pending} onClick={() => workflow.run({ type: "DEACTIVATE_PACKAGE", packageId: item.id })}>Ngừng bán</ButtonBar> : null}
+                </>;
+              },
+            }] : []),
+          ]}
+        />
       ) : null}
     </section>
   );

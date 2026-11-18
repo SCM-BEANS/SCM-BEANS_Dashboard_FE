@@ -185,7 +185,6 @@ export function InstallationWorkOrderRecords({
               variant="moderator"
               rows={evidence.data.items}
               rowKey={(item) => item.id}
-              style={{ minWidth: 760 }}
               columns={[
                 { key: "filename", header: "Tệp", render: (item) => item.originalFilename },
                 { key: "sha256", header: "Mã SHA-256", render: (item) => item.sha256 ?? "—" },

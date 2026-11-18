@@ -6,6 +6,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { recipesApi } from "@/apis/recipes.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { isRecipeSyncApplied, type RecipeSyncStatus } from "@/schema/recipes.schema";
@@ -200,16 +201,16 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
         {history.isPending ? <p role="status">Đang tải lịch sử…</p> : null}
         {history.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(history.error)}</p>{!isStatus(history.error, 403) ? <ButtonBar onClick={() => void history.refetch()}>Thử lại</ButtonBar> : null}</div> : null}
         {history.data ? <>
-          {history.data.items.length ? <div className={styles.recipeMenuTableScroll}><table className={styles.recipeMenuTable}>
-            <thead><tr><th scope="col">Thời gian</th><th scope="col">Phiên bản yêu cầu</th><th scope="col">Phiên bản máy báo</th><th scope="col">Trạng thái</th></tr></thead>
-            <tbody>{history.data.items.map((status, index) => <tr key={status.commandId ?? index}>
-              <td>{formatTime(status.requestedAt)}</td><td>{status.targetVersion}</td><td>{status.appliedVersion ?? "—"}</td>
-              <td><span className={styles.requestStatus} data-tone={stateTone(status)}>{stateLabel(status)}</span>
-                {status.lastError ? <p className={styles.recipeMenuMeta}>{status.lastError}</p> : null}
-                {role === "ADMIN" && status.commandId && ["FAILED", "EXPIRED"].includes(status.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: status.machineId, commandId: status.commandId! }); }}>Phát lại lệnh</ButtonBar> : null}
-              </td>
-            </tr>)}</tbody>
-          </table></div> : null}
+          {history.data.items.length ? <DataTable variant="accounts" rows={history.data.items} rowKey={(status, index) => status.commandId ?? index} columns={[
+            { key: "requestedAt", header: "Thời gian", render: (status) => formatTime(status.requestedAt) },
+            { key: "targetVersion", header: "Phiên bản yêu cầu", render: (status) => status.targetVersion },
+            { key: "appliedVersion", header: "Phiên bản máy báo", render: (status) => status.appliedVersion ?? "—" },
+            { key: "status", header: "Trạng thái", render: (status) => <>
+              <span className={styles.requestStatus} data-tone={stateTone(status)}>{stateLabel(status)}</span>
+              {status.lastError ? <p className={styles.recipeMenuMeta}>{status.lastError}</p> : null}
+              {role === "ADMIN" && status.commandId && ["FAILED", "EXPIRED"].includes(status.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: status.machineId, commandId: status.commandId! }); }}>Phát lại lệnh</ButtonBar> : null}
+            </> },
+          ]} /> : null}
           {!history.data.items.length ? <p className={styles.recipeMenuEmpty}>Chưa có lịch sử đồng bộ.</p> : null}
           {pageControls(history.data.page, history.data.hasNext, setHistoryPage, "Lịch sử đồng bộ")}
         </> : null}

@@ -411,7 +411,6 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                 rows={workflow.paymentProofs.data.items}
                 rowKey={(proof) => proof.id}
                 columns={adminProofColumns}
-                style={{ minWidth: 620 }}
                 emptyMessage="Chưa có chứng từ thanh toán trong hồ sơ này."
               />
               {downloadError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{downloadError}</p> : null}

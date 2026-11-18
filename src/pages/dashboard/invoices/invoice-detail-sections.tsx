@@ -89,7 +89,6 @@ export function InvoicePaymentProofs({ proofs, currency, loading, failed }: {
       <QueryFeedback loading={loading} failed={failed} empty={!proofs?.length} emptyText={messages.NO_PAYMENT_PROOFS} />
       {proofs?.length ? (
         <DataTable
-          className={styles.paymentProofTable}
           columns={columns}
           rowKey={(proof) => proof.id}
           rows={proofs}

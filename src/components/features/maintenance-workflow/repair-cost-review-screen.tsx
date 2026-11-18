@@ -121,8 +121,6 @@ export function RepairCostReviewScreen({
             <h2>Thành phần chi phí ({review.data.costComponents.length})</h2>
             <DataTable
               variant="accounts"
-              className={styles.costTable}
-              style={{ minWidth: 0 }}
               rows={review.data.costComponents}
               rowKey={(item) => item.id}
               emptyMessage="Không có thành phần chi phí."

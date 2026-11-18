@@ -292,7 +292,6 @@ function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers
       headerVariant="admin"
       headers={["Máy / phiếu bảo trì", messages.TECHNICAL_STATUS, "Thời gian", messages.TECHNICAL_NOTES, "Thao tác"]}
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
-      minWidth={800}
     >
       {visibleTickets.map((ticket, index) => {
         const serialNumber = ticket.machineId ? machineSerialNumbers?.get(ticket.machineId)?.trim() : undefined;
@@ -330,7 +329,7 @@ function MaintenanceRequestTable({
   isPending: boolean;
   pendingRequestId?: string;
   pendingAccepted?: boolean;
-  routes: Pick<TechnicalScreenRoutes, "requestDetail" | "requestAssign">;
+  routes: Pick<TechnicalScreenRoutes, "role" | "requestDetail" | "requestAssign">;
 }) {
   const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
     { key: "request", header: "Yêu cầu", render: (request: MaintenanceRequest) => <strong><TruncatedId value={request.id} /></strong> },
@@ -390,10 +389,9 @@ function MaintenanceRequestTable({
     <DataTable
       variant="accounts"
       headerVariant="admin"
-      style={{ minWidth: 820 }}
       rows={requests}
       rowKey={(request) => request.id}
-      columns={columns}
+      columns={columns.filter((column) => routes.role !== "admin" || column.key !== "request")}
     />
   );
 }

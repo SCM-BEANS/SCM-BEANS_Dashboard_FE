@@ -1,5 +1,4 @@
 .screen { font-family: inherit; font-size: 14px; line-height: 1.5; }
-.screen :global(table) { width: 100%; font-family: inherit; }
 .screen [data-buyback-list] { padding: 22px 24px; border-radius: 16px; gap: 20px; }
 .contractLayout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .9fr); align-items: start; gap: 18px; }
 .card { min-width: 0; padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; }
@@ -10,10 +9,6 @@
 .card h2 { font-size: 19px; line-height: 1.4; }
 .documentsCard > section { padding: 0; border: 0; border-radius: 0; }
 .contractLayout > [role="alert"] { grid-column: 1 / -1; }
-.screen :global(th) { font-size: 13px; font-weight: 600; }
-.screen :global(td) { vertical-align: middle; font-size: 14px; }
-.screen :global(td a) { color: #302927; text-decoration: none; }
-.screen :global(td a:hover) { color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .screen :global(form) { min-width: 0; }
 .screen :global(h3) { font-size: 16px; }
 .identity { display: grid; gap: 4px; min-width: 0; }

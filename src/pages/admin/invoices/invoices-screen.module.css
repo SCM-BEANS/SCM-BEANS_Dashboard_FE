@@ -37,26 +37,6 @@
 
 .filterControls { margin-bottom: 18px; padding-bottom: 0; border-bottom: 0; }
 
-.invoiceTable :global(table) {
-  min-width: 980px;
-  table-layout: fixed;
-}
-
-.invoiceTable :global(th:nth-child(1)),
-.invoiceTable :global(td:nth-child(1)) { width: 16%; }
-.invoiceTable :global(th:nth-child(2)),
-.invoiceTable :global(td:nth-child(2)) { width: 13%; }
-.invoiceTable :global(th:nth-child(3)),
-.invoiceTable :global(td:nth-child(3)) { width: 9%; }
-.invoiceTable :global(th:nth-child(4)),
-.invoiceTable :global(td:nth-child(4)) { width: 18%; }
-.invoiceTable :global(th:nth-child(5)),
-.invoiceTable :global(td:nth-child(5)) { width: 13%; }
-.invoiceTable :global(th:nth-child(6)),
-.invoiceTable :global(td:nth-child(6)) { width: 13%; }
-.invoiceTable :global(th:nth-child(7)),
-.invoiceTable :global(td:nth-child(7)) { width: 18%; }
-
 .invoiceIdentity { display: grid; gap: 4px; min-width: 0; }
 .invoiceIdentity strong { overflow: hidden; color: #302927; font-size: 14px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .invoiceIdentity span { color: #706561; font-size: 12px; }

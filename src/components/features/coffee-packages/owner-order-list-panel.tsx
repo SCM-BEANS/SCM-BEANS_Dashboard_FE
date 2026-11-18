@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -20,23 +21,19 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
       {!workflow.orders.isPending && !workflow.orders.isError && workflow.orders.data?.items.length === 0 ? <p className={styles.notice}>Bạn chưa có đơn gói cà phê.</p> : null}
 
       {workflow.orders.data?.items.length ? (
-        <div className={styles.tableWrap}>
-          <table className={`${styles.table} ${styles.orderTable}`}>
-            <thead><tr><th>Đơn hàng</th><th>Gói cà phê</th><th className={styles.numeric}>Thành tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-            <tbody>{workflow.orders.data.items.map((order) => (
-              <tr key={order.id}>
-                <td>
-                  <strong className={styles.orderCustomer}>Đơn {order.id.slice(0, 8).toUpperCase()}</strong>
-                  <span className={styles.orderQuantity}>{formatCoffeePackageDateTime(order.createdAt)}</span>
-                </td>
-                <td>{order.packageName ?? order.packageCode ?? "—"}<span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span></td>
-                <td className={styles.numeric}>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</td>
-                <td><StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></td>
-                <td><ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Xem đơn</ButtonBar></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+        <DataTable variant="accounts" rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
+          { key: "order", header: "Đơn hàng", render: (order) => <>
+            <strong className={styles.orderCustomer}>Đơn {order.id.slice(0, 8).toUpperCase()}</strong>
+            <span className={styles.orderQuantity}>{formatCoffeePackageDateTime(order.createdAt)}</span>
+          </> },
+          { key: "package", header: "Gói cà phê", render: (order) => <>
+            {order.packageName ?? order.packageCode ?? "—"}
+            <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
+          </> },
+          { key: "amount", header: "Thành tiền", align: "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
+          { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge> },
+          { key: "actions", header: "Thao tác", render: (order) => <ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Xem đơn</ButtonBar> },
+        ]} />
       ) : null}
 
       {workflow.orders.data ? (

@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -29,29 +30,22 @@ export function OperatorOrderListPanel({
       {workflow.orders.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.orders.error)}</p> : null}
       {!workflow.orders.isPending && !workflow.orders.isError && workflow.orders.data?.items.length === 0 ? <p className={styles.notice}>Chưa có đơn gói cà phê trong phạm vi này.</p> : null}
       {workflow.orders.data?.items.length ? (
-        <div className={styles.tableWrap}>
-          <table className={`${styles.table} ${styles.orderTable}`}>
-            <thead><tr><th>Đơn hàng / khách hàng</th><th>Gói cà phê</th><th className={styles.numeric}>Thành tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-            <tbody>{workflow.orders.data.items.map((order) => (
-              <tr key={order.id} className={workflow.selectedOrderId === order.id ? styles.selectedRow : undefined}>
-                <td>
-                  <strong className={styles.orderCustomer}>{order.ownerName?.trim() || (order.ownerId ? ownerNames.data?.[order.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
-                  <div className={styles.orderMeta}>
-                    <span>Đơn <TruncatedId value={order.id} /></span>
-                    <span>{formatCoffeePackageDateTime(order.createdAt)}</span>
-                  </div>
-                </td>
-                <td>
-                  {order.packageName ?? order.packageCode ?? "—"}
-                  <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
-                </td>
-                <td className={styles.numeric}>{formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND")}</td>
-                <td><StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge></td>
-                <td><ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Mở đơn</ButtonBar></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+        <DataTable variant="accounts" rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
+          { key: "order", header: "Đơn hàng / khách hàng", render: (order) => <>
+            <strong className={styles.orderCustomer}>{order.ownerName?.trim() || (order.ownerId ? ownerNames.data?.[order.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
+            <div className={styles.orderMeta}>
+              <span>Đơn <TruncatedId value={order.id} /></span>
+              <span>{formatCoffeePackageDateTime(order.createdAt)}</span>
+            </div>
+          </> },
+          { key: "package", header: "Gói cà phê", render: (order) => <>
+            {order.packageName ?? order.packageCode ?? "—"}
+            <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
+          </> },
+          { key: "amount", header: "Thành tiền", align: "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
+          { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge> },
+          { key: "actions", header: "Thao tác", render: (order) => <ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Mở đơn</ButtonBar> },
+        ]} />
       ) : null}
       {workflow.orders.data ? (
         <div className={styles.pagination}>

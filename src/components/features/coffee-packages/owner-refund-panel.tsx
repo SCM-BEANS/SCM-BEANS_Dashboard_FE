@@ -3,6 +3,7 @@ import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -43,19 +44,15 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
             <p className={styles.hint}>Mã khoản hoàn: {workflow.selectedRefundId}</p>
             <p className={styles.hint}>Lý do: {refund.reason ?? "—"}</p>
           {attempts.length ? (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead><tr><th>Lần chuyển / giao dịch</th><th className={styles.numeric}>Số tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-                <tbody>{attempts.map((attempt) => (
-                  <tr key={attempt.id}>
-                    <td><strong className={styles.orderCustomer}>Lần {attempt.attemptNumber}</strong><div className={styles.orderMeta}><span>{attempt.bankReference ?? "Chưa có mã giao dịch"}</span><span>{formatCoffeePackageDateTime(attempt.createdAt)}</span></div></td>
-                    <td className={styles.numeric}>{formatCoffeePackageMoney(attempt.amount, attempt.currency ?? "VND")}</td>
-                    <td><StatusBadge variant="dot" status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge></td>
-                    <td><CoffeePackageDownloadButton filename="chung-tu-hoan-tien" download={(signal, onProgress) => coffeePackagesApi.downloadPayoutEvidenceContent(attempt.refundId, attempt.attemptNumber, signal, onProgress)} /></td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
+            <DataTable variant="accounts" rows={attempts} rowKey={(attempt) => attempt.id} columns={[
+              { key: "attempt", header: "Lần chuyển / giao dịch", render: (attempt) => <>
+                <strong className={styles.orderCustomer}>Lần {attempt.attemptNumber}</strong>
+                <div className={styles.orderMeta}><span>{attempt.bankReference ?? "Chưa có mã giao dịch"}</span><span>{formatCoffeePackageDateTime(attempt.createdAt)}</span></div>
+              </> },
+              { key: "amount", header: "Số tiền", align: "right", render: (attempt) => formatCoffeePackageMoney(attempt.amount, attempt.currency ?? "VND") },
+              { key: "status", header: "Trạng thái", render: (attempt) => <StatusBadge variant="dot" status={attempt.status}>{coffeePackageStatusLabel(attempt.status)}</StatusBadge> },
+              { key: "actions", header: "Thao tác", render: (attempt) => <CoffeePackageDownloadButton filename="chung-tu-hoan-tien" download={(signal, onProgress) => coffeePackagesApi.downloadPayoutEvidenceContent(attempt.refundId, attempt.attemptNumber, signal, onProgress)} /> },
+            ]} />
           ) : <p className={styles.hint}>Chưa có giao dịch hoàn tiền.</p>}
           </details>
           {refund.status === "PAYOUT_RECORDED" && ["RECORDED", "DISPUTE_CONFIRMED"].includes(latestAttempt?.status ?? "") ? (

@@ -146,7 +146,6 @@ function LocationTable({ records, failed }: { records: OwnerReadBatch<Awaited<Re
       variant="moderator"
       headers={[messages.LOCATION_OWNER, messages.LOCATION_NAME, messages.LOCATION_ADDRESS, messages.LOCATION_CITY, messages.LOCATION_STATUS, messages.LOCATION_MACHINE_COUNT, messages.LOCATION_ACTION]}
       emptyMessage={failed ? undefined : messages.OWNER_LOCATION_EMPTY}
-      minWidth={780}
     >
       {records.map(({ owner, record }) => <LocationRow key={`${owner.idaasUserId}-${record.id}`} owner={owner} location={record} />)}
     </DataTable>

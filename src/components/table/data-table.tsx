@@ -1,4 +1,4 @@
-import { Children, type CSSProperties, type HTMLAttributes, type Key, type ReactNode, type TdHTMLAttributes } from "react";
+import { Children, type Key, type ReactNode, type TdHTMLAttributes } from "react";
 import styles from "./data-table.module.css";
 
 export type DataTableColumn<Row> = {
@@ -6,18 +6,16 @@ export type DataTableColumn<Row> = {
   header: ReactNode;
   align?: "left" | "center" | "right";
   render: (row: Row, index: number) => ReactNode;
-  cellProps?: (row: Row, index: number) => TdHTMLAttributes<HTMLTableCellElement>;
+  cellProps?: (row: Row, index: number) => Pick<TdHTMLAttributes<HTMLTableCellElement>, "title">;
 };
 
-type DataTableRowProps = HTMLAttributes<HTMLTableRowElement> & {
+type DataTableRowProps = {
   [attribute: `data-${string}`]: string | undefined;
 };
 
 type DataTableBaseProps = {
   variant?: "operations" | "accounts" | "standard" | "moderator" | "customer";
   headerVariant?: "admin";
-  className?: string;
-  style?: CSSProperties;
 };
 
 type DataTableRowsProps<Row> = DataTableBaseProps & {
@@ -28,14 +26,12 @@ type DataTableRowsProps<Row> = DataTableBaseProps & {
   emptyMessage?: ReactNode;
   headers?: never;
   children?: never;
-  minWidth?: never;
 };
 
 type DataTableChildrenProps = DataTableBaseProps & {
   headers: readonly ReactNode[];
   children?: ReactNode;
   emptyMessage?: ReactNode;
-  minWidth?: number;
   columns?: never;
   rows?: never;
   rowKey?: never;
@@ -45,11 +41,7 @@ type DataTableProps<Row> = DataTableRowsProps<Row> | DataTableChildrenProps;
 
 export function DataTable<Row>(props: DataTableProps<Row>) {
   const variant = props.variant ?? "operations";
-  const containerClassName = [
-    styles.container,
-    variant === "moderator" ? styles.moderatorContainer : undefined,
-    props.className,
-  ].filter(Boolean).join(" ");
+  const containerClassName = [styles.container, variant === "moderator" ? styles.moderatorContainer : undefined].filter(Boolean).join(" ");
   const variantClassName = {
     operations: styles.operations,
     accounts: styles.accounts,
@@ -62,10 +54,6 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
     variantClassName,
     props.headerVariant === "admin" ? styles.adminHeader : undefined,
   ].filter(Boolean).join(" ");
-  const tableStyle = {
-    ...props.style,
-    ...(props.minWidth ? { minWidth: props.minWidth } : {}),
-  };
   const isRowsTable = "rows" in props && props.rows !== undefined;
   const headers: Array<{ key: string; content: ReactNode; align?: "left" | "center" | "right" }> = isRowsTable
     ? props.columns.map((column) => ({ key: column.key, content: column.header, align: column.align }))
@@ -74,17 +62,11 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
     ? props.rows.length > 0
       ? props.rows.map((row, index) => (
         <tr key={props.rowKey(row, index)} {...props.rowProps?.(row, index)}>
-          {props.columns.map((column) => {
-            const cellProps = column.cellProps?.(row, index);
-            const cellStyle = column.align
-              ? { ...cellProps?.style, textAlign: column.align }
-              : cellProps?.style;
-            return (
-              <td key={column.key} {...cellProps} style={cellStyle}>
-                {column.render(row, index)}
-              </td>
-            );
-          })}
+          {props.columns.map((column) => (
+            <td key={column.key} {...column.cellProps?.(row, index)} style={column.align ? { textAlign: column.align } : undefined}>
+              {column.render(row, index)}
+            </td>
+          ))}
         </tr>
       ))
       : props.emptyMessage
@@ -98,7 +80,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
 
   return (
     <div className={containerClassName}>
-      <table className={tableClassName} style={tableStyle}>
+      <table className={tableClassName}>
         <thead>
           <tr>
             {headers.map((header) => (

@@ -191,7 +191,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_SOURCE,
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_ACTOR,
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_CHANGES,
-              ]} minWidth={760}>
+              ]}>
                 {history.data.items.map((entry, index) => (
                   <tr key={entry.id ?? `${entry.changedAt ?? "history"}-${index}`}>
                     <td>{displayDate(entry.changedAt)}</td>

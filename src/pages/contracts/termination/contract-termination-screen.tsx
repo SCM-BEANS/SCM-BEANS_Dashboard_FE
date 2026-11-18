@@ -79,7 +79,7 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
       {invoices.isFetching ? <p role="status">Đang tải hóa đơn…</p> : null}
       {invoices.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(invoices.error)}</p> : null}
       {invoices.isSuccess ? <>
-        <DataTable headers={["Hóa đơn", "Kỳ", "Tổng hóa đơn", "Trạng thái", ""]} minWidth={620}>
+        <DataTable headers={["Hóa đơn", "Kỳ", "Tổng hóa đơn", "Trạng thái", ""]}>
           {invoices.data.items.map((invoice) => <tr key={invoice.id}>
             <td>{invoice.id.slice(0, 8).toUpperCase()}</td><td>{invoice.period}</td>
             <td>{money(invoice.amount)}</td><td>{invoiceStatuses[invoice.status] ?? invoice.status}</td>
@@ -99,7 +99,7 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
         {lines.isFetching ? <p role="status">Đang kiểm tra các dòng hóa đơn…</p> : null}
         {lines.isError ? <div className={styles.error} role="alert"><p>{getApiErrorMessage(lines.error)}</p><ButtonBar type="button" onClick={() => void lines.refetch()}>Thử lại</ButtonBar></div> : null}
         {lines.isSuccess ? <>
-          <DataTable headers={["Nội dung", "Tiền cọc trên hóa đơn", "Đối chiếu hợp đồng"]} minWidth={500}>
+          <DataTable headers={["Nội dung", "Tiền cọc trên hóa đơn", "Đối chiếu hợp đồng"]}>
             {depositLines.map((line, index) => <tr key={line.id ?? index}><td>{line.description || "Tiền cọc"}</td><td>{line.amount == null ? "Chưa có dữ liệu" : money(line.amount)}</td><td>{line.amount != null && depositAmount != null && line.amount === depositAmount ? "Khớp số tiền cọc" : "Cần kiểm tra số tiền cọc"}</td></tr>)}
           </DataTable>
           {!depositLines.length ? <p className={styles.notice}>Không có dòng tiền cọc khớp hợp đồng trên trang chi tiết này.{lines.data.hasNext ? " Hãy xem tiếp các trang còn lại." : " Kiểm tra các trang hoặc hóa đơn khác; nếu thiếu dòng cọc, cần bộ phận vận hành kiểm tra dữ liệu."}</p> : null}

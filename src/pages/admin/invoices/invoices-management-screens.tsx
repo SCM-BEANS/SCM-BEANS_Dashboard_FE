@@ -219,7 +219,6 @@ export function AdminInvoiceListScreen() {
               {invoices.data.items.length === 0 ? <p className={styles.emptyText}>Không có hóa đơn phù hợp với bộ lọc.</p> : (
                 <DataTable
                   headerVariant="admin"
-                  className={pageStyles.invoiceTable}
                   rows={invoices.data.items}
                   rowKey={(invoice) => invoice.id}
                   columns={[
@@ -306,7 +305,6 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
       {proofs.length === 0 ? <p className={styles.emptyText}>Hóa đơn chưa có chứng từ thanh toán.</p> : (
         <DataTable
           headerVariant="admin"
-          className={styles.reportInvoiceTable}
           rows={proofs}
           rowKey={(proof) => proof.id}
           columns={[
@@ -461,7 +459,7 @@ export function AdminInvoiceDetailScreen({ invoiceId, routerReady }: { invoiceId
 }
 
 function InvoiceLineItemsTable({ items, invoice }: { items: InvoiceLineItem[]; invoice: Invoice }) {
-  return <DataTable headerVariant="admin" rows={items} rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`} className={styles.reportInvoiceLineItemsTable} columns={[
+  return <DataTable headerVariant="admin" rows={items} rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`} columns={[
     { key: "description", header: "Nội dung", render: (item) => item.description || item.serviceCode || "—" },
     { key: "machine", header: "Máy ID", render: (item) => item.machineId ?? "—" },
     { key: "quantity", header: "Số lượng", align: "center", render: (item) => item.quantity == null ? "—" : amountFormatter.format(item.quantity) },

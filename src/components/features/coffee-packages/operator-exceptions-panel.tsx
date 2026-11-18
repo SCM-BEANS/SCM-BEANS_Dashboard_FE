@@ -2,6 +2,7 @@ import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -58,25 +59,23 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
       {!workflow.exceptions.isPending && !workflow.exceptions.isError && workflow.exceptions.data?.items.length === 0 ? <p className={styles.notice}>Không có khoản thanh toán ngoại lệ.</p> : null}
 
       {workflow.exceptions.data?.items.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead><tr><th>Chứng từ</th><th>Hóa đơn</th><th className={styles.numeric}>Đã khai báo</th><th>Trạng thái</th><th>Gửi lúc</th><th /></tr></thead>
-            <tbody>{workflow.exceptions.data.items.map((item) => (
-              <tr key={item.id} className={selectedProofId === item.id ? styles.selectedRow : undefined}>
-                <td>{item.originalFilename ?? <TruncatedId value={item.id} />}</td>
-                <td className={styles.code}>{item.invoiceId}</td>
-                <td className={styles.numeric}>{formatCoffeePackageMoney(item.amount, "VND")}</td>
-                <td><StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge></td>
-                <td>{formatCoffeePackageDateTime(item.submittedAt)}</td>
-                <td className={styles.buttonCell}>
-                  <span className={styles.downloadAction}><span className={styles.muted}>Chứng từ thanh toán</span><CoffeePackageDownloadButton filename={item.originalFilename ?? "chung-tu-thanh-toan"} download={(signal, onProgress) => coffeePackagesApi.downloadPaymentProofContent(item.id, signal, onProgress)} /></span>
-                  {item.dispositionEvidencePath ? <span className={styles.downloadAction}><span className={styles.muted}>Biên nhận xử lý</span><CoffeePackageDownloadButton filename="bien-nhan-xu-ly" download={(signal, onProgress) => coffeePackagesApi.downloadDispositionEvidenceContent(item.id, signal, onProgress)} /></span> : null}
-                  <ButtonBar type="button" onClick={() => setSelectedProofId(item.id)}>Xử lý</ButtonBar>
-                </td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+        <DataTable
+          variant="accounts"
+          rows={workflow.exceptions.data.items}
+          rowKey={(item) => item.id}
+          columns={[
+            { key: "document", header: "Chứng từ", render: (item) => item.originalFilename ?? <TruncatedId value={item.id} /> },
+            { key: "invoice", header: "Hóa đơn", render: (item) => <span className={styles.code}>{item.invoiceId}</span> },
+            { key: "amount", header: "Đã khai báo", align: "right", render: (item) => formatCoffeePackageMoney(item.amount, "VND") },
+            { key: "status", header: "Trạng thái", render: (item) => <StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge> },
+            { key: "submittedAt", header: "Gửi lúc", render: (item) => formatCoffeePackageDateTime(item.submittedAt) },
+            { key: "actions", header: "", render: (item) => <>
+              <span className={styles.downloadAction}><span className={styles.muted}>Chứng từ thanh toán</span><CoffeePackageDownloadButton filename={item.originalFilename ?? "chung-tu-thanh-toan"} download={(signal, onProgress) => coffeePackagesApi.downloadPaymentProofContent(item.id, signal, onProgress)} /></span>
+              {item.dispositionEvidencePath ? <span className={styles.downloadAction}><span className={styles.muted}>Biên nhận xử lý</span><CoffeePackageDownloadButton filename="bien-nhan-xu-ly" download={(signal, onProgress) => coffeePackagesApi.downloadDispositionEvidenceContent(item.id, signal, onProgress)} /></span> : null}
+              <ButtonBar type="button" onClick={() => setSelectedProofId(item.id)}>Xử lý</ButtonBar>
+            </> },
+          ]}
+        />
       ) : null}
 
       {proof ? (
