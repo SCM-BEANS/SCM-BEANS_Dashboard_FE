@@ -25,7 +25,7 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
       {workflow.refunds.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.refunds.error)}</p> : null}
       {!workflow.refunds.isPending && !workflow.refunds.isError && workflow.refunds.data?.items.length === 0 ? <p className={styles.notice}>Chưa có khoản hoàn tiền trong phạm vi này.</p> : null}
       {workflow.refunds.data?.items.length ? (
-        <DataTable variant="accounts" rows={workflow.refunds.data.items} rowKey={(item) => item.id} columns={[
+        <DataTable rows={workflow.refunds.data.items} rowKey={(item) => item.id} columns={[
           { key: "refund", header: "Khoản hoàn / khách hàng", render: (item) => <>
             <strong className={styles.orderCustomer}>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
             <div className={styles.orderMeta}>

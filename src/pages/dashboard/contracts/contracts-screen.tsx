@@ -284,7 +284,6 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                 columns={columns.filter((column) => isExpiryList || column.key !== "term")}
                 rows={visibleContracts}
                 rowKey={(contract) => contract.id}
-                variant="accounts"
               />
               {(
                 <div className={styles.pagination}>

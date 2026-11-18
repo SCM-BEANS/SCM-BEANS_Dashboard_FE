@@ -202,7 +202,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         {menus.isPending ? <p role="status">Đang tải menu…</p> : null}
         {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
         {menus.data ? <>
-          <DataTable variant="accounts" rows={menus.data.content} rowKey={(item) => item.id}
+          <DataTable rows={menus.data.content} rowKey={(item) => item.id}
             emptyMessage="Chưa có menu phù hợp. Khi tạo món đầu tiên, bạn có thể để hệ thống tạo Menu của tôi." columns={[
               { key: "name", header: "Tên menu", render: (item) => <strong>{item.name}</strong> },
               { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} aria-pressed={item.id === menuId} onClick={() => {
@@ -229,7 +229,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
         {recipes.isFetching ? <p role="status">Đang tải công thức…</p> : null}
         {recipes.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(recipes.error)}</p><ButtonBar onClick={() => void recipes.refetch()}>Thử lại</ButtonBar></div> : null}
         {recipes.data ? <>
-          <DataTable variant="accounts" rows={recipes.data.content} rowKey={(item) => item.id}
+          <DataTable rows={recipes.data.content} rowKey={(item) => item.id}
             emptyMessage="Chưa có công thức phù hợp trong menu này." columns={[
               { key: "name", header: "Tên món", render: (item) => <strong>{item.name}</strong> },
               { key: "source", header: "Nguồn", render: (item) => item.sourceGlobalRecipeId ? "Bản sao riêng · v" + (item.sourceRevision ?? "—") : "Công thức tự tạo" },

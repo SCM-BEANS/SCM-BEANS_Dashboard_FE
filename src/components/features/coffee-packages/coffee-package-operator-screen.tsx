@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
+import { PATH_MODERATOR } from "@/routes/path";
 import type { CoffeePackageRole } from "./coffee-package-workflow-controller";
 import { useCoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import styles from "./coffee-package-workflow.module.css";
@@ -55,12 +55,10 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
       {tab === "orders" ? (
         <OperatorOrderListPanel
           workflow={workflow}
+          isAdmin={isAdmin}
           onOpenOrder={(id) => {
             workflow.setSelectedRefundId("");
-            const detailHref = role === "ADMIN"
-              ? PATH_ADMIN.COFFEE_PACKAGE_ORDER_DETAIL(id)
-              : PATH_MODERATOR.COFFEE_PACKAGE_ORDER_DETAIL(id);
-            void router.push(detailHref);
+            void router.push(PATH_MODERATOR.COFFEE_PACKAGE_ORDER_DETAIL(id));
           }}
         />
       ) : null}

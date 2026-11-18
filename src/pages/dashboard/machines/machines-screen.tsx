@@ -309,7 +309,6 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                 <nav className={machineStyles.ownerHistoryPagination} aria-label="Phân trang phiếu bảo trì"><ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar><span>Trang {ticketPage + 1}</span><ButtonBar disabled={!maintenanceTickets.data?.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar></nav>
                 <h3>Yêu cầu hỗ trợ ({maintenanceRequests.data?.length ?? 0})</h3>
                 <DataTable
-                  variant="accounts"
                   rows={(maintenanceRequests.data ?? []).slice(requestPage * 10, requestPage * 10 + 10)}
                   rowKey={(request) => request.id}
                   emptyMessage="Chưa có yêu cầu hỗ trợ."
@@ -361,8 +360,6 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
           />
               {visibleMachines.length > 0 && <div ref={heartbeatTableRef}>
                 <DataTable
-                  headerVariant="admin"
-                  variant="accounts"
                   rows={pageMachines}
                   rowKey={(machine) => machine.id}
                   rowProps={(machine) => ({

@@ -61,7 +61,7 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
     {props.notice && <p role="status">{props.notice}</p>}
     {props.error ? <p className={styles.telemetryError} role="alert">{props.error}</p>
       : props.loading ? <p role="status">Đang tải chứng chỉ…</p>
-        : props.page && <DataTable headerVariant="admin" rows={props.page.content} rowKey={(item) => item.id} emptyMessage="Chưa có chứng chỉ trong danh sách này." columns={[
+        : props.page && <DataTable rows={props.page.content} rowKey={(item) => item.id} emptyMessage="Chưa có chứng chỉ trong danh sách này." columns={[
           { key: "serial", header: "Số chứng chỉ", render: (item) => <strong>{item.certificateSerial ?? item.id}</strong> },
           { key: "status", header: "Trạng thái", render: (item) => statusLabels[item.status] },
           { key: "issued", header: "Ngày phát hành", render: (item) => formatDate(item.issuedAt) },

@@ -165,13 +165,6 @@ function replacementAssignmentIdFromTimeline(events: Array<{ eventType: string; 
   return parsedId.success ? parsedId.data : undefined;
 }
 
-function tableVariant(role: RepairWorkflowRole): "operations" | "moderator" | "standard" | "customer" {
-  if (role === "owner") return "customer";
-  if (role === "technician") return "standard";
-  if (role === "moderator") return "moderator";
-  return "operations";
-}
-
 export function RepairCaseDetailScreen({
   caseId,
   role,

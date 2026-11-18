@@ -601,7 +601,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
             {evidence.data?.length ? (
               <section className={styles.panel} aria-labelledby="technician-recall-evidence-title">
                 <h2 id="technician-recall-evidence-title">Chứng cứ đã lưu ({evidence.data.length})</h2>
-                <DataTable variant="moderator" rows={evidence.data} rowKey={(item) => item.id} columns={[
+                <DataTable rows={evidence.data} rowKey={(item) => item.id} columns={[
                   { key: "type", header: "Loại", render: (item) => item.evidenceType === "PICKUP" ? "Nhận máy" : item.evidenceType === "OWNER_HANDOVER" ? "Bàn giao Owner" : "Nhận kho" },
                   { key: "file", header: "Tệp", render: (item) => item.originalFilename },
                   { key: "uploaded", header: "Thời điểm", render: (item) => formatDateTime(item.uploadedAt) },

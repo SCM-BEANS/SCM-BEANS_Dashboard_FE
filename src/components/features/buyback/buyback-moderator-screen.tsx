@@ -406,8 +406,6 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
               <h3 className={styles.sectionTitle}>Thanh toán thu mua</h3>
               {operatorRole !== "ADMIN" ? <p className={styles.formHint}>Khách hàng xác nhận đã nhận tiền hoặc báo chưa nhận trong tài khoản của mình. Nhân viên không duyệt chứng từ ở bước này.</p> : null}
               <DataTable
-                variant="standard"
-                headerVariant="admin"
                 rows={workflow.paymentProofs.data.items}
                 rowKey={(proof) => proof.id}
                 columns={adminProofColumns}

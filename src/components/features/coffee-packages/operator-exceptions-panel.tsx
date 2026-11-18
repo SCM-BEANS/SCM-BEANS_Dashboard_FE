@@ -60,7 +60,6 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
 
       {workflow.exceptions.data?.items.length ? (
         <DataTable
-          variant="accounts"
           rows={workflow.exceptions.data.items}
           rowKey={(item) => item.id}
           columns={[

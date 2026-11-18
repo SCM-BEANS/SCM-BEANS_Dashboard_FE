@@ -152,7 +152,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
             )}
             {contracts.data && !contracts.isError && contracts.data.items.length > 0 && (
               <>
-                <DataTable variant="moderator" headers={[
+                <DataTable headers={[
                   MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID,
                   MODERATOR_MESSAGES.READ_SCREENS.PROFILE_CONTRACT_MACHINE,
                   MODERATOR_MESSAGES.READ_SCREENS.PROFILE_CONTRACT_STATUS,
@@ -186,7 +186,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
           )}
           {history.data && !history.isError && history.data.items.length > 0 && (
             <>
-              <DataTable variant="moderator" headers={[
+              <DataTable headers={[
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_DATE,
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_SOURCE,
                 MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_ACTOR,

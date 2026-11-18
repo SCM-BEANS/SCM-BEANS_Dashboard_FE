@@ -165,13 +165,6 @@ function formatDate(value?: string | null) {
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function tableVariant(role: ActionItemsRole): "operations" | "moderator" | "customer" | "standard" {
-  if (role === "OWNER") return "customer";
-  if (role === "MODERATOR") return "moderator";
-  if (role === "TECHNICIAN") return "standard";
-  return "operations";
-}
-
 export function ActionItemsPanel({ role, compact = false, summary }: {
   role: ActionItemsRole; compact?: boolean; summary?: TDashboardOverview["actionSummary"];
 }) {
@@ -410,8 +403,6 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         <details open={!compact} className={styles.workDetails}>
           <summary hidden={!compact}>Xem danh sách công việc</summary>
         <DataTable
-          variant={tableVariant(role)}
-          {...(role === "ADMIN" ? { headerVariant: "admin" as const } : {})}
           rows={items.data.items}
           rowKey={(item) => item.actionKey}
           columns={compact && role === "ADMIN" ? columns.filter(column => ["work", "status", "action"].includes(column.key)) : columns}

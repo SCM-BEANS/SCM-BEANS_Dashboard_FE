@@ -37,7 +37,7 @@ export function OperatorPayoutAttemptsPanel({
       {workflow.payoutAttempts.isPending ? <p className={styles.notice} role="status">Đang tải lịch sử chuyển khoản…</p> : null}
       {workflow.payoutAttempts.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.payoutAttempts.error)}</p> : null}
       {workflow.payoutAttempts.data?.length ? (
-        <DataTable variant="accounts" rows={workflow.payoutAttempts.data} rowKey={(attempt) => attempt.id} columns={[
+        <DataTable rows={workflow.payoutAttempts.data} rowKey={(attempt) => attempt.id} columns={[
           { key: "attempt", header: "Lần chuyển", render: (attempt) => attempt.attemptNumber },
           { key: "bankReference", header: "Mã giao dịch", render: (attempt) => attempt.bankReference ?? "—" },
           { key: "createdAt", header: "Thời điểm", render: (attempt) => formatCoffeePackageDateTime(attempt.createdAt) },

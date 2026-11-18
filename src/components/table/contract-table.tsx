@@ -101,7 +101,6 @@ export function ContractTable({
 
   return (
     <DataTable
-      variant="accounts"
       rows={contracts}
       rowKey={(contract) => contract.id}
       columns={columns.filter((column) => showContractIdColumn || column.key !== "contract")}

@@ -40,7 +40,7 @@ export function MachineCleaningHistoryPanel({ data, loading, error, onRetry, onP
     {error ? <div className={styles.operationalOverviewError} role="alert"><p>{error}</p><ButtonBar onClick={onRetry}>Thử lại</ButtonBar></div>
       : loading ? <p role="status">Đang tải lịch sử vệ sinh…</p>
         : data ? <>
-          <DataTable variant="accounts" headerVariant="admin" rows={data.content} rowKey={(row) => row.id} emptyMessage="Chưa có bản ghi vệ sinh trong khoảng đã chọn." columns={[
+          <DataTable rows={data.content} rowKey={(row) => row.id} emptyMessage="Chưa có bản ghi vệ sinh trong khoảng đã chọn." columns={[
             { key: "started", header: "Bắt đầu", render: (row) => <time dateTime={row.startedAt}>{formatOwnerRecordTime(row.startedAt)}</time> },
             { key: "type", header: "Loại vệ sinh", render: (row) => row.cleaningType === "STARTUP" ? "Đầu ngày" : "Cuối ngày" },
             { key: "status", header: "Kết quả", render: (row) => <span className={adminStyles.machinePlainStatus} data-status={row.status}>{statusLabels[row.status]}</span> },

@@ -201,7 +201,7 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
         {history.isPending ? <p role="status">Đang tải lịch sử…</p> : null}
         {history.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(history.error)}</p>{!isStatus(history.error, 403) ? <ButtonBar onClick={() => void history.refetch()}>Thử lại</ButtonBar> : null}</div> : null}
         {history.data ? <>
-          {history.data.items.length ? <DataTable variant="accounts" rows={history.data.items} rowKey={(status, index) => status.commandId ?? index} columns={[
+          {history.data.items.length ? <DataTable rows={history.data.items} rowKey={(status, index) => status.commandId ?? index} columns={[
             { key: "requestedAt", header: "Thời gian", render: (status) => formatTime(status.requestedAt) },
             { key: "targetVersion", header: "Phiên bản yêu cầu", render: (status) => status.targetVersion },
             { key: "appliedVersion", header: "Phiên bản máy báo", render: (status) => status.appliedVersion ?? "—" },

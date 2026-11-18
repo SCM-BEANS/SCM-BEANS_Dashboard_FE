@@ -23,7 +23,6 @@ export function MachineMaintenanceTicketTable({
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
-      headerVariant="admin"
       rows={visibleTickets}
       rowKey={(ticket, index) => ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}
       columns={[

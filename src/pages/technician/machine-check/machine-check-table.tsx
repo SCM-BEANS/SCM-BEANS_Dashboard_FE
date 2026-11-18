@@ -48,8 +48,6 @@ export function MachineCheckTable() {
         </form>
         {machines.data && (
           <DataTable
-            variant="accounts"
-            headerVariant="admin"
             rows={filtered.slice(page * 10, (page + 1) * 10)}
             rowKey={(machine) => machine.id}
             emptyMessage={T.MACHINE_CHECK.EMPTY}

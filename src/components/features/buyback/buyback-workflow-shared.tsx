@@ -446,8 +446,6 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             columns={listColumns}
             rows={list.data?.items ?? []}
             rowKey={(item) => item.id}
-            variant={role === "technician" ? "accounts" : role === "owner" ? "customer" : operatorRole === "MODERATOR" ? "moderator" : "operations"}
-            headerVariant="admin"
             emptyMessage="Chưa có hồ sơ thu mua."
           />
           <div className={isWorkspace ? adminStyles.pagination : styles.technicalRequestActions}>

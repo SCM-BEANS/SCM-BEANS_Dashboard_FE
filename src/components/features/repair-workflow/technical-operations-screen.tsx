@@ -288,8 +288,6 @@ function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
-      variant="accounts"
-      headerVariant="admin"
       headers={["Máy / phiếu bảo trì", messages.TECHNICAL_STATUS, "Thời gian", messages.TECHNICAL_NOTES, "Thao tác"]}
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
     >
@@ -387,8 +385,6 @@ function MaintenanceRequestTable({
 
   return (
     <DataTable
-      variant="accounts"
-      headerVariant="admin"
       rows={requests}
       rowKey={(request) => request.id}
       columns={columns.filter((column) => routes.role !== "admin" || column.key !== "request")}
@@ -701,49 +697,53 @@ export function TechnicalOperationsScreen({
       )}
       <section className={styles.panel} aria-labelledby="technical-request-list-title">
         <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2></div>
-        <TableFilters
-          search={{
-            ariaLabel: "Tìm theo mã khách hàng",
-            maxLength: 36,
-            placeholder: "Tìm theo mã khách hàng (UUID)",
-            value: requestSearchDraft,
-            onChange: setRequestSearchDraft,
-          }}
-          selects={[
-            {
-              id: "technical-request-type-filter",
-              ariaLabel: "Lọc yêu cầu theo loại",
-              value: requestTypeDraft,
-              options: [
-                { value: "", label: "Tất cả loại yêu cầu" },
-                { value: "REPAIR", label: "Sửa chữa" },
-                { value: "PREVENTIVE", label: "Bảo trì định kỳ" },
-              ],
-              onChange: (value) => setRequestTypeDraft(value as MaintenanceRequest["requestType"] | ""),
-            },
-            {
-              id: "technical-request-status-filter",
-              ariaLabel: "Lọc yêu cầu theo trạng thái",
-              value: requestStatusDraft,
-              options: [
-                { value: "", label: "Tất cả trạng thái" },
-                ...([
-                  "REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS",
-                  "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED",
-                ] as const).map((status) => ({ value: status, label: maintenanceRequestStatusLabel(status) })),
-              ],
-              onChange: (value) => setRequestStatusDraft(value as MaintenanceRequest["status"] | ""),
-            },
-          ]}
-          submitLabel="Tìm kiếm"
-          onSubmit={submitRequestFilters}
-        />
-        <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
-        {requestList}
-        {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
-        {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
-          <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
-        ) : null}
+        <div className={routes.role === "admin" ? styles.technicalRequestList : styles.technicalRequestListPassthrough}>
+          <TableFilters
+            search={{
+              ariaLabel: "Tìm theo mã khách hàng",
+              maxLength: 36,
+              placeholder: "Tìm theo mã khách hàng (UUID)",
+              value: requestSearchDraft,
+              onChange: setRequestSearchDraft,
+            }}
+            selects={[
+              {
+                id: "technical-request-type-filter",
+                ariaLabel: "Lọc yêu cầu theo loại",
+                value: requestTypeDraft,
+                options: [
+                  { value: "", label: "Tất cả loại yêu cầu" },
+                  { value: "REPAIR", label: "Sửa chữa" },
+                  { value: "PREVENTIVE", label: "Bảo trì định kỳ" },
+                ],
+                onChange: (value) => setRequestTypeDraft(value as MaintenanceRequest["requestType"] | ""),
+              },
+              {
+                id: "technical-request-status-filter",
+                ariaLabel: "Lọc yêu cầu theo trạng thái",
+                value: requestStatusDraft,
+                options: [
+                  { value: "", label: "Tất cả trạng thái" },
+                  ...([
+                    "REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS",
+                    "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED",
+                  ] as const).map((status) => ({ value: status, label: maintenanceRequestStatusLabel(status) })),
+                ],
+                onChange: (value) => setRequestStatusDraft(value as MaintenanceRequest["status"] | ""),
+              },
+            ]}
+            submitLabel="Tìm kiếm"
+            onSubmit={submitRequestFilters}
+          />
+          <div className={routes.role === "admin" ? styles.technicalRequestResults : styles.technicalRequestResultsPassthrough}>
+            <QueryFeedback query={maintenanceRequests} loadingMessage={messages.LOADING_MAINTENANCE_REQUESTS} />
+            {requestList}
+            {listReady && !maintenanceRequests.isError && maintenanceRequests.data?.items.length === 0 && !maintenanceRequests.data.hasNext && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_EMPTY}</p>}
+            {listReady && !maintenanceRequests.isError && maintenanceRequests.data && maintenanceRequests.data.items.length === 0 && (maintenanceRequests.data.page > 0 || maintenanceRequests.data.hasNext) ? (
+              <RepairWorkflowPagination page={maintenanceRequests.data.page} hasNext={maintenanceRequests.data.hasNext} isFetching={maintenanceRequests.isFetching} ariaLabel="Phân trang yêu cầu bảo trì" onPageChange={setRequestPage} />
+            ) : null}
+          </div>
+        </div>
       </section>
       {routes.role === "moderator" ? (
         <RepairCaseListPanel

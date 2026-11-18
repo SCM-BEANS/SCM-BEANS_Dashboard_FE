@@ -90,8 +90,6 @@ export function SupportRequestsListScreen() {
               columns={columns}
               rows={requests}
               rowKey={(request) => request.id}
-              variant="accounts"
-              headerVariant="admin"
               emptyMessage={messages.SUPPORT_LIST_EMPTY}
             />
           ) : null}

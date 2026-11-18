@@ -197,7 +197,6 @@ export function AdminUserDetailView({
                 <button className={styles.accountSecondaryButton} type="button" disabled={ownerContracts.isFetching} onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button>
               </div>}
               {ownerContracts.data && <DataTable
-                variant="accounts"
                 rows={ownerContracts.data.items}
                 rowKey={(contract) => contract.contractId ?? contract.id ?? `${contract.machineId}-${contract.startDate}`}
                 emptyMessage="Khách hàng chưa có hợp đồng."

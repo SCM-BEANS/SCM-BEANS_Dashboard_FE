@@ -44,7 +44,7 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
             <p className={styles.hint}>Mã khoản hoàn: {workflow.selectedRefundId}</p>
             <p className={styles.hint}>Lý do: {refund.reason ?? "—"}</p>
           {attempts.length ? (
-            <DataTable variant="accounts" rows={attempts} rowKey={(attempt) => attempt.id} columns={[
+            <DataTable rows={attempts} rowKey={(attempt) => attempt.id} columns={[
               { key: "attempt", header: "Lần chuyển / giao dịch", render: (attempt) => <>
                 <strong className={styles.orderCustomer}>Lần {attempt.attemptNumber}</strong>
                 <div className={styles.orderMeta}><span>{attempt.bankReference ?? "Chưa có mã giao dịch"}</span><span>{formatCoffeePackageDateTime(attempt.createdAt)}</span></div>

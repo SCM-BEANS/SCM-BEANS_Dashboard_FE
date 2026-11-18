@@ -187,7 +187,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           {list.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
           {list.isError ? <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><ButtonBar type="button" onClick={() => void list.refetch()}>Thử lại</ButtonBar></div> : null}
           {list.data?.content.length === 0 && !list.isError ? <p className={styles.notice} role="status">Không có lệnh thu hồi trong phạm vi tài khoản.</p> : null}
-          {list.data && list.data.content.length > 0 ? <DataTable variant="accounts" headerVariant="admin" rows={list.data.content} rowKey={item => item.id} columns={[
+          {list.data && list.data.content.length > 0 ? <DataTable rows={list.data.content} rowKey={item => item.id} columns={[
             { key: "machine", header: "Lệnh / máy", render: item => <div className={viewStyles.identity}><strong>{item.machineSerialNumber || <TruncatedId value={item.machineId} />}</strong><span>Lệnh <TruncatedId value={item.id} /></span></div> },
             { key: "customer", header: "Khách hàng", render: item => item.ownerName || <TruncatedId value={item.ownerId} /> },
             { key: "schedule", header: "Lịch nhận máy", render: item => localDateTime(item.scheduledPickupAt) },
@@ -391,7 +391,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           <h2 className={styles.sectionTitle} id="recall-evidence-title">Chứng từ bàn giao</h2>
           {evidence.isPending ? <p role="status">Đang tải chứng từ…</p> : null}
           {evidence.isError ? <p role="alert">{getApiErrorMessage(evidence.error)}</p> : null}
-          {evidence.data && <DataTable variant="accounts" headerVariant="admin" rows={evidence.data.filter(item => relevantEvidenceTypes.includes(item.evidenceType))} rowKey={item => item.id} emptyMessage="Chưa có chứng từ." columns={[
+          {evidence.data && <DataTable rows={evidence.data.filter(item => relevantEvidenceTypes.includes(item.evidenceType))} rowKey={item => item.id} emptyMessage="Chưa có chứng từ." columns={[
             { key: "file", header: "Tệp", render: item => <span>{item.originalFilename}</span> },
             { key: "type", header: "Nội dung", render: item => ({ PICKUP: "Nhận máy", OWNER_HANDOVER: "Khách hàng bàn giao", DEPOT_RECEIPT: "Tiếp nhận tại kho" }[item.evidenceType] || item.evidenceType) },
             { key: "date", header: "Ngày gửi", render: item => localDateTime(item.uploadedAt) },

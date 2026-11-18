@@ -13,12 +13,7 @@ type DataTableRowProps = {
   [attribute: `data-${string}`]: string | undefined;
 };
 
-type DataTableBaseProps = {
-  variant?: "operations" | "accounts" | "standard" | "moderator" | "customer";
-  headerVariant?: "admin";
-};
-
-type DataTableRowsProps<Row> = DataTableBaseProps & {
+type DataTableRowsProps<Row> = {
   columns: readonly DataTableColumn<Row>[];
   rows: readonly Row[];
   rowKey: (row: Row, index: number) => Key;
@@ -28,7 +23,7 @@ type DataTableRowsProps<Row> = DataTableBaseProps & {
   children?: never;
 };
 
-type DataTableChildrenProps = DataTableBaseProps & {
+type DataTableChildrenProps = {
   headers: readonly ReactNode[];
   children?: ReactNode;
   emptyMessage?: ReactNode;
@@ -40,20 +35,6 @@ type DataTableChildrenProps = DataTableBaseProps & {
 type DataTableProps<Row> = DataTableRowsProps<Row> | DataTableChildrenProps;
 
 export function DataTable<Row>(props: DataTableProps<Row>) {
-  const variant = props.variant ?? "operations";
-  const containerClassName = [styles.container, variant === "moderator" ? styles.moderatorContainer : undefined].filter(Boolean).join(" ");
-  const variantClassName = {
-    operations: styles.operations,
-    accounts: styles.accounts,
-    standard: styles.standard,
-    moderator: styles.moderator,
-    customer: styles.customer,
-  }[variant];
-  const tableClassName = [
-    styles.table,
-    variantClassName,
-    props.headerVariant === "admin" ? styles.adminHeader : undefined,
-  ].filter(Boolean).join(" ");
   const isRowsTable = "rows" in props && props.rows !== undefined;
   const headers: Array<{ key: string; content: ReactNode; align?: "left" | "center" | "right" }> = isRowsTable
     ? props.columns.map((column) => ({ key: column.key, content: column.header, align: column.align }))
@@ -79,8 +60,8 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         : null;
 
   return (
-    <div className={containerClassName}>
-      <table className={tableClassName}>
+    <div className={styles.container}>
+      <table className={styles.table}>
         <thead>
           <tr>
             {headers.map((header) => (

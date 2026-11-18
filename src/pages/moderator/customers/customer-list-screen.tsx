@@ -140,7 +140,7 @@ export function CustomerProfileListScreen() {
       )}
       {pageData && pageData.items.length > 0 && !profiles.isError && (
         <>
-          <DataTable variant="moderator" headers={[
+          <DataTable headers={[
             "Khách hàng",
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PHONE,
             MODERATOR_MESSAGES.READ_SCREENS.PROFILE_STATUS,

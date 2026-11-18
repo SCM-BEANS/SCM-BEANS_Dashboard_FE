@@ -364,7 +364,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
             <QueryFeedback query={policyHistory} loadingMessage={T.COMMON.LOADING} />
             {policyHistory.data && policyHistory.data.length === 0 && !policyHistory.isError && <p className={adminStyles.emptyText}>{T.COMMON.EMPTY}</p>}
             {policyHistory.data && policyHistory.data.length > 0 && <DataTable
-              headerVariant="admin"
               rows={policyHistory.data}
               rowKey={(item) => item.id}
               columns={[
@@ -445,7 +444,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
               <p className={adminStyles.emptyText} role="status">Chưa tìm thấy lệnh lắp đặt thuộc hợp đồng này.</p>
             )}
             {matchingInstallationOrders.length > 0 && <DataTable
-              headerVariant="admin"
               rows={matchingInstallationOrders}
               rowKey={(item) => item.id}
               columns={[
@@ -473,7 +471,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
             </form>}
             {downloadError && <p className={adminStyles.accountInlineWarning} role="alert">{downloadError}</p>}
             {documents.data && documents.data.length > 0 && <DataTable
-              headerVariant="admin"
               rows={documents.data}
               rowKey={(item) => item.id}
               columns={[

@@ -106,7 +106,6 @@ export function OperatorCatalogPanel({
       {!workflow.packages.isPending && !workflow.packages.isError && packages.length === 0 ? <p className={styles.notice}>Chưa có gói cà phê trong danh mục.</p> : null}
       {packages.length ? (
         <DataTable
-          variant="accounts"
           rows={packages}
           rowKey={(item) => item.id}
           columns={[

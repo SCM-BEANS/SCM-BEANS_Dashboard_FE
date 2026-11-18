@@ -231,7 +231,6 @@ export function TelemetryHistoryPanel({
         </figure></> : view === "chart" ? <p className={styles.monitoringEmpty} role="status">Thông số này không phải dữ liệu số. Chọn Bảng dữ liệu để xem nội dung.</p> : null}
         {view === "table" ? <><p className={styles.telemetryRecordsLabel}>Bản ghi theo thời gian · {field}</p>
         <DataTable
-          headerVariant="admin"
           rows={orderedPoints.filter((point) => point.field === field)}
           rowKey={(point, index) => `${point.timestamp}-${point.field}-${index}`}
           columns={[

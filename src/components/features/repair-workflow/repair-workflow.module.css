@@ -1418,6 +1418,17 @@ fieldset.recipeMenuEditorGroup {
 .operatorWorkspace .panel, .operatorWorkspace .formPanel { padding: 22px; border-radius: 12px; }
 .listHeading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 14px; }
 .listHeading span { color: #706561; font-size: 13px; }
+.technicalRequestList {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+}
+.technicalRequestResults {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+}
+.technicalRequestListPassthrough, .technicalRequestResultsPassthrough { display: contents; }
 .historyFilters { margin-bottom: 0; }
 .historyFilters > select:first-child { flex: 1; width: 100%; }
 .historyMachineCell { display: flex; flex-direction: column; gap: 6px; max-width: 340px; overflow-wrap: anywhere; }

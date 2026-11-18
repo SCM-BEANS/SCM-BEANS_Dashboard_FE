@@ -166,7 +166,6 @@ export function ContractHistoryScreen({ id }: { id: string }) {
         <QueryFeedback query={history} loadingMessage={T.COMMON.LOADING} />
         {history.data && history.data.length === 0 && <p className={adminStyles.emptyText} role="status">{T.COMMON.EMPTY}</p>}
         {history.data && history.data.length > 0 && <DataTable
-          headerVariant="admin"
           rows={history.data}
           rowKey={(item) => item.id}
           columns={[

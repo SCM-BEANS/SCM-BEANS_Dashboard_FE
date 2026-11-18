@@ -412,7 +412,6 @@ function ContractsContent() {
           {policyHistory.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(policyHistory.error)} <ButtonBar type="button" onClick={() => void policyHistory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {policyHistory.data && policyHistory.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
           {policyHistory.data && policyHistory.data.length > 0 && <DataTable
-            headerVariant="admin"
             rows={policyHistory.data}
             rowKey={(item) => item.id}
             columns={[
@@ -427,7 +426,7 @@ function ContractsContent() {
           <h2 id="admin-contract-installation-orders">Điều phối lắp đặt</h2>
           {installationOrders.isPending && <p role="status">Đang tải lệnh lắp đặt…</p>}
           {installationOrders.isError && <div role="alert"><p>{getApiErrorMessage(installationOrders.error)}</p><ButtonBar type="button" onClick={() => void installationOrders.refetch()}>Thử lại</ButtonBar></div>}
-          {installationOrders.data && <DataTable headerVariant="admin"
+          {installationOrders.data && <DataTable
             rows={installationOrders.data.filter((order) => order.ownerId === contract.data!.ownerId && order.contractId === contract.data!.id && order.machineId === contract.data!.machineId).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))}
             rowKey={(order) => order.id} emptyMessage="Chưa có lệnh lắp đặt thuộc hợp đồng này."
             columns={[
@@ -511,7 +510,6 @@ function ContractsContent() {
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {documents.data && documents.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
           {documents.data && documents.data.length > 0 && <DataTable
-            headerVariant="admin"
             rows={documents.data}
             rowKey={(doc) => doc.id}
             columns={[
@@ -540,7 +538,6 @@ function ContractsContent() {
       {history.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
       {history.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(history.error)}</p><ButtonBar type="button" onClick={() => void history.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {history.data && <section className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
-        headerVariant="admin"
         rows={history.data}
         rowKey={(item) => item.id}
         columns={[

@@ -81,7 +81,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
     {local.isPending ? <p role="status">Đang tải điều chỉnh…</p> : null}
     {local.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(local.error)}</p><ButtonBar onClick={() => void local.refetch()}>Thử lại</ButtonBar></div> : null}
     {local.data ? <>
-      <DataTable variant="accounts" rows={local.data.items} rowKey={(item) => item.id}
+      <DataTable rows={local.data.items} rowKey={(item) => item.id}
         columns={[
           { key: "recipe", header: "Công thức", render: (item) => <strong>{item.globalRecipeName ?? "Công thức tương thích"}</strong> },
           ...(owner ? [] : [{ key: "owner", header: "Mã khách hàng", cellProps: (item: NonNullable<typeof local.data>["items"][number]) => ({ title: item.ownerId }), render: (item: NonNullable<typeof local.data>["items"][number]) => item.ownerId.slice(0, 8).toUpperCase() }]),

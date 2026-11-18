@@ -89,7 +89,6 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
         <p role="status">{messages.EMPTY_PAYMENT_PROOFS}</p>
       ) : (
         <DataTable
-          variant="moderator"
           headers={["Chứng từ", messages.PROOF_STATUS, messages.PROOF_AMOUNT, messages.PROOF_SUBMITTED_AT, messages.PROOF_CONTENT, messages.PROOF_ACTION]}
         >
           {proofs.map((proof) => (

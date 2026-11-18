@@ -92,7 +92,6 @@ export function InvoicePaymentProofs({ proofs, currency, loading, failed }: {
           columns={columns}
           rowKey={(proof) => proof.id}
           rows={proofs}
-          headerVariant="admin"
         />
       ) : null}
     </section>

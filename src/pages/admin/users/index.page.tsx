@@ -145,7 +145,6 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
             ) : (
               <>
                 <DataTable
-                  variant="accounts"
                   rows={users.data.items}
                   rowKey={(entry) => entry.id}
                   columns={[

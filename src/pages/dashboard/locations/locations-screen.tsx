@@ -25,10 +25,10 @@ export function LocationsScreen() {
         <LocationDetailPanel
           locationId={locationId}
           machineDetailHref={(machineId) => PATH_CUSTOMER.MACHINE_DETAIL(machineId)}
-          tableVariant="customer"
+          role="OWNER"
         />
       ) : (
-        <LocationsManagementPanel mode="owner" ownerId={ownerId} tableVariant="customer" />
+        <LocationsManagementPanel mode="owner" ownerId={ownerId} />
       ) : <div className={styles.errorNotice} role="alert">{messages.IDENTITY_UNAVAILABLE}</div>}
     </section>
   );

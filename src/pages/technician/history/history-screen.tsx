@@ -170,8 +170,6 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
                 { key: "date", header: "Lịch / hoàn tất", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
                 { key: "action", header: "Thao tác", align: "right", render: ticket => ticket.id ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(ticket.id)}>Xem phiếu</ButtonBar> : "—" },
               ]}
-              variant="accounts"
-              headerVariant="admin"
             />
           ) : null}
           <div className={shellStyles.pagination}><span>Trang {ticketPage + 1}</span><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={!tickets.data?.hasNext || tickets.isFetching} onClick={() => setTicketPage(value => value + 1)}>Trang sau</ButtonBar></div>
@@ -191,8 +189,6 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
                 { key: "description", header: "Mô tả", render: (request) => request.issueDescription?.trim() || "—" },
                 { key: "action", header: "Thao tác", align: "right", render: (request) => <ButtonBar rollingLabel href={`/technician/history/requests/${request.id}`}>Mở yêu cầu</ButtonBar> },
               ]}
-              variant="accounts"
-              headerVariant="admin"
             />
           ) : null}
           <div className={shellStyles.pagination}><span>Trang {requestPage + 1}</span><ButtonBar disabled={requestPage === 0} onClick={() => setRequestPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={(requestPage + 1) * 10 >= filteredRequests.length} onClick={() => setRequestPage(value => value + 1)}>Trang sau</ButtonBar></div>

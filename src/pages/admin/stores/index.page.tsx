@@ -400,7 +400,7 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
         <LocationDetailPanel
           locationId={detail.data.id}
           machineDetailHref={(machineId) => (role === "ADMIN" ? PATH_ADMIN : PATH_MODERATOR).MACHINE_DETAIL(machineId)}
-          tableVariant={role === "ADMIN" ? "operations" : "moderator"}
+          role={role}
           compact
         />
       </>}
@@ -438,7 +438,6 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       {listing.data && <>
         {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
         {visibleLocations.length === 0 ? <p className={styles.emptyText}>{search || initialOwnerId ? T.STORES.NO_MATCH : T.COMMON.EMPTY}</p> : <DataTable
-          variant="accounts"
           rows={visibleLocations.slice(currentStorePage * 10, currentStorePage * 10 + 10)}
           rowKey={({ location }) => location.id}
           columns={[

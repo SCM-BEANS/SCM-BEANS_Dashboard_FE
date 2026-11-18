@@ -17,7 +17,7 @@ import styles from "./location-detail.module.css";
 import { TransferMachineAction } from "./transfer-machine-action";
 
 type MachineSummary = LocationMachinePage["content"][number];
-type TableVariant = "operations" | "moderator" | "customer";
+type LocationRole = "ADMIN" | "MODERATOR" | "OWNER";
 
 function numberLabel(value: number): string {
   return new Intl.NumberFormat("vi-VN").format(value);
@@ -46,12 +46,12 @@ function MachineConnection({ machine }: { machine: MachineSummary }) {
 export function LocationDetailPanel({
   locationId,
   machineDetailHref,
-  tableVariant = "operations",
+  role = "ADMIN",
   compact = false,
 }: {
   locationId: string;
   machineDetailHref: (machineId: string) => string;
-  tableVariant?: TableVariant;
+  role?: LocationRole;
   compact?: boolean;
 }) {
   const validId = LocationIdSchema.safeParse(locationId).success;
@@ -99,7 +99,7 @@ export function LocationDetailPanel({
       header: "Thao tác",
       render: (machine: MachineSummary) => <TransferMachineAction
         machine={machine}
-        role={tableVariant === "operations" ? "admin" : tableVariant === "moderator" ? "moderator" : "owner"}
+        role={role === "ADMIN" ? "admin" : role === "MODERATOR" ? "moderator" : "owner"}
         currentLocationName={statsData?.locationName}
         onOpen={() => setTransferSuccessMessage("")}
         onSuccess={(targetLocationName) => setTransferSuccessMessage(`Đã chuyển máy tới ${targetLocationName}.`)}
@@ -164,7 +164,6 @@ export function LocationDetailPanel({
       {machinePage && <>
         {transferSuccessMessage && <p className={styles.successNotice} role="status">{transferSuccessMessage}</p>}
         <DataTable
-          variant={tableVariant}
           rows={machinePage.content}
           rowKey={(machine) => machine.id}
           columns={columns}

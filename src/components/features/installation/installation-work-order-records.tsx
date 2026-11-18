@@ -137,7 +137,6 @@ export function InstallationWorkOrderRecords({
           {checklist.data.items.length === 0
             ? <p className={styles.feedback} role="status">Chưa có mục kiểm tra nào.</p>
             : <DataTable
-              variant="moderator"
               rows={checklist.data.items}
               rowKey={(item) => item.id}
               columns={[
@@ -162,7 +161,6 @@ export function InstallationWorkOrderRecords({
           {accessories.data.items.length === 0
             ? <p className={styles.feedback} role="status">Chưa ghi nhận phụ kiện nào.</p>
             : <DataTable
-              variant="moderator"
               rows={accessories.data.items}
               rowKey={(item) => item.id}
               columns={[
@@ -182,7 +180,6 @@ export function InstallationWorkOrderRecords({
           {evidence.data.items.length === 0
             ? <p className={styles.feedback} role="status">Chưa có chứng từ nào.</p>
             : <DataTable
-              variant="moderator"
               rows={evidence.data.items}
               rowKey={(item) => item.id}
               columns={[

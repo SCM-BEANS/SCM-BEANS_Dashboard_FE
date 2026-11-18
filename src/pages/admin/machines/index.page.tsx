@@ -234,7 +234,6 @@ function MachinesContent() {
               {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
                 <DataTable
-                  variant="accounts"
                   rows={machineModels.data.slice(modelPage * 10, modelPage * 10 + 10)}
                   rowKey={(machineModel) => machineModel.id}
                   columns={[
@@ -265,7 +264,6 @@ function MachinesContent() {
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
                 <div ref={heartbeatTableRef}>
                   <DataTable
-                    variant="accounts"
                     rows={pageMachines}
                     rowKey={(machine) => machine.id}
                     rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}

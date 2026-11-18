@@ -244,7 +244,6 @@ function InvoiceList({
       />
       {query.data && query.data.items.length > 0 && (
         <DataTable
-          variant="accounts"
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
@@ -443,7 +442,6 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         />
         {lineItems.data?.items.length ? (
           <DataTable
-            variant="accounts"
             rows={lineItems.data.items}
             rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`}
             columns={[
@@ -485,7 +483,6 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         />
         {proofs.data?.items.length ? (
           <DataTable
-            variant="accounts"
             rows={proofs.data.items}
             rowKey={(proof) => proof.id}
             columns={[

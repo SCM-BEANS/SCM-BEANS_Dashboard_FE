@@ -114,7 +114,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
           {workflow.paymentProofs.data?.items.length ? (
             <section className={adminStyles.paymentPanel} aria-label="Chứng từ Dolores thanh toán hồ sơ thu mua">
               <h3 className={styles.sectionTitle}>Chứng từ thanh toán từ Dolores</h3>
-              <DataTable headerVariant="admin" rows={workflow.paymentProofs.data.items} rowKey={(proof) => proof.id} columns={[
+              <DataTable rows={workflow.paymentProofs.data.items} rowKey={(proof) => proof.id} columns={[
                 { key: "file", header: "Chứng từ", render: (proof) => <div className={adminStyles.identity}><span>{proof.originalFilename}</span><span className={adminStyles.meta}>{formatBuybackDateTime(proof.submittedAt)}</span></div> },
                 { key: "amount", header: "Số tiền", align: "right", render: (proof) => <span className={adminStyles.money}>{formatBuybackMoney(proof.amount, proof.currency ?? caseData.currency)}</span> },
                 { key: "status", header: "Trạng thái", render: (proof) => <div className={adminStyles.identity}><StatusBadge variant="dot" status={proof.status}>{buybackPaymentProofStatusLabel(proof.status)}</StatusBadge>{proof.reviewReason ? <span className={adminStyles.meta}>{proof.reviewReason}</span> : null}{proof.ownerRespondedAt ? <span className={adminStyles.meta}>Phản hồi lúc {formatBuybackDateTime(proof.ownerRespondedAt)}</span> : null}</div> },

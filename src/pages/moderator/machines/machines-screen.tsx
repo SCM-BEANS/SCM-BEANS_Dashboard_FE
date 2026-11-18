@@ -190,8 +190,6 @@ function MachineList({
     <div>
       <MachineListFilters value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setSearch(filterDraft.search.trim()); onStatusChange(filterDraft.status || "ALL"); setPage(0); }} />
       <DataTable
-        variant="accounts"
-        headerVariant="admin"
         rows={rows}
         rowKey={(machine) => machine.id}
         emptyMessage={visibleMachines.length === 0 ? emptyMessage : undefined}
@@ -391,8 +389,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
             {machineModels.data?.length === 0 && <p className={styles.formHint}>{ADMIN_T.COMMON.EMPTY}</p>}
             {machineModels.data && machineModels.data.length > 0 && <>
               <DataTable
-                headerVariant="admin"
-                variant="accounts"
                 rows={machineModels.data.slice(currentModelPage * 10, currentModelPage * 10 + 10)}
                 rowKey={(model) => model.id}
                 columns={[

@@ -25,13 +25,6 @@ function statusLabel(status: string): string {
   return M.STATUS_LABELS[status as keyof typeof M.STATUS_LABELS] ?? status;
 }
 
-function tableVariant(role: RepairWorkflowRole): "accounts" | "operations" | "standard" | "customer" {
-  if (role === "owner") return "accounts";
-  if (role === "technician") return "standard";
-  if (role === "moderator") return "accounts";
-  return "operations";
-}
-
 export function RepairCaseListPanel({
   role,
   detailHref,
@@ -106,8 +99,6 @@ export function RepairCaseListPanel({
       {cases.data ? (
         <>
           <DataTable
-            variant={tableVariant(role)}
-            headerVariant={role === "moderator" || role === "owner" ? "admin" : undefined}
             rows={cases.data.items}
             rowKey={(repairCase) => repairCase.id}
             columns={columns}

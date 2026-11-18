@@ -22,7 +22,7 @@ export function MachineContractHistory({ machineId, role }: { machineId: string;
     <label className={styles.historyFilter}>Trạng thái <select value={status} onChange={event => { setStatus(event.target.value as keyof typeof labels | ""); setPage(0); }}><option value="">Tất cả</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     {query.isPending ? <p role="status">Đang tải lịch sử hợp đồng…</p> : null}
     {query.isError ? <p role="alert">{getApiErrorMessage(query.error)}</p> : null}
-    {query.data ? <><DataTable variant={role === "OWNER" ? "accounts" : undefined} rows={query.data.items} rowKey={row => row.id} emptyMessage="Không có lịch sử hợp đồng." columns={[
+    {query.data ? <><DataTable rows={query.data.items} rowKey={row => row.id} emptyMessage="Không có lịch sử hợp đồng." columns={[
       { key: "id", header: "Mã hợp đồng", render: row => role === "TECHNICIAN" ? row.id : <Link href={role === "ADMIN" ? `/admin/contracts?view=detail&id=${encodeURIComponent(row.id)}` : `${base}/${encodeURIComponent(row.id)}`}>{row.id.slice(0, 8).toUpperCase()}</Link> },
       { key: "status", header: "Trạng thái", render: row => role === "OWNER" ? <span className={adminStyles.machinePlainStatus} data-status={row.status}>{labels[row.status]}</span> : <StatusBadge status={row.status}>{labels[row.status]}</StatusBadge> },
       { key: "start", header: "Ngày bắt đầu", render: row => row.startDate ?? "—" },

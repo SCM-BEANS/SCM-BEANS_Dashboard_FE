@@ -262,8 +262,6 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
               { key: "updated", header: "Cập nhật", render: (request) => formatDateTime(request.updatedAt ?? request.createdAt) },
               { key: "action", header: "Thao tác", align: "right", render: request => <ButtonBar rollingLabel href={PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>Mở lịch bảo trì</ButtonBar> },
             ]}
-            variant="accounts"
-            headerVariant="admin"
           />
           <RepairWorkflowPagination
             page={requests.data.page}

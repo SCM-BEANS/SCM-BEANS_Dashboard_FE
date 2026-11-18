@@ -20,18 +20,15 @@ import { loadProfilePage, nextProfilePage } from "./asset-management-data";
 import styles from "./asset-management.module.css";
 
 type Mode = "owner" | "moderator";
-type TableVariant = "operations" | "moderator" | "customer";
 
 const emptyForm: LocationCreate = { name: "", address: "", city: "", contactPerson: "", phoneNumber: "" };
 
 export function LocationsManagementPanel({
   mode,
   ownerId,
-  tableVariant = mode === "moderator" ? "moderator" : "customer",
 }: {
   mode: Mode;
   ownerId: string | null;
-  tableVariant?: TableVariant;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -201,7 +198,6 @@ export function LocationsManagementPanel({
         </div>}
         {listingState.data && locationRows.length === 0 && <p className={styles.notice} role="status">Owner chưa có địa điểm.</p>}
         {(mode === "owner" || !createFormOpen) && listingState.data && locationRows.length > 0 && <DataTable
-          variant={tableVariant}
           rows={locationRows}
           rowKey={(location) => location.id}
           columns={[

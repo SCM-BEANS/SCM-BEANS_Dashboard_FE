@@ -3,87 +3,13 @@
   overflow-x: auto;
 }
 
-.moderatorContainer {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .table {
   width: 100%;
+  min-width: 760px;
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
   font-size: 14px;
-}
-
-.operations {
-  min-width: 680px;
-}
-
-.accounts {
-  min-width: 760px;
-}
-
-.standard {
-  min-width: 400px;
-}
-
-.moderator {
-  min-width: 680px;
-}
-
-.customer {
-  min-width: 760px;
-  border-collapse: separate;
-  border-spacing: 0 14px;
-}
-
-.table.customer th {
-  padding: 14px 12px;
-}
-
-.table.customer td {
-  padding: 18px 12px;
-  border-top: 1px solid #eee8e3;
-  border-bottom: 1px solid #eee8e3;
-  background: #fff;
-}
-
-.table.customer td:first-child {
-  border-left: 1px solid #eee8e3;
-  border-radius: 8px 0 0 8px;
-}
-
-.table.customer td:last-child {
-  border-right: 1px solid #eee8e3;
-  border-radius: 0 8px 8px 0;
-}
-
-.table.moderator th,
-.table.moderator td {
-  padding: 14px 16px;
-  vertical-align: top;
-}
-
-.table.moderator th {
-  background: #f8f6f3;
-  color: #706561;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.table.moderator td {
-  border-top: 1px solid #eee8e3;
-  border-bottom: 0;
-  color: #302927;
-  font-size: 14px;
-  line-height: 1.5;
-  transition: background-color 140ms ease;
-}
-
-.table.moderator tbody tr:hover td {
-  background: #fdfbf9;
 }
 
 .table th {
@@ -111,26 +37,14 @@
   background-color: #fdf8f7;
 }
 
-.table:not(.customer) tbody tr:last-child td {
+.table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.standard th {
-  padding: 14px 10px;
-}
-
 .table td {
-  padding: 12px 10px;
+  padding: 11px 10px;
   border-bottom: 1px solid #f0ece8;
   overflow-wrap: anywhere;
-}
-
-.accounts th {
-  padding: 12px 10px;
-}
-
-.accounts td {
-  padding: 11px 10px;
 }
 
 .contractStatus {
@@ -156,43 +70,7 @@
 .contractStatus[data-status="DRAFT"] .contractStatusDot { background: #c58a16; }
 .contractStatus[data-status="TERMINATED"] .contractStatusDot { background: #bd3b3b; }
 
-.standard td {
-  padding: 15px 10px;
-}
-
-.table.adminHeader th {
-  padding: 14px 16px;
-  background: #f4f0ed;
-  color: #574b46;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  text-wrap: balance;
-  vertical-align: middle;
-  border-bottom: 1px solid #e6ddd8;
-}
-
-.table.adminHeader td {
-  padding: 14px 16px;
-  vertical-align: middle;
-  transition: background-color 140ms ease;
-}
-
-.table.adminHeader tbody tr:hover td {
-  background-color: #fcf8f6;
-}
-
-@media (max-width: 1023px) {
-  .moderator {
-    min-width: 620px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .table tbody tr { transition: none; }
-  .table.moderator td { transition: none; }
-  .table.adminHeader td { transition: none; }
 }
-
-
 

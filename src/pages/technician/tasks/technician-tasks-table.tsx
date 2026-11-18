@@ -256,8 +256,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         {isLoading ? <p className={styles.loading} role="status">Đang tải công việc…</p> : null}
         {tasksQuery.data ? (
           <DataTable
-            variant="accounts"
-            headerVariant="admin"
             rows={tasks}
             rowKey={(task) => task.key}
             emptyMessage={tasksQuery.isError ? undefined : "Chưa có công việc đang mở được phân công cho bạn. Công việc đã hoàn tất được lưu trong lịch sử máy hoặc danh sách thu hồi."}

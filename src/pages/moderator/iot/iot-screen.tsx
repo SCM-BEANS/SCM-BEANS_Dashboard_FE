@@ -143,7 +143,6 @@ function OwnerPartialFailure({
 function LocationTable({ records, failed }: { records: OwnerReadBatch<Awaited<ReturnType<typeof locationsApi.listByOwner>>[number]>["records"]; failed: boolean }) {
   return (
     <DataTable
-      variant="moderator"
       headers={[messages.LOCATION_OWNER, messages.LOCATION_NAME, messages.LOCATION_ADDRESS, messages.LOCATION_CITY, messages.LOCATION_STATUS, messages.LOCATION_MACHINE_COUNT, messages.LOCATION_ACTION]}
       emptyMessage={failed ? undefined : messages.OWNER_LOCATION_EMPTY}
     >
@@ -302,7 +301,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     {!reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2></div>
       <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
-      {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable variant="accounts" headerVariant="admin" rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
+      {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
         { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
         { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },

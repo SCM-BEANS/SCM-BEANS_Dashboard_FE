@@ -218,7 +218,6 @@ export function AdminInvoiceListScreen() {
             <>
               {invoices.data.items.length === 0 ? <p className={styles.emptyText}>Không có hóa đơn phù hợp với bộ lọc.</p> : (
                 <DataTable
-                  headerVariant="admin"
                   rows={invoices.data.items}
                   rowKey={(invoice) => invoice.id}
                   columns={[
@@ -304,7 +303,6 @@ function PaymentProofReviewList({ proofs, invoiceId }: { proofs: PaymentProof[];
       <p className={pageStyles.hint}>Mở hoặc tải chứng từ để kiểm tra. Khi duyệt hoặc từ chối, hãy ghi lý do để lưu lại kết quả đối soát.</p>
       {proofs.length === 0 ? <p className={styles.emptyText}>Hóa đơn chưa có chứng từ thanh toán.</p> : (
         <DataTable
-          headerVariant="admin"
           rows={proofs}
           rowKey={(proof) => proof.id}
           columns={[
@@ -372,13 +370,13 @@ function ContractPreviewPanel({ contractId }: { contractId: string }) {
           <span>Tổng xem trước · {total.currency ?? "—"}</span><strong>{amountText(total.previewTotal, total.currency)}</strong>
           <span>Phí hợp đồng {amountText(total.contractAmount, total.currency)} · Phí sửa chữa {amountText(total.repairAmount, total.currency)}</span>
         </div>)}</div> : <p className={styles.emptyText}>API chưa trả tổng chi phí cho bản xem trước này.</p>}
-        {data.contractCharges?.length ? <DataTable headerVariant="admin" rows={data.contractCharges} rowKey={(item, index) => `${item.serviceCode ?? "charge"}-${index}`} columns={[
+        {data.contractCharges?.length ? <DataTable rows={data.contractCharges} rowKey={(item, index) => `${item.serviceCode ?? "charge"}-${index}`} columns={[
           { key: "description", header: "Khoản phí", render: (item) => item.description || item.serviceCode || "—" },
           { key: "quantity", header: "Số lượng", align: "center", render: (item) => item.quantity == null ? "—" : amountFormatter.format(item.quantity) },
           { key: "unit-price", header: "Đơn giá", align: "right", render: (item) => amountText(item.unitPrice, item.currency) },
           { key: "amount", header: "Thành tiền", align: "right", render: (item) => amountText(item.amount, item.currency) },
         ]} /> : null}
-        {data.repairCharges?.length ? <DataTable headerVariant="admin" rows={data.repairCharges} rowKey={(item, index) => item.repairCostReviewId ?? `${item.serviceCode ?? "repair"}-${index}`} columns={[
+        {data.repairCharges?.length ? <DataTable rows={data.repairCharges} rowKey={(item, index) => item.repairCostReviewId ?? `${item.serviceCode ?? "repair"}-${index}`} columns={[
           { key: "description", header: "Chi phí sửa chữa", render: (item) => item.description || item.serviceCode || "—" },
           { key: "responsibility", header: "Bên chịu phí", render: (item) => item.responsibleParty ?? "Chưa xác định" },
           { key: "review", header: "Tình trạng xét duyệt", render: (item) => item.reviewStatus ?? "—" },
@@ -459,7 +457,7 @@ export function AdminInvoiceDetailScreen({ invoiceId, routerReady }: { invoiceId
 }
 
 function InvoiceLineItemsTable({ items, invoice }: { items: InvoiceLineItem[]; invoice: Invoice }) {
-  return <DataTable headerVariant="admin" rows={items} rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`} columns={[
+  return <DataTable rows={items} rowKey={(item, index) => item.id ?? `${item.invoiceId}-${index}`} columns={[
     { key: "description", header: "Nội dung", render: (item) => item.description || item.serviceCode || "—" },
     { key: "machine", header: "Máy ID", render: (item) => item.machineId ?? "—" },
     { key: "quantity", header: "Số lượng", align: "center", render: (item) => item.quantity == null ? "—" : amountFormatter.format(item.quantity) },

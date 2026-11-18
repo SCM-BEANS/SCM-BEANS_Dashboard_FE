@@ -21,7 +21,7 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
       {!workflow.orders.isPending && !workflow.orders.isError && workflow.orders.data?.items.length === 0 ? <p className={styles.notice}>Bạn chưa có đơn gói cà phê.</p> : null}
 
       {workflow.orders.data?.items.length ? (
-        <DataTable variant="accounts" rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
+        <DataTable rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
           { key: "order", header: "Đơn hàng", render: (order) => <>
             <strong className={styles.orderCustomer}>Đơn {order.id.slice(0, 8).toUpperCase()}</strong>
             <span className={styles.orderQuantity}>{formatCoffeePackageDateTime(order.createdAt)}</span>

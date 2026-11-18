@@ -135,7 +135,6 @@ export function EvidenceList({
       {data ? (
         <>
           <DataTable
-            headerVariant="admin"
             rows={data.items}
             rowKey={(item) => item.id}
             emptyMessage="Chưa có chứng từ."
