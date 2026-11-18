@@ -6,6 +6,7 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -15,7 +16,7 @@ import { buildRecallLegacyReviewActions } from "@/components/action-bar/entity-p
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import type { RecallEvidence, RecallEvidenceType } from "@/schema/termination-workflow.schema";
+import type { RecallEvidence, RecallEvidenceType, RecallWorkOrderSummary } from "@/schema/termination-workflow.schema";
 import styles from "../repair-workflow/repair-workflow.module.css";
 
 type Role = "owner" | "technician" | "operator";
@@ -179,6 +180,9 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   const refreshButton = <ButtonBar type="button" disabled={list.isFetching || workOrder.isFetching} onClick={() => void refresh()}>Làm mới</ButtonBar>;
 
   if (!id) {
+    const isModerator = queryScopeRole === "MODERATOR";
+    const openWorkOrder = onOpen ?? setSelectedId;
+
     return (
       <div className={styles.pageContent}>
         <BackButtonHeading title="Thu hồi máy" titleId="recall-list-title" className={styles.pageHeading} back={null} />
@@ -188,11 +192,34 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           {list.isError ? <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><ButtonBar type="button" onClick={() => void list.refetch()}>Thử lại</ButtonBar></div> : null}
           {list.data?.content.length === 0 && !list.isError ? <p className={styles.notice} role="status">Không có lệnh thu hồi trong phạm vi tài khoản.</p> : null}
           {list.data && list.data.content.length > 0 ? <DataTable rows={list.data.content} rowKey={item => item.id} columns={[
-            { key: "machine", header: "Lệnh / máy", render: item => <div className={viewStyles.identity}><strong>{item.machineSerialNumber || <TruncatedId value={item.machineId} />}</strong><span>Lệnh <TruncatedId value={item.id} /></span></div> },
+            {
+              key: "machine",
+              header: "Lệnh / máy",
+              render: item => {
+                const machineLabel = item.machineSerialNumber || <TruncatedId value={item.machineId} />;
+                return (
+                  <div className={viewStyles.identity}>
+                    <strong>
+                      {isModerator ? (
+                        <TextActionButton onClick={() => openWorkOrder(item.id)}>{machineLabel}</TextActionButton>
+                      ) : machineLabel}
+                    </strong>
+                    <span>Lệnh <TruncatedId value={item.id} /></span>
+                  </div>
+                );
+              },
+            },
             { key: "customer", header: "Khách hàng", render: item => item.ownerName || <TruncatedId value={item.ownerId} /> },
             { key: "schedule", header: "Lịch nhận máy", render: item => localDateTime(item.scheduledPickupAt) },
             { key: "status", header: "Trạng thái", render: item => <StatusBadge variant="dot" status={item.status}>{recallLabels[item.status] ?? item.status}</StatusBadge> },
-            { key: "action", header: "Thao tác", align: "right", render: item => <ButtonBar rollingLabel type="button" onClick={() => onOpen ? onOpen(item.id) : setSelectedId(item.id)}>Mở chi tiết</ButtonBar> },
+            ...(isModerator ? [] : [{
+              key: "action",
+              header: "Thao tác",
+              align: "right" as const,
+              render: (item: RecallWorkOrderSummary) => (
+                <ButtonBar rollingLabel type="button" onClick={() => openWorkOrder(item.id)}>Mở chi tiết</ButtonBar>
+              ),
+            }]),
           ]} /> : null}
           {list.data && list.data.totalPages > 1 ? (
             <nav className={styles.pagination} aria-label="Phân trang lệnh thu hồi">

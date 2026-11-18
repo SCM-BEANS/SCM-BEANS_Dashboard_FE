@@ -7,11 +7,11 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 
 import { useState } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { OfflineReviewPanel } from "@/components/machines/offline-review-panel";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 
 import { locationsApi } from "@/apis/locations.api";
@@ -302,10 +302,10 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2></div>
       <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
       {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
-        { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</Link> },
+        { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
         { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
-        { key: "actions", header: "Thao tác", render: (machine) => <div className={machineStyles.machineRowActions}><ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>Xem hồ sơ</ButtonBar><ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar></div> },
+        { key: "actions", header: "Thao tác", render: (machine) => <div className={machineStyles.machineRowActions}><ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar></div> },
       ]} />}
       <nav className={adminStyles.machinePagination} aria-label="Phân trang giám sát"><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
     </section> : null}

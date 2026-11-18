@@ -329,11 +329,29 @@ function MaintenanceRequestTable({
   pendingAccepted?: boolean;
   routes: Pick<TechnicalScreenRoutes, "role" | "requestDetail" | "requestAssign">;
 }) {
+  const isModerator = routes.role === "moderator";
   const columns: readonly DataTableColumn<MaintenanceRequest>[] = [
-    { key: "request", header: "Yêu cầu", render: (request: MaintenanceRequest) => <strong><TruncatedId value={request.id} /></strong> },
-    { key: "type", header: messages.TECHNICAL_TYPE, render: (request) => (
-      <TextLinkButton href={routes.requestDetail(request.id)}>{requestTypeLabel(request.requestType)}</TextLinkButton>
-    ) },
+    {
+      key: "request",
+      header: "Yêu cầu",
+      render: (request) => (
+        <strong>
+          {isModerator ? (
+            <TextLinkButton href={routes.requestDetail(request.id)}>
+              <TruncatedId value={request.id} />
+            </TextLinkButton>
+          ) : <TruncatedId value={request.id} />}
+        </strong>
+      ),
+    },
+    {
+      key: "type",
+      header: messages.TECHNICAL_TYPE,
+      render: (request) => {
+        const label = requestTypeLabel(request.requestType);
+        return isModerator ? label : <TextLinkButton href={routes.requestDetail(request.id)}>{label}</TextLinkButton>;
+      },
+    },
     {
       key: "status",
       header: messages.TECHNICAL_STATUS,
@@ -387,7 +405,10 @@ function MaintenanceRequestTable({
     <DataTable
       rows={requests}
       rowKey={(request) => request.id}
-      columns={columns.filter((column) => routes.role !== "admin" || column.key !== "request")}
+      columns={columns.filter((column) => {
+        if (routes.role === "admin") return column.key !== "request";
+        return !isModerator || column.key !== "detail";
+      })}
     />
   );
 }

@@ -7,6 +7,7 @@ import { ContractActivationPanel } from "@/components/contracts/contract-activat
 import { PageActions } from "@/components/action-bar/page-actions";
 import { buildContractDetailActions } from "@/components/action-bar/entity-page-actions";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -447,12 +448,19 @@ export function ContractDetailScreen({ id }: { id: string }) {
               rows={matchingInstallationOrders}
               rowKey={(item) => item.id}
               columns={[
-                { key: "work-order", header: "Mã lệnh", render: (item) => <TruncatedId value={item.id} /> },
+                {
+                  key: "work-order",
+                  header: "Mã lệnh",
+                  render: (item) => (
+                    <TextLinkButton href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(item.id)}>
+                      <TruncatedId value={item.id} />
+                    </TextLinkButton>
+                  ),
+                },
                 { key: "status", header: "Trạng thái", render: (item) => <StatusBadge variant="dot" status={item.status}>{installationWorkOrderStatus(item.status)}</StatusBadge> },
                 { key: "technician", header: "Kỹ thuật viên", render: (item) => item.assignedTechnicianId ? <TruncatedId value={item.assignedTechnicianId} /> : "Chưa phân công" },
                 { key: "scheduled", header: "Lịch hẹn", render: (item) => dateTime(item.scheduledFor) },
                 { key: "completed", header: "Hoàn tất", render: (item) => dateTime(item.completedAt) },
-                { key: "action", header: "", render: (item) => <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(item.id)}>Mở chi tiết lệnh</ButtonBar> },
               ]}
             />}
           </section>}

@@ -404,13 +404,22 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     const machineColumn = listColumns.find((column) => column.key === "machine")!;
     machineColumn.header = "Hồ sơ / thiết bị";
     const renderMachine = machineColumn.render;
-    machineColumn.render = (item, index) => <div className={adminStyles.identity}>
-      <strong>{renderMachine(item, index)}</strong>
-      <span className={adminStyles.meta}>
-        {isAdmin ? null : <>Hồ sơ <TruncatedId value={item.id} /> · </>}
-        {formatBuybackDateTime(item.updatedAt)}
-      </span>
-    </div>;
+    machineColumn.render = (item, index) => {
+      const machineLabel = renderMachine(item, index);
+      return (
+        <div className={adminStyles.identity}>
+          <strong>
+            {workflow.isModeratorRoute ? (
+              <TextLinkButton href={caseDetailsHref(item.id)}>{machineLabel}</TextLinkButton>
+            ) : machineLabel}
+          </strong>
+          <span className={adminStyles.meta}>
+            {isAdmin ? null : <>Hồ sơ <TruncatedId value={item.id} /> · </>}
+            {formatBuybackDateTime(item.updatedAt)}
+          </span>
+        </div>
+      );
+    };
     listColumns.splice(0, 1);
     if (role === "operator") {
       listColumns.splice(isAdmin ? 0 : 1, 0, {
@@ -431,7 +440,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       const actionColumn = listColumns.find((column) => column.key === (role === "owner" ? "owner-decision-actions" : "operator-actions"))!;
       const renderActions = actionColumn.render;
       actionColumn.render = (item, index) => <div className={adminStyles.rowActions}>
-        <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Xem hồ sơ</ButtonBar>
+        {!workflow.isModeratorRoute && <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Xem hồ sơ</ButtonBar>}
         {renderActions(item, index)}
       </div>;
     }

@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { recipesApi } from "@/apis/recipes.api";
 import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton, TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -67,6 +68,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   const detailRef = useRef<HTMLElement>(null);
   const owner = role === "owner";
   const admin = !owner && operatorRole === "ADMIN";
+  const isModerator = operatorRole === "MODERATOR";
   const subject = authScopedQuerySubject(owner ? "OWNER" : operatorRole ?? "operator");
   const client = useQueryClient();
   const [view, setView] = useState<"global" | "legacy" | "sync">("global");
@@ -268,7 +270,6 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   };
   const openRecipe = (id: string) => {
     if (owner) { void router.push(PATH_CUSTOMER.MENU_RECIPE(id)); return; }
-    if (operatorRole === "MODERATOR") { void router.push(PATH_MODERATOR.MENU_RECIPE_DETAIL(id)); return; }
     setSelectedId(id);
     setOperatorScreen("detail");
     setMode("view");
@@ -371,9 +372,18 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
         {menus.data ? <>
           <DataTable rows={menus.data.content} rowKey={(item) => item.id} emptyMessage="Chưa có menu phù hợp." columns={[
-            { key: "name", header: "Tên menu", render: (item) => <strong>{item.name}</strong> },
+            { key: "name", header: "Tên menu", render: (item) => isModerator ? (
+              <TextActionButton disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>
+                {item.name}
+              </TextActionButton>
+            ) : <strong>{item.name}</strong> },
             { key: "date", header: "Ngày tạo", render: (item) => formatMenuDate(item.createdAt) },
-            { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>Mở menu</ButtonBar> },
+            ...(isModerator ? [] : [{
+              key: "action",
+              header: "",
+              align: "right" as const,
+              render: (item: { id: string; name: string }) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>Mở menu</ButtonBar>,
+            }]),
           ]} />
           {pagination(menus.data.page, !menus.data.last, (page) => { setMenuPage(page); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }, "Danh sách menu")}
         </> : null}
@@ -392,9 +402,16 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         {recipes.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(recipes.error)}</p><ButtonBar onClick={() => void recipes.refetch()}>Thử lại</ButtonBar></div> : null}
         {recipes.data ? <>
           <DataTable rows={recipes.data.items} rowKey={(item) => item.id} emptyMessage="Chưa có món nào phù hợp." columns={[
-            { key: "name", header: "Tên món", render: (item) => <strong>{item.name}</strong> },
+            { key: "name", header: "Tên món", render: (item) => isModerator && !busy ? (
+              <TextLinkButton href={PATH_MODERATOR.MENU_RECIPE_DETAIL(item.id)}>{item.name}</TextLinkButton>
+            ) : <strong>{item.name}</strong> },
             { key: "version", header: "Phiên bản", render: (item) => "v" + item.revision },
-            { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel disabled={busy} aria-label={"Xem chi tiết " + item.name} onClick={() => openRecipe(item.id)}>Xem chi tiết</ButtonBar> },
+            ...(isModerator ? [] : [{
+              key: "action",
+              header: "",
+              align: "right" as const,
+              render: (item: { id: string; name: string }) => <ButtonBar rollingLabel disabled={busy} aria-label={"Xem chi tiết " + item.name} onClick={() => openRecipe(item.id)}>Xem chi tiết</ButtonBar>,
+            }]),
           ]} />
           {pagination(recipes.data.page, recipes.data.hasNext, (page) => { setRecipePage(page); setSelectedId(""); setMode("view"); setDeleteTarget(null); }, "Danh sách công thức")}
         </> : null}
