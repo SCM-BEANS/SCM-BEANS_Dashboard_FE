@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useState, type FormEvent } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -89,7 +90,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
         titleId="technician-maintenance-ticket-title"
         className={styles.pageHeading}
       />
-      {ticket?.repairCaseId ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Mở hồ sơ sửa chữa</ButtonBar> : null}
+      {ticket?.repairCaseId ? <TextLinkButton href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Hồ sơ sửa chữa</TextLinkButton> : null}
       </div>
       {!validId ? <p className={styles.notice} role="alert">Mã ticket bảo trì không hợp lệ.</p> : null}
       {validId && ticketQuery.isPending ? <p className={styles.notice} role="status">Đang tải ticket…</p> : null}

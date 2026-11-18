@@ -1,16 +1,28 @@
-.link:link,
-.link:visited {
+.link.link {
   color: #302927;
   font-weight: 700;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 38%, transparent);
+  text-underline-offset: 3px;
 }
 
-.link:hover {
-  color: #302927;
-  text-decoration: none;
+button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.link.link:hover,
+.link.link:focus-visible {
+  color: var(--color-primary, #b81724);
+  text-decoration-color: currentColor;
 }
 
 .link:focus-visible {
   outline: 2px solid #302927;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }

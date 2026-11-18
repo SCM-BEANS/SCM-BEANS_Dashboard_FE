@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -23,7 +24,7 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
       {workflow.orders.data?.items.length ? (
         <DataTable rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
           { key: "order", header: "Đơn hàng", render: (order) => <>
-            <strong className={styles.orderCustomer}>Đơn {order.id.slice(0, 8).toUpperCase()}</strong>
+            <TextLinkButton onClick={() => onOpenOrder(order.id)}>Đơn {order.id.slice(0, 8).toUpperCase()}</TextLinkButton>
             <span className={styles.orderQuantity}>{formatCoffeePackageDateTime(order.createdAt)}</span>
           </> },
           { key: "package", header: "Gói cà phê", render: (order) => <>
@@ -32,7 +33,6 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
           </> },
           { key: "amount", header: "Thành tiền", align: "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
           { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge> },
-          { key: "actions", header: "Thao tác", render: (order) => <ButtonBar rollingLabel type="button" onClick={() => onOpenOrder(order.id)}>Xem đơn</ButtonBar> },
         ]} />
       ) : null}
 

@@ -226,7 +226,7 @@ test.describe("machine operational overview cross-role presentation", () => {
         await expect(page).toHaveURL(new RegExp(`${role.operationsPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
         await expect(page.locator("#machine-operational-overview-title")).toBeVisible();
         if (role.claim === "owner") await expect(page.getByText("18", { exact: true }).first()).toBeVisible();
-        else await expect(page.getByRole("heading", { name: role.claim === "admin" ? "Kết nối & sức khỏe máy" : "Rà soát mất kết nối", exact: true })).toBeVisible();
+        else await expect(page.getByRole("heading", { name: role.claim === "admin" ? "Kết nối & thông số thiết bị" : "Rà soát mất kết nối", exact: true })).toBeVisible();
         await expectNoHorizontalOverflow(page, width, `${role.label} operational overview`);
 
         const backToMachine = page.locator(`a[href="${role.detailPath}"]`).last();
@@ -243,7 +243,7 @@ test.describe("machine operational overview cross-role presentation", () => {
       } else if (role.claim === "moderator") {
         expect(requests.some((request) => request.includes("/heartbeats/latest"))).toBe(false);
         await page.goto(`${role.operationsPath}?tab=connection`);
-        await expect(page.getByRole("heading", { name: "Kết nối & sức khỏe máy", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Kết nối & thông số thiết bị", exact: true })).toBeVisible();
         await expect.poll(() => requests.some((request) => request.includes("/heartbeats/latest"))).toBe(true);
       }
       const heartbeatRequested = requests.some((request) => request.includes("/heartbeats/latest"));
@@ -503,7 +503,7 @@ test.describe("Offline review role workflow", () => {
     await expect(panel.locator('[name="reason"]')).toHaveCount(0);
     await panel.getByLabel("Trạng thái rà soát").selectOption("REVIEW_REQUIRED");
     await expect(page).toHaveURL(/reviewStatus=REVIEW_REQUIRED/);
-    await panel.getByRole("button", { name: "Xem hồ sơ" }).click();
+    await panel.getByRole("button", { name: "08:30:00 06/11/2026", exact: true }).click();
     await page.reload();
     await expect(panel.getByRole("heading", { name: "Chi tiết rà soát" })).toBeVisible();
     expect(new URL(page.url()).searchParams.get("keep")).toBe("existing");
@@ -911,7 +911,7 @@ test.describe("Machine provisioning Phase 01", () => {
     const requests: string[] = [];
     await installMockApi(page, roleCases[1], requests);
     await page.goto(roleCases[1].operationsPath);
-    await expect(page.getByRole("heading", { name: "Kết nối & sức khỏe máy", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kết nối & thông số thiết bị", exact: true })).toBeVisible();
     expect(requests.some((path) => path.includes("/cleaning-compliance"))).toBe(false);
     await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
     const panel = page.getByRole("region", { name: "Tuân thủ vệ sinh", exact: true });

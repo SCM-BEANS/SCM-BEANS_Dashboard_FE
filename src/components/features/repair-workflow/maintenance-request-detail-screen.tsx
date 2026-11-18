@@ -236,7 +236,7 @@ export function MaintenanceRequestDetailScreen({
             <div><dt>Cập nhật</dt><dd>{formatDate(request.updatedAt ?? request.createdAt)}</dd></div>
           </dl>
           {request.requestType === "REPAIR" && request.status === "TRIAGED" && !request.technicianId && <ButtonBar href={listHref + "/requests/" + request.id + "/assign"}>Phân công xử lý</ButtonBar>}
-          {ticketQuery.data?.repairCaseId && <ButtonBar href={caseDetailHref(ticketQuery.data.repairCaseId)} rollingLabel>Mở hồ sơ sửa chữa</ButtonBar>}
+          {ticketQuery.data?.repairCaseId && <TextLinkButton href={caseDetailHref(ticketQuery.data.repairCaseId)}>Hồ sơ sửa chữa</TextLinkButton>}
         </aside>
       </div>}
 

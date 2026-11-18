@@ -39,7 +39,7 @@ test("opening unread records marks them read and exposes only evidence-backed pr
   expect(api.writes).toHaveLength(0);
   await drawer.getByRole("button", { name: /Thông báo mới 2/ }).click();
   await expect(drawer.getByText("2 chưa đọc", { exact: true })).toBeVisible();
-  await expect(drawer.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000009");
+  await expect(drawer.getByRole("link", { name: "Thông báo mới 2", exact: true })).toHaveAttribute("href", "/admin/contracts?view=detail&id=00000000-0000-4000-8000-000000000009");
   expect(api.writes).toHaveLength(1);
   await drawer.getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true }).click();
   await expect(drawer.getByText("1 chưa đọc", { exact: true })).toBeVisible();
@@ -48,7 +48,7 @@ test("opening unread records marks them read and exposes only evidence-backed pr
   await expect(drawer.getByRole("img", { name: "Chưa đọc", exact: true })).toHaveCount(1);
   await drawer.getByRole("button", { name: /chưa gửi được vị trí GPS/ }).click();
   await expect(drawer.getByText("0 chưa đọc", { exact: true })).toBeVisible();
-  await expect(drawer.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/admin/machines/00000000-0000-4000-8000-000000000001");
+  await expect(drawer.getByRole("link", { name: /chưa gửi được vị trí GPS/ })).toHaveAttribute("href", "/admin/machines/00000000-0000-4000-8000-000000000001");
   expect(api.writes).toHaveLength(3);
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);

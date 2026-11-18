@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellOff, CheckCheck, Settings, X } from "lucide-react";
 import Link from "next/link";
-import { ButtonBar } from "@/components/button/button-bar";
 import { notificationsApi } from "@/apis/notifications.api";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -94,7 +94,7 @@ export function NotificationBell({ scope, viewAllHref, settingsHref, logout }: N
         {markOne.isError || markAll.isError ? <p className={styles.error} role="alert">Chưa cập nhật được trạng thái. {markAll.isError ? markAll.error.message : getApiErrorMessage(markOne.error)}</p> : null}
         {list.isPending ? <p className={styles.empty} role="status">Đang tải thông báo…</p> : list.isError ? <div className={styles.empty} role="alert"><p>Chưa tải được thông báo.</p><button type="button" onClick={() => void list.refetch()}>Thử lại</button></div> : !filtered.length ? <div className={styles.empty}><Bell size={32} aria-hidden="true" /><strong>Không có thông báo</strong><p>Bạn đã xem hết thông báo trong mục này.</p></div> : filtered.map((item) => <article key={item.id} className={styles.feedItem} data-expanded={expanded === item.id}>
           <button className={styles.openItem} type="button" aria-expanded={expanded === item.id} onClick={() => { setExpanded(expanded === item.id ? null : item.id); if (!item.read && !busy) markOne.mutate(item.id); }}><NotificationTypeIcon label={item.typeLabel} /><span className={styles.itemBody}><span className={styles.itemMeta}><span>{item.typeLabel}</span><time dateTime={item.createdAt ?? undefined}>{formatNotificationDate(item.createdAt)}</time></span><strong>{item.title}</strong><span className={styles.message}>{item.message}</span></span><span className={styles.readDot} data-unread={!item.read} role="img" aria-label={item.read ? "Đã đọc" : "Chưa đọc"} /></button>
-          {expanded === item.id && item.recordHref ? <ButtonBar href={item.recordHref} rollingLabel>Mở hồ sơ</ButtonBar> : null}
+          {expanded === item.id && item.recordHref ? <TextLinkButton href={item.recordHref}>{item.title}</TextLinkButton> : null}
         </article>)}
         {list.isSuccess && filtered.length ? <p className={styles.end}>Đã hiển thị {filtered.length} thông báo</p> : null}
       </div>

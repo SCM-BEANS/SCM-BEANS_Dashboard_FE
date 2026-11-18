@@ -362,12 +362,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                 <DataTable
                   rows={pageMachines}
                   rowKey={(machine) => machine.id}
-                  rowProps={(machine) => ({
-                    ...(machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}),
-                    tabIndex: 0,
-                    onClick: (event) => { if (!(event.target as HTMLElement).closest("a,button")) void router.push(PATH_CUSTOMER.MACHINE_DETAIL(machine.id)); },
-                    onKeyDown: (event) => { if (event.key === "Enter" && event.target === event.currentTarget) void router.push(PATH_CUSTOMER.MACHINE_DETAIL(machine.id)); },
-                  })}
+                  rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
                   columns={[
                     { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? messages.MACHINE_NO_SERIAL}</Link> },
                     { key: "type", header: messages.FIELD_MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Thông thường" : "—" },
@@ -380,7 +375,6 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                       return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
                     } },
                     { key: "cleaning", header: "Vệ sinh trong ngày", render: (machine) => machine.machineType !== "SMART_IOT" ? <span className={machineStyles.muted}>Không áp dụng</span> : <div className={styles.ownerCleaningCell}>{([["startup", "Đầu ngày"], ["closing", "Cuối ngày"]] as const).map(([period, label]) => { const value = cleaningLabel(machine.id, period); return <div key={period}><span>{label}</span><span className={styles.ownerCleaningState} data-complete={value === "Hoàn tất"} title={value}><i aria-hidden="true" />{value}</span></div>; })}</div> },
-                    { key: "open", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>Mở hồ sơ</ButtonBar> },
                   ]}
                 />
               </div>}

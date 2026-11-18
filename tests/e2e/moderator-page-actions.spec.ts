@@ -159,7 +159,7 @@ test("selected offline review exposes its decision in the dock", async ({ page }
   await page.goto("/moderator/iot");
   await expect(pageActionBar(page)).toBeHidden();
   await page.getByRole("button", { name: "Mất kết nối" }).click();
-  await page.getByRole("button", { name: "Xem hồ sơ" }).click();
+  await page.getByRole("button", { name: "08:30:00 06/11/2026", exact: true }).click();
   const action = pageActionBar(page).locator('[data-action-id="offline-review-decide"]');
   await expect(action).toBeDisabled();
   await page.getByLabel("Lý do rà soát").fill("Kiểm tra kết nối");

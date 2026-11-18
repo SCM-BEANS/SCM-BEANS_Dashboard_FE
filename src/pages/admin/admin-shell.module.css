@@ -391,9 +391,9 @@
 .userSectionHeading { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }
 .userSectionHeading h2 { margin: 0; }
 .userSectionHeading > span { color: #675b57; font-size: 13px; }
-.userIdentityCell { display: flex; gap: 12px; align-items: center; min-width: 240px; }
+.userIdentityCell { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .userIdentityCell > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.userIdentityCell strong { color: #302927; font-size: 14px; }
+.userIdentityCell > div > a { align-self: flex-start; font-size: 14px; }
 .userIdentityCell > div > span { color: #675b57; font-size: 13px; overflow-wrap: anywhere; }
 .userAvatar { display: inline-flex; flex: 0 0 36px; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 50%; background: #faeded; color: color-mix(in srgb, var(--color-primary) 87%, black); font-size: 13px; font-weight: 600; }
 .userStatus { display: inline-flex; align-items: center; gap: 7px; color: #514843; font: inherit; font-size: 14px; white-space: nowrap; }

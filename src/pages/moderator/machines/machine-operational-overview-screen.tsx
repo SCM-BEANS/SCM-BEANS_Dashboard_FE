@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { telemetryApi } from "@/apis/telemetry.api";
+import { MachineHealthPanel } from "@/components/machines/machine-health-panel";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
@@ -15,7 +16,7 @@ import { PATH_MODERATOR } from "@/routes/path";
 import { moderatorStyles } from "../moderator-shell";
 import styles from "@/components/machines/machines.module.css";
 
-const tabs = [{ value: "production", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Kết nối" }, { value: "cleaning", label: "Vệ sinh" }, { value: "reviews", label: "Mất kết nối" }];
+const tabs = [{ value: "production", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Kết nối" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }, { value: "reviews", label: "Mất kết nối" }];
 export function ModeratorMachineOperationalOverviewScreen({ machineId }: { machineId: string }) {
   const router = useRouter(), subject = authScopedQuerySubject("MODERATOR");
   const visible = usePageVisibility();
@@ -38,12 +39,15 @@ export function ModeratorMachineOperationalOverviewScreen({ machineId }: { machi
   const reviews = useQuery({ queryKey: ["offline-reviews", subject, state?.params], queryFn: ({ signal }) => offlineViolationReviewsApi.listPage(state!.params, signal), enabled, retry: false });
   const detail = useQuery({ queryKey: ["offline-review", subject, state?.reviewId, machineId], queryFn: ({ signal }) => offlineViolationReviewsApi.getById(state!.reviewId!, signal, { machineId }), enabled: enabled && Boolean(state?.reviewId), retry: false });
   return <div className={moderatorStyles.pageContent}><div className={styles.operationalOverview}>
-    <MachineMonitoringHeader machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_MODERATOR.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={validTab ? tab : ""} onTabChange={(tab) => navigate({ tab, recordPage: undefined })} idPrefix="moderator-monitoring" />
+    <MachineMonitoringHeader machineLabel={machine.data?.serialNumber ?? undefined} backHref={router.query.from === "priority" ? `${PATH_MODERATOR.IOT}?view=priority` : PATH_MODERATOR.MACHINE_DETAIL(machineId)} backLabel={router.query.from === "priority" ? "Về danh sách ưu tiên" : undefined} tabs={tabs} activeTab={validTab ? tab : ""} onTabChange={(tab) => navigate({ tab, recordPage: undefined })} idPrefix="moderator-monitoring" />
     {router.isReady && !MachineIdSchema.safeParse(machineId).success ? <p role="alert">Mã máy không hợp lệ.</p> : null}
     {ready && machine.isPending ? <p role="status">Đang tải hồ sơ máy…</p> : null}
     {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
     {!validTab || tab === "reviews" && !state ? <p role="alert">Bộ lọc rà soát không hợp lệ. <ButtonBar onClick={() => navigate({ tab: undefined, reviewId: undefined, reviewPage: undefined, reviewStatus: undefined })}>Đặt lại bộ lọc</ButtonBar></p> : machine.isSuccess ? <div id="moderator-monitoring-content" className={styles.monitoringContent} role="tabpanel" aria-labelledby={`moderator-monitoring-tab-${tab}`}>
-      {tab === "production" || tab === "history" || tab === "cleaning" ? <MachineRecordsSection key={`${subject}:${machineId}:${tab}`} subject={subject} machineId={machineId} kind={tab} query={router.query} onNavigate={navigate} /> : tab === "connection" ? smart ? <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} /> : <p className={styles.monitoringEmpty}>Máy này chưa được xác nhận là Smart IoT để xem dữ liệu kết nối.</p> : state ? <>
+      {tab === "health" ? smart
+        ? <MachineHealthPanel key={machineId} machineId={machineId} subject={subject} onOpenCleaning={() => navigate({ tab: "cleaning" })} />
+        : <p className={styles.monitoringEmpty}>Đánh giá sức khỏe chỉ có cho máy Smart IoT.</p> : null}
+      {tab === "health" ? null : tab === "production" || tab === "history" || tab === "cleaning" ? <MachineRecordsSection key={`${subject}:${machineId}:${tab}`} subject={subject} machineId={machineId} kind={tab} query={router.query} onNavigate={navigate} /> : tab === "connection" ? smart ? <MachineHeartbeatPanel title="Kết nối & thông số thiết bị" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} /> : <p className={styles.monitoringEmpty}>Máy này chưa được xác nhận là Smart IoT để xem dữ liệu kết nối.</p> : state ? <>
       {machine.data.machineType === "SMART_IOT" ? <OfflineReviewPanel key={machineId} showDateFilter selectedId={state?.reviewId} page={reviews.data} detail={detail.data} status={state.params.status ?? ""} machineId={machineId} canDecide loading={enabled && reviews.isPending} detailLoading={Boolean(state.reviewId) && detail.isPending} error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={detail.isError ? getApiErrorMessage(detail.error) : undefined} onFilterChange={(status) => navigate({ reviewStatus: status, reviewPage: undefined, reviewId: undefined })} onPageChange={(page) => navigate({ reviewPage: String(page), reviewId: undefined })} onSelect={(reviewId) => navigate({ reviewId })} onDecide={async (id, body, files) => { try { await offlineViolationReviewsApi.decideIfRequired(id, body, { machineId }, files); } catch (error) { throw new Error(error instanceof OfflineReviewWorkflowError ? error.message : getApiErrorMessage(error, "mutation")); } finally { await Promise.all([reviews.refetch(), detail.refetch()]); } }} /> : <p className={styles.monitoringEmpty}>Máy này chưa được xác nhận là Smart IoT để xem hồ sơ mất kết nối.</p>}
       </> : null}
     </div> : null}

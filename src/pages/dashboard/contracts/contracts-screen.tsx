@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
@@ -177,7 +178,6 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
       header: messages.FIELD_STATUS,
       render: (contract) => <span className={styles.contractStatus} data-status={contract.status}><i aria-hidden="true" />{contractStatusLabel(contract)}</span>,
     },
-    { key: "action", header: "", render: (contract) => <ButtonBar href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
   ];
 
   return (
@@ -259,8 +259,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
               </section>
               {hasTerminationCase || (recallOrders.isError && detail.data.status === "ACTIVE") ? (
                 <section className={styles.dataPanel} aria-labelledby="owner-termination-link-title">
-                  <h2 id="owner-termination-link-title">Hồ sơ chấm dứt hợp đồng</h2>
-                  <ButtonBar rollingLabel href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Mở hồ sơ chấm dứt</ButtonBar>
+                  <h2 id="owner-termination-link-title"><TextLinkButton href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Hồ sơ chấm dứt hợp đồng</TextLinkButton></h2>
                 </section>
               ) : null}
             </div>

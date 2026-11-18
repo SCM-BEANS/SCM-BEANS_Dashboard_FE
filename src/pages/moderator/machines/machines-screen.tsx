@@ -201,7 +201,6 @@ function MachineList({
             const result = heartbeats[smartMachines.findIndex((item) => item.id === machine.id)];
             return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />;
           } },
-          { key: "open", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>Mở hồ sơ</ButtonBar> },
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
@@ -392,20 +391,10 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                 rows={machineModels.data.slice(currentModelPage * 10, currentModelPage * 10 + 10)}
                 rowKey={(model) => model.id}
                 columns={[
-                  { key: "model-code", header: ADMIN_T.MACHINE_MODELS.MODEL_CODE, align: "center", render: (model) => (
-                    <button
-                      className={adminStyles.accountTextButton}
-                      type="button"
-                      aria-label={`Xem chi tiết mẫu máy ${model.modelCode}`}
-                      onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id))}
-                    >
-                      {model.modelCode}
-                    </button>
-                  ) },
+                  { key: "model-code", header: ADMIN_T.MACHINE_MODELS.MODEL_CODE, render: (model) => model.modelCode },
                   { key: "manufacturer", header: ADMIN_T.MACHINE_MODELS.MANUFACTURER, render: (model) => model.manufacturer },
-                  { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => model.displayName },
+                  { key: "display-name", header: ADMIN_T.MACHINE_MODELS.DISPLAY_NAME, render: (model) => <TextLinkButton href={PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id)}>{model.displayName || model.modelCode}</TextLinkButton> },
                   { key: "machine-type", header: ADMIN_T.MACHINES.MACHINE_TYPE, render: (model) => model.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL },
-                  { key: "open", header: "", render: (model) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id)}>Mở hồ sơ</ButtonBar> },
                 ]}
               />
               <nav className={adminStyles.machinePagination} aria-label="Phân trang mẫu máy"><ButtonBar disabled={currentModelPage === 0} onClick={() => setModelPage(currentModelPage - 1)}>Trước</ButtonBar><span>Trang {currentModelPage + 1}</span><ButtonBar disabled={(currentModelPage + 1) * 10 >= machineModels.data.length} onClick={() => setModelPage(currentModelPage + 1)}>Sau</ButtonBar></nav>

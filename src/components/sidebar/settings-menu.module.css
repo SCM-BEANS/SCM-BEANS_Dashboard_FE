@@ -73,6 +73,8 @@
   left: 0;
 }
 
+.compactMenu { right: auto; min-width: 180px; }
+
 .menuItem {
   display: flex;
   min-height: 40px;

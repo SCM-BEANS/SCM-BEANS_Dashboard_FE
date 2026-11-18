@@ -1,4 +1,5 @@
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRef, useState } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -66,10 +67,9 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
       <DataTable rows={filteredItems ?? []} rowKey={(row) => row.id} emptyMessage={dateFilter.fromDate || dateFilter.toDate ? "Không có hồ sơ phù hợp trên trang đang xem." : "Chưa có hồ sơ rà soát trong phạm vi đã chọn."} columns={[
         ...(!machineId ? [{ key: "machine", header: "Máy", render: (row: OfflineViolationReview) => <span title={row.machineId}>{machineLabels?.[row.machineId] ?? row.machineId.slice(0, 8).toUpperCase()}</span> }] : []),
-        { key: "time", header: "Thời điểm phát hiện", render: (row) => formatTime(row.detectedAt) },
+        { key: "time", header: "Thời điểm phát hiện", render: (row) => <TextLinkButton onClick={() => onSelect(row.id)}>{formatTime(row.detectedAt)}</TextLinkButton> },
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
         { key: "status", header: "Trạng thái", render: (row) => <span className={styles.offlineReviewStatus} data-status={row.status}>{labels[row.status]}</span> },
-        { key: "open", header: "Chi tiết", render: (row) => <ButtonBar rollingLabel onClick={() => onSelect(row.id)}>Xem hồ sơ</ButtonBar> },
       ]} />
       <div className={styles.offlineReviewPagination}><ButtonBar disabled={page.page === 0 || loading} onClick={() => onPageChange(page.page - 1)}>Trang trước</ButtonBar><span>Trang {page.page + 1}</span><ButtonBar disabled={!page.hasNext || loading} onClick={() => onPageChange(page.page + 1)}>Trang sau</ButtonBar></div>
     </> : null}

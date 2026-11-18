@@ -579,7 +579,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "TECHNICIAN", adminId);
   await page.goto("/technician/tasks/buyback-assessment");
-  await page.getByRole("link", { name: "Mở hồ sơ", exact: true }).click();
+  await page.getByRole("table").locator(`a[href="/technician/tasks/buyback-assessment/${caseId}"]`).click();
   await expect(page.getByText("Hồ sơ chưa được giao tân trang cho tài khoản Technician hiện tại.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Tân trang", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Bắt đầu tân trang" })).toHaveCount(0);
@@ -598,7 +598,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await setRole(page, "TECHNICIAN", adminId);
   await page.goto("/technician/tasks/buyback-assessment");
   await expect(page.getByRole("link", { name: "Tiếp tục tân trang", exact: true })).toHaveCount(0);
-  await page.getByRole("link", { name: "Mở hồ sơ", exact: true }).click();
+  await page.getByRole("table").locator(`a[href="/technician/tasks/buyback-assessment/${caseId}"]`).click();
   await expect(page.getByText("Chỉ Technician được giao tân trang mới có thể ghi kết quả cho hồ sơ này.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Hoàn tất tân trang" })).toHaveCount(0);
 
@@ -662,7 +662,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "TECHNICIAN", technicianId);
   await page.goto("/technician/tasks/buyback-assessment");
-  await page.getByRole("link", { name: "Mở hồ sơ", exact: true }).click();
+  await page.getByRole("table").locator(`a[href="/technician/tasks/buyback-assessment/${caseId}"]`).click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
   await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
 

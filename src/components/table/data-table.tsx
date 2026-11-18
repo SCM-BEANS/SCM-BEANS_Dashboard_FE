@@ -32,9 +32,7 @@ type DataTableChildrenProps = {
   rowKey?: never;
 };
 
-type DataTableProps<Row> = (DataTableRowsProps<Row> | DataTableChildrenProps) & {
-  equalColumns?: boolean;
-};
+type DataTableProps<Row> = DataTableRowsProps<Row> | DataTableChildrenProps;
 
 export function DataTable<Row>(props: DataTableProps<Row>) {
   const isRowsTable = "rows" in props && props.rows !== undefined;
@@ -63,7 +61,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
 
   return (
     <div className={styles.container}>
-      <table className={props.equalColumns ? `${styles.table} ${styles.equalColumns}` : styles.table}>
+      <table className={styles.table}>
         <thead>
           <tr>
             {headers.map((header) => (

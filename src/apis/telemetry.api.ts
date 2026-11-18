@@ -2,6 +2,8 @@ import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import { MachineIdSchema } from "@/schema/machines.schema";
 import {
   MachineHeartbeatSchema,
+  MachineHealthSchema,
+  MachineMaintenancePriorityQueueSchema,
   TelemetryPointListSchema,
   TelemetryPointsParamsSchema,
 } from "@/schema/telemetry.schema";
@@ -25,6 +27,23 @@ export class HeartbeatMachineMismatchError extends Error {
 const machinePath = (id: string) => encodeURIComponent(MachineIdSchema.parse(id));
 
 export const telemetryApi = {
+  async getMachineHealth(id: string, signal?: AbortSignal) {
+    const machineId = MachineIdSchema.parse(id);
+    const response = await axiosClient.get<unknown>(
+      `/telemetry-query/machines/${machinePath(machineId)}/health`,
+      { baseURL: DOLORES_API_BASE_URL, signal },
+    );
+    const health = MachineHealthSchema.parse(response.data);
+    if (health.machineId !== machineId) throw new TelemetryMachineMismatchError();
+    return health;
+  },
+  async getMaintenancePriorityQueue(signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>(
+      "/telemetry-query/machines/priority-queue",
+      { baseURL: DOLORES_API_BASE_URL, signal },
+    );
+    return MachineMaintenancePriorityQueueSchema.parse(response.data);
+  },
   async getLatestHeartbeat(id: string, signal?: AbortSignal) {
     const machineId = MachineIdSchema.parse(id);
     const response = await axiosClient.get<unknown>(

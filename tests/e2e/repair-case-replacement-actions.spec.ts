@@ -85,7 +85,7 @@ test("owner opens a support request and can see the current acknowledgement step
   await page.getByRole("link", { name: "Xem yêu cầu" }).click();
   await expect(page.getByText(request.issueDescription)).toBeVisible();
   await page.reload();
-  await page.getByRole("link", { name: "Mở hồ sơ sửa chữa" }).click();
+  await page.getByRole("link", { name: "Hồ sơ sửa chữa", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Nội dung xác nhận bàn giao" })).toBeVisible();
 });
 

@@ -8,6 +8,44 @@
   background: linear-gradient(180deg, #fff 0%, #fff 70%, #fdf6f6 100%);
 }
 
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.collapseButton {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #706561;
+  cursor: pointer;
+}
+
+.collapseButton:hover { background: #f7f5f3; }
+
+.sidebar[data-collapsed="true"] {
+  width: 68px;
+  flex-basis: 68px;
+}
+
+.sidebar[data-collapsed="true"] .brand,
+.sidebar[data-collapsed="true"] .roleLabel,
+.sidebar[data-collapsed="true"] .navItem > span {
+  display: none;
+}
+
+.sidebar[data-collapsed="true"] .brandRow { margin-bottom: 12px; }
+.sidebar[data-collapsed="true"] .navItem { justify-content: center; padding: 0; }
+.sidebar[data-collapsed="true"] .logoutButton { justify-content: center; padding: 0; }
+.sidebar[data-collapsed="true"] .logoutButton > span { display: none; }
+
 .brand {
   padding: 0 8px;
   color: #b81724 !important;
@@ -34,9 +72,11 @@
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #e2d8d3 transparent;
+  min-height: 0;
+  scrollbar-width: none;
 }
+
+.sidebarNav::-webkit-scrollbar { display: none; }
 
 .navItem {
   display: flex;
@@ -44,6 +84,7 @@
   min-height: 44px;
   flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   padding: 0 15px;
   border-radius: 12px;
@@ -51,6 +92,8 @@
   color: #706561 !important;
   font-size: 14px;
 }
+
+.navItem > svg { flex: none; }
 
 .navItem:not(.navItemDisabled):hover {
   background: #f7f5f3;

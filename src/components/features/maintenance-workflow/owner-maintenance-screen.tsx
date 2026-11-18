@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { machinesApi } from "@/apis/machines.api";
@@ -134,7 +135,7 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
                   <div className={repairStyles.detailItem}><dt>Ngày gửi</dt><dd>{formatDateTime(repairRequest.createdAt ?? repairRequest.reportedAt)}</dd></div>
                   <div className={repairStyles.detailItem}><dt>Cập nhật</dt><dd>{formatDateTime(repairRequest.updatedAt)}</dd></div>
                 </dl>
-                {caseReference.data && <ButtonBar rollingLabel href={PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseReference.data.id)}>Mở hồ sơ sửa chữa</ButtonBar>}
+                {caseReference.data && <TextLinkButton href={PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL(caseReference.data.id)}>Hồ sơ sửa chữa</TextLinkButton>}
                 {caseReference.isError && <ButtonBar onClick={() => void caseReference.refetch()}>Tải lại hồ sơ liên quan</ButtonBar>}
               </aside>
             </div>

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
 import { adminUsersApi } from "@/apis/admin-users.api";
@@ -149,7 +150,7 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
                   rowKey={(entry) => entry.id}
                   columns={[
                     { key: "name", header: "Tài khoản", render: (entry) => (
-                      <div className={styles.userIdentityCell}><span className={styles.userAvatar} aria-hidden="true">{entry.name.trim().split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase() || "?"}</span><div><strong>{entry.name || "Chưa có họ tên"}</strong><span>{entry.email}</span></div></div>
+                      <div className={styles.userIdentityCell}><span className={styles.userAvatar} aria-hidden="true">{entry.name.trim().split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase() || "?"}</span><div><TextLinkButton href={userDetailHref(entry.id, router.query)}>{entry.name || entry.email}</TextLinkButton><span>{entry.email}</span></div></div>
                     ) },
                     { key: "role", header: T.FORM.ROLE, render: (entry) => {
                       const role = getAdminUserRole(entry);
@@ -158,7 +159,6 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
                     { key: "status", header: T.FORM.STATUS, render: (entry) => (
                       <span className={styles.userStatus} data-status={entry.status}>{entry.status === "ACTIVE" ? T.COMMON.ACTIVE : T.COMMON.DISABLED}</span>
                     ) },
-                    { key: "action", header: "", render: (entry) => <ButtonBar rollingLabel href={userDetailHref(entry.id, router.query)} aria-label={`Mở hồ sơ ${entry.name || entry.email}`}>Mở hồ sơ</ButtonBar> },
                   ]}
                 />
                 <div className={styles.accountPagination}>

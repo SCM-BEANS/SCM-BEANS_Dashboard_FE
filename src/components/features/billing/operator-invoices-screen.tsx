@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import Link from "next/link";
@@ -247,7 +248,7 @@ function InvoiceList({
           rows={query.data.items}
           rowKey={(invoice) => invoice.id}
           columns={[
-            { key: "invoice", header: "Hóa đơn", render: (invoice) => <div className={styles.invoiceIdentity}><strong title={invoice.id}>{invoice.id.slice(0, 8).toUpperCase()}</strong><small>{messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type}</small></div> },
+            { key: "invoice", header: "Hóa đơn", render: (invoice) => <div className={styles.invoiceIdentity}><TextLinkButton title={invoice.id} href={role === "owner" ? `${PATH_CUSTOMER.INVOICE_DETAIL(invoice.id)}${router.asPath?.split("?")[0].endsWith("/refund") ? "?tab=refund" : ""}` : role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>{invoice.id.slice(0, 8).toUpperCase()}</TextLinkButton><small>{messages.INVOICE_TYPES[invoice.type as keyof typeof messages.INVOICE_TYPES] ?? invoice.type}</small></div> },
             ...(role !== "owner" ? [{ key: "owner", header: "Khách hàng", render: (invoice: Invoice) => {
               const ownerId = invoice.ownerId ?? invoice.tenantId;
               const apiName = invoice.ownerName;
@@ -260,7 +261,6 @@ function InvoiceList({
             { key: "period", header: messages.PERIOD, render: (invoice) => periodText(invoice.period) },
             { key: "amount", header: "Số tiền", align: "right", render: (invoice) => <span className={styles.money}>{amountText(invoice.amount, invoice.currency)}</span> },
             { key: "status", header: messages.STATUS, render: (invoice) => <BillingStatus status={invoice.status} label={invoiceStatus(invoice.status)} /> },
-            { key: "action", header: "", render: (invoice) => <ButtonBar rollingLabel href={role === "owner" ? `${PATH_CUSTOMER.INVOICE_DETAIL(invoice.id)}${router.asPath?.split("?")[0].endsWith("/refund") ? "?tab=refund" : ""}` : role === "admin" ? PATH_ADMIN.INVOICE_DETAIL(invoice.id) : PATH_MODERATOR.INVOICE_DETAIL(invoice.id)}>Mở hồ sơ</ButtonBar> },
           ]}
         />
       )}
@@ -486,28 +486,26 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
             rows={proofs.data.items}
             rowKey={(proof) => proof.id}
             columns={[
-              { key: "file", header: messages.PROOF_FILENAME, render: (proof) => <span className={styles.proofFilename} title={proof.originalFilename}>{proof.originalFilename}</span> },
+              { key: "file", header: messages.PROOF_FILENAME, render: (proof) => <span className={styles.proofFilename} title={proof.originalFilename}>{role === "moderator" ? <TextLinkButton href={`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}?paymentProofId=${encodeURIComponent(proof.id)}&paymentProofPage=${proofPage}`}>{proof.originalFilename}</TextLinkButton> : proof.originalFilename}</span> },
               { key: "status", header: messages.STATUS, render: (proof) => <BillingStatus status={proof.status} label={messages.PROOF_STATUSES[proof.status]} /> },
               { key: "submitted", header: messages.SUBMITTED_AT, render: (proof) => <time className={styles.proofDate} dateTime={proof.submittedAt}>{dateText(proof.submittedAt)}<small>{new Date(proof.submittedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</small></time> },
               ...(role !== "admin" ? [{ key: "proof-amount", header: "Số tiền trên chứng từ", align: "right" as const, render: (proof: PaymentProof) => <span className={styles.money}>{proof.amount == null ? "Chưa có dữ liệu" : amountText(proof.amount, proof.currency ?? record.currency)}</span> }] : []),
-              {
+              ...(role !== "moderator" ? [{
                 key: "actions",
                 header: messages.PROOF_ACTIONS,
-                render: (proof) => (
+                render: (proof: PaymentProof) => (
                   <div className={styles.proofActions}>
-                    {role === "moderator" ? <ButtonBar rollingLabel href={`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}?paymentProofId=${encodeURIComponent(proof.id)}&paymentProofPage=${proofPage}`}>Mở hồ sơ</ButtonBar> : <>
-                      <ButtonBar type="button" onClick={() => setPreviewProof(proof)}>Xem chứng từ</ButtonBar>
-                      <ProgressDownloadButton filename={proof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
+                    <ButtonBar type="button" onClick={() => setPreviewProof(proof)}>Xem chứng từ</ButtonBar>
+                    <ProgressDownloadButton filename={proof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
                     {role !== "owner" && proof.status === "SUBMITTED" ? (
                       <>
                         <ButtonBar type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: true, reason: "" })}>{messages.APPROVE_PROOF}</ButtonBar>
                         <ButtonBar variant="danger" type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: false, reason: "" })}>{messages.REJECT_PROOF}</ButtonBar>
                       </>
                     ) : null}
-                    </>}
                   </div>
                 ),
-              },
+              }] : []),
             ]}
           />
         ) : null}
