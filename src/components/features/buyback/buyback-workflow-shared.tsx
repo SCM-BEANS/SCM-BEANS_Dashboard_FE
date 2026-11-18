@@ -54,6 +54,7 @@ export function BuybackWorkflowLayout({
 
 export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowController }) {
   const { list, showList, role, operatorRole, page, setPage } = workflow;
+  const isAdmin = role === "operator" && operatorRole === "ADMIN";
   const isWorkspace = role !== "technician";
   const ownerNames = useOwnerNames(role === "operator" ? list.data?.items.map((item) => item.ownerId) ?? [] : []);
   const [acceptanceCase, setAcceptanceCase] = useState<BuybackCaseSummaryType | null>(null);
@@ -318,7 +319,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     const renderOpen = openColumn.render;
     openColumn.render = (item, index) => <div className={styles.technicalRequestActions}>{renderOpen(item, index)}{acceptColumn.render(item, index)}</div>;
   }
-  if (role === "operator" && (operatorRole === "ADMIN" || operatorRole === "MODERATOR")) {
+  if (role === "operator" && operatorRole === "MODERATOR") {
     listColumns.push({
       key: "operator-actions",
       header: "Thao tác",
@@ -405,21 +406,35 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
     const renderMachine = machineColumn.render;
     machineColumn.render = (item, index) => <div className={adminStyles.identity}>
       <strong>{renderMachine(item, index)}</strong>
-      <span className={adminStyles.meta}>Hồ sơ <TruncatedId value={item.id} /> · {formatBuybackDateTime(item.updatedAt)}</span>
+      <span className={adminStyles.meta}>
+        {isAdmin ? null : <>Hồ sơ <TruncatedId value={item.id} /> · </>}
+        {formatBuybackDateTime(item.updatedAt)}
+      </span>
     </div>;
     listColumns.splice(0, 1);
-    if (role === "operator") listColumns.splice(1, 0, { key: "customer", header: "Khách hàng", render: (item) => ownerNames.data?.[item.ownerId] || <TruncatedId value={item.ownerId} /> });
-    listColumns.find((column) => column.key === "price")!.align = "right";
+    if (role === "operator") {
+      listColumns.splice(isAdmin ? 0 : 1, 0, {
+        key: "customer",
+        header: "Khách hàng",
+        render: (item) => {
+          const customer = ownerNames.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />;
+          return isAdmin ? <TextLinkButton href={caseDetailsHref(item.id)}>{customer}</TextLinkButton> : customer;
+        },
+      });
+    }
+    listColumns.find((column) => column.key === "price")!.align = isAdmin ? "left" : "right";
     const statusColumn = listColumns.find((column) => column.key === "status")!;
     statusColumn.render = (item) => <StatusBadge variant="dot" status={item.status}>{statusLabel(item)}</StatusBadge>;
     const updatedIndex = listColumns.findIndex((column) => column.key === "updated-at");
     listColumns.splice(updatedIndex, 1);
-    const actionColumn = listColumns.find((column) => column.key === (role === "owner" ? "owner-decision-actions" : "operator-actions"))!;
-    const renderActions = actionColumn.render;
-    actionColumn.render = (item, index) => <div className={adminStyles.rowActions}>
-      <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Xem hồ sơ</ButtonBar>
-      {renderActions(item, index)}
-    </div>;
+    if (!isAdmin) {
+      const actionColumn = listColumns.find((column) => column.key === (role === "owner" ? "owner-decision-actions" : "operator-actions"))!;
+      const renderActions = actionColumn.render;
+      actionColumn.render = (item, index) => <div className={adminStyles.rowActions}>
+        <ButtonBar rollingLabel href={caseDetailsHref(item.id)}>Xem hồ sơ</ButtonBar>
+        {renderActions(item, index)}
+      </div>;
+    }
   }
 
   return (
@@ -443,6 +458,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             selects={[{ id: "buyback-status", ariaLabel: "Trạng thái thu mua", value: workflow.listFilterDraft.status, onChange: (status) => workflow.setListFilterDraft((current) => ({ ...current, status: status as typeof current.status })), options: [{ value: "", label: "Tất cả trạng thái" }, ...Object.entries(buybackStatusLabels).map(([value, label]) => ({ value, label }))] }]}
             submitLabel="Tìm kiếm" onSubmit={(event) => { event.preventDefault(); workflow.applyListFilters(); }} /> : null}
           <DataTable
+            equalColumns={isAdmin}
             columns={listColumns}
             rows={list.data?.items ?? []}
             rowKey={(item) => item.id}

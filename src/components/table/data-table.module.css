@@ -12,6 +12,11 @@
   font-size: 14px;
 }
 
+.equalColumns {
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+
 .table th {
   padding: 12px 10px;
   background: #f7f5f3;

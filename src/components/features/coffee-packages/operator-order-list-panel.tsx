@@ -35,7 +35,7 @@ export function OperatorOrderListPanel({
       {workflow.orders.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.orders.error)}</p> : null}
       {!workflow.orders.isPending && !workflow.orders.isError && workflow.orders.data?.items.length === 0 ? <p className={styles.notice}>Chưa có đơn gói cà phê trong phạm vi này.</p> : null}
       {workflow.orders.data?.items.length ? (
-        <DataTable rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
+        <DataTable equalColumns={isAdmin} rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
           {
             key: "order",
             header: isAdmin ? "Khách hàng" : "Đơn hàng / khách hàng",
@@ -63,7 +63,7 @@ export function OperatorOrderListPanel({
             {order.packageName ?? order.packageCode ?? "—"}
             <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
           </> },
-          { key: "amount", header: "Thành tiền", align: "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
+          { key: "amount", header: "Thành tiền", align: isAdmin ? "left" : "right", render: (order) => formatCoffeePackageMoney(order.total ?? order.amount ?? (order.unitPrice != null && order.quantity != null ? order.unitPrice * order.quantity : null), order.currency ?? "VND") },
           { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{coffeePackageStatusLabel(order.status)}</StatusBadge> },
           ...(isAdmin ? [] : [{
             key: "actions",

@@ -1,5 +1,4 @@
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +10,7 @@ import { telemetryApi } from "@/apis/telemetry.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
@@ -268,7 +268,16 @@ function MachinesContent() {
                     rowKey={(machine) => machine.id}
                     rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
                     columns={[
-                      { key: "serial", header: T.MACHINES.SERIAL, align: "left", render: (machine) => <Link className={styles.machineInventoryLink} href={statusFilter === "ALL" ? PATH_ADMIN.MACHINE_DETAIL(machine.id) : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }} title={machine.serialNumber ?? machine.id}>{machine.serialNumber ?? "—"}</Link> },
+                      { key: "serial", header: T.MACHINES.SERIAL, align: "left", render: (machine) => (
+                        <TextLinkButton
+                          href={statusFilter === "ALL"
+                            ? PATH_ADMIN.MACHINE_DETAIL(machine.id)
+                            : { pathname: PATH_ADMIN.MACHINE_DETAIL(machine.id), query: { status: statusFilter } }}
+                          title={machine.serialNumber ?? machine.id}
+                        >
+                          {machine.serialNumber ?? "—"}
+                        </TextLinkButton>
+                      ) },
                       { key: "status", header: T.MACHINES.STATUS, align: "left", render: (machine) => machine.status ? <span className={styles.machinePlainStatus} data-status={machine.status}>{statusLabel(machine.status).replace("Đang triển khai · Owner hợp đồng", "Đang cho thuê").replace("Đang triển khai · Owner cửa hàng", "Đang sử dụng tại cửa hàng")}</span> : "—" },
                       { key: "connection", header: "Kết nối", align: "left", render: (machine) => {
                         if (machine.machineType !== "SMART_IOT") return "—";
@@ -277,7 +286,6 @@ function MachinesContent() {
                         return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
                       } },
                       { key: "contract-period", header: T.MACHINES.CONTRACT_PERIOD, align: "left", render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
-                      { key: "open", header: "", render: (machine) => <ButtonBar rollingLabel href={PATH_ADMIN.MACHINE_DETAIL(machine.id)}>Mở hồ sơ</ButtonBar> },
                     ]}
                   />
                 </div>

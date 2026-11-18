@@ -624,7 +624,9 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "ADMIN", adminId);
   await page.goto("/admin/buybacks");
-  await page.getByRole("link", { name: caseId }).click();
+  await page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })
+    .locator(`a[href="/admin/buybacks?caseId=${encodeURIComponent(caseId)}"]`)
+    .click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Chờ đăng ký máy" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng ký máy" })).toHaveCount(0);
 
@@ -666,7 +668,9 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "ADMIN", adminId);
   await page.goto("/admin/buybacks");
-  await page.getByRole("link", { name: caseId }).click();
+  await page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })
+    .locator(`a[href="/admin/buybacks?caseId=${encodeURIComponent(caseId)}"]`)
+    .click();
   await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
   await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
 
