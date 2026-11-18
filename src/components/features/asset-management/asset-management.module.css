@@ -1,10 +1,12 @@
+@reference "../../../styles/dashboard-tailadmin.css";
+
 .panel {
   min-width: 0;
   padding: 18px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .panel h2 {
@@ -15,7 +17,7 @@
 
 .description,
 .hint {
-  color: #706561;
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -35,29 +37,30 @@
   min-width: 0;
   flex-direction: column;
   gap: 6px;
-  color: #514843;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .field input,
 .field select {
+  box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
+
   padding: 9px 11px;
-  border: 1px solid #e2dad4;
-  border-radius: 8px;
-  background: #fff;
-  color: #302927;
+
+
+
+
   font: inherit;
   font-weight: 400;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .field input:focus-visible,
 .field select:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
+
+
+ @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
 
 .actions {
   display: flex;
@@ -70,18 +73,18 @@
 .notice {
   padding: 12px 14px;
   margin: 12px 0 0;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: #fdfbf9;
-  color: #514843;
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: 14px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .notice[role="alert"] {
-  border-color: #efc3c5;
-  background: #fff4f4;
+  border-color: var(--color-border);
+  background: var(--color-primary-soft);
   color: #8c1d26;
 }
 
@@ -111,23 +114,26 @@
 .locationsHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .locationsHeading h2 { margin: 0; }
 .locationsHeading > div { width: auto; margin-left: auto; }
-.locationsPanel { padding: 24px; border-radius: 16px; }
+.locationsPanel { padding: 24px; border-radius: var(--radius-panel); }
 .locationsPanel h2 { font-size: 20px; }
 .locationsPanel .formGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
 .locationsPanel :global(table) { min-width: 680px; width: 100%; }
 .locationsPanel :global(td) { vertical-align: middle; }
-.locationStatus { display: inline-flex; align-items: center; gap: 7px; color: #514843; font: inherit; white-space: nowrap; }
-.locationStatus::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #80756f; }
+.locationStatus { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text); font: inherit; white-space: nowrap; }
+.locationStatus::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #737373; }
 .locationStatus[data-status="ACTIVE"]::before { background: #32866b; }
 @media (max-width: 700px) { .locationsPanel { padding: 16px; } .locationsPanel .formGrid { grid-template-columns: minmax(0, 1fr); } }
 
 .registrationLayout[data-owner] { display:grid; grid-template-columns:minmax(0, 2fr) minmax(240px, 1fr); gap:24px; align-items:start; }
 .registrationLayout[data-owner] .formGrid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .registrationLayout[data-owner] .notice { grid-column:1 / -1; }
-.registrationSummary { padding:20px; border:1px solid #e9e2dc; border-radius:12px; margin-top:14px; }
+.registrationSummary { padding:20px; border:1px solid var(--color-border); border-radius:12px; margin-top:14px; }
 .registrationSummary h3 { margin:0 0 18px; font-size:18px; }
 .registrationSummary dl { display:grid; gap:18px; margin:0; }
 .registrationSummary dl > div { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; font-size:14px; }
-.registrationSummary dt { color:#706561; }
+.registrationSummary dt { color:var(--color-muted); }
 .registrationSummary dd { margin:0; overflow-wrap:anywhere; font-weight:600; }
 @media(max-width:800px) { .registrationLayout[data-owner], .registrationLayout[data-owner] .formGrid { grid-template-columns:minmax(0,1fr); } }
+
+/* Remove only the outer panel directly inside a shell page. */
+:global(main) > section > .panel { border: 0; border-radius: 0; padding: 16px 0; }

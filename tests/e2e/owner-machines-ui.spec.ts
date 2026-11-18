@@ -1,5 +1,4 @@
 ﻿import { expect, test, type Page } from "@playwright/test";
-import { clickPageAction, expectNoPageAction, expectPageAction } from "./page-actions-test-helpers";
 
 const ownerId = "f1000000-0000-4000-8000-000000000001";
 const smartId = "f1000000-0000-4000-8000-000000000002";
@@ -87,42 +86,53 @@ async function setup(page: Page, options: SetupOptions = {}) {
   };
 }
 test("Owner machine list shows status, location and fleet counts", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await setup(page); await page.goto("/dashboard/machines");
   const rows = page.getByRole("row");
   await expect(rows.filter({ hasText: "SMART-01" })).toContainText("Đang bảo trì");
   await expect(rows.filter({ hasText: "SMART-01" })).toContainText("Cửa hàng trung tâm");
   await expect(rows.filter({ hasText: "NORMAL-01" })).toContainText("Sẵn sàng cho thuê");
   await expect(rows.filter({ hasText: "NORMAL-01" })).toContainText("Kho");
-  const summary = page.getByLabel("Tóm tắt máy");
-  for (const [label, count] of [["Tổng số máy", "2"], ["Smart IoT", "1"], ["Thông thường", "1"], ["Đang bảo trì", "1"]]) await expect(summary.locator("article").filter({ hasText: label })).toContainText(count);
-  await page.getByRole("button", { name: "Smart IoT", exact: true }).click();
-  await expect(summary.locator("article").filter({ hasText: "Tổng số máy" })).toContainText("2");
+  const heading = page.getByRole("heading", { name: "Máy của tôi", exact: true }).locator("xpath=../..");
+  await expect(heading.getByRole("link", { name: "Đăng ký máy", exact: true })).toBeVisible();
+  await expect(heading.getByRole("button", { name: "Làm mới", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: ".playwright-cli/designs/ui-after-owner-machines.png" });
+  await page.getByRole("combobox", { name: "Loại máy", exact: true }).selectOption("SMART_IOT");
+  await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
+  await expect(rows.filter({ hasText: "SMART-01" })).toHaveCount(1);
+  await expect(rows.filter({ hasText: "NORMAL-01" })).toHaveCount(0);
 });
 test("Owner detail shows a single ticket and Smart IoT action", async ({ page }) => {
   await setup(page); await page.goto(`/dashboard/machines/${smartId}`);
+  await page.getByText("Thông tin bổ sung", { exact: true }).click();
   await expect(page.getByTitle(smartId)).toHaveText(`${smartId.slice(0, 12)}…`);
   await expect(page.getByText("Cửa hàng trung tâm")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Xem chi tiết" })).toHaveCount(0);
-  await expectPageAction(page, "maintenance-ticket-create");
+  await expect(page.getByRole("link", { name: "Xem chi tiết" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Bảo trì & hỗ trợ" }).click();
   await expect(page.getByText("Cửa hàng trung tâm")).toBeHidden();
   const maintenanceSummary = page.getByLabel("Tóm tắt bảo trì");
-  await expect(maintenanceSummary.locator("article").filter({ hasText: "Phiếu đang mở" })).toContainText("0");
+  await expect(maintenanceSummary.locator("article").filter({ hasText: "Phiếu mở trong trang" })).toContainText("0");
+  await expect(page.getByRole("button", { name: "Tạo phiếu bảo trì" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Phiếu bảo trì (1)" })).toBeVisible();
   await expect(page.getByText("Chưa có yêu cầu hỗ trợ.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Xem chi tiết" })).toHaveCount(1);
-  await page.getByRole("button", { name: "Xem chi tiết" }).click();
-  const ticketDialog = page.getByRole("dialog", { name: "Chi tiết phiếu bảo trì" });
-  await expect(ticketDialog).toBeVisible();
-  await ticketDialog.getByRole("button", { name: "Đóng" }).click();
-  await expect(ticketDialog).toBeHidden();
+  const ticketLink = page.getByRole("link", { name: "Xem chi tiết" });
+  await expect(ticketLink).toHaveCount(1);
+  await ticketLink.click();
+  await expect(page.getByRole("heading", { name: "Chi tiết phiếu bảo trì", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`maintenanceTicketId=${ticketId}`));
+  await page.goBack();
   await page.getByRole("tab", { name: "Hợp đồng" }).click();
   await expect(page.getByRole("heading", { name: "Lịch sử hợp đồng của máy" })).toBeVisible();
-  await expectPageAction(page, "machine-operational-overview");
-  await clickPageAction(page, "machine-operational-overview");
+  await page.getByRole("link", { name: "Xem vận hành" }).click();
+  await expect(page).toHaveURL(new RegExp(`/machines/${smartId}/operations`));
+  await page.getByRole("button", { name: "Về hồ sơ máy" }).click();
+  await expect(page.getByRole("heading", { name: "Hồ sơ máy · SMART-01" })).toBeVisible();
+  await page.goto(`/dashboard/machines/${smartId}/operations`);
+  await page.getByRole("button", { name: "Về hồ sơ máy" }).click();
+  await expect(page).toHaveURL(new RegExp(`/machines/${smartId}$`));
   await page.goto(`/dashboard/machines/${conventionalId}`);
-  await expect(page.getByText("NORMAL-01")).toBeVisible();
-  await expectNoPageAction(page, "machine-operational-overview");
+  await expect(page.getByRole("heading", { name: "Hồ sơ máy · NORMAL-01" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Xem vận hành" })).toHaveCount(0);
 });
 test("Owner machine detail opens the local digital twin tab", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -134,10 +144,7 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
   const tab = page.getByRole("tab", { name: "Xem máy" });
   await tab.click();
   await expect(tab).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByText(
-    "Mô hình phát lại món vừa pha, chậm vài giây so với máy.",
-    { exact: true },
-  )).toBeVisible();
+  await expect(page.getByRole("button", { name: "Trực tiếp", exact: true })).toHaveAttribute("aria-pressed", "true");
 
   const panel = page.getByRole("tabpanel", { name: "Xem máy" });
   const canvas = panel.locator("canvas");
@@ -148,46 +155,55 @@ test("Owner machine detail opens the local digital twin tab", async ({ page }) =
   ).toBeTruthy();
   await expect(page.locator("html")).toHaveJSProperty("scrollWidth", 390, { timeout: 5_000 });
 });
-test("Owner live digital twin replays new brew records and switches to simulation", async ({ page }) => {
+test("Owner digital twin displays live telemetry and can replay a recent brew in simulation", async ({ page }) => {
+  // The separate viewer smoke test covers GLB loading.
+  await page.route("**/models/**/*.glb", route => route.abort());
   const setupControls = await setup(page, {
     brewRecordOnSecondPoll: true,
     alerts: [{
       id: alertId,
-      level: "WARNING",
+      level: "CRITICAL",
       machineId: smartId,
       message: "Nhiệt độ máy tăng cao",
       acknowledged: false,
       ts: new Date().toISOString(),
     }],
-    metricsJson: JSON.stringify({ wifiRssiDbm: -45, cupsServed: 27, nested: { ignored: true } }),
+    metricsJson: JSON.stringify({ fsm_state: "MAIN_EXTRACTION", recipe_name: "Latte", recipe_step: 5, wifiRssiDbm: -45 }),
   });
   await page.goto(`/dashboard/machines/${smartId}`);
   setupControls.activateBrewTwinPolling();
+  // The development overlay reports the intentionally aborted model request.
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
   await page.getByRole("tab", { name: "Xem máy" }).click();
 
   const liveButton = page.getByRole("button", { name: "Trực tiếp", exact: true });
   await expect(liveButton).toHaveAttribute("aria-pressed", "true");
   const panel = page.getByRole("tabpanel", { name: "Xem máy" });
-  await expect(panel.getByRole("heading", { name: "Món đang pha: Latte" })).toBeVisible({ timeout: 20_000 });
-  await expect(panel.locator('[aria-current="step"]')).toHaveCount(1);
-  await expect(panel.getByRole("button", { name: "Xem lại", exact: true })).toBeVisible();
-  await expect(panel.getByText("Nhiệt độ máy tăng cao", { exact: true })).toBeVisible();
+  const liveStep = panel.getByRole("region", { name: "Bước pha hiện tại" });
+  await expect(liveStep.getByRole("status")).toHaveText("Đang chiết xuất");
+  await expect(liveStep).toContainText("Latte");
+  await expect(panel.getByRole("alert").filter({ hasText: "Nhiệt độ máy tăng cao" })).toBeVisible();
 
-  const shellLayer = page.getByRole("button", { name: "Vỏ", exact: true });
-  await expect(shellLayer).toHaveAttribute("aria-pressed", "true");
-  await shellLayer.click();
-  await expect(shellLayer).toHaveAttribute("aria-pressed", "false");
-  await shellLayer.click();
+  await panel.getByRole("button", { name: "Xem thêm", exact: true }).click();
+  await panel.getByText("Hiển thị bộ phận", { exact: true }).click();
+  const shellLayer = panel.getByRole("checkbox", { name: "Vỏ máy", exact: true });
+  await expect(shellLayer).toBeChecked();
+  await shellLayer.uncheck();
+  await expect(shellLayer).not.toBeChecked();
+  await shellLayer.check();
 
-  await panel.getByRole("button", { name: "Xem lại", exact: true }).click();
+  await panel.getByText("Lịch sử pha", { exact: true }).click();
+  const replay = panel.getByRole("button", { name: "Xem lại", exact: true });
+  await expect(replay).toBeVisible({ timeout: 15_000 });
+  await replay.press("Enter");
   await expect(panel.getByRole("heading", { name: /Món (đang pha|vừa pha): Latte/ })).toBeVisible();
 
-  await page.getByRole("button", { name: "Mô phỏng", exact: true }).click();
   await expect(page.getByRole("button", { name: "Mô phỏng", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(panel.getByLabel("Chọn công thức")).toBeVisible();
-  await expect(panel.getByRole("button", { name: "Chạy món này", exact: true })).toBeVisible();
+  await expect(panel.getByLabel("Món mô phỏng")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Chạy mô phỏng", exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Dừng", exact: true }).click();
-  await panel.getByRole("button", { name: "Chạy món này", exact: true }).click();
+  await panel.getByRole("button", { name: "Chạy mô phỏng", exact: true }).click();
+  await panel.getByText("Quy trình pha", { exact: true }).click();
   await expect(panel.locator('[aria-current="step"]')).toHaveCount(1);
 });
 test("Owner live digital twin shows when the machine is offline", async ({ page }) => {
@@ -195,7 +211,9 @@ test("Owner live digital twin shows when the machine is offline", async ({ page 
   await page.goto(`/dashboard/machines/${smartId}`);
   await page.getByRole("tab", { name: "Xem máy" }).click();
 
-  await expect(page.getByText(/Mất kết nối — trạng thái cuối lúc/)).toBeVisible();
+  const panel = page.getByRole("tabpanel", { name: "Xem máy" });
+  await expect(panel.getByText("Mất kết nối", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/^Tín hiệu gần nhất:/)).toBeVisible();
 });
 test("Owner conventional machine opens only the simulation twin", async ({ page }) => {
   await setup(page);
@@ -203,7 +221,8 @@ test("Owner conventional machine opens only the simulation twin", async ({ page 
   await page.getByRole("tab", { name: "Xem máy" }).click();
 
   await expect(page.getByRole("button", { name: "Trực tiếp", exact: true })).toHaveCount(0);
-  await expect(page.getByText("Máy thông thường không gửi dữ liệu, chỉ xem mô phỏng.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mô phỏng pha" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chạy mô phỏng" })).toBeEnabled();
 });
 test("Owner toolbar wraps at mobile width", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await setup(page); await page.goto("/dashboard/machines");

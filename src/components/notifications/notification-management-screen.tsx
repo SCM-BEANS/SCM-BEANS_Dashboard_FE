@@ -39,7 +39,7 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
   return <NotificationInbox scope={scope} variant="management" initialSection={initialSection} title="Thông báo"
     showOwnerId={scope === "admin"} onRefreshExtra={scope === "technician" ? undefined : () => alerts.refetch()}>
     {scope !== "technician" ? <div className={styles.workspace} data-detail={Boolean(selected)}>
-      <section className={styles.feed} aria-labelledby="alerts-list-title">
+      <section className={`${styles.feed} dashboard-list-panel`} aria-labelledby="alerts-list-title">
         <div className={styles.panelHeading}><div><h2 id="alerts-list-title">Cảnh báo máy</h2><p>{alerts.isSuccess ? `${alerts.data.filter((alert) => !alert.acknowledged).length} chưa xác nhận · ${filtered.length} cảnh báo trong danh sách` : "Theo dõi cảnh báo và tình trạng xử lý của máy."}</p></div></div>
         {scopeNotice ? <p className={styles.scopeNote} role="note">{scopeNotice}</p> : null}
         <TableFilters search={{ ariaLabel: "Tìm cảnh báo", placeholder: "Tìm nội dung hoặc mã máy", value: draft.search, onChange: (search) => setDraft((value) => ({ ...value, search })) }} selects={[

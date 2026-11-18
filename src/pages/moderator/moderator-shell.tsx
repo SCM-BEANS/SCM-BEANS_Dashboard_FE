@@ -22,11 +22,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
-import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
-import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
+import { SidebarShell, SidebarWorkspace, Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { hasModeratorRole } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
@@ -123,19 +122,13 @@ export function ModeratorShell({
     );
   }
 
-  const renderBreadcrumb = () => (
-    <AdminBreadcrumb
-      rootLabel={MODERATOR_MESSAGES.ROLE}
-      currentLabel={currentSection.LABEL}
-    />
-  );
   return (
     <>
       <Head>
         <title>{pageTitle} | {MODERATOR_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="moderator">
+      <SidebarShell className={`${styles.shell} dashboard-tailadmin ta:bg-gray-50 ta:text-gray-800`} data-role="moderator">
         <NotificationRuntime scope="moderator" />
         <Sidebar
           brand={MODERATOR_MESSAGES.BRAND}
@@ -145,23 +138,13 @@ export function ModeratorShell({
           rootHref={PATH_MODERATOR.ROOT}
           navigationLabel={MODERATOR_MESSAGES.ROUTES.NAVIGATION_LABEL}
           items={MODERATOR_SIDEBAR_ITEMS}
-          settingsHref={PATH_MODERATOR.SETTINGS}
-          logout={{
-            label: MODERATOR_MESSAGES.AUTH.LOGOUT,
-            pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT,
-            pending: loggingOut,
-            onLogout: handleLogout,
-          }}
         />
-        <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            {renderBreadcrumb()}
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
-          </header>
-          <header className={styles.mobileHeader}>
-            <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
+        <SidebarWorkspace className={styles.workspace} context={currentSection.LABEL} notifications={<NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} logout={{ label: MODERATOR_MESSAGES.AUTH.LOGOUT, pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />}>
+          <header className={`${styles.mobileHeader} ta:items-center ta:justify-between ta:gap-3 ta:bg-white ta:px-4`}>
+            <Link className={`${styles.mobileBrand} ta:truncate ta:text-lg ta:font-bold ta:text-gray-800`} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
             </Link>
+            <div data-dashboard-dev-login-mobile />
             <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} settingsHref={PATH_MODERATOR.SETTINGS} logout={{ label: MODERATOR_MESSAGES.AUTH.LOGOUT, pendingLabel: MODERATOR_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={MODERATOR_SIDEBAR_ITEMS}
@@ -179,14 +162,13 @@ export function ModeratorShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {renderBreadcrumb()}
-          </div>
-          <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
-            <main className={styles.main}>{children}</main>
-          </ActionBarLayout>
-        </div>
-      </div>
+          <main className={styles.main} aria-label={pageTitle}>
+            <ActionBarLayout navigationHrefs={MODERATOR_SIDEBAR_ITEMS.filter(item => item.enabled !== false).map(item => item.href)} label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
+              {children}
+            </ActionBarLayout>
+          </main>
+        </SidebarWorkspace>
+      </SidebarShell>
       {logoutSucceeded && (
         <LiquidSuccessSplash
           message="Đăng xuất thành công"

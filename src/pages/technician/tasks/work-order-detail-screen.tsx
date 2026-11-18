@@ -8,7 +8,7 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
-import { TextLinkButton } from "@/components/button/text-link-button";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -223,12 +223,12 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
   return (
     <TechnicianShell pageTitle="Chi tiết sửa chữa">
       <section className={shellStyles.pageContent} aria-labelledby="technician-repair-case-title">
-        <header className={shellStyles.pageHeading}>
-          <h1 id="technician-repair-case-title">Chi tiết sửa chữa</h1>
-          <div className={styles.backLink}>
-            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
-          </div>
-        </header>
+        <BackButtonHeading
+          className={shellStyles.pageHeading}
+          titleId="technician-repair-case-title"
+          title="Chi tiết sửa chữa"
+          back={{ label: "Về danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
+        />
         {repairCase.isPending && <p className={shellStyles.pendingNotice} role="status">Đang tải hồ sơ sửa chữa…</p>}
         {repairCase.isError && <p className={shellStyles.errorNotice} role="alert">{getApiErrorMessage(repairCase.error)}</p>}
         {caseData ? (
@@ -488,11 +488,13 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
   return (
     <TechnicianShell pageTitle="Thu hồi máy">
       <section className={shellStyles.pageContent} aria-labelledby="technician-recall-title">
-        <header className={shellStyles.pageHeading}>
-          <h1 id="technician-recall-title">Thu hồi máy theo hợp đồng</h1>
-          <p>Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự.</p>
-          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
-        </header>
+        <BackButtonHeading
+          className={shellStyles.pageHeading}
+          titleId="technician-recall-title"
+          title="Thu hồi máy theo hợp đồng"
+          description="Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự."
+          back={{ label: "Về danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
+        />
         {orderQuery.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải lệnh thu hồi…</p> : null}
         {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
         {order ? (
@@ -671,11 +673,13 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
   return (
     <TechnicianShell pageTitle="Kiểm tra máy thu hồi">
       <section className={shellStyles.pageContent} aria-labelledby="termination-inspection-title">
-        <header className={shellStyles.pageHeading}>
-          <h1 id="termination-inspection-title">Kiểm tra máy sau khi thu hồi</h1>
-          <p>Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng.</p>
-          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
-        </header>
+        <BackButtonHeading
+          className={shellStyles.pageHeading}
+          titleId="termination-inspection-title"
+          title="Kiểm tra máy sau khi thu hồi"
+          description="Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng."
+          back={{ label: "Về danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
+        />
         {ticket.isPending || terminationCase.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải phiếu kiểm tra…</p> : null}
         {ticket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(ticket.error)}</p> : null}
         {terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
@@ -1044,13 +1048,13 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
   return (
     <TechnicianShell pageTitle={messages.TASK_DETAIL_TITLE}>
       <section className={shellStyles.pageContent} aria-labelledby="technician-work-order-title">
-        <header className={shellStyles.pageHeading}>
-          <h1 id="technician-work-order-title">{messages.TASK_DETAIL_TITLE}</h1>
-          <p>Thực hiện lắp đặt, tải minh chứng bàn giao và xác nhận người nhận theo trạng thái của lệnh.</p>
-          <div className={styles.backLink}>
-            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
-          </div>
-        </header>
+        <BackButtonHeading
+          className={shellStyles.pageHeading}
+          titleId="technician-work-order-title"
+          title={messages.TASK_DETAIL_TITLE}
+          description="Thực hiện lắp đặt, tải minh chứng bàn giao và xác nhận người nhận theo trạng thái của lệnh."
+          back={{ label: "Về danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
+        />
 
         {(details.isPending
           || (details.isError && repairCaseDetails.isPending)

@@ -44,7 +44,7 @@ export function BuybackWorkflowLayout({
         title={title}
         titleId="buyback-title"
         description={description}
-        className={styles.pageHeading}
+        className={`${styles.pageHeading} dashboard-list-heading`}
         back={back ?? (actionBarBackHref ? { label: actionBarBackLabel, fallbackHref: actionBarBackHref } : null)}
       />
       {children}
@@ -435,7 +435,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         <p className={styles.notice} role="status">Chưa có hồ sơ trong phạm vi tài khoản.</p>
       ) : null}
       {isWorkspace || list.data?.items.length ? (
-        <section className={styles.panel} data-buyback-list aria-label="Danh sách hồ sơ thu mua">
+        <section className={`${styles.panel} dashboard-list-panel`} data-buyback-list aria-label="Danh sách hồ sơ thu mua">
           <div className={styles.panelHeading}>
             <div><h2 className={styles.sectionTitle}>Hồ sơ thu mua</h2></div>
           </div>

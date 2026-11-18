@@ -1,12 +1,14 @@
+@reference "../../../styles/dashboard-tailadmin.css";
+
 .panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
   margin-top: 20px;
   padding: 22px;
-  border: 1px solid #e9e2dc;
-  border-radius: 16px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
 }
 
 .heading,
@@ -28,7 +30,7 @@
 .sectionHeading p,
 .notice {
   margin: 6px 0 0;
-  color: #706561;
+  color: var(--color-muted);
 }
 
 .statGrid {
@@ -45,7 +47,7 @@
 
 .pagination p {
   margin: 0;
-  color: #706561;
+  color: var(--color-muted);
 }
 
 .dialogField {
@@ -60,14 +62,15 @@
 
 .dialogField select,
 .dialogField textarea {
+  box-sizing: border-box;
   width: 100%;
-  border: 1px solid #cfc5be;
-  border-radius: 8px;
+
+
   padding: 10px 12px;
-  background: #fff;
-  color: inherit;
+
+
   font: inherit;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .dialogField textarea {
   resize: vertical;
@@ -75,13 +78,13 @@
 
 .counter {
   justify-self: end;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
 .dialogError {
   margin: 12px 0 0;
-  color: #a32626;
+  color: var(--ta-color-red-700);
 }
 
 .successNotice {
@@ -107,10 +110,10 @@
 }
 
 .panel.compact { background: transparent; border: 0; padding: 0; margin: 0; gap: 20px; min-width: 0; }
-.compact > section { background: white; border: 1px solid #e9e2dc; border-radius: 16px; padding: 22px 24px; min-width: 0; }
+.compact > section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-panel); padding: 22px 24px; min-width: 0; }
 .compact h3 { font-size: 18px; }
 .compactStats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; margin: 22px 0 0; }
-.compactStats dt { color: #675b57; font-size: 13px; line-height: 1.45; }
-.compactStats dd { margin: 9px 0 0; font-size: 26px; font-weight: 600; color: #302927; }
+.compactStats dt { color: var(--color-muted); font-size: 13px; line-height: 1.45; }
+.compactStats dd { margin: 9px 0 0; font-size: 26px; font-weight: 600; color: var(--color-text); }
 @media (max-width: 1200px) { .compactStats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .compact > section { padding: 18px; } .compactStats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

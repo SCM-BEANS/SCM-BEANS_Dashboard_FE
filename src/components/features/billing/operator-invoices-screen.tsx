@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import Link from "next/link";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import Image from "next/image";
 import axios from "axios";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
@@ -82,7 +83,7 @@ function Pagination({
       <ButtonBar type="button" disabled={page === 0 || disabled} onClick={() => onChange(page - 1)}>
         {messages.PREVIOUS_PAGE}
       </ButtonBar>
-      <span>{messages.PAGE} {page + 1}</span>
+      <span className="ta:inline-flex ta:min-h-11 ta:items-center ta:rounded-lg ta:bg-brand-50 ta:px-4 ta:text-sm ta:font-medium ta:text-brand-700">{messages.PAGE} {page + 1}</span>
       <ButtonBar type="button" disabled={!hasNext || disabled} onClick={() => onChange(page + 1)}>
         {messages.NEXT_PAGE}
       </ButtonBar>
@@ -218,21 +219,21 @@ function InvoiceList({
     mutationFn: () => billingApi.createExport({ format: "CSV", ...(role !== "owner" ? { ownerId: typeof ownerId === "string" ? ownerId : undefined } : {}), invoiceIds: rows.map((invoice) => invoice.id) }),
     onSuccess: (job) => role === "owner" ? router.push(`${PATH_CUSTOMER.INVOICES}?exportId=${encodeURIComponent(job.id)}`) : router.push(role === "admin" ? PATH_ADMIN.BILLING_EXPORT_JOB(job.id) : `/moderator/invoices/exports/${encodeURIComponent(job.id)}`),
   });
-  const exportReason = query.isFetching ? "Đang tải danh sách hóa đơn." : !rows.length ? "Chưa có hóa đơn để xuất." : role !== "owner" && !ownerId ? "" : undefined;
+  const exportReason = query.isFetching ? "Đang tải danh sách hóa đơn." : !rows.length ? "Chưa có hóa đơn để xuất." : role !== "owner" && !ownerId ? "Lọc theo một chủ sở hữu để xuất hóa đơn." : undefined;
 
   useEffect(() => setPage(0), [filters]);
 
   return (
     <>
-      <header className={styles.panelHeading}>
-        {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1></div> : <span />}
-        <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
-      </header>
-    <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
+      {showHeading && <header className="dashboard-list-heading"><h1>Hóa đơn</h1></header>}
+    <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="operator-invoice-list-title">
       <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2></div>
-      {exportReason && <p className={styles.hint}>{exportReason}</p>}
+      {exportReason && <p id="invoice-list-export-reason" className={styles.hint}>{exportReason}</p>}
       {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}
-      <InvoiceFilters role={role} initialPeriod={filters.period} onApply={onApplyFilters} disabled={query.isFetching} />
+      <div className={styles.listTools}>
+        <InvoiceFilters role={role} initialPeriod={filters.period} onApply={onApplyFilters} disabled={query.isFetching} />
+        <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} aria-describedby={exportReason ? "invoice-list-export-reason" : undefined} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
+      </div>
       {invalidFilterMessage ? <p className={`${styles.notice} ${styles.error}`} role="alert">{invalidFilterMessage}</p> : null}
       <InlineQueryState
         pending={query.isPending}
@@ -419,10 +420,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   }
   return (
     <div className={styles.detailStack}>
-      <div className={styles.panelHeading}>
-        <div className={styles.heading}><h1>Hồ sơ hóa đơn</h1></div>
-        <ButtonBar href={invoiceListPath(role)}>Về danh sách</ButtonBar>
-      </div>
+      <BackButtonHeading className={styles.heading} title="Hồ sơ hóa đơn" titleId="operator-invoice-title" back={{ label: "Về danh sách", fallbackHref: invoiceListPath(role) }} />
       <div className={styles.invoiceLayout}>
       <section className={`${styles.panel} ${styles.invoiceMain}`}>
         <h2>Thông tin hóa đơn</h2>
@@ -498,20 +496,9 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
               {
                 key: "actions",
                 header: messages.PROOF_ACTIONS,
-                render: (proof) => (
-                  <div className={styles.proofActions}>
-                    {role === "moderator" ? <ButtonBar rollingLabel href={`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}?paymentProofId=${encodeURIComponent(proof.id)}&paymentProofPage=${proofPage}`}>Mở hồ sơ</ButtonBar> : <>
-                      <ButtonBar type="button" onClick={() => setPreviewProof(proof)}>Xem chứng từ</ButtonBar>
-                      <ProgressDownloadButton filename={proof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(proof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
-                    {role !== "owner" && proof.status === "SUBMITTED" ? (
-                      <>
-                        <ButtonBar type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: true, reason: "" })}>{messages.APPROVE_PROOF}</ButtonBar>
-                        <ButtonBar variant="danger" type="button" disabled={review.isPending} onClick={() => setReviewDraft({ proof, approve: false, reason: "" })}>{messages.REJECT_PROOF}</ButtonBar>
-                      </>
-                    ) : null}
-                    </>}
-                  </div>
-                ),
+                render: (proof) => role === "moderator"
+                  ? <ButtonBar href={`${PATH_MODERATOR.INVOICE_DETAIL(invoiceId)}?paymentProofId=${encodeURIComponent(proof.id)}&paymentProofPage=${proofPage}`}>Mở hồ sơ</ButtonBar>
+                  : <ButtonBar type="button" onClick={() => { setDownloadError(""); setPreviewProof(proof); }}>Xem chứng từ</ButtonBar>,
               },
             ]}
           />
@@ -534,7 +521,13 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
           <InlineQueryState pending={preview.isPending || (!previewUrl && !preview.isError)} error={preview.isError ? preview.error : null} loadingText="Đang tải chứng từ…" retry={preview.refetch} />
           {previewUrl && (previewType === "application/pdf" ? <object className={styles.proofPreview} type="application/pdf" data={previewUrl} aria-label={previewProof.originalFilename}><p>Trình duyệt không hỗ trợ xem PDF. Hãy tải chứng từ để kiểm tra.</p></object> : <Image unoptimized width={1200} height={900} className={styles.proofPreview} src={previewUrl} alt={previewProof.originalFilename} />)}
         </>}
-        <ProgressDownloadButton filename={previewProof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(previewProof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
+        <div className={styles.proofActions}>
+          <ProgressDownloadButton filename={previewProof.originalFilename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadPaymentProofContent(previewProof.id, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton>
+          {role === "admin" && previewProof.status === "SUBMITTED" && <>
+            <ButtonBar variant="primary" type="button" disabled={review.isPending} onClick={() => { setReviewDraft({ proof: previewProof, approve: true, reason: "" }); setPreviewProof(null); }}>{messages.APPROVE_PROOF}</ButtonBar>
+            <ButtonBar variant="danger" type="button" disabled={review.isPending} onClick={() => { setReviewDraft({ proof: previewProof, approve: false, reason: "" }); setPreviewProof(null); }}>{messages.REJECT_PROOF}</ButtonBar>
+          </>}
+        </div>
         {downloadError && <p role="alert" className={styles.errorText}>{downloadError}</p>}
       </NotificationDialog>}
       {reviewDraft ? (
@@ -594,7 +587,7 @@ export function InvoiceExportJobScreen({ jobId, routerReady, role }: { jobId: st
         {job.data.status === "FAILED" && <p className={styles.errorText} role="alert">{job.data.message || job.data.errorCode || "Không thể tạo tệp xuất."}</p>}
         {downloadError && <p role="alert" className={styles.errorText}>{downloadError}</p>}
         <div className={styles.exportActions}><ButtonBar disabled={job.isFetching} onClick={() => void job.refetch()}>Làm mới</ButtonBar>
-          {job.data.status === "COMPLETED" ? <ProgressDownloadButton filename={filename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadExportContent(jobId, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> : <ButtonBar disabled>Tệp chưa sẵn sàng</ButtonBar>}
+          {job.data.status === "COMPLETED" ? <ProgressDownloadButton filename={filename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadExportContent(jobId, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> : null}
         </div>
         {["QUEUED", "PROCESSING"].includes(job.data.status) && <p className={styles.hint} role="status">Đang xử lý. Trạng thái tự cập nhật mỗi 3 giây.</p>}
       </section>}
@@ -631,7 +624,7 @@ export function OperatorInvoicesScreen({
   }
 
   return (
-    <div className={styles.screen}>
+    <div className={`${styles.screen} ${!validInvoiceId && showHeading ? "dashboard-list-page" : ""}`}>
       {showHeading && invalidInvoiceId ? (
         <header className={styles.heading}>
           <h1>{validInvoiceId ? "Hồ sơ hóa đơn" : "Hóa đơn"}</h1>

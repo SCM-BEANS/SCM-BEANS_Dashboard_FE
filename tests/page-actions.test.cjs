@@ -110,3 +110,77 @@ test('page actions preserve hold-to-confirm on the shared button', () => {
   const html = render([{ id: 'reject', label: 'Reject', variant: 'danger', holdToConfirm: true }]);
   assert.match(html, /data-hold-to-confirm="true"/);
 });
+
+
+test('navigation-only docks disappear only when every target is already in the sidebar', () => {
+  const registry = new PageActionsRegistry(['/admin/machines', '/admin/reports']);
+  registry.register('shortcuts', [{ id: 'machines', label: 'Kho máy', href: '/admin/machines' }, { id: 'reports', label: 'Báo cáo', href: '/admin/reports' }]);
+  assert.deepEqual(registry.getSnapshot(), []);
+  registry.register('save', [{ id: 'save', label: 'Lưu', type: 'submit', form: 'edit-form', disabled: true }]);
+  assert.deepEqual(registry.getSnapshot().map(action => action.id), ['machines', 'reports', 'save']);
+  registry.unregister('save');
+  assert.deepEqual(registry.getSnapshot(), []);
+  registry.register('create', [{ id: 'create', label: 'Tạo', href: '/admin/machines/new' }]);
+  assert.equal(registry.getSnapshot().length, 3);
+});
+
+test('navigation targets with business callbacks and confirmations remain available', () => {
+  for (const extra of [{ onClick() {} }, { type: 'submit' }, { form: 'form' }, { confirm: { title: 'Hủy?', description: 'Bỏ thay đổi', confirmLabel: 'Hủy' } }, { holdToConfirm: true }]) {
+    const registry = new PageActionsRegistry(['/admin/machines']);
+    const action = { id: 'cancel', label: 'Hủy', href: '/admin/machines', ...extra };
+    registry.register('form', [action]);
+    assert.deepEqual(registry.getSnapshot(), [action]);
+  }
+});
+
+test('TailAdmin shared controls retain accessible sizes, focus, disabled and selected tab styles', () => {
+  const css = fs.readFileSync('src/components/button/button-bar.module.css', 'utf8');
+  assert.match(css, /ta:min-w-11 ta:min-h-11/);
+  assert.match(css, /\.button:focus-visible[^}]*ta:outline-brand-500/);
+  assert.match(css, /\.button:disabled[^}]*ta:opacity-50/);
+  assert.match(css, /\.button\.button\.primary[^}]*ta:bg-brand-500 ta:text-white/);
+  assert.match(css, /\.button\.button\.primary:hover[^}]*ta:bg-brand-600/);
+  assert.match(css, /\.sectionTabs\s*\{[^}]*ta:flex-nowrap[^}]*ta:overflow-x-auto[^}]*ta:border-gray-200/);
+  assert.match(css, /ta:border-b-2 ta:border-transparent/);
+  assert.match(css, /aria-selected="true"[^}]*ta:text-brand-500 ta:border-brand-500/);
+  assert.match(css, /\.ghost:not\(\.primary\):not\(\.danger\)/);
+  assert.match(css, /\.progressDownloadTrack[^}]*background: var\(--ta-color-brand-50\)/);
+  assert.match(css, /\.progressDownloadBar[^}]*background: var\(--ta-color-brand-200\)/);
+});
+
+test('machine tabs retain ARIA relationships, roving focus, arrow wrap and Home/End selection', () => {
+  const source = fs.readFileSync('src/components/machines/operational-overview.tsx', 'utf8');
+  const ast = ts.createSourceFile('operational-overview.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const declaration = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'MachineSectionTabs');
+  assert.ok(declaration);
+  const code = ts.transpileModule(declaration.getText(ast), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+  const loaded = { exports: {} };
+  new Function('require', 'module', 'exports', 'styles', code)(require, loaded, loaded.exports, { ownerOperationsTabs: 'tabs' });
+  const tabs = [{ value: 'first', label: 'First (2)' }, { value: 'second', label: 'Second (3)' }];
+  const selections = [];
+  const tree = loaded.exports.MachineSectionTabs({ label: 'Machine sections', tabs, activeTab: 'first', onTabChange: value => selections.push(value), idPrefix: 'machine', panelId: value => `panel-${value}` });
+  assert.equal(tree.props.role, 'tablist');
+  assert.equal(tree.props['aria-label'], 'Machine sections');
+  const buttons = tree.props.children;
+  assert.deepEqual(buttons.map(button => [button.props.role, button.props.tabIndex, button.props['aria-selected'], button.props['aria-controls'], button.props.children]), [
+    ['tab', 0, true, 'panel-first', 'First (2)'], ['tab', -1, false, 'panel-second', 'Second (3)'],
+  ]);
+  const focused = [];
+  const previousDocument = global.document;
+  global.document = { getElementById: id => ({ focus: () => focused.push(id) }) };
+  try {
+    let prevented = 0;
+    for (const [index, key] of [[0, 'ArrowLeft'], [1, 'ArrowRight'], [0, 'End'], [1, 'Home']]) {
+      buttons[index].props.onKeyDown({ key, preventDefault: () => prevented++ });
+    }
+    assert.equal(prevented, 4);
+    assert.deepEqual(selections, ['second', 'first', 'second', 'first']);
+    assert.deepEqual(focused, ['machine-tab-second', 'machine-tab-first', 'machine-tab-second', 'machine-tab-first']);
+    buttons[0].props.onKeyDown({ key: 'Enter', preventDefault: () => assert.fail('unhandled keys keep native behavior') });
+    buttons[1].props.onClick();
+    assert.equal(selections.at(-1), 'second');
+  } finally {
+    if (previousDocument === undefined) delete global.document;
+    else global.document = previousDocument;
+  }
+});

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackage } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -27,14 +27,16 @@ export function OwnerOrderFormPanel({
     }
   }, [contractId, workflow.activeSmartIoTContracts]);
 
+  const orderQuantity = Number(quantity);
+  const submitDisabled = !contractId || !packageId || !Number.isInteger(orderQuantity) || orderQuantity < 1;
   const placeOrder = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!contractId || !packageId) return;
-    workflow.run({ type: "PLACE_ORDER", input: { contractId, packageId, quantity: Number(quantity) } });
+    if (submitDisabled || workflow.pending) return;
+    workflow.run({ type: "PLACE_ORDER", input: { contractId, packageId, quantity: orderQuantity } });
   };
 
   return (
-    <section className={`${styles.panel} ${styles.ownerOrderForm}`} aria-labelledby="coffee-package-order-title">
+    <section className={`${styles.panel} ${styles.ownerOrderForm} dashboard-list-panel`} aria-labelledby="coffee-package-order-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-package-order-title">Đặt gói mới</h2>
@@ -105,8 +107,8 @@ export function OwnerOrderFormPanel({
           {workflow.packageDetail.isPending ? <p className={styles.notice} role="status">Đang tải chi tiết gói…</p> : null}
           {workflow.packageDetail.isError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.packageDetail.error)}</p> : null}
           <div className={styles.actionRow}>
-            <span className={styles.hint}>Bạn có thể xem trạng thái và chứng từ sau khi gửi đơn.</span>
-            <PageActions actions={[{ id: "place-coffee-order", label: "Gửi đơn đặt gói", variant: "primary", priority: 100, type: "submit", form: "owner-coffee-order-form", disabled: !contractId || !packageId || Number(quantity) < 1, disabledReason: "Chọn hợp đồng, gói và số lượng hợp lệ.", pending: workflow.pending, pendingLabel: "Đang gửi…" }]} />
+            <span className={styles.hint} id="owner-coffee-order-hint">{submitDisabled ? "Chọn hợp đồng, gói và số lượng hợp lệ." : "Bạn có thể xem trạng thái và chứng từ sau khi gửi đơn."}</span>
+            <ButtonBar variant="primary" type="submit" disabled={submitDisabled || workflow.pending} aria-busy={workflow.pending} aria-describedby="owner-coffee-order-hint">{workflow.pending ? "Đang gửi…" : "Gửi đơn đặt gói"}</ButtonBar>
           </div>
         </form>
       ) : null}

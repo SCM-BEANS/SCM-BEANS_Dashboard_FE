@@ -124,8 +124,7 @@ function createShellHarness({ pathname, hasRole = true } = {}) {
   const render = () => renderToStaticMarkup(
     React.createElement(ModeratorShell, {
       pageTitle: "Hợp đồng",
-      children: React.createElement("p", null, "Screen content"),
-    }),
+    }, React.createElement("p", null, "Screen content")),
   );
 
   return { render, navigationCalls, logoutCalls, routerCalls, routeCatalog };
@@ -156,7 +155,7 @@ test("Moderator keeps mobile notifications and nested-section heading while the 
   shell.render();
   const html = shell.render();
   const shellSource = readFileSync(join(root, "src/pages/moderator/moderator-shell.tsx"), "utf8");
-  const mobileHeaderStart = shellSource.indexOf("className={styles.mobileHeader}");
+  const mobileHeaderStart = shellSource.indexOf("styles.mobileHeader}");
   const mobileHeaderEnd = shellSource.indexOf("</header>", mobileHeaderStart);
   const mobileHeaderSource = shellSource.slice(mobileHeaderStart, mobileHeaderEnd);
 

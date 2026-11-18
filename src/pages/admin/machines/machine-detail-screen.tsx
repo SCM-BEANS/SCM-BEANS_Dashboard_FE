@@ -501,10 +501,10 @@ function MachineDetailContent() {
           previewLimit={10}
           onRefresh={() => maintenanceTickets.refetch()}
         />}
-        {maintenanceTickets.data && <nav className={styles.machinePagination} aria-label="Phân trang bảo trì">
-          <ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar>
-          <span>Trang {ticketPage + 1} · tối đa 10 phiếu</span>
-          <ButtonBar disabled={!maintenanceTickets.data.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar>
+        {maintenanceTickets.data && (ticketPage > 0 || maintenanceTickets.data.hasNext) && <nav className={styles.machinePagination} aria-label="Phân trang bảo trì">
+          <ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trang trước</ButtonBar>
+          <span>Trang {ticketPage + 1}</span>
+          <ButtonBar disabled={!maintenanceTickets.data.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Trang sau</ButtonBar>
         </nav>}
       </section>
 

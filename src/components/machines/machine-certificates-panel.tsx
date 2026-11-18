@@ -44,6 +44,8 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
   const [downloadError, setDownloadError] = useState("");
   const detail = !props.error && props.detail?.id === props.selectedCertificateId ? props.detail : undefined;
 
+  const selected = props.page?.content.find((item) => item.id === props.selectedCertificateId);
+
   const content = <>
     <div className={styles.monitoringChartToolbar}>
       <label className={styles.telemetryFieldSelector}>Trạng thái chứng chỉ
@@ -66,23 +68,25 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
           { key: "status", header: "Trạng thái", render: (item) => statusLabels[item.status] },
           { key: "issued", header: "Ngày phát hành", render: (item) => formatDate(item.issuedAt) },
           { key: "expires", header: "Ngày hết hạn", render: (item) => formatDate(item.expiresAt) },
-          { key: "actions", header: "Thao tác", render: (item) => <div className={styles.telemetryRangePresets}>
-            <ButtonBar rollingLabel disabled={props.busy} onClick={() => props.onSelect(item.id)}>Xem chi tiết</ButtonBar>
-            <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.zip`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "zip", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải ZIP</ProgressDownloadButton>
-            <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.json`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "json", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải JSON</ProgressDownloadButton>
-            <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(item)}>Xóa chứng chỉ</ButtonBar>
-          </div> },
+          { key: "actions", header: "Thao tác", render: (item) => <ButtonBar disabled={props.busy} aria-pressed={props.selectedCertificateId === item.id} onClick={() => { setDownloadError(""); props.onSelect(item.id); }}>Xem chi tiết</ButtonBar> },
         ]} />}
-    {downloadError && <p className={styles.telemetryError} role="alert">{downloadError}</p>}
     {props.page && !props.error && <div className={styles.telemetryRangePresets}>
       <ButtonBar disabled={props.busy || props.loading || props.page.first} onClick={() => props.onPageChange(props.pageNumber - 1)}>Trang trước</ButtonBar>
       <span>Trang {props.pageNumber + 1} / {Math.max(1, props.page.totalPages)}</span>
       <ButtonBar disabled={props.busy || props.loading || props.page.last} onClick={() => props.onPageChange(props.pageNumber + 1)}>Trang sau</ButtonBar>
     </div>}
+    {selected && !props.error && <div className={styles.monitoringChartToolbar}>
+      <h3>Chi tiết chứng chỉ</h3>
+      <div className={styles.telemetryRangePresets}>
+        <ProgressDownloadButton filename={`machine-${selected.machineId}-certificate-${selected.id}.zip`} download={(signal) => { setDownloadError(""); return props.onDownload(selected.id, "zip", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải ZIP</ProgressDownloadButton>
+        <ProgressDownloadButton filename={`machine-${selected.machineId}-certificate-${selected.id}.json`} download={(signal) => { setDownloadError(""); return props.onDownload(selected.id, "json", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải JSON</ProgressDownloadButton>
+        <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(selected)}>Xóa chứng chỉ</ButtonBar>
+      </div>
+    </div>}
+    {downloadError && <p className={styles.telemetryError} role="alert">{downloadError}</p>}
     {props.detailLoading ? <p role="status">Đang tải chi tiết chứng chỉ…</p>
       : props.detailError ? <p className={styles.telemetryError} role="alert">{props.detailError}</p>
         : detail && <div className={styles.telemetryHistory}>
-          <h3>Chi tiết chứng chỉ</h3>
           <dl className={styles.operationalMetricGrid}>
             {[["Tên thiết bị", detail.commonName], ["Tổ chức", detail.organization], ["SPIFFE ID", detail.spiffeId], ["Dấu vân tay", detail.fingerprint]].map(([label, value]) => <div className={styles.operationalMetricCard} key={label}><dt>{label}</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{value ?? "—"}</dd></div>)}
           </dl>

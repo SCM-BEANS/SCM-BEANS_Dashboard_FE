@@ -181,7 +181,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                                 <XAxis dataKey="date" tickFormatter={(day: string) => day.slice(5).split("-").reverse().join("/")} tickLine={false} axisLine={false} />
                                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={42} />
                                 <Tooltip labelFormatter={(day) => String(day).split("-").reverse().join("/")} formatter={(value) => [Number(value).toLocaleString("vi-VN") + " ly", "Số ly"]} />
-                                <Line type="linear" dataKey="cups" stroke="#bd1427" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+                                <Line type="linear" dataKey="cups" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
                               </LineChart></ResponsiveContainer>
                               <details><summary>Xem số liệu theo ngày</summary><ul>{cupCount.data.dailyBreakdown.map((row) => <li key={row.date}>{row.date}: {row.cups.toLocaleString("vi-VN")} ly</li>)}</ul></details>
                             </div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}

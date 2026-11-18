@@ -135,12 +135,12 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
 
   return (
     <TechnicianShell pageTitle={title}>
-      <section className={shellStyles.pageContent} aria-labelledby="technician-machine-history-title">
+      <section className={`${shellStyles.pageContent} dashboard-list-page`} aria-labelledby="technician-machine-history-title">
         <BackButtonHeading
           back={machineId ? { label: "Lịch sử máy", fallbackHref: "/technician/history" } : null}
           title={title}
           titleId="technician-machine-history-title"
-          className={shellStyles.pageHeading}
+          className={machineId ? shellStyles.pageHeading : "dashboard-list-heading"}
         />
         {isLoading ? <p className={shellStyles.pendingNotice} role="status">Đang tải lịch sử…</p> : null}
         {tickets.isError ? <p className={tableStyles.error} role="alert">{getApiErrorMessage(tickets.error)}</p> : null}
@@ -157,7 +157,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
             ) : null}
           </section>
         ) : null}
-        <section className={tableStyles.panel} aria-labelledby="technician-maintenance-tickets-title">
+        <section className={`${tableStyles.panel} dashboard-list-panel`} aria-labelledby="technician-maintenance-tickets-title">
           <h2 id="technician-maintenance-tickets-title">Phiếu bảo trì</h2>
           {tickets.isSuccess ? (
             <DataTable
@@ -176,7 +176,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
           ) : null}
           <div className={shellStyles.pagination}><span>Trang {ticketPage + 1}</span><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={!tickets.data?.hasNext || tickets.isFetching} onClick={() => setTicketPage(value => value + 1)}>Trang sau</ButtonBar></div>
         </section>
-        <section className={tableStyles.panel} aria-labelledby="technician-maintenance-requests-title">
+        <section className={`${tableStyles.panel} dashboard-list-panel`} aria-labelledby="technician-maintenance-requests-title">
           <h2 id="technician-maintenance-requests-title">Yêu cầu bảo trì và sửa chữa</h2>
           {requests.isSuccess ? (
             <DataTable

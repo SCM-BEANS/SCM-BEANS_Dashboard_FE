@@ -151,12 +151,10 @@ export const ButtonBar = forwardRef<
   HTMLAnchorElement | HTMLButtonElement,
   ButtonBarProps
 >(function ButtonBar(props, ref) {
-  const { variant = "secondary", rollingLabel = false, holdToConfirm = false, children, ...rest } = props;
-  const rolls = rollingLabel && typeof children === "string";
-  const className = [styles.button, styles[variant], rolls && styles.rollingButton, props.className].filter(Boolean).join(" ");
-  // Lucian UX/UI Prompt #009 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#009
-  const content = rolls ? <span className={styles.rollingWord} aria-hidden="true">{Array.from(children as string).map((letter, index) => <span key={index} className={styles.rollingLetter} data-letter={letter === " " ? "\u00a0" : letter} style={{ "--letter-index": index } as CSSProperties}>{letter === " " ? "\u00a0" : letter}</span>)}</span> : children;
-  const accessibleLabel = props["aria-label"] ?? (rolls ? children as string : undefined);
+  const { variant = "secondary", rollingLabel: _rollingLabel, holdToConfirm = false, children, ...rest } = props;
+  const className = [styles.button, styles[variant], props.className].filter(Boolean).join(" ");
+  const content = children;
+  const accessibleLabel = props["aria-label"];
 
   if (props.href) {
     const { href, ...linkProps } = rest as LinkButtonProps;

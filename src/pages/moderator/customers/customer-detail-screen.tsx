@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButton } from "@/components/navigation/back-button";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
@@ -102,11 +103,19 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
 
   return (
     <div className={`${styles.pageContent} ${styles.customerDetailPage}`}>
-      <header className={styles.pageHeading}><h1>Hồ sơ khách hàng</h1></header>
-      <div className={styles.customerDetailToolbar}>
-        <ButtonBar disabled={updateContact.isPending} onClick={() => dirty ? setLeaveTarget(PATH_MODERATOR.CUSTOMERS) : void router.push(PATH_MODERATOR.CUSTOMERS)}>Về danh sách</ButtonBar>
-        {profile.data && !profile.isError && <><div className={styles.customerToolbarIdentity}><strong>{profile.data.fullName || profile.data.email}</strong><span>Khách hàng</span></div>{isOwner && <ButtonBar variant="primary" type="submit" form="moderator-owner-contact" disabled={!dirty || updateContact.isPending}>{updateContact.isPending ? "Đang lưu…" : "Lưu thay đổi"}</ButtonBar>}</>}
-      </div>
+      <header className={styles.pageHeading}>
+        <BackButton
+          label="Về danh sách khách hàng"
+          fallbackHref={PATH_MODERATOR.CUSTOMERS}
+          disabled={updateContact.isPending}
+          onNavigate={() => {
+            if (dirty) setLeaveTarget(PATH_MODERATOR.CUSTOMERS);
+            else void router.push(PATH_MODERATOR.CUSTOMERS);
+          }}
+        />
+        <h1>Hồ sơ khách hàng</h1>
+        {profile.data && !profile.isError && <div className={styles.customerToolbarIdentity}><strong>{profile.data.fullName || profile.data.email}</strong><span>Khách hàng</span></div>}
+      </header>
       {!validId && (
         <p className={styles.pendingNotice} role="status">{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_UNAVAILABLE}</p>
       )}
@@ -139,13 +148,17 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
               /></label>
               {updateContact.isError && <p role="alert">{getApiErrorMessage(updateContact.error)}</p>}
               {updateContact.isSuccess && <p role="status">{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PHONE_SAVED}</p>}
+              <div className="ta:mt-4 ta:flex ta:justify-end">
+                <ButtonBar variant="primary" type="submit" disabled={!dirty || updateContact.isPending}>
+                  {updateContact.isPending ? "Đang lưu…" : "Lưu thay đổi"}
+                </ButtonBar>
+              </div>
             </form>
           )}
           </section>
           {isOwner && <section className={styles.formPanel} aria-labelledby="moderator-owner-contracts">
-            <h2 id="moderator-owner-contracts" className={styles.sectionTitle}>Hồ sơ khách hàng</h2>
+            <h2 id="moderator-owner-contracts" className={styles.sectionTitle}>Hợp đồng liên quan</h2>
             <details className={styles.customerTechnicalDetails}><summary>Thông tin đồng bộ</summary><dl className={styles.customerAccountInfo}><div><dt>Mã hồ sơ</dt><dd><TruncatedId value={profile.data.idaasUserId} /></dd></div><div><dt>Vai trò</dt><dd>{profile.data.roles.map(role => ({ OWNER: "Khách hàng", MODERATOR: "Điều phối viên", TECHNICIAN: "Kỹ thuật viên", ADMIN: "Quản trị viên" } as Record<string, string>)[role.toUpperCase()] ?? role).join(", ")}</dd></div></dl></details>
-            <h3 className={styles.sectionTitle}>Hợp đồng liên quan</h3>
             <QueryFeedback query={contracts} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACTS} />
             {contracts.data?.items.length === 0 && !contracts.isError && (
               <p role="status">{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_CONTRACTS_EMPTY}</p>
@@ -171,9 +184,9 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                   })}
                 </DataTable>
                 <div className={styles.profilePagination}>
-                  <button className={styles.retryButton} type="button" disabled={contractsPage <= 0} onClick={() => setContractsPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
+                  <ButtonBar type="button" disabled={contractsPage <= 0} onClick={() => setContractsPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</ButtonBar>
                   <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(contracts.data.page + 1, Math.max(1, contracts.data.totalPages), contracts.data.totalElements)}</span>
-                  <button className={styles.retryButton} type="button" disabled={contractsPage + 1 >= contracts.data.totalPages} onClick={() => setContractsPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
+                  <ButtonBar type="button" disabled={contractsPage + 1 >= contracts.data.totalPages} onClick={() => setContractsPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</ButtonBar>
                 </div>
               </>
             )}
@@ -202,9 +215,9 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                 ))}
               </DataTable>
               <div className={styles.profilePagination}>
-                <button className={styles.retryButton} type="button" disabled={historyPage <= 0} onClick={() => setHistoryPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
+                <ButtonBar type="button" disabled={historyPage <= 0} onClick={() => setHistoryPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</ButtonBar>
                 <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(history.data.page + 1, Math.max(1, history.data.totalPages), history.data.totalElements)}</span>
-                <button className={styles.retryButton} type="button" disabled={historyPage + 1 >= history.data.totalPages} onClick={() => setHistoryPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
+                <ButtonBar type="button" disabled={historyPage + 1 >= history.data.totalPages} onClick={() => setHistoryPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</ButtonBar>
               </div>
             </>
           )}

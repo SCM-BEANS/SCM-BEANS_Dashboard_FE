@@ -245,14 +245,14 @@ export function OverviewScreen() {
                 <div className={styles.cupChart} role="img" aria-label="Biểu đồ số ly ghi nhận theo ngày">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={cupDays} margin={{ top: 14, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid vertical={false} stroke="#eee8e3" strokeDasharray="3 4" />
+                      <CartesianGrid vertical={false} stroke="var(--color-divider)" strokeDasharray="3 4" />
                       <XAxis dataKey="date" tickFormatter={(value) => dayLabel(String(value))} tickLine={false} axisLine={false} minTickGap={24} tick={{ fontSize: 12 }} />
                       <YAxis allowDecimals={false} width={42} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                       <Tooltip
                         labelFormatter={(value) => formatDate(String(value))}
                         formatter={(value) => [numberFormat.format(Number(value)), "Ly ghi nhận"]}
                       />
-                      <Area type="monotone" dataKey="cups" stroke="#b81724" fill="#b81724" fillOpacity={0.1} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false} isAnimationActive={false} />
+                      <Area type="monotone" dataKey="cups" stroke="var(--color-primary)" fill="var(--color-chart-fill)" fillOpacity={1} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -272,8 +272,8 @@ export function OverviewScreen() {
                   <>
                     <div className={styles.machineGauge}>
                       <svg viewBox="0 0 240 140" role="img" aria-label={numberFormat.format(activeMachineCount) + " trên " + numberFormat.format(machineCount) + " máy đang hoạt động"}>
-                        <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="#eee8e3" strokeWidth="16" strokeDasharray="3 3" pathLength="100" />
-                        <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="#36866a" strokeWidth="16" strokeDasharray={rentalRate * 100 + " 100"} pathLength="100" />
+                        <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="var(--color-divider)" strokeWidth="16" strokeDasharray="3 3" pathLength="100" />
+                        <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="var(--color-primary)" strokeWidth="16" strokeDasharray={rentalRate * 100 + " 100"} pathLength="100" />
                         <text x="120" y="99" textAnchor="middle" className={styles.gaugeValue}>{numberFormat.format(activeMachineCount)}</text>
                         <text x="120" y="124" textAnchor="middle" className={styles.gaugeLabel}>trên {numberFormat.format(machineCount)} máy</text>
                       </svg>

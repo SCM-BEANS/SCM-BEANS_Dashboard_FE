@@ -15,9 +15,9 @@
 .invoicePanel {
   min-width: 0;
   padding: 20px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .cupsPanel {
@@ -37,7 +37,7 @@
 .cupsHeading h2,
 .panelHeading h2 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: 16px;
   line-height: 1.4;
 }
@@ -45,14 +45,14 @@
 .cupsHeading p,
 .panelHeading p {
   margin: 5px 0 0;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 13px;
   line-height: 1.45;
 }
 
 .panelLink {
   flex: 0 0 auto;
-  color: #a81521;
+  color: var(--color-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
@@ -67,7 +67,7 @@
 .panelLink:focus-visible,
 .invoiceIdentity a:focus-visible {
   border-radius: 3px;
-  outline: 2px solid #a81521;
+  outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -76,7 +76,7 @@
   align-items: baseline;
   gap: 10px;
   margin: 18px 0 0;
-  color: #302927;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .cupsTotal span {
-  color: #706561;
+  color: var(--color-muted);
   font-size: 14px;
 }
 
@@ -99,7 +99,7 @@
 }
 
 .cupChart :global(.recharts-text) {
-  fill: #706561;
+  fill: var(--color-muted);
 }
 
 .chartEmpty {
@@ -109,8 +109,8 @@
   margin: 16px 0 0;
   padding: 20px;
   border-radius: 9px;
-  background: #f8f6f4;
-  color: #625955;
+  background: var(--color-page);
+  color: var(--color-muted);
   font-size: 14px;
   text-align: center;
 }
@@ -118,7 +118,7 @@
 .chartCaption {
   margin: auto 0 0;
   padding-top: 12px;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -149,20 +149,20 @@
 }
 
 .gaugeValue {
-  fill: #302927;
+  fill: var(--color-text);
   font-size: 32px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .gaugeLabel {
-  fill: #625955;
+  fill: var(--color-muted);
   font-size: 13px;
 }
 
 .gaugeCaption {
   margin: 0;
-  color: #625955;
+  color: var(--color-muted);
   font-size: 13px;
   text-align: center;
 }
@@ -175,7 +175,7 @@
   overflow: hidden;
   margin: 17px 0 12px;
   border-radius: 999px;
-  background: #eee8e3;
+  background: var(--color-border);
 }
 
 .contractBar span {
@@ -202,7 +202,7 @@
   gap: 9px;
   margin: 0;
   padding: 0;
-  color: #625955;
+  color: var(--color-muted);
   font-size: 13px;
   list-style: none;
 }
@@ -221,7 +221,7 @@
 }
 
 .contractLegend strong {
-  color: #302927;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -239,14 +239,14 @@
 
 .invoiceSnapshotTitle {
   margin: 0 0 6px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .invoiceSnapshotCaption {
   margin: 0;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 13px;
 }
 
@@ -256,7 +256,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-top: 10px;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 13px;
 }
 
@@ -265,7 +265,7 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 4px 14px;
-  color: #302927;
+  color: var(--color-text);
   text-align: right;
 }
 
@@ -281,12 +281,12 @@
   overflow: hidden;
   margin: 12px 0;
   border-radius: 8px;
-  background: #eee8e3;
+  background: var(--color-border);
 }
 
 .invoiceSnapshotBar [data-group="overdue"],
 .invoiceSnapshotLegend [data-group="overdue"] {
-  background: #b81724;
+  background: var(--color-overdue);
 }
 
 .invoiceSnapshotBar [data-group="waiting"],
@@ -304,7 +304,7 @@
 }
 
 .invoiceSnapshotLegend {
-  color: #625955;
+  color: var(--color-muted);
 }
 
 .invoiceSnapshotLegend li {
@@ -322,7 +322,7 @@
 }
 
 .invoiceSnapshotLegend strong {
-  color: #302927;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -341,7 +341,7 @@
 }
 
 .invoiceSnapshotList li + li {
-  border-top: 1px solid #eee8e3;
+  border-top: 1px solid var(--color-border);
 }
 
 .invoiceIdentity {
@@ -352,25 +352,25 @@
 
 .invoiceIdentity a {
   width: fit-content;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 650;
   text-decoration: none;
 }
 
 .invoiceIdentity a:hover {
-  color: #a81521;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .invoiceIdentity small {
-  color: #706561;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
 .invoiceAmount {
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -379,7 +379,7 @@
 .panelNotice,
 .panelError {
   margin: 0;
-  color: #625955;
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -396,20 +396,20 @@
 .panelError button {
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
 
 .panelError button:hover {
-  background: #f8f6f4;
+  background: var(--color-page);
 }
 
 .panelError button:focus-visible {
-  outline: 2px solid #a81521;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

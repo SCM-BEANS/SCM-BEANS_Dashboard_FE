@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { ButtonBar } from "@/components/button/button-bar";
+import { MachineSectionTabs } from "@/components/machines/operational-overview";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN, PATH_MODERATOR } from "@/routes/path";
 import type { CoffeePackageRole } from "./coffee-package-workflow-controller";
@@ -28,8 +29,8 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
   ];
 
   return (
-    <main className={`${styles.screen} ${styles.managementScreen}`}>
-      <header className={styles.heading}>
+    <div className={`${styles.screen} ${styles.managementScreen} dashboard-list-page`}>
+      <header className="dashboard-list-heading">
         <div>
           <h1>Gói cà phê</h1>
         </div>
@@ -44,14 +45,8 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}
       {workflow.actionError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.actionError, "mutation")}</p> : null}
 
-      <nav className={styles.tabs} aria-label="Nhóm quản lý gói cà phê">
-        {tabs.map((item) => (
-          <button key={item.id} type="button" aria-pressed={tab === item.id} className={tab === item.id ? styles.activeTab : undefined} onClick={() => setTab(item.id)}>
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
+      <MachineSectionTabs label="Nhóm quản lý gói cà phê" tabs={tabs.map((item) => ({ value: item.id, label: item.label }))} activeTab={tab} onTabChange={(value) => setTab(value as OperatorTab)} idPrefix="coffee-package" />
+      <div className={styles.tabPanel} role="tabpanel" id="coffee-package-content" aria-labelledby={`coffee-package-tab-${tab}`}>
       {tab === "orders" ? (
         <OperatorOrderListPanel
           workflow={workflow}
@@ -67,6 +62,7 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
       {tab === "refunds" ? <OperatorRefundsPanel workflow={workflow} isAdmin={isAdmin} /> : null}
       {tab === "catalog" ? <OperatorCatalogPanel workflow={workflow} isAdmin={isAdmin} /> : null}
       {tab === "exceptions" && isAdmin ? <OperatorExceptionsPanel workflow={workflow} /> : null}
-    </main>
+      </div>
+    </div>
   );
 }

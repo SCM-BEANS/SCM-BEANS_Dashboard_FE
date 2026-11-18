@@ -101,8 +101,8 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description?: string }) {
-  return <BackButtonHeading title={title} titleId="technical-operations-heading" description={description} className={styles.pageHeading} back={null} />;
+function PageHeading({ title, description, className = styles.pageHeading }: { title: string; description?: string; className?: string }) {
+  return <BackButtonHeading title={title} titleId="technical-operations-heading" description={description} className={className} back={null} />;
 }
 
 function ActionLink({ href, children }: { href: string; children: ReactNode }) {
@@ -350,13 +350,13 @@ function MaintenanceRequestTable({
     { key: "updated", header: messages.TECHNICAL_UPDATED, render: (request) => formatDate(request.updatedAt ?? request.createdAt) },
     {
       key: "actions",
-      header: messages.TECHNICAL_ACTIONS,
+      header: "Tiếp nhận và phân công",
       render: (request) => {
         const isCurrentRequestPending = isPending && pendingRequestId === request.id;
         return request.status === "REQUESTED" && request.requestType === "REPAIR" ? (
           <div className={styles.technicalRequestActions}>
-            <button
-              className={styles.technicalRequestAccept}
+            <ButtonBar
+              variant="primary"
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: true })}
               type="button"
@@ -364,9 +364,9 @@ function MaintenanceRequestTable({
               {isCurrentRequestPending && pendingAccepted
                 ? messages.TECHNICAL_ACCEPTING
                 : messages.TECHNICAL_ACCEPT}
-            </button>
-            <button
-              className={styles.technicalRequestReject}
+            </ButtonBar>
+            <ButtonBar
+              variant="danger"
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: false })}
               type="button"
@@ -374,16 +374,16 @@ function MaintenanceRequestTable({
               {isCurrentRequestPending && pendingAccepted === false
                 ? messages.TECHNICAL_REJECTING
                 : messages.TECHNICAL_REJECT}
-            </button>
+            </ButtonBar>
           </div>
         ) : request.status === "TRIAGED" ? (
           request.technicianId === null || request.technicianId === undefined
-            ? <Link className={styles.technicalRequestAssign} href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</Link>
+            ? <ButtonBar href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</ButtonBar>
             : <span className={styles.technicalRequestAssigned}>{messages.TECHNICAL_ASSIGNED}</span>
         ) : "—";
       },
     },
-    { key: "detail", header: <span className={styles.srOnly}>Hồ sơ</span>, render: (request: MaintenanceRequest) => <ButtonBar href={routes.requestDetail(request.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
+    { key: "detail", align: "right", header: "Thao tác", render: (request: MaintenanceRequest) => <ButtonBar href={routes.requestDetail(request.id)} rollingLabel>Mở hồ sơ</ButtonBar> },
   ];
 
   return (
@@ -654,9 +654,9 @@ export function TechnicalOperationsScreen({
 
   if (isMachineHistory) {
     if (historyMachineId && !validHistoryMachineId) return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><p className={styles.pendingNotice} role="status">{historyMachineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
-    return <div className={styles.pageContent}>
-      <BackButtonHeading className={styles.pageHeading} titleId="machine-history-title" title="Lịch sử máy" back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
-      <section className={styles.panel} aria-labelledby="machine-history-list-title">
+    return <div className={`${styles.pageContent} dashboard-list-page`}>
+      <BackButtonHeading className={historyMachineId ? styles.pageHeading : "dashboard-list-heading"} titleId="machine-history-title" title="Lịch sử máy" back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
+      <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="machine-history-list-title">
         <div className={styles.listHeading}><h2 id="machine-history-list-title">Phiếu bảo trì</h2></div>
         <form className={`${filterStyles.filters} ${styles.historyFilters}`} onSubmit={(event) => { event.preventDefault(); setHistoryFilters(historyDraft); setTicketPage(0); }}>
           <select aria-label="Lọc theo máy" value={historyMachineId || historyDraft.machineId} disabled={Boolean(historyMachineId) || historyMachines.isPending || historyMachines.isError} onChange={(event) => setHistoryDraft((value) => ({ ...value, machineId: event.target.value }))}>
@@ -665,7 +665,7 @@ export function TechnicalOperationsScreen({
           <select aria-label="Lọc trạng thái phiếu" value={historyDraft.status} onChange={(event) => setHistoryDraft((value) => ({ ...value, status: event.target.value as typeof historyDraft.status }))}>
             <option value="">Tất cả trạng thái</option>{["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"].map((status) => <option key={status} value={status}>{maintenanceTicketStatusLabel(status)}</option>)}
           </select>
-          <button type="submit" disabled={tickets.isFetching}>Tìm kiếm</button>
+          <ButtonBar type="submit" disabled={tickets.isFetching}>Tìm kiếm</ButtonBar>
         </form>
         {shouldLoadMachineSerials && <QueryFeedback query={historyMachines} loadingMessage={messages.LOADING_MACHINES} />}
         <QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />
@@ -694,14 +694,14 @@ export function TechnicalOperationsScreen({
     </>
   ) : null;
   return (
-    <div className={styles.pageContent}>
-      <PageHeading title="Yêu cầu kỹ thuật" />
+    <div className={`${styles.pageContent} dashboard-list-page`}>
+      <PageHeading title="Yêu cầu kỹ thuật" className="dashboard-list-heading" />
       {triageFeedback && (
         <p className={styles.pendingNotice} role={triageFeedback.type === "error" ? "alert" : "status"}>
           {triageFeedback.message}
         </p>
       )}
-      <section className={styles.panel} aria-labelledby="technical-request-list-title">
+      <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="technical-request-list-title">
         <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2></div>
         <TableFilters
           search={{

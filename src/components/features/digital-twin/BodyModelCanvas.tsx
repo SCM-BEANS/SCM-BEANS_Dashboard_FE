@@ -201,6 +201,7 @@ function applyPresentationVisualState(
   state: PresentationVisualState,
 ) {
   const focus = new Set(presentation.focus);
+  const accent = typeof document === "undefined" ? "#2F7A6F" : getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim();
   const snapshotVisibility = (node: THREE.Object3D) => {
     if (!state.visibility.has(node)) state.visibility.set(node, node.visible);
   };
@@ -224,11 +225,11 @@ function applyPresentationVisualState(
         state.originalDepthWrite.set(clone, original.depthWrite);
         const material = clone as THREE.MeshStandardMaterial;
         if (material.color instanceof THREE.Color) {
-          if (groupIsFocused) material.color.lerp(new THREE.Color("#b91222"), 0.18);
+          if (groupIsFocused) material.color.lerp(new THREE.Color(accent), 0.18);
           else if (focus.size > 0) material.color.lerp(new THREE.Color("#898989"), 0.25);
         }
         if (groupIsFocused && material.emissive instanceof THREE.Color) {
-          material.emissive.copy(new THREE.Color("#b91222"));
+          material.emissive.copy(new THREE.Color(accent));
           material.emissiveIntensity = Math.max(material.emissiveIntensity ?? 0, 0.12);
         }
         setMaterialOpacity(clone, getPresentationOpacity(original.opacity, group, groupIsFocused, focus.size > 0), groupIsFocused ? false : original.transparent, groupIsFocused ? true : original.depthWrite);

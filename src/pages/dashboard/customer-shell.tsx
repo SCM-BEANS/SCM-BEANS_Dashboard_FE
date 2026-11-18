@@ -10,7 +10,7 @@ import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
-import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
+import { SidebarShell, SidebarWorkspace, Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessCustomerArea } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_CUSTOMER, PATH_HOME } from "@/routes/path";
@@ -110,7 +110,7 @@ export function CustomerShell({
         <title>{pageTitle} | {CUSTOMER_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="customer">
+      <SidebarShell className={`${styles.shell} dashboard-tailadmin ta:bg-gray-50 ta:text-gray-800`} data-role="customer">
         <NotificationRuntime scope="customer" />
         <Sidebar
           brand={CUSTOMER_MESSAGES.BRAND}
@@ -120,23 +120,13 @@ export function CustomerShell({
           rootHref={PATH_CUSTOMER.ROOT}
           navigationLabel={CUSTOMER_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
           items={CUSTOMER_SIDEBAR_ITEMS}
-          settingsHref={PATH_CUSTOMER.SETTINGS}
-          logout={{
-            label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT,
-            pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT,
-            pending: loggingOut,
-            onLogout: handleLogout,
-          }}
         />
-        <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
-          </header>
-          <header className={styles.mobileHeader}>
-            <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
+        <SidebarWorkspace className={styles.workspace} context={currentSection.LABEL} notifications={<NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} logout={{ label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />}>
+          <header className={`${styles.mobileHeader} ta:items-center ta:justify-between ta:gap-3 ta:bg-white ta:px-4`}>
+            <Link className={`${styles.mobileBrand} ta:truncate ta:text-lg ta:font-bold ta:text-gray-800`} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
             </Link>
+            <div data-dashboard-dev-login-mobile />
             <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} settingsHref={PATH_CUSTOMER.SETTINGS} logout={{ label: CUSTOMER_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: CUSTOMER_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={CUSTOMER_SIDEBAR_ITEMS}
@@ -154,14 +144,13 @@ export function CustomerShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
-          </div>
-          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
-            <main className={styles.main}>{children}</main>
-          </ActionBarLayout>
-        </div>
-      </div>
+          <main className={styles.main} aria-label={pageTitle}>
+            <ActionBarLayout navigationHrefs={CUSTOMER_SIDEBAR_ITEMS.filter(item => item.enabled !== false).map(item => item.href)} label={`Thao tác ${pageTitle}`}>
+              {children}
+            </ActionBarLayout>
+          </main>
+        </SidebarWorkspace>
+      </SidebarShell>
       {logoutSucceeded && (
         <LiquidSuccessSplash
           message="Đăng xuất thành công"

@@ -235,7 +235,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
 
   return (
     <BuybackWorkflowLayout
-      className={adminStyles.screen}
+      className={`${adminStyles.screen} ${workflow.detailId ? "" : "dashboard-list-page"}`}
       title={caseData ? `Lệnh thu mua · ${caseData.id.slice(0, 8).toUpperCase()}` : "Thu mua và tân trang máy"}
       back={workflow.detailId ? { label: "Về yêu cầu kỹ thuật", fallbackHref: operatorRole === "MODERATOR" ? PATH_MODERATOR.BUYBACK_DETAIL(workflow.detailId) : `${listHref}?caseId=${encodeURIComponent(workflow.detailId)}` } : undefined}
       actionBarBackHref={workflow.isModeratorRoute && caseId ? listHref : undefined}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { BackButton } from "@/components/navigation/back-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
@@ -22,7 +23,7 @@ export function MachineMonitoringHeader({ machineLabel, backHref, tabs, activeTa
   onTabChange: (tab: string) => void; idPrefix?: string;
 }) {
   return <>
-    <div className={styles.operationalOverviewBack}><Link href={backHref}>← Về hồ sơ máy</Link></div>
+    <div><BackButton label="Về hồ sơ máy" fallbackHref={backHref} /></div>
     <header className={styles.operationalOverviewHeading}>
       <h1 id="machine-operational-overview-title">Giám sát vận hành <span className={styles.monitoringMachineName}>{machineLabel ?? "Máy đang xem"}</span></h1>
     </header>
@@ -181,7 +182,7 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
             <div className={styles.productionTotal}><article className={styles.operationalMetricCard}><span>Ly ghi nhận trong kỳ</span><strong>{formatCount(stats.total)} <small>ly</small></strong><small>Máy đang xem · {formatDate(String(fromDate))} – {formatDate(String(toDate))}</small></article></div>
             {!stats.complete && <p className={styles.operationalOverviewState}>Biểu đồ từ {formatCount(stats.loaded)}/{formatCount(stats.total)} bản ghi đã tải.</p>}
             <div className={styles.monitoringProductionCharts}>
-              <section className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="#eee8e3" />)}<polyline fill="none" stroke="#b81724" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="#b81724"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="#706561">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
+              <section className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="var(--color-divider)" />)}<polyline fill="none" stroke="var(--color-primary)" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="var(--color-primary)"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="var(--color-muted)">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
               <section className={styles.operationalOverviewPanel}><h2>Ly theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} ly</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</section>
             </div>
             {production.hasNextPage ? <ButtonBar disabled={production.isFetching} onClick={() => void production.fetchNextPage()}>{production.isFetchingNextPage ? "Đang tải…" : "Tải thêm dữ liệu biểu đồ"}</ButtonBar> : !stats.complete ? <p role="status">Chưa tải đủ dữ liệu hoặc dữ liệu đã thay đổi. Hãy chọn khoảng ngày ngắn hơn để tải đủ dữ liệu.</p> : null}
@@ -309,8 +310,11 @@ export function OperationalOverview({
 
   return (
     <section className={styles.operationalOverview} aria-labelledby="machine-operational-overview-title">
-      <div className={styles.operationalOverviewBack}>
-        <Link href={machineLoading || !machineError ? machineHref : machineListHref}>← Quay lại máy</Link>
+      <div>
+        <BackButton
+          label={machineError && !machineLoading ? "Về danh sách máy" : "Về hồ sơ máy"}
+          fallbackHref={machineLoading || !machineError ? machineHref : machineListHref}
+        />
       </div>
       <header className={styles.operationalOverviewHeading}>
         <h1 id="machine-operational-overview-title">Tổng quan dữ liệu vận hành</h1>

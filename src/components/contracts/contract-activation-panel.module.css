@@ -3,14 +3,14 @@
   flex-direction: column;
   gap: 14px;
   padding: 20px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .panel h2 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: 18px;
 }
 
@@ -18,7 +18,7 @@
 .hint,
 .confirmation p {
   margin: 0;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -32,7 +32,7 @@
 .summary > div {
   display: grid;
   gap: 6px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
 }
 
@@ -49,13 +49,13 @@
 
 .policy {
   padding: 14px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 }
 
 .policy summary {
   cursor: pointer;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -85,9 +85,9 @@
   justify-content: space-between;
   gap: 14px;
   padding: 14px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 .actions {

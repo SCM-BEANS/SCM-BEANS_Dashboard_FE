@@ -51,21 +51,6 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
         titleId="technician-screen-title"
         className={styles.pageHeading}
       />
-      {screen.filters?.length ? (
-        <div className={styles.workflowActions} role="group" aria-label={screen.filterLabel}>
-          {screen.filters.map((filter) => (
-            <button
-              aria-describedby="technician-screen-reason"
-              className={styles.workflowAction}
-              disabled
-              key={filter}
-              type="button"
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-      ) : null}
       <div className={styles.unavailableStatus} role="status" aria-labelledby="technician-status-title">
         {screen.panelTitle ? <p className={styles.unavailablePanelTitle}>{screen.panelTitle}</p> : null}
         <h2 id="technician-status-title">{TECHNICIAN_MESSAGES.WORKFLOWS.UNAVAILABLE_TITLE}</h2>

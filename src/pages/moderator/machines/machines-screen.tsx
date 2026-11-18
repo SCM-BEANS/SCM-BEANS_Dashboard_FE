@@ -28,7 +28,6 @@ import { MachineListView } from "@/components/machines/machine-list-view";
 import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
 import { CreateMachineModelForm } from "@/pages/admin/machines/create-machine-model-form";
@@ -208,7 +207,7 @@ function MachineList({
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
-      <nav className={adminStyles.machinePagination} aria-label="Phân trang máy"><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
+      <nav className={adminStyles.machinePagination} aria-label="Phân trang máy"><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trang trước</ButtonBar><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span><ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => setPage(currentPage + 1)}>Trang sau</ButtonBar></nav>
     </div>
   );
 }
@@ -414,7 +413,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                   { key: "open", header: "", render: (model) => <ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_MODEL_DETAIL(model.id)}>Mở hồ sơ</ButtonBar> },
                 ]}
               />
-              <nav className={adminStyles.machinePagination} aria-label="Phân trang mẫu máy"><ButtonBar disabled={currentModelPage === 0} onClick={() => setModelPage(currentModelPage - 1)}>Trước</ButtonBar><span>Trang {currentModelPage + 1}</span><ButtonBar disabled={(currentModelPage + 1) * 10 >= machineModels.data.length} onClick={() => setModelPage(currentModelPage + 1)}>Sau</ButtonBar></nav>
+              <nav className={adminStyles.machinePagination} aria-label="Phân trang mẫu máy"><ButtonBar disabled={currentModelPage === 0} onClick={() => setModelPage(currentModelPage - 1)}>Trang trước</ButtonBar><span>Trang {currentModelPage + 1}</span><ButtonBar disabled={(currentModelPage + 1) * 10 >= machineModels.data.length} onClick={() => setModelPage(currentModelPage + 1)}>Trang sau</ButtonBar></nav>
             </>}
           </> : <>
             <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
@@ -424,11 +423,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       </div>
       </MachineListView>
     </div>
-    {!isCreateView && !isMachineModelDetail && (
-      <PageActions actions={[
-        { id: "iot", label: ADMIN_T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_MODERATOR.IOT },
-      ]} />
-    )}
     </>
   );
 }

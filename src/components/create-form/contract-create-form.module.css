@@ -1,8 +1,10 @@
+@reference "../../styles/dashboard-tailadmin.css";
+
 .panel {
   padding: 22px 24px;
-  border: 1px solid #e9e2dc;
-  border-radius: 16px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
 }
 
 .panel h2 {
@@ -19,17 +21,18 @@
 .operationsGrid input,
 .operationsGrid select,
 .operationsGrid textarea {
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
+
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
-  border-radius: 10px;
-  background: #fff;
-  color: #302927;
+
+
+
+
   font: inherit;
   font-size: 14px;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .operationsGrid textarea {
   min-height: 104px;
@@ -43,12 +46,12 @@
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  color: #706561;
+  color: var(--color-muted);
   font-size: 13px;
 }
 
 .operationsGrid strong {
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
   overflow-wrap: anywhere;
@@ -75,18 +78,18 @@
 
 .createLayout { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(260px, .9fr); gap: 18px; align-items: start; }
 .createMain { display: grid; min-width: 0; gap: 18px; }
-.createLayout .panel { min-width: 0; padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; }
+.createLayout .panel { min-width: 0; padding: 22px 24px; border: 1px solid var(--color-border); border-radius: var(--radius-panel); background: var(--color-surface); }
 .createSummary { display: grid; min-width: 0; gap: 16px; }
-.createSummary h2, .createMain h2 { margin: 0 0 16px; color: #302927; font-size: 19px; }
+.createSummary h2, .createMain h2 { margin: 0 0 16px; color: var(--color-text); font-size: 19px; }
 .summaryFields { display: grid; gap: 16px; margin: 0; }
 .summaryFields > div { display: grid; gap: 5px; min-width: 0; }
-.summaryFields dt { color: #706561; font-size: 13px; }
-.summaryFields dd { margin: 0; color: #302927; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.summaryFields dt { color: var(--color-muted); font-size: 13px; }
+.summaryFields dd { margin: 0; color: var(--color-text); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .policyHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .policyHeading h2 { margin: 0 0 6px; }
-.policyHeading p, .createContext p { margin: 0; color: #706561; font-size: 13px; line-height: 1.55; }
-.policyHeading > span { flex: none; padding: 6px 9px; border-radius: 6px; background: #f5f2ef; color: #514843; font-size: 12px; }
-.createContext { background: #fdfbf9 !important; }
+.policyHeading p, .createContext p { margin: 0; color: var(--color-muted); font-size: 13px; line-height: 1.55; }
+.policyHeading > span { flex: none; padding: 6px 9px; border-radius: 6px; background: var(--ta-color-gray-100); color: var(--color-text); font-size: 12px; }
+.createContext { background: var(--color-surface) !important; }
 .createContext h2 { font-size: 16px !important; }
 
 .contractCheckboxGroup {
@@ -100,7 +103,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
 }
 
@@ -116,14 +119,14 @@
   min-height: 18px;
   margin: 0;
   padding: 0;
-  accent-color: #8a5a44;
+  accent-color: var(--ta-color-brand-500);
 }
 
 .operationsNotice {
   padding: 14px 16px;
   border-radius: 10px;
-  background: #fff2e6;
-  color: #693c2c;
+  background: var(--ta-color-orange-50);
+  color: var(--ta-color-orange-800);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -132,10 +135,10 @@
   min-height: 36px;
   margin-left: 8px;
   padding: 0 10px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
 }
 

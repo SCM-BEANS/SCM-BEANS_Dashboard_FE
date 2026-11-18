@@ -1,3 +1,5 @@
+@reference "../../styles/dashboard-tailadmin.css";
+
 .filters {
   display: flex;
   width: 100%;
@@ -11,23 +13,19 @@
 
 .filters > input,
 .filters > select {
+  box-sizing: border-box;
   width: 170px;
   min-width: 0;
-  min-height: 44px;
+
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
-  border-radius: 12px;
-  background: white;
-  color: #302927;
+
+
+
+
   font: inherit;
   font-size: 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.filters > input:hover,
-.filters > select:hover {
-  border-color: #cbbfb9;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .filters > input {
   width: 100%;
@@ -44,10 +42,10 @@
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  border: 1px solid #e9e2dc;
-  border-radius: 12px;
-  background: white;
-  color: #302927;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-control);
+  color: var(--color-text);
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -56,8 +54,8 @@
 }
 
 .filters button:hover {
-  border-color: #dfb8bb;
-  background: #fdf4f4;
+  border-color: var(--color-primary-ink);
+  background: var(--color-primary-soft);
 }
 
 .filters button:disabled {
@@ -68,10 +66,10 @@
 .filters input:focus-visible,
 .filters select:focus-visible,
 .filters button:focus-visible {
-  border-color: var(--color-primary);
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
-  outline-offset: 2px;
-}
+
+
+
+ @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
 
 @media (max-width: 1023px) {
   .filters {

@@ -224,7 +224,9 @@ test.describe("installation work-order paged records", () => {
 
     const activeTab = page.getByRole("tab", { name: "Danh sách kiểm tra" });
     await expect(activeTab).toBeVisible();
-    await expect(activeTab).toHaveCSS("color", "rgb(184, 23, 36)");
+    await expect(activeTab).toHaveCSS("color", "rgb(31, 90, 81)");
+    await expect(activeTab).toHaveCSS("border-bottom-width", "2px");
+    await expect(activeTab).toHaveCSS("font-weight", "600");
     await page.getByRole("tab", { name: "Chứng từ" }).click();
     await expect(page.getByRole("columnheader", { name: "Định dạng" })).toHaveCount(0);
     await expect(page.getByRole("columnheader", { name: "Dung lượng" })).toHaveCount(0);

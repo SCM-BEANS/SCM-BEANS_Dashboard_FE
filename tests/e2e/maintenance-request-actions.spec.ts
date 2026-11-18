@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 async function expectPageAction(page: Page, id: string) { await expect(page.locator('[data-action-id="' + id + '"]')).toBeVisible(); }
 async function expectNoPageAction(page: Page, id: string) { await expect(page.locator('[data-action-id="' + id + '"]')).toHaveCount(0); }
-async function expectNoPageActionLabel(page: Page, label: string) { await expect(page.locator('footer[aria-label^="Thao t?c"]').getByRole("button", { name: label, exact: true })).toHaveCount(0); }
+async function expectNoPageActionLabel(page: Page, label: string) { await expect(page.locator('section[aria-label^="Thao tác"]').getByRole("button", { name: label, exact: true })).toHaveCount(0); }
 async function clickPageAction(page: Page, id: string) { await page.locator('[data-action-id="' + id + '"]').click(); }
 async function expectInlineActions(page: Page, ids: string[]) {
   for (const id of ids) await expectPageAction(page, id);

@@ -35,8 +35,8 @@ export function CoffeePackageOwnerScreen() {
   }, [router, workflow.selectedOrderId]);
 
   return (
-    <main className={`${styles.screen} ${styles.managementScreen}`}>
-      <header className={styles.heading}>
+    <div className={`${styles.screen} ${styles.managementScreen} dashboard-list-page`}>
+      <header className={`${styles.heading} dashboard-list-heading`}>
         <div>
           <h1>Gói cà phê</h1>
           <p>Đặt hạt cà phê cho hợp đồng Smart IoT, theo dõi thanh toán và bàn giao.</p>
@@ -60,7 +60,7 @@ export function CoffeePackageOwnerScreen() {
         workflow.setSelectedRefundId("");
         void router.push(PATH_CUSTOMER.COFFEE_PACKAGE_ORDER_DETAIL(orderId));
       }} />
-    </main>
+    </div>
   );
 }
 

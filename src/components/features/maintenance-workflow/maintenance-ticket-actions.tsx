@@ -413,7 +413,7 @@ export function MachineMaintenanceTicketActions({
   const hiddenCount = sortedTickets.length - visibleTickets.length;
   // In table mode the list may live inside a hidden tab panel; portal dialogs so they still show.
   const overlay = (node: ReactNode) => {
-    const content = role === "OWNER" ? <div className={styles.ownerDialogScope}>{node}</div> : node;
+    const content = <div className={`dashboard-tailadmin-portal ${role === "OWNER" ? styles.ownerDialogScope : ""}`}>{node}</div>;
     return isTable && typeof document !== "undefined" ? createPortal(content, document.body) : content;
   };
 

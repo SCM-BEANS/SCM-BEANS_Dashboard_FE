@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
 import { notificationsApi } from "@/apis/notifications.api";
 import type { Notification } from "@/schema/notifications.schema";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -63,8 +63,11 @@ function NotificationToast({ notification, dismiss }: { notification: Notificati
     return () => { clearTimeout(timer); remaining.current = Math.max(0, remaining.current - (Date.now() - started)); };
   }, [paused, dismiss]);
   const presentation = getNotificationPresentation(notification);
+  const type = notification.type.toUpperCase();
+  const level = /SUCCESS|COMPLETED|RESOLVED/.test(type) ? "success" : /ERROR|CRITICAL|DANGER|FAILED/.test(type) ? "danger" : /WARNING|EXPIRING|MISSING|MAINTENANCE|REVIEW/.test(type) ? "warning" : "info";
+  const Icon = level === "success" ? CheckCircle2 : level === "danger" ? XCircle : level === "warning" ? AlertTriangle : Info;
   return <article className={styles.toast} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}>
-    <NotificationTypeIcon label={presentation.typeLabel} /><div><time>{formatNotificationDate(notification.createdAt)}</time><strong>{presentation.title}</strong></div>
+    <span className={styles.toastIcon} data-level={level}><Icon size={22} aria-hidden="true" /></span><div><time>{formatNotificationDate(notification.createdAt)}</time><strong>{presentation.title}</strong></div>
     <button type="button" aria-label={`Đóng thông báo nổi: ${presentation.title}`} onClick={dismiss}><X size={18} aria-hidden="true" /></button>
   </article>;
 }
@@ -103,7 +106,7 @@ export function NotificationRuntime({ scope }: { scope: NotificationScope }) {
   }, [list.data, dnd, preferences.sound, client, scope, subject]);
   useEffect(() => { if (dnd) setToasts([]); }, [dnd]);
   if (!toasts.length || dnd) return null;
-  return createPortal(<section className={styles.toastStack} data-position={preferences.position} aria-label="Thông báo mới" aria-live="polite" aria-relevant="additions">
+  return createPortal(<section className={`${styles.toastStack} dashboard-tailadmin-portal`} data-position={preferences.position} aria-label="Thông báo mới" aria-live="polite" aria-relevant="additions">
     {toasts.map((notification) => <NotificationToast key={notification.id} notification={notification} dismiss={() => setToasts((items) => items.filter((item) => item.id !== notification.id))} />)}
   </section>, document.body);
 }

@@ -56,7 +56,7 @@ export function getCurrentAdminSection(pathname: string): NavigationItem {
   return ADMIN_NAVIGATION_LINKS.find((item) => item.HREF === activeItem?.href) ?? ADMIN_NAVIGATION_LINKS[0];
 }
 
-export function AdminSidebarMenu({ loggingOut, onLogout }: { loggingOut: boolean; onLogout: () => void | Promise<void> }) {
+export function AdminSidebarMenu() {
   const router = useRouter();
 
   return (
@@ -68,13 +68,6 @@ export function AdminSidebarMenu({ loggingOut, onLogout }: { loggingOut: boolean
       rootHref={PATH_ADMIN.ROOT}
       navigationLabel={"\u0110i\u1ec1u h\u01b0\u1edbng Admin"}
       items={ADMIN_SIDEBAR_ITEMS}
-      settingsHref={PATH_ADMIN.SETTINGS}
-      logout={{
-        label: ADMIN_MESSAGES.AUTH.LOGOUT,
-        pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT,
-        pending: loggingOut,
-        onLogout,
-      }}
     />
   );
 }

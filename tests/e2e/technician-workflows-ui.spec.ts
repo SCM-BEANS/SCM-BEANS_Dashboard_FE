@@ -12,6 +12,8 @@ test("recall uses a compact list and a separate progress detail with collapsed h
     return route.fulfill({ json: path.endsWith("/recall-work-orders") ? { content: [order], page: 0, size: 10, totalElements: 1, totalPages: 1, first: true, last: true } : path.endsWith(`/recall-work-orders/${id}`) ? order : path.endsWith("/events") ? { content: events, page: 0, size: 50, totalElements: 7, totalPages: 1, first: true, last: true } : [] });
   });
   await page.goto("/technician/tasks/retrieval");
+  await expect(page.getByRole("banner")).toHaveCSS("border-bottom-width", "0px");
+  await expect(page.getByRole("region", { name: "Danh sách lệnh thu hồi" })).toHaveCSS("padding-left", "20px");
   await expect(page.getByRole("table")).toHaveCount(1);
   await page.screenshot({ path: ".playwright-cli/technician-retrieval-list.png" });
   await page.getByRole("button", { name: "Mở chi tiết", exact: true }).click();

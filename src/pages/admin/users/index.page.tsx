@@ -87,8 +87,8 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
 
   return (
     <>
-      <div className={`${styles.pageContent} ${styles.accountPageContent} ${styles.userPage}`}>
-        <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
+      <div className={`${styles.pageContent} ${styles.accountPageContent} ${styles.userPage} ${view === "list" ? "dashboard-list-page" : ""}`}>
+        <div className={`${styles.pageHeading} ${styles.userPageHeading} ${view === "list" ? "dashboard-list-heading" : ""}`}>
           <div>
           <h1>{view === "detail" ? T.FORM.DETAIL_TITLE : view === "create" ? T.FORM.CREATE_TITLE : T.LIST.TITLE}</h1>
           {view === "create" && <p>{T.FORM.CREATE_DESCRIPTION}</p>}

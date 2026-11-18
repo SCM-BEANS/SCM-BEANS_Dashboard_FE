@@ -84,7 +84,7 @@ export function RepairCaseListPanel({
   ];
 
   return (
-    <section className={styles.panel} aria-labelledby="repair-case-list-title">
+    <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="repair-case-list-title">
       <header className={styles.panelHeading}>
         <div>
           <h2 id="repair-case-list-title">{title}</h2>

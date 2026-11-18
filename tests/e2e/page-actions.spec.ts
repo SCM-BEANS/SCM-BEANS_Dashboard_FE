@@ -16,14 +16,23 @@ async function mockApi(page: Page) {
 test("orders primary and danger actions, supports overflow keyboard use, and cancels confirmation", async ({ page }) => {
   await page.goto("/dev/action-bar-fixture");
 
-  const dock = page.getByRole("contentinfo", { name: "Thao tác kiểm thử" });
+  const dock = page.getByRole("region", { name: "Thao tác kiểm thử" });
   await expect(dock).toBeVisible();
   const visibleActions = dock.locator("button, a");
   await expect(visibleActions).toHaveCount(4);
   await expect(visibleActions.nth(0)).toHaveAccessibleName("Xóa mục");
-  await expect(visibleActions.nth(0)).toHaveCSS("border-top-color", "rgb(184, 23, 36)");
+  const dangerColor = await dock.evaluate(element => getComputedStyle(element).getPropertyValue("--ta-color-red-600").trim());
+  const resolvedDangerColor = await page.evaluate(color => {
+    const sample = document.createElement("span");
+    sample.style.color = color;
+    document.body.append(sample);
+    const resolved = getComputedStyle(sample).color;
+    sample.remove();
+    return resolved;
+  }, dangerColor);
+  await expect(visibleActions.nth(0)).toHaveCSS("border-top-color", resolvedDangerColor);
   await expect(visibleActions.last()).toHaveAccessibleName("Lưu thay đổi");
-  await expect(visibleActions.last()).toHaveCSS("background-color", "rgb(184, 23, 36)");
+  await expect(visibleActions.last()).toHaveCSS("background-color", "rgb(70, 95, 255)");
 
   const trigger = dock.getByRole("button", { name: "Thêm thao tác", exact: true });
   await trigger.focus();
@@ -66,10 +75,10 @@ test("confirm action navigates with the client router", async ({ page }) => {
   await page.goto("/dev/action-bar-fixture");
   let documentRequests = 0;
   page.on("request", (request) => {
-    if (request.isNavigationRequest() && request.resourceType() === "document") documentRequests += 1;
+    if (request.isNavigationRequest() && request.resourceType() === "document" && request.frame() === page.mainFrame()) documentRequests += 1;
   });
 
-  const dock = page.getByRole("contentinfo", { name: "Thao tác kiểm thử" });
+  const dock = page.getByRole("region", { name: "Thao tác kiểm thử" });
   await dock.getByRole("button", { name: "Thêm thao tác", exact: true }).click();
   await page.getByRole("menu").getByRole("menuitem", { name: "Tiếp tục" }).click();
   await page.getByRole("alertdialog", { name: "Xác nhận thao tác" }).getByRole("button", { name: "Thực hiện" }).click();
@@ -78,57 +87,29 @@ test("confirm action navigates with the client router", async ({ page }) => {
   expect(documentRequests).toBe(0);
 });
 
-test("customer machine read screen shows the dock without covering the final content", async ({ page }) => {
+for (const width of [1440, 390]) test(`customer machine read screen has no shortcut dock at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
   await login(page, "owner");
   await mockApi(page);
   await page.goto("/dashboard/machines");
-
-  const dock = page.getByRole("contentinfo", { name: /Thao tác/ });
-  await expect(dock).toBeVisible();
-  await expect(dock.locator("button, a")).toHaveCount(4);
-  await expect(dock.locator("a").last()).toHaveCSS("background-color", "rgb(184, 23, 36)");
-
-  const main = page.locator("main");
-  await expect(main).toHaveCSS("padding-bottom", "80px");
-  const lastContent = await main.evaluate((element) => {
-    const last = element.lastElementChild;
-    if (!last) return null;
-    const { top, bottom } = last.getBoundingClientRect();
-    return { top, bottom };
-  });
-  const dockBox = await dock.boundingBox();
-  expect(lastContent).not.toBeNull();
-  expect(dockBox).not.toBeNull();
-  expect(lastContent!.bottom <= dockBox!.y || lastContent!.top >= dockBox!.y + dockBox!.height).toBe(true);
-});
-
-test("customer machine read screen keeps the mobile dock static with only primary and overflow controls", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await login(page, "owner");
-  await mockApi(page);
-  await page.goto("/dashboard/machines");
-
-  const dock = page.getByRole("contentinfo", { name: /Thao tác/ });
-  await expect(dock).toBeVisible();
-  await expect(dock).toHaveCSS("position", "static");
-  await expect(dock.locator("button, a")).toHaveCount(2);
-  await expect(dock.getByRole("button", { name: "Thêm thao tác", exact: true })).toBeVisible();
-  await expect(dock.locator("a")).toHaveCount(1);
+  await expect(page.locator("main")).toBeVisible();
+  await expect(page.locator('section[aria-label^="Thao tác"]')).toBeHidden();
   await expect(page.locator("main")).toHaveCSS("padding-bottom", "0px");
+  if (width > 1023) await expect(page.getByRole("navigation", { name: "Điều hướng Khách hàng", exact: true }).getByRole("link", { name: "Quản lý máy", exact: true })).toBeVisible();
 });
 
 test("customer workflow and technician screens register page actions", async ({ page }) => {
   await login(page, "owner");
   await mockApi(page);
   await page.goto("/dashboard/support/new");
-  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Thao tác/ })).toBeVisible();
 
   await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveAttribute("form", "repair-intake-form");
   await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveClass(/primary/);
 
   await login(page, "technician");
   await page.goto("/technician/tasks/standard-handover");
-  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: /Thao tác/ })).toHaveCount(0);
 });
 
 test("customer operational read screen hides the dock when it has no actions", async ({ page }) => {
@@ -138,7 +119,7 @@ test("customer operational read screen hides the dock when it has no actions", a
   await page.goto(`/dashboard/machines/${machineId}/operations`);
 
   await expect(page.locator("main")).toBeVisible();
-  const dock = page.locator('footer[aria-label^="Thao tác"]');
+  const dock = page.locator('section[aria-label^="Thao tác"]');
   await expect(dock).toBeHidden();
-  await expect(dock).toHaveCSS("position", "fixed");
+  await expect(dock).toHaveCSS("position", "relative");
 });

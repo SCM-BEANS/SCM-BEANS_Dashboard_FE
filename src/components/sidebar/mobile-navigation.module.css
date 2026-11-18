@@ -7,21 +7,13 @@
   flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e9e2dc;
-  border-radius: 10px;
-  background: #fff;
-  color: #706561;
   cursor: pointer;
 }
 
-.trigger:hover {
-  background: #f7f5f3;
-  color: #b81724;
-}
 
 .trigger:focus-visible,
 .closeButton:focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -30,23 +22,21 @@
   z-index: 50;
   inset: 0;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   background: rgb(48 41 39 / 42%);
   animation: fade-in 160ms ease-out;
 }
 
 .sheet {
   display: flex;
-  width: min(100%, 760px);
-  max-height: min(82vh, 760px);
-  max-height: min(82dvh, 760px);
+  width: min(290px, calc(100vw - 32px));
+  height: 100%;
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
   padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
-  border-radius: 20px 20px 0 0;
-  background: #fff;
+  border-right: 1px solid var(--color-border);
   box-shadow: 0 -12px 40px rgb(48 41 39 / 12%);
   animation: sheet-enter 220ms cubic-bezier(.2, .8, .2, 1);
 }
@@ -59,7 +49,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 0 4px 12px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 16px;
 }
 
@@ -75,12 +65,12 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #302927;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .closeButton:hover {
-  background: #f7f5f3;
+  background: var(--color-subtle);
 }
 
 .navigation {
@@ -121,7 +111,7 @@
 }
 
 @keyframes sheet-enter {
-  from { transform: translateY(18px); opacity: .96; }
+  from { transform: translateX(-18px); opacity: .96; }
   to { transform: translateY(0); opacity: 1; }
 }
 

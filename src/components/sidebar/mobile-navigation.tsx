@@ -111,7 +111,7 @@ export function MobileNavigation({
   return (
     <>
       <button
-        className={styles.trigger}
+        className={`${styles.trigger} ta:rounded-lg ta:border ta:border-gray-200 ta:bg-white ta:text-gray-600 ta:hover:bg-gray-100 ta:focus-visible:shadow-focus-ring`}
         type="button"
         ref={triggerRef}
         aria-label={triggerLabel}
@@ -130,7 +130,7 @@ export function MobileNavigation({
           }}
         >
           <section
-            className={styles.sheet}
+            className={`${styles.sheet} ta:bg-white ta:text-gray-800`}
             id={dialogId}
             ref={dialogRef}
             role="dialog"

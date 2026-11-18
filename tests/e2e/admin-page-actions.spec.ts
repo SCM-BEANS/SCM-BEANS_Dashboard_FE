@@ -193,31 +193,75 @@ test("machine create form exposes a disabled primary submit with a reason until 
   await expect(page.locator(`[id="${reasonId}"]`)).toHaveText("Chọn mẫu máy trước khi tạo máy.");
 });
 
-test("overview actions are secondary shortcuts without a primary", async ({ page }) => {
+test("overview keeps the reporting period without duplicate shortcut actions", async ({ page }) => {
   await prepareAdminPage(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/admin");
-
-  const bar = pageActionBar(page);
-  await expect(bar).toBeVisible();
-  const actions = bar.locator("[data-action-id]");
-  await expect(actions).toHaveCount(3);
-  const actionClasses = await actions.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("class") ?? ""));
-  expect(actionClasses.every((className) => !className.includes("primary"))).toBe(true);
-  await expect(bar.locator("a[data-action-id]")).toHaveCount(3);
+  const heading = page.getByRole("heading", { name: "Tổng quan vận hành", exact: true }).locator("xpath=../..");
+  await expect(heading.locator('a[href="/admin/iot"], a[href="/admin/machines"]')).toHaveCount(0);
+  await expect(page.getByLabel("Chọn kỳ báo cáo", { exact: true })).toBeVisible();
+  await expect(pageActionBar(page)).toBeHidden();
+  await page.screenshot({ path: ".playwright-cli/designs/ui-after-admin-overview.png" });
 });
 
-test("mobile contract detail shows only primary and overflow controls", async ({ page }) => {
+test("text tabs keep keyboard selection, panel relationships and mobile scrolling", async ({ page }) => {
+  await prepareAdminPage(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/admin/coffee-packages");
+  const tabs = page.getByRole("tablist", { name: "Nhóm quản lý gói cà phê" });
+  const orders = tabs.getByRole("tab", { name: "Đơn hàng", exact: true });
+  await expect(orders).toHaveAttribute("aria-selected", "true");
+  await expect(orders).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(orders).toHaveCSS("border-bottom-width", "2px");
+  await expect(orders).toHaveCSS("color", "rgb(31, 90, 81)");
+  await expect(orders).toHaveCSS("font-weight", "600");
+  await page.screenshot({ path: ".playwright-cli/designs/ui-after-admin-coffee-packages.png" });
+  await orders.focus();
+  await orders.press("ArrowRight");
+  const refunds = tabs.getByRole("tab", { name: "Hoàn tiền", exact: true });
+  await expect(refunds).toBeFocused();
+  await expect(refunds).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel", { name: "Hoàn tiền", exact: true })).toBeVisible();
+  await refunds.press("End");
+  await expect(tabs.getByRole("tab", { name: "Thanh toán ngoại lệ" })).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(tabs).toHaveCSS("overflow-x", "auto");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/admin/menu");
+  const recipe = page.getByRole("navigation", { name: "Khu vực công thức" });
+  await expect(recipe).toBeVisible();
+  const active = recipe.locator('[aria-pressed="true"], [aria-current="page"]');
+  await expect(active).toHaveCSS("border-bottom-width", "2px");
+  await expect(active).toHaveCSS("font-weight", "600");
+  await expect(active).toHaveCSS("color", "rgb(31, 90, 81)");
+  await page.screenshot({ path: ".playwright-cli/designs/ui-after-admin-recipes.png" });
+});
+
+test("invoice export shows progress until the completed file can be downloaded", async ({ page }) => {
+  await prepareAdminPage(page);
+  let status = "PROCESSING";
+  await page.route(`**/billing/exports/${contractId}`, (route) => route.fulfill({ json: { id: contractId, status, format: "CSV" } }));
+  await page.goto(`/admin/invoices/exports/${contractId}`);
+  await expect(page.getByRole("status").filter({ hasText: "Trạng thái tự cập nhật" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tệp chưa sẵn sàng" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Tải xuống dolores-invoices.csv", exact: true })).toHaveCount(0);
+  status = "COMPLETED";
+  await page.getByRole("button", { name: "Làm mới", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Tải xuống dolores-invoices.csv", exact: true })).toBeEnabled();
+});
+
+test("mobile contract shows its two actions at the top without a footer", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await prepareAdminPage(page, "TERMINATED");
   await page.goto(`/admin/contracts?view=detail&id=${contractId}`);
 
   const bar = pageActionBar(page);
   await expect(bar).toBeVisible();
-  await expect(bar.getByRole("button", { name: "Thêm thao tác", exact: true })).toBeVisible();
-  const visibleActions = bar.locator('[data-action-id]:visible');
-  await expect(visibleActions).toHaveCount(1);
-  await expect(visibleActions.first()).toHaveAttribute("data-action-id", "contract-lifecycle-continue");
-  await expect(visibleActions.first()).toHaveClass(/primary/);
+  await expect(bar.getByRole("button", { name: "Lịch sử hợp đồng", exact: true })).toBeVisible();
+  await expect(bar.locator('[data-action-id="contract-lifecycle-continue"]')).toHaveClass(/primary/);
+  await expect(page.locator("footer")).toHaveCount(0);
+  expect((await bar.boundingBox())!.y).toBeLessThan((await page.getByRole("heading", { level: 1 }).boundingBox())!.y);
 });
 
 
@@ -232,12 +276,14 @@ test("invoice export requires one owner and submits filtered invoices", async ({
     const rows = [invoice(contractId, ownerId), invoice(machineId, otherOwner)];
     return route.fulfill({ json: url.searchParams.has("ownerId") ? rows.slice(0, 1) : rows });
   });
+  await page.route("**/api/dolores/v1/profiles*", (route) => route.fulfill({ json: { items: [{ idaasUserId: ownerId, email: "owner@example.com", fullName: "TEST_DATA Owner", emailVerified: true, roles: ["OWNER"], status: "ACTIVE" }], page: 0, size: 100, totalElements: 1, totalPages: 1 } }));
   await page.goto("/admin/invoices");
-  const button = pageActionBar(page).getByRole("button", { name: "Xuất hóa đơn" });
+  const filters = page.getByRole("button", { name: "Tìm kiếm", exact: true }).locator("xpath=../..");
+  const button = filters.getByRole("button", { name: "Xuất danh sách" });
   await expect(button).toBeVisible();
   await expect(button).toBeDisabled();
   await expect(button).toHaveAccessibleDescription("Lọc theo một chủ sở hữu để xuất hóa đơn.");
-  await page.getByPlaceholder(/Owner ID/).fill(ownerId);
+  await page.getByRole("combobox", { name: "Khách hàng", exact: true }).selectOption(ownerId);
   await page.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(button).toBeEnabled();
   await button.click();
@@ -262,4 +308,58 @@ test("pending coffee order decisions use the action bar", async ({ page }) => {
   await page.getByLabel("Lý do", { exact: true }).fill("Không đủ nguồn cung");
   await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toBeEnabled();
   await expect(bar.locator('[data-action-id="coffee-order-reject"]')).toBeEnabled();
+});
+
+
+test("invoice proof rows show one button and open review controls in the preview", async ({ page }) => {
+  await prepareAdminPage(page);
+  const ownerId = contract("ACTIVE").ownerId;
+  await page.route(`**/billing/invoices/${contractId}`, route => route.fulfill({ json: {
+    id: contractId, ownerId, type: "REPAIR", amount: 12500, currency: "VND", status: "UNPAID", period: "2026-10",
+  } }));
+  await page.route(`**/billing/invoices/${contractId}/payment-proofs?*`, route => route.fulfill({ json: [{
+    id: modelId, invoiceId: contractId, ownerId, paymentId: modelId, originalFilename: "chung-tu.zip",
+    sizeBytes: 100, sha256: "a".repeat(64), contentType: "application/zip", status: "SUBMITTED",
+    submittedBy: ownerId, submittedAt: "2026-11-01T10:00:00Z",
+  }] }));
+  await page.goto(`/admin/invoices/${contractId}`);
+  const row = page.getByRole("row").filter({ hasText: "chung-tu.zip" });
+  await expect(row.getByRole("button")).toHaveCount(1);
+  await row.getByRole("button", { name: "Xem chứng từ" }).click();
+  const preview = page.getByRole("dialog", { name: "Chứng từ thanh toán" });
+  await expect(preview.getByRole("button", { name: /Tải xuống/ })).toBeVisible();
+  await expect(preview.getByRole("button", { name: "Từ chối chứng từ" })).toBeEnabled();
+  await preview.getByRole("button", { name: "Duyệt chứng từ" }).click();
+  await expect(preview).toHaveCount(0);
+  await expect(page.getByRole("alertdialog").getByRole("textbox")).toBeVisible();
+});
+
+
+test("dashboard lists align their titles and keep one settings entry", async ({ page }) => {
+  test.setTimeout(90_000);
+  await prepareAdminPage(page);
+  const routes = ["invoices", "machines", "notifications", "buybacks", "coffee-packages", "technical-requests"];
+  for (const viewport of [{ width: 1440, height: 560 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    let firstTitle: { x: number; y: number } | undefined;
+    for (const route of routes) {
+      await page.goto(`/admin/${route}`);
+      const title = page.getByRole("heading", { level: 1 });
+      await expect(title).toBeVisible();
+      const bounds = (await title.boundingBox())!;
+      firstTitle ??= bounds;
+      expect(bounds.x, route).toBeCloseTo(firstTitle.x, 0);
+      expect(bounds.y, route).toBeCloseTo(firstTitle.y, 0);
+      await expect(page.getByRole("button", { name: "Cài đặt", exact: true })).toHaveCount(1);
+    }
+    if (viewport.width > 1023) {
+      const nav = page.getByRole("navigation", { name: "Điều hướng Admin" });
+      await expect(nav).toHaveCSS("scrollbar-width", "none");
+      const lastLink = nav.getByRole("link", { name: "Thông báo", exact: true });
+      await lastLink.focus();
+      await expect(lastLink).toBeInViewport();
+    }
+    await page.getByRole("button", { name: "Cài đặt", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "Hồ sơ" })).toBeVisible();
+  }
 });

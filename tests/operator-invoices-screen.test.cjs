@@ -93,6 +93,7 @@ function makeScreen(queryResults, routerQuery = {}) {
       columns.map((column) => React.createElement('td', { key: column.key }, column.render(row, rowIndex)))))));
   const screenModule = loadTypescript('src/components/features/billing/operator-invoices-screen.tsx', {
     'next/router': { useRouter: () => ({ push: async () => {}, query: routerQuery }) },
+    '@/components/navigation/back-button-heading': { BackButtonHeading: ({ title }) => React.createElement('h1', null, title) },
     '@/components/action-bar/page-actions': { PageActions: () => null },
     '@/components/action-bar/entity-page-actions': loadTypescript('src/components/action-bar/entity-page-actions.ts'),
     '@/components/action-bar/page-actions-renderer': { PageActionsRenderer: ({ actions }) => React.createElement('div', null, actions.map((action) => React.createElement('button', { key: action.id, disabled: action.disabled, onClick: action.onClick }, action.label))) },
@@ -187,7 +188,7 @@ test('operator invoice detail lists proof metadata and opens moderator review th
   const html = screen.render({ role: 'moderator', invoiceId });
   assert.match(html, /transfer\.pdf/);
   assert.doesNotMatch(html, /Duyệt chứng từ|Từ chối chứng từ|Tải xuống|Xem chứng từ/);
-  assert.match(html, /Thông tin tệp/);
+  assert.match(html, /<th>Tên tệp<\/th>/);
   assert.match(html, /aria-label="Nội dung hồ sơ hóa đơn"/);
   assert.doesNotMatch(html, /aria-label="Phân trang dòng phí"/);
   assert.doesNotMatch(html, /aria-label="Phân trang chứng từ thanh toán"/);
@@ -255,7 +256,7 @@ test('owner list uses ten-row owner API and never loads customer options or name
   assert.deepEqual(screen.invoiceRequests, [{ period: '2026-11', page: 0, size: 10, scope: 'owner' }]);
 });
 
-test('owner detail keeps payment and downloads but exposes no operator review or status controls', async () => {
+test('owner detail keeps payment and access to each proof without exposing operator controls', async () => {
   const screen = makeScreen(new Map([
     [JSON.stringify(['owner-invoice', invoiceId, 'owner:test-subject']), {
       data: { ...invoice, amount: 423000.5 }, isPending: false, isError: false, isSuccess: true,
@@ -266,7 +267,8 @@ test('owner detail keeps payment and downloads but exposes no operator review or
   ]));
   const html = screen.render({ role: 'owner', invoiceId, paymentForm: React.createElement('form', { 'data-owner-upload': true }) });
   assert.match(html, /data-owner-upload="true"/);
-  assert.match(html, /data-download-effect="true"/);
+  assert.match(html, /Xem chứng từ/);
+  assert.doesNotMatch(html, /data-download-effect="true"/);
   assert.match(html, /423\.000,5/);
   assert.match(html, /title="transfer.pdf"/);
   assert.doesNotMatch(html, /Duyệt chứng từ|Từ chối chứng từ|Hủy hóa đơn|Xử lý hóa đơn/);

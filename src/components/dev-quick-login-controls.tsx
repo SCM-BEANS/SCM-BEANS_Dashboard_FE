@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/router";
 import {
@@ -28,8 +29,26 @@ export function DevQuickLoginControls({ floating = false }: Props) {
   const [showOwners, setShowOwners] = useState(false);
   const [activeAccount, setActiveAccount] = useState<AccountKey | null>(null);
   const [message, setMessage] = useState("");
+  const [header, setHeader] = useState<Element | null>(null);
+  const dashboard = /^\/(admin|moderator|dashboard|technician)(?:\/|$)/.test(router.pathname);
+  useEffect(() => {
+    setHeader(null);
+    if (process.env.NODE_ENV !== "development" || !floating || !dashboard) return;
+    const mobile = window.matchMedia("(max-width: 1023px)");
+    const mount = () => {
+      const target = document.querySelector(mobile.matches ? "[data-dashboard-dev-login-mobile]" : "[data-dashboard-dev-login]");
+      if (target) setHeader(target);
+      return Boolean(target);
+    };
+    mobile.addEventListener("change", mount);
+    mount();
+    // Authorization may mount the dashboard header after the app's first effect.
+    const observer = new MutationObserver(() => { if (mount()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => { observer.disconnect(); mobile.removeEventListener("change", mount); };
+  }, [dashboard, floating, router.asPath]);
 
-  if (process.env.NODE_ENV !== "development" || (floating && (router.pathname === "/quick-login" || router.pathname === "/"))) return null;
+  if (process.env.NODE_ENV !== "development" || (floating && ["/quick-login", "/", "/dev/action-bar-fixture"].includes(router.pathname))) return null;
 
   const login = async (account: AccountKey) => {
     setActiveAccount(account);
@@ -94,8 +113,8 @@ export function DevQuickLoginControls({ floating = false }: Props) {
   });
 
   if (floating) {
-    return (
-      <nav className={styles.dock} aria-label="Đăng nhập nhanh theo vai trò">
+    const controls = (
+      <nav className={`${styles.dock} ${dashboard ? `${styles.dashboardDock} dashboard-tailadmin-portal` : ""}`} aria-label="Đăng nhập nhanh theo vai trò">
         <span className={styles.devLabel}>DEV</span>
         {roles.map(({ key, label }) => (
           <button
@@ -139,6 +158,16 @@ export function DevQuickLoginControls({ floating = false }: Props) {
         {message ? <p className={styles.status} role="alert">{message}</p> : null}
       </nav>
     );
+    return dashboard ? (header ? createPortal(
+      <details className={styles.dashboardMenu} onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.currentTarget.open = false;
+          event.currentTarget.querySelector("summary")?.focus();
+        }
+      }}>
+        <summary>DEV Role</summary>
+        {controls}
+      </details>, header) : null) : controls;
   }
 
   const panel = (

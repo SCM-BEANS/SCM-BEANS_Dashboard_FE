@@ -1,3 +1,4 @@
+import { SidebarShell, SidebarWorkspace } from "@/components/sidebar/sidebar";
 import Cookies from "js-cookie";
 import Head from "next/head";
 import Link from "next/link";
@@ -5,7 +6,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
-import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
@@ -82,24 +82,18 @@ export function AdminShell({
         <title>{pageTitle} | {ADMIN_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell}>
+      <SidebarShell className={`${styles.shell} dashboard-tailadmin ta:bg-gray-50 ta:text-gray-800`}>
         <NotificationRuntime scope="admin" />
-        <AdminSidebarMenu loggingOut={loggingOut} onLogout={handleLogout} />
-        <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <AdminBreadcrumb
-              rootLabel={ADMIN_MESSAGES.ROLE}
-              currentLabel={currentSection.LABEL}
-            />
-            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
-          </header>
-          <header className={styles.mobileHeader}>
-            <Link className={styles.mobileBrand} href={PATH_ADMIN.ROOT}>
+        <AdminSidebarMenu />
+        <SidebarWorkspace className={styles.workspace} context={currentSection.LABEL} notifications={<NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} settingsHref={PATH_ADMIN.SETTINGS} logout={{ label: ADMIN_MESSAGES.AUTH.LOGOUT, pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />}>
+          <header className={`${styles.mobileHeader} ta:items-center ta:justify-between ta:gap-3 ta:bg-white ta:px-4`}>
+            <Link className={`${styles.mobileBrand} ta:truncate ta:text-lg ta:font-bold ta:text-gray-800`} href={PATH_ADMIN.ROOT}>
               {ADMIN_MESSAGES.BRAND}
             </Link>
             <span className={styles.mobileHeaderStatus}>
               {currentSection.LABEL}
             </span>
+            <div data-dashboard-dev-login-mobile />
             <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} settingsHref={PATH_ADMIN.SETTINGS} logout={{ label: ADMIN_MESSAGES.AUTH.LOGOUT, pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={ADMIN_SIDEBAR_ITEMS}
@@ -117,11 +111,13 @@ export function AdminShell({
               }}
             />
           </header>
-          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
-            <main className={styles.main}>{children}</main>
-          </ActionBarLayout>
-        </div>
-      </div>
+          <main className={styles.main} aria-label={pageTitle}>
+            <ActionBarLayout navigationHrefs={ADMIN_SIDEBAR_ITEMS.filter(item => item.enabled !== false).map(item => item.href)} label={`Thao tác ${pageTitle}`}>
+              {children}
+            </ActionBarLayout>
+          </main>
+        </SidebarWorkspace>
+      </SidebarShell>
       {logoutSucceeded && (
         <LiquidSuccessSplash
           message="Đăng xuất thành công"

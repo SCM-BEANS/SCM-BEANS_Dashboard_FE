@@ -1,9 +1,11 @@
+@reference "../../../styles/dashboard-tailadmin.css";
+
 .page { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 20px; padding: 28px 32px 112px; margin: 0 auto; }
 .heading { display: flex; flex-direction: column; gap: 6px; }
-.heading h1 { margin: 0; color: #302927; font-size: 27px; line-height: 1.4; }
-.heading p { margin: 6px 0 0; color: #706561; font-size: 14px; line-height: 1.5; }
-.contractCard, .form { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; }
-.contractCard h2, .form h2 { margin: 0 0 14px; color: #302927; font-size: 19px; }
+.heading h1 { margin: 0; color: var(--color-text); font-size: 27px; line-height: 1.4; }
+.heading p { margin: 6px 0 0; color: var(--color-muted); font-size: 14px; line-height: 1.5; }
+.contractCard, .form { padding: 22px 24px; border: 1px solid var(--color-border); border-radius: var(--radius-panel); background: var(--color-surface); }
+.contractCard h2, .form h2 { margin: 0 0 14px; color: var(--color-text); font-size: 19px; }
 .terminationStartLayout { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.45fr); align-items: start; gap: 18px; }
 .terminationReadLayout { display: grid; grid-template-columns: minmax(0, 1fr); }
 .contractCardHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
@@ -11,34 +13,34 @@
 .terminationState { padding: 6px 9px; border-radius: 6px; background: #edf7f0; color: #24653c; font-size: 12px; font-weight: 600; }
 .contractSummary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; margin: 0; }
 .contractSummary div { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
-.contractSummary dt { color: #706561; font-size: 13px; }
-.contractSummary dd { margin: 0; color: #302927; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-.form > p { margin: -4px 0 18px; color: #706561; font-size: 14px; line-height: 1.5; }
+.contractSummary dt { color: var(--color-muted); font-size: 13px; }
+.contractSummary dd { margin: 0; color: var(--color-text); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.form > p { margin: -4px 0 18px; color: var(--color-muted); font-size: 14px; line-height: 1.5; }
 .formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 18px; }
-.formGrid label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: #706561; font-size: 13px; }
+.formGrid label { display: flex; min-width: 0; flex-direction: column; gap: 8px; color: var(--color-muted); font-size: 13px; }
 .formGrid label span { color: var(--color-primary); }
 .reasonField { grid-column: 1 / -1; }
-.formGrid input, .formGrid select, .formGrid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
+.formGrid input, .formGrid select, .formGrid textarea { box-sizing: border-box; width: 100%;  padding: 10px 12px;     font: inherit;  @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 .formGrid textarea { min-height: 120px; resize: vertical; }
-.formGrid input:focus-visible, .formGrid select:focus-visible, .formGrid textarea:focus-visible { border-color: var(--color-primary); outline: 0; box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent); }
-.notice, .error, .success { padding: 14px 16px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #514843; font-size: 14px; line-height: 1.5; }
-.error { border-color: #edb8bc; background: #fff7f7; color: #9a301d; }
+.formGrid input:focus-visible, .formGrid select:focus-visible, .formGrid textarea:focus-visible {     @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
+.notice, .error, .success { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--ta-color-red-700); font-size: 14px; line-height: 1.5; }
+.error { border-color: var(--ta-color-red-200); background: var(--ta-color-red-50); color: var(--ta-color-red-700); }
 .error p { margin: 0 0 10px; }
 .success { border-color: #b9d8c3; background: #f5fbf6; color: #356b49; }
 .depositHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .depositHeading h2 { margin-bottom: 8px; }
-.depositDescription { margin: 0; color: #706561; font-size: 14px; line-height: 1.6; }
+.depositDescription { margin: 0; color: var(--color-muted); font-size: 14px; line-height: 1.6; }
 .depositContent { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
 .depositFilters, .depositActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .depositFilters { align-items: flex-end; }
-.depositFilters label { display: flex; flex-direction: column; gap: 6px; color: #706561; font-size: 13px; }
-.depositFilters input { min-height: 44px; padding: 10px 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
-.depositFilters input:focus-visible, .invoiceLink:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.depositActions { color: #706561; font-size: 13px; }
-.depositLines { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid #e9e2dc; }
-.depositLines h3 { margin: 0; color: #302927; font-size: 16px; }
-.invoiceLink { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid #e9e2dc; border-radius: 10px; color: #302927; text-decoration: none; font-size: 14px; font-weight: 600; }
-.invoiceLink:hover { background: #faf8f6; }
+.depositFilters label { display: flex; flex-direction: column; gap: 6px; color: var(--color-muted); font-size: 13px; }
+.depositFilters input {  box-sizing: border-box;  padding: 10px 12px;     font: inherit;  @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
+.depositFilters input:focus-visible, .invoiceLink:focus-visible {    @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
+.depositActions { color: var(--color-muted); font-size: 13px; }
+.depositLines { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+.depositLines h3 { margin: 0; color: var(--color-text); font-size: 16px; }
+.invoiceLink { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+.invoiceLink:hover { background: var(--color-subtle); }
 
 @media (max-width: 720px) {
   .page { gap: 16px; padding: 20px 16px 100px; }

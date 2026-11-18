@@ -98,7 +98,7 @@ export function NotificationDialog(props: NotificationDialogProps) {
     : primaryAction.label;
 
   return (
-    <div className={styles.backdrop}>
+    <div className={`${styles.backdrop} dashboard-tailadmin-portal`}>
       <section
         ref={dialogRef}
         className={styles.dialog}
@@ -132,7 +132,8 @@ export function NotificationDialog(props: NotificationDialogProps) {
               {primaryLabel}
             </ButtonBar>
           ) : (
-            <button
+            <ButtonBar
+              variant="primary"
               className={[styles.primaryButton, primaryAction.className].filter(Boolean).join(" ")}
               type="button"
               data-dialog-primary
@@ -141,10 +142,10 @@ export function NotificationDialog(props: NotificationDialogProps) {
               onClick={primaryAction.onClick}
             >
               {primaryLabel}
-            </button>
+            </ButtonBar>
           )}
           {variant === "confirm" && (
-            <button
+            <ButtonBar
               className={[styles.secondaryButton, props.secondaryAction.className].filter(Boolean).join(" ")}
               type="button"
               disabled={props.secondaryAction.disabled || props.secondaryAction.pending}
@@ -153,7 +154,7 @@ export function NotificationDialog(props: NotificationDialogProps) {
               {props.secondaryAction.pending
                 ? props.secondaryAction.pendingLabel ?? props.secondaryAction.label
                 : props.secondaryAction.label}
-            </button>
+            </ButtonBar>
           )}
         </div>
       </section>

@@ -43,5 +43,5 @@ export function StatusBadge({
 }) {
   const resolvedTone = tone ?? statusTone(status);
   const toneClass = resolvedTone === "neutral" ? "" : styles[resolvedTone];
-  return <span className={[styles.badge, toneClass, variant === "dot" && styles.dot].filter(Boolean).join(" ")}>{children}</span>;
+  return <span className={[styles.badge, toneClass, status?.trim().toUpperCase().startsWith("OVERDUE") && styles.overdue, variant === "dot" && styles.dot].filter(Boolean).join(" ")}>{children}</span>;
 }

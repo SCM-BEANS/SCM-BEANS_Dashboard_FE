@@ -142,3 +142,25 @@
     font-size: 11px;
   }
 }
+
+/* Dashboard controls occupy header space; marketing keeps its floating dock. */
+.dashboardMenu { position: relative; flex-shrink: 0; font-family: var(--font-ui); }
+.dashboardMenu > summary { display: flex; align-items: center; min-height: 44px; padding: 0 10px; border: 1px solid var(--ta-color-gray-200); border-radius: 8px; background: var(--ta-color-white); color: var(--ta-color-gray-700); font-size: 12px; font-weight: 600; cursor: pointer; list-style: none; white-space: nowrap; }
+.dashboardMenu > summary::-webkit-details-marker { display: none; }
+.dashboardMenu > summary:focus-visible { outline: 2px solid var(--ta-color-brand-500); outline-offset: 2px; }
+.dock.dashboardDock { position: absolute; inset: calc(100% + 8px) 0 auto auto; z-index: 30; width: 240px; max-width: calc(100vw - 32px); flex-wrap: wrap; padding: 12px; border: 1px solid var(--ta-color-gray-200); border-radius: 16px; background: var(--ta-color-white); box-shadow: var(--ta-shadow-theme-md); overflow: visible; }
+.dashboardDock .roleButton { min-height: 44px; border-color: var(--ta-color-gray-200); border-radius: 8px; background: var(--ta-color-white); color: var(--ta-color-gray-700); }
+.dashboardDock .devLabel { color: var(--ta-color-gray-500); }
+.dashboardDock .dropdown, .dashboardDock .status { position: static; width: 100%; min-width: 0; margin-top: 8px; border-color: var(--ta-color-gray-200); background: var(--ta-color-white); box-shadow: none; }
+.dashboardDock .ownerMenu { width: 100%; }
+.dashboardDock .dropdown button { background: var(--ta-color-white); color: var(--ta-color-gray-700); overflow-wrap: anywhere; }
+.dashboardDock .roleButton:hover:not(:disabled),
+.dashboardDock .dropdown button:hover:not(:disabled),
+.dashboardDock .roleButtonActive { border-color: var(--ta-color-brand-500); background: var(--ta-color-brand-50); }
+.dashboardDock .roleButton:focus-visible,
+.dashboardDock .dropdown button:focus-visible { outline-color: var(--ta-color-brand-500); box-shadow: var(--ta-shadow-focus-ring); }
+.dashboardDock .status { color: var(--ta-color-red-700); }
+@media (max-width: 1023px) {
+  .dock.dashboardDock { position: fixed; inset: 64px 16px auto auto; }
+}
+:global(body:has([role="dialog"], [role="alertdialog"], dialog[open])) .dashboardMenu { visibility: hidden; }

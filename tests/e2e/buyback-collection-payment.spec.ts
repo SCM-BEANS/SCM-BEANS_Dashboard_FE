@@ -474,7 +474,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await expect(page.getByRole("heading", { name: "Quyết định giá thu mua" })).toBeVisible();
   await page.getByLabel("Lý do chấp nhận hoặc từ chối").fill("I accept the approved valuation");
   await page
-    .locator('footer[aria-label^="Thao tác"]')
+    .locator('section[aria-label^="Thao tác"]')
     .getByRole("button", { name: "Chấp nhận giá" })
     .click();
   await expect(page.getByText(/Bạn đã chấp nhận giá/)).toBeVisible();

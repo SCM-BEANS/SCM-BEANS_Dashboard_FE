@@ -28,7 +28,6 @@ import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-me
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 import { getIotBackDestination } from "../admin-back-destination";
 import { ButtonBar } from "@/components/button/button-bar";
-import { PageActions } from "@/components/action-bar/page-actions";
 
 
 function count(value: number | undefined): string {
@@ -217,7 +216,7 @@ function IoTContent() {
       ]} />}
       <nav className={styles.machinePagination} aria-label="Phân trang giám sát"><span>{smartRows.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(smartRows.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setMachinePage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= smartRows.length} onClick={() => setMachinePage(currentPage + 1)}>Sau</ButtonBar></nav>
     </section>}
-  </div><PageActions actions={[{ id: "iot-machines", label: "Kho máy", variant: "secondary", href: PATH_ADMIN.MACHINES }, { id: "iot-reports", label: "Báo cáo tổng hợp", variant: "secondary", href: PATH_ADMIN.REPORTS }]} /></AdminShell>;
+  </div></AdminShell>;
 }
 
 export default function IoTPage() {

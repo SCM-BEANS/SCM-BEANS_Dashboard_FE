@@ -18,15 +18,15 @@ export function ActionBar({
   actionsRef,
 }: ActionBarProps) {
   return (
-    <footer className={styles.dock} aria-label={label}>
+    <section className={styles.toolbar} aria-label={label}>
       <div className={styles.actions} ref={actionsRef}>{children}</div>
-    </footer>
+    </section>
   );
 }
 
-export function ActionBarLayout({ children, label }: { children: ReactNode; label: string }) {
+export function ActionBarLayout({ children, label, navigationHrefs }: { children: ReactNode; label: string; navigationHrefs?: readonly string[] }) {
   const [actionsElement, setActionsElement] = useState<HTMLDivElement | null>(null);
-  const [registry] = useState(() => new PageActionsRegistry());
+  const [registry] = useState(() => new PageActionsRegistry(navigationHrefs));
 
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -42,8 +42,8 @@ export function ActionBarLayout({ children, label }: { children: ReactNode; labe
     <PageActionsRegistryContext.Provider value={registry}>
     <ActionBarSlotContext.Provider value={actionsElement}>
       <div className={styles.layout} data-visible={visible}>
-        {children}
         <ActionBar label={label} actionsRef={setActionsElement}><RegisteredPageActions registry={registry} /></ActionBar>
+        {children}
       </div>
     </ActionBarSlotContext.Provider>
     </PageActionsRegistryContext.Provider>

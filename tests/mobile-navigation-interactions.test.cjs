@@ -108,6 +108,7 @@ function createElementHarness() {
     "next/link": link,
     "./sidebar.module.css": cssModule,
     "./navigation-route": routeModule,
+    "./settings-menu": { SettingsMenu: () => null },
   });
   const { MobileNavigation } = loadTypeScriptModule("src/components/sidebar/mobile-navigation.tsx", {
     react: hookReact,

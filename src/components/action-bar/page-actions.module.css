@@ -1,16 +1,17 @@
-﻿.container { display: flex; width: 100%; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; }
-.danger, .right { display: flex; align-items: center; gap: 8px; }
-.right { margin-left: auto; }
+﻿.container { display: flex; width: 100%; min-width: 0; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; }
+.danger, .right { display: flex; align-items: center; gap: 12px; }
+.right { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
 .action { position: relative; display: inline-flex; }
-.reason { position: absolute; bottom: 100%; left: 0; display: none; width: max-content; max-width: 220px; padding: 6px; background: #302927; color: white; border-radius: 4px; font-size: 12px; white-space: normal; }
+.reason { position: absolute; top: 100%; right: 0; z-index: 1; display: none; width: max-content; max-width: 220px; padding: 6px; background: var(--ta-color-gray-800); color: white; border-radius: 4px; font-size: 12px; white-space: normal; }
 .action:hover .reason, .action:focus-within .reason { display: block; }
 /* Touch has no hover/focus on disabled buttons, so show the reason inline. */
 @media (max-width: 1023px) {
   .action { flex-direction: column; align-items: flex-end; }
-  .reason { position: static; display: block; max-width: 160px; padding: 2px 0 0; background: none; color: #645b55; }
+  .reason { position: static; display: block; max-width: 160px; padding: 2px 0 0; background: none; color: var(--ta-color-gray-600); }
 }
-.pendingHint { align-self: center; color: #645b55; font-size: 12px; }
+.pendingHint { align-self: center; color: var(--ta-color-gray-600); font-size: 12px; }
 .menu { position: relative; }
-.popup { position: absolute; right: 0; bottom: calc(100% + 8px); display: flex; flex-direction: column; gap: 4px; padding: 8px; background: white; border: 1px solid #e9e2dc; border-radius: 10px; box-shadow: 0 4px 16px #0002; }
+.popup { position: absolute; right: 0; top: calc(100% + 8px); z-index: 2; display: flex; flex-direction: column; gap: 4px; padding: 8px; background: var(--ta-color-white); border: 1px solid var(--ta-color-gray-200); border-radius: 12px; box-shadow: var(--ta-shadow-theme-lg); }
+.menuItem { composes: ghost from "../button/button-bar.module.css"; }
 .popup .menuItem { width: 100%; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

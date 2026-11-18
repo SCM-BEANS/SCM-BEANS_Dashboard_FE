@@ -7,7 +7,6 @@ import { billingApi } from "@/apis/billing.api";
 import { CalendarDays } from "lucide-react";
 import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
 import { dashboardApi } from "@/apis/dashboard.api";
-import { PageActions } from "@/components/action-bar/page-actions";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -18,6 +17,14 @@ import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { AdminShell, adminStyles as styles } from "../admin-shell";
 
 const number = new Intl.NumberFormat("vi-VN");
+const tailAdminTooltip = {
+  backgroundColor: "var(--ta-color-white)",
+  border: "1px solid var(--ta-color-gray-200)",
+  borderRadius: 8,
+  boxShadow: "var(--ta-shadow-theme-md)",
+  color: "var(--ta-color-gray-800)",
+  fontSize: 13,
+};
 const money = new Intl.NumberFormat("vi-VN", {
   style: "currency",
   currency: "VND",
@@ -312,11 +319,11 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
         <div className={styles.summaryRevenueChart} role="img" aria-label="Biểu đồ tiền đã thu theo kỳ">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenue.data} margin={{ top: 16, right: 12, left: 10, bottom: 4 }}>
-              <CartesianGrid vertical={false} stroke="#eee8e3" strokeDasharray="3 4" />
+              <CartesianGrid vertical={false} stroke="var(--color-divider)" strokeDasharray="3 4" />
               <XAxis dataKey="fromDate" tickFormatter={value => formatDateOnly(value)} tickLine={false} axisLine={false} minTickGap={35} tick={{ fontSize: 11 }} />
               <YAxis width={65} tickFormatter={value => new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(value)} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-              <Tooltip labelFormatter={(_, entries) => `${entries[0]?.payload?.label ?? ""}${entries[0]?.payload?.partial ? " · Chưa đầy đủ" : ""}`} formatter={value => [amount(Number(value)), "Tiền đã thu"]} />
-              <Area type="linear" dataKey="amount" stroke="#b81724" fill="#b81724" fillOpacity={0.08} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />
+              <Tooltip contentStyle={moderator ? undefined : tailAdminTooltip} labelFormatter={(_, entries) => `${entries[0]?.payload?.label ?? ""}${entries[0]?.payload?.partial ? " · Chưa đầy đủ" : ""}`} formatter={value => [amount(Number(value)), "Tiền đã thu"]} />
+              <Area type="linear" dataKey="amount" stroke="var(--color-primary)" fill="var(--color-chart-fill)" fillOpacity={1} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -334,11 +341,11 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
         <div className={styles.summaryChart} role="img" aria-label="Biểu đồ số ly ghi nhận theo ngày">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={days} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#eee8e3" strokeDasharray="3 4" />
+              <CartesianGrid vertical={false} stroke="var(--color-divider)" strokeDasharray="3 4" />
               <XAxis dataKey="date" tickFormatter={value => { const parts = String(value).split("-"); return parts.length === 3 ? `${Number(parts[2])}/${Number(parts[1])}` : "—"; }} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} minTickGap={24} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={48} tick={{ fontSize: 12 }} />
-              <Tooltip labelFormatter={value => formatDateOnly(String(value))} formatter={value => [count(Number(value)), "Ly ghi nhận"]} />
-              <Bar dataKey="cups" fill="#b81724" radius={[5, 5, 0, 0]} maxBarSize={36} isAnimationActive={false} />
+              <Tooltip contentStyle={moderator ? undefined : tailAdminTooltip} labelFormatter={value => formatDateOnly(String(value))} formatter={value => [count(Number(value)), "Ly ghi nhận"]} />
+              <Bar dataKey="cups" fill={moderator ? "var(--color-accent-2)" : "var(--ta-color-brand-500)"} radius={[5, 5, 0, 0]} maxBarSize={36} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -357,8 +364,8 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
       {machineCounts ? <>
         <div className={styles.summaryGauge}>
           <svg viewBox="0 0 240 140" role="img" aria-label={`${count(rentedMachines)} trên ${count(totalMachines)} máy đang cho thuê`}>
-            <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="#eee8e3" strokeWidth="16" strokeDasharray="3 3" pathLength="100" />
-            <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="#36866a" strokeWidth="16" strokeDasharray={`${rentalRate * 100} 100`} pathLength="100" />
+            <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="var(--color-divider)" strokeWidth="16" strokeDasharray="3 3" pathLength="100" />
+            <path d="M 25 120 A 95 95 0 0 1 215 120" fill="none" stroke="var(--color-primary)" strokeWidth="16" strokeDasharray={`${rentalRate * 100} 100`} pathLength="100" />
             <text x="120" y="99" textAnchor="middle" className={styles.summaryGaugeValue}>{count(rentedMachines)}</text>
             <text x="120" y="124" textAnchor="middle" className={styles.summaryGaugeLabel}>trên {count(totalMachines)} máy</text>
           </svg>
@@ -415,7 +422,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
   );
 
   return (
-    <div className={moderator ? `${styles.pageContent} ${styles.moderatorOverview}` : styles.pageContent}>
+    <div className={`${styles.pageContent} ${moderator ? styles.moderatorOverview : styles.adminOverview}`}>
       <div className={`${styles.pageHeading} ${styles.summaryHeading}`}>
         <div>
           <h1>{ADMIN_MESSAGES.OVERVIEW.TITLE}</h1>
@@ -618,10 +625,7 @@ export default function AdminPage() {
   return (
     <AdminShell>
       <OperationsOverview role="ADMIN" />
-      <PageActions actions={[
-        { id: "admin-overview-iot", label: ADMIN_MESSAGES.NAVIGATION.IOT, variant: "secondary", priority: 0, href: PATH_ADMIN.IOT },
-        { id: "admin-overview-machines", label: ADMIN_MESSAGES.NAVIGATION.MACHINES, variant: "secondary", priority: 0, href: PATH_ADMIN.MACHINES },
-      ]} />
+
     </AdminShell>
   );
 }

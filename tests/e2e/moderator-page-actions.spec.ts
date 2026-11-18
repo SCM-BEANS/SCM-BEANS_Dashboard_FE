@@ -101,6 +101,34 @@ async function prepareModeratorPage(page: Page, contractStatus: "ACTIVE" | "TERM
   });
 }
 
+test("customer form keeps Save with the field and guards the header Back action", async ({ page }) => {
+  await prepareModeratorPage(page);
+  await page.route(`**/api/dolores/v1/profiles/${ownerId}`, route => route.fulfill({
+    json: {
+      idaasUserId: ownerId, email: "owner@example.com", fullName: "Khách hàng thử",
+      phone: "0900000000", emailVerified: true, roles: ["OWNER"], status: "ACTIVE",
+    },
+  }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/moderator/customers/${ownerId}`);
+  const heading = page.getByRole("heading", { name: "Hồ sơ khách hàng", exact: true });
+  await expect(heading).toHaveCount(1);
+  const back = heading.locator("..").getByRole("button", { name: "Về danh sách khách hàng" });
+  const phone = page.getByRole("textbox", { name: "Số điện thoại" });
+  const save = page.locator("#moderator-owner-contact").getByRole("button", { name: "Lưu thay đổi" });
+  await expect(phone).toHaveValue("0900000000");
+  await expect(save).toBeDisabled();
+  await phone.fill("0909999999");
+  await expect(save).toBeEnabled();
+  await back.click();
+  const dialog = page.getByRole("alertdialog", { name: "Rời hồ sơ khách hàng?" });
+  await dialog.getByRole("button", { name: "Tiếp tục chỉnh sửa" }).click();
+  await expect(phone).toHaveValue("0909999999");
+  await back.click();
+  await dialog.getByRole("button", { name: "Rời hồ sơ" }).click();
+  await expect(page).toHaveURL(/\/moderator\/customers$/);
+});
+
 test("active contract offers termination and amendment, and the form has two actions", async ({ page }) => {
   await prepareModeratorPage(page);
   await page.goto(`/moderator/contracts/${contractId}`);
@@ -124,10 +152,14 @@ test("list actions omit placeholders and shortcuts", async ({ page }) => {
     await expect(page.getByRole("button", { name: /Đối soát chứng từ|Tạo yêu cầu kỹ thuật|Yêu cầu thu gom/ })).toHaveCount(0);
   }
   await page.goto("/moderator/contracts");
-  await expect(pageActionBar(page).locator('[data-action-id="contracts-create"]')).toHaveClass(/primary/);
-  await expect(pageActionBar(page).locator('[data-action-id="contracts-create"]')).toHaveText("Tạo hợp đồng");
+  const createContract = page.getByRole("main").getByRole("link", { name: "Tạo hợp đồng", exact: true });
+  await expect(createContract).toHaveClass(/primary/);
+  await expect(createContract).toHaveAttribute("href", "/moderator/contracts/new");
   await page.goto("/moderator/machines");
-  await expect(pageActionBar(page).locator('[data-action-id="machine-create"]')).toHaveClass(/primary/);
+  const createMachine = page.getByRole("main").getByRole("link", { name: "Thêm máy", exact: true });
+  await expect(createMachine).toHaveClass(/primary/);
+  await expect(createMachine).toHaveAttribute("href", "/moderator/machines/new");
+  await expect(pageActionBar(page)).toBeHidden();
 });
 
 test("invoice lists expose export and customer creation uses the dock", async ({ page }) => {

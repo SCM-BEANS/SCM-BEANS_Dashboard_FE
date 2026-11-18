@@ -160,8 +160,8 @@ function MachinesContent() {
   visibleHeartbeatMachines.forEach((machine, index) => heartbeatByMachineId.set(machine.id, listHeartbeats[index]!));
   return (
     <AdminShell>
-      <div className={styles.pageContent}>
-        <div className={styles.summarySectionHeading}>
+      <div className={`${styles.pageContent} ${isInventoryView || isMachineTypesView ? "dashboard-list-page" : ""}`}>
+        <div className={`${styles.summarySectionHeading} ${isInventoryView || isMachineTypesView ? "dashboard-list-heading" : ""}`}>
         <BackButtonHeading
           title={isCreateView
             ? T.MACHINES.CREATE_TITLE
@@ -208,7 +208,7 @@ function MachinesContent() {
                   Mẫu máy
                 </button>
               </div>
-              <section className={styles.panel}>
+              <section className={`${styles.panel} ${styles.inventoryPanel} dashboard-list-panel`}>
               <div className={styles.machineInventoryHeading}>
                 <h2>{isMachineTypesView ? T.MACHINE_MODELS.TITLE : T.MACHINES.TITLE}</h2>
                 {isMachineTypesView ? machineModels.data && (
@@ -257,9 +257,9 @@ function MachinesContent() {
                 />
                 <nav className={styles.machinePagination} aria-label="Phân trang mẫu máy">
                   <span>{modelPage * 10 + 1}–{Math.min((modelPage + 1) * 10, machineModels.data.length)} / {machineModels.data.length} mẫu máy</span>
-                  <ButtonBar disabled={modelPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage - 1) } }, undefined, { shallow: true })}>Trước</ButtonBar>
+                  <ButtonBar disabled={modelPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage - 1) } }, undefined, { shallow: true })}>Trang trước</ButtonBar>
                   <span>Trang {modelPage + 1}/{Math.max(1, Math.ceil(machineModels.data.length / 10))}</span>
-                  <ButtonBar disabled={(modelPage + 1) * 10 >= machineModels.data.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage + 1) } }, undefined, { shallow: true })}>Sau</ButtonBar>
+                  <ButtonBar disabled={(modelPage + 1) * 10 >= machineModels.data.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage + 1) } }, undefined, { shallow: true })}>Trang sau</ButtonBar>
                 </nav>
               </>}
               {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <>
@@ -287,9 +287,9 @@ function MachinesContent() {
                 </div>
                 <nav className={styles.machinePagination} aria-label="Phân trang máy">
                   <span>{currentPage * 10 + 1}–{Math.min((currentPage + 1) * 10, visibleMachines.length)} / {visibleMachines.length} máy</span>
-                  <ButtonBar disabled={currentPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage - 1) } }, undefined, { shallow: true })}>Trước</ButtonBar>
+                  <ButtonBar disabled={currentPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage - 1) } }, undefined, { shallow: true })}>Trang trước</ButtonBar>
                   <span>Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span>
-                  <ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage + 1) } }, undefined, { shallow: true })}>Sau</ButtonBar>
+                  <ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage + 1) } }, undefined, { shallow: true })}>Trang sau</ButtonBar>
                 </nav>
               </>}
               </section>

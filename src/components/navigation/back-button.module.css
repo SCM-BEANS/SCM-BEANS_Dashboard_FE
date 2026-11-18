@@ -1,6 +1,8 @@
 .button {
   display: inline-flex;
   min-height: 44px;
+  align-self: flex-start;
+  width: fit-content;
   align-items: center;
   gap: 8px;
   border: 0;
@@ -23,6 +25,10 @@
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+:global(.dashboard-tailadmin) .button { color: var(--ta-color-gray-700); }
+:global(.dashboard-tailadmin) .button:hover:not(:disabled) { background: var(--ta-color-brand-50); color: var(--ta-color-brand-700); }
+.button:disabled { cursor: not-allowed; opacity: .55; }
 
 .icon {
   width: 18px;

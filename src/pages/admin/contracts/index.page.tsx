@@ -302,8 +302,8 @@ function ContractsContent() {
   }
 
   return <>
-  <div className={`${styles.pageContent} ${styles.userPage}`}>
-    {isContractList ? <div className={`${styles.pageHeading} ${styles.userPageHeading}`}>
+  <div className={`${styles.pageContent} ${styles.userPage} ${isContractList ? "dashboard-list-page" : ""}`}>
+    {isContractList ? <div className={`${styles.pageHeading} ${styles.userPageHeading} ${isContractList ? "dashboard-list-heading" : ""}`}>
       <div>
         <h1 id="admin-contracts-title">{ADMIN_CONTRACT_LIST_TITLE}</h1>
       </div>

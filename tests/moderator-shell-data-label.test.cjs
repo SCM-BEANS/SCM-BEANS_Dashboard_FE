@@ -115,8 +115,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
     render: () => renderToStaticMarkup(
       React.createElement(ModeratorShell, {
         pageTitle: "Hợp đồng",
-        children: React.createElement("p", null, "Nội dung"),
-      }),
+      }, React.createElement("p", null, "Nội dung")),
     ),
   };
 }
@@ -205,8 +204,8 @@ test("Moderator shell shows its navigation and selects the current nested sectio
 
   assert.match(html, /data-role="moderator"/);
   assert.match(html, /href="\/moderator\/contracts"[^>]*aria-current="page"/);
-  assert.match(html, /<nav aria-label="Đường dẫn">/);
-  assert.match(html, /<span aria-current="page">Hợp đồng<\/span>/);
+  assert.doesNotMatch(html, /aria-label="Đường dẫn"/);
+  assert.match(html, /<main[^>]*aria-label="Hợp đồng"/);
   assert.match(html, /Tài khoản khách/);
   assert.match(html, /Giám sát Smart IoT/);
   assert.match(html, /href="\/moderator\/notifications"/);

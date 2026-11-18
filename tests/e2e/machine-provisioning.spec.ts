@@ -110,7 +110,7 @@ async function mockMachineApi(page: Page, options: { deniedMachine?: boolean; is
 async function openAdminSetup(page: Page) {
   await page.goto(`/admin/machines/${machineId}`);
   await page.getByRole("tab", { name: "Thiết lập kết nối", exact: true }).click();
-  return page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
+  return page.getByRole("region", { name: "Thiết lập kết nối", exact: true });
 }
 
 for (const role of ["admin", "moderator", "owner", "technician"]) {
@@ -236,14 +236,16 @@ test.describe("Machine provisioning Phase 02", () => {
     await expect(panel.getByText("1794029485731", { exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
     await expect(panel.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toBeAttached();
-    await panel.getByRole("button", { name: "Phát hành chứng chỉ", exact: true }).click();
+    await panel.getByRole("button", { name: "Phát hành chứng chỉ", exact: true }).click({ delay: 1300 });
     await expect(panel.getByText("1794029485732", { exact: true })).toBeVisible();
     expect(calls.filter((call) => call.method === "POST" && call.path.endsWith("/certificates"))).toHaveLength(1);
     const row = panel.getByRole("row").filter({ hasText: "1794029485732" });
-    await row.getByRole("button", { name: "Xóa chứng chỉ", exact: true }).click();
+    await expect(row.getByRole("button")).toHaveCount(1);
+    await row.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+    await panel.getByRole("button", { name: "Xóa chứng chỉ", exact: true }).click();
     const confirmation = page.getByRole("alertdialog");
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole("button", { name: "Xóa chứng chỉ", exact: true }).click();
+    await confirmation.getByRole("button", { name: /^Xóa chứng chỉ/ }).click({ delay: 1300 });
     await expect(panel.getByText("1794029485732", { exact: true })).toHaveCount(0);
     expect(calls.filter((call) => call.method === "DELETE")).toHaveLength(1);
   });
@@ -262,8 +264,9 @@ test.describe("Machine provisioning Phase 02", () => {
     await page.goto(`/technician/machine-check/${machineId}`);
     const panel = page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
     await expect(panel.getByText("1794029485731", { exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
     const downloadPromise = page.waitForEvent("download");
-    await panel.getByRole("button", { name: "Tải ZIP", exact: true }).click();
+    await panel.getByRole("button", { name: /^Tải ZIP / }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.zip$/);
     await expect(page.getByText("PRIVATE_KEY_DOWNLOAD_ONLY", { exact: false })).toHaveCount(0);
@@ -387,7 +390,7 @@ test.describe("Machine provisioning cross-role Phase 04", () => {
     await expect(panel.getByRole("heading", { name: "Chi tiết chứng chỉ", exact: true })).toHaveCount(0);
     await expect(panel.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toHaveCount(0);
     await expect(panel.getByText("PUBLIC_CA_PEM", { exact: false })).toHaveCount(0);
-    await expect(panel.getByRole("button", { name: /^(Tải ZIP|Tải JSON|Xóa chứng chỉ)$/ })).toHaveCount(0);
+    await expect(panel.getByRole("button", { name: /^(Tải ZIP |Tải JSON |Xóa chứng chỉ$)/ })).toHaveCount(0);
   });
 
   test("Owner denied active-menu readback cannot fetch candidates or mutate device setup", async ({ page, context }) => {

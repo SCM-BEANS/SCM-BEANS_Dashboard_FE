@@ -1,3 +1,5 @@
+@reference "../../../styles/dashboard-tailadmin.css";
+
 .stepper {
   display: grid;
   gap: 1rem;
@@ -34,7 +36,7 @@
   padding: 0.85rem;
   border: 1px solid #d7e0eb;
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .steps .recordedStep {
@@ -100,15 +102,16 @@
 .eventForm input,
 .eventForm textarea,
 .ackForm textarea {
+  box-sizing: border-box;
   width: min(100%, 42rem);
-  min-height: 2.7rem;
+
   padding: 0.65rem 0.75rem;
-  border: 1px solid #c7d1df;
-  border-radius: 0.6rem;
-  background: #fff;
-  color: #16233a;
+
+
+
+
   font: inherit;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .eventForm textarea,
 .ackForm textarea {
@@ -119,9 +122,9 @@
 .eventForm input:focus-visible,
 .eventForm textarea:focus-visible,
 .ackForm textarea:focus-visible {
-  outline: 3px solid rgb(47 111 237 / 28%);
-  outline-offset: 2px;
-}
+
+
+ @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
 
 .hint {
   font-size: 0.83rem;
@@ -133,7 +136,7 @@
   margin: 0;
   padding: 0.7rem 0.8rem;
   border-radius: 0.6rem;
-  color: #40536c;
+  color: var(--ta-color-red-700);
 }
 
 .notice {
@@ -141,8 +144,8 @@
 }
 
 .errorNotice {
-  background: #fff0f0;
-  color: #a12727;
+  background: var(--ta-color-red-50);
+  color: var(--ta-color-red-700);
 }
 
 .complete {

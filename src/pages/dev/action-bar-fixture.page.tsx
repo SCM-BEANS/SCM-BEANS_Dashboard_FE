@@ -27,8 +27,9 @@ const actions: PageAction[] = [
 
 export default function ActionBarFixturePage() {
   return (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
     <ActionBarLayout label="Thao tác kiểm thử">
-      <main>
+      <main style={{ flex: 1 }}>
         <section>
           <h1>Kiểm thử thanh thao tác</h1>
           <p>Trang fixture chỉ phục vụ kiểm thử giao diện trong môi trường phát triển.</p>
@@ -36,6 +37,7 @@ export default function ActionBarFixturePage() {
       </main>
       <PageActions actions={actions} />
     </ActionBarLayout>
+    </div>
   );
 }
 

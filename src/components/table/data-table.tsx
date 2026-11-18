@@ -47,7 +47,6 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const variant = props.variant ?? "operations";
   const containerClassName = [
     styles.container,
-    variant === "moderator" ? styles.moderatorContainer : undefined,
     props.className,
   ].filter(Boolean).join(" ");
   const variantClassName = {
@@ -60,15 +59,17 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const tableClassName = [
     styles.table,
     variantClassName,
-    props.headerVariant === "admin" ? styles.adminHeader : undefined,
   ].filter(Boolean).join(" ");
   const tableStyle = {
     ...props.style,
     ...(props.minWidth ? { minWidth: props.minWidth } : {}),
   };
   const isRowsTable = "rows" in props && props.rows !== undefined;
+  const actionColumn = isRowsTable && ["action", "actions", "open"].includes(props.columns.at(-1)?.key ?? "")
+    ? props.columns.at(-1)
+    : undefined;
   const headers: Array<{ key: string; content: ReactNode; align?: "left" | "center" | "right" }> = isRowsTable
-    ? props.columns.map((column) => ({ key: column.key, content: column.header, align: column.align }))
+    ? props.columns.map((column) => ({ key: column.key, content: column === actionColumn && column.header === "" ? "Thao tác" : column.header, align: column.align ?? (column === actionColumn ? "right" : undefined) }))
     : props.headers.map((header, index) => ({ key: `column-${index}`, content: header }));
   const body = isRowsTable
     ? props.rows.length > 0
@@ -76,8 +77,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         <tr key={props.rowKey(row, index)} {...props.rowProps?.(row, index)}>
           {props.columns.map((column) => {
             const cellProps = column.cellProps?.(row, index);
-            const cellStyle = column.align
-              ? { ...cellProps?.style, textAlign: column.align }
+            const align = column.align ?? (column === actionColumn ? "right" : undefined);
+            const cellStyle = align
+              ? { ...cellProps?.style, textAlign: align }
               : cellProps?.style;
             return (
               <td key={column.key} {...cellProps} style={cellStyle}>
@@ -88,16 +90,16 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         </tr>
       ))
       : props.emptyMessage
-        ? <tr><td colSpan={props.columns.length}>{props.emptyMessage}</td></tr>
+        ? <tr><td className={styles.emptyCell} colSpan={props.columns.length}>{props.emptyMessage}</td></tr>
         : null
     : Children.count(props.children) > 0
       ? props.children
       : props.emptyMessage
-        ? <tr><td colSpan={props.headers.length}>{props.emptyMessage}</td></tr>
+        ? <tr><td className={styles.emptyCell} colSpan={props.headers.length}>{props.emptyMessage}</td></tr>
         : null;
 
   return (
-    <div className={containerClassName}>
+    <div className={containerClassName} tabIndex={0} role="region" aria-label="Bảng dữ liệu">
       <table className={tableClassName} style={tableStyle}>
         <thead>
           <tr>

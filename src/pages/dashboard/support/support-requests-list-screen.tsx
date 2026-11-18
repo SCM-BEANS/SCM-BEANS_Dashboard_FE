@@ -57,14 +57,15 @@ export function SupportRequestsListScreen() {
 
   return (
     <div className={repairStyles.operatorWorkspace}>
-      <section className={repairStyles.pageContent} aria-labelledby="customer-support-title">
-        <header className={repairStyles.casePageHeader}>
-          <div className={repairStyles.pageHeading}>
-            <h1 id="customer-support-title">{messages.SUPPORT_TITLE}</h1>
+      <section className={`${repairStyles.pageContent} dashboard-list-page`} aria-labelledby="customer-support-title">
+        <header className="dashboard-list-heading">
+          <h1 id="customer-support-title">{messages.SUPPORT_TITLE}</h1>
+          <div className="ta:flex ta:flex-wrap ta:gap-2">
+            <ButtonBar href={PATH_CUSTOMER.SUPPORT_MENU}>Hỗ trợ công thức</ButtonBar>
+            <ButtonBar href={PATH_CUSTOMER.SUPPORT_NEW} variant="primary">Gửi yêu cầu mới</ButtonBar>
           </div>
-          <ButtonBar href={PATH_CUSTOMER.SUPPORT_NEW} variant="primary">Gửi yêu cầu mới</ButtonBar>
         </header>
-        <section className={repairStyles.panel} aria-labelledby="customer-support-list-heading">
+        <section className={`${repairStyles.panel} dashboard-list-panel`} aria-labelledby="customer-support-list-heading">
           <h2 id="customer-support-list-heading">{messages.SUPPORT_LIST_TITLE}</h2>
           {isListLoading ? (
             <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p>
@@ -112,7 +113,6 @@ export function SupportRequestsListScreen() {
           description=""
           showOwner={false}
         />
-        <div><ButtonBar href={PATH_CUSTOMER.SUPPORT_MENU}>Hỗ trợ công thức</ButtonBar></div>
       </section>
     </div>
   );

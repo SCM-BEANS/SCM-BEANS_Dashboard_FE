@@ -10,7 +10,7 @@ import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
-import { Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
+import { SidebarShell, SidebarWorkspace, Sidebar, type SidebarItem } from "@/components/sidebar/sidebar";
 import { getActiveNavigationItem, normalizeNavigationPath } from "@/components/sidebar/navigation-route";
 import { canAccessTechnicianArea } from "@/lib/auth-role";
 import { PATH_AUTH, PATH_HOME, PATH_TECHNICIAN } from "@/routes/path";
@@ -105,7 +105,7 @@ export function TechnicianShell({
         <title>{pageTitle} | {TECHNICIAN_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="technician">
+      <SidebarShell className={`${styles.shell} dashboard-tailadmin ta:bg-gray-50 ta:text-gray-800`} data-role="technician">
         <NotificationRuntime scope="technician" />
         <Sidebar
           brand={TECHNICIAN_MESSAGES.BRAND}
@@ -115,23 +115,13 @@ export function TechnicianShell({
           rootHref={PATH_TECHNICIAN.ROOT}
           navigationLabel={TECHNICIAN_MESSAGES.NAVIGATION.NAVIGATION_LABEL}
           items={TECHNICIAN_SIDEBAR_ITEMS}
-          settingsHref={PATH_TECHNICIAN.SETTINGS}
-          logout={{
-            label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT,
-            pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT,
-            pending: loggingOut,
-            onLogout: handleLogout,
-          }}
         />
-        <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <p>{TECHNICIAN_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
-          </header>
-          <header className={styles.mobileHeader}>
-            <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
+        <SidebarWorkspace className={styles.workspace} context={pageTitle} notifications={<NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} logout={{ label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />}>
+          <header className={`${styles.mobileHeader} ta:items-center ta:justify-between ta:gap-3 ta:bg-white ta:px-4`}>
+            <Link className={`${styles.mobileBrand} ta:truncate ta:text-lg ta:font-bold ta:text-gray-800`} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
             </Link>
+            <div data-dashboard-dev-login-mobile />
             <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} settingsHref={PATH_TECHNICIAN.SETTINGS} logout={{ label: TECHNICIAN_MESSAGES.NAVIGATION.LOGOUT, pendingLabel: TECHNICIAN_MESSAGES.NAVIGATION.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={TECHNICIAN_SIDEBAR_ITEMS}
@@ -149,14 +139,13 @@ export function TechnicianShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {TECHNICIAN_MESSAGES.ROLE} / {currentSection.LABEL}
-          </div>
-          <ActionBarLayout label={`Thao tác ${pageTitle}`}>
-            <main className={styles.main}>{children}</main>
-          </ActionBarLayout>
-        </div>
-      </div>
+          <main className={styles.main} aria-label={pageTitle}>
+            <ActionBarLayout navigationHrefs={TECHNICIAN_SIDEBAR_ITEMS.filter(item => item.enabled !== false).map(item => item.href)} label={`Thao tác ${pageTitle}`}>
+              {children}
+            </ActionBarLayout>
+          </main>
+        </SidebarWorkspace>
+      </SidebarShell>
       {logoutSucceeded && (
         <LiquidSuccessSplash
           message="Đăng xuất thành công"

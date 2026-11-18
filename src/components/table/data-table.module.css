@@ -1,129 +1,17 @@
-.container {
-  width: 100%;
-  overflow-x: auto;
-}
+@reference "../../styles/dashboard-tailadmin.css";
 
-.moderatorContainer {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 14px;
-}
-
-.operations {
-  min-width: 680px;
-}
-
-.accounts {
-  min-width: 760px;
-}
-
-.standard {
-  min-width: 400px;
-}
-
-.moderator {
-  min-width: 680px;
-}
-
-.customer {
-  min-width: 760px;
-  border-collapse: separate;
-  border-spacing: 0 14px;
-}
-
-.table.customer th {
-  padding: 14px 12px;
-}
-
-.table.customer td {
-  padding: 18px 12px;
-  border-top: 1px solid #eee8e3;
-  border-bottom: 1px solid #eee8e3;
-  background: #fff;
-}
-
-.table.customer td:first-child {
-  border-left: 1px solid #eee8e3;
-  border-radius: 8px 0 0 8px;
-}
-
-.table.customer td:last-child {
-  border-right: 1px solid #eee8e3;
-  border-radius: 0 8px 8px 0;
-}
-
-.table.moderator th,
-.table.moderator td {
-  padding: 14px 16px;
-  vertical-align: top;
-}
-
-.table.moderator th {
-  background: #f8f6f3;
-  color: #706561;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.table.moderator td {
-  border-top: 1px solid #eee8e3;
-  border-bottom: 0;
-  color: #302927;
-  font-size: 14px;
-  line-height: 1.5;
-  transition: background-color 140ms ease;
-}
-
-.table.moderator tbody tr:hover td {
-  background: #fdfbf9;
-}
-
-.table th {
-  padding: 12px 10px;
-  background: #f7f5f3;
-  color: #706561;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .01em;
-}
-
-.table tbody tr {
-  transition: background-color 140ms ease;
-}
-
-.table tbody tr:hover td {
-  background-color: #fdf8f7;
-}
-
-.table:not(.customer) tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.standard th {
-  padding: 14px 10px;
-}
-
-.table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #f0ece8;
-  overflow-wrap: anywhere;
-}
-
-.accounts th {
-  padding: 12px 10px;
-}
-
-.accounts td {
-  padding: 11px 10px;
-}
-
+.container { @apply ta:w-full ta:overflow-x-auto ta:rounded-xl ta:border ta:border-gray-200 ta:bg-white; }
+.container:focus-visible { @apply ta:outline-2 ta:outline-brand-500 ta:outline-offset-2; }
+.table { @apply ta:w-full ta:border-collapse ta:text-left ta:text-sm ta:text-gray-800 ta:tabular-nums; line-height: 1.5; }
+.operations, .moderator { min-width: 680px; }
+.accounts, .customer { min-width: 760px; }
+.standard { min-width: 400px; }
+.table th { @apply ta:bg-gray-50 ta:px-5 ta:py-4 ta:text-xs ta:font-medium ta:text-gray-500; }
+.table td { @apply ta:border-b ta:border-gray-100 ta:px-5 ta:py-4 ta:align-middle ta:break-words; }
+.table tbody tr:last-child td { @apply ta:border-b-0; }
+.table tbody tr:hover td { @apply ta:bg-gray-50; }
+.table tbody tr:focus-within td { @apply ta:bg-brand-50; }
+.table td.emptyCell { @apply ta:px-5 ta:py-9 ta:text-center ta:text-gray-500; }
 .contractTable {
   overflow-x: auto;
 }
@@ -136,7 +24,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #514843;
+  @apply ta:rounded-full ta:bg-gray-100 ta:px-2.5 ta:py-0.5 ta:text-gray-700;
   font: inherit;
   font-size: 14px;
   white-space: nowrap;
@@ -148,63 +36,13 @@
   height: 6px;
   flex: none;
   border-radius: 50%;
-  background: #80756f;
-}
-
-.contractStatus[data-status="ACTIVE"] .contractStatusDot { background: #32866b; }
-.contractStatus[data-status="DRAFT"] .contractStatusDot { background: #c58a16; }
-.contractStatus[data-status="TERMINATED"] .contractStatusDot { background: #bd3b3b; }
-
-.standard td {
-  padding: 15px 10px;
-}
-
-.adminHeader {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.table.adminHeader th {
-  padding: 14px 16px;
-  background: #f4f0ed;
-  color: #574b46;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  text-wrap: balance;
-  vertical-align: middle;
-  border-bottom: 1px solid #e6ddd8;
-}
-
-.table.adminHeader th:first-child {
-  border-top-left-radius: 8px;
-}
-
-.table.adminHeader th:last-child {
-  border-top-right-radius: 8px;
-}
-
-.table.adminHeader td {
-  padding: 14px 16px;
-  vertical-align: middle;
-  transition: background-color 140ms ease;
-}
-
-.table.adminHeader tbody tr:hover td {
-  background-color: #fcf8f6;
-}
-
-@media (max-width: 1023px) {
-  .moderator {
-    min-width: 620px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .table tbody tr { transition: none; }
-  .table.moderator td { transition: none; }
-  .table.adminHeader td { transition: none; }
+  background: currentColor;
 }
 
 
 
+@media (max-width: 1023px) { .moderator { min-width: 620px; } }
+
+.contractStatus[data-status="ACTIVE"] { @apply ta:bg-green-50 ta:text-green-700; }
+.contractStatus[data-status="DRAFT"] { @apply ta:bg-amber-50 ta:text-amber-800; }
+.contractStatus[data-status="TERMINATED"] { @apply ta:bg-red-50 ta:text-red-700; }

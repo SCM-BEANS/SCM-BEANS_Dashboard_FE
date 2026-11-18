@@ -1,3 +1,5 @@
+@reference "../../styles/dashboard-tailadmin.css";
+
 .field {
   display: grid;
   gap: 0.45rem;
@@ -9,28 +11,28 @@
 }
 
 .field textarea {
+  box-sizing: border-box;
   width: 100%;
-  min-height: 7rem;
   padding: 0.7rem 0.8rem;
-  border: 1px solid #c8d1df;
-  border-radius: 0.65rem;
-  color: #16233a;
+
+
+
   font: inherit;
   resize: vertical;
-}
+ @apply ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none ta:min-h-11; }
 
 .field textarea:focus-visible {
-  outline: 3px solid rgb(47 111 237 / 28%);
-  outline-offset: 2px;
-}
+
+
+ @apply ta:border-brand-300 ta:outline-2 ta:outline-brand-300 ta:outline-offset-2 ta:shadow-focus-ring; }
 
 .counter {
   justify-self: end;
-  color: #61718a;
+  color: var(--ta-color-gray-500);
   font-size: 0.8rem;
 }
 
 .error {
   margin: 0;
-  color: #a12727;
+  color: var(--ta-color-red-700);
 }

@@ -23,6 +23,42 @@ const invoice = {
   createdAt: '2026-10-31T10:00:00',
   paidAt: null,
 };
+
+test('invoice list export keeps owner scope, loading and empty-state guards in the table tools', () => {
+  const React = require('react');
+  const file = 'src/components/features/billing/operator-invoices-screen.tsx';
+  const source = readFileSync(join(__dirname, '..', file), 'utf8');
+  const mocks = Object.fromEntries([...source.matchAll(/from ["']([^"']+)["']/g)].map((match) => [match[1], {}]));
+  let rows = [invoice, { ...invoice, id: uuid(99), ownerId: uuid(98) }];
+  let loading = false;
+  mocks.react = { ...React, useState: (initial) => [initial, () => {}], useEffect: () => {} };
+  mocks['next/router'] = { useRouter: () => ({ push: () => {} }) };
+  mocks['@tanstack/react-query'] = { useQuery: () => ({ data: { items: rows }, isFetching: loading }), useMutation: () => ({ mutate: () => {}, isPending: false }) };
+  mocks['@/hooks/use-owner-names'] = { useOwnerNames: () => ({ data: {} }) };
+  mocks['@/components/button/button-bar'] = { ButtonBar: 'button' };
+  mocks['@/components/features/repair-workflow/repair-workflow-query-identity'] = { querySubject: () => 'test' };
+  mocks['@/text/billing/billing-messages'] = { BILLING_MESSAGES: {} };
+  const { InvoiceList } = loadTypescript(file, mocks, '\nexport { InvoiceList };');
+  function exportButton(role = 'admin') {
+    const tree = InvoiceList({ role, filters: {}, onApplyFilters: () => {}, showHeading: true });
+    function find(node) {
+      if (!node || typeof node !== 'object') return undefined;
+      if (node.type === 'button' && node.props.children === 'Xuất danh sách') return node;
+      return React.Children.toArray(node.props?.children).map(find).find(Boolean);
+    }
+    return find(tree);
+  }
+  assert.equal(exportButton().props.disabled, true, 'mixed owners require an explicit owner filter');
+  assert.equal(exportButton().props['aria-describedby'], 'invoice-list-export-reason');
+  assert.equal(exportButton('owner').props.disabled, false, 'Owner exports remain scoped by the authenticated API');
+  rows = [invoice];
+  assert.equal(exportButton().props.disabled, false);
+  loading = true;
+  assert.equal(exportButton().props.disabled, true);
+  loading = false;
+  rows = [];
+  assert.equal(exportButton().props.disabled, true);
+});
 const proof = {
   id: ids.proof,
   ownerId: ids.owner,

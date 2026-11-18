@@ -22,6 +22,8 @@ export function isModeratorReadRoute(sectionPath: string): boolean {
     /^contracts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/installation-request$/i.test(sectionPath) ||
     sectionPath === "notifications" ||
     sectionPath === "notifications/alerts" ||
+    sectionPath === "customers" ||
+    sectionPath.startsWith("customers/") ||
     sectionPath === "machines" ||
     sectionPath.startsWith("machines/") ||
     sectionPath === "stores" ||

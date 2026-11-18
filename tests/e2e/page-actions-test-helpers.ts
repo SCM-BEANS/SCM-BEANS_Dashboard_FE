@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export function pageActionBar(page: Page) {
-  return page.locator('footer[aria-label^="Thao tác"]').last();
+  return page.locator('section[aria-label^="Thao tác"]').last();
 }
 
 export async function expectPageAction(page: Page, id: string) {

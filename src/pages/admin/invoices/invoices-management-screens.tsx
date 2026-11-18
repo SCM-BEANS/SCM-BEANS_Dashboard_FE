@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { billingApi } from "@/apis/billing.api";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -198,6 +199,12 @@ export function AdminInvoiceListScreen() {
               submitLabel="Tìm kiếm"
               onSubmit={applyFilters}
             />
+            <div className={pageStyles.actionGroup}>
+              <ButtonBar type="button" disabled={invoices.isFetching || createPdfExport.isPending} onClick={() => void invoices.refetch()}>
+                {invoices.isFetching ? "Đang tải…" : "Làm mới"}
+              </ButtonBar>
+              <PageActionsRenderer actions={buildInvoiceExportActions({ count: displayedInvoices.length, ownerRequired: true, ownerId: exportOwner, loading: invoices.isFetching, pending: createListExport.isPending, onExport: () => createListExport.mutate() })} />
+            </div>
             {filterError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{filterError}</p>}
           </div>
 
@@ -208,11 +215,6 @@ export function AdminInvoiceListScreen() {
           </div>}
           {createListExport.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(createListExport.error, "mutation")}</p>}
           {createPdfExport.isError && <p className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">{getApiErrorMessage(createPdfExport.error, "mutation")}</p>}
-          <div className={pageStyles.actionGroup}>
-            <ButtonBar type="button" disabled={invoices.isFetching || createPdfExport.isPending} onClick={() => void invoices.refetch()}>
-              {invoices.isFetching ? "Đang tải…" : "Làm mới"}
-            </ButtonBar>
-          </div>
 
           {invoices.data && (
             <>
@@ -247,7 +249,6 @@ export function AdminInvoiceListScreen() {
           )}
         </section>
       </div>
-      <PageActions actions={buildInvoiceExportActions({ count: displayedInvoices.length, ownerRequired: true, ownerId: exportOwner, loading: invoices.isFetching, pending: createListExport.isPending, onExport: () => createListExport.mutate() })} />
     </AdminShell>
   );
 }

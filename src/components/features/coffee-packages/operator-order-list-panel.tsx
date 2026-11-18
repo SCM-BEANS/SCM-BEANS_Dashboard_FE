@@ -20,7 +20,7 @@ export function OperatorOrderListPanel({
   )) ?? []);
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-operator-orders-title">
+    <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="coffee-operator-orders-title">
       <div className={styles.panelHeading}>
         <div><h2 id="coffee-operator-orders-title">Đơn gói cà phê</h2></div>
       </div>

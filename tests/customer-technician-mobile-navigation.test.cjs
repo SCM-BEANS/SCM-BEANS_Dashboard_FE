@@ -165,8 +165,7 @@ function createShellHarness(roleKey) {
     effects = [];
     const html = renderToStaticMarkup(React.createElement(Shell, {
       pageTitle: "Role page title",
-      children: React.createElement("p", null, "Page content"),
-    }));
+    }, React.createElement("p", null, "Page content")));
     const renderedEffects = effects;
     effects = [];
     return { html, renderedEffects };
@@ -217,7 +216,7 @@ test("Customer and Technician preserve mobile notifications, nested route breadc
     const shell = createShellHarness(roleKey);
     const { html, role } = shell;
     const shellSource = readFileSync(join(root, role.relativePath), "utf8");
-    const headerStart = shellSource.indexOf("className={styles.mobileHeader}");
+    const headerStart = shellSource.indexOf("styles.mobileHeader}");
     const headerEnd = shellSource.indexOf("</header>", headerStart);
     const headerSource = shellSource.slice(headerStart, headerEnd);
 

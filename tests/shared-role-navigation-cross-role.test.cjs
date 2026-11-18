@@ -270,7 +270,7 @@ test("all four role shells mount shared mobile navigation in the mobile header a
       ? shellSource
       : readFileSync(join(root, role.menuPath), "utf8");
     const styleSource = readFileSync(join(root, role.stylePath), "utf8");
-    const headerStart = shellSource.indexOf("className={styles.mobileHeader}");
+    const headerStart = shellSource.indexOf("styles.mobileHeader}");
     const headerEnd = shellSource.indexOf("</header>", headerStart);
     const mobileHeader = shellSource.slice(headerStart, headerEnd);
 
@@ -427,7 +427,7 @@ test("Admin logout callback calls auth logout, clears the token, and returns to 
   const render = () => {
     stateIndex = 0;
     effects = [];
-    renderToStaticMarkup(React.createElement(AdminShell, { children: React.createElement("p", null, "Admin screen") }));
+    renderToStaticMarkup(React.createElement(AdminShell, null, React.createElement("p", null, "Admin screen")));
     const pendingEffects = effects;
     effects = [];
     return pendingEffects;

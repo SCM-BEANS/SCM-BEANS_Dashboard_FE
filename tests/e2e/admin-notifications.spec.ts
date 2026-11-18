@@ -48,9 +48,9 @@ test("admin notifications paginate, filter and mark unread items when opened", a
   const feedBox = (await panel.boundingBox())!;
   expect((await detail.boundingBox())!.x).toBeGreaterThan(feedBox.x + feedBox.width);
   await expect(panel.getByRole("heading", { name: "Trước đó", exact: true })).toBeVisible();
-  await expect(panel.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(253, 248, 247)");
+  await expect(panel.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(239, 233, 225)");
   await panel.locator("article").nth(1).hover();
-  await expect(panel.locator("article").nth(1)).toHaveCSS("background-color", "rgb(253, 248, 247)");
+  await expect(panel.locator("article").nth(1)).toHaveCSS("background-color", "rgb(239, 233, 225)");
   const secondMenu = panel.locator("article").nth(1).locator("details");
   await secondMenu.locator("summary").click();
   await secondMenu.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
@@ -163,7 +163,7 @@ for (const role of ["moderator", "owner"] as const) {
     await expect(feed.locator("article")).toHaveCount(10);
     await expect(detail).toBeVisible();
     expect((await detail.boundingBox())!.x).toBeGreaterThan((await feed.boundingBox())!.x + (await feed.boundingBox())!.width);
-    await expect(feed.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(253, 248, 247)");
+    await expect(feed.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(239, 233, 225)");
     if (role === "owner") {
       await expect(page.getByRole("button", { name: "Cảnh báo máy", exact: true })).toHaveCount(0);
       await expect(detail.getByRole("link", { name: "Mở hồ sơ", exact: true })).toHaveAttribute("href", "/dashboard/repair-cost-reviews/00000000-0000-4000-8000-000000000001");

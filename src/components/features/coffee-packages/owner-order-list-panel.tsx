@@ -7,7 +7,7 @@ import { CoffeeOrderFilters } from "./coffee-order-filters";
 
 export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: CoffeePackageWorkflowController; onOpenOrder: (orderId: string) => void }) {
   return (
-    <section className={styles.panel} aria-labelledby="coffee-package-orders-title">
+    <section className={`${styles.panel} dashboard-list-panel`} aria-labelledby="coffee-package-orders-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-package-orders-title">Đơn gói cà phê của tôi</h2>

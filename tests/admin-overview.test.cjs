@@ -35,14 +35,75 @@ function tokenWithRoles(roles) {
   return `header.${payload}.signature`;
 }
 
+test("TailAdmin table preserves both APIs, cell/row attributes and empty content", () => {
+  const React = require("react");
+  const { renderToStaticMarkup: render } = require("react-dom/server");
+  const { DataTable } = loadModule("src/components/table/data-table.tsx", {
+    "./data-table.module.css": new Proxy({}, { get: (_, key) => key }),
+  });
+  const columns = [{ key: "name", header: "Name", align: "right", render: row => row.name,
+    cellProps: () => ({ title: "cell", style: { whiteSpace: "nowrap" } }) }];
+  const html = render(React.createElement(DataTable, {
+    columns, rows: [{ id: 7, name: "Beans" }], rowKey: row => row.id, variant: "accounts",
+    rowProps: () => ({ "data-id": "7" }),
+  }));
+  assert.match(html, /data-id="7"/);
+  assert.match(html, /title="cell"/);
+  assert.match(html, /white-space:nowrap;text-align:right/);
+  assert.match(html, /scope="col"/);
+  assert.match(html, /Beans/);
+  const legacy = render(React.createElement(DataTable, { headers: ["Name"], minWidth: 820 },
+    React.createElement("tr", null, React.createElement("td", null, "Legacy"))));
+  assert.match(legacy, /min-width:820px/);
+  assert.match(legacy, /Legacy/);
+  for (const props of [{ columns, rows: [], rowKey: row => row.id }, { headers: ["Name"] }]) {
+    assert.match(render(React.createElement(DataTable, { ...props, emptyMessage: "Empty" })), /colSpan="1">Empty/);
+  }
+});
+
+test("TailAdmin status colors meet AA for small labels including overdue", () => {
+  const css = readFileSync(join(root, "src/components/status-badge/status-badge.module.css"), "utf8");
+  assert.match(css, /\.overdue\s*\{[^}]*ta:bg-orange-50[^}]*ta:text-orange-800/);
+  const luminance = hex => hex.match(/../g).map(c => parseInt(c, 16) / 255)
+    .map(c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+    .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+  for (const [fg, bg] of [["374151", "f3f4f6"], ["15803d", "f0fdf4"], ["92400e", "fffbeb"],
+    ["b91c1c", "fef2f2"], ["2a31d8", "ecf3ff"], ["9a3412", "fff7ed"]]) {
+    assert.ok((luminance(bg) + 0.05) / (luminance(fg) + 0.05) >= 4.5, `${fg}/${bg}`);
+  }
+});
+
+test("repair pagination retains zero-based navigation and loading guards", () => {
+  const { RepairWorkflowPagination } = loadModule("src/components/features/repair-workflow/repair-workflow-pagination.tsx", {
+    "@/text/repair-workflow/repair-workflow-messages": { REPAIR_WORKFLOW_MESSAGES: { PREVIOUS: "Previous", NEXT: "Next", PAGE: "Page" } },
+    "@/components/button/button-bar": { ButtonBar: () => null },
+    "./repair-workflow.module.css": { pagination: "pagination" },
+  });
+  const changes = [];
+  const props = { page: 0, hasNext: false, isFetching: false, ariaLabel: "Pages", onPageChange: page => changes.push(page) };
+  assert.equal(RepairWorkflowPagination(props), null);
+  let nav = RepairWorkflowPagination({ ...props, hasNext: true });
+  assert.equal(nav.props["aria-label"], "Pages");
+  assert.equal(nav.props.children[0].props.disabled, true);
+  assert.equal(nav.props.children[2].props.disabled, false);
+  nav.props.children[2].props.onClick();
+  nav = RepairWorkflowPagination({ ...props, page: 2 });
+  nav.props.children[0].props.onClick();
+  assert.equal(nav.props.children[2].props.disabled, true);
+  assert.deepEqual(changes, [1, 1]);
+  nav = RepairWorkflowPagination({ ...props, page: 2, hasNext: true, isFetching: true });
+  assert.equal(nav.props.children[0].props.disabled, true);
+  assert.equal(nav.props.children[2].props.disabled, true);
+});
+
 function adminPageDependencies() {
   const React = require("react");
   return {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "@/components/button/button-bar": {
-      ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
+      ButtonBar: React.forwardRef(function MockButtonBar({ href, children, ...props }, ref) { return href
         ? React.createElement("a", { href, ref, ...props }, children)
-        : React.createElement("button", { ref, ...props }, children)),
+        : React.createElement("button", { ref, ...props }, children); }),
     },
     "@/components/action-bar/page-actions": {
       PageActions: ({ actions }) => React.createElement("div", { "data-action-bar": "true" }, actions.map((action) => action.href
@@ -510,4 +571,17 @@ test("Owner, Admin, and Moderator machine routes retain context for the shared o
     assert.ok(/MACHINE_OPERATIONAL_OVERVIEW/.test(source), `${label} detail should preserve the selected machine in its operations link`);
     assert.ok(/Xem dữ liệu vận hành/.test(source), `${label} detail should expose the operational overview action`);
   }
+});
+
+
+test("status badges distinguish overdue from failed", () => {
+  const { StatusBadge } = loadModule("src/components/status-badge/status-badge.tsx", {
+    "./status-badge.module.css": { badge: "badge", danger: "danger", success: "success", warning: "warning", overdue: "overdue" },
+  });
+  const React = require("react");
+  const { renderToStaticMarkup } = require("react-dom/server");
+  for (const status of ["OVERDUE", " overdue_review "]) {
+    assert.match(renderToStaticMarkup(React.createElement(StatusBadge, { status }, status)), /class="[^"]*overdue/);
+  }
+  assert.doesNotMatch(renderToStaticMarkup(React.createElement(StatusBadge, { status: "FAILED" }, "Failed")), /class="[^"]*overdue/);
 });

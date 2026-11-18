@@ -21,6 +21,18 @@ const { recentLiveHeartbeat, selectLiveHeartbeat, liveBrewView, liveHeartbeatCon
 const { DigitalTwinCycleEventSchema } = load("src/schema/digital-twin-cycle.schema.ts");
 const machineId = "00000000-0000-4000-8000-000000000001";
 const now = Date.parse("2026-11-16T05:00:00Z");
+
+test("critical alerts stay in the visible summary even when newer routine alerts fill the list", () => {
+  const source = readFileSync(join(__dirname, "..", "src/components/features/digital-twin/machine-digital-twin-view.tsx"), "utf8");
+  const helpers = source.slice(source.indexOf("function alertTone("), source.indexOf("function recipeNameKey("));
+  const { outputText } = ts.transpileModule(helpers, { compilerOptions: { target: ts.ScriptTarget.ES2022 } });
+  const sortAlerts = new Function(`${outputText}; return sortOpenAlerts;`)();
+  const routine = Array.from({ length: 6 }, (_, index) => ({ id: String(index), machineId, acknowledged: false, level: "INFO", ts: new Date(now + index).toISOString() }));
+  const critical = { id: "critical", machineId, acknowledged: false, level: "CRITICAL", message: "Overheat", ts: new Date(now - 1000).toISOString() };
+  assert.equal(sortAlerts([...routine, critical], machineId)[0], critical);
+  assert.equal(sortAlerts([{ ...critical, acknowledged: true }, ...routine], machineId).some(alert => alert.id === critical.id), false);
+  assert.equal(sortAlerts([{ ...critical, machineId: "another-machine" }, ...routine], machineId).some(alert => alert.id === critical.id), false);
+});
 function heartbeat(state, sequenceNumber = 1, age = 0) { return { machineId, status: "ONLINE", brewState: `BREW_STATE_${state}`, sequenceNumber, lastSeenAt: new Date(now - age).toISOString(), metricsJson: { recipe_id: "espresso", recipe_name: "Espresso", recipe_step: 3, simulated: false } }; }
 
 test("device stages select viewer phases and hold until a new device state arrives", () => {

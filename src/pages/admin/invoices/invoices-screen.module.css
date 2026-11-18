@@ -1,30 +1,33 @@
+@reference "../../../styles/dashboard-tailadmin.css";
+
 .billingPanel {
   padding: 20px 22px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .invoiceListPanel { padding: 0; border: 0; border-radius: 0; background: transparent; }
 
 .billingPanel h2 {
   margin: 0 0 12px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 18px;
   line-height: 1.4;
 }
 
 .reviewForm textarea {
+  box-sizing: border-box;
   width: 100%;
-  min-height: 44px;
+
   padding: 9px 11px;
-  border: 1px solid #e2dad4;
-  border-radius: 8px;
-  background: #fff;
-  color: #302927;
+
+
+
+
   font: inherit;
   font-size: 14px;
-}
+ @apply ta:min-h-11 ta:rounded-lg ta:border ta:border-gray-300 ta:bg-white ta:text-gray-800 ta:focus:border-brand-300 ta:focus:shadow-focus-ring ta:disabled:bg-gray-100 ta:disabled:text-gray-500 ta:disabled:cursor-not-allowed ta:aria-invalid:border-red-500 ta:placeholder:text-gray-400 ta:focus:aria-invalid:border-red-500 ta:focus:aria-invalid:shadow-none; }
 
 .actionGroup,
 .reviewActions,
@@ -35,7 +38,10 @@
   gap: 8px;
 }
 
-.filterControls { margin-bottom: 18px; padding-bottom: 0; border-bottom: 0; }
+.filterControls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 18px; padding-bottom: 0; border-bottom: 0; }
+.filterControls > form { flex: 1 1 600px; margin-bottom: 0; }
+.filterControls > .actionGroup { flex-wrap: nowrap; }
+.filterControls > .inlineNotice { flex-basis: 100%; }
 
 .invoiceTable :global(table) {
   min-width: 980px;
@@ -58,9 +64,9 @@
 .invoiceTable :global(td:nth-child(7)) { width: 18%; }
 
 .invoiceIdentity { display: grid; gap: 4px; min-width: 0; }
-.invoiceIdentity strong { overflow: hidden; color: #302927; font-size: 14px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
-.invoiceIdentity span { color: #706561; font-size: 12px; }
-.identifier { display: block; overflow: hidden; color: #514843; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.invoiceIdentity strong { overflow: hidden; color: var(--color-text); font-size: 14px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.invoiceIdentity span { color: var(--color-muted); font-size: 12px; }
+.identifier { display: block; overflow: hidden; color: var(--color-text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .noWrap { white-space: nowrap; }
 .invoiceRowActions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
@@ -77,30 +83,30 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border: 1px solid #eee8e3;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fdfcfb;
+  background: var(--color-surface);
 }
 
-.detailField dt { color: #706561; font-size: 13px; }
-.detailField dd { margin: 0; overflow-wrap: anywhere; color: #302927; font-size: 14px; font-weight: 600; line-height: 1.45; }
-.hint { margin: 0 0 12px; color: #706561; font-size: 13px; line-height: 1.5; }
-.rowHint { margin: 0; color: #706561; font-size: 12px; line-height: 1.45; }
+.detailField dt { color: var(--color-muted); font-size: 13px; }
+.detailField dd { margin: 0; overflow-wrap: anywhere; color: var(--color-text); font-size: 14px; font-weight: 600; line-height: 1.45; }
+.hint { margin: 0 0 12px; color: var(--color-muted); font-size: 13px; line-height: 1.5; }
+.rowHint { margin: 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 .proofActions { align-items: flex-start; }
 .reviewForm { display: grid; gap: 8px; min-width: min(100%, 260px); margin-top: 10px; }
-.reviewForm label { color: #706561; font-size: 13px; font-weight: 600; }
+.reviewForm label { color: var(--color-muted); font-size: 13px; font-weight: 600; }
 .reviewForm textarea { min-height: 82px; resize: vertical; }
 .inlineNotice { padding: 12px; border: 1px solid #f1d2a8; border-radius: 8px; background: #fff9ef; color: #754a24; font-size: 13px; line-height: 1.5; }
-.errorNotice { border-color: #efc5c5; background: #fff5f5; color: #9e1c26; }
+.errorNotice { border-color: var(--ta-color-red-200); background: var(--ta-color-red-50); color: var(--ta-color-red-700); }
 .successNotice { border-color: #cfe3d2; background: #f1f8f2; color: #315c39; }
 .previewBlock { display: grid; gap: 14px; }
 .previewTotals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.previewTotal { display: grid; gap: 5px; padding: 13px; border: 1px solid #eee8e3; border-radius: 8px; background: #fdfcfb; }
-.previewTotal span { color: #706561; font-size: 12px; }
-.previewTotal strong { overflow-wrap: anywhere; color: #302927; font-size: 16px; }
+.previewTotal { display: grid; gap: 5px; padding: 13px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.previewTotal span { color: var(--color-muted); font-size: 12px; }
+.previewTotal strong { overflow-wrap: anywhere; color: var(--color-text); font-size: 16px; }
 .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
-.pagination span { color: #706561; font-size: 13px; }
-.exportStatus { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #eee5df; border-radius: 8px; background: #fdfbf9; }
+.pagination span { color: var(--color-muted); font-size: 13px; }
+.exportStatus { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #eee5df; border-radius: 8px; background: var(--color-surface); }
 
 @media (max-width: 900px) {
   .detailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

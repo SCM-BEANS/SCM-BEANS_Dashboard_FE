@@ -32,6 +32,8 @@ test("opening unread records marks them read and exposes only evidence-backed pr
   await bell.click();
   const drawer = page.getByRole("dialog", { name: "Thông báo", exact: true });
   await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveClass(/dashboard-tailadmin-portal/);
+  expect(await drawer.evaluate(element => { const probe = document.createElement("span"); probe.style.color = "var(--color-primary)"; element.append(probe); const color = getComputedStyle(probe).color; probe.remove(); return color; })).toBe("rgb(70, 95, 255)");
   await expect(drawer.locator("article")).toHaveCount(3);
   expect(api.writes).toHaveLength(0);
   await drawer.getByRole("button", { name: "Hợp đồng", exact: true }).click();

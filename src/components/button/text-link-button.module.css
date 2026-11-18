@@ -1,16 +1,16 @@
 .link:link,
 .link:visited {
-  color: #302927;
+  color: var(--color-text);
   font-weight: 700;
   text-decoration: none;
 }
 
 .link:hover {
-  color: #302927;
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .link:focus-visible {
-  outline: 2px solid #302927;
+  outline: 2px solid var(--color-text);
   outline-offset: 3px;
 }
