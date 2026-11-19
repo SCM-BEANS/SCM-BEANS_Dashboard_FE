@@ -49,11 +49,10 @@ function QueryFeedback({
   return null;
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
+function PageHeading({ title }: { title: string }) {
   return (
     <header className={styles.pageHeading}>
       <h1>{title}</h1>
-      <p>{description}</p>
     </header>
   );
 }
@@ -97,10 +96,7 @@ export function CustomerProfileListScreen() {
   return (
     <div className={`${styles.pageContent} ${styles.customerListPage}`}>
       <div className={styles.customerPageHeading}>
-      <PageHeading
-        title={MODERATOR_MESSAGES.READ_SCREENS.CUSTOMERS_TITLE}
-        description={MODERATOR_MESSAGES.READ_SCREENS.CUSTOMERS_DESCRIPTION}
-      />
+      <PageHeading title={MODERATOR_MESSAGES.READ_SCREENS.CUSTOMERS_TITLE} />
       <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CUSTOMER}>Tạo khách hàng</ButtonBar>
       </div>
 

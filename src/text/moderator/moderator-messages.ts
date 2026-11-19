@@ -99,7 +99,6 @@ export const MODERATOR_MESSAGES =  {
     LOADING_ALERTS: "Đang tải cảnh báo…",
     RETRY: "Thử lại",
     CUSTOMERS_TITLE: "Khách hàng",
-    CUSTOMERS_DESCRIPTION: "Tra cứu hồ sơ khách hàng và thông tin liên hệ.",
     CUSTOMER_DETAIL_TITLE: "Hồ sơ khách hàng",
     PROFILE_ID: "Mã hồ sơ",
     PROFILE_NAME: "Họ và tên",
