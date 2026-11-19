@@ -5,7 +5,7 @@
 }
 
 .field label {
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .field textarea {
@@ -27,7 +27,7 @@
 .counter {
   justify-self: end;
   color: #61718a;
-  font-size: 0.8rem;
+  font-size: 13px;
 }
 
 .error {

@@ -3,9 +3,9 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .heading,
@@ -21,7 +21,7 @@
 .step h3,
 .step h4 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
 }
 
 .heading h2 {
@@ -34,7 +34,7 @@
 }
 
 .step h4 {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .heading p,
@@ -43,7 +43,7 @@
 .success,
 .error {
   margin: 6px 0 0;
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -80,7 +80,7 @@
   content: "";
 }
 
-.workflowSteps::before { background: #e9e2dc; }
+.workflowSteps::before { background: var(--color-border); }
 .workflowSteps::after {
   background: var(--color-primary);
   transform: scaleX(var(--workflow-progress));
@@ -95,7 +95,7 @@
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   text-align: center;
 }
 
@@ -107,11 +107,11 @@
   place-items: center;
   border: 2px solid #dcd2ca;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-surface);
   color: #8b817c;
   font-size: 13px;
-  font-weight: 700;
-  transition: color .35s ease, border-color .35s ease, background-color .35s ease, transform .45s cubic-bezier(.34,1.45,.64,1);
+  font-weight: 600;
+  transition: color .35s ease, border-color .35s ease, background-color .35s ease, transform .45s var(--ease-out);
 }
 
 .workflowDot svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -119,9 +119,9 @@
 .workflowStep[data-state="done"] .workflowDot { border-color: #27834b; background: #27834b; color: #fff; }
 .workflowStep[data-state="done"] .workflowDot path { stroke-dashoffset: 0; }
 .workflowStep[data-state="current"] .workflowDot { border-color: var(--color-primary); color: var(--color-primary); transform: scale(1.08); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 9.4%, transparent); }
-.workflowLabel { color: #706561; font-size: 13px; font-weight: 600; line-height: 1.3; }
+.workflowLabel { color: var(--color-text-muted); font-size: 13px; font-weight: 600; line-height: 1.3; }
 .workflowStep[data-state="done"] .workflowLabel,
-.workflowStep[data-state="current"] .workflowLabel { color: #302927; }
+.workflowStep[data-state="current"] .workflowLabel { color: var(--color-text); }
 
 .summary {
   display: grid;
@@ -133,21 +133,21 @@
 .summary > div {
   min-width: 0;
   padding: 10px 12px;
-  border: 1px solid #eee8e3;
-  border-radius: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   background: #fcfbfa;
 }
 
 .summary dt {
   margin-bottom: 4px;
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 
 .summary dd {
   margin: 0;
   overflow-wrap: anywhere;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -168,7 +168,7 @@
   flex: 1 1 220px;
   flex-direction: column;
   gap: 6px;
-  color: #514843;
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 600;
 }
@@ -182,9 +182,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .step label input,
@@ -196,11 +196,11 @@
 .orderPicker select {
   width: 100%;
   min-height: 42px;
-  padding: 9px 11px;
+  padding: 8px 12px;
   border: 1px solid #dcd2ca;
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   font-weight: 400;
 }
@@ -216,7 +216,7 @@
   flex-direction: column;
   gap: 12px;
   padding-top: 16px;
-  border-top: 1px solid #eee8e3;
+  border-top: 1px solid var(--color-border);
 }
 
 .subheading {
@@ -224,7 +224,7 @@
 }
 
 .subheading span {
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -235,21 +235,21 @@
 .notice,
 .success,
 .error {
-  padding: 11px 13px;
-  border: 1px solid #e9e2dc;
+  padding: 12px 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #faf8f6;
+  background: var(--color-surface-subtle);
 }
 
 .success {
   border-color: #c5dfcf;
   background: #f3faf5;
-  color: #28633d;
+  color: var(--color-success);
 }
 
 .error {
   border-color: #efc2c2;
-  background: #fff7f7;
+  background: var(--color-primary-soft);
   color: #9e1d25;
 }
 
@@ -270,9 +270,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #eee8e3;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #514843;
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
@@ -289,7 +289,7 @@
 .eventList li p {
   flex-basis: 100%;
   margin: 0;
-  color: #706561;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 640px) {
@@ -305,10 +305,10 @@
     grid-template-columns: 1fr;
   }
 
-  .workflowSteps { gap: 3px; }
+  .workflowSteps { gap: 4px; }
   .workflowSteps::before, .workflowSteps::after { top: 14px; }
   .workflowDot { width: 30px; height: 30px; font-size: 12px; }
-  .workflowLabel { font-size: 10.5px; }
+  .workflowLabel { font-size: 12px; }
 
   .actions > button,
   .step > button {

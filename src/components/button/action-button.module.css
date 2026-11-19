@@ -9,7 +9,7 @@
   border-radius: 10px;
   font: inherit;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
@@ -47,23 +47,23 @@
 
 .secondary {
   color: var(--color-primary);
-  border-color: var(--color-border, #e9e2dc);
-  background: #fff;
+  border-color: var(--color-border);
+  background: var(--color-surface);
 }
 
 .secondary:hover {
   border-color: #d7c6c0;
-  background: var(--color-primary-soft, #f9e9ea);
+  background: var(--color-primary-soft);
 }
 
 .light {
-  color: #302927;
-  border-color: #fff;
-  background: #fff;
+  color: var(--color-text);
+  border-color: var(--color-surface);
+  background: var(--color-surface);
 }
 
 .light:hover {
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 .outline {

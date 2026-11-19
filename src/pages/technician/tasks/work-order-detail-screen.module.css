@@ -4,14 +4,14 @@
   flex-direction: column;
   gap: 16px;
   padding: 22px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .panel h2 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: 18px;
 }
 
@@ -32,20 +32,20 @@
 .detailItem dt,
 .fileField span,
 .recipientField span {
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
 .detailItem dd {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .codeValue {
-  font-family: Consolas, Monaco, monospace;
+  font-family: var(--font-mono);
   font-size: 12px !important;
 }
 
@@ -58,7 +58,7 @@
 
 .evidenceActions .evidenceActionButton.evidenceActionButton {
   min-height: 36px;
-  padding: 0 11px;
+  padding: 0 12px;
   font-size: 13px;
   white-space: nowrap;
 }
@@ -66,7 +66,7 @@
 .hint,
 .notes {
   margin: 0;
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -85,7 +85,7 @@
   min-width: min(100%, 320px);
   flex: 1;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .fileField input,
@@ -96,16 +96,16 @@
 .tableControl {
   width: 100%;
   min-height: 44px;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border: 1px solid #ded6d0;
-  border-radius: 6px;
-  background: #fff;
-  color: #302927;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
 .formField span {
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -125,7 +125,7 @@
 
 .eventList p {
   margin: 4px 0 0;
-  color: #706561;
+  color: var(--color-text-muted);
 }
 
 .formGrid {
@@ -137,7 +137,7 @@
 .tableControl {
   min-width: 130px;
   min-height: 38px;
-  padding: 7px 9px;
+  padding: 8px 8px;
   font-size: 13px;
 }
 
@@ -145,13 +145,13 @@
 .formField input:disabled,
 .formField textarea:disabled {
   cursor: not-allowed;
-  background: #f7f5f3;
-  color: #706561;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
 }
 
 .fileName {
   align-self: center;
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
 }
@@ -169,16 +169,16 @@
   min-height: 40px;
   align-items: center;
   padding: 0 12px;
-  border: 1px solid #e2dad4;
-  border-radius: 6px;
-  background: #fff;
-  color: #514843;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   text-decoration: none;
 }
 
 .backLink :global(a:hover) {
   border-color: #c9bcb4;
-  background: #fdfbf9;
+  background: var(--color-surface-subtle);
 }
 
 .error,
@@ -186,14 +186,14 @@
 .success {
   margin: 0;
   padding: 12px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   line-height: 1.5;
 }
 
 .error,
 .notice {
-  background: #fff2e6;
+  background: var(--color-warning-soft);
   color: #693c2c;
 }
 
@@ -205,12 +205,12 @@
 
 @media (max-width: 600px) {
   .panel {
-    padding: 17px 14px;
+    padding: 16px 14px;
   }
 
   .detailGrid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 15px;
+    gap: 16px;
   }
 
   .uploadRow {

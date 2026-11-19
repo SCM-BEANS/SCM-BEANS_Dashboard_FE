@@ -3,7 +3,7 @@
   width: min(100%, 1440px);
   min-height: 100%;
   flex-direction: column;
-  gap: 22px;
+  gap: 24px;
   padding: 28px 32px 112px;
   margin: 0 auto;
 }
@@ -20,14 +20,14 @@
   flex-direction: column;
   gap: 16px;
   padding: 18px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .panel h2 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: 18px;
 }
 
@@ -49,24 +49,24 @@
 .retryButton {
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .button[aria-pressed="true"] {
-  border-color: #b81724;
+  border-color: var(--color-primary);
   background: #fff4f4;
   color: #981421;
 }
 
 .primaryButton {
-  border-color: #b81724;
-  background: #b81724;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -80,7 +80,7 @@
 .unreadCount {
   color: #5d524e;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .notificationList {
@@ -91,14 +91,14 @@
 .notificationCard {
   min-width: 0;
   padding: 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .notificationCard h3 {
   margin: 12px 0 6px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 16px;
 }
 
@@ -123,13 +123,13 @@
 }
 
 .notificationOpenButton:focus-visible {
-  border-radius: 6px;
-  outline: 3px solid #b81724;
+  border-radius: 8px;
+  outline: 3px solid var(--color-primary);
   outline-offset: 4px;
 }
 
 .notificationOpenButton:hover h3 {
-  color: #b81724;
+  color: var(--color-primary);
 }
 
 .detailPanel {
@@ -138,9 +138,9 @@
   flex-direction: column;
   gap: 28px;
   padding: 24px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .backToListButton {
@@ -150,17 +150,17 @@
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .backToListButton:hover {
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 .notificationDetail {
@@ -173,7 +173,7 @@
 
 .notificationDetail h1 {
   margin: 0;
-  color: #302927;
+  color: var(--color-text);
   font-size: clamp(24px, 3vw, 36px);
   line-height: 1.2;
 }
@@ -185,14 +185,14 @@
 .detailMessage {
   margin: 0;
   color: #5d524e;
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.7;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .notificationMeta {
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 
@@ -207,9 +207,9 @@
 
 .readBadge,
 .unreadBadge {
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 999px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .readBadge {
@@ -232,14 +232,14 @@
 
 .loadingNotice,
 .emptyNotice {
-  background: #f8f6f3;
+  background: var(--color-page);
   color: #5d524e;
 }
 
 .errorNotice {
-  border: 1px solid #efc3c5;
+  border: 1px solid var(--color-primary-border);
   background: #fff4f4;
-  color: #8c1d26;
+  color: var(--color-primary-strong);
 }
 
 .errorNotice p {
@@ -260,7 +260,7 @@
 }
 
 .extraContent a {
-  color: #b81724;
+  color: var(--color-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -283,16 +283,16 @@
   width: 44px;
   min-height: 44px;
   place-items: center;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
 
 .bellButton:hover {
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 .settingsButton {
@@ -301,19 +301,19 @@
   min-height: 44px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .settingsButton:hover {
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 .settingsButton:focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -325,13 +325,13 @@
   min-width: 20px;
   height: 20px;
   place-items: center;
-  padding: 0 5px;
-  border: 2px solid #fff;
+  padding: 0 4px;
+  border: 2px solid var(--color-surface);
   border-radius: 999px;
-  background: #b81724;
+  background: var(--color-primary);
   color: #fff;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -346,11 +346,11 @@
   gap: 12px;
   padding: 16px;
   overflow: auto;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow: 0 12px 32px #30292724;
-  color: #302927;
+  color: var(--color-text);
 }
 
 .popoverHeader {
@@ -362,7 +362,7 @@
 
 .popoverHeader h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .closeButton {
@@ -371,10 +371,10 @@
   min-height: 36px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
@@ -388,7 +388,7 @@
 }
 
 .unreadCard {
-  border-left: 3px solid #b81724;
+  border-left: 3px solid var(--color-primary);
 }
 
 .notificationType {
@@ -406,7 +406,7 @@
   min-height: 32px;
   padding: 0 10px;
   border-color: transparent;
-  background: #f8f6f3;
+  background: var(--color-page);
   font-size: 13px;
 }
 
@@ -416,8 +416,8 @@
 }
 
 .popover .notificationMeta {
-  gap: 7px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 12px;
 }
 
 .viewAllLink {
@@ -425,16 +425,16 @@
   min-height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .viewAllLink:hover {
-  background: #f8f6f3;
+  background: var(--color-page);
 }
 
 @media (max-width: 1023px) {

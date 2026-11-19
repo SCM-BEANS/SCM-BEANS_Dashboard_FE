@@ -19,7 +19,7 @@
   overflow-y: auto;
   padding: 32px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--color-surface);
   color: #292625;
   box-shadow: none;
 }
@@ -32,7 +32,7 @@
 .eyebrow {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   color: #292625;
   font-size: 14px;
   font-weight: 600;
@@ -41,18 +41,18 @@
 
 .successMark {
   color: #292625;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .title {
-  color: #302927;
-  font-size: 26px;
+  color: var(--color-text);
+  font-size: 28px;
   font-weight: 600;
   line-height: 38px;
 }
 
 .description {
-  color: #302927;
+  color: var(--color-text);
   font-size: 16px;
   font-weight: 400;
   line-height: 23px;
@@ -98,13 +98,13 @@
 }
 
 .secondaryButton {
-  border: 1px solid #e9e2dc;
-  background: #fff;
-  color: #302927;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: #f7f5f3;
+  background: var(--color-surface-subtle);
 }
 
 .primaryButton:focus-visible,
@@ -133,12 +133,12 @@
   }
 
   .title {
-    font-size: 22px;
+    font-size: 24px;
     line-height: 32px;
   }
 
   .description {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 22px;
   }
 

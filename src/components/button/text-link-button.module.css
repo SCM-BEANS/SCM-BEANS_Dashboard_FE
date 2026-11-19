@@ -11,8 +11,8 @@ button.link,
 
 .link.link,
 .action {
-  color: #302927;
-  font-weight: 700;
+  color: var(--color-text);
+  font-weight: 600;
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 38%, transparent);
   text-underline-offset: 3px;
@@ -22,13 +22,13 @@ button.link,
 .link.link:focus-visible,
 .action:enabled:hover,
 .action:focus-visible {
-  color: var(--color-primary, #b81724);
+  color: var(--color-primary);
   text-decoration-color: currentColor;
 }
 
 .link:focus-visible,
 .action:focus-visible {
-  outline: 2px solid #302927;
+  outline: 2px solid var(--color-text);
   outline-offset: 2px;
 }
 

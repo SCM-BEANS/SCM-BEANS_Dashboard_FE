@@ -1,13 +1,13 @@
 .panel {
   padding: 22px 24px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .panel h2 {
   margin: 0 0 14px;
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .operationsGrid {
@@ -23,10 +23,10 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   font-size: 14px;
 }
@@ -43,12 +43,12 @@
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  color: #706561;
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
 .operationsGrid strong {
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
   overflow-wrap: anywhere;
@@ -75,18 +75,18 @@
 
 .createLayout { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(260px, .9fr); gap: 18px; align-items: start; }
 .createMain { display: grid; min-width: 0; gap: 18px; }
-.createLayout .panel { min-width: 0; padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; }
+.createLayout .panel { min-width: 0; padding: 22px 24px; border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); }
 .createSummary { display: grid; min-width: 0; gap: 16px; }
-.createSummary h2, .createMain h2 { margin: 0 0 16px; color: #302927; font-size: 19px; }
+.createSummary h2, .createMain h2 { margin: 0 0 16px; color: var(--color-text); font-size: 20px; }
 .summaryFields { display: grid; gap: 16px; margin: 0; }
-.summaryFields > div { display: grid; gap: 5px; min-width: 0; }
-.summaryFields dt { color: #706561; font-size: 13px; }
-.summaryFields dd { margin: 0; color: #302927; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.summaryFields > div { display: grid; gap: 4px; min-width: 0; }
+.summaryFields dt { color: var(--color-text-muted); font-size: 13px; }
+.summaryFields dd { margin: 0; color: var(--color-text); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .policyHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .policyHeading h2 { margin: 0 0 6px; }
-.policyHeading p, .createContext p { margin: 0; color: #706561; font-size: 13px; line-height: 1.55; }
-.policyHeading > span { flex: none; padding: 6px 9px; border-radius: 6px; background: #f5f2ef; color: #514843; font-size: 12px; }
-.createContext { background: #fdfbf9 !important; }
+.policyHeading p, .createContext p { margin: 0; color: var(--color-text-muted); font-size: 13px; line-height: 1.55; }
+.policyHeading > span { flex: none; padding: 6px 8px; border-radius: 8px; background: #f5f2ef; color: var(--color-text-secondary); font-size: 12px; }
+.createContext { background: var(--color-surface-subtle) !important; }
 .createContext h2 { font-size: 16px !important; }
 
 .contractCheckboxGroup {
@@ -100,7 +100,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 14px;
 }
 
@@ -122,7 +122,7 @@
 .operationsNotice {
   padding: 14px 16px;
   border-radius: 10px;
-  background: #fff2e6;
+  background: var(--color-warning-soft);
   color: #693c2c;
   font-size: 14px;
   line-height: 1.5;
@@ -132,10 +132,10 @@
   min-height: 36px;
   margin-left: 8px;
   padding: 0 10px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302927;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
 }
 

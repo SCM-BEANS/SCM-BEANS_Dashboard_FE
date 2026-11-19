@@ -7,21 +7,21 @@
   flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
-  color: #706561;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .trigger:hover {
-  background: #f7f5f3;
-  color: #b81724;
+  background: var(--color-surface-subtle);
+  color: var(--color-primary);
 }
 
 .trigger:focus-visible,
 .closeButton:focus-visible {
-  outline: 3px solid #b81724;
+  outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
@@ -46,7 +46,7 @@
   overflow: hidden;
   padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
   border-radius: 20px 20px 0 0;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow: 0 -12px 40px rgb(48 41 39 / 12%);
   animation: sheet-enter 220ms cubic-bezier(.2, .8, .2, 1);
 }
@@ -59,7 +59,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 0 4px 12px;
-  color: #302927;
+  color: var(--color-text);
   font-size: 16px;
 }
 
@@ -75,12 +75,12 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #302927;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .closeButton:hover {
-  background: #f7f5f3;
+  background: var(--color-surface-subtle);
 }
 
 .navigation {

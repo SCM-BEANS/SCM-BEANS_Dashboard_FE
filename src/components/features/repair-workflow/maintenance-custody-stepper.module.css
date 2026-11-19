@@ -5,7 +5,7 @@
   padding: clamp(1rem, 3vw, 1.35rem);
   border: 1px solid #d8e0eb;
   border-radius: 1rem;
-  background: linear-gradient(145deg, #fbfdff, #f4f8fc);
+  background: #fbfdff;
 }
 
 .heading h2,
@@ -34,7 +34,7 @@
   padding: 0.85rem;
   border: 1px solid #d7e0eb;
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .steps .recordedStep {
@@ -62,7 +62,7 @@
   border-radius: 50%;
   background: #e8eef6;
   color: #294869;
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .recordedStep .stepNumber {
@@ -73,7 +73,7 @@
 .stepHeading h3 {
   margin: 0;
   color: #243a54;
-  font-size: 0.95rem;
+  font-size: 16px;
 }
 
 .stepHeading p {
@@ -94,7 +94,7 @@
 .eventForm label,
 .ackForm label {
   color: #263a53;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .eventForm input,
@@ -105,7 +105,7 @@
   padding: 0.65rem 0.75rem;
   border: 1px solid #c7d1df;
   border-radius: 0.6rem;
-  background: #fff;
+  background: var(--color-surface);
   color: #16233a;
   font: inherit;
 }
@@ -124,7 +124,7 @@
 }
 
 .hint {
-  font-size: 0.83rem;
+  font-size: 13px;
 }
 
 .notice,

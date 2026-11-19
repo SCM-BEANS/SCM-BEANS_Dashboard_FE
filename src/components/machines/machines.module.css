@@ -16,7 +16,7 @@
 
 .ownerOperationsHeader p {
   margin: 0;
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .ownerOperationsTabs {
@@ -28,9 +28,9 @@
 .ownerOperationsTabs button {
   min-height: 44px;
   padding: 10px 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   color: #5e5551;
   cursor: pointer;
   font: inherit;
@@ -42,7 +42,7 @@
   border-color: #d9a6aa;
   background: #fae9eb;
   color: var(--color-primary);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .ownerOperationsFilters {
@@ -57,8 +57,8 @@
   flex: 1 1 170px;
   gap: 6px;
   min-width: 0;
-  color: #786e69;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 .ownerOperationsFilters input,
@@ -66,11 +66,11 @@
   box-sizing: border-box;
   width: 100%;
   min-height: 42px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid #e3d9d2;
   border-radius: 8px;
-  background: #fff;
-  color: #302b29;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
@@ -80,7 +80,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .ownerCleaningFlags,
@@ -100,8 +100,8 @@
 
 .ownerCleaningFlags dt,
 .ownerRecipeBreakdown dt {
-  color: #786e69;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 .ownerCleaningFlags dd,
@@ -113,11 +113,11 @@
 .ownerCleaningSummary {
   display: grid;
   gap: 6px;
-  font-size: 0.875rem;
+  font-size: 14px;
 }
 
 .ownerMachineLink {
-  color: #302b29;
+  color: var(--color-text);
   font-weight: 600;
   text-decoration: none;
 }
@@ -168,20 +168,20 @@
   min-width: 0;
   min-height: 88px;
   padding: 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .machineDetailMetric span {
-  color: #786e69;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 14px;
   line-height: 1.4;
 }
 
 .machineDetailMetric strong {
-  color: #302b29;
-  font-size: 1rem;
+  color: var(--color-text);
+  font-size: 16px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -194,13 +194,13 @@
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .machineListCount strong {
-  color: #302b29;
-  font-size: 1.25rem;
-  font-weight: 650;
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -212,10 +212,10 @@
 
 .machineListFilterButton {
   min-height: 40px;
-  padding: 8px 13px;
-  border: 1px solid #e9e2dc;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   color: #5e5551;
   cursor: pointer;
   font: inherit;
@@ -238,7 +238,7 @@
   display: grid;
   gap: 16px;
   min-width: 0;
-  color: #302b29;
+  color: var(--color-text);
 }
 
 .monitoringContent {
@@ -247,7 +247,7 @@
   min-width: 0;
 }
 
-.monitoringMachineName { margin-left: 10px; color: #786e69; font-size: 0.68em; font-weight: 600; overflow-wrap: anywhere; vertical-align: baseline; }
+.monitoringMachineName { margin-left: 10px; color: var(--color-text-muted); font-size: 12px; font-weight: 600; overflow-wrap: anywhere; vertical-align: baseline; }
 
 .monitoringHeartbeatSummary,
 .monitoringMetricStrip {
@@ -256,33 +256,33 @@
   gap: 16px;
   margin: 0;
   padding: 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: #fcfaf8;
 }
 
 .monitoringHeartbeatSummary > div,
 .monitoringMetricStrip > div { display: grid; align-content: start; justify-items: start; gap: 8px; min-width: 0; }
-.monitoringHeartbeatSummary strong { font-size: 0.9375rem; font-weight: 600; overflow-wrap: anywhere; }
-.monitoringMetricStrip dt { color: #665e59; font-size: 0.875rem; }
-.monitoringMetricStrip dd { margin: 0; font-size: 1.375rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.monitoringHeartbeatSummary strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.monitoringMetricStrip dt { color: #665e59; font-size: 14px; }
+.monitoringMetricStrip dd { margin: 0; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .monitoringChartToolbar { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .monitoringChartToolbar > label { flex: 1 1 220px; max-width: 360px; }
-.monitoringEmpty { margin: 0; padding: 28px 16px; border-radius: 8px; background: #f8f6f3; color: #665e59; line-height: 1.6; }
+.monitoringEmpty { margin: 0; padding: 28px 16px; border-radius: 8px; background: var(--color-page); color: #665e59; line-height: 1.6; }
 .monitoringProductionCharts { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .monitoringProductionCharts > section { min-width: 0; }
 .monitoringProductionCharts .operationalDailyChartTrack { width: 56px; max-width: 100%; justify-self: center; }
 .monitoringProductionCharts .operationalDailyChartBar { min-height: 0; }
 @media (max-width: 1023px) { .monitoringProductionCharts { grid-template-columns: minmax(0, 1fr); } }
-.operationalOverviewPanel > h2 { margin: 0; font-size: 1.125rem; line-height: 1.4; }
+.operationalOverviewPanel > h2 { margin: 0; font-size: 18px; line-height: 1.4; }
 .operationalOverviewPanel > p { margin: 0; }
 .monitoringRecipeBars { display: grid; gap: 18px; padding: 0; margin: 0; list-style: none; }
 .monitoringRecipeBars li { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(80px, 2fr) auto; align-items: center; gap: 16px; }
 .monitoringRecipeBars li > span { overflow-wrap: anywhere; }
 .monitoringRecipeBars li > div { height: 12px; border-radius: 3px; background: #f1eae5; overflow: hidden; }
 .monitoringRecipeBars li > div > span { display: block; height: 100%; background: var(--color-primary); border-radius: inherit; }
-.monitoringRecipeBars strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.offlineReviewStatus { display: inline-flex; padding: 4px 9px; border: 1px solid #e3d9d2; border-radius: 5px; background: #f8f6f3; color: #665e59; font-size: 0.875rem; white-space: nowrap; }
+.monitoringRecipeBars strong { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.offlineReviewStatus { display: inline-flex; padding: 4px 8px; border: 1px solid #e3d9d2; border-radius: 5px; background: var(--color-page); color: #665e59; font-size: 14px; white-space: nowrap; }
 .offlineReviewStatus[data-status="REVIEW_REQUIRED"] { color: #8a4b0f; border-color: #eed6b4; background: #fff7eb; }
 .offlineReviewStatus[data-status="REVIEWED"],
 .offlineReviewStatus[data-status="CLEARED"] { color: #28643a; border-color: #b9d9c1; background: #f1f8f3; }
@@ -295,7 +295,7 @@
 }
 
 .operationalOverviewBack a {
-  color: #786e69;
+  color: var(--color-text-muted);
   text-decoration: none;
 }
 
@@ -316,13 +316,13 @@
 }
 
 .operationalOverviewHeading h1 {
-  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  font-size: clamp(24px, 2.5vw, 28px);
   line-height: 1.25;
 }
 
 .operationalOverviewHeading p,
 .operationalOverviewPanelHeading p {
-  color: #786e69;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
@@ -331,9 +331,9 @@
   gap: 14px;
   min-width: 0;
   padding: 18px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .operationalOverviewPanelHeading {
@@ -345,8 +345,8 @@
 }
 
 .operationalOverviewPanelHeading h2 {
-  margin-bottom: 5px;
-  font-size: 1.1rem;
+  margin-bottom: 4px;
+  font-size: 18px;
   line-height: 1.4;
 }
 
@@ -360,10 +360,10 @@
 .operationalDateForm button,
 .operationalOverviewError button {
   min-height: 40px;
-  padding: 8px 13px;
-  border: 1px solid #e9e2dc;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   color: #5e5551;
   cursor: pointer;
   font: inherit;
@@ -395,7 +395,7 @@
   gap: 6px;
   min-width: 0;
   color: #665e59;
-  font-size: 0.9rem;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -405,10 +405,10 @@
   box-sizing: border-box;
   min-height: 42px;
   padding: 8px 10px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302b29;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
@@ -426,9 +426,9 @@
 .operationalOverviewError {
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #faf8f6;
+  background: var(--color-surface-subtle);
   color: #5e5551;
   line-height: 1.5;
 }
@@ -440,7 +440,7 @@
   justify-content: space-between;
   gap: 10px;
   border-color: #efc7c8;
-  background: #fff7f7;
+  background: var(--color-primary-soft);
   color: #a61924;
 }
 
@@ -462,29 +462,29 @@
 .operationalMetricCard {
   display: grid;
   align-content: start;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
   padding: 16px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .operationalMetricCard span,
 .operationalMetricCard small {
-  color: #786e69;
+  color: var(--color-text-muted);
   line-height: 1.4;
 }
 
 .operationalMetricCard strong {
   overflow-wrap: anywhere;
-  color: #302b29;
-  font-size: 1.25rem;
+  color: var(--color-text);
+  font-size: 20px;
   line-height: 1.3;
 }
 
 .operationalMetricCard small {
-  font-size: 0.8125rem;
+  font-size: 13px;
 }
 
 .operationalDailyChart {
@@ -501,16 +501,16 @@
   display: grid;
   grid-template-rows: auto 116px auto;
   align-items: end;
-  gap: 7px;
+  gap: 8px;
   min-width: 44px;
-  color: #786e69;
-  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-size: 13px;
   text-align: center;
 }
 
 .operationalDailyChartColumn strong {
-  color: #302b29;
-  font-size: 0.8125rem;
+  color: var(--color-text);
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -524,7 +524,7 @@
   height: 116px;
   overflow: hidden;
   border-radius: 4px;
-  background: #faf8f6;
+  background: var(--color-surface-subtle);
 }
 
 .operationalDailyChartBar {
@@ -548,7 +548,7 @@
   display: grid;
   gap: 16px;
   padding-top: 18px;
-  border-top: 1px solid #e9e2dc;
+  border-top: 1px solid var(--color-border);
   min-width: 0;
 }
 
@@ -567,9 +567,9 @@
 
 .offlineReviewForm label {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   color: #665e59;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .offlineReviewForm input,
@@ -578,10 +578,10 @@
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302b29;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
@@ -596,26 +596,26 @@
   gap: 14px;
   min-width: 0;
   padding: 20px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .smartIotPanelHeader {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .smartIotPanelHeader h2 {
   margin: 0;
-  color: #302b29;
-  font-size: 1.05rem;
+  color: var(--color-text);
+  font-size: 16px;
   line-height: 1.4;
 }
 
 .smartIotPanelHeader p {
   margin: 0;
-  color: #786e69;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
@@ -632,15 +632,15 @@
   justify-content: space-between;
   gap: 10px 16px;
   padding: 12px 14px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #faf8f6;
+  background: var(--color-surface-subtle);
   color: #5e5551;
 }
 
 .smartIotPanelState[data-state="error"] {
   border-color: #efc7c8;
-  background: #fff7f7;
+  background: var(--color-primary-soft);
   color: #a61924;
 }
 
@@ -655,10 +655,10 @@
 
 .smartIotRetryButton {
   min-height: 40px;
-  padding: 8px 13px;
-  border: 1px solid #e9e2dc;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   color: inherit;
   cursor: pointer;
   font: inherit;
@@ -672,15 +672,15 @@
 .machineConnectionBadge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   width: fit-content;
   max-width: 100%;
-  padding: 5px 9px;
-  border: 1px solid #e9e2dc;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   background: #f8f5f2;
   color: #5e5551;
-  font-size: 0.8125rem;
+  font-size: 13px;
   line-height: 1.3;
   white-space: nowrap;
 }
@@ -703,7 +703,7 @@
 .machineConnectionBadge[data-state="OFFLINE"],
 .machineConnectionBadge[data-state="error"] {
   border-color: #efc7c8;
-  background: #fff7f7;
+  background: var(--color-primary-soft);
   color: #a61924;
 }
 
@@ -715,7 +715,7 @@
 }
 
 .machineConnectionBadge[data-state="loading"] {
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .machineConnectionRetry {
@@ -725,7 +725,7 @@
   color: inherit;
   cursor: pointer;
   font: inherit;
-  font-weight: 650;
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -749,13 +749,13 @@
 }
 
 .machineHeartbeatFields dt {
-  color: #786e69;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 .machineHeartbeatFields dd {
   margin: 0;
-  color: #302b29;
+  color: var(--color-text);
   overflow-wrap: anywhere;
 }
 
@@ -776,11 +776,11 @@
 .telemetryError button,
 .telemetryLoadMore {
   min-height: 40px;
-  padding: 8px 13px;
-  border: 1px solid #e9e2dc;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
-  color: #302b29;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   font: inherit;
 }
@@ -789,7 +789,7 @@
   border-color: #d9a6aa;
   background: #fae9eb;
   color: var(--color-primary);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .telemetryRangePresets button:focus-visible,
@@ -813,8 +813,8 @@
   display: grid;
   gap: 6px;
   min-width: 0;
-  color: #786e69;
-  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 .telemetryRangeForm input,
@@ -826,15 +826,15 @@
   padding: 8px 10px;
   border: 1px solid #e3d9d2;
   border-radius: 8px;
-  background: #fff;
-  color: #302b29;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
 .telemetryRangeCaption,
 .telemetryRecordsLabel {
   margin: 0;
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .telemetryRangeError,
@@ -852,7 +852,7 @@
   padding: 12px;
   border: 1px solid #efc7c8;
   border-radius: 8px;
-  background: #fff7f7;
+  background: var(--color-primary-soft);
 }
 
 .telemetryError p {
@@ -872,7 +872,7 @@
 }
 
 .telemetryChart figcaption {
-  color: #302b29;
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -889,8 +889,8 @@
   stroke-dasharray: 4 4;
 }
 
-.telemetryChart svg text { fill: #665e59; font-family: Arial, sans-serif; font-size: 13px; }
-.telemetryChart svg circle:focus { outline: 2px solid #302b29; outline-offset: 3px; }
+.telemetryChart svg text { fill: #665e59; font-family: var(--font-sans); font-size: 13px; }
+.telemetryChart svg circle:focus { outline: 2px solid var(--color-text); outline-offset: 3px; }
 
 .telemetryChart svg polyline {
   fill: none;
@@ -909,8 +909,8 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #786e69;
-  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-size: 13px;
 }
 
 .telemetryLoadMore {
@@ -947,14 +947,14 @@
 }
 
 .ownerToolbarRight { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; min-width: 0; }
-.muted { color: #786e69; }
+.muted { color: var(--color-text-muted); }
 
-.historyFilter { display: grid; gap: 6px; justify-items: start; color: #786e69; }
-.historyFilter select { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: #fff; color: #302927; font: inherit; }
+.historyFilter { display: grid; gap: 6px; justify-items: start; color: var(--color-text-muted); }
+.historyFilter select { min-width: 240px; min-height: 40px; padding: 0 36px 0 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
 .historyFilter select:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 
 .copyIdRow { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.copyIdButton { padding: 2px 10px; border: 1px solid #e9e2dc; border-radius: 999px; background: #fff; color: #302927; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.copyIdButton { padding: 2px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .copyIdButton:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .copyIdButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
@@ -963,37 +963,37 @@
 .showMoreButton { justify-self: start; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-.machineConnectionBadge.machineConnectionBadge { border: 0; border-radius: 0; background: transparent; padding: 0; font: inherit; color: #302927; white-space: normal; }
+.machineConnectionBadge.machineConnectionBadge { border: 0; border-radius: 0; background: transparent; padding: 0; font: inherit; color: var(--color-text); white-space: normal; }
 .machineConnectionBadge::before { display: none; }
 .connectionIcon { position: relative; display: inline-flex; flex: 0 0 22px; width: 22px; height: 22px; align-items: center; color: #807974; }
 .connectionIcon > svg { width: 20px; height: 20px; stroke-width: 2; }
 .machineConnectionBadge[data-state="ONLINE"] .connectionIcon { color: #23815b; filter: drop-shadow(0 0 3px #2c8b6940); }
 .machineConnectionBadge[data-state="OFFLINE"] .connectionIcon { color: var(--color-primary); }
-.connectionIcon > .connectionCross { position: absolute; width: 11px; height: 11px; right: -2px; bottom: -1px; background: #fff; border-radius: 50%; stroke-width: 3; }
+.connectionIcon > .connectionCross { position: absolute; width: 11px; height: 11px; right: -2px; bottom: -1px; background: var(--color-surface); border-radius: 50%; stroke-width: 3; }
 .connectionSpinner { animation: connectionSpin 1s linear infinite; }
 .compactPeriod { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 10px; margin-bottom: 12px; }
 .periodPicker { position: relative; min-width: 0; max-width: 100%; }
-.periodPicker > summary { max-width: calc(100vw - 48px); min-height: 42px; overflow: hidden; padding: 11px 14px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; cursor: pointer; color: #302927; font-size: 14px; list-style: none; text-overflow: ellipsis; white-space: nowrap; }
-.periodPicker[open] > form { position: absolute; top: calc(100% + 8px); right: 0; z-index: 50; box-sizing: border-box; width: min(680px, calc(100vw - 32px)); padding: 16px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; box-shadow: 0 8px 24px #302b2914; }
+.periodPicker > summary { max-width: calc(100vw - 48px); min-height: 42px; overflow: hidden; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); cursor: pointer; color: var(--color-text); font-size: 14px; list-style: none; text-overflow: ellipsis; white-space: nowrap; }
+.periodPicker[open] > form { position: absolute; top: calc(100% + 8px); right: 0; z-index: 50; box-sizing: border-box; width: min(680px, calc(100vw - 32px)); padding: 16px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); box-shadow: 0 8px 24px #302b2914; }
 .periodPicker[open] > summary { width: fit-content; white-space: nowrap; }
-.compactPeriod select, .operationalOverviewPanelHeading select { min-height: 42px; padding: 8px 12px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; }
-.productionTotal .operationalMetricCard { min-height: 0; padding: 20px 24px; gap: 5px; }
-.productionTotal .operationalMetricCard > strong { font-size: 46px; line-height: 1.2; color: #302927; }
+.compactPeriod select, .operationalOverviewPanelHeading select { min-height: 42px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.productionTotal .operationalMetricCard { min-height: 0; padding: 20px 24px; gap: 4px; }
+.productionTotal .operationalMetricCard > strong { font-size: 46px; line-height: 1.2; color: var(--color-text); }
 .productionTotal .operationalMetricCard > strong > small { font-size: 16px; font-weight: 400; }
 .productionLine { margin: 12px 0 0; min-width: 0; }
 .productionLine svg { display: block; width: 100%; height: 240px; }
 .cleaningDetailFields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; text-align: left; }
 .cleaningDetailFields > div { min-width: 0; }
-.cleaningDetailFields dt { color: #706561; margin-bottom: 6px; }
-.cleaningDetailFields dd { margin: 0; color: #302927; overflow-wrap: anywhere; }
+.cleaningDetailFields dt { color: var(--color-text-muted); margin-bottom: 6px; }
+.cleaningDetailFields dd { margin: 0; color: var(--color-text); overflow-wrap: anywhere; }
 .offlineReviewFilters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 16px; }
 .reviewFilter { display: grid; gap: 8px; max-width: 280px; margin: 0; }
-.reviewFilter select { padding: 10px 12px; min-height: 44px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; }
-.offlineReviewStatus.offlineReviewStatus { border: 0; background: none; padding: 0; color: #302927; }
+.reviewFilter select { padding: 10px 12px; min-height: 44px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.offlineReviewStatus.offlineReviewStatus { border: 0; background: none; padding: 0; color: var(--color-text); }
 .offlineReviewStatus::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #807974; }
 .offlineReviewStatus[data-status="REVIEW_REQUIRED"]::before { background: #ca8b20; }
 .offlineReviewStatus[data-status="REVIEWED"]::before, .offlineReviewStatus[data-status="CLEARED"]::before { background: #23815b; }
-.ownerOperationsTabs.ownerOperationsTabs { border-bottom: 1px solid #e9e2dc; gap: 16px; }
+.ownerOperationsTabs.ownerOperationsTabs { border-bottom: 1px solid var(--color-border); gap: 16px; }
 .ownerOperationsTabs.ownerOperationsTabs button { background: none; border: 0; border-radius: 0; border-bottom: 2px solid transparent; min-height: 44px; }
 .ownerOperationsTabs.ownerOperationsTabs button[aria-selected="true"], .ownerOperationsTabs.ownerOperationsTabs button[aria-pressed="true"] { background: none; border-bottom-color: var(--color-primary); color: var(--color-primary); }
 @media (max-width: 700px) { .cleaningDetailFields { grid-template-columns: 1fr; } .compactPeriod { justify-content: flex-start; } }
@@ -1008,10 +1008,10 @@
 
 .ownerCompactFilters { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
 .ownerDatePopover { position:relative; }
-.ownerDatePopover > summary { padding:11px 14px; border:1px solid #e7dfd9; border-radius:9px; cursor:pointer; list-style:none; background:#fff; }
-.ownerDatePopover[open] > form { position:absolute; right:0; top:calc(100% + 8px); z-index:20; width:min(600px,calc(100vw - 64px)); padding:18px; border:1px solid #e7dfd9; border-radius:12px; background:#fff; box-shadow:0 8px 24px #302b2914; }
+.ownerDatePopover > summary { padding:12px 14px; border:1px solid var(--color-border); border-radius:10px; cursor:pointer; list-style:none; background:var(--color-surface); }
+.ownerDatePopover[open] > form { position:absolute; right:0; top:calc(100% + 8px); z-index:20; width:min(600px,calc(100vw - 64px)); padding:18px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); box-shadow:0 8px 24px #302b2914; }
 .ownerPeriodSelect { display:flex; align-items:center; gap:8px; font-size:14px; }
-.ownerPeriodSelect select { min-height:44px; border:1px solid #e7dfd9; border-radius:9px; padding:8px 12px; background:#fff; color:#302b29; font:inherit; }
+.ownerPeriodSelect select { min-height:44px; border:1px solid var(--color-border); border-radius:10px; padding:8px 12px; background:var(--color-surface); color:var(--color-text); font:inherit; }
 .ownerProductionLine { min-width:0; }
 .ownerDatePopover summary:focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
 @media(max-width:700px) { .ownerCompactFilters { justify-content:flex-start; } .ownerDatePopover[open] > form { position:static; width:100%; box-sizing:border-box; margin-top:8px; } }

@@ -11,9 +11,9 @@
   flex-direction: column;
   gap: 14px;
   padding: 18px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .listPanel h2 {
@@ -34,8 +34,8 @@
 
 .table th {
   padding: 12px var(--table-cell-inline);
-  background: #f7f5f3;
-  color: #706561;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: .01em;
@@ -56,7 +56,7 @@
 }
 
 .table tbody tr:hover td {
-  background-color: #fdf8f7;
+  background-color: var(--color-primary-soft);
 }
 
 .table tbody tr:last-child td {
@@ -72,8 +72,8 @@
 .contractStatus {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  color: #514843;
+  gap: 8px;
+  color: var(--color-text-secondary);
   font: inherit;
   font-size: 14px;
   white-space: nowrap;

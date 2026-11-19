@@ -4,10 +4,10 @@
   min-width: 0;
   min-height: 320px;
   overflow: hidden;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   background: transparent;
-  color: #302b29;
+  color: var(--color-text);
 }
 
 @media (min-width: 768px) {
@@ -41,7 +41,7 @@
   gap: 8px;
   box-sizing: border-box;
   padding: 6px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   background: rgb(255 255 255 / 94%);
   box-shadow: 0 2px 8px rgb(48 43 41 / 12%);
@@ -61,9 +61,9 @@
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: #302b29;
+  color: var(--color-text);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
@@ -95,14 +95,14 @@
 }
 
 .layerButton[aria-pressed="false"] {
-  border-color: #e9e2dc;
-  background: #fff;
-  color: #786e69;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
 }
 
 .iconButton {
   padding: 8px;
-  font-size: 1.25rem;
+  font-size: 20px;
   font-weight: 500;
 }
 
@@ -133,14 +133,14 @@
 }
 
 .textButton {
-  color: #786e69;
+  color: var(--color-text-muted);
 }
 
 .separator {
   width: 1px;
   height: 28px;
   flex: 0 0 1px;
-  background: #e9e2dc;
+  background: var(--color-border);
 }
 
 .loadingOverlay,
@@ -182,8 +182,8 @@
 .loadingText,
 .errorText {
   margin: 0;
-  color: #302b29;
-  font-size: 0.875rem;
+  color: var(--color-text);
+  font-size: 14px;
 }
 
 .loadingText {
@@ -207,7 +207,7 @@
   border: 1px solid var(--color-primary);
   border-radius: 8px;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -219,11 +219,11 @@
   max-width: calc(100% - 24px);
   box-sizing: border-box;
   padding: 6px 12px;
-  border: 1px solid #e9e2dc;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background: rgb(255 255 255 / 92%);
-  color: #302b29;
-  font-size: 0.75rem;
+  color: var(--color-text);
+  font-size: 12px;
   font-weight: 600;
   overflow-wrap: anywhere;
   box-shadow: 0 1px 4px rgb(48 43 41 / 10%);
@@ -250,14 +250,14 @@
 
 .presentationLabel {
   max-width: min(230px, 72vw);
-  padding: 7px 11px;
+  padding: 8px 12px;
   border: 1px solid rgb(185 18 34 / 24%);
   border-radius: 999px;
   background: rgb(255 255 255 / 94%);
-  color: #302b29;
+  color: var(--color-text);
   box-shadow: 0 2px 8px rgb(48 43 41 / 18%);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
   text-align: center;
@@ -277,8 +277,8 @@
   }
 
   .toolbarButton {
-    padding-right: 9px;
-    padding-left: 9px;
+    padding-right: 8px;
+    padding-left: 8px;
   }
 
   .iconButton {
@@ -301,12 +301,12 @@
 
 .ownerViewer { min-height: 0; border: 0; border-radius: 0; overflow: visible; }
 .ownerScene { position: relative; overflow: hidden; height: clamp(340px, calc(100vh - 426px), 700px); }
-.ownerViewer .toolbar { position: relative; inset: auto; width: 100%; max-width: 100%; padding: 12px 16px; border: 0; border-radius: 0; background: white; justify-content: flex-start; box-shadow: none; backdrop-filter: none; }
+.ownerViewer .toolbar { position: relative; inset: auto; width: 100%; max-width: 100%; padding: 12px 16px; border: 0; border-radius: 0; background: var(--color-surface); justify-content: flex-start; box-shadow: none; backdrop-filter: none; }
 .ownerViewer .separator { display: none; }
-.ownerViewer .toolbarButton { font-size: 14px; white-space: nowrap; border: 1px solid #e9e2dc; border-radius: 8px; color: #302b29; background: white; }
+.ownerViewer .toolbarButton { font-size: 14px; white-space: nowrap; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); }
 .ownerViewer .ghostButton { margin-left: auto; }
 .ownerViewer .loadingOverlay, .ownerViewer .errorOverlay { bottom: 68px; }
-.partControls { color: #302b29; font-size: 14px; }
+.partControls { color: var(--color-text); font-size: 14px; }
 .partControls label { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
 .partControls input { width: 18px; height: 18px; accent-color: var(--color-primary); }
 .partControls input:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
