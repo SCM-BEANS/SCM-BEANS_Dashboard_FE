@@ -300,13 +300,12 @@ function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers
           : "—";
         return (
           <tr key={ticket.id ?? `${ticket.machineId ?? "ticket"}-${index}`}>
-            <td><div className={styles.historyMachineCell}>{machineValue}<span>Phiếu {ticket.id ? <TruncatedId value={ticket.id} /> : "chưa có mã"}</span></div></td>
+          <td><div className={styles.historyMachineCell}>{machineValue}<span>Phiếu {ticket.id ? <TextLinkButton href={ticketHref(ticket.id)}><TruncatedId value={ticket.id} /></TextLinkButton> : "chưa có mã"}</span></div></td>
             <td>{ticket.status
               ? <StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
               : "—"}</td>
             <td>{formatDate(ticketDate(ticket))}</td>
             <td><p className={styles.historyNotes} title={ticketNotes(ticket) || undefined}>{ticketNotes(ticket) || "Chưa có ghi nhận"}</p></td>
-            <td>{ticket.id ? <ButtonBar rollingLabel href={ticketHref(ticket.id)}>Xem phiếu</ButtonBar> : "—"}</td>
           </tr>
         );
       })}

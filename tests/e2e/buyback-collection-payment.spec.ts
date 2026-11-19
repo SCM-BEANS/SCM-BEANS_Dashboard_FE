@@ -7,6 +7,7 @@ const technicianId = "ad1c3358-dd25-44b4-ae83-5c6ef3e1934a";
 const adminId = "fcedb831-2a42-45bc-b32f-dc3cb7e99c57";
 const paymentId = "b3fa6733-2d95-4b2d-9c3e-d6a5f6d80c00";
 const proofId = "331c6199-a97f-42fd-9f02-a4f8d5297f6a";
+const replacementProofId = "5ba511d4-fc03-4bdc-979e-022941c7f804";
 const contractId = "a2299f86-0a8c-4a4d-a176-76c8ec81add5";
 const inspectionId = "ba8db8e7-32ec-4c43-9f35-8804e180a3a4";
 const legacyCaseId = "e46df306-3cd5-43eb-88d7-3958cb1ca3a1";
@@ -20,6 +21,7 @@ const conventionalModelId = "0050dfff-8928-4857-a186-dd536762d003";
 const smartModelId = "166fae4c-9c66-40cc-9ab2-326a010026e0";
 const inactiveModelId = "93122089-d1bb-4053-9ff4-b285df6497fb";
 const registeredMachineId = "0e93918c-a473-4bed-8887-01cc38bdb3a7";
+const collectionEvidenceId = "48c58a5b-c063-4429-9a3d-e18b1b032ab1";
 
 function refurbishmentResponse(status: string, technicianId: string, completed = false) {
   return {
@@ -79,6 +81,8 @@ function caseResponse(
     refurbishmentsPath: `/api/v1/buybacks/${caseId}/refurbishments`,
     qaDecisionsPath: `/api/v1/buybacks/${caseId}/qa-decisions`,
     assetSerial: "OWNER-SERIAL-01",
+    intakeSerial: "OWNER-SERIAL-01",
+    serialRevision: 0,
     assetManufacturer: "Dolores",
     assetModelLabel: "Machine V2",
     assetDescription: "External buyback fixture",
@@ -168,6 +172,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   let machineModelRequestCount = 0;
   let registeredDetailGetCount = 0;
   let currentProof: ReturnType<typeof proofResponse> | null = null;
+  let previousProof: ReturnType<typeof proofResponse> | null = null;
   const mutations: Array<{ method: string; path: string; body: Record<string, unknown> | null }> = [];
   const currentCaseResponse = () => ({
     ...caseResponse(
@@ -295,10 +300,21 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
       return respond(currentCaseResponse());
     }
     if (path === `/buybacks/${caseId}/payment-proofs` && method === "GET") {
-      return respond(currentProof ? [currentProof] : [], 200, {
+      return respond([currentProof, previousProof].filter(Boolean), 200, {
         "X-Page": "0",
         "X-Page-Size": "50",
         "X-Has-Next": "false",
+      });
+    }
+    if (path === `/buybacks/${caseId}/evidence` && method === "GET") {
+      return respond({
+        items: evidenceRecorded ? [{
+          id: collectionEvidenceId, resourceType: "BUYBACK_CASE", resourceId: caseId, purpose: "BUYBACK_COLLECTION",
+          originalFilename: "evidence.pdf", contentType: "application/pdf", sizeBytes: 12, sha256: "a".repeat(64),
+          uploadedBy: technicianId, uploadedAt: "2026-11-03T09:25:00",
+          downloadPath: `/api/v1/buybacks/${caseId}/evidence/${collectionEvidenceId}/content`,
+        }] : [],
+        page: 0, size: Number(url.searchParams.get("size") ?? 50), hasNext: false,
       });
     }
     if (method === "POST") mutations.push({ method, path, body });
@@ -372,12 +388,13 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
       }, 201);
     }
     if (path === `/buybacks/${caseId}/payment-proofs` && method === "POST") {
-      currentProof = proofResponse("SUBMITTED", moderatorId);
+      previousProof = currentProof;
+      currentProof = { ...proofResponse("SUBMITTED", moderatorId), id: previousProof ? replacementProofId : proofId };
       return respond(currentProof, 201);
     }
-    if (path === `/buybacks/payment-proofs/${proofId}/owner-receipt` && method === "POST") {
+    if (currentProof && path === `/buybacks/payment-proofs/${currentProof.id}/owner-receipt` && method === "POST") {
       const received = body?.received === true;
-      currentProof = proofResponse(received ? "OWNER_CONFIRMED" : "OWNER_NOT_RECEIVED", moderatorId);
+      currentProof = { ...currentProof, status: received ? "OWNER_CONFIRMED" : "OWNER_NOT_RECEIVED" };
       if (received) status = "PAID";
       return respond(currentProof);
     }
@@ -419,21 +436,23 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
     await expect(page.getByRole("button", { name: "Gửi yêu cầu thu mua" })).toBeDisabled();
   }
   await page.getByLabel("Tôi xác nhận gửi yêu cầu để Dolores tiếp nhận và kiểm tra máy.").check();
+  await page.getByLabel("Serial máy", { exact: true }).fill("OWNER-SERIAL-01");
   await page.getByRole("button", { name: "Gửi yêu cầu thu mua" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ tiếp nhận" })).toBeVisible();
+  await expect(page.locator("main").getByText("Chờ tiếp nhận", { exact: true }).first()).toBeVisible();
 
   await setRole(page, "MODERATOR", moderatorId);
   await page.goto("/moderator/buyback");
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
-    await expect(page.getByRole("link", { name: caseId })).toBeVisible();
+    await expect(page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first()).toBeVisible();
   }
-  await page.getByRole("link", { name: caseId }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ tiếp nhận" })).toBeVisible();
-  await page.getByRole("button", { name: "Quay lại danh sách" }).click();
+  await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
+  await expect(page.getByRole("link", { name: "Mở chi tiết lệnh" })).toBeVisible();
+  await page.getByRole("button", { name: "Về danh sách thu mua" }).click();
   await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
-  await page.getByRole("link", { name: caseId }).click();
+  await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
+  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await expect(page.getByRole("region", { name: "Chi tiết hồ sơ thu mua" })).toBeVisible();
@@ -443,7 +462,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByLabel("Technician phụ trách").selectOption(technicianId);
   await page.getByLabel("Lý do phân công").fill("Assign inspection to the active technician");
   await page.getByRole("button", { name: "Giao Technician kiểm tra" }).click();
-  await expect(page.getByText(`Technician kiểm tra: ${technicianId}`)).toBeVisible();
+  await expect.poll(() => inspectionTechnicianId).toBe(technicianId);
 
   await setRole(page, "TECHNICIAN", technicianId);
   await page.goto("/technician/tasks/buyback-assessment");
@@ -451,40 +470,38 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByRole("button", { name: "Tiếp nhận", exact: true }).click();
   await expect(page.getByRole("link", { name: "Đánh giá", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Đánh giá", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ kiểm tra máy" })).toBeVisible();
+  await expect(page.locator("main").getByText("Chờ kiểm tra máy", { exact: true }).first()).toBeVisible();
   await page.getByLabel("Tình trạng máy").fill("Good working condition");
   await page.getByLabel("Giá trị thẩm định").fill("850000");
   await page.getByLabel("Tiền tệ").fill("VND");
   await page.getByLabel("Ghi chú").fill("All inspected functions operate normally");
-  await page.getByLabel("Chứng từ kiểm tra").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+  await page.getByLabel("Chứng từ kiểm tra").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await page.getByRole("button", { name: "Gửi kết quả kiểm tra" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đang thẩm định giá" })).toBeVisible();
+  await expect(page.locator("main").getByText("Đang thẩm định giá", { exact: true }).first()).toBeVisible();
 
   await setRole(page, "MODERATOR", moderatorId);
   await page.goto("/moderator/buyback");
   await page.getByRole("button", { name: "Duyệt giá", exact: true }).click();
   await page.getByLabel("Lý do quyết định").fill("Valuation approved after inspection");
   await page.getByRole("button", { name: "Duyệt giá", exact: true }).last().click();
-  await page.getByRole("link", { name: caseId }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã duyệt giá" })).toBeVisible();
+  await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
+  await expect(page.locator("main").getByText("Đã duyệt giá", { exact: true }).first()).toBeVisible();
 
   await setRole(page, "OWNER", ownerId);
   await page.goto("/dashboard/buyback");
-  await page.getByRole("link", { name: caseId }).click();
+  await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
+  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
   await expect(page.getByRole("heading", { name: "Quyết định giá thu mua" })).toBeVisible();
   await page.getByLabel("Lý do chấp nhận hoặc từ chối").fill("I accept the approved valuation");
-  await page
-    .locator('footer[aria-label^="Thao tác"]')
-    .getByRole("button", { name: "Chấp nhận giá" })
-    .click();
+  await page.getByRole("button", { name: "Chấp nhận giá" }).click();
   await expect(page.getByText(/Bạn đã chấp nhận giá/)).toBeVisible();
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ thu máy" })).toBeVisible();
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
+  await expect(page.locator("main").getByText("Chờ thu máy", { exact: true }).first()).toBeVisible();
   await page.getByLabel("Lý do / hướng dẫn thu máy").fill("Coordinate handover");
   await page.getByRole("button", { name: "Yêu cầu thu máy" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ phân công thu máy" })).toBeVisible();
+  await expect(page.locator("main").getByText("Chờ phân công thu máy", { exact: true }).first()).toBeVisible();
 
   await setRole(page, "TECHNICIAN", technicianId);
   await page.goto("/technician/tasks/buyback-assessment");
@@ -492,11 +509,11 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await expect(page.getByRole("link", { name: "Thu máy", exact: true })).toHaveCount(0);
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
-  await expect(page.getByText(`Sẽ dùng lại Technician đã kiểm tra máy: ${technicianId}`)).toBeVisible();
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
+  await page.getByLabel("Technician phụ trách").selectOption(technicianId);
   await page.getByLabel("Lý do phân công").fill("Collect and record handover details");
   await page.getByRole("button", { name: "Giao Technician thu máy" }).click();
-  await expect(page.getByText(`Technician thu máy: ${technicianId}`)).toBeVisible();
+  await expect.poll(() => assignedTechnicianId).toBe(technicianId);
   await expect(page.getByRole("button", { name: "Xác nhận đã thu máy" })).toHaveCount(0);
 
   await setRole(page, "TECHNICIAN", adminId);
@@ -513,45 +530,43 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.goto("/technician/tasks/buyback-assessment");
   await expect(page.getByRole("link", { name: "Thu máy", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Thu máy", exact: true }).click();
-  await page.getByLabel("Serial đã xác nhận").fill("CONFIRMED-SERIAL-01");
+  await page.getByLabel("Serial trên tem máy").fill("OWNER-SERIAL-01");
   await page.getByLabel("Địa điểm thu máy").fill("Hồ Chí Minh");
-  await page.getByLabel("Chứng từ thu máy").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+  await page.getByLabel("Chứng từ thu máy", { exact: true }).setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await page.getByRole("button", { name: "Ghi nhận thu máy" }).click();
   await expect(page.getByText(/Đã ghi nhận bằng chứng thu máy/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Ghi nhận thu máy" })).toHaveCount(0);
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
-  await page.getByLabel("Evidence reference").fill("storage-ref:mock-fixture");
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
+  await expect(page.getByRole("button", { name: "Tải chứng cứ thu máy" })).toBeVisible();
   await page.getByRole("button", { name: "Xác nhận đã thu máy" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã nhận máy" })).toBeVisible();
+  await expect(page.locator("main").getByText("Đã nhận máy", { exact: true }).first()).toBeVisible();
 
   await page.getByLabel("Phương thức thanh toán").fill("BANK_TRANSFER");
   await expect(page.getByLabel(/Số tiền/)).toHaveCount(0);
   await page.getByRole("button", { name: "Tạo khoản chi" }).click();
-  await expect(page.getByText(`Mã khoản chi: ${paymentId}`)).toBeVisible();
+  await expect(page.getByLabel("Mã khoản chi")).toHaveValue(paymentId);
   await page.getByLabel("Tệp PDF, JPEG hoặc PNG (tối đa 20 MB)").setInputFiles({
     name: "payment-proof.pdf",
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-fixture"),
   });
   await page.getByRole("button", { name: "Tải chứng từ riêng tư" }).click();
-  await expect(page.getByText("Chờ Owner xác nhận", { exact: true })).toBeVisible();
+  await expect(page.getByText("Chờ khách hàng xác nhận", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Chọn để xét duyệt" })).toHaveCount(0);
 
   await setRole(page, "OWNER", ownerId);
-  await page.goto("/dashboard");
-  await page.getByRole("link", { name: "Xem hồ sơ và chứng từ" }).click();
-  await expect(page.getByText("Chờ Owner xác nhận", { exact: true })).toBeVisible();
-  await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Chưa nhận được tiền" }).click();
-  await expect(page.getByRole("alertdialog", { name: "Bạn chưa nhận được tiền?" })).toBeVisible();
-  await page.getByRole("button", { name: "Gửi báo chưa nhận tiền" }).click();
-  await expect(page.getByRole("link", { name: "Xem hồ sơ và chứng từ" })).toHaveCount(0);
+  await page.goto(`/dashboard/buyback?caseId=${caseId}`);
+  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
+  await page.getByRole("button", { name: "Phản hồi khoản chi" }).click();
+  await page.getByLabel("Bạn đã nhận khoản tiền này chưa?").selectOption("false");
+  await page.getByRole("button", { name: "Gửi phản hồi" }).click();
+  await expect(page.getByText("Khách hàng báo chưa nhận tiền", { exact: true })).toBeVisible();
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
-  await expect(page.getByText("Owner báo chưa nhận tiền", { exact: true })).toBeVisible();
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
+  await expect(page.getByText("Khách hàng báo chưa nhận tiền", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Cập nhật chứng từ thanh toán" })).toBeVisible();
   await page.getByLabel("Mã khoản chi").fill(paymentId);
   await page.getByLabel("Tệp PDF, JPEG hoặc PNG (tối đa 20 MB)").setInputFiles({
@@ -560,22 +575,21 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
     buffer: Buffer.from("%PDF-updated-fixture"),
   });
   await page.getByRole("button", { name: "Tải chứng từ riêng tư" }).click();
-  await expect(page.getByText("Chờ Owner xác nhận", { exact: true })).toBeVisible();
+  await expect(page.getByText("Chờ khách hàng xác nhận", { exact: true })).toBeVisible();
 
   await setRole(page, "OWNER", ownerId);
-  await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Đã nhận tiền" }).click();
-  await expect(page.getByRole("alertdialog", { name: "Bạn đã nhận được tiền?" })).toBeVisible();
-  await page.getByRole("button", { name: "Xác nhận đã nhận tiền" }).click();
-  await page.goto(`/dashboard/buyback?caseId=${caseId}`);
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã thanh toán" })).toBeVisible();
+  await page.goto(`/dashboard/buyback?caseId=${caseId}&view=work-order`);
+  await page.getByRole("button", { name: "Phản hồi khoản chi" }).click();
+  await page.getByLabel("Bạn đã nhận khoản tiền này chưa?").selectOption("true");
+  await page.getByRole("button", { name: "Gửi phản hồi" }).click();
+  await expect(page.locator("main").getByText("Đã thanh toán", { exact: true }).first()).toBeVisible();
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
   await page.getByLabel("Technician phụ trách").selectOption(technicianId);
   await page.getByLabel("Lý do phân công").fill("Assign refurbishment work to the available technician");
   await page.getByRole("button", { name: "Giao Technician tân trang" }).click();
-  await expect(page.getByText(`Technician tân trang: ${technicianId}`)).toBeVisible();
+  await expect.poll(() => assignedRefurbishmentTechnicianId).toBe(technicianId);
 
   await setRole(page, "TECHNICIAN", adminId);
   await page.goto("/technician/tasks/buyback-assessment");
@@ -599,7 +613,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.goto("/technician/tasks/buyback-assessment");
   await expect(page.getByRole("link", { name: "Tiếp tục tân trang", exact: true })).toHaveCount(0);
   await page.getByRole("table").locator(`a[href="/technician/tasks/buyback-assessment/${caseId}"]`).click();
-  await expect(page.getByText("Chỉ Technician được giao tân trang mới có thể ghi kết quả cho hồ sơ này.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Chi tiết hồ sơ thu mua" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Hoàn tất tân trang" })).toHaveCount(0);
 
   await setRole(page, "TECHNICIAN", technicianId);
@@ -607,11 +621,11 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await expect(page.getByRole("link", { name: "Tiếp tục tân trang", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Tiếp tục tân trang", exact: true }).click();
   await expect(page.locator("[data-buyback-detail]").getByText("Đang tân trang", { exact: true }).first()).toBeVisible();
-  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await page.getByLabel("Công việc đã làm").fill("Replaced pump and cleaned the intake");
-  await page.getByLabel("Kết quả").fill("Machine works normally after refurbishment");
+  await page.getByLabel("Kết quả").selectOption("PASSED");
   await page.getByRole("button", { name: "Hoàn tất tân trang" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ đăng ký máy" })).toBeVisible();
+  await expect(page.locator("main").getByText("Chờ đăng ký máy", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Kiểm định độc lập" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Đăng ký máy" })).toHaveCount(0);
   await page.goto("/technician/tasks/buyback-assessment");
@@ -619,7 +633,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await expect(page.getByRole("link", { name: "Tân trang", exact: true })).toHaveCount(0);
 
   await setRole(page, "MODERATOR", adminId);
-  await page.goto(`/moderator/buyback/${caseId}`);
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
   await expect(page.getByRole("button", { name: "Đăng ký máy" })).toHaveCount(0);
 
   await setRole(page, "ADMIN", adminId);
@@ -627,11 +641,11 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })
     .locator(`a[href="/admin/buybacks?caseId=${encodeURIComponent(caseId)}"]`)
     .click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Chờ đăng ký máy" })).toBeVisible();
+  await expect(page.locator("main").getByText("Chờ đăng ký máy", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng ký máy" })).toHaveCount(0);
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
   await expect(page.getByRole("alert")).toBeVisible();
   await page.getByRole("button", { name: "Tải lại danh mục model" }).click();
   await expect(page.getByLabel("Model")).toBeVisible();
@@ -646,33 +660,37 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await page.getByLabel("Lý do đăng ký").fill("Register the refurbished machine in Dolores");
   const registeredGetsBeforeMutation = registeredDetailGetCount;
   await page.getByRole("button", { name: "Đăng ký máy" }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
-  await expect(page.getByText(`Dolores đã đăng ký máy ${registeredMachineId}.`)).toBeVisible();
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/Dolores đã đăng ký máy/)).toBeVisible();
   await expect.poll(() => registeredDetailGetCount).toBeGreaterThan(registeredGetsBeforeMutation);
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
-  await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
+  await page.getByText("Thông tin đầy đủ & mã liên kết", { exact: true }).click();
+  await expect(page.getByRole("definition").getByTitle(registeredMachineId)).toBeVisible();
 
   await setRole(page, "OWNER", ownerId);
   await page.goto("/dashboard/buyback");
-  await page.getByRole("link", { name: caseId }).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
-  await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
+  await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
+  await page.getByText("Mã liên kết", { exact: true }).click();
+  await expect(page.getByRole("definition").getByTitle(registeredMachineId)).toBeVisible();
 
   await setRole(page, "TECHNICIAN", technicianId);
   await page.goto("/technician/tasks/buyback-assessment");
   await page.getByRole("table").locator(`a[href="/technician/tasks/buyback-assessment/${caseId}"]`).click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
-  await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
+  await page.getByText("Thông tin đầy đủ & mã liên kết", { exact: true }).click();
+  await expect(page.getByRole("definition").getByTitle(registeredMachineId)).toBeVisible();
 
   await setRole(page, "ADMIN", adminId);
   await page.goto("/admin/buybacks");
   await page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })
     .locator(`a[href="/admin/buybacks?caseId=${encodeURIComponent(caseId)}"]`)
     .click();
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
-  await expect(page.getByRole("definition").filter({ hasText: registeredMachineId })).toBeVisible();
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
+  await page.getByText("Mã liên kết", { exact: true }).click();
+  await expect(page.getByRole("definition").getByTitle(registeredMachineId)).toBeVisible();
 
   expect(mutations.map(({ path }) => path)).toEqual([
     "/buybacks",
@@ -689,7 +707,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
     `/buybacks/${caseId}/payment-proofs`,
     `/buybacks/payment-proofs/${proofId}/owner-receipt`,
     `/buybacks/${caseId}/payment-proofs`,
-    `/buybacks/payment-proofs/${proofId}/owner-receipt`,
+    `/buybacks/payment-proofs/${replacementProofId}/owner-receipt`,
     `/buybacks/${caseId}/refurbishment/assign`,
     `/buybacks/${caseId}/refurbishment/start`,
     `/buybacks/${caseId}/refurbishment/complete`,
@@ -697,7 +715,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   ]);
   const paymentRequest = mutations.find(({ path }) => path === `/buybacks/${caseId}/payments`);
   expect(paymentRequest?.body).not.toHaveProperty("amount");
-  const ownerReceiptRequests = mutations.filter(({ path }) => path === `/buybacks/payment-proofs/${proofId}/owner-receipt`);
+  const ownerReceiptRequests = mutations.filter(({ path }) => path.endsWith("/owner-receipt"));
   expect(ownerReceiptRequests).toHaveLength(2);
   expect(ownerReceiptRequests.map(({ body }) => body?.received)).toEqual([false, true]);
   for (const { body } of ownerReceiptRequests) {
@@ -705,7 +723,8 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
     expect(body).not.toHaveProperty("approved");
   }
   const createRequest = mutations.find(({ path }) => path === "/buybacks");
-  expect(createRequest?.body).toMatchObject({ idempotencyKey: expect.any(String), correlationId: expect.any(String) });
+  expect(createRequest?.body).toMatchObject({ serialNumber: "OWNER-SERIAL-01", idempotencyKey: expect.any(String), correlationId: expect.any(String) });
+  expect(mutations.find(({ path }) => path === `/buybacks/${caseId}/collection/confirm`)?.body).toMatchObject({ evidenceReference: collectionEvidenceId });
   expect(createRequest?.body?.correlationId).toBe(createRequest?.body?.idempotencyKey);
   expect(createRequest?.body).not.toHaveProperty("contractId");
   expect(createRequest?.body).not.toHaveProperty("machineId");
@@ -733,7 +752,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   });
   expect(mutations.find(({ path }) => path === `/buybacks/${caseId}/refurbishment/complete`)?.body).toMatchObject({
     workPerformed: "Replaced pump and cleaned the intake",
-    result: "Machine works normally after refurbishment",
+    result: "PASSED",
   });
   expect(mutations.find(({ path }) => path === `/buybacks/${caseId}/register-machine`)?.body).toMatchObject({
     machineType: "CONVENTIONAL",
@@ -771,8 +790,8 @@ test("registered case with no returned machine ID stays visibly incomplete", asy
   });
 
   await setRole(page, "MODERATOR", moderatorId);
-  await page.goto(`/moderator/buyback/${caseId}`);
-  await expect(page.getByRole("heading", { name: "Hồ sơ Đã đăng ký máy" })).toBeVisible();
+  await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
+  await expect(page.locator("main").getByText("Đã đăng ký máy", { exact: true }).first()).toBeVisible();
   await expect(page.locator('p[role="alert"]').filter({ hasText: "chưa có mã máy" })).toBeVisible();
   await expect(page.getByRole("term", { name: "Mã máy Dolores" })).toHaveCount(0);
   await expect(page.getByText(/Dolores đã đăng ký máy/)).toHaveCount(0);
@@ -790,7 +809,7 @@ test("registration 403, 404, 409, and 422 errors stay visible without reporting 
         contentType: "application/json",
         body: JSON.stringify(caseResponse(
           "READY_FOR_REGISTRATION",
-          false,
+          true,
           technicianId,
           technicianId,
           refurbishmentResponse("COMPLETED", technicianId, true),
@@ -838,13 +857,13 @@ test("registration 403, 404, 409, and 422 errors stay visible without reporting 
   });
   for (const status of [403, 404, 409, 422]) {
     registrationErrorStatus = status;
-    await page.goto(`/moderator/buyback/${caseId}`);
+    await page.goto(`/moderator/buyback/${caseId}?view=work-order`);
     await expect(page.getByLabel("Model")).toBeVisible();
     await page.getByLabel("Model").selectOption(conventionalModelId);
     await page.getByLabel("Lý do đăng ký").fill(`Registration error fixture ${status}`);
     await page.getByRole("button", { name: "Đăng ký máy" }).click();
     await expect(page.getByRole("region", { name: "Chi tiết hồ sơ thu mua" }).getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Hồ sơ Chờ đăng ký máy" })).toBeVisible();
+    await expect(page.locator("main").getByText("Chờ đăng ký máy", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/Dolores đã đăng ký máy/)).toHaveCount(0);
   }
 });
@@ -936,12 +955,12 @@ test("legacy buyback keeps refurbishment and QA steps", async ({ page }) => {
 
   await setRole(page, "TECHNICIAN", technicianId);
   await page.goto("/technician/tasks/buyback-assessment");
-  await page.getByRole("link", { name: legacyCaseId }).click();
+  await page.locator(`[data-buyback-list] a[href$="${legacyCaseId}"]`).first().click();
   await page.getByLabel("Kế hoạch công việc").fill("Replace the pump under the legacy workflow");
   await page.getByLabel("Chi phí linh kiện ước tính").fill("25000");
   await page.getByRole("button", { name: "Bắt đầu tân trang" }).click();
   await expect(page.locator("[data-buyback-detail]").getByText("Đang tân trang", { exact: true }).first()).toBeVisible();
-  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("evidence-data") });
+  await page.getByLabel("Chứng từ tân trang").setInputFiles({ name: "evidence.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await page.getByLabel("Công việc đã làm").fill("Replaced pump");
   await page.getByLabel("Kết quả").fill("Machine passed functional checks");
   await page.getByRole("button", { name: "Hoàn tất tân trang" }).click();

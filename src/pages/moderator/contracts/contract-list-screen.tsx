@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { ContractTable } from "@/components/table/contract-table";
+import tableStyles from "@/components/table/data-table.module.css";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -91,47 +92,45 @@ export function ContractListScreen() {
         </div>
         <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CONTRACT}>{T.CONTRACTS.CREATE}</ButtonBar>
       </div>
-      <section className={`${adminStyles.panel} ${adminStyles.contractListPanel}`} aria-labelledby="moderator-contract-list-title">
-          <div className={adminStyles.userSectionHeading}>
-            <h2 id="moderator-contract-list-title">Danh sách hợp đồng</h2>
-            {contracts.data && <span className={adminStyles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}
+      <section className={tableStyles.listPanel} aria-labelledby="moderator-contract-list-title">
+        <div className={adminStyles.userSectionHeading}>
+          <h2 id="moderator-contract-list-title">Danh sách hợp đồng</h2>
+          {contracts.data && <span className={adminStyles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}
+        </div>
+        <QueryFeedback query={contracts} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACTS} />
+        <TableFilters
+          search={{ ariaLabel: "Tìm hợp đồng", maxLength: 100, placeholder: "Tìm mã hợp đồng hoặc khách hàng", value: searchDraft, onChange: setSearchDraft }}
+          selects={[
+            { id: "moderator-contract-status-filter", ariaLabel: "Lọc hợp đồng theo trạng thái", value: statusDraft, options: [
+              { value: "", label: "Tất cả trạng thái" },
+              { value: "ACTIVE", label: T.CONTRACTS.ACTIVE },
+              { value: "DRAFT", label: T.CONTRACTS.DRAFT },
+              { value: "TERMINATED", label: T.CONTRACTS.TERMINATED },
+            ], onChange: setStatusDraft },
+            { id: "moderator-contract-machine-type-filter", ariaLabel: "Lọc hợp đồng theo loại máy", value: typeDraft, options: [
+              { value: "", label: "Tất cả loại máy" },
+              { value: "CONVENTIONAL", label: T.MACHINES.CONVENTIONAL },
+              { value: "SMART_IOT", label: T.MACHINES.SMART },
+            ], onChange: setTypeDraft },
+          ]}
+          submitLabel="Tìm kiếm"
+          onSubmit={submitFilters}
+        />
+        {contracts.data?.length === 0 && <p className={adminStyles.emptyText} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_CONTRACTS}</p>}
+        {(contracts.data?.length ?? 0) > 0 && filteredContracts.length === 0 && <p className={adminStyles.emptyText}>Không tìm thấy hợp đồng phù hợp bộ lọc.</p>}
+        {visibleContracts.length > 0 && <ContractTable
+          contracts={visibleContracts}
+          contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
+          draftStatusHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
+        />}
+        {filteredContracts.length > 0 && <div className={adminStyles.accountPagination}>
+          <span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
+          <div>
+            <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Trang trước</button>
+            <span>Trang {currentPage}/{totalPages}</span>
+            <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Trang sau</button>
           </div>
-          <QueryFeedback query={contracts} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACTS} />
-          <TableFilters
-            search={{ ariaLabel: "Tìm hợp đồng", maxLength: 100, placeholder: "Tìm mã hợp đồng hoặc khách hàng", value: searchDraft, onChange: setSearchDraft }}
-            selects={[
-              { id: "moderator-contract-status-filter", ariaLabel: "Lọc hợp đồng theo trạng thái", value: statusDraft, options: [
-                { value: "", label: "Tất cả trạng thái" },
-                { value: "ACTIVE", label: T.CONTRACTS.ACTIVE },
-                { value: "DRAFT", label: T.CONTRACTS.DRAFT },
-                { value: "TERMINATED", label: T.CONTRACTS.TERMINATED },
-              ], onChange: setStatusDraft },
-              { id: "moderator-contract-machine-type-filter", ariaLabel: "Lọc hợp đồng theo loại máy", value: typeDraft, options: [
-                { value: "", label: "Tất cả loại máy" },
-                { value: "CONVENTIONAL", label: T.MACHINES.CONVENTIONAL },
-                { value: "SMART_IOT", label: T.MACHINES.SMART },
-              ], onChange: setTypeDraft },
-            ]}
-            submitLabel="Tìm kiếm"
-            onSubmit={submitFilters}
-          />
-          {contracts.data?.length === 0 && <p className={adminStyles.emptyText} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_CONTRACTS}</p>}
-          {(contracts.data?.length ?? 0) > 0 && filteredContracts.length === 0 && <p className={adminStyles.emptyText}>Không tìm thấy hợp đồng phù hợp bộ lọc.</p>}
-          {visibleContracts.length > 0 && <ContractTable
-            contracts={visibleContracts}
-            headerVariant="admin"
-            contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
-            draftStatusHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
-            ownerHeader="Khách hàng"
-          />}
-          {filteredContracts.length > 0 && <div className={adminStyles.accountPagination}>
-            <span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
-            <div>
-              <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Trang trước</button>
-              <span>Trang {currentPage}/{totalPages}</span>
-              <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Trang sau</button>
-            </div>
-          </div>}
+        </div>}
       </section>
     </div>
   );

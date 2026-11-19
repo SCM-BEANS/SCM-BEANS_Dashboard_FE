@@ -208,21 +208,22 @@ export function ContractTerminationScreen({
   const existingCase = useQuery({
     queryKey: ["dolores", "contract-termination-existing", caseStorageKey, linkedCaseId],
     queryFn: async ({ signal }) => {
-      // shortcut: The API has no contract-to-case lookup; persist only verified references in this browser.
-      const id = linkedCaseId || readSavedCaseId();
-      if (!id) return null;
-      const result = await terminationCasesApi.getById(TerminationCaseIdSchema.parse(id), signal).catch(error => {
-        if (linkedCaseId || !isAxiosError(error) || error.response?.status !== 404) throw error;
-        // Expiry and recall lookups succeeded without a link; discard only this stale browser reference.
-        if (readSavedCaseId() === id) window.localStorage.removeItem(caseStorageKey);
-        return null;
-      });
+      const savedCaseId = readSavedCaseId();
+      const id = linkedCaseId || (role === "OWNER" ? savedCaseId : "");
+      const result = id
+        ? await terminationCasesApi.getById(TerminationCaseIdSchema.parse(id), signal).catch(error => {
+          if (linkedCaseId || role !== "OWNER" || !isAxiosError(error) || error.response?.status !== 404) throw error;
+          if (readSavedCaseId() === id) window.localStorage.removeItem(caseStorageKey);
+          return null;
+        })
+        : role === "OWNER" ? null : await terminationCasesApi.findByContractId(contractId, signal);
       if (!result) return null;
-      if (result.contractId !== contractId) throw new Error("Hồ sơ chấm dứt không thuộc hợp đồng này.");
+      if (result.contractId.toLowerCase() !== contractId.toLowerCase()) throw new Error("Hồ sơ chấm dứt không thuộc hợp đồng này.");
       try { window.localStorage.setItem(caseStorageKey, result.id); } catch { /* The verified case remains available for this visit. */ }
       return result;
     },
-    enabled: Boolean(contract.data) && router.isReady && (Boolean(linkedCaseId) || (expiry.isSuccess && recallOrders.isSuccess)) && !invalidCaseId,
+    enabled: Boolean(contract.data) && router.isReady && !invalidCaseId
+      && (role !== "OWNER" || Boolean(linkedCaseId) || (expiry.isSuccess && recallOrders.isSuccess)),
     retry: false,
   });
   const activeCaseId = linkedCaseId || existingCase.data?.id || "";

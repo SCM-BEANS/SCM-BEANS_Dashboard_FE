@@ -158,7 +158,7 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
           <StatusBadge variant="dot" status={task.statusCode} tone={task.statusCode === "RESOLVED" ? "success" : undefined}>{task.status}</StatusBadge>
         </div>
         <p className={styles.taskMachine}>
-          Máy <code title={task.machineId}>{task.serialNumber || shortReference(task.machineId)}</code>
+          Máy {task.href ? <TextLinkButton href={task.href}><code title={task.machineId}>{task.serialNumber || shortReference(task.machineId)}</code></TextLinkButton> : <code title={task.machineId}>{task.serialNumber || shortReference(task.machineId)}</code>}
           {task.modelName ? <span> · {task.modelName}</span> : null}
         </p>
         {task.summary ? <p className={styles.taskSummary}>{task.summary}</p> : null}
@@ -179,7 +179,6 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
           {task.dateLabel} {formatDate(task.date)}
         </p>
       </div>
-      {task.href ? compact ? <TextLinkButton href={task.href}>Mở việc</TextLinkButton> : <ButtonBar rollingLabel href={task.href}>Mở việc</ButtonBar> : null}
     </article>
   );
 }
@@ -263,7 +262,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
               {
                 key: "work",
                 header: "Công việc / máy",
-                render: (task) => <div className={styles.tableCellStack}><strong>{categoryLabels[task.category]} · {task.serialNumber || shortReference(task.machineId)}</strong><span className={styles.tableSubtext}>{task.summary || task.modelName || `Mã việc ${shortReference(task.id)}`}</span></div>,
+                render: (task) => <div className={styles.tableCellStack}><strong>{task.href ? <TextLinkButton href={task.href}>{categoryLabels[task.category]} · {task.serialNumber || shortReference(task.machineId)}</TextLinkButton> : <>{categoryLabels[task.category]} · {task.serialNumber || shortReference(task.machineId)}</>}</strong><span className={styles.tableSubtext}>{task.summary || task.modelName || `Mã việc ${shortReference(task.id)}`}</span></div>,
               },
               {
                 key: "owner",
@@ -284,12 +283,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
                     <span>{formatDate(task.date)}</span>
                   </div>
                 ),
-              },
-              {
-                key: "action",
-                header: "",
-                align: "right",
-                render: (task) => task.href ? <ButtonBar rollingLabel href={task.href}>Mở việc</ButtonBar> : "—",
               },
             ]}
           />

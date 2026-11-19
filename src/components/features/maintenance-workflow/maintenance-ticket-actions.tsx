@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { createPortal } from "react-dom";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -428,10 +429,10 @@ export function MachineMaintenanceTicketActions({
             rowKey={(ticket, index) => ticket.id ?? index}
             emptyMessage="Chưa có phiếu bảo trì."
             columns={[
+              { key: "ticket", header: "Phiếu bảo trì", render: (ticket) => ticket.id ? <TextLinkButton href={ticketHref(ticket.id)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Chưa có mã" },
               { key: "status", header: "Trạng thái", render: (ticket) => role === "OWNER" ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
               { key: "due", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
               { key: "origin", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype || ticket.source ? maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!) : "—" },
-              { key: "action", header: <span className={styles.visuallyHidden}>Thao tác</span>, align: "right", render: (ticket) => ticket.id ? <ButtonBar rollingLabel href={ticketHref(ticket.id)}>Xem chi tiết</ButtonBar> : null },
             ]}
           />
           {sortedTickets.length > previewLimit && (
@@ -445,11 +446,10 @@ export function MachineMaintenanceTicketActions({
         <div className={styles.ticketCards} aria-label="Phiếu bảo trì của máy">
           {tickets.map((ticket, index) => (
             <article className={styles.ticketCard} key={ticket.id ?? index}>
-              <div><h3>Phiếu bảo trì</h3><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
+              <div><h3>{ticket.id ? <TextLinkButton href={ticketHref(ticket.id)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Phiếu bảo trì"}</h3><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
                 <p>{formatDate(ticket.scheduledDueAt ?? ticket.completedAt)}</p>
                 {ticket.preventiveSubtype || ticket.source ? <p>{maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!)}</p> : null}
               </div>
-              {ticket.id && <ButtonBar className={styles.ticketLink} rollingLabel href={ticketHref(ticket.id)}>Xem chi tiết</ButtonBar>}
             </article>
           ))}
         </div>

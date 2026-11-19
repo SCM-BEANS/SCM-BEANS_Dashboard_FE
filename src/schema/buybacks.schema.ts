@@ -9,6 +9,7 @@ export const BuybackStatusSchema = z.enum([
 ]);
 const optionalText = z.string().nullish();
 const optionalId = z.string().uuid().nullish();
+export const BuybackSerialSchema = z.string().trim().min(1).max(160).regex(/^[ -~]+$/);
 const statusFields = {
   id: BuybackIdSchema,
   ownerId: z.string().uuid(),
@@ -34,6 +35,7 @@ export const BuybackCaseSummarySchema = z.object({
   acceptedPrice: z.number().finite().nullish(),
   registeredMachineId: optionalId,
   ownerAccepted: z.boolean().nullish(),
+  ownerName: optionalText,
   machineSerialNumber: optionalText,
 }).passthrough();
 export const BuybackCasesSchema = z.array(BuybackCaseSummarySchema);
@@ -112,15 +114,36 @@ export const BuybackCaseSchema = z.object({
   ownerDecisionReason: optionalText,
   machineSerialNumber: optionalText,
   machineModelName: optionalText,
+  ownerName: optionalText,
+  intakeSerial: optionalText,
+  serialRevision: z.number().int().nonnegative().optional(),
   inspectionsPath: z.string().optional(),
   refurbishmentsPath: z.string().optional(),
   qaDecisionsPath: z.string().optional(),
 }).passthrough();
 
 export const BuybackCreateRequestSchema = z.object({
+  serialNumber: BuybackSerialSchema,
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
+export const BuybackSerialCorrectionSchema = z.object({
+  expectedSerial: BuybackSerialSchema.nullable(),
+  expectedRevision: z.number().int().nonnegative(),
+  newSerial: BuybackSerialSchema,
+  reason: z.string().trim().min(1),
+  correlationId: z.string().trim().min(1).max(128),
+}).strict();
+export const BuybackSerialHistorySchema = z.array(z.object({
+  id: BuybackIdSchema,
+  caseId: BuybackIdSchema,
+  oldSerial: optionalText,
+  newSerial: z.string(),
+  actorId: BuybackIdSchema,
+  reason: z.string(),
+  correlationId: z.string(),
+  occurredAt: z.string(),
+}));
 export const BuybackOwnerDecisionRequestSchema = z.object({
   accepted: z.boolean(),
   reason: z.string().trim().min(1).max(2000),
@@ -218,7 +241,7 @@ export const BuybackCollectionRequestSchema = z.object({
   correlationId: z.string().trim().min(1).max(128),
 }).strict();
 export const BuybackPickupEvidenceRequestSchema = z.object({
-  confirmedSerial: z.string().trim().min(1),
+  confirmedSerial: BuybackSerialSchema,
   collectionLocation: z.string().trim().min(1),
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),

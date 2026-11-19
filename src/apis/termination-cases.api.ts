@@ -8,12 +8,15 @@ import {
   TerminationActionRequestSchema,
   TerminationCaseCreateRequestSchema,
   TerminationCaseIdSchema,
+  TerminationCaseListParamsSchema,
+  TerminationCasePageSchema,
   TerminationCaseSchema,
   TerminationInspectionRequestSchema,
   TerminationRejectionRequestSchema,
   TerminationSettlementRequestSchema,
   type TerminationActionRequest,
   type TerminationCaseCreateRequest,
+  type TerminationCaseListParams,
   type TerminationInspectionRequest,
   type TerminationRejectionRequest,
   type TerminationSettlementRequest,
@@ -32,6 +35,27 @@ function verifyCaseIdentity(value: unknown, expectedId: string, expectedContract
 }
 
 export const terminationCasesApi =  {
+  async list(input: TerminationCaseListParams = {}, signal?: AbortSignal) {
+    const params = TerminationCaseListParamsSchema.parse(input);
+    const response = await axiosClient.get<unknown>("/termination-cases", {
+      baseURL: DOLORES_API_BASE_URL,
+      params,
+      signal,
+    });
+    const page = TerminationCasePageSchema.parse(response.data);
+    if (page.page !== params.page) throw new Error("Dolores returned a different termination case page than requested.");
+    return page;
+  },
+  async findByContractId(contractId: string, signal?: AbortSignal) {
+    const validContractId = ContractIdSchema.parse(contractId);
+    // shortcut: The collection has no contractId filter; add one when the API supports it.
+    for (let page = 0; ; page += 1) {
+      const result = await terminationCasesApi.list({ page, size: 100 }, signal);
+      const terminationCase = result.content.find((item) => item.contractId.toLowerCase() === validContractId.toLowerCase());
+      if (terminationCase) return terminationCase;
+      if (page + 1 >= result.totalPages) return null;
+    }
+  },
   async create(contractId: string, input: TerminationCaseCreateRequest) {
     const validContractId = ContractIdSchema.parse(contractId);
     const request = TerminationCaseCreateRequestSchema.parse(input);

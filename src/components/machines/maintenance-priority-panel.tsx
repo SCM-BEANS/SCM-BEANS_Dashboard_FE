@@ -34,7 +34,7 @@ export function MaintenancePriorityPanel({ subject, enabled, machineHref }: {
       <ButtonBar disabled={query.isFetching} onClick={() => void query.refetch()}>{query.isFetching ? "Đang cập nhật…" : "Làm mới"}</ButtonBar>
     </div>}
     {!state && <>
-      <div className={styles.queueHeader} aria-hidden="true"><span>Máy</span><span>Ưu tiên / Tình trạng</span><span>Kiểm tra trước</span></div>
+      <div className={styles.queueHeader} aria-hidden="true"><span>Máy</span><span>Điểm ưu tiên / tình trạng</span><span>Kiểm tra trước</span></div>
       <ol className={styles.queue}>
         {machines.map(machine => <li key={machine.machineId} data-status={machine.overallStatus} className={styles.queueRow}>
           <div className={styles.queueMachine}>

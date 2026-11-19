@@ -313,10 +313,10 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   rowKey={(request) => request.id}
                   emptyMessage="Chưa có yêu cầu hỗ trợ."
                   columns={[
+                    { key: "request", header: "Yêu cầu", render: (request) => <TextLinkButton href={request.requestType === "REPAIR" ? PATH_CUSTOMER.SUPPORT_DETAIL(request.id) : PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}><TruncatedId value={request.id} /></TextLinkButton> },
                     { key: "type", header: "Loại", render: (request) => request.requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì" },
                     { key: "status", header: "Trạng thái", render: (request) => <span className={adminStyles.machinePlainStatus} data-status={request.status}>{maintenanceRequestStatusLabels[request.status] ?? statusLabel(request.status)}</span> },
                     { key: "description", header: "Mô tả", render: (request) => <span className={machineStyles.truncateLine} title={request.issueDescription ?? undefined}>{request.issueDescription?.trim() || "Không có mô tả"}</span> },
-                    { key: "action", header: <span className={machineStyles.visuallyHidden}>Thao tác</span>, align: "right", render: (request) => <ButtonBar rollingLabel href={request.requestType === "REPAIR" ? PATH_CUSTOMER.SUPPORT_DETAIL(request.id) : PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>Xem yêu cầu</ButtonBar> },
                   ]}
                 />
                 <nav className={machineStyles.ownerHistoryPagination} aria-label="Phân trang yêu cầu hỗ trợ"><ButtonBar disabled={requestPage === 0} onClick={() => setRequestPage(requestPage - 1)}>Trước</ButtonBar><span>Trang {requestPage + 1}</span><ButtonBar disabled={(requestPage + 1) * 10 >= (maintenanceRequests.data?.length ?? 0)} onClick={() => setRequestPage(requestPage + 1)}>Sau</ButtonBar></nav>

@@ -16,7 +16,7 @@ import { PATH_MODERATOR } from "@/routes/path";
 import { moderatorStyles } from "../moderator-shell";
 import styles from "@/components/machines/machines.module.css";
 
-const tabs = [{ value: "production", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Kết nối" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }, { value: "reviews", label: "Mất kết nối" }];
+const tabs = [{ value: "production", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Kết nối & thông số" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }, { value: "reviews", label: "Mất kết nối" }];
 export function ModeratorMachineOperationalOverviewScreen({ machineId }: { machineId: string }) {
   const router = useRouter(), subject = authScopedQuerySubject("MODERATOR");
   const visible = usePageVisibility();

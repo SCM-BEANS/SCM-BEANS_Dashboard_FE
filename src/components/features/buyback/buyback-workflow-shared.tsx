@@ -15,7 +15,7 @@ import { useOwnerNames } from "@/hooks/use-owner-names";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
-import { type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } from "@/schema/buybacks.schema";
+import { BuybackSerialSchema, type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } from "@/schema/buybacks.schema";
 import { buybackStatusLabels, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import type { BuybackWorkflowController, BuybackWorkflowRole } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
@@ -163,7 +163,6 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       && item.responsibleModeratorId === workflow.ownerId
       && item.workflowVersion === 2
       && item.status === "COLLECTION_PENDING"
-      && Boolean(item.inspectionTechnicianId)
       && !item.collectionTechnicianId,
   );
   const openCollectionRequestDialog = (item: BuybackCaseSummaryType) => {
@@ -253,7 +252,8 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       header: "Thao tác",
       align: "right",
       render: (item) => {
-        if (item.status === "INSPECTION_PENDING") {
+        if (item.status === "INSPECTION_PENDING" && (item.workflowVersion !== 2
+          || (workflow.ownerId && item.inspectionTechnicianId === workflow.ownerId))) {
           return (
             <ButtonBar className={styles.buybackDetailAction} href={PATH_TECHNICIAN.TASK_BUYBACK_ASSESSMENT_DETAIL(item.id)}>
               Đánh giá
@@ -297,7 +297,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
           );
         }
         if (item.status !== "REQUESTED") return null;
-        const canAccept = item.contractId != null
+        const canAccept = item.workflowVersion !== 2 && item.contractId != null
           || Boolean(workflow.ownerId && item.inspectionTechnicianId === workflow.ownerId);
         return (
           <button
@@ -319,7 +319,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
       header: "Thao tác",
       align: "right",
       render: (item) => {
-        if (item.status === "VALUATION_PENDING") {
+        if (item.status === "VALUATION_PENDING" && (item.workflowVersion !== 2 || item.responsibleModeratorId === workflow.ownerId)) {
           return (
             <div className={styles.technicalRequestActions}>
               <button
@@ -411,7 +411,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         key: "customer",
         header: "Khách hàng",
         render: (item) => {
-          const customer = ownerNames.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />;
+          const customer = item.ownerName || ownerNames.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />;
           return customer;
         },
       });
@@ -564,13 +564,14 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
 
 export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowController }) {
   const router = useRouter();
-  const { createFormOpen, ownerId, contracts, hasActiveContract, createConfirmed, setCreateConfirmed, create, submitCreate } = workflow;
+  const { createFormOpen, ownerId, contracts, hasActiveContract, createConfirmed, setCreateConfirmed, serialNumber, setSerialNumber, create, submitCreate } = workflow;
+  const validSerial = BuybackSerialSchema.safeParse(serialNumber).success;
   if (!createFormOpen) return null;
 
   return (
     <section className={styles.panel} aria-labelledby="buyback-create-title">
       <h2 id="buyback-create-title" className={styles.sectionTitle}>Mở hồ sơ thu mua máy cũ</h2>
-      <p className={styles.formHint}>Dolores sẽ kiểm tra máy và gửi giá để bạn quyết định. Tài khoản cần có ít nhất một hợp đồng đang hoạt động. Ở bước này, BE chỉ nhận yêu cầu mở hồ sơ; thông tin máy và giá sẽ được bổ sung sau khi Technician kiểm tra.</p>
+      <p className={styles.formHint}>Nhập serial của máy bạn muốn bán. Dolores sẽ kiểm tra và gửi giá để bạn quyết định.</p>
       {!ownerId ? <p className={styles.notice} role="alert">Không xác định được Owner đăng nhập.</p> : null}
       {contracts.isPending && ownerId ? <p className={styles.notice} role="status">Đang kiểm tra điều kiện hợp đồng…</p> : null}
       {contracts.isError ? <BuybackErrorNotice error={contracts.error} /> : null}
@@ -578,6 +579,11 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
         {!contracts.isPending && !contracts.isError && ownerId && !hasActiveContract ? (
           <p className={styles.notice} role="note">Bạn cần có hợp đồng đang hoạt động để mở hồ sơ thu mua.</p>
         ) : null}
+        <label className={styles.formField}>
+          <span>Serial máy</span>
+          <input required maxLength={160} value={serialNumber} disabled={create.isPending} onChange={(event) => setSerialNumber(event.target.value)} />
+        </label>
+        {serialNumber && !validSerial ? <p role="alert">Serial chỉ dùng tối đa 160 ký tự ASCII in được, chẳng hạn chữ không dấu, số và dấu gạch ngang.</p> : null}
         <label className={styles.confirmationField}>
           <input type="checkbox" required checked={createConfirmed} onChange={(event) => setCreateConfirmed(event.target.checked)} />
           <span>Tôi xác nhận gửi yêu cầu để Dolores tiếp nhận và kiểm tra máy.</span>
@@ -585,7 +591,7 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
         {create.isError ? <BuybackErrorNotice error={create.error} /> : null}
         <PageActions actions={[
           { id: "buyback-create-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push("/dashboard/buyback"); }, ...(createConfirmed ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
-          { id: "buyback-create-submit", label: "Gửi yêu cầu thu mua", variant: "primary", type: "submit", form: "buyback-create-form", disabled: !createConfirmed || !ownerId || contracts.isPending || contracts.isError || !hasActiveContract, disabledReason: "Xác nhận yêu cầu và kiểm tra hợp đồng đang hoạt động.", pending: create.isPending, pendingLabel: "Đang mở hồ sơ…" },
+          { id: "buyback-create-submit", label: "Gửi yêu cầu thu mua", variant: "primary", type: "submit", form: "buyback-create-form", disabled: !validSerial || !createConfirmed || !ownerId || contracts.isPending || contracts.isError || !hasActiveContract, disabledReason: "Nhập serial hợp lệ, xác nhận yêu cầu và kiểm tra điều kiện hợp đồng.", pending: create.isPending, pendingLabel: "Đang mở hồ sơ…" },
         ]} />
       </form>
     </section>
@@ -639,8 +645,8 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
           {isWorkspace ? <>
             <dl className={adminStyles.summary}>
               <div><dt>Thiết bị</dt><dd>{caseData.machineModelName ?? caseData.assetModelLabel ?? caseData.machineSerialNumber ?? caseData.assetSerial ?? "Chờ kiểm tra máy"}</dd></div>
-              <div><dt>Khách hàng</dt><dd>{workflow.role === "owner" ? "Bạn" : ownerNames.data?.[caseData.ownerId] || <TruncatedId value={caseData.ownerId} />}</dd></div>
-              <div><dt>Serial</dt><dd>{caseData.machineSerialNumber ?? caseData.assetSerial ?? "Chưa ghi nhận"}</dd></div>
+              <div><dt>Khách hàng</dt><dd>{workflow.role === "owner" ? "Bạn" : caseData.ownerName || ownerNames.data?.[caseData.ownerId] || <TruncatedId value={caseData.ownerId} />}</dd></div>
+              <div><dt>Serial</dt><dd>{caseData.intakeSerial ?? caseData.machineSerialNumber ?? caseData.assetSerial ?? "Chưa ghi nhận"}</dd></div>
               <div><dt>Nhà sản xuất</dt><dd>{caseData.assetManufacturer || "Chưa ghi nhận"}</dd></div>
               {workflow.role !== "owner" ? <div><dt>Giá đề xuất</dt><dd>{formatBuybackMoney(caseData.proposedPrice ?? caseData.requestedPrice, caseData.currency)}</dd></div> : null}
               <div><dt>Giá đã duyệt</dt><dd>{formatBuybackMoney(caseData.approvedPrice, caseData.currency)}</dd></div>
@@ -685,10 +691,10 @@ function BuybackAdminProgress({ status }: { status: BuybackCase["status"] }) {
     AVAILABLE_FOR_RENT: 4, REGISTERED: 4, REJECTED: -1, CANCELLED: -1,
   };
   const current = stages[status];
-  return <section className={`${styles.workOrderSummary} ${styles.workOrderProgressPanel}`} aria-label="Tiến độ thu hồi máy">
-    <div className={styles.workOrderSummaryHeading}><h2>Tiến độ thu hồi máy</h2><StatusBadge variant="dot" status={status}>{buybackStatusLabels[status]}</StatusBadge></div>
-    <ol className={`${styles.workOrderProgress} ${adminStyles.workOrderProgress}`} aria-label="Tiến độ thu hồi máy">
-      {["Tiếp nhận", "Kiểm tra & định giá", "Thu hồi & thanh toán", "Tân trang", "Hoàn tất"].map((label, index) => {
+  return <section className={`${styles.workOrderSummary} ${styles.workOrderProgressPanel}`} aria-label="Tiến độ thu mua">
+    <div className={styles.workOrderSummaryHeading}><h2>Tiến độ thu mua</h2><StatusBadge variant="dot" status={status}>{buybackStatusLabels[status]}</StatusBadge></div>
+    <ol className={`${styles.workOrderProgress} ${adminStyles.workOrderProgress}`} aria-label="Tiến độ thu mua">
+      {["Tiếp nhận", "Kiểm tra & định giá", "Thu máy & thanh toán", "Tân trang", "Hoàn tất"].map((label, index) => {
         const complete = current >= 0 && (index < current || current === 4);
         return <li key={label} className={[styles.workOrderProgressStep, complete ? styles.workOrderProgressComplete : "", index === current && !complete ? styles.workOrderProgressCurrent : ""].filter(Boolean).join(" ")} aria-current={index === current ? "step" : undefined}>
           <span aria-hidden="true">{complete ? "✓" : index + 1}</span><small>{label}</small>
@@ -706,7 +712,7 @@ export function BuybackCaseSummary({ caseData, role }: { caseData: BuybackCase; 
       <div className={styles.detailItem}><dt>Mã hồ sơ</dt><dd className={styles.codeValue}><TruncatedId value={caseData.id} /></dd></div>
       {isExternalBuyback ? <>
         <div className={styles.detailItem}><dt>Máy thu mua</dt><dd>{caseData.machineModelName ?? caseData.assetModelLabel ?? "Đang chờ Technician kiểm tra"}</dd></div>
-        {caseData.machineSerialNumber ?? caseData.assetSerial ? <div className={styles.detailItem}><dt>Số serial</dt><dd className={styles.codeValue}>{caseData.machineSerialNumber ?? caseData.assetSerial}</dd></div> : null}
+        {caseData.intakeSerial ?? caseData.machineSerialNumber ?? caseData.assetSerial ? <div className={styles.detailItem}><dt>Số serial</dt><dd className={styles.codeValue}>{caseData.intakeSerial ?? caseData.machineSerialNumber ?? caseData.assetSerial}</dd></div> : null}
         {caseData.assetManufacturer ? <div className={styles.detailItem}><dt>Nhà sản xuất</dt><dd>{caseData.assetManufacturer}</dd></div> : null}
         {caseData.assetDescription ? <div className={styles.detailItem}><dt>Mô tả máy</dt><dd>{caseData.assetDescription}</dd></div> : null}
         {role === "owner" ? (

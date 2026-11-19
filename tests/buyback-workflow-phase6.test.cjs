@@ -47,21 +47,23 @@ test("buyback list honors query scope and parses bounded-array response metadata
     calls.push([url, config]);
     return { data: [buyback], headers: { "X-Page": "2", "X-Page-Size": "20", "X-Has-Next": "true" } };
   } });
-  const result = await api.list({ page: 2, size: 20, contractId });
+  const result = await api.list({ page: 2, size: 20, ownerId, contractId });
   assert.equal(result.items[0].id, caseId);
   assert.equal(result.page, 2);
   assert.equal(result.hasNext, true);
-  assert.deepEqual(calls[0], ["/buybacks", { baseURL: "/api/dolores/v1", params: { page: 2, size: 20, contractId }, signal: undefined }]);
+  assert.deepEqual(calls[0], ["/buybacks", { baseURL: "/api/dolores/v1", params: { page: 2, size: 20, ownerId, contractId }, signal: undefined }]);
 });
 
-test("external buyback create sends only idempotency contract and validates v2 response", async () => {
+test("external buyback create sends a validated serial and command keys", async () => {
   const calls = [];
   const api = apiWith({ post: async (url, data) => { calls.push([url, data]); return { data: buyback }; } });
-  const request = { idempotencyKey: "same-key", correlationId: "corr" };
-  assert.equal((await api.create(request)).id, caseId);
+  const request = { serialNumber: "SERIAL-01", idempotencyKey: "same-key", correlationId: "corr" };
+  assert.equal((await api.create({ ...request, serialNumber: " SERIAL-01 " })).id, caseId);
   assert.equal(calls[0][0], "/buybacks");
   assert.deepEqual(calls[0][1], request);
   await assert.rejects(api.create({ ...request, machineId }), /Unrecognized key/i);
+  await assert.rejects(api.create({ ...request, serialNumber: "MÁY-01" }));
+  assert.equal(calls.length, 1);
 });
 
 test("buyback assignment, collection evidence, and registration use documented routes and DTOs", async () => {
@@ -72,7 +74,7 @@ test("buyback assignment, collection evidence, and registration use documented r
   await api.assignModerator(caseId, { ...command, moderatorId });
   await api.assignInspection(caseId, { ...command, technicianId });
   await api.assignCollection(caseId, { ...command, technicianId });
-  await api.recordCollectionEvidence(caseId, { confirmedSerial: "SERIAL-01", collectionLocation: "Warehouse", idempotencyKey: "evidence-idem", correlationId: "evidence-corr" }, [new File(["evidence data"], "evidence.pdf", { type: "application/pdf" })]);
+  await api.recordCollectionEvidence(caseId, { confirmedSerial: "SERIAL-01", collectionLocation: "Warehouse", idempotencyKey: "evidence-idem", correlationId: "evidence-corr" }, [new File(["%PDF-1.4"], "evidence.pdf", { type: "application/pdf" })]);
   await api.assignRefurbishment(caseId, { ...command, technicianId });
   await api.registerMachine(caseId, { machineType: "SMART_IOT", modelId, region: "South", reason: "Ready after refurbishment", idempotencyKey: "register-idem", correlationId: "register-corr" });
 
@@ -89,6 +91,20 @@ test("buyback assignment, collection evidence, and registration use documented r
   assert.equal(calls[3][2].headers["Content-Type"], "multipart/form-data");
   await assert.rejects(api.recordCollectionEvidence(caseId, { confirmedSerial: " ", collectionLocation: "Warehouse", idempotencyKey: "idem", correlationId: "corr" }, []));
   await assert.rejects(api.registerMachine(caseId, { machineType: "INVALID", modelId, reason: "Ready", idempotencyKey: "idem", correlationId: "corr" }));
+});
+
+test("serial correction sends the expected revision and reads history only for that case", async () => {
+  const calls = [];
+  const audit = { id: proofId, caseId, oldSerial: null, newSerial: "SERIAL-01", actorId: moderatorId, reason: "Verified label", correlationId: "corr", occurredAt: now };
+  const api = apiWith({
+    post: async (url, data) => { calls.push([url, data]); return { data: { ...buyback, intakeSerial: audit.newSerial, serialRevision: 1 } }; },
+    get: async (url) => { calls.push([url]); return { data: [audit] }; },
+  });
+  const request = { expectedSerial: null, expectedRevision: 0, newSerial: "SERIAL-01", reason: "Verified label", correlationId: "corr" };
+  assert.equal((await api.correctSerial(caseId, request)).serialRevision, 1);
+  assert.deepEqual(await api.listSerialHistory(caseId), [audit]);
+  assert.deepEqual(calls, [[`/buybacks/${caseId}/serial/correct`, request], [`/buybacks/${caseId}/serial/history`]]);
+  await assert.rejects(api.listSerialHistory(contractId), /không khớp/);
 });
 
 test("Phase 2 assignment, inspection, valuation, and Owner decisions match Dolores DTOs", async () => {

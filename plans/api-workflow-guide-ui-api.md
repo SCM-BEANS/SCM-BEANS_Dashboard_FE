@@ -228,7 +228,7 @@ Implement the human-facing parts of all ten guide sections:
 
 **Exit condition:** Every confirmed operator/Technician step is wired and validated; unresolved discovery or evidence gaps are recorded.
 
-**Stop/review gate:** The guide lists `GET /termination-cases/{caseId}` but no list route. If there is no authorized collection or assigned-work discovery endpoint, do not create a screen that requires users to guess IDs; stop the affected list/Technician path and report the missing read contract.
+**Stop/review gate:** The API handoff now specifies a paginated `GET /termination-cases?page=&size=` collection with case, Contract, Owner, and machine identifiers. The FE uses it to check for an existing case from Admin/Moderator Contract termination pages; Technician discovery still requires its assigned-work endpoint.
 
 ## Phase 6 — Buyback and refurbishment
 

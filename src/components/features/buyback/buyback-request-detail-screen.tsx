@@ -21,9 +21,9 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
     enabled: validId,
     retry: false,
   });
-  const item = query.data;
+  const item = query.isError ? undefined : query.data;
   const names = useOwnerNames(item && role !== "OWNER" ? [item.ownerId, item.responsibleModeratorId] : []);
-  return <BuybackWorkflowLayout className={styles.screen} title="Chi tiết yêu cầu kỹ thuật"
+  return <BuybackWorkflowLayout className={styles.screen} title="Hồ sơ thu mua"
     back={{ label: "Về danh sách thu mua", fallbackHref: listHref }}>
     {!validId ? <p role="alert">Mã hồ sơ không hợp lệ.</p> : null}
     {validId && query.isPending ? <p role="status">Đang tải yêu cầu…</p> : null}
@@ -33,8 +33,9 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
         <section className={styles.card} aria-labelledby="buyback-request-info">
           <h2 id="buyback-request-info">Thông tin yêu cầu</h2>
           <dl className={styles.requestFacts}>
-            <div><dt>Khách hàng</dt><dd>{role === "OWNER" ? "Bạn" : names.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />}</dd></div>
+            <div><dt>Khách hàng</dt><dd>{role === "OWNER" ? "Bạn" : item.ownerName || names.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />}</dd></div>
             <div><dt>Thiết bị</dt><dd>{item.machineModelName ?? item.assetModelLabel ?? item.machineSerialNumber ?? item.assetSerial ?? "Chờ kiểm tra máy"}</dd></div>
+            {item.workflowVersion === 2 && item.intakeSerial ? <div><dt>Serial khai báo</dt><dd>{item.intakeSerial}</dd></div> : null}
             <div><dt>Loại yêu cầu</dt><dd>Thu mua và tân trang máy</dd></div>
             <div><dt>Ngày gửi</dt><dd>{formatBuybackDateTime(item.requestedAt || item.createdAt)}</dd></div>
           </dl>

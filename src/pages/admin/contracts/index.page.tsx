@@ -363,8 +363,6 @@ function ContractsContent() {
       {visibleContracts.length > 0 &&
         <ContractTable
           contracts={visibleContracts}
-          headerVariant="admin"
-          ownerHeader="Khách hàng"
           ownerName={ownerName}
           contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
           draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}

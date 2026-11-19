@@ -15,6 +15,9 @@ const PURPOSE_LABELS: Record<string, string> = {
   MAINTENANCE_RESOLUTION: "Kết quả bảo trì",
   MAINTENANCE_CUSTODY: "Bàn giao bảo trì",
   OFFLINE_DECISION: "Quyết định mất kết nối",
+  BUYBACK_INSPECTION: "Kiểm tra máy thu mua",
+  BUYBACK_COLLECTION: "Thu máy",
+  BUYBACK_REFURBISHMENT: "Tân trang máy",
 };
 
 function purposeLabel(purpose: string): string {
