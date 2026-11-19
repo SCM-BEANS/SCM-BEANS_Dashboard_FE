@@ -26,6 +26,8 @@ import {
   BuybackRefurbishmentSchema,
   BuybackRefurbishmentStartRequestSchema,
   BuybackStatusSchema,
+  BuybackSerialCorrectionSchema,
+  BuybackSerialHistorySchema,
   BuybackValuationRequestSchema,
   type BuybackActionRequest,
   type BuybackAssignModeratorRequest,
@@ -44,15 +46,6 @@ import {
   type BuybackValuationRequest,
 } from "@/schema/buybacks.schema";
 import { BuybackCaseSummaryListSchema, BuybackInspectionHistorySchema, BuybackQaDecisionHistorySchema, BuybackRefurbishmentHistorySchema, type BuybackCollectionRequest } from "@/schema/buybacks.schema";
-const BuybackListQuerySchema = z.object({
-  status: BuybackStatusSchema.optional(),
-  ownerId: z.string().uuid().optional(),
-  contractId: z.string().uuid().optional(),
-  machineId: z.string().uuid().optional(),
-  page: z.number().int().nonnegative().default(0),
-  size: z.number().int().min(1).max(100).default(50),
-});
-type BuybackListQuery = z.input<typeof BuybackListQuerySchema>;
 async function getCaseHistory<TSchema extends z.ZodTypeAny>(
   id: string,
   historyPath: string,
@@ -99,6 +92,7 @@ const pageParamsSchema = z.object({
   page: z.number().int().nonnegative().default(0),
   size: z.number().int().min(1).max(100).default(50),
   status: BuybackStatusSchema.optional(),
+  ownerId: z.string().uuid().optional(),
   contractId: z.string().uuid().optional(),
   machineId: z.string().uuid().optional(),
 }).strict();
@@ -133,7 +127,7 @@ function withoutResourceId(input: object, key: "id" | "proofId") {
   delete body[key];
   return body;
 }
-async function validatePaymentProofFile(file: File) {
+async function validateBuybackFile(file: File) {
   if (!file || file.size <= 0) throw new Error("Chọn tệp chứng từ thanh toán không rỗng.");
   if (file.size > 20 * 1024 * 1024) throw new Error("Chứng từ không được vượt quá 20 MB.");
   if (!fileTypes.has(file.type)) throw new Error("Chỉ hỗ trợ chứng từ PDF, JPEG hoặc PNG.");
@@ -146,7 +140,12 @@ async function validatePaymentProofFile(file: File) {
   if (!valid) throw new Error("Nội dung tệp không khớp định dạng chứng từ đã chọn.");
 }
 
-export const buybacksApi =  {
+async function validateBuybackEvidence(files: File[], limits: { min: number; max: number }) {
+  validateEvidenceFiles(files, limits);
+  await Promise.all(files.map(validateBuybackFile));
+}
+
+export const buybacksApi = {
   async list(input: z.input<typeof pageParamsSchema> = {}, signal?: AbortSignal) {
     const params = pageParamsSchema.parse(input);
     const response = await axiosClient.get<unknown>("/buybacks", { baseURL: DOLORES_API_BASE_URL, params, signal });
@@ -180,6 +179,18 @@ export const buybacksApi =  {
     );
     return verifyCase(response.data, validId);
   },
+  correctSerial(id: string, input: z.input<typeof BuybackSerialCorrectionSchema>) {
+    return postCaseAction(id, "/serial/correct", BuybackSerialCorrectionSchema.parse(input));
+  },
+  async listSerialHistory(id: string, signal?: AbortSignal) {
+    const response = await axiosClient.get<unknown>(`${buybackPath(id)}/serial/history`, {
+      baseURL: DOLORES_API_BASE_URL,
+      signal,
+    });
+    const items = BuybackSerialHistorySchema.parse(response.data);
+    if (items.some((item) => item.caseId !== id)) throw new Error("Lịch sử serial không khớp hồ sơ thu mua.");
+    return items;
+  },
   async assignInspection(id: string, input: BuybackAssignTechnicianRequest) {
     const validId = BuybackIdSchema.parse(id);
     const response = await axiosClient.post<unknown>(
@@ -206,7 +217,7 @@ export const buybacksApi =  {
   async submitInspection(id: string, input: BuybackInspectionRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
     const request = BuybackInspectionRequestSchema.parse(withoutResourceId(input, "id"));
-    validateEvidenceFiles(files, { min: 0, max: 5 });
+    await validateBuybackEvidence(files, { min: 0, max: 5 });
     const response = await axiosClient.post<unknown>(
       `${buybackPath(validId)}/inspection`,
       buildEvidenceForm(request, files),
@@ -231,7 +242,7 @@ export const buybacksApi =  {
     const validPaymentId = z.string().uuid().parse(paymentId);
     const key = z.string().trim().min(1).max(128).parse(idempotencyKey);
     const correlation = z.string().trim().min(1).max(128).parse(correlationId);
-    await validatePaymentProofFile(file);
+    await validateBuybackFile(file);
     const form = new FormData();
     form.append("file", file);
     const response = await axiosClient.post<unknown>(`${buybackPath(validId)}/payment-proofs`, form, {
@@ -306,7 +317,7 @@ export const buybacksApi =  {
   async recordCollectionEvidence(id: string, input: BuybackPickupEvidenceRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
     const request = BuybackPickupEvidenceRequestSchema.parse(withoutResourceId(input, "id"));
-    validateEvidenceFiles(files, { min: 1, max: 1 });
+    await validateBuybackEvidence(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `${buybackPath(validId)}/collection/evidence`,
       buildEvidenceForm(request, files),
@@ -327,7 +338,7 @@ export const buybacksApi =  {
   async completeRefurbishment(id: string, input: BuybackRefurbishmentCompleteRequest, files: File[]) {
     const validId = BuybackIdSchema.parse(id);
     const request = BuybackRefurbishmentCompleteRequestSchema.parse(withoutResourceId(input, "id"));
-    validateEvidenceFiles(files, { min: 0, max: 5 });
+    await validateBuybackEvidence(files, { min: 0, max: 5 });
     const response = await axiosClient.post<unknown>(
       `${buybackPath(validId)}/refurbishment/complete`,
       buildEvidenceForm(request, files),

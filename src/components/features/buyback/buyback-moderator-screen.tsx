@@ -6,6 +6,8 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { EvidenceList } from "@/components/evidence/evidence-list";
+import { evidenceApi } from "@/apis/evidence.api";
+import { BuybackSerialPanel } from "./buyback-serial-panel";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
@@ -41,9 +43,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
         ? workflow.assignRefurbishment
         : workflow.assignModerator;
   const submit = workflow.perform(() => {
-    const selectedTechnicianId = assigningCollectionTechnician
-      ? caseData.inspectionTechnicianId ?? ""
-      : workflow.selectedAssigneeId;
+    const selectedTechnicianId = workflow.selectedAssigneeId;
     if (!selectedTechnicianId || !workflow.assignmentReason.trim()) return;
     const assignment = {
       profileId: selectedTechnicianId,
@@ -87,12 +87,13 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
         {assigningInspectionTechnician
           ? "Chỉ Moderator phụ trách giao Technician đang hoạt động để kiểm tra máy."
           : assigningCollectionTechnician
-            ? "Moderator phụ trách dùng lại Technician đã kiểm tra máy để thu máy."
+            ? "Chọn kỹ thuật viên phụ trách thu máy."
             : assigningRefurbishmentTechnician
               ? "Chỉ Moderator phụ trách giao Technician tân trang đang hoạt động."
               : "Chỉ Admin được xử lý hồ sơ REQUESTED chưa có Moderator phụ trách."}
       </p>
-      {!assigningCollectionTechnician ? <label className={styles.formField}>
+      {assigningCollectionTechnician && caseData.collectionEvidenceRecorded ? <p className={styles.notice}>Phân công lại sẽ yêu cầu ghi nhận chứng cứ thu máy mới.</p> : null}
+      <label className={styles.formField}>
         <span>Tìm theo tên hoặc email</span>
         <input
           type="search"
@@ -100,28 +101,22 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
           onChange={(event) => workflow.setAssignmentSearch(event.target.value)}
           maxLength={128}
         />
-      </label> : null}
-      {!assigningCollectionTechnician && (profiles.isPending || profiles.isFetching) ? <p className={styles.notice} role="status">Đang tải hồ sơ đủ điều kiện…</p> : null}
-      {!assigningCollectionTechnician && profiles.isError ? (
+      </label>
+      {profiles.isFetching ? <p className={styles.notice} role="status">Đang tải hồ sơ đủ điều kiện…</p> : null}
+      {profiles.isError ? (
         <div className={styles.assignmentForm}>
           <BuybackErrorNotice error={profiles.error} />
           <ButtonBar type="button" onClick={() => void profiles.refetch()}>Tải lại danh sách</ButtonBar>
         </div>
       ) : null}
-      {!assigningCollectionTechnician && !profiles.isPending && !profiles.isError && profiles.data && workflow.eligibleAssignees.length === 0 ? (
+      {profiles.isSuccess && workflow.eligibleAssignees.length === 0 ? (
         <p className={styles.notice} role="note">
           Không có {assigningTechnician ? "Technician" : "Moderator"} đang hoạt động và đã xác minh email phù hợp.
         </p>
       ) : null}
-      {assigningCollectionTechnician && !caseData.inspectionTechnicianId ? (
-        <p className={styles.notice} role="alert">Hồ sơ không có Technician kiểm tra để dùng lại cho bước thu máy.</p>
-      ) : null}
-      {assigningCollectionTechnician && caseData.inspectionTechnicianId ? (
-        <p className={styles.notice} role="status">Sẽ dùng lại Technician đã kiểm tra máy: <span className={styles.codeValue}><TruncatedId value={caseData.inspectionTechnicianId} /></span></p>
-      ) : null}
-      {(assigningCollectionTechnician ? Boolean(caseData.inspectionTechnicianId) : Boolean(profiles.data && workflow.eligibleAssignees.length > 0)) ? (
+      {profiles.isSuccess ? (
         <>
-          {!assigningCollectionTechnician ? <label className={styles.formField}>
+          <label className={styles.formField}>
             <span>{assigningTechnician ? "Technician" : "Moderator"} phụ trách</span>
             <select
               required
@@ -136,7 +131,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
                 </option>
               ))}
             </select>
-          </label> : null}
+          </label>
           <label className={styles.formField}>
             <span>Lý do phân công</span>
             <textarea
@@ -146,7 +141,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
               onChange={(event) => workflow.setAssignmentReason(event.target.value)}
             />
           </label>
-          {!assigningCollectionTechnician && totalPages > 1 ? (
+          {totalPages > 1 ? (
             <div className={styles.technicalRequestActions}>
               <ButtonBar type="button" disabled={workflow.assignmentPage === 0 || profiles.isFetching} onClick={() => workflow.goToAssignmentPage(workflow.assignmentPage - 1)}>Trang trước</ButtonBar>
               <span>Trang {workflow.assignmentPage + 1} / {totalPages}</span>
@@ -155,7 +150,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
           ) : null}
           <ButtonBar
             type="submit"
-            disabled={(!assigningCollectionTechnician && !workflow.selectedAssigneeId) || (assigningCollectionTechnician && !caseData.inspectionTechnicianId) || !workflow.assignmentReason.trim() || (!assigningCollectionTechnician && profiles.isFetching) || mutation.isPending}
+            disabled={!workflow.selectedAssigneeId || !workflow.assignmentReason.trim() || profiles.isFetching || mutation.isPending}
           >
             {mutation.isPending ? "Đang phân công…" : actionLabel}
           </ButtonBar>
@@ -168,6 +163,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
 export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { caseId?: string; listHref: string; operatorRole: "ADMIN" | "MODERATOR" }) {
   const workflow = useBuybackWorkflowController({ role: "operator", operatorRole, initialCaseId: caseId, listHref });
   const { caseData } = workflow;
+  const collectionFile = workflow.collectionEvidence.data?.items[0];
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [valuationDecision, setValuationDecision] = useState<boolean | null>(null);
@@ -175,7 +171,9 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
   const [recordsTab, setRecordsTab] = useState<"payment" | "documents">("payment");
   const hasSubmittedPaymentProof = workflow.paymentProofs.data?.items.some((proof) => proof.status === "SUBMITTED") ?? false;
   const hasOwnerReportedPaymentNotReceived = workflow.paymentProofs.data?.items.some((proof) => proof.status === "OWNER_NOT_RECEIVED") ?? false;
-  const canUploadPaymentProof = workflow.paymentProofs.data != null && !hasSubmittedPaymentProof;
+  const canUploadPaymentProof = workflow.proofPage === 0 && workflow.paymentProofs.isSuccess && !hasSubmittedPaymentProof;
+  const payoutRetry = workflow.createPayment.isError && workflow.createPayment.variables?.id === caseData?.id
+    ? workflow.createPayment.variables : undefined;
   const closeCancelDialog = () => {
     if (workflow.cancelBuyback.isPending) return;
     setCancelDialogOpen(false);
@@ -210,18 +208,18 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
   };
   const submitValuationDecision = () => {
     const reason = workflow.decisionReason.trim();
-    if (!caseData || valuationDecision === null || !reason || workflow.decideValuation.isPending) return;
-    const proposedPrice = caseData.proposedPrice;
-    if (valuationDecision && (proposedPrice == null || !Number.isFinite(proposedPrice) || proposedPrice <= 0)) return;
+    if (!caseData || !workflow.canDecideValuation || valuationDecision === null || !reason || workflow.decideValuation.isPending) return;
+    const approvedPrice = Number(workflow.approvedPrice);
+    if (valuationDecision && (!Number.isFinite(approvedPrice) || approvedPrice < 0.01)) return;
     const key = workflow.operationKey(
       "valuation-decision",
       caseData.id,
-      JSON.stringify({ approved: valuationDecision, approvedPrice: valuationDecision ? proposedPrice : undefined, reason }),
+      JSON.stringify({ approved: valuationDecision, approvedPrice: valuationDecision ? approvedPrice : undefined, reason }),
     );
     workflow.decideValuation.mutate({
       id: caseData.id,
       approved: valuationDecision,
-      ...(valuationDecision ? { approvedPrice: proposedPrice! } : {}),
+      ...(valuationDecision ? { approvedPrice } : {}),
       reason,
       idempotencyKey: key,
       correlationId: key,
@@ -247,6 +245,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>
           <BuybackAssignmentPanel workflow={workflow} />
+          {workflow.isExternalBuyback && workflow.isResponsibleModerator ? <BuybackSerialPanel key={caseData.id} caseData={caseData} invalidate={workflow.invalidate} /> : null}
           {workflow.isExternalBuyback && caseData.ownerAccepted === true && ["APPROVED", "COLLECTION_PENDING"].includes(caseData.status) ? <p className={styles.notice} role="status">Khách hàng đã chấp nhận giá {formatBuybackMoney(caseData.acceptedPrice, caseData.currency)}. Hồ sơ đang ở bước điều phối thu máy.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTED" ? <p className={styles.notice} role="status">Dolores đã xác nhận nhận máy. Có thể tạo khoản thanh toán mua lại.</p> : null}
           {workflow.isExternalBuyback && workflow.canManageExternalPayment && caseData.status === "COLLECTED" ? (
@@ -272,30 +271,35 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                   ? "Khách hàng báo chưa nhận được tiền. Kiểm tra giao dịch rồi tải chứng từ cập nhật để khách hàng phản hồi lại."
                   : "Dùng mã khoản chi được cấp khi tạo khoản thanh toán. Nếu đã rời trang, hãy nhập lại mã đã lưu."}
               </p>
+              {!workflow.paymentId && payoutRetry ? <ButtonBar type="button" onClick={() => workflow.createPayment.mutate(payoutRetry)}>Thử lấy lại mã khoản chi</ButtonBar> : null}
               <label className={styles.formField}><span>Mã khoản chi</span><input required value={workflow.paymentId} onChange={(event) => workflow.setPaymentId(event.target.value.trim())} /></label>
               <form className={styles.assignmentForm} onSubmit={workflow.perform(() => {
-                if (!workflow.paymentId || !workflow.proofFile) return;
+                if (!workflow.paymentId || !workflow.proofFile || workflow.submitProof.isPending || workflow.paymentProofs.isFetching) return;
                 const key = workflow.paymentProofOperationKey(caseData.id, workflow.paymentId, workflow.proofFile);
                 workflow.submitProof.mutate({ id: caseData.id, paymentId: workflow.paymentId, key, correlationId: key, file: workflow.proofFile });
               })}>
                 <label className={styles.formField}><span>Tệp PDF, JPEG hoặc PNG (tối đa 20 MB)</span><input required type="file" accept="application/pdf,image/jpeg,image/png" onChange={(event) => workflow.setProofFile(event.target.files?.[0] ?? null)} /></label>
-                <ButtonBar type="submit" disabled={!workflow.paymentId || !workflow.proofFile || workflow.submitProof.isPending}>Tải chứng từ riêng tư</ButtonBar>
+                <ButtonBar type="submit" disabled={!workflow.paymentId || !workflow.proofFile || workflow.submitProof.isPending || workflow.paymentProofs.isFetching}>Tải chứng từ riêng tư</ButtonBar>
               </form>
               {workflow.proofId ? <p className={styles.notice} role="status">Đã tải chứng từ. Mã chứng từ: <span className={styles.codeValue}><TruncatedId value={workflow.proofId} /></span></p> : null}
             </section>
           ) : null}
-          {caseData.status === "VALUATION_PENDING" ? (
+          {workflow.canDecideValuation ? (
             <section className={styles.formPanel} aria-label="Quyết định giá thu mua">
               <h3 className={styles.sectionTitle}>Duyệt đánh giá Technician</h3>
-              <p className={styles.formHint}>Giá Technician đề xuất: {formatBuybackMoney(caseData.proposedPrice, caseData.currency)}. Duyệt sẽ sử dụng đúng mức giá này.</p>
+              <p className={styles.formHint}>Giá kỹ thuật viên đề xuất: {formatBuybackMoney(caseData.proposedPrice, caseData.currency)}.</p>
+              <label className={styles.formField}><span>Giá duyệt ({caseData.currency})</span>
+                <input type="number" min="0.01" step="0.01" value={workflow.approvedPrice} placeholder={String(caseData.proposedPrice ?? "")}
+                  disabled={workflow.decideValuation.isPending} onChange={(event) => workflow.setApprovedPrice(event.target.value)} />
+              </label>
               <label className={styles.formField}><span>Lý do quyết định</span><textarea required maxLength={2000} value={workflow.decisionReason} onChange={(event) => workflow.setDecisionReason(event.target.value)} /></label>
               <div className={styles.technicalRequestActions}>
                 <ButtonBar
                   type="button"
                   className={styles.technicalRequestAccept}
-                  disabled={!workflow.decisionReason.trim() || caseData.proposedPrice == null || !Number.isFinite(caseData.proposedPrice) || caseData.proposedPrice <= 0 || workflow.decideValuation.isPending}
-                  onClick={() => { workflow.decideValuation.reset(); setValuationDecision(true); }}
-                >Duyệt giá đề xuất</ButtonBar>
+                  disabled={!workflow.decisionReason.trim() || !(Number(workflow.approvedPrice || caseData.proposedPrice) >= 0.01) || workflow.decideValuation.isPending}
+                  onClick={() => { workflow.setApprovedPrice(workflow.approvedPrice || String(caseData.proposedPrice ?? "")); workflow.decideValuation.reset(); setValuationDecision(true); }}
+                >Duyệt giá</ButtonBar>
                 <ButtonBar
                   type="button"
                   className={styles.technicalRequestReject}
@@ -348,18 +352,24 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" ? <>
             <p className={styles.notice} role="note">Dolores đang điều phối Technician đến thu máy. Chỉ Technician được gán mới ghi serial, địa điểm và evidence reference.</p>
-            {caseData.collectionEvidenceRecorded ? (
+            {workflow.canConfirmCollection ? (
               <form className={styles.formPanel} onSubmit={workflow.perform(() => {
-                const evidenceReference = workflow.collectionConfirmationReference.trim();
+                if (!collectionFile || workflow.collectionEvidence.isFetching || workflow.collectionEvidence.isError || workflow.detail.isFetching || workflow.confirmCollection.isPending) return;
+                const evidenceReference = collectionFile.id;
                 const key = workflow.operationKey("collection-confirm", caseData.id, evidenceReference);
                 workflow.confirmCollection.mutate({ id: caseData.id, evidenceReference, idempotencyKey: key, correlationId: key });
               })}>
                 <h3 className={styles.sectionTitle}>Xác nhận đã nhận máy</h3>
-                <p className={styles.formHint}>Tệp minh chứng đã được ghi nhận. Nhập mã tham chiếu của tệp để xác nhận đã nhận máy.</p>
-                <label className={styles.formField}><span>Mã tham chiếu tệp minh chứng</span><input required maxLength={2048} value={workflow.collectionConfirmationReference} onChange={(event) => workflow.setCollectionConfirmationReference(event.target.value)} /></label>
-                <ButtonBar type="submit" disabled={!workflow.canConfirmCollection || !workflow.collectionConfirmationReference.trim() || workflow.confirmCollection.isPending}>Xác nhận đã thu máy</ButtonBar>
+                {workflow.collectionEvidence.isFetching ? <p role="status">Đang tải chứng cứ thu máy…</p> : null}
+                {workflow.collectionEvidence.isError ? <BuybackErrorNotice error={workflow.collectionEvidence.error} /> : null}
+                {workflow.collectionEvidence.isSuccess && !collectionFile ? <p role="status">Chưa tìm thấy tệp chứng cứ thu máy.</p> : null}
+                {collectionFile ? <ProgressDownloadButton filename={collectionFile.originalFilename}
+                  download={(signal) => evidenceApi.download("BUYBACK_CASE", caseData.id, collectionFile.id, signal)}
+                  onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải chứng cứ thu máy</ProgressDownloadButton> : null}
+                <ButtonBar type="submit" disabled={!collectionFile || workflow.collectionEvidence.isFetching || workflow.collectionEvidence.isError || workflow.detail.isFetching || workflow.confirmCollection.isPending}>Xác nhận đã thu máy</ButtonBar>
               </form>
-            ) : <p className={styles.formHint}>Chưa có bằng chứng thu máy trong hồ sơ Dolores.</p>}
+            ) : !caseData.collectionEvidenceRecorded ? <p className={styles.formHint}>Chưa có chứng cứ thu máy.</p>
+              : <p className={styles.formHint}>Cần xác minh lại serial đã ghi trên chứng cứ trước khi xác nhận nhận máy.</p>}
           </> : null}
           {workflow.canRegisterMachine ? (
             <form className={styles.formPanel} onSubmit={workflow.perform(() => {
@@ -382,6 +392,8 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
               <ButtonBar type="submit" disabled={!workflow.registrationModelId || !workflow.registrationReason.trim() || workflow.machineModels.isPending || workflow.machineModels.isError || workflow.registerMachine.isPending}>Đăng ký máy</ButtonBar>
             </form>
           ) : null}
+          {workflow.isResponsibleModerator && workflow.isExternalBuyback && caseData.status === "READY_FOR_REGISTRATION" && !workflow.canRegisterMachine
+            ? <p className={styles.notice}>Cần kỹ thuật viên thu máy xác minh lại serial và gửi chứng cứ trước khi đăng ký máy vào kho.</p> : null}
           {operatorRole !== "ADMIN" && workflow.isExternalBuyback && caseData.status === "REGISTERED" && caseData.registeredMachineId ? <p className={styles.notice} role="status">Dolores đã đăng ký máy <span className={styles.codeValue}><TruncatedId value={caseData.registeredMachineId} /></span>.</p> : null}
           {!workflow.isExternalBuyback && caseData.status === "QA_PENDING" ? (
             <div className={styles.formPanel}>
@@ -421,13 +433,13 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
           </div>
         </> : null}
       </BuybackDetailPanel>
-      {valuationDecision !== null && caseData?.status === "VALUATION_PENDING" ? (
+      {valuationDecision !== null && caseData && workflow.canDecideValuation ? (
         <NotificationDialog
           variant="confirm"
           eyebrow="Hồ sơ thu mua"
-          title={valuationDecision ? "Duyệt giá Technician đề xuất?" : "Không duyệt giá Technician đề xuất?"}
+          title={valuationDecision ? "Duyệt giá thu mua?" : "Từ chối định giá?"}
           description={valuationDecision
-            ? `Xác nhận duyệt theo giá ${formatBuybackMoney(caseData.proposedPrice, caseData.currency)} do Technician đề xuất.`
+            ? `Xác nhận duyệt giá thu mua ${formatBuybackMoney(Number(workflow.approvedPrice), caseData.currency)}.`
             : `Xác nhận không duyệt giá ${formatBuybackMoney(caseData.proposedPrice, caseData.currency)} do Technician đề xuất.`}
           primaryAction={{
             label: valuationDecision ? "Duyệt giá" : "Không duyệt",

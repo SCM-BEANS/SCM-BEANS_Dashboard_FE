@@ -9,6 +9,8 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import type { BuybackPaymentProof } from "@/schema/buybacks.schema";
 import { buybackPaymentProofStatusLabel, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
 import {
   BuybackCaseList,
@@ -30,6 +32,7 @@ export function BuybackOwnerScreen({ listHref = "/dashboard/buyback", showCreate
 function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: string; showCreateForm: boolean }) {
   const [recordsTab, setRecordsTab] = useState<"payment" | "documents">("payment");
   const [downloadError, setDownloadError] = useState("");
+  const [receiptDecision, setReceiptDecision] = useState<{ proof: BuybackPaymentProof; received: boolean | null } | null>(null);
   const workflow = useBuybackWorkflowController({ role: "owner", listHref, showCreateForm });
   const { caseData } = workflow;
   const hasSubmittedPaymentProof = workflow.paymentProofs.data?.items.some((proof) => proof.status === "SUBMITTED") ?? false;
@@ -67,7 +70,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
           {workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? (
             <p className={styles.notice} role="status">
               {hasSubmittedPaymentProof
-                ? "Đã có chứng từ thanh toán. Vui lòng xem chứng từ bên dưới rồi phản hồi ở mục Công việc cần xử lý trên bảng điều khiển."
+                ? "Hãy xem chứng từ và kiểm tra khoản tiền thực nhận trước khi phản hồi."
                 : hasUnreceivedPaymentProof
                   ? "Bạn đã báo chưa nhận được tiền. Moderator đã được thông báo và cần kiểm tra, cập nhật chứng từ thanh toán."
                   : "Đang chờ Moderator/Admin tải chứng từ thanh toán lên. Bạn sẽ được thông báo khi cần phản hồi về khoản tiền."}
@@ -122,6 +125,16 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
                   setDownloadError("");
                   return (await buybacksApi.downloadPaymentProofContent(proof.id, signal)).blob;
                 }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> },
+                ...(workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" && hasSubmittedPaymentProof ? [{
+                  key: "receipt",
+                  header: "Phản hồi",
+                  render: (proof: BuybackPaymentProof) => proof.status === "SUBMITTED" ? (
+                    <ButtonBar type="button" onClick={() => {
+                      workflow.respondToReceipt.reset();
+                      setReceiptDecision({ proof, received: null });
+                    }}>Phản hồi khoản chi</ButtonBar>
+                  ) : null,
+                }] : []),
               ]} />
               {downloadError ? <p role="alert" className={`${styles.notice} ${styles.error}`}>{downloadError}</p> : null}
               {workflow.paymentProofs.data.hasNext || workflow.proofPage > 0 ? (
@@ -139,6 +152,38 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
           </div>
         </> : null}
       </BuybackDetailPanel>
+      {receiptDecision && caseData?.id === receiptDecision.proof.buybackCaseId ? (
+        <NotificationDialog
+          variant="confirm"
+          title="Xác nhận khoản tiền thu mua"
+          description={`Số tiền trên chứng từ là ${formatBuybackMoney(receiptDecision.proof.amount, receiptDecision.proof.currency ?? caseData.currency)}.`}
+          primaryAction={{
+            label: "Gửi phản hồi",
+            pending: workflow.respondToReceipt.isPending,
+            disabled: receiptDecision.received === null || workflow.detail.isFetching || workflow.paymentProofs.isFetching
+              || caseData.status !== "PAYMENT_PENDING" || !workflow.paymentProofs.data?.items.some((proof) => proof.id === receiptDecision.proof.id && proof.status === "SUBMITTED"),
+            onClick: () => {
+              if (receiptDecision.received === null) return;
+              workflow.respondToReceipt.mutate({ proofId: receiptDecision.proof.id, received: receiptDecision.received }, {
+                onSuccess: () => setReceiptDecision(null),
+              });
+            },
+          }}
+          secondaryAction={{ label: "Quay lại", disabled: workflow.respondToReceipt.isPending, onClick: () => setReceiptDecision(null) }}
+          onClose={() => { if (!workflow.respondToReceipt.isPending) setReceiptDecision(null); }}
+          closeOnEscape={!workflow.respondToReceipt.isPending}
+        >
+          <label className={styles.formField}><span>Bạn đã nhận khoản tiền này chưa?</span>
+            <select disabled={workflow.respondToReceipt.isPending} value={receiptDecision.received === null ? "" : String(receiptDecision.received)}
+              onChange={(event) => setReceiptDecision({ ...receiptDecision, received: event.target.value === "" ? null : event.target.value === "true" })}>
+              <option value="">Chọn phản hồi</option>
+              <option value="true">Đã nhận tiền</option>
+              <option value="false">Chưa nhận tiền</option>
+            </select>
+          </label>
+          {workflow.respondToReceipt.isError ? <BuybackErrorNotice error={workflow.respondToReceipt.error} /> : null}
+        </NotificationDialog>
+      ) : null}
     </BuybackWorkflowLayout>
   );
 }

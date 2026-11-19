@@ -14,6 +14,7 @@ const EvidenceIdSchema = z.string().uuid();
 const EvidenceListParamsSchema = z.object({
   page: z.number().int().nonnegative().default(0),
   size: z.number().int().min(1).max(100).default(50),
+  purpose: z.enum(["BUYBACK_INSPECTION", "BUYBACK_COLLECTION", "BUYBACK_REFURBISHMENT"]).optional(),
 }).strict();
 
 export type EvidenceListParams = z.input<typeof EvidenceListParamsSchema>;
@@ -45,6 +46,7 @@ export const evidenceApi = {
     const query = EvidenceListParamsSchema.parse({
       page: params.page ?? 0,
       size: params.size ?? 50,
+      ...(params.purpose ? { purpose: params.purpose } : {}),
     });
     const response = await axiosClient.get<unknown>(evidencePath(validResource, validParentId), {
       baseURL: DOLORES_API_BASE_URL,
@@ -54,6 +56,9 @@ export const evidenceApi = {
     const page = EvidencePageSchema.parse(response.data);
     if (page.items.some((item: EvidenceItem) => item.resourceId !== validParentId || item.resourceType !== validResource)) {
       throw new Error("Evidence response does not match the requested resource.");
+    }
+    if (query.purpose && page.items.some((item) => item.purpose !== query.purpose)) {
+      throw new Error("Danh sách chứng cứ không đúng mục đích yêu cầu.");
     }
     return page;
   },

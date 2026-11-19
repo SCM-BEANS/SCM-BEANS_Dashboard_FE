@@ -3,12 +3,13 @@ import { readAllPages } from "@/lib/read-all-pages";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { buybacksApi } from "@/apis/buybacks.api";
+import { evidenceApi } from "@/apis/evidence.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { BuybackIdSchema, type BuybackCase } from "@/schema/buybacks.schema";
+import { BuybackIdSchema, BuybackSerialSchema, type BuybackCase } from "@/schema/buybacks.schema";
 import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
 
@@ -25,7 +26,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const router = useRouter();
   const queryClient = useQueryClient();
   const idempotencyKeys = useRef(new Map<string, { key: string; fingerprint: string }>());
-  const paymentProofFingerprints = useRef(new WeakMap<File, string>());
+  const fileFingerprints = useRef(new WeakMap<File, string>());
   const subject = authScopedQuerySubject(role === "operator" ? operatorRole ?? role : role.toUpperCase());
   const isModeratorRoute = role === "operator" && operatorRole === "MODERATOR";
   const ownerId = getAuthenticatedSubjectId();
@@ -36,6 +37,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const [listFilters, setListFilters] = useState(listFilterDraft);
   const [proofPage, setProofPage] = useState(0);
   const [createConfirmed, setCreateConfirmed] = useState(false);
+  const [serialNumber, setSerialNumber] = useState("");
   const [currency, setCurrency] = useState("");
   const [condition, setCondition] = useState("");
   const [valuationAmount, setValuationAmount] = useState("");
@@ -52,8 +54,6 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const [collectionReason, setCollectionReason] = useState("");
   const [confirmedCollectionSerial, setConfirmedCollectionSerial] = useState("");
   const [collectionLocation, setCollectionLocation] = useState("");
-  const [collectionEvidenceReference, setCollectionEvidenceReference] = useState("");
-  const [collectionConfirmationReference, setCollectionConfirmationReference] = useState("");
   const [assignmentSearch, setAssignmentSearch] = useState("");
   const [assignmentPage, setAssignmentPage] = useState(0);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState("");
@@ -97,15 +97,21 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     enabled: detailValid,
     retry: false,
   });
-  const caseData = detail.data;
+  const caseData = detail.isError ? undefined : detail.data;
   const isExternalBuyback = caseData?.workflowVersion === 2;
+  const isResponsibleModerator = isModeratorRoute && Boolean(ownerId && caseData?.responsibleModeratorId === ownerId);
+  const canOperateCase = operatorRole === "ADMIN" || isResponsibleModerator;
+  const collectionSerialVerified = Boolean(caseData?.collectionEvidenceRecorded && caseData.intakeSerial
+    && caseData.assetSerial?.toUpperCase() === caseData.intakeSerial.toUpperCase());
+  const canDecideValuation = Boolean(role === "operator" && caseData?.status === "VALUATION_PENDING"
+    && (!isExternalBuyback || canOperateCase));
   const [paymentIdCaseId, setPaymentIdCaseId] = useState("");
   const setPaymentIdForCase = (caseId: string, value: string) => {
     setPaymentIdState(value);
     setPaymentIdCaseId(caseId);
     if (typeof window !== "undefined" && caseId) {
       try {
-        const key = `buyback-payment-id:${caseId}`;
+        const key = `buyback-payment-id:${subject}:${caseId}`;
         if (value.trim()) window.sessionStorage.setItem(key, value.trim());
         else window.sessionStorage.removeItem(key);
       } catch {
@@ -118,7 +124,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     if (!detailId || typeof window === "undefined") return;
     let cached = "";
     try {
-      cached = window.sessionStorage.getItem(`buyback-payment-id:${detailId}`) ?? "";
+      cached = window.sessionStorage.getItem(`buyback-payment-id:${subject}:${detailId}`)
+        ?? window.sessionStorage.getItem(`buyback-payment-id:${detailId}`) ?? "";
     } catch {
       // The payment ID can still be pasted into the form when session storage is unavailable.
     }
@@ -127,13 +134,19 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     setPaymentMethod("");
     setExternalReference("");
     setProofFile(null);
+    setProofPage(0);
     setProofId("");
     setProofReviewReason("");
+    setCondition("");
+    setValuationAmount("");
+    setInspectionNotes("");
+    setCurrency("");
+    setApprovedPrice("");
+    setDecisionReason("");
+    setOwnerDecisionReason("");
     setCollectionReason("");
     setConfirmedCollectionSerial("");
     setCollectionLocation("");
-    setCollectionEvidenceReference("");
-    setCollectionConfirmationReference("");
     setSelectedAssigneeId("");
     setAssignmentReason("");
     setWorkPlanned("");
@@ -144,17 +157,19 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     setRegistrationModelId("");
     setRegistrationRegion("");
     setRegistrationReason("");
-  }, [detailId]);
+  }, [detailId, subject]);
   const scopedPaymentId = paymentIdCaseId === detailId ? paymentId : "";
   const paymentProofs = useQuery({
     queryKey: ["dolores", role, "buyback-payment-proofs", subject, detailId, proofPage],
     queryFn: ({ signal }) => buybacksApi.listPaymentProofs(detailId, proofPage, 50, signal),
     enabled: detailValid && Boolean(caseData) && (
       role === "owner"
-      || (role === "operator" && (operatorRole === "ADMIN" || caseData?.responsibleModeratorId === ownerId))
+      || (role === "operator" && canOperateCase)
     ),
     retry: false,
   });
+  const proofPaymentId = paymentProofs.data?.items.find((proof) =>
+    proof.status === "OWNER_NOT_RECEIVED" || proof.status === "SUBMITTED")?.paymentId;
   const contracts = useQuery({
     queryKey: ["dolores", "owner", "buyback-contracts", subject],
     queryFn: ({ signal }) => contractsApi.listByOwner(ownerId!, signal),
@@ -167,18 +182,14 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       && operatorRole === "MODERATOR"
       && caseData != null
       && isExternalBuyback
-      && caseData.contractId == null
-      && caseData.status === "REQUESTED"
-      && caseData.responsibleModeratorId === ownerId
-      && !caseData.inspectionTechnicianId,
+      && ["REQUESTED", "INSPECTION_PENDING"].includes(caseData.status)
+      && isResponsibleModerator,
   );
   const canCancelExternalBuyback = Boolean(
     role === "operator"
-      && isModeratorRoute
+      && canOperateCase
       && isExternalBuyback
       && caseData
-      && caseData.contractId == null
-      && caseData.responsibleModeratorId === ownerId
       && ["REQUESTED", "INSPECTION_PENDING", "VALUATION_PENDING", "APPROVED", "COLLECTION_PENDING"].includes(caseData.status),
   );
   const canRequestCollection = Boolean(
@@ -188,54 +199,71 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       && caseData.ownerAccepted === true
       && Number(caseData.acceptedPrice) > 0
       && Number(caseData.acceptedPrice) === Number(caseData.approvedPrice)
-      && (operatorRole === "ADMIN" || caseData.responsibleModeratorId === ownerId),
+      && canOperateCase,
   );
   const canAssignCollection = Boolean(
     role === "operator"
       && operatorRole === "MODERATOR"
       && isExternalBuyback
       && caseData?.status === "COLLECTION_PENDING"
-      && caseData.responsibleModeratorId === ownerId
-      && !caseData.collectionTechnicianId,
+      && isResponsibleModerator
   );
   const canConfirmCollection = Boolean(
     role === "operator"
       && isExternalBuyback
       && caseData?.status === "COLLECTION_PENDING"
-      && caseData.collectionEvidenceRecorded
-      && (operatorRole === "ADMIN" || caseData.responsibleModeratorId === ownerId),
+      && caseData.collectionTechnicianId
+      && collectionSerialVerified
+      && canOperateCase,
   );
+  const canVerifyCollectionSerial = Boolean(role === "technician" && isExternalBuyback && ownerId && caseData
+    && caseData.collectionTechnicianId === ownerId && !caseData.collectionEvidenceRecorded
+    && (caseData.status === "COLLECTION_PENDING" || (
+      (caseData.serialRevision ?? 0) > 0 && caseData.collectedAt
+      && ["COLLECTED", "PAYMENT_PENDING", "PAID", "REFURBISHING", "READY_FOR_REGISTRATION"].includes(caseData.status)
+    )));
+  const collectionEvidence = useQuery({
+    queryKey: ["dolores", role, "buyback-collection-evidence", subject, detailId, caseData?.serialRevision],
+    queryFn: ({ signal }) => evidenceApi.list("BUYBACK_CASE", detailId, { purpose: "BUYBACK_COLLECTION", size: 1 }, signal),
+    enabled: canConfirmCollection && !detail.isFetching && !detail.isError,
+    retry: false,
+  });
   const canManageExternalPayment = Boolean(
     role === "operator"
       && isExternalBuyback
-      && (operatorRole === "ADMIN" || caseData?.responsibleModeratorId === ownerId),
+      && canOperateCase,
   );
+  const refurbishmentOpen = caseData?.refurbishment?.status === "OPEN";
+  const canOpenRefurbishment = caseData?.status === "PAID"
+    || (caseData?.status === "REFURBISHING" && Boolean(caseData.refurbishment) && !refurbishmentOpen);
   const canAssignRefurbishment = Boolean(
     role === "operator"
       && operatorRole === "MODERATOR"
       && isExternalBuyback
-      && caseData?.status === "PAID"
-      && caseData.responsibleModeratorId === ownerId
-      && !caseData.refurbishmentTechnicianId,
+      && canOpenRefurbishment
+      && isResponsibleModerator,
   );
   const canRegisterMachine = Boolean(
     role === "operator"
       && operatorRole === "MODERATOR"
       && isExternalBuyback
       && caseData?.status === "READY_FOR_REGISTRATION"
-      && caseData.responsibleModeratorId === ownerId
+      && isResponsibleModerator
+      && collectionSerialVerified
       && !caseData.registeredMachineId,
   );
   const canStartRefurbishment = Boolean(
     role === "technician"
       && isExternalBuyback
-      && caseData?.status === "PAID"
-      && caseData.refurbishmentTechnicianId === ownerId,
+      && canOpenRefurbishment
+      && Boolean(ownerId && caseData?.refurbishmentTechnicianId === ownerId),
   );
   const canCompleteRefurbishment = Boolean(
     role === "technician"
       && isExternalBuyback
       && caseData?.status === "REFURBISHING"
+      && refurbishmentOpen
+      && ownerId
       && caseData.refurbishmentTechnicianId === ownerId,
   );
   const machineModels = useQuery({
@@ -256,7 +284,6 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       && operatorRole === "ADMIN"
       && caseData != null
       && isExternalBuyback
-      && caseData.contractId == null
       && caseData.status === "REQUESTED"
       && !caseData.responsibleModeratorId,
   );
@@ -279,7 +306,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       page: assignmentPage,
       size: 20,
     }, signal),
-    enabled: Boolean(assignmentRole && assignmentRole !== "COLLECTION_TECHNICIAN"),
+    enabled: Boolean(assignmentRole),
     retry: false,
   });
   const eligibleAssignees = (assignmentProfiles.data?.items ?? []).filter((profile) =>
@@ -299,23 +326,35 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const clearOperationKey = (action: string, resourceId = "new") => {
     idempotencyKeys.current.delete(`${action}:${resourceId}`);
   };
-  const paymentProofOperationKey = (caseId: string, id: string, file: File) => {
-    let fingerprint = paymentProofFingerprints.current.get(file);
+  const fileFingerprint = (file: File) => {
+    let fingerprint = fileFingerprints.current.get(file);
     if (!fingerprint) {
       fingerprint = createIdempotencyKey();
-      paymentProofFingerprints.current.set(file, fingerprint);
+      fileFingerprints.current.set(file, fingerprint);
     }
-    return operationKey("payment-proof", `${caseId}:${id}`, fingerprint);
+    return fingerprint;
   };
+  const paymentProofOperationKey = (caseId: string, id: string, file: File) =>
+    operationKey("payment-proof", `${caseId}:${id}`, fileFingerprint(file));
   const invalidate = async (caseId = detailId) => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["dolores", role, "buybacks", subject] }),
     ...(caseId ? [queryClient.invalidateQueries({ queryKey: ["dolores", role, "buyback", subject, caseId] })] : []),
     ...(caseId ? [queryClient.invalidateQueries({ queryKey: ["dolores", role, "buyback-payment-proofs", subject, caseId] })] : []),
+    ...(caseId ? [queryClient.invalidateQueries({ queryKey: ["dolores", role, "buyback-collection-evidence", subject, caseId] })] : []),
+    ...(caseId ? [queryClient.invalidateQueries({ queryKey: ["dolores", "evidence", "BUYBACK_CASE", caseId] })] : []),
+    ...(caseId && role === "owner" ? [queryClient.invalidateQueries({ queryKey: ["dolores", "dashboard", "action-items", subject] })] : []),
   ]);
 
   const create = useMutation({
     mutationFn: (input: Parameters<typeof buybacksApi.create>[0]) => buybacksApi.create(input),
-    onSuccess: async (value) => { clearOperationKey("create"); setSelectedCaseId(value.id); setProofPage(0); await invalidate(value.id); },
+    onSuccess: async (value) => {
+      clearOperationKey("create");
+      setSelectedCaseId(value.id);
+      setSerialNumber("");
+      setCreateConfirmed(false);
+      await invalidate(value.id);
+      void router.replace(`${listHref ?? "/dashboard/buyback"}?caseId=${encodeURIComponent(value.id)}`);
+    },
   });
   const assignInspection = useMutation({
     mutationFn: (input: Parameters<typeof buybacksApi.assignInspection>[1] & { id: string }) => {
@@ -336,9 +375,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     mutationFn: (input: Parameters<typeof buybacksApi.assignCollection>[1] & { id: string }) => {
       const { id, ...request } = input;
       const technicianId = ProfileIdSchema.parse(input.technicianId);
-      const reusingInspectionTechnician = caseData?.inspectionTechnicianId === technicianId;
-      const eligible = canAssignCollection && (reusingInspectionTechnician || eligibleAssignees.some((profile) => profile.idaasUserId === technicianId));
-      if (!eligible) throw new Error("Chỉ Moderator phụ trách mới được dùng Technician kiểm tra đã giao hoặc chọn Technician thu máy đủ điều kiện.");
+      const eligible = canAssignCollection && eligibleAssignees.some((profile) => profile.idaasUserId === technicianId);
+      if (!eligible) throw new Error("Chọn kỹ thuật viên thu máy đang hoạt động và đã xác minh email.");
       return buybacksApi.assignCollection(id, { ...request, technicianId });
     },
     onSuccess: (_, input) => {
@@ -385,7 +423,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   });
   const cancelBuyback = useMutation({
     mutationFn: (input: { id: string; reason: string; idempotencyKey: string; correlationId: string }) => {
-      if (!canCancelExternalBuyback) throw new Error("Chỉ Moderator phụ trách mới có thể hủy hồ sơ thu mua đủ điều kiện.");
+      if (!canCancelExternalBuyback) throw new Error("Hồ sơ này không đủ điều kiện hủy.");
       return buybacksApi.cancel(input.id, input);
     },
     onSuccess: (_, input) => {
@@ -406,6 +444,14 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     onSuccess: (proof, input) => { clearOperationKey("payment-proof", `${input.id}:${input.paymentId}`); setProofId(proof.id); setProofFile(null); },
     onSettled: (_, __, input) => invalidate(input.id),
   });
+  const respondToReceipt = useMutation({
+    mutationFn: ({ proofId, received }: { proofId: string; received: boolean }) => {
+      const key = operationKey("owner-receipt", proofId, String(received));
+      return buybacksApi.respondToOwnerPaymentReceipt(proofId, { received, idempotencyKey: key, correlationId: key });
+    },
+    onSuccess: (_, input) => clearOperationKey("owner-receipt", input.proofId),
+    onSettled: () => invalidate(),
+  });
   const reviewProof = useMutation({
     mutationFn: (input: Parameters<typeof buybacksApi.reviewPaymentProof>[1] & { caseId: string; proofId: string; approved: boolean }) => {
       const { caseId, proofId, ...request } = input;
@@ -418,15 +464,12 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
   const recordCollectionEvidence = useMutation({
     mutationFn: (input: Parameters<typeof buybacksApi.recordCollectionEvidence>[1] & { id: string; files: File[] }) => {
       const { id, files, ...request } = input;
-      if (role !== "technician" || !caseData || caseData.collectionTechnicianId !== ownerId || caseData.status !== "COLLECTION_PENDING") {
+      if (!canVerifyCollectionSerial || caseData?.id !== id) {
         throw new Error("Chỉ Technician được giao mới có thể ghi bằng chứng thu máy cho hồ sơ này.");
       }
       return buybacksApi.recordCollectionEvidence(id, request, files);
     },
-    onSuccess: (_, input) => {
-      clearOperationKey("collection-evidence", input.id);
-      setCollectionEvidenceReference("");
-    },
+    onSuccess: (_, input) => clearOperationKey("collection-evidence", input.id),
     onSettled: (_, __, input) => invalidate(input.id),
   });
   const confirmCollection = useMutation({
@@ -435,10 +478,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
       const { id, ...request } = input;
       return buybacksApi.confirmCollection(id, request);
     },
-    onSuccess: (_, input) => {
-      clearOperationKey("collection-confirm", input.id);
-      setCollectionConfirmationReference("");
-    },
+    onSuccess: (_, input) => clearOperationKey("collection-confirm", input.id),
     onSettled: (_, __, input) => invalidate(input.id),
   });
   const startRefurbishment = useMutation({
@@ -481,12 +521,13 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
 
   const submitCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!createConfirmed || !hasActiveContract) return;
-    const key = operationKey("create");
-    create.mutate({ idempotencyKey: key, correlationId: key });
+    const serial = BuybackSerialSchema.safeParse(serialNumber);
+    if (!createConfirmed || !hasActiveContract || !serial.success || create.isPending) return;
+    const key = operationKey("create", "new", serial.data);
+    create.mutate({ serialNumber: serial.data, idempotencyKey: key, correlationId: key });
   };
   const perform = (run: () => void) => (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); run(); };
-  const commonError = [assignInspection, assignCollection, assignRefurbishment, assignModerator, decideOwnerPrice, cancelBuyback, startInspection, submitInspection, decideValuation, createPayment, submitProof, reviewProof, requestCollection, recordCollectionEvidence, confirmCollection, startRefurbishment, completeRefurbishment, registerMachine, decideQa, downloadProof].find((mutation) => mutation.isError);
+  const commonError = [assignInspection, assignCollection, assignRefurbishment, assignModerator, decideOwnerPrice, cancelBuyback, startInspection, submitInspection, decideValuation, createPayment, submitProof, respondToReceipt, reviewProof, requestCollection, recordCollectionEvidence, confirmCollection, startRefurbishment, completeRefurbishment, registerMachine, decideQa, downloadProof].find((mutation) => mutation.isError);
   const backHref = listHref ?? "/dashboard/buyback";
   const createFormOpen = role === "owner" && showCreateForm && !detailId;
   const showList = !createFormOpen && !(isModeratorRoute && Boolean(detailId))
@@ -520,11 +561,15 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     contracts,
     hasActiveContract,
     canAssignInspection,
+    isResponsibleModerator,
+    canDecideValuation,
     canCancelExternalBuyback,
     canAssignModerator,
     canRequestCollection,
     canAssignCollection,
     canConfirmCollection,
+    canVerifyCollectionSerial,
+    collectionEvidence,
     canManageExternalPayment,
     canAssignRefurbishment,
     canRegisterMachine,
@@ -550,6 +595,8 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     setProofPage,
     createConfirmed,
     setCreateConfirmed,
+    serialNumber,
+    setSerialNumber,
     currency,
     setCurrency,
     condition,
@@ -568,9 +615,10 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     setPaymentMethod,
     externalReference,
     setExternalReference,
-    paymentId: scopedPaymentId,
+    paymentId: scopedPaymentId || proofPaymentId || "",
     setPaymentId: updatePaymentId,
     paymentProofOperationKey,
+    fileFingerprint,
     proofFile,
     setProofFile,
     proofId,
@@ -583,10 +631,6 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     setConfirmedCollectionSerial,
     collectionLocation,
     setCollectionLocation,
-    collectionEvidenceReference,
-    setCollectionEvidenceReference,
-    collectionConfirmationReference,
-    setCollectionConfirmationReference,
     workPlanned,
     setWorkPlanned,
     estimatedPartsCost,
@@ -627,6 +671,7 @@ export function useBuybackWorkflowController({ role, initialCaseId, listHref, op
     decideValuation,
     createPayment,
     submitProof,
+    respondToReceipt,
     reviewProof,
     requestCollection,
     recordCollectionEvidence,
