@@ -260,6 +260,7 @@
   border-radius: 8px;
   background: #fcfaf8;
 }
+.monitoringHeartbeatSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .monitoringHeartbeatSummary > div,
 .monitoringMetricStrip > div { display: grid; align-content: start; justify-items: start; gap: 8px; min-width: 0; }
@@ -758,6 +759,16 @@
   color: #302b29;
   overflow-wrap: anywhere;
 }
+
+.machineHeartbeatDetails {
+  margin-top: 14px;
+  border-top: 1px solid #eee8e3;
+  padding-top: 12px;
+}
+
+.machineHeartbeatDetails > summary { cursor: pointer; font-weight: 600; }
+.machineHeartbeatDetailsContent { display: grid; gap: 14px; margin-top: 12px; }
+.machineHeartbeatDetailsContent > p { margin: 0; color: #665e59; }
 
 .telemetryHistory {
   display: grid;

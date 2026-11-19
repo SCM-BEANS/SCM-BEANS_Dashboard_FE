@@ -28,7 +28,7 @@ import { getVietnamToday, MachineCleaningHistoryPanel } from "./machine-cleaning
 import styles from "@/components/machines/machines.module.css";
 import shellStyles from "../customer-shell.module.css";
 
-const tabs = [{ value: "brewing", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Thông số kỹ thuật" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }] as const;
+const tabs = [{ value: "brewing", label: "Sản lượng" }, { value: "history", label: "Lịch sử pha" }, { value: "connection", label: "Kết nối & thông số" }, { value: "health", label: "Sức khỏe máy" }, { value: "cleaning", label: "Vệ sinh" }] as const;
 type Tab = typeof tabs[number]["value"];
 const shiftDay = (day: string, amount: number) => new Date(Date.parse(`${day}T00:00:00Z`) + amount * 86_400_000).toISOString().slice(0, 10);
 

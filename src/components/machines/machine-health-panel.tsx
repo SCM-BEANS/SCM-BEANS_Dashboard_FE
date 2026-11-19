@@ -118,7 +118,7 @@ export function MachineHealthPanel({ machineId, subject, onOpenCleaning }: {
             </summary>
             <div className={styles.subsystemDetail}>
               {component.score != null && component.status !== "DISABLED" && component.status !== "INSUFFICIENT_DATA" &&
-                <p><strong>Điểm đánh giá</strong> {numberFormat.format(component.score)}/100</p>}
+                <p><strong>Điểm tình trạng bộ phận</strong> {numberFormat.format(component.score)}/100</p>}
               {component.evidence ? <p><strong>Căn cứ</strong> {component.evidence}</p> : <p className={styles.muted}>Chưa có số liệu chi tiết.</p>}
               {key === "thermal" && showTemperature && <MachineTemperatureHistory machineId={machineId} subject={subject} />}
             </div>
@@ -143,7 +143,7 @@ export function MachineHealthPanel({ machineId, subject, onOpenCleaning }: {
         <small className={styles.processNote} title={health.processStabilityDisclaimer ?? undefined}>Bảng đo độ đồng đều của thể tích và thời gian pha. Hương vị cần được đánh giá bằng thử nếm.</small>
       </SmartIotPanel>
       <SmartIotPanel title="Vệ sinh">
-        <p className={styles.hygieneStatus} data-overdue={cleaningHygiene.overdue === true}>{hygieneStatus}</p>
+        <p className={styles.hygieneStatus} data-overdue={cleaningHygiene.overdue == null ? "unknown" : cleaningHygiene.overdue}>{hygieneStatus}</p>
         <dl className={styles.facts}>
           <div><dt>Vệ sinh lần cuối</dt><dd>{dateTime(cleaningHygiene.lastCleanedAt)}</dd></div>
           <div><dt>Số ly sau lần vệ sinh</dt><dd>{measurement(cleaningHygiene.cupsSinceLastClean, "ly")}</dd></div>

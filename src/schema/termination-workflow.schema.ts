@@ -39,7 +39,30 @@ export const TerminationCaseSchema = z.object({
   rejectedReason: z.string().nullish(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  ownerName: z.string().nullish(),
+  machineSerialNumber: z.string().nullish(),
+  machineModelName: z.string().nullish(),
 }).passthrough();
+
+export const TerminationCaseListParamsSchema = z.object({
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+}).strict();
+
+export const TerminationCasePageSchema = z.object({
+  content: z.array(TerminationCaseSchema),
+  page: z.number().int().nonnegative(),
+  size: z.number().int().positive(),
+  totalElements: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+  first: z.boolean(),
+  last: z.boolean(),
+}).passthrough().refine((result) => result.content.length <= result.size
+  && result.totalPages === Math.ceil(result.totalElements / result.size)
+  && result.first === (result.page === 0)
+  && result.last === (result.page >= result.totalPages - 1), {
+  message: "Invalid termination case page metadata.",
+});
 
 export const TerminationCaseCreateRequestSchema = z.object({
   type: TerminationCaseTypeSchema,
@@ -220,6 +243,8 @@ export const RecallReceiptDecisionRequestSchema = z.object({
 }).strict().refine((input) => input.approved || Boolean(input.reason?.trim()), "A reason is required to reject a depot receipt.");
 
 export type TerminationCase = z.infer<typeof TerminationCaseSchema>;
+export type TerminationCaseListParams = z.input<typeof TerminationCaseListParamsSchema>;
+export type TerminationCasePage = z.infer<typeof TerminationCasePageSchema>;
 export type TerminationCaseCreateRequest = z.infer<typeof TerminationCaseCreateRequestSchema>;
 export type TerminationActionRequest = z.infer<typeof TerminationActionRequestSchema>;
 export type TerminationInspectionRequest = z.infer<typeof TerminationInspectionRequestSchema>;

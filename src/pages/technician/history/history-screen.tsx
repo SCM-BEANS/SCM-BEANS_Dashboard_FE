@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -165,10 +166,9 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
               rowKey={(ticket) => ticket.id ?? `${ticket.machineId}-${ticket.status}-${ticket.scheduledDueAt}`}
               emptyMessage="Chưa có phiếu bảo trì trong phạm vi được giao."
               columns={[
-                { key: "machine", header: "Mã máy", render: (ticket) => ticket.machineId ? <TruncatedId value={ticket.machineId} /> : "—" },
+                { key: "ticket", header: "Phiếu bảo trì / máy", render: (ticket) => <div className={tableStyles.tableCellStack}><strong>{ticket.id ? <TextLinkButton href={PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(ticket.id)}>Phiếu {<TruncatedId value={ticket.id} />}</TextLinkButton> : "Phiếu chưa có mã"}</strong><span className={tableStyles.tableSubtext}>{ticket.machineId ? <TruncatedId value={ticket.machineId} /> : "Chưa có mã máy"}</span></div> },
                 { key: "status", header: "Trạng thái", render: (ticket) => <StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{ticket.status ? maintenanceStatusLabels[ticket.status] : "—"}</StatusBadge> },
                 { key: "date", header: "Lịch / hoàn tất", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
-                { key: "action", header: "Thao tác", align: "right", render: ticket => ticket.id ? <ButtonBar rollingLabel href={PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(ticket.id)}>Xem phiếu</ButtonBar> : "—" },
               ]}
             />
           ) : null}
@@ -182,12 +182,11 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
               rowKey={(request) => request.id}
               emptyMessage="Chưa có yêu cầu liên quan trong phạm vi được giao."
               columns={[
-                { key: "id", header: "Mã yêu cầu", render: (request) => <TruncatedId value={request.id} /> },
+                { key: "id", header: "Mã yêu cầu", render: (request) => <TextLinkButton href={`/technician/history/requests/${request.id}`}><TruncatedId value={request.id} /></TextLinkButton> },
                 { key: "machine", header: "Mã máy", render: (request) => <TruncatedId value={request.machineId} /> },
                 { key: "type", header: "Loại", render: (request) => request.requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì định kỳ" },
                 { key: "status", header: "Trạng thái", render: (request) => <StatusBadge variant="dot" status={request.status}>{requestStatusLabels[request.status]}</StatusBadge> },
                 { key: "description", header: "Mô tả", render: (request) => request.issueDescription?.trim() || "—" },
-                { key: "action", header: "Thao tác", align: "right", render: (request) => <ButtonBar rollingLabel href={`/technician/history/requests/${request.id}`}>Mở yêu cầu</ButtonBar> },
               ]}
             />
           ) : null}

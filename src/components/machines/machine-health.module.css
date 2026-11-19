@@ -58,8 +58,9 @@
 .brew table { min-width: 0; }
 .subline, .processNote { display: block; margin-top: 4px; }
 .processNote { margin-top: 12px; }
-.hygieneStatus { margin: 0; font-weight: 700; }
-.hygieneStatus[data-overdue="true"] { color: #8b202b; }
+.hygieneStatus { display: inline-flex; width: fit-content; margin: 0; border-radius: 999px; padding: 4px 9px; background: #f2eeeb; color: #554d49; font-size: 13px; font-weight: 600; }
+.hygieneStatus[data-overdue="true"] { background: #fbe9e9; color: #8b202b; }
+.hygieneStatus[data-overdue="false"] { background: #e8f4ee; color: #24583e; }
 .hygieneStatus ~ a, .hygieneStatus ~ button { margin-top: 16px; }
 .temperature {
   min-width: 0;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { maintenanceRequestStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
 import repairStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
@@ -36,7 +37,7 @@ export function SupportRequestsListScreen() {
     {
       key: "request-id",
       header: messages.SUPPORT_TABLE_REQUEST_ID,
-      render: (request) => <TruncatedId value={request.id} />,
+      render: (request) => <TextLinkButton href={PATH_CUSTOMER.SUPPORT_DETAIL(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
     },
     {
       key: "machine",
@@ -47,11 +48,6 @@ export function SupportRequestsListScreen() {
       key: "status",
       header: messages.SUPPORT_TABLE_STATUS,
       render: (request) => <span className={repairStyles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status, request.requestType)}</span>,
-    },
-    {
-      key: "actions",
-      header: "",
-      render: (request) => <ButtonBar rollingLabel href={PATH_CUSTOMER.SUPPORT_DETAIL(request.id)}>Xem yêu cầu</ButtonBar>,
     },
   ];
 
