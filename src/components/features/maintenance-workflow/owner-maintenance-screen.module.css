@@ -1,15 +1,16 @@
 .pageContent {
+  composes: page from "../../heading/dashboard-page.module.css";
   display: grid;
-  width: min(100%, 1440px);
-  margin: 0 auto;
-  padding: 20px 32px 40px;
   box-sizing: border-box;
   min-width: 0;
-  gap: 20px;
+  padding-bottom: 40px;
 }
 
-.pageHeading { min-width: 0; }
-.pageHeading h1 { margin: 0; font-size: 28px; }
+.pageHeading {
+  composes: heading from "../../heading/dashboard-page.module.css";
+  min-width: 0;
+}
+.pageHeading h1 { margin: 0; overflow-wrap: anywhere; }
 .pageHeading p { color: #706561; margin: 10px 0 0; }
 .panel { min-width: 0; padding: 22px; background: #fff; border: 1px solid #e9e2dc; border-radius: 12px; }
 .panel h2 { margin: 0 0 20px; font-size: 18px; }
@@ -95,7 +96,7 @@
 .link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 
 @media (max-width: 600px) {
-  .pageContent { gap: 16px; padding: 16px 14px 32px; }
+  .pageContent { padding-bottom: 32px; }
   .form { width: 100%; padding: 14px; }
 }
 @media (max-width: 900px) { .overview { grid-template-columns: minmax(0, 1fr); } }

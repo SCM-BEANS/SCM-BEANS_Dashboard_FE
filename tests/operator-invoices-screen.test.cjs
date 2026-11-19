@@ -130,6 +130,7 @@ function makeScreen(queryResults, routerQuery = {}) {
       NotificationDialog: ({ title, children }) => React.createElement('dialog', null, title, children),
     },
     './operator-invoices-screen.module.css': styles,
+    '@/components/table/data-table.module.css': styles,
     'next/link': ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children),
   });
 

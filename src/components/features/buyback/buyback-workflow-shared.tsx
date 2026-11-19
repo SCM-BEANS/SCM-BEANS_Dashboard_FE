@@ -39,7 +39,7 @@ export function BuybackWorkflowLayout({
   className?: string;
 }) {
   return (
-    <section className={`${styles.screen} ${styles.pageContent} ${className ?? ""}`} aria-labelledby="buyback-title">
+    <section className={`${styles.pageContent} ${className ?? ""}`} aria-labelledby="buyback-title">
       <BackButtonHeading
         title={title}
         titleId="buyback-title"

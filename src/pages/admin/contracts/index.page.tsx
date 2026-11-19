@@ -22,6 +22,7 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { ContractTable } from "@/components/table/contract-table";
+import tableStyles from "@/components/table/data-table.module.css";
 import { TableFilters } from "@/components/table/table-filters";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
@@ -314,7 +315,7 @@ function ContractsContent() {
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
     />}
-    {isContractList && <section className={`${styles.panel} ${styles.contractListPanel}`} aria-labelledby="admin-contract-list-panel-title">
+    {isContractList && <section className={tableStyles.listPanel} aria-labelledby="admin-contract-list-panel-title">
       <div className={styles.userSectionHeading}>
         <h2 id="admin-contract-list-panel-title">Danh sách hợp đồng</h2>
         {contracts.data && <span className={styles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}

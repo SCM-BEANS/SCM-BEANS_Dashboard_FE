@@ -5,6 +5,23 @@
   overflow-x: auto;
 }
 
+.listPanel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e9e2dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.listPanel h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
 .table {
   width: 100%;
   min-width: 32rem;
@@ -77,5 +94,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .table tbody tr { transition: none; }
+}
+
+@media (max-width: 640px) {
+  .listPanel { padding: 14px; }
 }
 

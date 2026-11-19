@@ -21,9 +21,8 @@
 .main { min-height: 0; flex: 1; overflow: auto; }
 .mobileHeader { display: none; }
 
-.pageContent { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 22px; padding: 0 32px 32px; margin: -4px auto 0; }
-.pageHeading { display: flex; flex-direction: column; gap: 6px; }
-.pageHeading h1 { margin: 0; font-size: 27px; line-height: 1.4; }
+.pageContent { composes: page from "../../components/heading/dashboard-page.module.css"; padding-bottom: 32px; }
+.pageHeading { composes: heading from "../../components/heading/dashboard-page.module.css"; }
 .pageHeading p { margin: 6px 0 0; color: #706561; font-size: 14px; line-height: 1.5; }
 .pageActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .pageActions button, .pageActions select { min-height: 46px; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 10px; background: white; color: #302927; font: inherit; }
@@ -249,9 +248,7 @@
   .mobileHeaderStatus { min-width: 0; flex: 1; overflow: hidden; color: #706561; font-size: 14px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
   .pageActions { flex-wrap: nowrap; }
   .pageActions button { white-space: nowrap; }
-  .pageContent { gap: 16px; padding: 0 16px 24px; }
-  .pageHeading { flex-direction: column; }
-  .pageHeading h1 { font-size: 24px; }
+  .pageContent { padding-bottom: 24px; }
   .pageActions { justify-content: flex-start; }
   .metricsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .overviewRangeForm { align-items: stretch; }
@@ -385,7 +382,7 @@
   .summaryTitle > button { display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #e9e0da; border-radius: 8px; background: white; color: #514843; text-align: left; font: inherit; cursor: pointer; }
 }
 
-.pageContent.userPage { padding-bottom: 32px; gap: 18px; }
+.pageContent.userPage { padding-bottom: 32px; }
 .userPageHeading { flex-direction: row; justify-content: space-between; align-items: center; gap: 16px; }
 .userPageHeading > div:last-child { width: auto; }
 .userSectionHeading { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 16px; }

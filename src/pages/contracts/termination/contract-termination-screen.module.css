@@ -1,6 +1,6 @@
-.page { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 20px; padding: 28px 32px 112px; margin: 0 auto; }
-.heading { display: flex; flex-direction: column; gap: 6px; }
-.heading h1 { margin: 0; color: #302927; font-size: 27px; line-height: 1.4; }
+.page { composes: page from "../../../components/heading/dashboard-page.module.css"; padding-bottom: 112px; }
+.heading { composes: heading from "../../../components/heading/dashboard-page.module.css"; display: flex; flex-direction: column; gap: 6px; }
+.heading h1 { margin: 0; color: #302927; overflow-wrap: anywhere; }
 .heading p { margin: 6px 0 0; color: #706561; font-size: 14px; line-height: 1.5; }
 .contractCard, .form { padding: 22px 24px; border: 1px solid #e9e2dc; border-radius: 16px; background: #fff; }
 .contractCard h2, .form h2 { margin: 0 0 14px; color: #302927; font-size: 19px; }
@@ -41,8 +41,7 @@
 .invoiceLink:hover { background: #faf8f6; }
 
 @media (max-width: 720px) {
-  .page { gap: 16px; padding: 20px 16px 100px; }
-  .heading h1 { font-size: 23px; }
+  .page { padding-bottom: 100px; }
   .terminationStartLayout { grid-template-columns: minmax(0, 1fr); }
   .contractCard, .form { padding: 18px 16px; }
   .contractSummary, .formGrid { grid-template-columns: minmax(0, 1fr); }

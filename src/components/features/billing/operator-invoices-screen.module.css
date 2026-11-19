@@ -1,6 +1,5 @@
-.screen { display: flex; width: min(100%, 1440px); flex-direction: column; gap: 20px; padding: 28px 32px 32px; margin: 0 auto; color: #302927; }
-.heading { display: flex; flex-direction: column; gap: 6px; }
-.heading h1 { margin: 0; font-size: 28px; line-height: 1.35; }
+.screen { composes: page from "../../heading/dashboard-page.module.css"; padding-bottom: 32px; color: #302927; }
+.heading { composes: heading from "../../heading/dashboard-page.module.css"; }
 .heading p { margin: 0; color: #706561; font-size: 14px; line-height: 1.5; }
 .panel { display: flex; min-width: 0; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid #e9e2dc; border-radius: 12px; background: #fff; }
 .panel h2 { margin: 0; font-size: 18px; line-height: 1.4; }
@@ -105,8 +104,7 @@ object.proofPreview { height: 55vh; }
 }
 
 @media (max-width: 640px) {
-  .screen { gap: 15px; padding: 20px 14px 96px; }
-  .heading h1 { font-size: 23px; }
+  .screen { padding-bottom: 96px; }
   .filters { grid-template-columns: minmax(0, 1fr); padding: 14px; }
   .filterActions { grid-column: auto; }
   .panel { padding: 14px; }

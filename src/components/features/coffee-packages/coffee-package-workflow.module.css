@@ -1,14 +1,27 @@
 .screen {
+  composes: page from "../../heading/dashboard-page.module.css";
   display: grid;
-  width: min(100%, 1440px);
-  gap: 18px;
-  padding: 0 32px 24px;
+  padding-bottom: 24px;
   color: #352e2c;
   min-width: 0;
-  margin: -4px auto 0;
 }
 
-.heading,
+.heading {
+  composes: heading from "../../heading/dashboard-page.module.css";
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detailHeading {
+  composes: heading from "../../heading/dashboard-page.module.css";
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
 .panelHeading,
 .actionRow,
 .pagination {
@@ -18,19 +31,13 @@
   gap: 12px;
 }
 
-.detailHeading {
-  display: grid;
-  justify-items: start;
-  gap: 10px;
-}
-
 .detailHeading h1,
 .detailHeading p {
   margin: 0;
 }
 
 .detailHeading h1 {
-  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  overflow-wrap: anywhere;
 }
 
 .detailHeading p {
@@ -55,7 +62,7 @@
 }
 
 .heading h1 {
-  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  overflow-wrap: anywhere;
 }
 
 .panel,
@@ -301,15 +308,12 @@
 }
 
 .managementScreen {
-  gap: 22px;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   color: #302927;
 }
 
-.managementScreen .heading h1,
-.managementScreen .detailHeading h1 { font-size: 27px; line-height: 1.4; }
 .managementScreen .heading p,
 .managementScreen .detailHeading p { font-size: 14px; color: #706561; }
 .managementScreen .panel { padding: 22px 24px; border-color: #e9e2dc; border-radius: 16px; gap: 20px; }
@@ -387,13 +391,12 @@
 }
 
 @media (max-width: 1023px) {
-  .screen { padding: 0 16px 16px; }
+  .screen { padding-bottom: 16px; }
 }
 
 @media (max-width: 800px) {
   .screen {
-    gap: 14px;
-    padding: 0 16px 16px;
+    padding-bottom: 16px;
   }
 
   .panel,
@@ -411,7 +414,6 @@
   .ownerOrderColumns .invoiceSection { padding: 14px; }
   .proofList > li { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .managementScreen .orderSummary { grid-template-columns: minmax(0, 1fr); }
-  .screen { padding-right: 14px; padding-left: 14px; }
   .heading,
   .panelHeading {
     align-items: flex-start;

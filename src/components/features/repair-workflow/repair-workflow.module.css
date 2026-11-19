@@ -8,29 +8,20 @@
 }
 
 .pageContent {
-  display: flex;
-  width: min(100%, 1440px);
+  composes: page from "../../heading/dashboard-page.module.css";
   min-width: 0;
   min-height: 100%;
-  flex-direction: column;
-  gap: 22px;
-  padding: 0 32px 120px;
-  margin: -4px auto 0;
+  padding-bottom: 120px;
   color: #302927;
 }
 
 .pageHeading {
-  display: flex;
+  composes: heading from "../../heading/dashboard-page.module.css";
   min-width: 0;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .pageHeading h1 {
   overflow-wrap: anywhere;
-  margin: 0;
-  font-size: 27px;
-  line-height: 1.4;
 }
 
 .pageHeading p {
@@ -98,6 +89,7 @@
 .disabledAction { min-height: 40px; align-self: flex-start; padding: 0 14px; border: 1px solid #e9e2dc; border-radius: 8px; background: #f8f6f3; color: #706561; cursor: not-allowed; }
 
 .heading {
+  composes: heading from "../../heading/dashboard-page.module.css";
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -107,8 +99,6 @@
 .heading h1 {
   overflow-wrap: anywhere;
   margin: 0;
-  font-size: 24px;
-  line-height: 1.4;
 }
 
 .heading p {
@@ -409,19 +399,13 @@
 }
 
 @media (max-width: 1023px) {
-  .pageContent { gap: 16px; padding: 0 16px 104px; }
-  .pageHeading h1 { font-size: 24px; }
+  .pageContent { padding-bottom: 104px; }
 }
 
 @media (max-width: 600px) {
-  .pageContent { padding: 0 14px 100px; }
-  .pageHeading h1 { font-size: 22px; }
+  .pageContent { padding-bottom: 100px; }
   .panel {
     padding: 14px;
-  }
-
-  .heading h1 {
-    font-size: 21px;
   }
 
   .workflowStep { padding: 13px 12px 13px 44px; }
@@ -435,15 +419,17 @@
 }
 
 .workOrderPageHeading {
+  composes: heading from "../../heading/dashboard-page.module.css";
   display: flex;
   min-width: 0;
+  flex-direction: row;
   align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
 }
 .workOrderPageHeading > div:first-child { min-width: 0; }
 .workOrderPageHeading p { margin: 0 0 5px; color: #706561; font-size: 12px; }
-.workOrderPageHeading h1 { overflow-wrap: anywhere; margin: 0; color: #302927; font-size: 24px; line-height: 1.35; }
+.workOrderPageHeading h1 { overflow-wrap: anywhere; margin: 0; color: #302927; }
 .workOrderPageHeading h1 > span { display: inline; }
 .workOrderPageHeading > div:first-child > span { display: block; margin-top: 5px; color: #706561; font-size: 13px; }
 .workOrderPageActions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
@@ -685,7 +671,6 @@
 }
 @media (max-width: 600px) {
   .workOrderPageHeading { align-items: flex-start; flex-direction: column; }
-  .workOrderPageHeading h1 { font-size: 21px; }
   .workOrderPageActions { width: 100%; justify-content: flex-start; }
   .workOrderSummary { padding: 14px; }
   .workOrderProgress { gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -1411,10 +1396,8 @@ fieldset.recipeMenuEditorGroup {
 }
 
 /* Admin technical workspace follows the account-management density. */
-.operatorWorkspace { width: 100%; min-width: 0; font-family: Arial, Helvetica, sans-serif; color: #302927; }
-.operatorWorkspace .pageContent, .operatorWorkspace > .screen { width: min(100%, 1440px); margin: 0 auto; padding: 0 24px 32px; gap: 18px; }
+.operatorWorkspace { min-width: 0; font-family: Arial, Helvetica, sans-serif; color: #302927; }
 .operatorWorkspace h2 { margin: 0; font-size: 19px; line-height: 1.4; }
-.operatorWorkspace .pageHeading h1, .operatorWorkspace .heading h1 { font-size: 28px; }
 .operatorWorkspace .panel, .operatorWorkspace .formPanel { padding: 22px; border-radius: 12px; }
 .listHeading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 14px; }
 .listHeading span { color: #706561; font-size: 13px; }
@@ -1465,11 +1448,9 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .operatorWorkspace .workflowStep { padding: 16px 18px 16px 50px; }
 .operatorWorkspace .workOrderProgress { margin: 12px 0 4px; }
 .operatorWorkspace .workOrderPageHeading p { display: none; }
-.operatorWorkspace .workOrderPageHeading h1 { font-size: 28px; }
 .operatorWorkspace .workOrderSummary { padding: 16px 22px; }
 @media (max-width: 900px) {
  .requestOverview, .assignmentColumns { grid-template-columns: minmax(0, 1fr); }
- .operatorWorkspace .pageContent, .operatorWorkspace > .screen { padding: 0 12px 24px; }
 }
 @media (max-width: 560px) {
  .operatorWorkspace .detailGrid { grid-template-columns: minmax(0, 1fr); }
@@ -1616,10 +1597,11 @@ details[open] > .workflowStepHeading::after { content: "−"; }
   color: #302927;
 }
 
-.ownerRecipePage[data-recipe-layout], .pageContent[data-recipe-layout] { gap: 18px; margin-top: 0; padding-top: 16px; padding-bottom: 32px; }
-.adminRecipeHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; }
+.ownerRecipePage[data-recipe-layout] { padding-bottom: 32px; }
+.pageContent[data-recipe-layout] { padding-bottom: 32px; }
+.adminRecipeHeader { composes: heading from "../../heading/dashboard-page.module.css"; display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; }
 .adminRecipeHeader > div { min-width: 0; }
-.adminRecipeHeader h1 { margin: 0; font-size: 28px; line-height: 1.25; overflow-wrap: anywhere; }
+.adminRecipeHeader h1 { margin: 0; overflow-wrap: anywhere; }
 .adminRecipeHeader p { margin: 6px 0 0; color: #625954; overflow-wrap: anywhere; }
 .adminRecipeBack { margin-bottom: 10px; }
 [data-recipe-layout] .recipeMenuTabs { gap: 6px 20px; padding: 0; margin: 0; border-bottom: 1px solid #e7dfd9; }

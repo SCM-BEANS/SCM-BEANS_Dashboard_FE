@@ -81,25 +81,13 @@
 }
 
 .pageContent {
-  display: flex;
-  width: min(100%, 1440px);
+  composes: page from "../../components/heading/dashboard-page.module.css";
   min-height: 100%;
-  flex-direction: column;
-  gap: 22px;
-  padding: 0 32px 32px;
-  margin: -4px auto 0;
+  padding-bottom: 32px;
 }
 
 .pageHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.pageHeading h1 {
-  margin: 0;
-  font-size: 27px;
-  line-height: 1.4;
+  composes: heading from "../../components/heading/dashboard-page.module.css";
 }
 
 .pageHeading p {
@@ -606,26 +594,11 @@
   }
 
   .pageContent {
-    gap: 16px;
-    padding: 0 16px 80px;
-  }
-
-  .pageHeading h1 {
-    font-size: 24px;
+    padding-bottom: 80px;
   }
 
   .detailGrid {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .pageContent {
-    padding: 0 14px 80px;
-  }
-
-  .pageHeading h1 {
-    font-size: 22px;
   }
 }
 

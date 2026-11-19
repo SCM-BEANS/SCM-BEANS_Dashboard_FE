@@ -1,5 +1,5 @@
-.pageContent { display: flex; flex-direction: column; width: min(100%, 1440px); margin: 0 auto; padding: 20px 32px 40px; min-width: 0; gap: 22px; font-size: 14px; line-height: 1.55; }
-.pageHeading { min-width: 0; }
+.pageContent { composes: page from "../../heading/dashboard-page.module.css"; display: flex; flex-direction: column; min-width: 0; padding-bottom: 40px; font-size: 14px; line-height: 1.55; }
+.pageHeading { composes: heading from "../../heading/dashboard-page.module.css"; min-width: 0; }
 .pageHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .detailGrid {
   display: grid;
@@ -55,10 +55,10 @@
 .hint { color: #706561 !important; font-size: 12px !important; }
 .link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .button:focus-visible, .link:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
-@media (max-width: 600px) { .pageContent { padding: 16px 14px 80px; gap: 14px; } .panel, .notice { padding: 14px; } }
+@media (max-width: 600px) { .pageContent { padding-bottom: 80px; } .panel, .notice { padding: 14px; } }
 
 .detailGrid > div { min-width: 0; }
-.pageHeading h1 { font-size: 28px; margin: 0; overflow-wrap: anywhere; }
+.pageHeading h1 { margin: 0; overflow-wrap: anywhere; }
 .pageHeading p { color: #706561; font-size: 14px; line-height: 1.55; }
 .code { font-family: inherit; font-size: 13px; }
 .panel, .notice { padding: 22px; }

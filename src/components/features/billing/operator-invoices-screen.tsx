@@ -8,6 +8,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
+import tableStyles from "@/components/table/data-table.module.css";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { profilesApi } from "@/apis/profiles.api";
@@ -230,7 +231,7 @@ function InvoiceList({
         {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1></div> : <span />}
         <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
       </header>
-    <section className={styles.panel} aria-labelledby="operator-invoice-list-title">
+    <section className={role === "admin" ? tableStyles.listPanel : styles.panel} aria-labelledby="operator-invoice-list-title">
       <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2></div>
       {exportReason && <p className={styles.hint}>{exportReason}</p>}
       {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}

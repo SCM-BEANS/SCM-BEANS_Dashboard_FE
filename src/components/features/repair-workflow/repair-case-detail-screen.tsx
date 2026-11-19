@@ -181,6 +181,9 @@ export function RepairCaseDetailScreen({
   const relatedHref = role === "technician" ? `${caseHref}/related` : role === "owner" ? PATH_CUSTOMER.SUPPORT_REPAIR_CASE_RELATED(caseId) : (role === "moderator" ? PATH_MODERATOR : PATH_ADMIN).TECHNICAL_REPAIR_CASE_RELATED(caseId);
   const CaseActions = role === "admin" ? PageActionsRenderer : PageActions;
   const validCaseId = RepairCaseIdSchema.safeParse(caseId).success;
+  const wrapRepairCasePage = (content: ReactNode) => role === "technician"
+    ? content
+    : <div className={styles.pageContent}>{content}</div>;
   const queryClient = useQueryClient();
   const subject = querySubject(role);
   const [emergencyAuthorizationId, setEmergencyAuthorizationId] = useState("");
@@ -964,10 +967,10 @@ export function RepairCaseDetailScreen({
   );
 
   if (!validCaseId) {
-    return <div className={styles.screen}><p className={`${styles.notice} ${styles.error}`} role="alert">{M.INVALID_CASE_ID}</p></div>;
+    return wrapRepairCasePage(<div className={styles.screen}><p className={`${styles.notice} ${styles.error}`} role="alert">{M.INVALID_CASE_ID}</p></div>);
   }
 
-  return (
+  const screen = (
     <div className={compactLayout ? `${styles.screen} ${styles.operatorWorkspace}` : styles.screen} data-screen="repair-case" data-role={role}>
       <div className={compactLayout ? styles.casePageHeader : undefined}>
         <BackButtonHeading
@@ -1596,4 +1599,5 @@ export function RepairCaseDetailScreen({
       ) : null}
     </div>
   );
+  return wrapRepairCasePage(screen);
 }
