@@ -1,6 +1,5 @@
 import { Panel } from "@/components/panel/panel";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";

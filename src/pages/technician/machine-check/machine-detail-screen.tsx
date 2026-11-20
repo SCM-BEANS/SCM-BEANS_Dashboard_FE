@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { machineCertificatesApi } from "@/apis/machine-certificates.api";
 import { MachineActiveMenuPanel } from "@/components/features/recipe-menus/recipe-sync-panel";
 import { MachineCertificatesPanel } from "@/components/machines/machine-certificates-panel";
-import { MachineSectionTabs } from "@/components/machines/operational-overview";
+import { MachineRecordsSection, MachineSectionTabs } from "@/components/machines/operational-overview";
+import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
 import { Panel } from "@/components/panel/panel";
 import type { MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { useRouter } from "next/router";
@@ -36,7 +37,10 @@ const machineSections = [
   { id: "maintenance", label: "Bảo trì" },
   { id: "profile", label: "Hồ sơ máy" },
   { id: "connection", label: "Kết nối" },
+  { id: "certificates", label: "Chứng chỉ" },
   { id: "menu", label: "Menu của máy" },
+  { id: "history", label: "Lịch sử pha" },
+  { id: "cleaning", label: "Vệ sinh" },
 ] as const;
 
 function maintenanceTicketHref(ticketId: string, ticket: MaintenanceTicket) {
@@ -104,8 +108,7 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
     </>
   );
 }
-
-function TechnicianMachineCertificates({ machineId, subject, serialNumber, showUnavailable }: { machineId: string; subject: string; serialNumber?: string | null; showUnavailable: boolean }) {
+function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { machineId: string; subject: string; serialNumber?: string | null }) {
   const [status, setStatus] = useState<MachineCertificateStatus | "">("");
   const [pageNumber, setPageNumber] = useState(0);
   const [selectedCertificateId, setSelectedCertificateId] = useState("");
@@ -128,7 +131,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber, showU
     retry: false,
   });
   const customIdentity = identity.isSuccess && Boolean(identity.data && identity.data.deviceId !== serialNumber);
-  const identityAllowsIssue = identity.isSuccess && !identity.isFetching && !customIdentity && Boolean(serialNumber?.trim());
+  const identityAllowsIssue = (identity.isSuccess || isForbidden(identity.error)) && !identity.isFetching && !customIdentity && Boolean(serialNumber?.trim());
   const certificates = useQuery({
     queryKey: ["machine-certificates", "TECHNICIAN", subject, machineId, status, pageNumber],
     queryFn: ({ signal }) => machineCertificatesApi.list(machineId, { page: pageNumber, size: 50, ...(status ? { status } : {}) }, signal),
@@ -142,7 +145,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber, showU
   async function refresh() {
     if (locked.current) return;
     const [result, identityResult] = await Promise.all([certificates.refetch(), identity.refetch()]);
-    if (alive.current && result.isSuccess && identityResult.isSuccess) { setIssueBlocked(false); setActionError(""); }
+    if (alive.current && result.isSuccess && (identityResult.isSuccess || isForbidden(identityResult.error))) { setIssueBlocked(false); setActionError(""); }
   }
   async function act(action: "issue" | "delete", id = "") {
     if (locked.current || action === "issue" && (issueBlocked || !certificates.isSuccess || !identityAllowsIssue)) return;
@@ -177,11 +180,14 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber, showU
       if (alive.current) setBusy(false);
     }
   }
-  if (isForbidden(identity.error) || isForbidden(certificates.error)) {
-    return showUnavailable ? <p className={styles.pendingNotice}>Không có thông tin kết nối để hiển thị cho máy này.</p> : null;
+  if (isForbidden(certificates.error)) {
+    return <SmartIotPanel title="Chứng chỉ kết nối">
+      <p role="alert">API chứng chỉ từ chối quyền truy cập máy này (403). Technician chỉ được xem chứng chỉ của máy được phân công theo quyền hiện tại của hệ thống.</p>
+      <ButtonBar disabled={certificates.isFetching} onClick={() => void certificates.refetch()}>Kiểm tra lại quyền truy cập</ButtonBar>
+    </SmartIotPanel>;
   }
   return <>
-    <SmartIotPanel title="Định danh thiết bị">
+    {!isForbidden(identity.error) && <SmartIotPanel title="Định danh thiết bị">
       {identity.isPending ? <p role="status">Đang tải định danh…</p>
         : identity.isError ? <p role="alert">{getApiErrorMessage(identity.error)}</p>
           : identity.data ? <p>Mã thiết bị: <strong>{identity.data.deviceId}</strong></p>
@@ -189,7 +195,7 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber, showU
       <ButtonBar disabled={busy || identity.isFetching} onClick={() => void identity.refetch()}>Làm mới định danh</ButtonBar>
       {customIdentity && <p role="alert">Mã thiết bị hiện tại khác serial máy. Chưa thể phát hành chứng chỉ; hãy liên hệ bộ phận vận hành kiểm tra định danh.</p>}
       {!serialNumber?.trim() && <p role="alert">Máy chưa có serial hợp lệ để phát hành chứng chỉ.</p>}
-    </SmartIotPanel>
+    </SmartIotPanel>}
     <MachineCertificatesPanel
     page={certificates.data} detail={detail.isError ? undefined : detail.data}
     status={status} pageNumber={pageNumber} selectedCertificateId={selectedCertificateId}
@@ -233,6 +239,13 @@ export function TechnicianMachineDetailScreen() {
     retry: false,
   });
   const smartIot = validId && authenticated && machine.isSuccess && machine.data?.machineType === "SMART_IOT";
+  const [complianceDays, setComplianceDays] = useState(30);
+  const compliance = useQuery({
+    queryKey: ["machine-cleaning-compliance", subject, machineId, complianceDays],
+    queryFn: ({ signal }) => machinesApi.getCleaningCompliance(machineId, complianceDays, signal),
+    enabled: smartIot && activeSection === "cleaning" && !isMaintenanceTicketDetail,
+    retry: false,
+  });
   const heartbeat = useQuery({
     queryKey: ["technician-machine-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
@@ -392,11 +405,13 @@ export function TechnicianMachineDetailScreen() {
             {smartIot && !isForbidden(points.error) && <SmartIotPanel title="Lịch sử thông số">
               <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
             </SmartIotPanel>}
-            <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} showUnavailable={!smartIot || (isForbidden(heartbeat.error) && isForbidden(points.error))} />
           </div>
         </div>
+        {activeSection === "certificates" && <div id="machine-section-certificates" role="tabpanel" aria-labelledby="machine-section-tab-certificates" className={detailStyles.stack}>
+          <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
+        </div>}
         <div id="machine-section-menu" role="tabpanel" aria-labelledby="machine-section-tab-menu" hidden={activeSection !== "menu"}>
-          <MachineActiveMenuPanel
+          {activeSection === "menu" && <MachineActiveMenuPanel
             key={`menu:${subject}:${machineId}`}
             machineId={machineId}
             subject={subject}
@@ -404,8 +419,16 @@ export function TechnicianMachineDetailScreen() {
             forbiddenFallback={<SmartIotPanel title="Menu đang gán">
               <p>{device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || (device.activeMenuId ? "Menu riêng" : "Chưa có thông tin menu.")}</p>
             </SmartIotPanel>}
-          />
+          />}
         </div>
+        {activeSection === "history" || activeSection === "cleaning" ? <div id={`machine-section-${activeSection}`} role="tabpanel" aria-labelledby={`machine-section-tab-${activeSection}`} className={detailStyles.stack}>
+          {activeSection === "cleaning" && smartIot ? <MachineCleaningCompliancePanel data={compliance.data} days={complianceDays} loading={compliance.isPending} refreshing={compliance.isFetching} error={compliance.isError ? getApiErrorMessage(compliance.error) : undefined} onDaysChange={setComplianceDays} onRefresh={() => void compliance.refetch()} /> : null}
+          <MachineRecordsSection key={`${subject}:${machineId}:${activeSection}`} subject={subject} machineId={machineId} kind={activeSection} query={router.query} onNavigate={(patch) => {
+            const query = { ...router.query };
+            for (const [key, value] of Object.entries(patch)) { if (value === undefined || value === "") delete query[key]; else query[key] = value; }
+            void router.push({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
+          }} />
+        </div> : null}
       </section>
     </TechnicianShell>
   );

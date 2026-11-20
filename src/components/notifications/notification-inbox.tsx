@@ -61,7 +61,6 @@ function NotificationInboxContent({
   initialSection = "notifications",
   title,
   description,
-  viewAllHref,
   back = null,
   showOwnerId = false,
   onRefreshExtra,
@@ -263,4 +262,3 @@ function NotificationInboxContent({
     </div>
   );
 }
-

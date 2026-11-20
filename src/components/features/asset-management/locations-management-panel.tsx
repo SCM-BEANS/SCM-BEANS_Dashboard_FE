@@ -17,7 +17,6 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { LocationCreateSchema, type LocationCreate } from "@/schema/locations.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
-import { PATH_CUSTOMER, PATH_MODERATOR } from "@/routes/path";
 import { loadProfilePage, nextProfilePage } from "./asset-management-data";
 import styles from "./asset-management.module.css";
 

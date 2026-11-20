@@ -1,51 +1,8 @@
 import { z } from "zod";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import { EVIDENCE_MULTIPART_HEADERS, buildEvidenceForm, validateEvidenceFiles } from "@/lib/evidence-multipart";
-import {
-  BuybackActionRequestSchema,
-  BuybackAssignModeratorRequestSchema,
-  BuybackAssignTechnicianRequestSchema,
-  BuybackCaseSchema,
-  BuybackCasesSchema,
-  BuybackCollectionRequestSchema,
-  BuybackCreateRequestSchema,
-  BuybackIdSchema,
-  BuybackInspectionRequestSchema,
-  BuybackInspectionSchema,
-  BuybackMachineRegistrationRequestSchema,
-  BuybackOwnerDecisionRequestSchema,
-  BuybackOwnerPaymentReceiptRequestSchema,
-  BuybackPaymentProofReviewRequestSchema,
-  BuybackPaymentProofSchema,
-  BuybackPaymentRequestSchema,
-  BuybackPaymentSchema,
-  BuybackPickupEvidenceRequestSchema,
-  BuybackQaRequestSchema,
-  BuybackQaDecisionSchema,
-  BuybackRefurbishmentCompleteRequestSchema,
-  BuybackRefurbishmentSchema,
-  BuybackRefurbishmentStartRequestSchema,
-  BuybackStatusSchema,
-  BuybackSerialCorrectionSchema,
-  BuybackSerialHistorySchema,
-  BuybackValuationRequestSchema,
-  type BuybackActionRequest,
-  type BuybackAssignModeratorRequest,
-  type BuybackAssignTechnicianRequest,
-  type BuybackCreateRequest,
-  type BuybackInspectionRequest,
-  type BuybackMachineRegistrationRequest,
-  type BuybackOwnerDecisionRequest,
-  type BuybackOwnerPaymentReceiptRequest,
-  type BuybackPaymentProofReviewRequest,
-  type BuybackPaymentRequest,
-  type BuybackPickupEvidenceRequest,
-  type BuybackQaRequest,
-  type BuybackRefurbishmentCompleteRequest,
-  type BuybackRefurbishmentStartRequest,
-  type BuybackValuationRequest,
-} from "@/schema/buybacks.schema";
-import { BuybackCaseSummaryListSchema, BuybackInspectionHistorySchema, BuybackQaDecisionHistorySchema, BuybackRefurbishmentHistorySchema, type BuybackCollectionRequest } from "@/schema/buybacks.schema";
+import { BuybackActionRequestSchema, BuybackAssignModeratorRequestSchema, BuybackAssignTechnicianRequestSchema, BuybackCaseSchema, BuybackCasesSchema, BuybackCollectionRequestSchema, BuybackCreateRequestSchema, BuybackIdSchema, BuybackInspectionRequestSchema, BuybackInspectionSchema, BuybackMachineRegistrationRequestSchema, BuybackOwnerDecisionRequestSchema, BuybackOwnerPaymentReceiptRequestSchema, BuybackPaymentProofReviewRequestSchema, BuybackPaymentProofSchema, BuybackPaymentRequestSchema, BuybackPaymentSchema, BuybackPickupEvidenceRequestSchema, BuybackQaRequestSchema, BuybackQaDecisionSchema, BuybackRefurbishmentCompleteRequestSchema, BuybackRefurbishmentSchema, BuybackRefurbishmentStartRequestSchema, BuybackStatusSchema, BuybackSerialCorrectionSchema, BuybackSerialHistorySchema, BuybackValuationRequestSchema, type BuybackActionRequest, type BuybackAssignModeratorRequest, type BuybackAssignTechnicianRequest, type BuybackCreateRequest, type BuybackInspectionRequest, type BuybackMachineRegistrationRequest, type BuybackOwnerDecisionRequest, type BuybackOwnerPaymentReceiptRequest, type BuybackPaymentProofReviewRequest, type BuybackPaymentRequest, type BuybackPickupEvidenceRequest, type BuybackQaRequest, type BuybackRefurbishmentCompleteRequest, type BuybackRefurbishmentStartRequest, type BuybackValuationRequest } from "@/schema/buybacks.schema";
+import { BuybackInspectionHistorySchema, BuybackQaDecisionHistorySchema, BuybackRefurbishmentHistorySchema } from "@/schema/buybacks.schema";
 async function getCaseHistory<TSchema extends z.ZodTypeAny>(
   id: string,
   historyPath: string,

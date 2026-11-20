@@ -108,7 +108,6 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   const [technicianId, setTechnicianId] = useState("");
   const [scheduledPickupAt, setScheduledPickupAt] = useState("");
   const [receiptReason, setReceiptReason] = useState("");
-  const [receiptLocation, setReceiptLocation] = useState("");
   const [ownerConditionNotes, setOwnerConditionNotes] = useState("");
   const [ownerEvidenceId, setOwnerEvidenceId] = useState("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);

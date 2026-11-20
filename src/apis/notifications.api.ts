@@ -1,13 +1,5 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
-import {
-  AlertSchema,
-  AlertsSchema,
-  NotificationIdSchema,
-  NotificationSchema,
-  NotificationUnreadCountSchema,
-  NotificationsSchema,
-} from "@/schema/notifications.schema";
-
+import { AlertsSchema, NotificationIdSchema, NotificationSchema, NotificationUnreadCountSchema, NotificationsSchema } from "@/schema/notifications.schema";
 function isAbortSignal(value: { machineId?: string } | AbortSignal): value is AbortSignal {
   return "aborted" in value && typeof value.aborted === "boolean";
 }

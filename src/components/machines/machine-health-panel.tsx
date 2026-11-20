@@ -49,10 +49,11 @@ export function MachineHealthStatus({ status }: { status: keyof typeof statusLab
   return <span className={styles.badge} data-status={status}>{statusLabels[status]}</span>;
 }
 
-export function MachineHealthPanel({ machineId, subject, onOpenCleaning }: {
+export function MachineHealthPanel({ machineId, subject, onOpenCleaning, canReadTelemetry = true }: {
   machineId: string;
   subject: string;
   onOpenCleaning: () => void;
+  canReadTelemetry?: boolean;
 }) {
   const [showTemperature, setShowTemperature] = useState(false);
   const query = useQuery({
@@ -120,7 +121,7 @@ export function MachineHealthPanel({ machineId, subject, onOpenCleaning }: {
               {component.score != null && component.status !== "DISABLED" && component.status !== "INSUFFICIENT_DATA" &&
                 <p><strong>Điểm tình trạng bộ phận</strong> {numberFormat.format(component.score)}/100</p>}
               {component.evidence ? <p><strong>Căn cứ</strong> {component.evidence}</p> : <p className={styles.muted}>Chưa có số liệu chi tiết.</p>}
-              {key === "thermal" && showTemperature && <MachineTemperatureHistory machineId={machineId} subject={subject} />}
+              {canReadTelemetry && key === "thermal" && showTemperature && <MachineTemperatureHistory machineId={machineId} subject={subject} />}
             </div>
           </details>;
         })}

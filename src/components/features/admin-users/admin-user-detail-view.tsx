@@ -9,13 +9,7 @@ import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import {
-  AdminUserIdSchema,
-  AdminUserUpdateSchema,
-  type AdminUser,
-  type AdminUserRole,
-  type AdminUserUpdate,
-} from "@/schema/admin-users.schema";
+import { AdminUserIdSchema, AdminUserUpdateSchema, type AdminUserRole, type AdminUserUpdate } from "@/schema/admin-users.schema";
 import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
 import { ADMIN_USER_ROLE_LABELS, formatAdminUserDate, getAdminUserRole } from "./admin-user-utils";
 import styles from "@/pages/admin/admin-shell.module.css";

@@ -8,7 +8,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { FormField } from "@/components/form-field/form-field";
 import { Panel } from "@/components/panel/panel";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type CustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
+import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
 import { RepairIntakeForm } from "./repair-intake-screen";
 import { SupportRequestsListScreen } from "../support/support-requests-list-screen";
 import { RepairCaseDetailScreen } from "@/components/features/repair-workflow/repair-case-detail-screen";

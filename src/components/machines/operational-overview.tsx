@@ -1,7 +1,6 @@
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Panel } from "@/components/panel/panel";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
@@ -10,11 +9,7 @@ import { TextActionButton, TextLinkButton } from "@/components/button/text-link-
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
-import {
-  DASHBOARD_BUSINESS_TIME_ZONE,
-  DashboardDateRangeSchema,
-  type TDashboardOverview,
-} from "@/schema/dashboard.schema";
+import { DASHBOARD_BUSINESS_TIME_ZONE, DashboardDateRangeSchema, type TDashboardOverview } from "@/schema/dashboard.schema";
 import styles from "./machines.module.css";
 
 export type OperationalDateRange = { fromDate: string; toDate: string };

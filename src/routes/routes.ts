@@ -1,10 +1,4 @@
-import {
-  PATH_ADMIN,
-  PATH_CUSTOMER,
-  PATH_HOME,
-  PATH_MODERATOR,
-  PATH_TECHNICIAN,
-} from "./path";
+import { PATH_ADMIN, PATH_CUSTOMER, PATH_HOME, PATH_MODERATOR, PATH_TECHNICIAN } from "./path";
 import { ContractIdSchema } from "@/schema/contracts.schema";
 import { InvoiceIdSchema } from "@/schema/billing.schema";
 import { MachineIdSchema, MaintenanceRequestIdSchema, MaintenanceTicketIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
@@ -16,7 +10,6 @@ import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
-import { RepairCaseSchema } from "@/schema/machines.schema";
 import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 import { CoffeePackageOrderIdSchema } from "@/schema/coffee-packages.schema";
 import { BuybackIdSchema } from "@/schema/buybacks.schema";

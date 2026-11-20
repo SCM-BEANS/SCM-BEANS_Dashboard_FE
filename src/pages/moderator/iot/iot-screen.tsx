@@ -2,13 +2,9 @@ import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
-import { telemetryApi } from "@/apis/telemetry.api";
 import { MaintenancePriorityPanel } from "@/components/machines/maintenance-priority-panel";
-import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
-import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { adminStyles } from "@/pages/admin/admin-shell";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { OfflineReviewWorkflowError, offlineViolationReviewsApi, readOfflineReviewQuery } from "@/apis/offline-violation-reviews.api";
@@ -220,7 +216,6 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   const [filterDraft, setFilterDraft] = useState<MachineListFilterValue>({ search: "", status: "", connection: "" });
   const [machineFilters, setMachineFilters] = useState(filterDraft);
   const [page, setPage] = useState(0);
-  const isPageVisible = usePageVisibility();
   const owners = useQuery({
     queryKey: ["dolores", "moderator", "owner-profiles"],
     queryFn: ({ signal }) => listModeratorOwners(signal),
@@ -265,21 +260,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
 
   const smartMachines = inventory.data?.filter((machine) => machine.machineType === "SMART_IOT") ?? [];
   const candidates = smartMachines.filter((machine) => (!machineFilters.status || machine.status === machineFilters.status) && (!machineFilters.search || [machine.serialNumber, machine.modelName, machine.modelCode].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi-VN").includes(machineFilters.search.toLocaleLowerCase("vi-VN")))));
-  const candidatePage = Math.min(page, Math.max(0, Math.ceil(candidates.length / 10) - 1));
-  const heartbeatMachines = machineFilters.connection ? candidates : candidates.slice(candidatePage * 10, candidatePage * 10 + 10);
-  const heartbeats = useQueries({ queries: heartbeatMachines.map((machine, index) => ({
-    queryKey: ["dolores", "moderator", "telemetry", "heartbeat", subject, machine.id],
-    queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
-    enabled: !isLocationsView && !reviewView && !priorityView && isPageVisible && Boolean(getAuthenticatedSubjectId()),
-    retry: false, staleTime: 3_000, refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? (machineFilters.connection ? 30_000 : 5_000) : false, refetchIntervalInBackground: false,
-  })) });
-  const getHeartbeat = (id: string) => heartbeats[heartbeatMachines.findIndex((machine) => machine.id === id)];
-  const connectionsLoading = Boolean(machineFilters.connection) && heartbeats.some((result) => result.isPending);
-  const filtered = candidates.filter((machine) => {
-    if (!machineFilters.connection) return true;
-    const result = getHeartbeat(machine.id);
-    return machineFilters.connection === (result?.isError ? "error" : result?.data?.status);
-  });
+  const filtered = candidates;
   const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
   const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
   if (isLocationsView) {
@@ -310,11 +291,10 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
     {!priorityView && <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />}
     {!priorityView && !reviewView && inventory.isSuccess ? <Panel className={styles.formPanel}>
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2></div>
-      <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
-      {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
+      <MachineListFilters value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
+      {<DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
         { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
-        { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
       ]} />}
       <Pagination page={currentPage} hasNext={!((currentPage + 1) * 10 >= filtered.length)} isFetching={false} ariaLabel="Phân trang giám sát" onPageChange={setPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span></Pagination>
     </Panel> : null}

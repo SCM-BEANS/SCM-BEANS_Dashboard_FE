@@ -35,7 +35,6 @@ import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.sche
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { getVietnamToday, summarizeMachineCleaning } from "./machine-cleaning-history-panel";
 import { MachineIdSchema, MachineStatusSchema } from "@/schema/machines.schema";
-import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { DetailItem, formatDate, QueryFeedback, statusLabel, useOwnerSubject } from "../shared/customer-screen-common";

@@ -2,7 +2,6 @@ import { machineStatusLabel } from "@/components/machines/machine-status-labels"
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TableFilters } from "@/components/table/table-filters";
 import { Pagination } from "@/components/pagination/pagination";

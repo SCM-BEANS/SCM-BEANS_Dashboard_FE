@@ -10,7 +10,7 @@ import { buildTechnicianMaintenanceTicketActions } from "@/components/action-bar
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { MaintenanceTicketIdSchema, type MaintenanceTicket } from "@/schema/machines.schema";
+import { MaintenanceTicketIdSchema } from "@/schema/machines.schema";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
 import { maintenanceTicketStatusLabel } from "./maintenance-status-labels";
 import { PATH_TECHNICIAN } from "@/routes/path";

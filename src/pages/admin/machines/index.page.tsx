@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
 import { telemetryApi } from "@/apis/telemetry.api";
@@ -34,19 +34,6 @@ const STATUSES = MachineStatusSchema.options;
 type MachineStatus = z.infer<typeof MachineStatusSchema>;
 type StatusFilter = "ALL" | MachineStatus;
 const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value : "";
-
-const STATUS_FILTER_LABELS: Record<MachineStatus, string> = {
-  IN_WAREHOUSE: "Trong kho",
-  PENDING_ACTIVATION: "Chờ kích hoạt",
-  DEPLOYED_CONTRACT_OWNER: "Owner hợp đồng",
-  DEPLOYED_STORE_OWNER: "Owner cửa hàng",
-  UNDER_MAINTENANCE: "Bảo trì",
-  REFURBISHING: "Tân trang",
-  PENDING_QA: "Chờ kiểm định",
-  AVAILABLE_FOR_RENT: "Sẵn sàng cho thuê",
-  RETIRED: "Ngừng sử dụng",
-};
-
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -70,7 +57,6 @@ function machineTypeLabel(machineType: string | null | undefined): string {
 
 function MachinesContent() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const subject = authScopedQuerySubject("ADMIN");
   const view = queryValue(router.query.view);
   const isCreateView = view === "create";

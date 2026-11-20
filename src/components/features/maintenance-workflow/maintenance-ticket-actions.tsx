@@ -18,12 +18,7 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { maintenanceAlertLevelLabel, maintenanceTicketStatusLabel, maintenanceTicketOriginLabel } from "./maintenance-status-labels";
-import {
-  MaintenanceTicketDetailsPatchRequestSchema,
-  MaintenanceTicketIdSchema,
-  type MaintenanceTicket,
-  type MaintenanceTicketDetailsPatchRequest,
-} from "@/schema/machines.schema";
+import { MaintenanceTicketDetailsPatchRequestSchema, MaintenanceTicketIdSchema, type MaintenanceTicket, type MaintenanceTicketDetailsPatchRequest } from "@/schema/machines.schema";
 import styles from "./maintenance-ticket-actions.module.css";
 
 export type MaintenanceTicketActionRole = MaintenanceActionRole;
@@ -69,7 +64,6 @@ function toLocalDateTime(value: string | null | undefined): string {
 
 function MaintenanceTicketDetailsForm({
   ticket,
-  pending,
   error,
   onSubmit,
   formId,

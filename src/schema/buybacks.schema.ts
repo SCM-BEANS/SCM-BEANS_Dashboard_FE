@@ -300,12 +300,6 @@ export const BuybackInspectionHistorySchema = z.array(BuybackInspectionSchema);
 export const BuybackRefurbishmentHistorySchema = z.array(BuybackRefurbishmentSchema);
 
 export const BuybackQaDecisionHistorySchema = z.array(BuybackQaDecisionSchema);
-
-const buybackCommandKeys = {
-  idempotencyKey: z.string().trim().min(1).max(128),
-  correlationId: z.string().trim().min(1).max(128),
-};
-
 export type BuybackCaseSummary = z.infer<typeof BuybackCaseSummarySchema>;
 
 export type BuybackPayment = z.infer<typeof BuybackPaymentSchema>;

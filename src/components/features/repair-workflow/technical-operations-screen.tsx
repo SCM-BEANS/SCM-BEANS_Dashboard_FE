@@ -46,9 +46,6 @@ import styles from "./repair-workflow.module.css";
 import filterStyles from "@/components/table/table-filters.module.css";
 
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
-
-const numberFormat = new Intl.NumberFormat("vi-VN");
-
 type TriageInput = { requestId: string; accepted: boolean };
 
 export type TechnicalScreenRoutes = {
@@ -105,20 +102,6 @@ function QueryFeedback({
 function PageHeading({ title, description }: { title: string; description?: string }) {
   return <BackButtonHeading title={title} titleId="technical-operations-heading" description={description} className={styles.pageHeading} back={null} />;
 }
-
-function ActionLink({ href, children }: { href: string; children: ReactNode }) {
-  return <Link className={styles.tableLink} href={href}>{children}</Link>;
-}
-
-function DetailValue({ label, value, code = false }: { label: string; value: ReactNode; code?: boolean }) {
-  return (
-    <div className={styles.detailItem}>
-      <dt>{label}</dt>
-      <dd className={code ? styles.codeValue : undefined}>{value}</dd>
-    </div>
-  );
-}
-
 const workOrderStatusLabels = {
   PENDING: "Chờ phân công",
   ASSIGNED: "Đã phân công",
@@ -776,4 +759,3 @@ export function TechnicalOperationsScreen({
     </div>
   );
 }
-

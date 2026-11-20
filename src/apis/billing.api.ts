@@ -1,74 +1,9 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import type { AxiosProgressEvent } from "axios";
-import {
-  buildEvidenceForm,
-  EVIDENCE_MULTIPART_HEADERS,
-  validateEvidenceFiles,
-} from "@/lib/evidence-multipart";
-import {
-  BILLING_DEFAULT_PAGE_SIZE,
-  InvoiceIdSchema,
-  InvoiceLineItemListParamsSchema,
-  InvoiceLineItemsSchema,
-  InvoiceListParamsSchema,
-  InvoicesSchema,
-  InvoiceSchema,
-  ModeratorInvoiceSchema,
-  ModeratorInvoicesSchema,
-  PaymentProofIdSchema,
-  PaymentProofListParamsSchema,
-  PaymentProofReviewRequestSchema,
-  PaymentProofsSchema,
-  PaymentProofSchema,
-  PaymentProofSubmitResponseSchema,
-  RefundIdSchema,
-  RefundReceiptRequestSchema,
-  RefundCreateRequestSchema,
-  RefundDetailSchema,
-  RefundRequestResponseSchema,
-  RefundOverdueParamsSchema,
-  RefundReasonRequestSchema,
-  RefundPayoutEvidenceSchema,
-  DepositReserveRequestSchema,
-  DepositReleaseRequestSchema,
-  DepositDamageRequestSchema,
-  DepositSettlementResponseSchema,
-  type RefundCreateRequest,
-  type RefundOverdueParams,
-  type BillingPage,
-  type Invoice,
-  type InvoiceLineItemListParams,
-  type InvoiceListParams,
-  type PaymentProofListParams,
-  type RefundReceiptRequest,
-} from "@/schema/billing.schema";
+import { buildEvidenceForm, EVIDENCE_MULTIPART_HEADERS, validateEvidenceFiles } from "@/lib/evidence-multipart";
+import { BILLING_DEFAULT_PAGE_SIZE, InvoiceIdSchema, InvoiceLineItemListParamsSchema, InvoiceLineItemsSchema, InvoiceListParamsSchema, InvoicesSchema, InvoiceSchema, ModeratorInvoiceSchema, ModeratorInvoicesSchema, PaymentProofIdSchema, PaymentProofListParamsSchema, PaymentProofReviewRequestSchema, PaymentProofsSchema, PaymentProofSchema, PaymentProofSubmitResponseSchema, RefundIdSchema, RefundReceiptRequestSchema, RefundCreateRequestSchema, RefundDetailSchema, RefundRequestResponseSchema, RefundOverdueParamsSchema, RefundReasonRequestSchema, RefundPayoutEvidenceSchema, DepositReserveRequestSchema, DepositReleaseRequestSchema, DepositDamageRequestSchema, DepositSettlementResponseSchema, type RefundCreateRequest, type RefundOverdueParams, type BillingPage, type Invoice, type InvoiceLineItemListParams, type InvoiceListParams, type PaymentProofListParams, type RefundReceiptRequest } from "@/schema/billing.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
-import { BillingExportRequestSchema, ContractBillingPreviewResponseSchema, ExportJobIdSchema, ExportJobResponseSchema, InvoiceStatusChangeRequestSchema, type PaymentProofReviewRequest, type InvoiceStatusChangeRequest, type BillingExportRequest } from "@/schema/billing.schema";
-async function fetchInvoicePage(params: InvoiceListParams = {}, signal?: AbortSignal) {
-  const query = InvoiceListParamsSchema.parse(params);
-  const response = await axiosClient.get<unknown>("/billing/invoices", {
-    baseURL: DOLORES_API_BASE_URL,
-    ...(Object.keys(query).length ? { params: query } : {}),
-    signal,
-  });
-  const headerNumber = (name: string, fallback: number) => {
-    const parsed = Number(response.headers[name] ?? fallback);
-    return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
-  };
-  const items = InvoicesSchema.parse(response.data);
-  const requestedSize = query.size ?? 50;
-  const hasNextHeader = response.headers["x-has-next"];
-  return {
-    items,
-    page: headerNumber("x-page", query.page ?? 0),
-    size: headerNumber("x-page-size", requestedSize),
-    hasNext: hasNextHeader == null
-      ? items.length === requestedSize
-      : String(hasNextHeader).toLowerCase() === "true",
-  };
-}
-
-
+import { BillingExportRequestSchema, ContractBillingPreviewResponseSchema, ExportJobIdSchema, ExportJobResponseSchema, InvoiceStatusChangeRequestSchema, type InvoiceStatusChangeRequest, type BillingExportRequest } from "@/schema/billing.schema";
 const MAX_PAYMENT_PROOF_BYTES = 20 * 1024 * 1024;
 const ALLOWED_PROOF_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 

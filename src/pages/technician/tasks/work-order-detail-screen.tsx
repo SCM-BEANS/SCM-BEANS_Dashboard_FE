@@ -819,8 +819,6 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
   const [accessoryQuantity, setAccessoryQuantity] = useState("1");
   const [accessorySerialNumber, setAccessorySerialNumber] = useState("");
   const [accessoryNotes, setAccessoryNotes] = useState("");
-  const [failureReason, setFailureReason] = useState("");
-
   const details = useQuery({
     queryKey: detailQueryKey(workOrderId),
     queryFn: ({ signal }) => installationWorkOrdersApi.getById(workOrderId, signal),
@@ -896,14 +894,6 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
         refreshWorkOrder(),
         queryClient.invalidateQueries({ queryKey: installationWorkOrderRecordsQueryPrefix(workOrderId, "accessories") }),
       ]);
-    },
-    onError: refreshWorkOrder,
-  });
-  const fail = useMutation({
-    mutationFn: () => installationWorkOrdersApi.fail(workOrderId, { failureReason: failureReason.trim() }),
-    onSuccess: async () => {
-      setFailureReason("");
-      await refreshWorkOrder();
     },
     onError: refreshWorkOrder,
   });

@@ -2,17 +2,12 @@ import { Panel } from "@/components/panel/panel";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { Suspense } from "react";
 import { AdminShell, adminStyles } from "@/pages/admin/admin-shell";
-import {
-  TechnicalOperationsScreen,
-  type TechnicalScreenRoutes,
-} from "@/components/features/repair-workflow/technical-operations-screen";
+import { TechnicalOperationsScreen, type TechnicalScreenRoutes } from "@/components/features/repair-workflow/technical-operations-screen";
 import { PATH_ADMIN } from "@/routes/path";
 import { InstallationWorkOrderIdSchema } from "@/schema/installation-work-orders.schema";
 import { MaintenanceRequestIdSchema, RepairCaseIdSchema } from "@/schema/machines.schema";
 import { RepairCostReviewIdSchema } from "@/schema/repair-cost-reviews.schema";
 import technicalStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
-import { ADMIN_MESSAGES } from "@/text/admin/admin-messages";
-
 type AdminTechnicalRequestsPageProps = { sectionPath: string };
 
 const routes: TechnicalScreenRoutes = {

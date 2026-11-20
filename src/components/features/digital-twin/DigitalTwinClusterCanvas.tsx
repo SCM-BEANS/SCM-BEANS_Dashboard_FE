@@ -3276,7 +3276,6 @@ function ClusterScene({
   motionDefinitionUrl,
   motionDefinitionUrls,
   isolateNodeName,
-  motionNodeName,
   onLoadStart,
   onReady,
   onError,

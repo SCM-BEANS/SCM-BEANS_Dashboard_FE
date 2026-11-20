@@ -1,23 +1,6 @@
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
-import {
-  CreateInstallationWorkOrderRequestSchema,
-  CreateInstallationWorkOrderResponseSchema,
-  AssignedInstallationWorkOrderListSchema,
-  CompleteInstallationWorkOrderRequestSchema,
-  InstallationWorkOrderEvidenceUploadResponseSchema,
-  InstallationWorkOrderDetailsSchema,
-  InstallationWorkOrderIdSchema,
-  InstallationWorkOrderListSchema,
-  InstallationWorkOrderRecordSchema,
-  InstallationWorkOrderOwnerIdSchema,
-  InstallationWorkOrderPageParamsSchema,
-  InstallationWorkOrderChecklistItemSchema,
-  InstallationWorkOrderEvidenceMetadataSchema,
-  type CreateInstallationWorkOrderRequest,
-  type InstallationWorkOrderPageParams,
-} from "@/schema/installation-work-orders.schema";
-import { FailInstallationWorkOrderRequestSchema, InstallationAccessoryRequestSchema, InstallationChecklistResultRequestSchema, InstallationChecklistResultResponseSchema, AssignInstallationWorkOrderRequestSchema, RescheduleInstallationWorkOrderRequestSchema, CancelInstallationWorkOrderRequestSchema, InstallationWorkOrderAccessorySchema, type InstallationWorkOrderSummary, type FailInstallationWorkOrderRequest, type InstallationAccessoryRequest, type InstallationChecklistResultRequest, type AssignInstallationWorkOrderRequest, type RescheduleInstallationWorkOrderRequest, type CancelInstallationWorkOrderRequest } from "@/schema/installation-work-orders.schema";
-
+import { CreateInstallationWorkOrderRequestSchema, CreateInstallationWorkOrderResponseSchema, AssignedInstallationWorkOrderListSchema, CompleteInstallationWorkOrderRequestSchema, InstallationWorkOrderEvidenceUploadResponseSchema, InstallationWorkOrderDetailsSchema, InstallationWorkOrderIdSchema, InstallationWorkOrderListSchema, InstallationWorkOrderRecordSchema, InstallationWorkOrderOwnerIdSchema, InstallationWorkOrderPageParamsSchema, InstallationWorkOrderChecklistItemSchema, InstallationWorkOrderEvidenceMetadataSchema, type CreateInstallationWorkOrderRequest, type InstallationWorkOrderPageParams } from "@/schema/installation-work-orders.schema";
+import { FailInstallationWorkOrderRequestSchema, InstallationAccessoryRequestSchema, InstallationChecklistResultRequestSchema, InstallationChecklistResultResponseSchema, AssignInstallationWorkOrderRequestSchema, RescheduleInstallationWorkOrderRequestSchema, CancelInstallationWorkOrderRequestSchema, InstallationWorkOrderAccessorySchema, type FailInstallationWorkOrderRequest, type InstallationAccessoryRequest, type InstallationChecklistResultRequest, type AssignInstallationWorkOrderRequest, type RescheduleInstallationWorkOrderRequest, type CancelInstallationWorkOrderRequest } from "@/schema/installation-work-orders.schema";
 type InstallationWorkOrderPage<T> = {
   items: T[];
   page: number;

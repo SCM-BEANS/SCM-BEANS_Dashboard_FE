@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { authScopedQuerySubject } from "@/lib/query-subject";
 import { LocationIdSchema, type LocationMachinePage } from "@/schema/locations.schema";
 import type { MachineConnectionState } from "@/components/machines/machine-connection-badge";
 import styles from "./location-detail.module.css";
@@ -26,12 +27,12 @@ function numberLabel(value: number): string {
 function wastageLabel(value: number | null): string {
   return value === null ? "—" : `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value)}%`;
 }
-
-function MachineConnection({ machine }: { machine: MachineSummary }) {
+function MachineConnection({ machine, role }: { machine: MachineSummary; role: LocationRole }) {
+  const subject = authScopedQuerySubject(role);
   const heartbeat = useQuery({
-    queryKey: ["location-machine-heartbeat", machine.id],
+    queryKey: ["location-machine-heartbeat", subject, machine.id],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machine.id, signal),
-    enabled: machine.machineType === "SMART_IOT",
+    enabled: role !== "MODERATOR" && machine.machineType === "SMART_IOT",
     retry: false,
     staleTime: 3_000,
   });
@@ -92,7 +93,7 @@ export function LocationDetailPanel({
     {
       key: "connection",
       header: "Kết nối",
-      render: (machine: MachineSummary) => <MachineConnection machine={machine} />,
+      render: (machine: MachineSummary) => <MachineConnection machine={machine} role={role} />,
     },
     {
       key: "actions",
@@ -166,7 +167,7 @@ export function LocationDetailPanel({
         <DataTable
           rows={machinePage.content}
           rowKey={(machine) => machine.id}
-          columns={columns}
+          columns={role === "MODERATOR" ? columns.filter((column) => column.key !== "connection") : columns}
           emptyMessage={compact ? "Cửa hàng chưa có máy." : "Địa điểm này chưa có máy."}
         />
         {(!compact || machinePage.totalElements > 0) && <div className={styles.pagination}>

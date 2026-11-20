@@ -1,36 +1,8 @@
 import { FallbackOfferRequestSchema, EmergencyAuthorizationRequestSchema, EmergencyAuthorizationResponseSchema, type FallbackOfferRequest, type EmergencyAuthorizationRequest } from "@/schema/machines.schema";
 import { axiosClient, DOLORES_API_BASE_URL } from "@/lib/http";
 import { buildEvidenceForm, validateEvidenceFiles, EVIDENCE_MULTIPART_HEADERS } from "@/lib/evidence-multipart";
-import {
-  MaintenanceRequestIdSchema,
-  MachineIdSchema,
-  RepairCaseIdSchema,
-  MaintenanceTicketIdSchema,
-  RepairCaseIntakeTriageRequestSchema,
-  RepairCaseListParamsSchema,
-  RepairCaseReferenceListSchema,
-  RepairCaseSchema,
-  RepairCaseSummaryListSchema,
-  RepairCaseReplacementAssignmentRequestSchema,
-  RepairCaseTimelinePageSchema,
-  MaintenanceCustodyEventListSchema,
-  MaintenanceCustodyEventCreateRequestSchema,
-  PrimaryCollectionRequestSchema,
-  MaintenanceCustodyAcknowledgementRequestSchema,
-  MaintenanceCustodyEventIdSchema,
-  MaintenanceCustodyEventSchema,
-  type MaintenanceCustodyEventCreateRequest,
-  type PrimaryCollectionRequest,
-  MaintenanceTicketSchema,
-  RepairWorkStartRequestSchema,
-  type RepairCaseIntakeTriageRequest,
-  type RepairCaseListParams,
-  type RepairCaseSummary,
-  type RepairCaseReplacementAssignmentRequest,
-  type MaintenanceCustodyAcknowledgementRequest,
-  type RepairWorkStartRequest,
-} from "@/schema/machines.schema";
-import { MaintenanceRequestSchema, RepairCustodyEventRequestSchema, RepairDiagnosisRequestSchema, RepairFallbackDecisionRequestSchema, RepairCaseListSchema, RepairTriageRequestSchema, RepairTriageResponseSchema, RepairWorkCompletionRequestSchema, type RepairCustodyEventRequest, type RepairDiagnosisRequest, type RepairFallbackDecisionRequest, type RepairTriageRequest, type RepairWorkCompletionRequest } from "@/schema/machines.schema";
+import { MaintenanceRequestIdSchema, MachineIdSchema, RepairCaseIdSchema, MaintenanceTicketIdSchema, RepairCaseIntakeTriageRequestSchema, RepairCaseListParamsSchema, RepairCaseReferenceListSchema, RepairCaseSchema, RepairCaseSummaryListSchema, RepairCaseReplacementAssignmentRequestSchema, RepairCaseTimelinePageSchema, MaintenanceCustodyEventListSchema, MaintenanceCustodyEventCreateRequestSchema, PrimaryCollectionRequestSchema, MaintenanceCustodyAcknowledgementRequestSchema, MaintenanceCustodyEventIdSchema, MaintenanceCustodyEventSchema, type MaintenanceCustodyEventCreateRequest, type PrimaryCollectionRequest, MaintenanceTicketSchema, RepairWorkStartRequestSchema, type RepairCaseIntakeTriageRequest, type RepairCaseListParams, type RepairCaseSummary, type RepairCaseReplacementAssignmentRequest, type MaintenanceCustodyAcknowledgementRequest, type RepairWorkStartRequest } from "@/schema/machines.schema";
+import { MaintenanceRequestSchema, RepairDiagnosisRequestSchema, RepairFallbackDecisionRequestSchema, RepairTriageRequestSchema, RepairTriageResponseSchema, RepairWorkCompletionRequestSchema, type RepairDiagnosisRequest, type RepairFallbackDecisionRequest, type RepairTriageRequest, type RepairWorkCompletionRequest } from "@/schema/machines.schema";
 const repairCasePath = (id: string) => `/repair-cases/${encodeURIComponent(RepairCaseSchema.shape.id.parse(id))}`;
 
 

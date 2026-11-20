@@ -2,11 +2,7 @@ import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
-import { telemetryApi } from "@/apis/telemetry.api";
-import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { useRouter } from "next/router";
@@ -28,7 +24,6 @@ import { API_ERROR_MESSAGES, getApiErrorMessage } from "@/lib/api-errors";
 import { DataTable } from "@/components/table/data-table";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { MachineListView } from "@/components/machines/machine-list-view";
-import { MachineConnectionBadge } from "@/components/machines/machine-connection-badge";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -51,25 +46,11 @@ const numberFormat = new Intl.NumberFormat("vi-VN");
 const MACHINE_STATUSES = MachineStatusSchema.options;
 type MachineStatus = typeof MACHINE_STATUSES[number];
 type StatusFilter = "ALL" | MachineStatus;
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
-  const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp)
-    ? value
-    : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
-}
-
 function formatDateOnly(value: string | null | undefined): string {
   if (!value) return "—";
   const timestamp = Date.parse(value);
   return Number.isNaN(timestamp) ? "—" : new Date(timestamp).toLocaleDateString("vi-VN");
 }
-
-function formatNumber(value: number | null | undefined): string {
-  return value == null ? "—" : numberFormat.format(value);
-}
-
 function formatPeriod(start: string | null | undefined, end: string | null | undefined): string {
   if (!start && !end) return "—";
   return `${formatDateOnly(start)} – ${formatDateOnly(end)}`;
@@ -167,18 +148,9 @@ function MachineList({
   const [search, setSearch] = useState("");
   const [filterDraft, setFilterDraft] = useState<MachineListFilterValue>({ search: "", status: statusFilter === "ALL" ? "" : statusFilter, connection: "" });
   useEffect(() => { setFilterDraft((current) => ({ ...current, status: statusFilter === "ALL" ? "" : statusFilter })); }, [statusFilter]);
-  const subject = authScopedQuerySubject("MODERATOR");
-  const isPageVisible = usePageVisibility();
   const visibleMachines = getVisibleMachines(machines, isStock, isCustomer, statusFilter).filter((machine) => !search || [machine.serialNumber, machine.modelName, machine.modelCode].some((value) => typeof value === "string" && value.toLocaleLowerCase("vi").includes(search.toLocaleLowerCase("vi"))));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(visibleMachines.length / 10) - 1));
   const rows = visibleMachines.slice(currentPage * 10, currentPage * 10 + 10);
-  const smartMachines = rows.filter((machine) => machine.machineType === "SMART_IOT");
-  const heartbeats = useQueries({ queries: smartMachines.map((machine, index) => ({
-    queryKey: ["dolores", "moderator", "telemetry", "heartbeat", subject, machine.id],
-    queryFn: async ({ signal }) => { await staggerHeartbeatRequest(index, signal); return telemetryApi.getLatestHeartbeat(machine.id, signal); },
-    enabled: isPageVisible && Boolean(getAuthenticatedSubjectId()), retry: false, staleTime: 3_000,
-    refetchInterval: (query: { state: { error: unknown } }) => isPageVisible && !query.state.error ? 5_000 : false, refetchIntervalInBackground: false,
-  })) });
   const emptyMessage = failed
     ? undefined
     : statusFilter !== "ALL" || search
@@ -199,11 +171,6 @@ function MachineList({
         columns={[
           { key: "serial", header: ADMIN_T.MACHINES.SERIAL, render: (machine) => <TextLinkButton href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.serialNumber ?? "—"}</TextLinkButton> },
           { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{machineStatusLabel(machine.status)}</span> : "—" },
-          { key: "connection", header: "Kết nối", render: (machine) => {
-            if (machine.machineType !== "SMART_IOT") return "—";
-            const result = heartbeats[smartMachines.findIndex((item) => item.id === machine.id)];
-            return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />;
-          } },
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
@@ -230,7 +197,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const isMachineModelsView = path === "machines/models";
   const isStock = path === "machines/stock";
   const isCustomer = path === "machines/customer";
-  const isInventoryView = !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView && !isMachineModelDetail;
   const requestedStatus = typeof router.query.status === "string" ? router.query.status : "";
   const statusFilter: StatusFilter = MACHINE_STATUSES.includes(requestedStatus as MachineStatus)
     ? requestedStatus as StatusFilter
