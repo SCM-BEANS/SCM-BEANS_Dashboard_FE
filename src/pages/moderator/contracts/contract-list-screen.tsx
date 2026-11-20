@@ -122,7 +122,7 @@ export function ContractListScreen() {
         {visibleContracts.length > 0 && <ContractTable
           contracts={visibleContracts}
           contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
-          draftStatusHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
+          installationRequestHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
         />}
         {filteredContracts.length > 0 && <div className={adminStyles.accountPagination}>
           <span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>

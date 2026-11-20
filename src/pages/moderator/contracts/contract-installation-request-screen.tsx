@@ -5,6 +5,7 @@ import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar } from "@/components/button/button-bar";
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { ContractIdSchema } from "@/schema/contracts.schema";
@@ -71,6 +72,24 @@ export function ContractInstallationRequestScreen({
     queryKey: ["dolores", "contracts", "id", contractId],
     queryFn: ({ signal }) => contractsApi.getById(contractId, signal),
     enabled: validId,
+    retry: false,
+  });
+  const ownerId = contract.data?.ownerId;
+  const machineId = contract.data?.machineId;
+  const ownerName = contract.data?.ownerName?.trim();
+  const contractSerial = contract.data?.machineSerialNumber;
+  const serial = typeof contractSerial === "string" ? contractSerial.trim() : "";
+  const showSummary = contract.data?.status === "DRAFT" && !contract.data.legacyUnmapped && Boolean(ownerId && machineId);
+  const owner = useQuery({
+    queryKey: ["dolores", "profiles", "id", ownerId],
+    queryFn: ({ signal }) => profilesApi.getById(ownerId!, signal),
+    enabled: showSummary && !ownerName,
+    retry: false,
+  });
+  const machine = useQuery({
+    queryKey: ["dolores", "machines", "id", machineId],
+    queryFn: ({ signal }) => machinesApi.getById(machineId!, signal),
+    enabled: showSummary && !serial,
     retry: false,
   });
   const documents = useQuery({
@@ -196,12 +215,12 @@ export function ContractInstallationRequestScreen({
                 <dd><TextLinkButton href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)} title={contract.data.id}>{contract.data.id.slice(0, 8).toUpperCase()}</TextLinkButton></dd>
               </div>
               <div className={styles.detailItem}>
-                <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID}</dt>
-                <dd><code className={styles.codeValue}>{contract.data.ownerId}</code></dd>
+                <dt>Tên khách hàng</dt>
+                <dd>{ownerName || owner.data?.fullName?.trim() || (owner.isFetching ? "Đang tải…" : "—")}</dd>
               </div>
               <div className={styles.detailItem}>
-                <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_MACHINE_ID}</dt>
-                <dd><code className={styles.codeValue}>{contract.data.machineId}</code></dd>
+                <dt>Serial</dt>
+                <dd><code className={styles.codeValue}>{serial || machine.data?.serialNumber?.trim() || (machine.isFetching ? "Đang tải…" : "—")}</code></dd>
               </div>
             </dl>
           </section>

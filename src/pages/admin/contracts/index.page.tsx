@@ -366,7 +366,7 @@ function ContractsContent() {
           contracts={visibleContracts}
           ownerName={ownerName}
           contractHref={(id) => `/admin/contracts?view=detail&id=${encodeURIComponent(id)}`}
-          draftStatusHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
+          installationRequestHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
         />
       }
       {filteredContracts.length > 0 && <div className={styles.accountPagination}>

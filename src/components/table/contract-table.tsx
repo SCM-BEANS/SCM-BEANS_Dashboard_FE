@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { type Contract } from "@/schema/contracts.schema";
 import { CONTRACT_TABLE_HEADERS } from "@/components/table/constants/contract-table.constants";
@@ -7,14 +8,14 @@ import styles from "./data-table.module.css";
 interface ContractTableProps {
   contracts: readonly Contract[];
   contractHref: (contractId: string) => string;
-  draftStatusHref?: (contractId: string) => string;
+  installationRequestHref?: (contractId: string) => string;
   ownerName?: (ownerId: string) => string;
 }
 
 export function ContractTable({
   contracts,
   contractHref,
-  draftStatusHref,
+  installationRequestHref,
   ownerName,
 }: ContractTableProps) {
   const renderOwner = (contract: Contract) => {
@@ -48,22 +49,31 @@ export function ContractTable({
       const label = contract.status === "ACTIVE" ? "Đang hiệu lực"
         : contract.status === "DRAFT" ? "Bản nháp"
           : contract.status === "TERMINATED" ? "Đã chấm dứt" : contract.status;
-      const statusContent = <span className={styles.contractStatus} data-status={contract.status}>
+      return <span className={styles.contractStatus} data-status={contract.status}>
         <span aria-hidden="true" className={styles.contractStatusDot} />
         {label}
       </span>;
-      return contract.status === "DRAFT" && draftStatusHref
-        ? <TextLinkButton href={draftStatusHref(contract.id)}>{statusContent}</TextLinkButton>
-        : statusContent;
     },
   };
   const columns: DataTableColumn<Contract>[] = [contractColumn, ownerColumn, typeColumn, statusColumn];
+  if (installationRequestHref) {
+    columns.push({
+      key: "actions",
+      header: "Thao tác",
+      align: "right",
+      render: (contract) => contract.status === "DRAFT"
+        ? <ButtonBar className={styles.contractDraftAction} href={installationRequestHref(contract.id)}>Cần giao lệnh lắp đặt</ButtonBar>
+        : "—",
+    });
+  }
 
   return (
-    <DataTable
-      rows={contracts}
-      rowKey={(contract) => contract.id}
-      columns={columns}
-    />
+    <div className={installationRequestHref ? styles.contractTable : undefined}>
+      <DataTable
+        rows={contracts}
+        rowKey={(contract) => contract.id}
+        columns={columns}
+      />
+    </div>
   );
 }
