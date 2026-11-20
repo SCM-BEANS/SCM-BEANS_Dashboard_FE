@@ -69,6 +69,32 @@
   border-bottom: 1px solid #f0ece8;
 }
 
+.contractTable {
+  --contract-draft-color: #c58a16;
+  min-width: 0;
+}
+
+.contractTable .table {
+  min-width: 48rem;
+  table-layout: fixed;
+}
+
+.contractTable th:nth-child(2) { width: 22%; }
+.contractTable th:nth-child(4) { width: 18%; }
+.contractTable th:last-child { width: 26%; }
+
+.contractTable .table .contractDraftAction {
+  min-height: 36px;
+  padding-inline: 12px;
+  border-color: var(--contract-draft-color);
+  background: color-mix(in srgb, var(--contract-draft-color) 11%, var(--color-surface));
+  color: #674608;
+}
+
+.contractTable .table .contractDraftAction:hover {
+  background: color-mix(in srgb, var(--contract-draft-color) 20%, var(--color-surface));
+}
+
 .contractStatus {
   display: inline-flex;
   align-items: center;
@@ -89,7 +115,7 @@
 }
 
 .contractStatus[data-status="ACTIVE"] .contractStatusDot { background: #32866b; }
-.contractStatus[data-status="DRAFT"] .contractStatusDot { background: #c58a16; }
+.contractStatus[data-status="DRAFT"] .contractStatusDot { background: var(--contract-draft-color, #c58a16); }
 .contractStatus[data-status="TERMINATED"] .contractStatusDot { background: #bd3b3b; }
 
 @media (prefers-reduced-motion: reduce) {
