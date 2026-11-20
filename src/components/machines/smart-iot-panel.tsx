@@ -1,4 +1,6 @@
-import { useId, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import styles from "./machines.module.css";
 
 export type SmartIotPanelState = "loading" | "empty" | "error" | "permission-denied";
@@ -24,16 +26,8 @@ export function SmartIotPanel({
   retryLabel = "Thử lại",
   onRetry,
 }: SmartIotPanelProps) {
-  const generatedId = useId();
-  const headingId = `smart-iot-panel-${generatedId.replace(/:/g, "")}`;
-  const classNames = [styles.smartIotPanel, className].filter(Boolean).join(" ");
-
   return (
-    <section className={classNames} aria-labelledby={headingId}>
-      <header className={styles.smartIotPanelHeader}>
-        <h2 id={headingId}>{title}</h2>
-        {description ? <p>{description}</p> : null}
-      </header>
+    <Panel title={title} description={description} className={className} aria-label={title}>
       {state && stateMessage ? (
         <div
           className={styles.smartIotPanelState}
@@ -42,13 +36,13 @@ export function SmartIotPanel({
         >
           <p>{stateMessage}</p>
           {state === "error" && onRetry ? (
-            <button className={styles.smartIotRetryButton} type="button" onClick={onRetry}>
+            <ButtonBar type="button" onClick={onRetry}>
               {retryLabel}
-            </button>
+            </ButtonBar>
           ) : null}
         </div>
       ) : null}
       {children ? <div className={styles.smartIotPanelContent}>{children}</div> : null}
-    </section>
+    </Panel>
   );
 }

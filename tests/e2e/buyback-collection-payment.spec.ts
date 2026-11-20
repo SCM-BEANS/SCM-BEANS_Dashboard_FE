@@ -442,17 +442,20 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "MODERATOR", moderatorId);
   await page.goto("/moderator/buyback");
+  const buybackList = page.getByRole("region", { name: "Danh sách hồ sơ thu mua" });
+  await expect(buybackList).toHaveAttribute("data-ui-panel", "true");
+  await expect(buybackList.getByRole("navigation", { name: "Phân trang hồ sơ thu mua" })).toBeVisible();
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
     await expect(page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first()).toBeVisible();
   }
   await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
-  await expect(page.getByRole("link", { name: "Mở chi tiết lệnh" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Lệnh xử lý hồ sơ" })).toBeVisible();
   await page.getByRole("button", { name: "Về danh sách thu mua" }).click();
   await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
   await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
-  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
+  await page.getByRole("link", { name: "Lệnh xử lý hồ sơ" }).click();
   for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await expect(page.getByRole("region", { name: "Chi tiết hồ sơ thu mua" })).toBeVisible();
@@ -490,7 +493,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   await setRole(page, "OWNER", ownerId);
   await page.goto("/dashboard/buyback");
   await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
-  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
+  await page.getByRole("link", { name: "Lệnh xử lý hồ sơ" }).click();
   await expect(page.getByRole("heading", { name: "Quyết định giá thu mua" })).toBeVisible();
   await page.getByLabel("Lý do chấp nhận hoặc từ chối").fill("I accept the approved valuation");
   await page.getByRole("button", { name: "Chấp nhận giá" }).click();
@@ -558,7 +561,7 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
 
   await setRole(page, "OWNER", ownerId);
   await page.goto(`/dashboard/buyback?caseId=${caseId}`);
-  await page.getByRole("link", { name: "Mở chi tiết lệnh" }).click();
+  await page.getByRole("link", { name: "Lệnh xử lý hồ sơ" }).click();
   await page.getByRole("button", { name: "Phản hồi khoản chi" }).click();
   await page.getByLabel("Bạn đã nhận khoản tiền này chưa?").selectOption("false");
   await page.getByRole("button", { name: "Gửi phản hồi" }).click();
@@ -968,7 +971,7 @@ test("legacy buyback keeps refurbishment and QA steps", async ({ page }) => {
 
   await setRole(page, "MODERATOR", moderatorId);
   await page.goto(`/moderator/buyback/${legacyCaseId}`);
-  await page.getByRole("link", { name: "Mở chi tiết lệnh", exact: true }).click();
+  await page.getByRole("link", { name: "Lệnh xử lý hồ sơ", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Kiểm định độc lập" })).toBeVisible();
   await page.getByLabel("Lý do").fill("Legacy workflow QA passed");
   await page.getByRole("button", { name: "Ghi nhận kiểm định" }).click();

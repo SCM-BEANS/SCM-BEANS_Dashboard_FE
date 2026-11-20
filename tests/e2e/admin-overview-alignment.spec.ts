@@ -49,17 +49,7 @@ function dateInputValue(isoDate: string) {
   return `${day}/${month}/${year}`;
 }
 
-async function textCenterOffset(locator: import("@playwright/test").Locator) {
-  return locator.evaluate((element) => {
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    const text = range.getBoundingClientRect();
-    const cell = element.getBoundingClientRect();
-    return Math.abs((text.left + text.right) / 2 - (cell.left + cell.right) / 2);
-  });
-}
-
-test("Admin daily cup values align with their column heading on mobile and desktop", async ({ page, context }) => {
+test("Admin daily cup values are right-aligned as numeric data on mobile and desktop", async ({ page, context }) => {
   const payload = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await context.addCookies([{
     name: "access_token",
@@ -85,12 +75,9 @@ test("Admin daily cup values align with their column heading on mobile and deskt
 
   for (const width of [375, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await expect(heading).toHaveCSS("text-align", "center");
-    await expect(cupCells.first()).toHaveCSS("text-align", "center");
-    await expect(cupCells.last()).toHaveCSS("text-align", "center");
-    expect(await textCenterOffset(heading)).toBeLessThan(2);
-    expect(await textCenterOffset(cupCells.first())).toBeLessThan(2);
-    expect(await textCenterOffset(cupCells.last())).toBeLessThan(2);
+    await expect(heading).toHaveCSS("text-align", "right");
+    await expect(cupCells.first()).toHaveCSS("text-align", "right");
+    await expect(cupCells.last()).toHaveCSS("text-align", "right");
   }
 });
 
@@ -289,16 +276,10 @@ test("Moderator overview uses the selected period and keeps an actionable work q
   expect((await revenue.boundingBox())!.x).toBeLessThan((await cups.boundingBox())!.x);
   expect(ranges).toEqual(expect.arrayContaining([`${yesterday}:${today}`, `${yesterday}:${yesterday}`, `${today}:${today}`]));
   await expect(page.getByRole("region", { name: "Chỉ số vận hành" }).locator("dd")).toHaveText(["3", "12", "2", "1"]);
-  await expect(page.getByRole("link", { name: "Mở công việc" }).first()).toHaveAttribute("href", "/moderator/contracts/f5000000-0000-4000-8000-000000000001");
+  await expect(page.getByRole("link", { name: "Cà phê Deer", exact: true })).toHaveAttribute("href", "/moderator/contracts/f5000000-0000-4000-8000-000000000001");
   const status = page.getByText("Đang hiệu lực", { exact: true }).first();
   await expect(status).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   expect(await status.evaluate(el => getComputedStyle(el, "::before").height)).toBe("7px");
-  const open = page.getByRole("link", { name: "Mở công việc" }).first();
-  const letter = open.locator("[data-letter]").first();
-  await open.hover();
-  await expect.poll(() => letter.evaluate(el => getComputedStyle(el).transform)).not.toBe("none");
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(letter).toHaveCSS("transform", "none");
   await expect(page.getByRole("heading", { name: "Hợp đồng hết hạn trong 30 ngày 2 việc" })).toHaveCount(1);
   await expect(page.getByText("Cà phê Deer", { exact: true })).toBeVisible();
   await expect(page.getByText("Cà phê S202", { exact: true })).toBeVisible();

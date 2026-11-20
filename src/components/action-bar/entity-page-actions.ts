@@ -275,7 +275,10 @@ export function buildContractDetailActions(input: {
     actions.push({ id: "contract-lifecycle-terminate", label: "Chấm dứt hợp đồng", variant: "danger", priority: 0, href: input.terminationHref });
     actions.push({ id: "contract-lifecycle-amend", label: "Sửa chính sách", variant: "secondary", priority: 10, disabled: !input.hasSnapshot, disabledReason: !input.hasSnapshot ? "Hợp đồng chưa có snapshot chính sách" : undefined, onClick: input.onAmend });
   }
-  if (input.status === "TERMINATED") actions.push({ id: "contract-lifecycle-continue", label: "Tạo hợp đồng tiếp nối", variant: "primary", priority: 50, onClick: input.onContinue });
+  if (input.status === "TERMINATED") {
+    actions.push({ id: "contract-lifecycle-view-termination", label: "Xem hồ sơ chấm dứt", variant: "secondary", priority: 10, href: input.terminationHref });
+    actions.push({ id: "contract-lifecycle-continue", label: "Tạo hợp đồng tiếp nối", variant: "primary", priority: 50, onClick: input.onContinue });
+  }
   if (input.machineId) actions.push({ id: "contract-lifecycle-history", label: "Lịch sử hợp đồng", variant: "secondary", priority: 0, onClick: input.onHistory });
   return actions;
 }

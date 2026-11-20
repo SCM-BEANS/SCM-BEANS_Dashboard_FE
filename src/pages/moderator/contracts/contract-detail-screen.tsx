@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
@@ -99,9 +100,9 @@ function QueryFeedback({
     return (
       <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert">
         <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
-        <button type="button" onClick={() => void query.refetch()}>
+        <ButtonBar type="button" onClick={() => void query.refetch()}>
           {MODERATOR_MESSAGES.READ_SCREENS.RETRY}
-        </button>
+        </ButtonBar>
       </div>
     );
   }
@@ -317,7 +318,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
           <div className={adminStyles.contractDetailLayout}>
           <ContractOverviewPanel contract={contract.data} ownerName={ownerName} />
 
-          <section className={`${adminStyles.panel} ${adminStyles.contractExpiryPanel}`}>
+          <Panel className={`${adminStyles.panel} ${adminStyles.contractExpiryPanel}`}>
             <h2>Trạng thái hết hạn</h2>
             <QueryFeedback query={expiry} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACT} />
             {expiry.data && !expiry.isError && <div className={adminStyles.operationsGrid}>
@@ -329,9 +330,9 @@ export function ContractDetailScreen({ id }: { id: string }) {
               <div><span>Đã xử lý hết hạn</span><strong>{dateTime(expiry.data.expiryProcessedAt)}</strong></div>
             </div>}
             <p className={adminStyles.panelSubtitle}>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_EXPIRY_READ_ONLY}</p>
-          </section>
+          </Panel>
 
-          <section className={`${adminStyles.panel} ${adminStyles.contractHistoryPanel}`}>
+          <Panel className={`${adminStyles.panel} ${adminStyles.contractHistoryPanel}`}>
             <h2>Lịch sử chính sách</h2>
             <QueryFeedback query={policyHistory} loadingMessage={T.COMMON.LOADING} />
             {policyHistory.data && policyHistory.data.length === 0 && !policyHistory.isError && <p className={adminStyles.emptyText}>{T.COMMON.EMPTY}</p>}
@@ -345,9 +346,9 @@ export function ContractDetailScreen({ id }: { id: string }) {
                 { key: "actor", header: "Vai trò cập nhật", render: (item) => item.actorRole },
               ]}
             />}
-          </section>
+          </Panel>
 
-          {lifecycleView === "amend" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-policy-amend-form" className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`} onSubmit={submitPolicyAmendment}>
+          {lifecycleView === "amend" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-policy-amend-form"  onSubmit={submitPolicyAmendment}><Panel className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`}>
             <h2>Điều chỉnh chính sách</h2>
             {policySnapshot ? <>
               <p className={adminStyles.panelSubtitle}>Chỉnh điều khoản bằng các trường nhập. Chính sách cũ vẫn nằm trong lịch sử; máy chủ ghi nhận phiên bản mới sau khi xác nhận.</p>
@@ -391,9 +392,9 @@ export function ContractDetailScreen({ id }: { id: string }) {
             </> : <div className={adminStyles.notice} role="note">Hợp đồng chưa có snapshot chính sách hợp lệ để tạo bản sửa đổi.</div>}
             {lifecycleError && <p className={adminStyles.accountInlineWarning} role="alert">{lifecycleError}</p>}
             {amendPolicy.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
-          </form>}
+          </Panel></form>}
 
-          {lifecycleView === "continue" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-continuation-form" className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`} onSubmit={submitContinuation}>
+          {lifecycleView === "continue" && <form onChange={() => setLifecycleDirty(true)} id="moderator-contract-continuation-form"  onSubmit={submitContinuation}><Panel className={`${adminStyles.panel} ${adminStyles.contractLifecyclePanel}`}>
             <h2>Tạo hợp đồng tiếp nối</h2>
             <p className={adminStyles.panelSubtitle}>Owner, máy và snapshot chính sách được kế thừa từ hợp đồng cũ. Máy chủ kiểm tra điều kiện trước khi tạo hợp đồng mới ở trạng thái nháp.</p>
             <div className={adminStyles.operationsGrid}>
@@ -407,9 +408,9 @@ export function ContractDetailScreen({ id }: { id: string }) {
             </div>
             {lifecycleError && <p className={adminStyles.accountInlineWarning} role="alert">{lifecycleError}</p>}
             {continueContract.isError && <p className={adminStyles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
-          </form>}
+          </Panel></form>}
 
-          {contract.data.status === "ACTIVE" && <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-installation-history">
+          {contract.data.status === "ACTIVE" && <Panel className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-installation-history">
             <h2 id="moderator-contract-installation-history">Điều phối lắp đặt</h2>
             <QueryFeedback query={installationWorkOrders} loadingMessage="Đang tải lệnh lắp đặt…" />
             {installationWorkOrders.data && matchingInstallationOrders.length === 0 && !installationWorkOrders.isError && (
@@ -434,12 +435,12 @@ export function ContractDetailScreen({ id }: { id: string }) {
                 { key: "completed", header: "Hoàn tất", render: (item) => dateTime(item.completedAt) },
               ]}
             />}
-          </section>}
-          <section className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-documents">
+          </Panel>}
+          <Panel className={`${adminStyles.panel} ${adminStyles.contractDocumentsPanel}`} aria-labelledby="moderator-contract-documents">
             <h2 id="moderator-contract-documents">{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOCUMENTS}</h2>
             <QueryFeedback query={documents} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_DOCUMENTS} />
             {documents.data?.length === 0 && !documents.isError && <p className={adminStyles.emptyText} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_DOCUMENTS}</p>}
-            {contract.data.status === "DRAFT" && <form className={styles.formPanel} onSubmit={(event) => { event.preventDefault(); if (documentFile) uploadMainContract.mutate(documentFile); }}>
+            {contract.data.status === "DRAFT" && <form  onSubmit={(event) => { event.preventDefault(); if (documentFile) uploadMainContract.mutate(documentFile); }}><Panel className={styles.formPanel}>
               <label className={styles.formField} htmlFor="moderator-main-contract-file">
                 <span>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_UPLOAD_MAIN}</span>
                 <input key={uploadMainContract.data?.id ?? "main-contract-file"} id="moderator-main-contract-file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" disabled={uploadMainContract.isPending} onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)} />
@@ -447,7 +448,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
               <ButtonBar type="submit" disabled={!documentFile || uploadMainContract.isPending}>{uploadMainContract.isPending ? MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_UPLOADING : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_UPLOAD}</ButtonBar>
               {uploadMainContract.isError && <p role="alert">{getApiErrorMessage(uploadMainContract.error)}</p>}
               {uploadMainContract.isSuccess && <p role="status">{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_UPLOAD_SUCCESS}</p>}
-            </form>}
+            </Panel></form>}
             {downloadError && <p className={adminStyles.accountInlineWarning} role="alert">{downloadError}</p>}
             {documents.data && documents.data.length > 0 && <DataTable
               rows={documents.data}
@@ -467,7 +468,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
                 >{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DOWNLOAD}</ProgressDownloadButton> },
               ]}
             />}
-          </section>
+          </Panel>
           </div>
 
           <ContractActivationPanel contract={contract.data} />

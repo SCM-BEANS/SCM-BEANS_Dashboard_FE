@@ -1,0 +1,14 @@
+.pagination {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination > span { color: var(--ui-color-muted, #665e59); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 600px) {
+  .pagination { justify-content: flex-start; }
+}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
+import { TextActionButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { MachineCertificate, MachineCertificateDetail, MachineCertificatePage, MachineCertificateStatus } from "@/schema/machine-certificates.schema";
@@ -62,12 +63,11 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
     {props.error ? <p className={styles.telemetryError} role="alert">{props.error}</p>
       : props.loading ? <p role="status">Đang tải chứng chỉ…</p>
         : props.page && <DataTable rows={props.page.content} rowKey={(item) => item.id} emptyMessage="Chưa có chứng chỉ trong danh sách này." columns={[
-          { key: "serial", header: "Số chứng chỉ", render: (item) => <strong>{item.certificateSerial ?? item.id}</strong> },
+          { key: "serial", header: "Số chứng chỉ", render: (item) => <TextActionButton disabled={props.busy} onClick={() => props.onSelect(item.id)}>{item.certificateSerial ?? item.id}</TextActionButton> },
           { key: "status", header: "Trạng thái", render: (item) => statusLabels[item.status] },
           { key: "issued", header: "Ngày phát hành", render: (item) => formatDate(item.issuedAt) },
           { key: "expires", header: "Ngày hết hạn", render: (item) => formatDate(item.expiresAt) },
           { key: "actions", header: "Thao tác", render: (item) => <div className={styles.telemetryRangePresets}>
-            <ButtonBar rollingLabel disabled={props.busy} onClick={() => props.onSelect(item.id)}>Xem chi tiết</ButtonBar>
             <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.zip`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "zip", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải ZIP</ProgressDownloadButton>
             <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.json`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "json", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải JSON</ProgressDownloadButton>
             <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(item)}>Xóa chứng chỉ</ButtonBar>

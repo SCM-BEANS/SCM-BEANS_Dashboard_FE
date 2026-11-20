@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY, technicianWorkItemsApi } from "@/apis/technician-work-items.api";
@@ -5,6 +6,8 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
+import { Pagination } from "@/components/pagination/pagination";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
 import { PATH_TECHNICIAN } from "@/routes/path";
@@ -210,7 +213,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
     const recentTasks = tasks.slice(0, 5);
 
     return (
-      <section className={styles.panel} aria-labelledby="technician-work-updates-title">
+      <Panel className={styles.panel} aria-labelledby="technician-work-updates-title">
         <div className={styles.panelHeading}>
           <div>
             <h2 id="technician-work-updates-title">Công việc được giao cập nhật</h2>
@@ -224,7 +227,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         ) : !isLoading && !tasksQuery.isError ? (
           <p className={styles.emptyState}>Chưa có công việc được giao.</p>
         ) : null}
-      </section>
+      </Panel>
     );
   }
 
@@ -233,21 +236,17 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
       <header className={shellStyles.pageHeading}>
         <h1 id="technician-tasks-title">{T.NAVIGATION.TASKS}</h1>
       </header>
-      <div className={styles.filterBar} role="group" aria-label={messages.FILTER_LABEL_TASKS}>
-        {filters.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            aria-pressed={filter === item.id}
-            className={styles.filterButton}
-            onClick={() => { setFilter(item.id); setPage(0); }}
-          >
-            {item.label}<span className={styles.filterCount}>{counts[item.id]}</span>
-          </button>
-        ))}
-      </div>
+      <TableFilters
+        showSubmit={false}
+        toggleGroup={{
+          ariaLabel: messages.FILTER_LABEL_TASKS,
+          value: filter,
+          options: filters.map((item) => ({ value: item.id, label: item.label, count: counts[item.id] })),
+          onChange: (value) => { setFilter(value as TaskFilter); setPage(0); },
+        }}
+      />
 
-      <section className={styles.panel} aria-labelledby="technician-task-list-title">
+      <Panel className={styles.panel} aria-labelledby="technician-task-list-title">
         <div className={styles.panelHeading}>
           <h2 id="technician-task-list-title">{filter === "all" ? "Danh sách công việc" : categoryLabels[filter]}</h2>
         </div>
@@ -293,15 +292,18 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
             {tasksQuery.data.hasNext ? " · còn trang tiếp theo" : ""}
           </p>
         ) : null}
-      <div className={styles.pagination}>
-        <ButtonBar type="button" disabled={page === 0 || isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>
-          Trang trước
-        </ButtonBar>
-        <ButtonBar type="button" disabled={!tasksQuery.data?.hasNext || isFetching} onClick={() => setPage((current) => current + 1)}>
-          Trang sau
-        </ButtonBar>
-      </div>
-      </section>
+      <Pagination
+        page={page}
+        hasNext={Boolean(tasksQuery.data?.hasNext)}
+        isFetching={isFetching}
+        ariaLabel={messages.TASKS_PAGINATION_LABEL}
+        previousLabel={messages.TASKS_PREVIOUS}
+        nextLabel={messages.TASKS_NEXT}
+        showPage={false}
+        hideWhenSinglePage={false}
+        onPageChange={setPage}
+      />
+      </Panel>
     </section>
   );
 }

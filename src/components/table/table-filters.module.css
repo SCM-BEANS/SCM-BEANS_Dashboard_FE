@@ -5,7 +5,7 @@
   min-width: 0;
   align-items: center;
   gap: 12px;
-  margin-block: 0 20px;
+  margin-block: 0 var(--ui-page-gap, 18px);
   flex-wrap: wrap;
   box-sizing: border-box;
 }
@@ -14,7 +14,7 @@
 .filters > select {
   width: 170px;
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--ui-control-height, 44px);
   padding: 0 12px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -24,6 +24,18 @@
   font-size: 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
+
+.fieldLabel { display: grid; min-width: 0; gap: 6px; color: var(--ui-color-text, #302927); font-size: 13px; font-weight: 600; }
+.fieldLabel > input, .fieldLabel > select { box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--ui-control-height, 44px); padding: 0 12px; border: 1px solid var(--ui-color-border, #e9e2dc); border-radius: var(--ui-control-radius, 10px); background: #fff; color: var(--ui-color-text, #302927); font: inherit; font-size: 14px; }
+.filters > .fieldLabel { flex: 0 1 220px; }
+
+.toggleGroup { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+.toggle { display: inline-flex; min-height: var(--ui-control-height, 44px); align-items: center; justify-content: center; gap: 9px; padding: 0 14px; border: 1px solid var(--ui-color-border, #e9e2dc); border-radius: var(--ui-control-radius, 10px); background: #fff; color: var(--ui-color-text, #302927); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.toggle:hover, .toggle[aria-pressed="true"] { border-color: var(--color-primary); }
+.toggle:hover { background: #fff; }
+.toggle[aria-pressed="true"] { background: #fae9ea; color: var(--color-primary); }
+.toggleCount { display: inline-flex; min-width: 24px; min-height: 24px; align-items: center; justify-content: center; padding: 0 6px; border-radius: 999px; background: rgb(48 41 39 / 7%); color: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
+.toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 
 .filters > input:hover,
 .filters > select:hover {
@@ -41,7 +53,7 @@
 
 .filters button {
   display: inline-flex;
-  min-height: 44px;
+  min-height: var(--ui-control-height, 44px);
   align-items: center;
   justify-content: center;
   padding: 0 16px;
@@ -79,6 +91,8 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .toggleGroup { grid-column: 1 / -1; }
 
   .filters input {
     grid-column: 1 / -1;

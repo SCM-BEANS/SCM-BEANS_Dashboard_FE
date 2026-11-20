@@ -2,6 +2,7 @@ import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { DataTable } from "@/components/table/data-table";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -46,7 +47,7 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
   };
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-operator-exceptions-title">
+    <Panel className={styles.panel} aria-labelledby="coffee-operator-exceptions-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-exceptions-title">Thanh toán ngoại lệ</h2>
@@ -78,7 +79,7 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
       ) : null}
 
       {proof ? (
-        <form className={styles.subpanel} onSubmit={submitDisposition}>
+        <form  onSubmit={submitDisposition}><Panel className={styles.subpanel}>
           <div>
             <h3>Xử lý khoản thanh toán</h3>
             <p>{proof.originalFilename ?? "Chứng từ thanh toán"} · số tiền Owner khai báo {formatCoffeePackageMoney(proof.amount, "VND")}</p>
@@ -103,8 +104,8 @@ export function OperatorExceptionsPanel({ workflow }: { workflow: CoffeePackageW
             <ButtonBar type="submit" disabled={!bankReference.trim() || !reason.trim() || !evidence || (disposition === "NO_FUNDS" && Number(verifiedAmount) !== 0) || workflow.pending}>Lưu kết quả xử lý</ButtonBar>
             <ButtonBar type="button" onClick={() => setSelectedProofId("")}>Đóng</ButtonBar>
           </div>
-        </form>
+        </Panel></form>
       ) : null}
-    </section>
+    </Panel>
   );
 }

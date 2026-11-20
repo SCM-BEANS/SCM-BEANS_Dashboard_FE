@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import axios from "axios";
 import { useRepairCaseCostDispute } from "./use-repair-case-cost-dispute";
@@ -69,7 +72,7 @@ function QueryError({ label, error, onRetry }: { label: string; error: unknown; 
   return (
     <div className={`${styles.notice} ${styles.error}`} role="alert">
       <p>{label} {getApiErrorMessage(error)}</p>
-      <button className={styles.inlineButton} type="button" onClick={onRetry}>{M.CASE_RETRY}</button>
+      <ButtonBar  type="button" onClick={onRetry}>{M.CASE_RETRY}</ButtonBar>
     </div>
   );
 }
@@ -883,11 +886,7 @@ export function RepairCaseDetailScreen({
         </div>
       )}
       {timeline.data && timeline.data.totalPages > 1 ? (
-        <nav className={styles.pagination} aria-label="Phân trang dòng thời gian">
-          <button className={styles.inlineButton} type="button" disabled={timeline.data.first || timeline.isFetching} onClick={() => setTimelinePage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
-          <span>{M.PAGE} {timeline.data.number + 1} / {timeline.data.totalPages}</span>
-          <button className={styles.inlineButton} type="button" disabled={timeline.data.last || timeline.isFetching} onClick={() => setTimelinePage((current) => current + 1)}>{M.NEXT}</button>
-        </nav>
+        <Pagination page={timelinePage} hasNext={!(timeline.data.last || timeline.isFetching)} isFetching={timeline.isFetching} ariaLabel="Phân trang dòng thời gian" onPageChange={setTimelinePage} previousLabel={M.PREVIOUS} nextLabel={M.NEXT} showPage={false} hideWhenSinglePage={false}><span>{M.PAGE} {timeline.data.number + 1} / {timeline.data.totalPages}</span></Pagination>
       ) : null}
     </>
   );
@@ -928,18 +927,14 @@ export function RepairCaseDetailScreen({
         </ol>
       ) : null}
       {custody.data && (custody.data.page > 0 || custody.data.hasNext) ? (
-        <nav className={styles.pagination} aria-label="Phân trang lịch sử bàn giao">
-          <button className={styles.inlineButton} type="button" disabled={custodyPage === 0 || custody.isFetching} onClick={() => setCustodyPage((current) => Math.max(0, current - 1))}>{M.PREVIOUS}</button>
-          <span>{M.PAGE} {custody.data.page + 1}</span>
-          <button className={styles.inlineButton} type="button" disabled={!custody.data.hasNext || custody.isFetching} onClick={() => setCustodyPage((current) => current + 1)}>{M.NEXT}</button>
-        </nav>
+        <Pagination page={custodyPage} hasNext={!(!custody.data.hasNext || custody.isFetching)} isFetching={custody.isFetching} ariaLabel="Phân trang lịch sử bàn giao" onPageChange={setCustodyPage} previousLabel={M.PREVIOUS} nextLabel={M.NEXT} showPage={false} hideWhenSinglePage={false}><span>{M.PAGE} {custody.data.page + 1}</span></Pagination>
       ) : null}
     </>
   );
 
   const renderRelatedWork = (caseData: NonNullable<typeof repairCase.data>) => (
     <>
-      <section className={styles.panel} aria-label="Công việc liên quan">
+      <Panel className={styles.panel} aria-label="Công việc liên quan">
         <SectionHeading title="Công việc liên quan" />
         {ticket.isError ? <QueryError label={M.MAINTENANCE_TICKET} error={ticket.error} onRetry={() => void ticket.refetch()} /> : null}
         {request.isError ? <QueryError label={M.REQUEST} error={request.error} onRetry={() => void request.refetch()} /> : null}
@@ -960,7 +955,7 @@ export function RepairCaseDetailScreen({
           <DetailValue label={M.END_AT} value={formatDateTime(assignment.data?.endAt)} />
           </>}
         </dl>
-      </section>
+      </Panel>
       <EvidenceList resource="REPAIR_CASE" parentId={caseId} showSize={false} title="Chứng từ hồ sơ sửa chữa" />
       {replacementAssignmentId && role !== "technician" ? <EvidenceList resource="REPLACEMENT_ASSIGNMENT" parentId={replacementAssignmentId} showSize={false} title="Chứng từ máy thay thế" /> : null}
     </>
@@ -1018,7 +1013,7 @@ export function RepairCaseDetailScreen({
             </section>
           ) : null}
           <div className={compactLayout ? styles.caseWorkspace : undefined} data-status={repairCase.data.status}>
-          {compactLayout ? <section className={[styles.panel, styles.caseSummary].join(" ")} aria-label="Thông tin hồ sơ">
+          {compactLayout ? <Panel className={[styles.panel, styles.caseSummary].join(" ")} aria-label="Thông tin hồ sơ">
             <h2>Hồ sơ sửa chữa</h2>
             <dl className={styles.detailGrid}>
               <DetailValue label={M.CREATED_AT} value={formatDateTime(repairCase.data.createdAt)} />
@@ -1031,7 +1026,7 @@ export function RepairCaseDetailScreen({
               <DetailValue label={M.CONTRACT} value={repairCase.data.contractId} code />
               <DetailValue label={M.PRIMARY_MACHINE} value={repairCase.data.primaryMachineId} code />
             </dl></details>
-          </section> : <>          <section className={styles.panel} aria-label="Thông tin hồ sơ">
+          </Panel> : <>          <Panel className={styles.panel} aria-label="Thông tin hồ sơ">
             <SectionHeading title="Thông tin hồ sơ" />
             <dl className={styles.detailGrid}>
               <DetailValue label={M.CASE_ID} value={repairCase.data.id} code />
@@ -1043,7 +1038,7 @@ export function RepairCaseDetailScreen({
               <DetailValue label={M.CREATED_AT} value={formatDateTime(repairCase.data.createdAt)} />
               <DetailValue label={M.CLOSED_AT} value={formatDateTime(repairCase.data.closedAt)} />
             </dl>
-          </section>
+          </Panel>
 
 </>}
 
@@ -1054,7 +1049,7 @@ export function RepairCaseDetailScreen({
             </details>
           )}
 
-          <section className={[styles.panel, styles.caseProcess].join(" ")} aria-label={M.PROCESS_TITLE}>
+          <Panel className={[styles.panel, styles.caseProcess].join(" ")} aria-label={M.PROCESS_TITLE}>
             {!compactLayout && <SectionHeading title={M.PROCESS_TITLE} />}
             {ownerWaitingForHandover && <p className={styles.notice} role="status">{M.WAITING_FOR_OPERATOR}</p>}
             <details className={styles.processDisclosure} open={role === "technician" || ownerHasPendingAcknowledgment}>
@@ -1537,17 +1532,17 @@ export function RepairCaseDetailScreen({
               </WorkflowStep>
             </ol>
             </details>
-          </section>
+          </Panel>
 
           </div>
           {compactLayout ? (
             <section className={`${styles.technicalDetails} ${styles.adminHistory}`} aria-labelledby="repair-case-history-title">
               <header className={styles.adminHistoryHeader}>
                 <h2 id="repair-case-history-title">Lịch sử hồ sơ</h2>
-                <nav className={styles.relatedNav} aria-label="Lịch sử hồ sơ">
+                <SectionTabList role="navigation" aria-label="Lịch sử hồ sơ">
                   <button type="button" aria-pressed={historyView === "timeline"} onClick={() => setHistoryView("timeline")}>Sự kiện</button>
                   <button type="button" aria-pressed={historyView === "custody"} onClick={() => setHistoryView("custody")}>Bàn giao máy</button>
-                </nav>
+                </SectionTabList>
               </header>
               <div className={styles.adminHistoryContent} role="region" aria-labelledby="repair-case-history-title" aria-live="polite">
                 {historyView === "timeline" ? renderTimelineHistory(false) : renderCustodyHistory(false)}

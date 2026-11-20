@@ -4,6 +4,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { billingApi } from "@/apis/billing.api";
 import { dashboardApi } from "@/apis/dashboard.api";
 import { ActionItemsPanel } from "@/components/features/operations/action-items-panel";
+import { Panel } from "@/components/panel/panel";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -80,7 +81,7 @@ function InvoiceOverview({ invoices, balances }: {
   ));
 
   return (
-    <section className={styles.invoicePanel} aria-labelledby="owner-invoices-title">
+    <Panel className={styles.invoicePanel} aria-labelledby="owner-invoices-title">
       <header className={styles.panelHeading}>
         <div>
           <h2 id="owner-invoices-title">Hóa đơn cần thanh toán</h2>
@@ -140,7 +141,7 @@ function InvoiceOverview({ invoices, balances }: {
           )}
         </div>
       </div>
-    </section>
+    </Panel>
   );
 }
 
@@ -229,7 +230,7 @@ export function OverviewScreen() {
       ) : (
         <>
           <div className={styles.visualGrid}>
-            <section className={styles.cupsPanel} aria-labelledby="owner-cups-title">
+            <Panel className={styles.cupsPanel} aria-labelledby="owner-cups-title">
               <header className={styles.cupsHeading}>
                 <div>
                   <h2 id="owner-cups-title">Ly đã ghi nhận</h2>
@@ -260,10 +261,10 @@ export function OverviewScreen() {
                 <div className={styles.chartEmpty} role="status">Chưa có dữ liệu sản lượng theo ngày trong kỳ này.</div>
               )}
               <p className={styles.chartCaption}>Sản lượng được ghi nhận từ các máy trong kỳ thống kê.</p>
-            </section>
+            </Panel>
 
             <div className={styles.sideColumn}>
-              <section className={styles.machinePanel} aria-labelledby="owner-machines-title">
+              <Panel className={styles.machinePanel} aria-labelledby="owner-machines-title">
                 <header className={styles.panelHeading}>
                   <h2 id="owner-machines-title">Máy đang hoạt động</h2>
                   <Link className={styles.panelLink} href={PATH_CUSTOMER.MACHINES}>Xem kho máy</Link>
@@ -283,9 +284,9 @@ export function OverviewScreen() {
                 ) : (
                   <p className={styles.chartEmpty}>Chưa có dữ liệu trạng thái máy.</p>
                 )}
-              </section>
+              </Panel>
 
-              <section className={styles.contractPanel} aria-labelledby="owner-contracts-title">
+              <Panel className={styles.contractPanel} aria-labelledby="owner-contracts-title">
                 <header className={styles.panelHeading}>
                   <div>
                     <h2 id="owner-contracts-title">Hợp đồng</h2>
@@ -321,7 +322,7 @@ export function OverviewScreen() {
                 ) : (
                   <p className={styles.chartEmpty}>Chưa có dữ liệu hợp đồng.</p>
                 )}
-              </section>
+              </Panel>
             </div>
           </div>
 

@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
@@ -7,6 +8,8 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { TextActionButton, TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
+import { Panel } from "@/components/panel/panel";
+import { Pagination } from "@/components/pagination/pagination";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getRecipeApiErrorDetails, getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -252,10 +255,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     setUnsupportedProcedureSteps(currentProcedure?.unsupported ?? []);
     setConfirmed(false); setDeleteTarget(null); setEditTargetId(edit ? detail.data?.id ?? "" : "");
   };
-  const pagination = (page: number, hasNext: boolean, onChange: (value: number) => void, label: string) => page === 0 && !hasNext ? null : <nav className={styles.recipeMenuPagination} aria-label={label}>
-    <ButtonBar disabled={busy || page === 0} onClick={() => onChange(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span>
-    <ButtonBar disabled={busy || !hasNext} onClick={() => onChange(page + 1)}>Trang sau</ButtonBar>
-  </nav>;
+  const pagination = (page: number, hasNext: boolean, onChange: (value: number) => void, label: string) => <Pagination page={page} hasNext={hasNext} isFetching={busy} ariaLabel={label} onPageChange={onChange} previousLabel="Trang trước" nextLabel="Trang sau" className={styles.recipeMenuPagination} />;
   const busy = write.isPending || move.isPending || remove.isPending || copy.isPending || changeMenu.isPending;
   const openMenu = (id: string) => {
     setMenuId(id);
@@ -332,16 +332,16 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     </header> : null}
     {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title" className={styles.pageHeading} back={null} /> : null}
     {owner && !library ? <div><ButtonBar onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</ButtonBar></div> : null}
-    {showNavigation && (library || view !== "global") ? <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
+    {showNavigation && (library || view !== "global") ? <SectionTabList role="navigation" aria-label="Khu vực công thức">
       <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</button>
       {owner ? <>
-        <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS)}>Menu của tôi</button>
-        <button type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}>Đồng bộ với máy</button>
+        <ButtonBar type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS)}>Menu của tôi</ButtonBar>
+        <ButtonBar type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}>Đồng bộ với máy</ButtonBar>
       </> : admin ? <>
         <button type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh định lượng cũ</button>
         <button type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Đồng bộ với máy</button>
       </> : null}
-    </nav> : null}
+    </SectionTabList> : null}
     {view === "legacy" && admin ? <LegacyRecipeOverrides role="ADMIN" /> : null}
     {view === "sync" && admin ? <RecipeSyncPanel role="ADMIN" /> : null}
     {view === "global" ? <>
@@ -351,7 +351,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           <form ref={menuEditorRef} onSubmit={(event) => { event.preventDefault(); if (busy || (menuAction === "delete" ? !canDeleteMenu : !menuName.trim())) return; clearFeedback(); changeMenu.mutate({ action: menuAction, menuId, name: menuName }); }}>
             <div className={styles.panelHeading}>
               <h2 id="create-menu-title">{menuAction === "create" ? "Tạo menu" : menuAction === "rename" ? "Đổi tên menu" : "Xóa menu?"}</h2>
-              <button type="button" className={styles.adminRecipeDialogClose} aria-label="Đóng hộp thoại" disabled={busy} onClick={() => { clearFeedback(); closeMenuDialog(); }}>×</button>
+              <ButtonBar type="button" className={styles.adminRecipeDialogClose} aria-label="Đóng hộp thoại" disabled={busy} onClick={() => { clearFeedback(); closeMenuDialog(); }}>×</ButtonBar>
             </div>
             {menuAction === "delete" ? <p>Xóa “{activeMenu}”? Thao tác này không thể hoàn tác.</p> : <label className={styles.formField}><span>Tên menu *</span><input required maxLength={255} placeholder="Ví dụ: Menu buổi sáng" value={menuName} onChange={(event) => setMenuName(event.target.value)} /></label>}
             {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
@@ -363,7 +363,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         </dialog> : null}
       {feedback ? <p className={styles.recipeMenuSuccess} role="status">{feedback}</p> : null}
       {error && !(!owner && menuAction) ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
-      {mode === "view" && !detailOnly && operatorScreen === "menus" ? <section className={styles.recipeMenuPanel}>
+      {mode === "view" && !detailOnly && operatorScreen === "menus" ? <Panel className={styles.recipeMenuPanel}>
         <div className={styles.panelHeading}><div><h2>Danh sách menu</h2></div>
         </div>
         <TableFilters search={{ ariaLabel: "Tìm menu", placeholder: "Tìm theo tên menu", value: menuSearch, maxLength: 200, onChange: setMenuSearch }}
@@ -372,24 +372,18 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
         {menus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(menus.error)}</p><ButtonBar onClick={() => void menus.refetch()}>Thử lại</ButtonBar></div> : null}
         {menus.data ? <>
           <DataTable rows={menus.data.content} rowKey={(item) => item.id} emptyMessage="Chưa có menu phù hợp." columns={[
-            { key: "name", header: "Tên menu", render: (item) => isModerator ? (
+            { key: "name", header: "Tên menu", render: (item) => (
               <TextActionButton disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>
                 {item.name}
               </TextActionButton>
-            ) : <strong>{item.name}</strong> },
+            ) },
             { key: "date", header: "Ngày tạo", render: (item) => formatMenuDate(item.createdAt) },
-            ...(isModerator ? [] : [{
-              key: "action",
-              header: "",
-              align: "right" as const,
-              render: (item: { id: string; name: string }) => <ButtonBar rollingLabel disabled={busy} aria-label={"Mở menu " + item.name} onClick={() => openMenu(item.id)}>Mở menu</ButtonBar>,
-            }]),
           ]} />
           {pagination(menus.data.page, !menus.data.last, (page) => { setMenuPage(page); setMoveMenuId(""); setDeleteTarget(null); setMode("view"); setMenuAction(null); }, "Danh sách menu")}
         </> : null}
         {menu.isError ? <p role="alert">{getRecipeApiErrorMessage(menu.error)}</p> : null}
-      </section> : null}
-      {mode !== "view" || detailOnly || operatorScreen !== "menus" ? <section className={styles.recipeMenuPanel}>
+      </Panel> : null}
+      {mode !== "view" || detailOnly || operatorScreen !== "menus" ? <Panel className={styles.recipeMenuPanel}>
         {mode === "view" && operatorScreen === "recipes" ? <div className={styles.panelHeading}><div>
           {owner ? <h2>{activeMenu}</h2> : <h2>Công thức trong menu</h2>}
           {recipes.data && "totalElements" in recipes.data ? <p>{recipes.data.totalElements} món trong menu.</p> : null}
@@ -404,14 +398,8 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           <DataTable rows={recipes.data.items} rowKey={(item) => item.id} emptyMessage="Chưa có món nào phù hợp." columns={[
             { key: "name", header: "Tên món", render: (item) => isModerator && !busy ? (
               <TextLinkButton href={PATH_MODERATOR.MENU_RECIPE_DETAIL(item.id)}>{item.name}</TextLinkButton>
-            ) : <strong>{item.name}</strong> },
+            ) : <TextActionButton disabled={busy} onClick={() => openRecipe(item.id)}>{item.name}</TextActionButton> },
             { key: "version", header: "Phiên bản", render: (item) => "v" + item.revision },
-            ...(isModerator ? [] : [{
-              key: "action",
-              header: "",
-              align: "right" as const,
-              render: (item: { id: string; name: string }) => <ButtonBar rollingLabel disabled={busy} aria-label={"Xem chi tiết " + item.name} onClick={() => openRecipe(item.id)}>Xem chi tiết</ButtonBar>,
-            }]),
           ]} />
           {pagination(recipes.data.page, recipes.data.hasNext, (page) => { setRecipePage(page); setSelectedId(""); setMode("view"); setDeleteTarget(null); }, "Danh sách công thức")}
         </> : null}
@@ -448,20 +436,20 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           {detail.data ? <>
             {owner ? <div className={styles.panelHeading}><div><h3 tabIndex={-1}>{detail.data.name}</h3><p>{detailMenu} · Phiên bản v{detail.data.revision}</p></div></div> : null}
             <div className={styles.adminRecipeColumns}>
-              <section className={styles.adminRecipeCard + " " + styles.recipeStepCard}><h2>Các bước pha</h2><RecipeSteps steps={detail.data.steps} /></section>
+              <Panel className={styles.adminRecipeCard + " " + styles.recipeStepCard}><h2>Các bước pha</h2><RecipeSteps steps={detail.data.steps} /></Panel>
               <div className={styles.recipeDetailSide}>
-              <section className={styles.adminRecipeCard}><h2>Thông số pha</h2>
+              <Panel className={styles.adminRecipeCard}><h2>Thông số pha</h2>
                 <dl className={styles.adminRecipeFacts}>
                   <div><dt>Lượng cà phê</dt><dd>{coffeeDose ? coffeeDose + " g" : "Chưa có thông số"}</dd></div>
                   <div><dt>Nước chiết xuất</dt><dd>{waterVolume ? waterVolume + " ml" : "Chưa có thông số"}</dd></div>
                 </dl>
-              </section>
-            <details className={styles.recipeDetailDisclosure}>
-              <summary>Thông số và đồng bộ</summary>
+              </Panel>
+            <section className={styles.recipeDetailDisclosure}>
+              <h3>Thông số và đồng bộ</h3>
               <p>Các bước trong thư viện có thể chưa phản ánh lần cập nhật gần nhất. Xem trạng thái đồng bộ để biết máy đã xác nhận áp dụng chưa.</p>
               {owner ? <ButtonBar href={PATH_CUSTOMER.MENU_SYNC}>Xem đồng bộ với máy</ButtonBar> : admin ? <ButtonBar onClick={() => setView("sync")}>Xem đồng bộ với máy</ButtonBar> : null}
-            </details>
-            {owner ? <div className={styles.adminRecipeCard + " " + styles.recipeDetailSide}><h2>Lưu vào Menu của tôi</h2><p className={styles.recipeMenuMeta}>Chọn menu nhận bản sao. Công thức gốc trong thư viện vẫn được giữ nguyên.</p>
+            </section>
+            {owner ? <Panel className={styles.adminRecipeCard + " " + styles.recipeDetailSide}><h2>Lưu vào Menu của tôi</h2><p className={styles.recipeMenuMeta}>Chọn menu nhận bản sao. Công thức gốc trong thư viện vẫn được giữ nguyên.</p>
               {ownerMenus.isPending ? <p>Đang tải menu của bạn…</p> : null}
               {ownerMenus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(ownerMenus.error)}</p><ButtonBar onClick={() => void ownerMenus.refetch()}>Thử lại</ButtonBar></div> : null}
               {ownerMenus.data ? <>
@@ -470,7 +458,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
                 <ButtonBar disabled={busy || (ownerMenus.data.totalElements > 0 && !copyMenuId)} onClick={() => { clearFeedback(); copy.mutate({ globalRecipeId: detail.data.id, ...(copyMenuId ? { menuId: copyMenuId } : {}) }); }}>{copy.isPending ? "Đang sao chép…" : "Lưu bản sao riêng"}</ButtonBar>
                 <ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>Mở Menu của tôi</ButtonBar>
               </> : null}
-            </div> : <details ref={recipeTools} className={styles.recipeDetailDisclosure}><summary>Quản lý công thức</summary><div className={styles.recipeMenuOperatorTools}>
+            </Panel> : <details ref={recipeTools} className={styles.recipeDetailDisclosure}><summary>Quản lý công thức</summary><div className={styles.recipeMenuOperatorTools}>
               <label className={styles.formField}><span>Chuyển công thức sang menu</span><select aria-label="Chuyển công thức sang menu" value={moveMenuId} onChange={(event) => setMoveMenuId(event.target.value)}><option value="">Chọn menu đích</option>{menus.data?.content.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
               <div className={styles.recipeMenuActions}>
                 <ButtonBar disabled={busy || !moveMenuId || moveMenuId === detail.data.menuId} onClick={() => { clearFeedback(); move.mutate({ remove: false, id: detail.data.id, menuId: moveMenuId }); }}>Chuyển menu</ButtonBar>
@@ -484,7 +472,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           </> : null}
         </section> : null}
         </div>
-      </section> : null}
+      </Panel> : null}
     </> : null}
   </div>;
 }

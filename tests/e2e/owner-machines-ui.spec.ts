@@ -210,3 +210,55 @@ test("Owner toolbar wraps at mobile width", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Làm mới" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
 });
+
+test("Owner contract list keeps shared filters, status badges and pagination", async ({ page }) => {
+  const contracts = Array.from({ length: 11 }, (_, index) => ({
+    id: `f100000${index.toString(16)}-0000-4000-8000-000000000001`,
+    ownerId,
+    machineId: smartId,
+    startDate: "2026-01-01",
+    endDate: "2027-12-31",
+    status: index === 10 ? "TERMINATED" : index === 0 ? "ACTIVE" : "DRAFT",
+  }));
+  await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: ["owner"], sub: ownerId })).toString("base64url")}.signature`, domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/dolores/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname.replace(/^\/api\/dolores\/v1/, "");
+    const body = path === `/contracts/owner/${ownerId}` ? contracts : path === "/machines" ? machines : [];
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto("/dashboard/contracts");
+
+  await expect(page.getByRole("heading", { name: "Danh sách hợp đồng" })).toBeVisible();
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(1);
+  await expect(page.getByRole("row")).toHaveCount(11);
+  await expect(page.getByRole("navigation", { name: "Phân trang hợp đồng" })).toBeVisible();
+  await page.getByRole("button", { name: "Tiếp" }).click();
+  await expect(page.locator(`[title="${contracts[10].id}"]`).first()).toBeVisible();
+
+  await page.getByRole("combobox", { name: "Lọc trạng thái hợp đồng" }).selectOption("TERMINATED");
+  await expect(page.getByRole("row")).toHaveCount(2);
+  await expect(page.getByRole("cell", { name: "Đã kết thúc" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Tìm mã hợp đồng hoặc máy" }).fill("không tồn tại");
+  await expect(page.getByRole("status")).toContainText("Không có hợp đồng phù hợp, hãy thử đổi bộ lọc hoặc từ khóa");
+});
+
+test("Owner contract details keep terms visible and expiry decisions available", async ({ page }) => {
+  const contractId = "f1000010-0000-4000-8000-000000000001";
+  const contract = { id: contractId, ownerId, machineId: smartId, startDate: "2026-01-01", endDate: "2027-12-31", terms: "Các điều khoản quan trọng của hợp đồng.", status: "ACTIVE", monthlyRentalFee: 2_000_000 };
+  const expiry = { contractId, expiryDate: "2027-12-31", reminderDate: null, reminderSentAt: null, decision: null, decidedAt: null, expiryProcessedAt: null };
+  await page.context().addCookies([{ name: "access_token", value: `header.${Buffer.from(JSON.stringify({ roles: ["owner"], sub: ownerId })).toString("base64url")}.signature`, domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/dolores/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname.replace(/^\/api\/dolores\/v1/, "");
+    const body = path === `/contracts/${contractId}` ? contract
+      : path === `/contracts/${contractId}/expiry-status` ? expiry
+        : path === "/recall-work-orders" ? { content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }
+          : [];
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.goto(`/dashboard/contracts/${contractId}`);
+
+  await expect(page.getByText("Các điều khoản quan trọng của hợp đồng.")).toBeVisible();
+  await expect(page.locator("details")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ghi nhận muốn tiếp tục" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Không tiếp tục thuê" })).toBeVisible();
+});

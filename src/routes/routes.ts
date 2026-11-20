@@ -19,6 +19,7 @@ import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 import { RepairCaseSchema } from "@/schema/machines.schema";
 import { MachineModelIdSchema } from "@/schema/machine-models.schema";
 import { CoffeePackageOrderIdSchema } from "@/schema/coffee-packages.schema";
+import { BuybackIdSchema } from "@/schema/buybacks.schema";
 
 
 export const HOME_NAVIGATION_LINKS =  [
@@ -468,10 +469,6 @@ const moderatorDynamicSections =  [
     segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   },
    {
-    base: PATH_MODERATOR.MENU,
-    segment: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-  },
-   {
     base: PATH_MODERATOR.CONTRACTS,
     segment: /^(?:C-\d{3}|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i
   },
@@ -511,9 +508,24 @@ const moderatorExactPaths = new Set([
   ...MODERATOR_ROUTE_CATALOG.sections,
 ]);
 
+const moderatorDetailIdSchemas = {
+  menu: GlobalRecipeIdSchema,
+  machines: MachineIdSchema,
+  "machine-history": MachineIdSchema,
+  "technical-requests": InstallationWorkOrderIdSchema,
+  contracts: ContractIdSchema,
+  invoices: InvoiceIdSchema,
+  "coffee-packages": CoffeePackageOrderIdSchema,
+  buyback: BuybackIdSchema,
+};
+
 export function isSupportedModeratorSection(section: string): boolean {
   if (section && (section.startsWith("/") || section.endsWith("/") || section.includes("//"))) {
     return false;
+  }
+  const modelDetail = /^machines\/models\/([^/]+)$/.exec(section);
+  if (modelDetail && modelDetail[1] !== "new") {
+    return MachineModelIdSchema.safeParse(modelDetail[1]).success;
   }
   const historyTicket = /^machine-history(?:\/([^/]+))?\/tickets\/([^/]+)$/.exec(section);
   if (historyTicket) {
@@ -551,6 +563,9 @@ export function isSupportedModeratorSection(section: string): boolean {
     : PATH_MODERATOR.ROOT;
 
   if (moderatorExactPaths.has(pathname)) return true;
+  const [group, id, extra] = section.split("/");
+  const idSchema = moderatorDetailIdSchemas[group as keyof typeof moderatorDetailIdSchemas];
+  if (extra === undefined && idSchema?.safeParse(id).success) return true;
   return moderatorDynamicSections.some(({ base, segment }) =>
     pathname.startsWith(base + "/") &&
     segment.test(pathname.slice(base.length + 1)),

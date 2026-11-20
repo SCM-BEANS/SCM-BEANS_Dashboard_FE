@@ -19,20 +19,20 @@
 
 .warning {
   border-color: #ead9b6;
-  background: #fff7e8;
-  color: #77541c;
+  background: var(--ui-color-warning-surface, #fff7e8);
+  color: var(--ui-color-warning, #77541c);
 }
 
 .danger {
   border-color: #ecc9ca;
-  background: #fff0f0;
-  color: #9b2f35;
+  background: var(--ui-color-danger-surface, #fff0f0);
+  color: var(--ui-color-danger, #9b2f35);
 }
 
 .info {
   border-color: #cedce9;
-  background: #eff6fc;
-  color: #315d80;
+  background: var(--ui-color-info-surface, #eff6fc);
+  color: var(--ui-color-info, #315d80);
 }
 
 .badge.dot {

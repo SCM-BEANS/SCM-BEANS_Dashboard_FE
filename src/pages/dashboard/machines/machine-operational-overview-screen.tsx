@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -165,9 +166,9 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
           : <p className={styles.monitoringEmpty}>Đánh giá sức khỏe chỉ có cho máy Smart IoT.</p> : null}
         {state.tab === "cleaning" && smartIot ? <MachineCleaningCompliancePanel data={compliance.data} days={state.complianceDays} loading={compliance.isPending} refreshing={compliance.isFetching} error={compliance.isError ? getApiErrorMessage(compliance.error) : undefined} onDaysChange={(days) => navigate({ complianceDays: String(days) })} onRefresh={() => void compliance.refetch()} /> : null}
         {state.tab === "health" ? null : state.tab !== "connection" ? <>
-          <section className={styles.operationalOverviewPanel} aria-label="Bộ lọc dữ liệu vận hành">
+          <Panel className={styles.operationalOverviewPanel} aria-label="Bộ lọc dữ liệu vận hành">
             <AnalyticsFilters fromDate={state.fromDate} toDate={state.toDate} tab={state.tab} recipeName={state.brewing.recipeName ?? ""} cleaningType={state.cleaning.cleaningType ?? ""} cleaningStatus={state.cleaning.status ?? ""} onApply={navigate} />
-          </section>
+          </Panel>
           {!smartIot ? <p className={styles.operationalOverviewState}>Máy này chưa được xác nhận là Smart IoT để xem dữ liệu pha chế và vệ sinh.</p>
             : contracts.isPending ? <p role="status">Đang kiểm tra hợp đồng của máy…</p>
               : contracts.isError ? <div className={styles.operationalOverviewError} role="alert"><p>Chưa kiểm tra được phạm vi hợp đồng. {getApiErrorMessage(contracts.error)}</p><ButtonBar onClick={() => void contracts.refetch()}>Thử lại</ButtonBar></div>
@@ -178,7 +179,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                         : cupCount.data ? <>
                           <section className={styles.operationalMetricGrid} aria-label="Số ly của máy"><article className={styles.operationalMetricCard}><span>Số ly trong khoảng đã chọn</span><strong>{cupCount.data.totalCups.toLocaleString("vi-VN")}</strong><small>{machine.data.serialNumber ?? "Máy đang xem"}</small></article></section>
                           <div className={styles.monitoringProductionCharts}>
-                          <section className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày</h2><p>Ngày trên biểu đồ theo UTC. Tổng ly tính theo khoảng ngày Việt Nam đã chọn.</p>
+                          <Panel className={styles.operationalOverviewPanel} aria-labelledby="owner-daily-cups-title"><h2 id="owner-daily-cups-title">Số ly theo ngày</h2><p>Ngày trên biểu đồ theo UTC. Tổng ly tính theo khoảng ngày Việt Nam đã chọn.</p>
                             {cupCount.data.dailyBreakdown.length ? <div className={styles.ownerProductionLine} role="img" aria-label="Biểu đồ số ly theo ngày">
                               <ResponsiveContainer width="100%" height={280}><LineChart data={cupCount.data.dailyBreakdown} margin={{ top: 16, right: 20, bottom: 8, left: 0 }}>
                                 <CartesianGrid strokeDasharray="3 4" vertical={false} stroke="#e9e2dc" />
@@ -189,10 +190,10 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
                               </LineChart></ResponsiveContainer>
                               <details><summary>Xem số liệu theo ngày</summary><ul>{cupCount.data.dailyBreakdown.map((row) => <li key={row.date}>{row.date}: {row.cups.toLocaleString("vi-VN")} ly</li>)}</ul></details>
                             </div> : <p>Chưa có dữ liệu pha chế trong khoảng đã chọn.</p>}
-                          </section>
-                          <section className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2>
+                          </Panel>
+                          <Panel className={styles.operationalOverviewPanel}><h2>Số ly theo món</h2>
                             {cupCount.data.recipeBreakdown.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh số ly theo món">{[...cupCount.data.recipeBreakdown].sort((a, b) => b.cups - a.cups).map((row) => <li key={row.recipeName}><span>{row.recipeName}</span><div><span style={{ width: `${row.cups / maxRecipeCups * 100}%` }} /></div><strong>{row.cups.toLocaleString("vi-VN")} ly</strong></li>)}</ul> : <p className={styles.monitoringEmpty}>Chưa có dữ liệu theo món.</p>}
-                          </section>
+                          </Panel>
                           </div>
                         </> : null}
                   </> : state.tab === "history" ? <MachineBrewHistoryPanel data={brew.data} loading={brew.isPending} error={brew.isError ? getApiErrorMessage(brew.error) : undefined} onRetry={() => void brew.refetch()} onPageChange={(page) => navigate({ brewPage: String(page) })} />

@@ -292,8 +292,42 @@
   color: var(--color-text-muted);
 }
 
+.disclosureContent {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.recallContent { display: contents; }
+.focused .heading { align-items: center; flex-wrap: wrap; }
+.focused .heading .actions { align-items: center; }
+.focused .summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 144px), 1fr));
+  gap: 12px 20px;
+}
+.focused .summary > div { padding: 0; background: transparent; border: 0; }
+.focused > .summary { border-top: 1px solid #eee8e3; padding-top: 14px; }
+.focused .step { background: #fcfbfa; }
+.focused .step > p { margin-top: 0; }
+
+.disclosure { min-width: 0; border: 1px solid #e9e2dc; border-radius: 10px; }
+.disclosure > summary {
+  padding: 12px 14px;
+  color: #302927;
+  font-weight: 600;
+  cursor: pointer;
+}
+.disclosure > summary::marker { color: #706561; }
+.disclosure > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; border-radius: 10px; }
+.disclosureMeta { margin-inline-start: 12px; color: #706561; font-size: 13px; font-weight: 400; }
+.disclosureContent { padding: 2px 14px 14px; }
+.disclosure > .eventList,
+.disclosure > .evidenceList { padding: 0 14px 8px; gap: 0; }
+.disclosure > .eventList > li,
+.disclosure > .evidenceList > li { padding-inline: 0; border-width: 1px 0 0; border-radius: 0; }
+
 @media (max-width: 640px) {
-  .panel {
+  .panel:not([data-ui-panel]) {
     padding: 16px;
   }
 

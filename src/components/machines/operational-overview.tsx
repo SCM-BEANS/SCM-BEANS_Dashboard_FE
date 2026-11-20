@@ -1,9 +1,12 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Panel } from "@/components/panel/panel";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
@@ -36,14 +39,9 @@ export function MachineSectionTabs({ label, tabs, activeTab, onTabChange, idPref
   onTabChange: (tab: string) => void; idPrefix: string;
   panelId?: (tab: string) => string;
 }) {
-  return <div className={styles.ownerOperationsTabs} role="tablist" aria-label={label}>
-    {tabs.map((tab, index) => <button key={tab.value} id={`${idPrefix}-tab-${tab.value}`} role="tab" type="button" tabIndex={activeTab === tab.value ? 0 : -1} aria-selected={activeTab === tab.value} aria-controls={panelId(tab.value)} onClick={() => onTabChange(tab.value)} onKeyDown={(event) => {
-      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-      event.preventDefault();
-      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
-      onTabChange(tabs[next].value); document.getElementById(`${idPrefix}-tab-${tabs[next].value}`)?.focus();
-    }}>{tab.label}</button>)}
-  </div>;
+  return <SectionTabList role="tablist" aria-label={label}>
+    {tabs.map((tab) => <button key={tab.value} id={`${idPrefix}-tab-${tab.value}`} role="tab" type="button" tabIndex={activeTab === tab.value ? 0 : -1} aria-selected={activeTab === tab.value} aria-controls={panelId(tab.value)} onClick={() => onTabChange(tab.value)}>{tab.label}</button>)}
+  </SectionTabList>;
 }
 export type CalendarPreset = "TODAY" | "YESTERDAY" | "THIS_WEEK" | "LAST_WEEK" | "LAST_30_DAYS" | "THIS_MONTH";
 
@@ -166,7 +164,7 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
         <form className={styles.operationalDateForm} onSubmit={(event) => { event.preventDefault(); if (applyRange(draft)) event.currentTarget.closest("details")?.removeAttribute("open"); }}>
           <label>Từ ngày<input type="date" value={draft.fromDate} max={draft.toDate || businessToday()} onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
           <label>Đến ngày<input type="date" value={draft.toDate} min={draft.fromDate || undefined} max={businessToday()} onChange={(event) => setDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
-          <button type="submit">Áp dụng</button>
+          <ButtonBar type="submit">Áp dụng</ButtonBar>
         </form>
       </details>
       <select aria-label="Chọn kỳ dữ liệu" value="" onChange={(event) => applyRange(makePresetRange(event.target.value as CalendarPreset, businessToday()))}>
@@ -181,25 +179,24 @@ export function MachineRecordsSection({ subject, machineId, kind, query, onNavig
             <div className={styles.productionTotal}><article className={styles.operationalMetricCard}><span>Ly ghi nhận trong kỳ</span><strong>{formatCount(stats.total)} <small>ly</small></strong><small>Máy đang xem · {formatDate(String(fromDate))} – {formatDate(String(toDate))}</small></article></div>
             {!stats.complete && <p className={styles.operationalOverviewState}>Biểu đồ từ {formatCount(stats.loaded)}/{formatCount(stats.total)} bản ghi đã tải.</p>}
             <div className={styles.monitoringProductionCharts}>
-              <section className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="#eee8e3" />)}<polyline fill="none" stroke="#b81724" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="#b81724"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="#706561">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</section>
-              <section className={styles.operationalOverviewPanel}><h2>Ly theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} ly</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</section>
+              <Panel className={styles.operationalOverviewPanel}><div className={styles.operationalOverviewPanelHeading}><h2>Ly theo ngày</h2><select aria-label="Loại biểu đồ sản lượng" value={productionView} onChange={(event) => setProductionView(event.target.value as "line" | "bar")}><option value="line">Biểu đồ đường</option><option value="bar">Biểu đồ cột</option></select></div>{stats.daily.length && productionView === "line" ? <figure className={styles.productionLine}><svg viewBox="0 0 1000 240" role="img" aria-label="Biểu đồ đường số ly theo ngày"><title>Số ly theo ngày trong dữ liệu đã tải</title>{[30, 110, 190].map((y) => <line key={y} x1="30" x2="970" y1={y} y2={y} stroke="#eee8e3" />)}<polyline fill="none" stroke="#b81724" strokeWidth="3" points={stats.daily.map(([, count], index) => `${stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940},${190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155}`).join(" ")} />{stats.daily.map(([day, count], index) => <g key={day}><circle cx={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} cy={190 - count / Math.max(1, ...stats.daily.map((item) => item[1])) * 155} r="4" fill="#b81724"><title>{formatDate(day)}: {count} ly</title></circle>{(stats.daily.length <= 10 || index % Math.ceil(stats.daily.length / 7) === 0) && <text x={stats.daily.length === 1 ? 500 : 30 + index / (stats.daily.length - 1) * 940} y="220" textAnchor="middle" fontSize="13" fill="#706561">{formatDate(day).slice(0, 5)}</text>}</g>)}</svg></figure> : stats.daily.length ? <div className={styles.operationalDailyChart} aria-label="Biểu đồ lần pha theo ngày">{stats.daily.map(([day, count]) => <div key={day} className={styles.operationalDailyChartColumn}><strong>{formatCount(count)}</strong><div className={styles.operationalDailyChartTrack}><span className={styles.operationalDailyChartBar} style={{ height: `${count / Math.max(1, ...stats.daily.map((item) => item[1])) * 100}%` }} /></div><time dateTime={day}>{formatDate(day).slice(0, 5)}</time></div>)}</div> : <p>Chưa có lần pha trong khoảng đã chọn.</p>}</Panel>
+              <Panel className={styles.operationalOverviewPanel}><h2>Ly theo món</h2>{stats.recipes.length ? <ul className={styles.monitoringRecipeBars} aria-label="So sánh lần pha theo món">{stats.recipes.map(([name, count]) => <li key={name}><span>{name || "Chưa có tên món"}</span><div><span style={{ width: `${count / stats.recipes[0][1] * 100}%` }} /></div><strong>{formatCount(count)} ly</strong></li>)}</ul> : <p>Chưa có dữ liệu theo món.</p>}</Panel>
             </div>
             {production.hasNextPage ? <ButtonBar disabled={production.isFetching} onClick={() => void production.fetchNextPage()}>{production.isFetchingNextPage ? "Đang tải…" : "Tải thêm dữ liệu biểu đồ"}</ButtonBar> : !stats.complete ? <p role="status">Chưa tải đủ dữ liệu hoặc dữ liệu đã thay đổi. Hãy chọn khoảng ngày ngắn hơn để tải đủ dữ liệu.</p> : null}
-          </> : <section className={styles.operationalOverviewPanel}>
+          </> : <Panel className={styles.operationalOverviewPanel}>
             <h2>{kind === "history" ? "Lịch sử từng lần pha" : "Lịch sử vệ sinh"}</h2>
             {kind === "history" && brew.data ? <DataTable rows={brew.data.content} rowKey={(row) => row.id} emptyMessage="Chưa có lần pha trong khoảng đã chọn." columns={[
               { key: "time", header: "Thời gian", render: (row) => time(row.brewedAt) },
               { key: "machine", header: "Máy", render: (row) => row.machineSerialNumber },
               { key: "recipe", header: "Món", render: (row) => row.recipeName },
             ]} /> : cleaning.data ? <DataTable rows={cleaning.data.content} rowKey={(row) => row.id} emptyMessage="Chưa có lịch sử vệ sinh trong khoảng đã chọn." columns={[
-              { key: "time", header: "Bắt đầu", render: (row) => time(row.startedAt) },
+              { key: "time", header: "Bắt đầu", render: (row) => <TextActionButton onClick={() => setCleaningSelection(row.id)}>{time(row.startedAt)}</TextActionButton> },
               { key: "machine", header: "Máy", render: (row) => row.machineSerialNumber },
               { key: "type", header: "Loại vệ sinh", render: (row) => row.cleaningType === "STARTUP" ? "Đầu ngày" : "Cuối ngày" },
               { key: "status", header: "Kết quả", render: (row) => ({ COMPLETED: "Hoàn tất", FAILED: "Chưa hoàn tất", ABORTED: "Bị gián đoạn" })[row.status] },
-              { key: "notes", header: "Nội dung", render: (row) => <ButtonBar onClick={() => setCleaningSelection(row.id)}>Xem chi tiết</ButtonBar> },
             ]} /> : null}
             {pagination ? <nav className={styles.ownerHistoryPagination} aria-label="Phân trang lịch sử máy"><span>{formatCount(pagination.totalElements)} bản ghi · Trang {pagination.page + 1}</span><ButtonBar disabled={pagination.first || selected.isFetching} onClick={() => onNavigate({ recordPage: String(page - 1) })}>Trang trước</ButtonBar><ButtonBar disabled={pagination.last || selected.isFetching} onClick={() => onNavigate({ recordPage: String(page + 1) })}>Trang sau</ButtonBar><ButtonBar disabled={selected.isFetching} onClick={() => void selected.refetch()}>Làm mới</ButtonBar></nav> : null}
-          </section>}
+          </Panel>}
     {cleaningRecord && <NotificationDialog variant="info" title="Chi tiết vệ sinh" primaryAction={{ label: "Đóng", onClick: () => setCleaningSelection(null) }} onClose={() => setCleaningSelection(null)}>
       <dl className={styles.cleaningDetailFields}>
         <div><dt>Bắt đầu</dt><dd>{time(cleaningRecord.startedAt)}</dd></div>
@@ -325,7 +322,7 @@ export function OperationalOverview({
         </div>
       ) : null}
 
-      <section className={styles.operationalOverviewPanel} aria-labelledby="operational-period-title">
+      <Panel className={styles.operationalOverviewPanel} aria-labelledby="operational-period-title">
         <div className={styles.operationalOverviewPanelHeading}>
           <div>
             <h2 id="operational-period-title">Số liệu theo ngày lịch</h2>
@@ -365,16 +362,16 @@ export function OperationalOverview({
               onChange={(event) => setDraftRange((current) => ({ ...current, toDate: event.target.value }))}
             />
           </label>
-          <button type="button" onClick={() => applyRange(draftRange)}>Áp dụng</button>
+          <ButtonBar type="button" onClick={() => applyRange(draftRange)}>Áp dụng</ButtonBar>
         </div>
         {rangeError ? <p className={styles.operationalOverviewErrorText} role="alert">{rangeError}</p> : null}
-      </section>
+      </Panel>
 
       {loading ? <p className={styles.operationalOverviewState} role="status">Đang tải số liệu tổng hợp…</p> : null}
       {error ? (
         <div className={styles.operationalOverviewError} role="alert">
           <p>{error}</p>
-          <button type="button" onClick={onRetry}>Thử lại</button>
+          <ButtonBar type="button" onClick={onRetry}>Thử lại</ButtonBar>
         </div>
       ) : null}
 
@@ -409,7 +406,7 @@ export function OperationalOverview({
             ) : null}
           </div>
 
-          <section className={styles.operationalOverviewPanel} aria-labelledby="daily-cups-title">
+          <Panel className={styles.operationalOverviewPanel} aria-labelledby="daily-cups-title">
             <div className={styles.operationalOverviewPanelHeading}>
               <div>
                 <h2 id="daily-cups-title">Ly hợp lệ theo ngày</h2>
@@ -437,10 +434,10 @@ export function OperationalOverview({
                 })}
               </div>
             )}
-          </section>
+          </Panel>
 
           {financialMetrics.length > 0 ? (
-            <section className={styles.operationalOverviewPanel} aria-labelledby="period-finances-title">
+            <Panel className={styles.operationalOverviewPanel} aria-labelledby="period-finances-title">
               <div className={styles.operationalOverviewPanelHeading}>
                 <div>
                   <h2 id="period-finances-title">Tài chính trong kỳ</h2>
@@ -465,7 +462,7 @@ export function OperationalOverview({
                   ) : null,
                 ])}
               </div>
-            </section>
+            </Panel>
           ) : null}
         </>
       ) : null}

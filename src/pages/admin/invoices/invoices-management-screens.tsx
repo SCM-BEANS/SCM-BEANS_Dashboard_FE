@@ -5,6 +5,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { billingApi } from "@/apis/billing.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { DataTable } from "@/components/table/data-table";
@@ -221,14 +222,13 @@ export function AdminInvoiceListScreen() {
                   rows={invoices.data.items}
                   rowKey={(invoice) => invoice.id}
                   columns={[
-                    { key: "invoice", header: "Hóa đơn", render: (invoice) => <div className={pageStyles.invoiceIdentity}><strong title={invoice.id}>{shortId(invoice.id)}</strong><span>Kỳ {invoice.period || "—"}</span></div> },
+                    { key: "invoice", header: "Hóa đơn", render: (invoice) => <div className={pageStyles.invoiceIdentity}><TextLinkButton href={PATH_ADMIN.INVOICE_DETAIL(invoice.id)} title={invoice.id}>{shortId(invoice.id)}</TextLinkButton><span>Kỳ {invoice.period || "—"}</span></div> },
                     { key: "owner", header: "Khách hàng", render: (invoice) => typeof invoice.ownerName === "string" ? invoice.ownerName : "—" },
                     { key: "type", header: "Loại", render: (invoice) => typeText(invoice.type) },
                     { key: "amount", header: "Số tiền", align: "right", render: (invoice) => <span className={pageStyles.noWrap}>{amountText(invoice.amount, invoice.currency)}</span> },
                     { key: "due", header: "Hạn thanh toán", render: (invoice) => <span className={pageStyles.noWrap}>{compactDateText(invoice.dueDate)}</span> },
                     { key: "status", header: "Trạng thái", render: (invoice) => <StatusBadge status={invoice.status}>{statusText(invoice.status)}</StatusBadge> },
                     { key: "actions", header: "Thao tác", render: (invoice) => <div className={pageStyles.invoiceRowActions}>
-                      <ButtonBar href={PATH_ADMIN.INVOICE_DETAIL(invoice.id)}>Chi tiết</ButtonBar>
                       <ButtonBar type="button" disabled={createPdfExport.isPending || !invoice.ownerId} onClick={() => { if (invoice.ownerId) createPdfExport.mutate({ invoiceId: invoice.id, ownerId: invoice.ownerId }); }}>
                         {createPdfExport.isPending && createPdfExport.variables?.invoiceId === invoice.id ? "Đang tạo…" : "Tạo PDF"}
                       </ButtonBar>

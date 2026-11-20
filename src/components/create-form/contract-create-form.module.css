@@ -1,4 +1,4 @@
-.panel {
+.panel:not([data-ui-panel]) {
   padding: 22px 24px;
   border: 1px solid var(--color-border);
   border-radius: 16px;
@@ -140,7 +140,7 @@
 }
 
 @media (max-width: 600px) {
-  .panel {
+  .panel:not([data-ui-panel]) {
     padding: 18px 16px;
   }
 
@@ -155,7 +155,7 @@
 }
 
 @media (max-width: 600px) {
-  .createLayout .panel { padding: 18px 16px; }
+  .createLayout .panel:not([data-ui-panel]) { padding: 18px 16px; }
   .createSummary { grid-template-columns: minmax(0, 1fr); }
   .policyHeading { flex-direction: column; }
 }

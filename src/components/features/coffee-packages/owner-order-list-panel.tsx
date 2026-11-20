@@ -1,7 +1,10 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { Pagination } from "@/components/pagination/pagination";
+import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
 import styles from "./coffee-package-workflow.module.css";
@@ -9,7 +12,7 @@ import { CoffeeOrderFilters } from "./coffee-order-filters";
 
 export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: CoffeePackageWorkflowController; onOpenOrder: (orderId: string) => void }) {
   return (
-    <section className={styles.panel} aria-labelledby="coffee-package-orders-title">
+    <Panel className={styles.panel} aria-labelledby="coffee-package-orders-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-package-orders-title">Đơn gói cà phê của tôi</h2>
@@ -37,12 +40,8 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
       ) : null}
 
       {workflow.orders.data ? (
-        <div className={styles.pagination}>
-          <ButtonBar type="button" disabled={workflow.page === 0} onClick={() => workflow.setPage((current) => Math.max(0, current - 1))}>Trang trước</ButtonBar>
-          <span>Trang {workflow.orders.data.page + 1}</span>
-          <ButtonBar type="button" disabled={!workflow.orders.data.hasNext} onClick={() => workflow.setPage((current) => current + 1)}>Trang sau</ButtonBar>
-        </div>
+        <Pagination page={workflow.orders.data.page} hasNext={workflow.orders.data.hasNext} isFetching={workflow.orders.isFetching} ariaLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_PAGINATION} onPageChange={workflow.setPage} previousLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_PREVIOUS} nextLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_NEXT} hideWhenSinglePage={false} />
       ) : null}
-    </section>
+    </Panel>
   );
 }

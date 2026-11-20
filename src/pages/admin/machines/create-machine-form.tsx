@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { PageActionsRenderer as PageActions } from "@/components/action-bar/page-actions-renderer";
@@ -179,7 +181,7 @@ export function CreateMachineForm({
       ]} />
       </div>
       <div className={styles.machineFormLayout}>
-      <form id="machine-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+      <form id="machine-create-form"  onSubmit={submit}><Panel className={`${styles.panel} ${styles.contractForm}`}>
         <h2>{T.MACHINES.CREATE_FORM_TITLE}</h2>
         <div className={styles.operationsGrid}>
           <label>{T.MACHINES.CREATE_SERIAL} *<input required autoComplete="off" value={form.serialNumber} onChange={(event) => setField("serialNumber", event.target.value)} /></label>
@@ -212,12 +214,12 @@ export function CreateMachineForm({
         {machineModels.isError && (
           <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
             <p>{getApiErrorMessage(machineModels.error)}</p>
-            <button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button>
+            <ButtonBar type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</ButtonBar>
           </div>
         )}
         {machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      </form>
+      </Panel></form>
       <aside className={`${styles.panel} ${styles.machineFormSummary}`} aria-label="Kiểm tra thông tin máy">
         <h2>Kiểm tra thông tin</h2>
         <dl className={styles.specificationsList}>

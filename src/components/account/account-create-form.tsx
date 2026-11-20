@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { ADMIN_USERS_MESSAGES as T } from "@/text/admin/admin-users-messages";
 import type { AdminUserRole } from "@/schema/admin-users.schema";
 import type { FormEvent, ReactNode } from "react";
@@ -40,7 +41,7 @@ export function AccountCreateForm({
   children?: ReactNode;
 }) {
   return (
-    <form id={id} className={styles.formPanel} onSubmit={onSubmit}>
+    <form id={id}  onSubmit={onSubmit}><Panel className={styles.formPanel}>
       <h2>{title}</h2>
       <div className={styles.formGrid}>
         <label>
@@ -90,6 +91,6 @@ export function AccountCreateForm({
       </div>
       {error && <p className={styles.error} role="alert">{error}</p>}
       {children}
-    </form>
+    </Panel></form>
   );
 }

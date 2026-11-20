@@ -89,7 +89,7 @@ test("Admin empty production keeps zero bars finite and history details compact"
   await expect(bars).toHaveCount(7);
   expect(await bars.evaluateAll((nodes) => nodes.every((node) => (node as HTMLElement).style.height === "0%"))).toBe(true);
   await page.getByRole("tab", { name: "Vệ sinh", exact: true }).click();
-  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  await page.getByRole("table").getByRole("row").nth(1).getByRole("cell").first().getByRole("button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("dialog").getByText("Đường cà phê", { exact: true })).toBeVisible();
   expect(requests.some((path) => path.includes("cleaning-records") && path.includes("size=10"))).toBe(true);
@@ -210,7 +210,7 @@ test.describe("machine operational overview cross-role presentation", () => {
         const detailLink = page.locator(`a[href="${role.detailPath}"]`).first();
         await expect(detailLink).toBeVisible();
         if (role.claim === "owner") {
-          await expect(page.getByRole("cell", { name: /Đầu ngày: Bị gián đoạn/ })).toBeVisible();
+          await expect(page.getByRole("cell", { name: /Đầu ngày.*Bị gián đoạn/ })).toBeVisible();
         }
         await expectNoHorizontalOverflow(page, width, `${role.label} machine list`);
 
@@ -270,6 +270,40 @@ test.describe("machine operational overview cross-role presentation", () => {
 });
 
 const ownerOperationsPath = `/dashboard/machines/${machineId}/operations`;
+
+test("Owner machine list uses shared pagination and keeps the same local page slices", async ({ page, context }) => {
+  await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
+  const unexpectedMethods: string[] = [];
+  const machines = Array.from({ length: 11 }, (_, index) => ({
+    ...machine,
+    id: `f1000000-0000-4000-8000-${String(index + 4).padStart(12, "0")}`,
+    serialNumber: `E2E-IOT-${String(index + 1).padStart(2, "0")}`,
+    machineType: "CONVENTIONAL",
+  }));
+  await page.route("**/api/dolores/v1/**", (route) => {
+    const request = route.request();
+    if (request.method() !== "GET" && request.method() !== "HEAD") {
+      unexpectedMethods.push(request.method());
+      return route.abort("blockedbyclient");
+    }
+    const path = new URL(request.url()).pathname.replace(/^\/api\/dolores\/v1/, "");
+    return route.fulfill({ json: path === "/machines" ? machines : [] });
+  });
+
+  await page.goto("/dashboard/machines");
+  const table = page.getByRole("table");
+  const pagination = page.locator('nav[aria-label="Phân trang máy"]');
+  await expect(table.locator("tbody tr")).toHaveCount(10);
+  await expect(table.getByRole("link", { name: "E2E-IOT-01", exact: true })).toBeVisible();
+  await pagination.getByRole("button", { name: "Tiếp", exact: true }).click();
+  await expect(page.getByText("11 máy · Trang 2/2", { exact: true })).toBeVisible();
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expect(table.getByRole("link", { name: "E2E-IOT-11", exact: true })).toBeVisible();
+  await expect(pagination.getByRole("button", { name: "Tiếp", exact: true })).toBeDisabled();
+  await pagination.getByRole("button", { name: "Trước", exact: true }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(10);
+  expect(unexpectedMethods).toEqual([]);
+});
 
 test("Owner separates production, brew history and technical data without cross-loading APIs", async ({ page, context }) => {
   await context.addCookies([{ name: "access_token", value: tokenFor("owner"), domain: "127.0.0.1", path: "/" }]);
@@ -501,6 +535,12 @@ test.describe("Offline review role workflow", () => {
     await expect(panel.getByRole("heading", { name: "Chi tiết rà soát" })).toBeVisible();
     await expect(panel.getByText("08:30:00 06/11/2026", { exact: true }).first()).toBeVisible();
     await expect(panel.locator('[name="reason"]')).toHaveCount(0);
+    await panel.getByRole("button", { name: "Về danh sách hồ sơ", exact: true }).click();
+    const dateFilter = page.locator("details").filter({ has: page.getByLabel("Từ ngày", { exact: true }) });
+    await dateFilter.locator("summary").click();
+    await dateFilter.getByLabel("Từ ngày", { exact: true }).fill("2026-11-06");
+    await dateFilter.getByLabel("Đến ngày", { exact: true }).fill("2026-11-06");
+    await dateFilter.getByRole("button", { name: "Áp dụng", exact: true }).click();
     await panel.getByLabel("Trạng thái rà soát").selectOption("REVIEW_REQUIRED");
     await expect(page).toHaveURL(/reviewStatus=REVIEW_REQUIRED/);
     await panel.getByRole("button", { name: "08:30:00 06/11/2026", exact: true }).click();
@@ -531,7 +571,7 @@ test.describe("Offline review role workflow", () => {
         await expect(panel.getByLabel("Lý do rà soát")).toHaveValue("Liên hệ cửa hàng kiểm tra kết nối");
         await expect(panel.getByRole("alert")).toBeVisible();
       } else {
-        await expect(panel.getByRole("cell", { name: "Đã rà soát", exact: true }).first()).toBeVisible();
+        await expect(panel.getByText("Đã rà soát", { exact: true })).toBeVisible();
         await expect(panel.locator('[name="reason"]')).toHaveCount(0);
       }
       expect(requests.some((path) => path.includes("/heartbeats/latest") || path.includes("/points"))).toBe(false);
@@ -544,12 +584,13 @@ test.describe("Offline review role workflow", () => {
     const requests: string[] = [];
     await installMockApi(page, roleCases[1], requests);
     await installOfflineMock(page, requests);
-    await page.goto(`/admin/iot?machineId=${machineId}&reviewId=${offlineReviewId}`);
+    await page.goto(`/admin/iot?view=reviews&machineId=${machineId}&reviewId=${offlineReviewId}`);
     const panel = page.getByRole("region", { name: "Rà soát mất kết nối", exact: true });
     await expect(panel.getByLabel("Lý do rà soát")).toBeVisible();
+    await panel.getByRole("button", { name: "Về danh sách hồ sơ", exact: true }).click();
     await panel.getByLabel("Trạng thái rà soát").selectOption("REVIEW_REQUIRED");
     await expect(page).toHaveURL(/reviewStatus=REVIEW_REQUIRED/);
-    await page.goBack();
+    await page.goto(`/admin/iot?view=reviews&machineId=${machineId}&reviewId=${offlineReviewId}&reviewStatus=REVIEW_REQUIRED`);
     await expect(panel.getByLabel("Lý do rà soát")).toBeVisible();
   });
 });

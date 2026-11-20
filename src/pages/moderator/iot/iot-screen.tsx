@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { MaintenancePriorityPanel } from "@/components/machines/maintenance-priority-panel";
@@ -57,7 +60,7 @@ function QueryFeedback({
     return (
       <div className={styles.pendingNotice} role="alert">
         <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
-        <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>{messages.RETRY}</button>
+        <ButtonBar  type="button" onClick={() => void query.refetch()}>{messages.RETRY}</ButtonBar>
       </div>
     );
   }
@@ -136,7 +139,7 @@ function OwnerPartialFailure({
     <div className={styles.partialNotice} role="alert">
       <p>{messages.PARTIAL_OWNER_FAILURE}</p>
       <ul>{failedOwners.map(({ owner, error }) => <li key={owner.idaasUserId}>{owner.fullName || owner.email || owner.idaasUserId}: {subject} — {getApiErrorMessage(error)}</li>)}</ul>
-      <button className={styles.retryButton} type="button" onClick={() => void retry()}>{messages.RETRY}</button>
+      <ButtonBar  type="button" onClick={() => void retry()}>{messages.RETRY}</ButtonBar>
     </div>
   );
 }
@@ -183,9 +186,9 @@ function LocationRow({ owner, location }: { owner: Profile; location: Location }
       <td>{location.active == null ? messages.LOCATION_UNKNOWN_STATUS : location.active ? messages.LOCATION_ACTIVE : messages.LOCATION_INACTIVE}</td>
       <td>{location.machineCount == null ? "—" : numberFormat.format(location.machineCount)}</td>
       <td>
-        <button className={styles.retryButton} type="button" onClick={() => setEditing((current) => !current)}>
+        <ButtonBar  type="button" onClick={() => setEditing((current) => !current)}>
           {editing ? messages.LOCATION_CANCEL : messages.LOCATION_EDIT}
-        </button>
+        </ButtonBar>
         {success && <p role="status">{messages.LOCATION_UPDATE_SUCCESS}</p>}
       </td>
     </tr>
@@ -199,9 +202,9 @@ function LocationRow({ owner, location }: { owner: Profile; location: Location }
             <input id={`moderator-location-address-${location.id}`} value={address} disabled={update.isPending} onChange={(event) => setAddress(event.target.value)} />
             <label htmlFor={`moderator-location-city-${location.id}`}>{messages.LOCATION_CITY}</label>
             <input id={`moderator-location-city-${location.id}`} value={city} disabled={update.isPending} onChange={(event) => setCity(event.target.value)} />
-            <button className={styles.retryButton} type="submit" disabled={update.isPending || !name.trim()}>
+            <ButtonBar  type="submit" disabled={update.isPending || !name.trim()}>
               {update.isPending ? messages.LOCATION_UPDATING : messages.LOCATION_SAVE}
-            </button>
+            </ButtonBar>
             {error && <p role="alert">{error}</p>}
           </form>
         </td>
@@ -298,26 +301,25 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
 
   return <div className={styles.pageContent}>
     <PageHeading title="Giám sát máy" />
-    <div className={machineStyles.ownerOperationsTabs} role="group" aria-label="Phạm vi giám sát">
+    <SectionTabList role="group" aria-label="Phạm vi giám sát">
       <button type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button>
       <button type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</button>
       <button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button>
-    </div>
+    </SectionTabList>
     {priorityView && <MaintenancePriorityPanel subject={subject} enabled={router.isReady && Boolean(getAuthenticatedSubjectId())} machineHref={id => `${PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(id)}?tab=health&from=priority`} />}
     {!priorityView && <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />}
-    {!priorityView && !reviewView && inventory.isSuccess ? <section className={styles.formPanel}>
+    {!priorityView && !reviewView && inventory.isSuccess ? <Panel className={styles.formPanel}>
       <div className={machineStyles.operationalOverviewPanelHeading}><h2>Máy Smart IoT</h2></div>
       <MachineListFilters connection value={filterDraft} onChange={setFilterDraft} onSubmit={() => { setMachineFilters({ ...filterDraft, search: filterDraft.search.trim() }); setPage(0); }} />
       {connectionsLoading ? <p role="status">Đang tải trạng thái kết nối…</p> : <DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
-        { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_MODERATOR.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
+        { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
         { key: "connection", header: "Kết nối", render: (machine) => { const result = getHeartbeat(machine.id); return <MachineConnectionBadge state={result?.isError ? "error" : result?.isPending ? "loading" : result?.data?.status ?? "not-requested"} onRetry={result ? () => void result.refetch() : undefined} />; } },
-        { key: "actions", header: "Thao tác", render: (machine) => <div className={machineStyles.machineRowActions}><ButtonBar rollingLabel href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>Xem vận hành</ButtonBar></div> },
       ]} />}
-      <nav className={adminStyles.machinePagination} aria-label="Phân trang giám sát"><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= filtered.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
-    </section> : null}
+      <Pagination page={currentPage} hasNext={!((currentPage + 1) * 10 >= filtered.length)} isFetching={false} ariaLabel="Phân trang giám sát" onPageChange={setPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span></Pagination>
+    </Panel> : null}
     {reviewView ? <>
-      {inventory.isSuccess ? <section className={styles.formPanel}><label className={styles.formField} htmlFor="moderator-iot-machine">Máy cần theo dõi<select id="moderator-iot-machine" value={selectedMachineId} onChange={(event) => navigateReview({ machineId: event.target.value, reviewId: undefined, reviewPage: undefined })}><option value="">Tất cả máy</option>{smartMachines.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</option>)}</select></label>{selectedMachineId ? <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} /> : null}</section> : null}
+      {inventory.isSuccess ? <Panel className={styles.formPanel}><label className={styles.formField} htmlFor="moderator-iot-machine">Máy cần theo dõi<select id="moderator-iot-machine" value={selectedMachineId} onChange={(event) => navigateReview({ machineId: event.target.value, reviewId: undefined, reviewPage: undefined })}><option value="">Tất cả máy</option>{smartMachines.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</option>)}</select></label>{selectedMachineId ? <QueryFeedback query={selectedMachine} loadingMessage={messages.LOADING_MACHINE} /> : null}</Panel> : null}
       {reviewFilterError ? <div className={styles.partialNotice} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigateReview({ machineId: undefined, reviewId: undefined, reviewPage: undefined, reviewStatus: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel selectedId={reviewState?.reviewId}
         machineLabels={Object.fromEntries(smartMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))} page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={reviewState?.params.machineId} canDecide
         loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { Panel } from "@/components/panel/panel";
+import { Pagination } from "@/components/pagination/pagination";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { useQuery } from "@tanstack/react-query";
@@ -149,17 +150,15 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
         {machine.isError ? <p className={tableStyles.error} role="alert">Không tải được máy này. Có thể máy không thuộc phân công của bạn.</p> : null}
         {schedule.isError ? <p className={tableStyles.error} role="alert">Không tải được lịch bảo trì của máy.</p> : null}
         {machineId && machine.data ? (
-          <section className={tableStyles.panel} aria-labelledby="technician-machine-history-summary">
-            <h2 id="technician-machine-history-summary">{machine.data.serialNumber ?? machine.data.id}</h2>
+          <Panel title={machine.data.serialNumber ?? machine.data.id} aria-label="Tổng quan máy">
             <p>Trạng thái máy: {machine.data.status ?? "—"}</p>
             <p>Lịch bảo trì tiếp theo: {formatDate(schedule.data?.nextPreventiveMaintenanceAt)}</p>
             {typeof schedule.data?.cupsServedSinceLastDescale === "number" ? (
               <p>Số ly từ lần vệ sinh gần nhất: {schedule.data.cupsServedSinceLastDescale.toLocaleString("vi-VN")}</p>
             ) : null}
-          </section>
+          </Panel>
         ) : null}
-        <section className={tableStyles.panel} aria-labelledby="technician-maintenance-tickets-title">
-          <h2 id="technician-maintenance-tickets-title">Phiếu bảo trì</h2>
+        <Panel title="Phiếu bảo trì" aria-label="Phiếu bảo trì">
           {tickets.isSuccess ? (
             <DataTable
               rows={filteredTickets}
@@ -172,10 +171,9 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
               ]}
             />
           ) : null}
-          <div className={shellStyles.pagination}><span>Trang {ticketPage + 1}</span><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={!tickets.data?.hasNext || tickets.isFetching} onClick={() => setTicketPage(value => value + 1)}>Trang sau</ButtonBar></div>
-        </section>
-        <section className={tableStyles.panel} aria-labelledby="technician-maintenance-requests-title">
-          <h2 id="technician-maintenance-requests-title">Yêu cầu bảo trì và sửa chữa</h2>
+          <Pagination page={ticketPage} hasNext={Boolean(tickets.data?.hasNext)} isFetching={tickets.isFetching} ariaLabel={messages.HISTORY_TICKETS_PAGINATION} onPageChange={setTicketPage} hideWhenSinglePage={false} />
+        </Panel>
+        <Panel title="Yêu cầu bảo trì và sửa chữa" aria-label="Yêu cầu bảo trì và sửa chữa">
           {requests.isSuccess ? (
             <DataTable
               rows={filteredRequests.slice(requestPage * 10, (requestPage + 1) * 10)}
@@ -190,8 +188,8 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
               ]}
             />
           ) : null}
-          <div className={shellStyles.pagination}><span>Trang {requestPage + 1}</span><ButtonBar disabled={requestPage === 0} onClick={() => setRequestPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={(requestPage + 1) * 10 >= filteredRequests.length} onClick={() => setRequestPage(value => value + 1)}>Trang sau</ButtonBar></div>
-        </section>
+          <Pagination page={requestPage} hasNext={(requestPage + 1) * 10 < filteredRequests.length} totalPages={Math.max(1, Math.ceil(filteredRequests.length / 10))} ariaLabel={messages.HISTORY_REQUESTS_PAGINATION} onPageChange={setRequestPage} hideWhenSinglePage={false} />
+        </Panel>
       </section>
     </TechnicianShell>
   );

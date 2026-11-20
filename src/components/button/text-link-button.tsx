@@ -25,6 +25,7 @@ interface TextActionButtonProps {
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
   "aria-label"?: string;
+  "aria-pressed"?: boolean;
   children: ReactNode;
 }
 
@@ -32,6 +33,7 @@ export function TextActionButton({
   onClick,
   disabled,
   "aria-label": ariaLabel,
+  "aria-pressed": pressed,
   children,
 }: TextActionButtonProps) {
   return (
@@ -41,6 +43,7 @@ export function TextActionButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
+      aria-pressed={pressed}
     >
       {children}
     </button>

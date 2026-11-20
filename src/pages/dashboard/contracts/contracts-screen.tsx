@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { TableFilters } from "@/components/table/table-filters";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
@@ -145,15 +148,19 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     {
       key: "contract-id",
       header: isExpiryList ? "Hợp đồng cần xem hạn" : messages.FIELD_CONTRACT_ID,
+      kind: "code",
+      noWrap: true,
       render: (contract) => (
-        <Link className={styles.tableLink} href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)}>
-          <TruncatedId value={contract.id} /> ›
-        </Link>
+        <TextLinkButton href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)} title={contract.id}>
+          <TruncatedId value={contract.id} />
+        </TextLinkButton>
       ),
     },
     {
       key: "machine",
       header: messages.CONTRACT_TABLE_MACHINE,
+      kind: "code",
+      noWrap: true,
       render: (contract) => {
         const machine = contract.machineId ? machineById.get(contract.machineId) : undefined;
         if (machine?.serialNumber) return machine.serialNumber;
@@ -171,12 +178,15 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     {
       key: "term",
       header: messages.CONTRACT_TABLE_TERM,
+      kind: "date",
+      noWrap: true,
       render: (contract) => formatContractPeriod(contract.startDate, contract.endDate),
     },
     {
       key: "status",
       header: messages.FIELD_STATUS,
-      render: (contract) => <span className={styles.contractStatus} data-status={contract.status}><i aria-hidden="true" />{contractStatusLabel(contract)}</span>,
+      kind: "status",
+      render: (contract) => <StatusBadge status={contract.status} variant="dot">{contractStatusLabel(contract)}</StatusBadge>,
     },
   ];
 
@@ -186,7 +196,6 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
         back={back ?? null}
         title={contractId ? "Hồ sơ hợp đồng" : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : "Hợp đồng"}
         titleId="customer-screen-title"
-        description={contractId ? `Hợp đồng · ${contractId.slice(0, 8).toUpperCase()}` : undefined}
         className={styles.pageHeading}
       />
       {contractId ? (
@@ -194,12 +203,12 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_CONTRACTS} />
           {detail.data ? (
             <div className={styles.contractLayout}>
-              <section className={`${styles.dataPanel} ${styles.contractOverview}`}>
+              <Panel className={styles.contractOverview}>
               <h2>Thông tin hợp đồng</h2>
               <dl className={styles.detailGrid}>
                 <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id.slice(0, 8).toUpperCase()} />
                 <DetailItem label={messages.FIELD_MACHINE_ID} value={typeof detail.data.machineSerialNumber === "string" ? detail.data.machineSerialNumber : detail.data.machineId} />
-                <DetailItem label={messages.FIELD_STATUS} value={statusLabel(detail.data.status)} />
+                <DetailItem label={messages.FIELD_STATUS} value={<StatusBadge variant="dot" status={detail.data.status}>{statusLabel(detail.data.status)}</StatusBadge>} />
                 <DetailItem label={messages.FIELD_START_DATE} value={formatDate(detail.data.startDate)} />
                 <DetailItem label={messages.FIELD_END_DATE} value={formatDate(detail.data.endDate)} />
                 <DetailItem label={messages.FIELD_MONTHLY_FEE} value={formatMoney(detail.data.monthlyRentalFee)} />
@@ -208,9 +217,9 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                 <DetailItem label="Phí lắp đặt" value={formatMoney(detail.data.installationFee)} />
                 <DetailItem label="Đơn giá theo lượt" value={formatMoney(detail.data.paygUnitPrice)} />
               </dl>
-              {detail.data.terms && <details className={styles.contractTerms}><summary>Điều khoản hợp đồng</summary><p>{detail.data.terms}</p></details>}
-              </section>
-              <section className={styles.dataPanel} aria-labelledby="contract-expiry-title">
+              {detail.data.terms && <div className={styles.contractTerms}><h3>Điều khoản hợp đồng</h3><p>{detail.data.terms}</p></div>}
+              </Panel>
+              <Panel aria-labelledby="contract-expiry-title">
                 <h2 id="contract-expiry-title">Hạn hợp đồng và ý định tiếp tục</h2>
                 {expiry.isPending ? <p className={styles.loadingNotice} role="status">Đang tải thông tin hết hạn…</p> : null}
                 {expiry.isError ? <p className={styles.errorNotice} role="alert">Không tải được thông tin hết hạn của hợp đồng.</p> : null}
@@ -235,43 +244,62 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                           </p>
                         ) : null}
                         <div className={styles.workflowActions}>
-                          <button
-                            className={styles.primaryButton}
+                          <ButtonBar
+                            variant="primary"
                             type="button"
                             disabled={recordExpiryDecision.isPending}
                             onClick={() => recordExpiryDecision.mutate("CONTINUE")}
                           >
                             {recordExpiryDecision.isPending ? "Đang ghi nhận…" : "Ghi nhận muốn tiếp tục"}
-                          </button>
-                          <button
-                            className={styles.secondaryButton}
+                          </ButtonBar>
+                          <ButtonBar
                             type="button"
                             disabled={recordExpiryDecision.isPending}
                             onClick={() => recordExpiryDecision.mutate("DO_NOT_CONTINUE")}
                           >
                             Không tiếp tục thuê
-                          </button>
+                          </ButtonBar>
                         </div>
                       </>
                     ) : null}
                   </>
                 ) : null}
-              </section>
-              {hasTerminationCase || (recallOrders.isError && detail.data.status === "ACTIVE") ? (
-                <section className={styles.dataPanel} aria-labelledby="owner-termination-link-title">
+              </Panel>
+              {hasTerminationCase || detail.data.status === "TERMINATED" || (recallOrders.isError && detail.data.status === "ACTIVE") ? (
+                <Panel className={styles.contractRelated} aria-labelledby="owner-termination-link-title">
                   <h2 id="owner-termination-link-title"><TextLinkButton href={PATH_CUSTOMER.CONTRACT_TERMINATION(detail.data.id)}>Hồ sơ chấm dứt hợp đồng</TextLinkButton></h2>
-                </section>
+                </Panel>
               ) : null}
             </div>
           ) : null}
         </>
       ) : (
-        <section className={`${styles.dataPanel} ${styles.contractList}`} aria-label={messages.CONTRACTS_TITLE}>
-          <div className={styles.contractListHeading}><h2>Danh sách hợp đồng</h2><span>{list.data?.length ?? "—"} hợp đồng</span></div>
-          <div className={styles.contractFilters}>
-            <label><span className={styles.contractFieldLabel}>Tìm hợp đồng</span><input aria-label="Tìm mã hợp đồng hoặc máy" placeholder="Tìm mã hợp đồng hoặc máy" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} /></label>
-            <label><span className={styles.contractFieldLabel}>Trạng thái</span><select aria-label="Lọc trạng thái hợp đồng" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}><option value="">Tất cả trạng thái</option><option value="ACTIVE">Đang hiệu lực</option><option value="DRAFT">Bản nháp</option><option value="TERMINATED">Đã chấm dứt</option></select></label>
-          </div>
+        <Panel className={styles.contractList} aria-label={messages.CONTRACTS_TITLE} title="Danh sách hợp đồng" actions={<span className={styles.contractListCount}>{list.data?.length ?? "—"} hợp đồng</span>}>
+          <TableFilters
+            search={{
+              ariaLabel: messages.CONTRACT_SEARCH_LABEL,
+              placeholder: messages.CONTRACT_SEARCH_LABEL,
+              label: messages.CONTRACT_SEARCH_CAPTION,
+              value: search,
+              onChange: (value) => { setSearch(value); setPage(0); },
+            }}
+            selects={[{
+              id: "contract-status",
+              ariaLabel: messages.CONTRACT_STATUS_FILTER,
+              label: messages.CONTRACT_STATUS_CAPTION,
+              value: status,
+              options: [
+                { value: "", label: messages.CONTRACT_STATUS_ALL },
+                { value: "ACTIVE", label: messages.CONTRACT_STATUS_ACTIVE },
+                { value: "DRAFT", label: messages.CONTRACT_STATUS_DRAFT },
+                { value: "TERMINATED", label: messages.CONTRACT_STATUS_TERMINATED },
+              ],
+              onChange: (value) => { setStatus(value); setPage(0); },
+            }]}
+            submitLabel={messages.CONTRACT_FILTER_SUBMIT}
+            showSubmit={false}
+            onSubmit={(event) => event.preventDefault()}
+          />
           {isListLoading ? <div className={styles.loadingNotice} role="status">{messages.LOADING}</div> : null}
           {list.isError ? <div className={styles.errorNotice} role="alert">{messages.LOAD_ERROR}</div> : null}
           {!isListLoading && !list.isError && contracts.length === 0 ? (
@@ -284,20 +312,20 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
                 rows={visibleContracts}
                 rowKey={(contract) => contract.id}
               />
-              {(
-                <div className={styles.pagination}>
-                  <button className={styles.secondaryButton} disabled={page <= 0 || list.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))} type="button">
-                    {messages.PREVIOUS}
-                  </button>
-                  <span>{messages.PAGE} {page + 1} / {totalPages}</span>
-                  <button className={styles.secondaryButton} disabled={page + 1 >= totalPages || list.isFetching} onClick={() => setPage((current) => current + 1)} type="button">
-                    {messages.NEXT}
-                  </button>
-                </div>
-              )}
+              <Pagination
+                page={page}
+                hasNext={page + 1 < totalPages}
+                isFetching={list.isFetching}
+                ariaLabel={messages.CONTRACT_PAGINATION_LABEL}
+                onPageChange={setPage}
+                previousLabel={messages.PREVIOUS}
+                nextLabel={messages.NEXT}
+                totalPages={totalPages}
+                hideWhenSinglePage={false}
+              />
             </>
           ) : null}
-        </section>
+        </Panel>
       )}
     </section>
   );

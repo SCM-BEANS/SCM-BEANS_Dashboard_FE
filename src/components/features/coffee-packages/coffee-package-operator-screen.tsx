@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -44,13 +45,13 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
       {workflow.success ? <p className={styles.successNotice} role="status">{workflow.success}</p> : null}
       {workflow.actionError ? <p className={styles.errorNotice} role="alert">{getApiErrorMessage(workflow.actionError, "mutation")}</p> : null}
 
-      <nav className={styles.tabs} aria-label="Nhóm quản lý gói cà phê">
+      <SectionTabList role="navigation" aria-label="Nhóm quản lý gói cà phê">
         {tabs.map((item) => (
           <button key={item.id} type="button" aria-pressed={tab === item.id} className={tab === item.id ? styles.activeTab : undefined} onClick={() => setTab(item.id)}>
             {item.label}
           </button>
         ))}
-      </nav>
+      </SectionTabList>
 
       {tab === "orders" ? (
         <OperatorOrderListPanel

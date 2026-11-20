@@ -60,7 +60,7 @@
 }
 
 @media (max-width: 640px) {
-  .panel {
+  .panel:not([data-ui-panel]) {
     padding: 16px;
   }
 }

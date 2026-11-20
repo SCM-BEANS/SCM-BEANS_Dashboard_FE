@@ -12,5 +12,5 @@
 
 @media (max-width: 760px) {
   .formGrid { grid-template-columns: 1fr; }
-  .formPanel { padding: 18px; }
+  .formPanel:not([data-ui-panel]) { padding: 18px; }
 }

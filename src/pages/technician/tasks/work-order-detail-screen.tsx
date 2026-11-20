@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
@@ -11,13 +12,14 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
 import { DataTable } from "@/components/table/data-table";
-import { getApiErrorMessage } from "@/lib/api-errors";
+import { getApiErrorMessage, getBillingWorkflowErrorMessage } from "@/lib/api-errors";
+import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { AssignedInstallationWorkOrderSummary, InstallationWorkOrderDetails } from "@/schema/installation-work-orders.schema";
 import type { RepairCase, RepairCustodyEventRequest } from "@/schema/machines.schema";
 import type { RecallEvidence, RecallWorkOrder } from "@/schema/recall-work-orders.schema";
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
-import type { TerminationInspectionRequest } from "@/schema/termination-cases.schema";
+import { TerminationInspectionRequestSchema, type TerminationInspectionRequest } from "@/schema/termination-workflow.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
 import shellStyles from "../technician-shell.module.css";
@@ -29,10 +31,10 @@ import { TruncatedId } from "@/components/truncated-id/truncated-id";
 const messages = T.WORKFLOWS;
 
 function WorkProgress({ title, labels, current, status, statusLabel }: { title: string; labels: string[]; current: number; status: string; statusLabel: string }) {
-  return <section className={`${styles.panel} ${workflowStyles.workOrderProgressPanel}`} aria-label={title}>
+  return <Panel className={`${styles.panel} ${workflowStyles.workOrderProgressPanel}`} aria-label={title}>
     <div className={workflowStyles.workOrderSummaryHeading}><h2>{title}</h2><StatusBadge variant="dot" status={status}>{statusLabel}</StatusBadge></div>
     <ol className={workflowStyles.workOrderProgress}>{labels.map((label, index) => <li key={label} className={[workflowStyles.workOrderProgressStep, index < current ? workflowStyles.workOrderProgressComplete : "", index === current ? workflowStyles.workOrderProgressCurrent : ""].join(" ")} aria-current={index === current ? "step" : undefined}><span aria-hidden="true">{index < current ? "✓" : index + 1}</span><small>{label}</small></li>)}</ol>
-  </section>;
+  </Panel>;
 }
 const detailQueryKey = (workOrderId: string) => ["dolores", "installation-work-orders", "id", workOrderId] as const;
 const assignedQueryKey = TECHNICIAN_WORK_ITEMS_QUERY_KEY;
@@ -233,7 +235,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
         {repairCase.isError && <p className={shellStyles.errorNotice} role="alert">{getApiErrorMessage(repairCase.error)}</p>}
         {caseData ? (
           <>
-            <section className={styles.panel} aria-labelledby="repair-case-summary-title">
+            <Panel className={styles.panel} aria-labelledby="repair-case-summary-title">
               <h2 id="repair-case-summary-title">Thông tin hồ sơ sửa chữa</h2>
               <dl className={styles.detailGrid}>
                 <DetailValue label="Mã hồ sơ" value={caseData.id} code />
@@ -247,10 +249,10 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
               </dl>
               {ticket.isPending && <p className={styles.hint} role="status">Đang tải lệnh bảo trì được giao…</p>}
               {ticket.isError && <p className={styles.error} role="alert">Không tải được lệnh bảo trì. Hãy kiểm tra phân công với Moderator.</p>}
-            </section>
+            </Panel>
 
             {canDiagnose ? (
-              <section className={styles.panel} aria-labelledby="repair-diagnosis-title">
+              <Panel className={styles.panel} aria-labelledby="repair-diagnosis-title">
                 <h2 id="repair-diagnosis-title">Ghi nhận chẩn đoán</h2>
                 <p className={styles.hint}>Owner đã xác nhận nhận máy thay thế. Chẩn đoán cần một tệp minh chứng.</p>
                 <label className={styles.formField} htmlFor="repair-diagnosis">
@@ -265,11 +267,11 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 {recordDiagnosis.isError && <p className={styles.error} role="alert">{getApiErrorMessage(recordDiagnosis.error, "mutation")}</p>}
                 {recordDiagnosis.isSuccess && <p className={styles.success} role="status">Đã lưu chẩn đoán.</p>}
                 <PageActions actions={[{ id: "record-diagnosis", label: "Lưu chẩn đoán", variant: "primary", priority: 50, disabled: !diagnosis.trim() || Boolean(evidenceFileError(diagnosisEvidence, { min: 1, max: 1 })), disabledReason: evidenceFileError(diagnosisEvidence, { min: 1, max: 1 }) ?? "Nhập chẩn đoán.", pending: recordDiagnosis.isPending, onClick: () => recordDiagnosis.mutate() }]} />
-              </section>
+              </Panel>
             ) : null}
 
             {canStartWork ? (
-              <section className={styles.panel} aria-labelledby="repair-work-start-title">
+              <Panel className={styles.panel} aria-labelledby="repair-work-start-title">
                 <h2 id="repair-work-start-title">Bắt đầu sửa chữa</h2>
                 <p className={styles.hint}>Mô tả phạm vi thao tác trước khi bắt đầu. Nếu có tranh chấp chi phí, Moderator cần cấp quyền xử lý khẩn cấp.</p>
                 <label className={styles.formField} htmlFor="repair-work-scope">
@@ -278,11 +280,11 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 </label>
                 {startWork.isError && <p className={styles.error} role="alert">{getApiErrorMessage(startWork.error, "mutation")}</p>}
                 <PageActions actions={[{ id: "start-repair", label: "Bắt đầu sửa chữa", variant: "primary", priority: 50, disabled: !workScope.trim(), disabledReason: "Nhập phạm vi công việc.", pending: startWork.isPending, onClick: () => startWork.mutate() }]} />
-              </section>
+              </Panel>
             ) : null}
 
             {canCompleteWork ? (
-              <section className={styles.panel} aria-labelledby="repair-work-complete-title">
+              <Panel className={styles.panel} aria-labelledby="repair-work-complete-title">
                 <h2 id="repair-work-complete-title">Hoàn tất sửa chữa</h2>
                 <div className={styles.formGrid}>
                   <label className={styles.formField} htmlFor="repair-completion-diagnosis">
@@ -310,11 +312,11 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                 {completeWork.isError && <p className={styles.error} role="alert">{getApiErrorMessage(completeWork.error, "mutation")}</p>}
                 {completeWork.isSuccess && <p className={styles.success} role="status">Đã hoàn tất công việc sửa chữa.</p>}
                 <PageActions actions={[{ id: "complete-repair", label: "Xác nhận hoàn tất", variant: "primary", priority: 50, disabled: !diagnosis.trim() || !resolutionResult.trim() || !workScope.trim() || Boolean(evidenceFileError(completionEvidence, { min: 1, max: 5 })), disabledReason: evidenceFileError(completionEvidence, { min: 1, max: 5 }) ?? "Nhập đầy đủ kết quả.", pending: completeWork.isPending, onClick: () => completeWork.mutate() }]} />
-              </section>
+              </Panel>
             ) : null}
 
             {custodyTypeOptions.length ? (
-              <section className={styles.panel} aria-labelledby="repair-custody-record-title">
+              <Panel className={styles.panel} aria-labelledby="repair-custody-record-title">
                 <h2 id="repair-custody-record-title">Ghi nhận bàn giao máy</h2>
                 <p className={styles.hint}>Ghi từng bước theo thứ tự. Bước tiếp theo chỉ mở sau khi Owner xác nhận bước bàn giao trước.</p>
                 <label className={styles.formField} htmlFor="repair-custody-type">
@@ -344,10 +346,10 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                   {recordCustody.isPending ? "Đang ghi nhận…" : "Ghi nhận bàn giao"}
                 </ButtonBar>
                 <p id="repair-custody-file-error">{evidenceFileError(custodyEvidence, { min: 1, max: 1 })}</p>
-              </section>
+              </Panel>
             ) : null}
 
-            <section className={styles.panel} aria-labelledby="repair-case-history-title">
+            <Panel className={styles.panel} aria-labelledby="repair-case-history-title">
               <h2 id="repair-case-history-title">Lịch sử xử lý</h2>
               {timeline.isPending && <p className={styles.hint} role="status">Đang tải lịch sử…</p>}
               {timeline.isError && <p className={styles.error} role="alert">Không tải được lịch sử xử lý.</p>}
@@ -361,9 +363,9 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                   ))}
                 </ol>
               ) : timeline.isSuccess ? <p className={styles.hint}>Chưa có cập nhật.</p> : null}
-            </section>
+            </Panel>
 
-            <section className={styles.panel} aria-labelledby="repair-case-custody-history-title">
+            <Panel className={styles.panel} aria-labelledby="repair-case-custody-history-title">
               <h2 id="repair-case-custody-history-title">Lịch sử bàn giao</h2>
               {custodyEvents.isPending && <p className={styles.hint} role="status">Đang tải sự kiện bàn giao…</p>}
               {custodyEvents.isError && <p className={styles.error} role="alert">Không tải được lịch sử bàn giao.</p>}
@@ -378,7 +380,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
                   ))}
                 </ol>
               ) : custodyEvents.isSuccess ? <p className={styles.hint}>Chưa có sự kiện bàn giao.</p> : null}
-            </section>
+            </Panel>
           </>
         ) : null}
       </section>
@@ -498,7 +500,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
         {order ? (
           <>
             <WorkProgress title="Tiến độ thu hồi" labels={["Phân công", "Nhận máy", "Xác nhận bàn giao", "Tiếp nhận tại kho"]} current={order.status === "RECEIVED_AT_DEPOT" ? 4 : ["CUSTODY_VERIFICATION_PENDING", "RECEIPT_REVIEW_PENDING"].includes(order.status) ? 3 : order.status === "OWNER_ACK_PENDING" ? 2 : order.status === "PICKUP_IN_PROGRESS" ? 1 : ["FAILED", "CANCELLED", "LEGACY_REVIEW_REQUIRED"].includes(order.status) ? -1 : 0} status={order.status} statusLabel={recallStatusLabels[order.status]} />
-            <section className={styles.panel} aria-labelledby="technician-recall-overview-title">
+            <Panel className={styles.panel} aria-labelledby="technician-recall-overview-title">
               <h2 id="technician-recall-overview-title">Thông tin lệnh thu hồi</h2>
               <dl className={styles.detailGrid}>
                 <DetailValue label="Mã lệnh" value={order.id} code />
@@ -515,10 +517,10 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                   <PageActions actions={[{ id: "start-pickup", label: "Bắt đầu nhận máy", variant: "primary", priority: 50, pending: startPickup.isPending, onClick: () => startPickup.mutate() }]} />
                 </>
               ) : null}
-            </section>
+            </Panel>
 
             {order.status === "PICKUP_IN_PROGRESS" ? (
-              <section className={styles.panel} aria-labelledby="technician-recall-pickup-title">
+              <Panel className={styles.panel} aria-labelledby="technician-recall-pickup-title">
                 <h2 id="technician-recall-pickup-title">Ghi nhận lần đến nhận máy</h2>
                 <p className={styles.hint}>Nếu nhận được máy, tải chứng cứ trước rồi xác nhận. Nếu chưa nhận được, ghi rõ lý do để Moderator sắp xếp lại.</p>
                 <label className={styles.formField} htmlFor="recall-pickup-evidence">
@@ -554,13 +556,13 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                 <div className={styles.evidenceActions}>
                   <PageActions actions={[{ id: "pickup-failed", label: "Chưa nhận được máy", priority: 50, disabled: !pickupNotes.trim(), disabledReason: "Nhập lý do chưa nhận máy.", pending: pickupAttempt.isPending, onClick: () => pickupAttempt.mutate(false) }, { id: "pickup-received", label: "Đã nhận được máy", variant: "primary", priority: 50, disabled: !isPickupEvidenceReady, disabledReason: "Tải chứng cứ nhận máy.", pending: pickupAttempt.isPending, onClick: () => pickupAttempt.mutate(true) }]} />
                 </div>
-              </section>
+              </Panel>
             ) : null}
 
             {order.status === "OWNER_ACK_PENDING" ? <p className={styles.notice} role="status">Đang chờ Owner xác nhận tình trạng và việc bàn giao máy. Sau khi Owner xác nhận, bạn có thể tiếp tục nộp biên nhận kho.</p> : null}
 
             {order.status === "CUSTODY_VERIFICATION_PENDING" ? (
-              <section className={styles.panel} aria-labelledby="technician-recall-depot-title">
+              <Panel className={styles.panel} aria-labelledby="technician-recall-depot-title">
                 <h2 id="technician-recall-depot-title">Bàn giao máy vào kho</h2>
                 <p className={styles.hint}>Owner đã xác nhận bàn giao. Tải chứng cứ nhận kho rồi gửi địa điểm để Moderator duyệt.</p>
                 <label className={styles.formField} htmlFor="recall-depot-location"><span>Địa điểm kho</span><input id="recall-depot-location" maxLength={240} value={depotLocation} onChange={(event) => setDepotLocation(event.target.value)} /></label>
@@ -591,7 +593,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                 {isDepotEvidenceReady ? <p className={styles.success} role="status">Đã tải chứng cứ nhận kho.</p> : null}
                 {depotReceipt.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(depotReceipt.error, "mutation")}</p> : null}
                 <PageActions actions={[{ id: "depot-receipt", label: "Gửi biên nhận về kho", variant: "primary", priority: 50, disabled: !depotLocation.trim() || !isDepotEvidenceReady, disabledReason: "Nhập địa điểm và tải chứng cứ.", pending: depotReceipt.isPending, onClick: () => depotReceipt.mutate() }]} />
-              </section>
+              </Panel>
             ) : null}
 
             {order.status === "RECEIPT_REVIEW_PENDING" ? <p className={styles.notice} role="status">Biên nhận đã gửi. Đang chờ Admin hoặc Moderator xác nhận máy đã về kho.</p> : null}
@@ -599,7 +601,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
             {order.status === "CANCELLED" ? <p className={styles.notice} role="status">Lệnh thu hồi đã bị hủy. Liên hệ Moderator nếu cần hướng dẫn tiếp theo.</p> : null}
 
             {evidence.data?.length ? (
-              <section className={styles.panel} aria-labelledby="technician-recall-evidence-title">
+              <Panel className={styles.panel} aria-labelledby="technician-recall-evidence-title">
                 <h2 id="technician-recall-evidence-title">Chứng cứ đã lưu ({evidence.data.length})</h2>
                 <DataTable rows={evidence.data} rowKey={(item) => item.id} columns={[
                   { key: "type", header: "Loại", render: (item) => item.evidenceType === "PICKUP" ? "Nhận máy" : item.evidenceType === "OWNER_HANDOVER" ? "Bàn giao Owner" : "Nhận kho" },
@@ -608,14 +610,14 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
                   { key: "action", header: "Thao tác", render: (item) => <ProgressDownloadButton filename={safeEvidenceFilename(item.originalFilename, item.id)} download={async (signal) => { setEvidenceActionError(""); return (await recallWorkOrdersApi.downloadEvidence(recallWorkOrderId, item.id, signal)).blob; }} onError={(error) => setEvidenceActionError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> },
                 ]} />
                 {evidenceActionError ? <p className={styles.error} role="alert">{evidenceActionError}</p> : null}
-              </section>
+              </Panel>
             ) : null}
             {evidence.isError || events.isError ? <p className={styles.error} role="alert">Không tải được đầy đủ lịch sử hoặc chứng cứ của lệnh thu hồi.</p> : null}
             {events.data?.content.length ? (
-              <section className={styles.panel} aria-labelledby="technician-recall-events-title">
+              <Panel className={styles.panel} aria-labelledby="technician-recall-events-title">
                 <h2 id="technician-recall-events-title">Lịch sử xử lý</h2>
                 <ol className={styles.eventList}>{events.data.content.map((event) => <li key={event.id}><strong>{event.eventType.replaceAll("_", " ")}</strong> · {formatDateTime(event.occurredAt)}{event.reason ? <p>{event.reason}</p> : null}</li>)}</ol>
-              </section>
+              </Panel>
             ) : null}
           </>
         ) : null}
@@ -633,6 +635,10 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
   const [evidenceReference, setEvidenceReference] = useState<File[]>([]);
   const [resolutionResult, setResolutionResult] = useState("");
   const [notes, setNotes] = useState("");
+  const [usageSync, setUsageSync] = useState<"" | "confirmed" | "pending">("");
+  const [lastUsageConfirmation, setLastUsageConfirmation] = useState<boolean | null>(null);
+  const [reconfirming, setReconfirming] = useState(false);
+  const inspectionAttempt = useRef<{ fingerprint: string; file: File; key: string } | null>(null);
   const ticket = useQuery({
     queryKey: ["dolores", "technician", "maintenance-ticket", maintenanceTicketId],
     queryFn: ({ signal }) => machinesApi.getMaintenanceTicketById(maintenanceTicketId, signal),
@@ -646,6 +652,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
   const refresh = async () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["dolores", "technician", "maintenance-ticket", maintenanceTicketId] }),
     queryClient.invalidateQueries({ queryKey: ["dolores", "termination-cases", "id", terminationCaseId] }),
+    queryClient.invalidateQueries({ queryKey: ["dolores", "termination-inspection-result", terminationCaseId] }),
     queryClient.invalidateQueries({ queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }),
   ]);
   const start = useMutation({
@@ -653,20 +660,64 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
     onSuccess: refresh,
   });
   const completeInspection = useMutation({
-    mutationFn: () => terminationCasesApi.completeInspection(terminationCaseId, {
-      maintenanceTicketId,
-      diagnosis: diagnosis.trim(),
-      responsibility,
-      inspectionDecision,
-      ...(actualCost.trim() ? { actualCost: Number(actualCost) } : {}),
-      resolutionResult: resolutionResult.trim(),
-      ...(notes.trim() ? { notes: notes.trim() } : {}),
-      correlationId: createWorkflowCorrelationId("termination-inspection"),
-    }, evidenceReference),
-    onSuccess: refresh,
+    mutationFn: ({ input, file, key }: { input: TerminationInspectionRequest; file: File; key: string }) =>
+      terminationCasesApi.completeInspection(terminationCaseId, input, [file], key),
+    onSuccess: async (result, { input }) => {
+      setLastUsageConfirmation(input.usageSyncConfirmed);
+      setReconfirming(false);
+      setEvidenceReference([]);
+      setUsageSync("");
+      queryClient.setQueryData(["dolores", "termination-cases", "id", terminationCaseId], result);
+      await refresh();
+    },
   });
-  const canSubmit = Boolean(diagnosis.trim() && !evidenceFileError(evidenceReference, { min: 1, max: 1 }) && resolutionResult.trim()
-    && (!actualCost.trim() || (Number.isFinite(Number(actualCost)) && Number(actualCost) >= 0)));
+  const savedResult = TerminationInspectionRequestSchema.safeParse({
+    maintenanceTicketId,
+    diagnosis: ticket.data?.diagnosis,
+    responsibility: ticket.data?.responsibility,
+    inspectionDecision: terminationCase.data?.inspectionDecision,
+    actualCost: ticket.data?.actualCost == null ? undefined : Number(ticket.data.actualCost),
+    resolutionResult: ticket.data?.resolutionResult,
+    notes: ticket.data?.notes ?? undefined,
+    usageSyncConfirmed: true,
+    correlationId: "termination-inspection",
+  });
+  const canReconfirm = ticket.data?.status === "RESOLVED"
+    && terminationCase.data?.status === "SETTLEMENT_PENDING"
+    && terminationCase.data.inspectionTicketId === maintenanceTicketId
+    && lastUsageConfirmation !== true && savedResult.success;
+  const fileError = evidenceFileError(evidenceReference, { min: 1, max: 1 });
+  const parsedCost = actualCost.trim() ? Number(actualCost) : undefined;
+  const costError = parsedCost !== undefined && (!Number.isFinite(parsedCost) || parsedCost < 0)
+    ? "Chi phí thực tế phải là số không âm."
+    : inspectionDecision === "NO_DAMAGE" && (parsedCost ?? 0) > 0
+      ? "Kết luận không hư hỏng chỉ cho phép chi phí bằng 0 hoặc để trống."
+      : "";
+  const canSubmit = lastUsageConfirmation === null && ticket.data?.status === "IN_PROGRESS"
+    && Boolean(diagnosis.trim() && resolutionResult.trim() && usageSync && !fileError && !costError);
+
+  function submitInspection(reconfirm = false) {
+    const file = evidenceReference[0];
+    if (completeInspection.isPending || !file || fileError) return;
+    const input = reconfirm
+      ? (canReconfirm && savedResult.success && usageSync === "confirmed" ? savedResult.data : null)
+      : canSubmit ? {
+        maintenanceTicketId,
+        diagnosis: diagnosis.trim(),
+        responsibility,
+        inspectionDecision,
+        ...(parsedCost === undefined ? {} : { actualCost: parsedCost }),
+        resolutionResult: resolutionResult.trim(),
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
+        usageSyncConfirmed: usageSync === "confirmed",
+      } : null;
+    if (!input) return;
+    const fingerprint = JSON.stringify(input);
+    const previous = inspectionAttempt.current;
+    const key = previous?.fingerprint === fingerprint && previous.file === file ? previous.key : createIdempotencyKey();
+    inspectionAttempt.current = { fingerprint, file, key };
+    completeInspection.mutate({ input: { ...input, correlationId: key }, file, key });
+  }
 
   return (
     <TechnicianShell pageTitle="Kiểm tra máy thu hồi">
@@ -681,7 +732,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
         {terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
         {ticket.data ? (
           <>
-            <section className={styles.panel} aria-labelledby="termination-inspection-summary-title">
+            <Panel className={styles.panel} aria-labelledby="termination-inspection-summary-title">
               <h2 id="termination-inspection-summary-title">Thông tin công việc</h2>
               <dl className={styles.detailGrid}>
                 <DetailValue label="Mã phiếu" value={ticket.data.id ?? "?"} code />
@@ -698,26 +749,55 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
                   <PageActions actions={[{ id: "start-termination-inspection", label: "Bắt đầu kiểm tra", variant: "primary", priority: 50, pending: start.isPending, onClick: () => start.mutate() }]} />
                 </>
               ) : null}
-            </section>
-            {ticket.data.status === "IN_PROGRESS" ? (
-              <form id="termination-inspection-form" className={styles.panel} onSubmit={(event) => { event.preventDefault(); if (canSubmit) completeInspection.mutate(); }}>
+            </Panel>
+            {ticket.data.status === "IN_PROGRESS" && lastUsageConfirmation === null ? (
+              <form id="termination-inspection-form"  onSubmit={(event) => { event.preventDefault(); submitInspection(); }}><Panel className={styles.panel}>
                 <h2>Kết quả kiểm tra máy</h2>
-                <label className={styles.formField} htmlFor="termination-diagnosis"><span>Chẩn đoán *</span><textarea id="termination-diagnosis" required rows={4} maxLength={4000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
+                <label className={styles.formField} htmlFor="termination-diagnosis"><span>Chẩn đoán *</span><textarea id="termination-diagnosis" required rows={4} maxLength={2000} value={diagnosis} onChange={(event) => setDiagnosis(event.target.value)} /></label>
                 <div className={styles.formGrid}>
                   <label className={styles.formField} htmlFor="termination-responsibility"><span>Trách nhiệm chi phí *</span><select id="termination-responsibility" value={responsibility} onChange={(event) => setResponsibility(event.target.value as TerminationInspectionRequest["responsibility"])}><option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Khách thuê / Owner</option><option value="COMPANY">Công ty Dolores</option></select></label>
                   <label className={styles.formField} htmlFor="termination-decision"><span>Kết luận kiểm tra *</span><select id="termination-decision" value={inspectionDecision} onChange={(event) => setInspectionDecision(event.target.value as TerminationInspectionRequest["inspectionDecision"])}><option value="NO_DAMAGE">Không hư hỏng</option><option value="DAMAGE">Hư hỏng</option><option value="PARTIAL_DAMAGE">Hư hỏng một phần</option></select></label>
                   <label className={styles.formField} htmlFor="termination-actual-cost"><span>Chi phí thực tế (VND, nếu có)</span><input id="termination-actual-cost" type="number" min="0" step="any" value={actualCost} onChange={(event) => setActualCost(event.target.value)} /></label>
                   <label className={styles.formField} htmlFor="termination-evidence-reference"><span>Tệp chứng cứ *</span><input id="termination-evidence-reference" type="file" accept={EVIDENCE_ACCEPT} required onChange={(event) => setEvidenceReference(Array.from(event.target.files ?? []))} />{evidenceReference.map((file) => <span key={file.name}>{file.name}</span>)}</label>
-                  <label className={styles.formField} htmlFor="termination-resolution-result"><span>Kết quả xử lý *</span><input id="termination-resolution-result" required maxLength={4000} value={resolutionResult} onChange={(event) => setResolutionResult(event.target.value)} /></label>
+                  <label className={styles.formField} htmlFor="termination-resolution-result"><span>Kết quả xử lý *</span><input id="termination-resolution-result" required maxLength={2000} value={resolutionResult} onChange={(event) => setResolutionResult(event.target.value)} /></label>
+                  <label className={styles.formField} htmlFor="termination-usage-sync">
+                    <span>Đồng bộ lượt pha khi nhận máy *</span>
+                    <select id="termination-usage-sync" required value={usageSync} onChange={(event) => setUsageSync(event.target.value as typeof usageSync)}>
+                      <option value="">Chọn tình trạng đồng bộ</option>
+                      <option value="confirmed">Đã đồng bộ đầy đủ lượt pha</option>
+                      <option value="pending">Chưa xác nhận đồng bộ đầy đủ</option>
+                    </select>
+                  </label>
                 </div>
-                <label className={styles.formField} htmlFor="termination-inspection-notes"><span>Ghi chú thêm</span><textarea id="termination-inspection-notes" rows={3} maxLength={4000} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
-                <p className={styles.hint}>Gửi kết quả sẽ hoàn tất phiếu kiểm tra liên kết. Hợp đồng chỉ được chấm dứt sau khi bộ phận vận hành hoàn tất các bước tiếp theo.</p>
-                {completeInspection.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(completeInspection.error, "mutation")}</p> : null}
-                {completeInspection.isSuccess ? <p className={styles.success} role="status">Đã gửi kết quả kiểm tra.</p> : null}
-                <PageActions actions={[{ id: "complete-termination-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "termination-inspection-form", disabled: !canSubmit, disabledReason: evidenceFileError(evidenceReference, { min: 1, max: 1 }) ?? "Nhập đầy đủ kết quả kiểm tra.", pending: completeInspection.isPending }]} />
-              </form>
+                <label className={styles.formField} htmlFor="termination-inspection-notes"><span>Ghi chú thêm</span><textarea id="termination-inspection-notes" rows={3} maxLength={2000} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+                {usageSync === "pending" && <p className={styles.hint}>Bạn có thể gửi kết quả kiểm tra và xác nhận lượt pha sau khi đồng bộ xong. Quyết toán chờ đối soát lượt pha.</p>}
+                {costError && <p className={styles.error} role="alert">{costError}</p>}
+                {completeInspection.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(completeInspection.error, "mutation")}</p> : null}
+                <PageActions actions={[{ id: "complete-termination-inspection", label: "Gửi kết quả kiểm tra", variant: "primary", priority: 100, type: "submit", form: "termination-inspection-form", disabled: !canSubmit, disabledReason: costError || fileError || (!usageSync ? "Chọn tình trạng đồng bộ lượt pha." : "Nhập đầy đủ kết quả kiểm tra."), pending: completeInspection.isPending }]} />
+              </Panel></form>
             ) : null}
-            {ticket.data.status === "RESOLVED" ? <p className={styles.success} role="status">Phiếu kiểm tra đã hoàn tất. Hồ sơ chấm dứt đang chờ bước tiếp theo từ bộ phận vận hành.</p> : null}
+            {lastUsageConfirmation !== null || ticket.data.status === "RESOLVED" ? <p className={styles.success} role="status">
+              {lastUsageConfirmation === false ? "Đã gửi kết quả kiểm tra. Lượt pha đang chờ xác nhận đồng bộ."
+                : lastUsageConfirmation === true ? "Đã gửi kết quả kiểm tra và xác nhận đồng bộ lượt pha."
+                  : "Phiếu kiểm tra đã hoàn tất. Hồ sơ chấm dứt đang chờ bước tiếp theo từ bộ phận vận hành."}
+            </p> : null}
+            {canReconfirm && !reconfirming && <div>
+              <ButtonBar type="button" onClick={() => { completeInspection.reset(); setReconfirming(true); }}>Xác nhận đồng bộ lượt pha</ButtonBar>
+            </div>}
+            {canReconfirm && reconfirming && (
+              <form  onSubmit={(event) => { event.preventDefault(); submitInspection(true); }}><Panel className={styles.panel}>
+                <h2>Xác nhận đồng bộ lượt pha</h2>
+                <p className={styles.hint}>Dùng khi phiếu đã gửi trước lúc máy đồng bộ đầy đủ lượt pha. Kết luận kiểm tra đã lưu sẽ được gửi lại cùng chứng từ.</p>
+                <label className={styles.formField}><span>Tệp chứng cứ</span><input type="file" required accept={EVIDENCE_ACCEPT} onChange={(event) => setEvidenceReference(Array.from(event.target.files ?? []))} /></label>
+                <label><input type="checkbox" checked={usageSync === "confirmed"} onChange={(event) => setUsageSync(event.target.checked ? "confirmed" : "")} /> Tôi xác nhận máy đã đồng bộ đầy đủ lượt pha tính đến lúc nhận máy.</label>
+                {fileError && evidenceReference.length > 0 && <p className={styles.error} role="alert">{fileError}</p>}
+                {completeInspection.isError && <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(completeInspection.error, "mutation")}</p>}
+                <div className={styles.uploadRow}>
+                  <ButtonBar type="submit" variant="primary" disabled={Boolean(fileError) || usageSync !== "confirmed" || completeInspection.isPending}>{completeInspection.isPending ? "Đang gửi xác nhận…" : "Gửi xác nhận"}</ButtonBar>
+                  <ButtonBar type="button" disabled={completeInspection.isPending} onClick={() => { setReconfirming(false); setUsageSync(""); setEvidenceReference([]); }}>Hủy</ButtonBar>
+                </div>
+              </Panel></form>
+            )}
             {ticket.data.status === "PENDING" ? <p className={styles.notice} role="status">Phiếu đang chờ Admin hoặc Moderator phân công kỹ thuật viên.</p> : null}
           </>
         ) : null}
@@ -1073,7 +1153,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
         {detailData && workOrder && !details.isError && (
           <>
             <WorkProgress title="Tiến độ lắp đặt" labels={["Tạo lệnh", "Đã phân công", "Đang lắp đặt", "Hoàn tất bàn giao"]} current={workOrder.status === "COMPLETED" ? 4 : workOrder.status === "IN_PROGRESS" ? 2 : workOrder.status === "ASSIGNED" ? 1 : workOrder.status === "PENDING" ? 0 : -1} status={workOrder.status} statusLabel={statusLabels[workOrder.status]} />
-            <section className={styles.panel} aria-labelledby="work-order-overview-title">
+            <Panel className={styles.panel} aria-labelledby="work-order-overview-title">
               <h2 id="work-order-overview-title">Thông tin lệnh lắp đặt</h2>
               <dl className={styles.detailGrid}>
                 <DetailValue label="Mã công việc" value={workOrder.id} code />
@@ -1089,19 +1169,19 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                 {workOrder.failureReason && <DetailValue label="Lý do thất bại" value={workOrder.failureReason} />}
               </dl>
               {detailData.installationNotes && <p className={styles.notes}><strong>Ghi chú:</strong> {detailData.installationNotes}</p>}
-            </section>
+            </Panel>
 
             {workOrder.status === "ASSIGNED" && (
-              <section className={styles.panel} aria-labelledby="work-order-start-title">
+              <Panel className={styles.panel} aria-labelledby="work-order-start-title">
                 <h2 id="work-order-start-title">Bắt đầu lắp đặt</h2>
                 <p className={styles.hint}>Lệnh chỉ có thể bắt đầu khi đang ở trạng thái “Đã phân công”.</p>
                 {start.isError && <p className={styles.error} role="alert">{getApiErrorMessage(start.error, "mutation")}</p>}
                 <PageActions actions={[{ id: "start-installation", label: "Bắt đầu lắp đặt", variant: "primary", priority: 50, pending: start.isPending, onClick: () => start.mutate() }]} />
-              </section>
+              </Panel>
             )}
 
             {workOrder.status === "IN_PROGRESS" && (
-                <section className={styles.panel} aria-labelledby="work-order-complete-title">
+                <Panel className={styles.panel} aria-labelledby="work-order-complete-title">
                   <h2 id="work-order-complete-title">Hoàn tất bàn giao</h2>
                   <p className={styles.hint}>Checklist không bắt buộc. Cần ít nhất một minh chứng đã tải lên và tên người nhận bàn giao.</p>
                   <label className={styles.recipientField} htmlFor="work-order-handover-recipient">
@@ -1115,7 +1195,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
                   </label>
                   {complete.isError && <p className={styles.error} role="alert">{getApiErrorMessage(complete.error, "mutation")}</p>}
                   <PageActions actions={[{ id: "complete-installation", label: "Xác nhận hoàn tất bàn giao", variant: "primary", priority: 50, disabled: !canComplete || uploadEvidence.isPending, disabledReason: "Nhập người nhận và tải minh chứng.", pending: complete.isPending, onClick: () => complete.mutate(handoverRecipient.trim()) }]} />
-                </section>
+                </Panel>
             )}
 
             {workOrder.status === "COMPLETED" && (

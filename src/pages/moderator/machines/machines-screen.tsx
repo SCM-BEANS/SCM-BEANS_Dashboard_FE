@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
@@ -91,7 +94,7 @@ function QueryFeedback({
     return (
       <div className={styles.pendingNotice} role="alert">
         <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
-        <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>{messages.RETRY}</button>
+        <ButtonBar  type="button" onClick={() => void query.refetch()}>{messages.RETRY}</ButtonBar>
       </div>
     );
   }
@@ -204,7 +207,7 @@ function MachineList({
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
-      <nav className={adminStyles.machinePagination} aria-label="Phân trang máy"><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => setPage(currentPage + 1)}>Sau</ButtonBar></nav>
+      <Pagination page={currentPage} hasNext={!((currentPage + 1) * 10 >= visibleMachines.length)} isFetching={false} ariaLabel="Phân trang máy" onPageChange={setPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span></Pagination>
     </div>
   );
 }
@@ -373,11 +376,11 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
         <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
       </> : null}>
       <div className={adminStyles.machineInventoryGroup}>
-        <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Danh sách máy và loại máy">
+        <SectionTabList role="tablist" aria-label="Danh sách máy và loại máy">
           <button type="button" role="tab" aria-selected={!isMachineModelsView} className={`${adminStyles.machineViewTab} ${!isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINES)}>{ADMIN_T.MACHINES.TITLE}</button>
           <button type="button" role="tab" aria-selected={isMachineModelsView} className={`${adminStyles.machineViewTab} ${isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODELS)}>{ADMIN_T.MACHINE_MODELS.TITLE}</button>
-        </div>
-        <section className={adminStyles.panel}>
+        </SectionTabList>
+        <Panel className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
             <h2>{isMachineModelsView ? ADMIN_T.MACHINE_MODELS.TITLE : title}</h2>
             {isMachineModelsView
@@ -402,13 +405,13 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
                   { key: "machine-type", header: ADMIN_T.MACHINES.MACHINE_TYPE, render: (model) => model.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : ADMIN_T.MACHINES.CONVENTIONAL },
                 ]}
               />
-              <nav className={adminStyles.machinePagination} aria-label="Phân trang mẫu máy"><ButtonBar disabled={currentModelPage === 0} onClick={() => setModelPage(currentModelPage - 1)}>Trước</ButtonBar><span>Trang {currentModelPage + 1}</span><ButtonBar disabled={(currentModelPage + 1) * 10 >= machineModels.data.length} onClick={() => setModelPage(currentModelPage + 1)}>Sau</ButtonBar></nav>
+              <Pagination page={currentModelPage} hasNext={!((currentModelPage + 1) * 10 >= machineModels.data.length)} isFetching={false} ariaLabel="Phân trang mẫu máy" onPageChange={setModelPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>Trang {currentModelPage + 1}</span></Pagination>
             </>}
           </> : <>
             <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />
             {inventory.data && !inventory.isError && <MachineList machines={inventory.data} isStock={isStock} isCustomer={isCustomer} statusFilter={statusFilter} failed={inventory.isError} onStatusChange={selectStatus} />}
           </>}
-        </section>
+        </Panel>
       </div>
       </MachineListView>
     </div>

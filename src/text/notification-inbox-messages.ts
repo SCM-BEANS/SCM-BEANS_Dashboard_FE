@@ -22,6 +22,17 @@
   VIEW_ALL: "Xem tất cả thông báo",
   BACK_TO_LIST: "Quay lại danh sách",
   DETAIL_NOT_FOUND: "Không tìm thấy thông báo này trong danh sách hiện tại.",
+  ALERTS_PER_PAGE: "10 cảnh báo / trang",
+  NOTIFICATIONS_PER_PAGE: "10 thông báo / trang",
+  PAGINATE_ALERTS: "Phân trang cảnh báo",
+  PAGINATE_NOTIFICATIONS: "Phân trang thông báo",
+  SEARCH_NOTIFICATIONS: "Tìm thông báo",
+  SEARCH_NOTIFICATIONS_PLACEHOLDER: "Tìm thông báo",
+  FILTER_NOTIFICATION_TYPE: "Loại thông báo",
+  FILTER_ALL_NOTIFICATION_TYPES: "Tất cả loại",
+  FILTER_READ_STATE: "Trạng thái thông báo",
+  PREVIOUS_PAGE: "Trang trước",
+  NEXT_PAGE: "Trang sau",
 } as const;
 
 const TYPE_LABELS: Record<string, string> = {

@@ -37,7 +37,7 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : id.startsWith("@/text/") ? loadModule(`src/${id.slice(2)}.ts`) : require(id);
   new Function("require", "module", "exports", outputText)(mockedRequire, loaded, loaded.exports);
   return loaded.exports;
 }
@@ -88,6 +88,8 @@ test("machine API reads inventory, summary, detail and schedule through the shar
   });
   const { machinesApi } = loadModule("src/apis/machines.api.ts", {
     "@/lib/http": axiosMock(client), "@/schema/machines.schema": machineSchemas,
+    "@/schema/profiles.schema": profileSchemas,
+    "@/schema/owner-analytics.schema": {}, "@/lib/evidence-multipart": {},
   });
   const signal = new AbortController().signal;
 
@@ -105,6 +107,8 @@ test("machine detail and telemetry reject mismatched machine identities", async 
   const mismatchClient = clientFor(() => ({ ...machine, id: otherMachineId }));
   const mismatchApi = loadModule("src/apis/machines.api.ts", {
     "@/lib/http": axiosMock(mismatchClient.client), "@/schema/machines.schema": machineSchemas,
+    "@/schema/profiles.schema": profileSchemas,
+    "@/schema/owner-analytics.schema": {}, "@/lib/evidence-multipart": {},
   }).machinesApi;
   await assert.rejects(mismatchApi.getById(machineId), /different machine/);
 
@@ -291,7 +295,7 @@ test("shared list and detail components enforce summary-before-content hierarchy
   ]) {
     assert.match(readSource(screen), /<MachineListView[\s\S]*?(?:summary=|labelledBy=|label=)/);
     if (screen.includes("dashboard/machines")) {
-      assert.match(readSource(screen), /ownerOperationsHeader[\s\S]*machineListFilterGroup/, `${screen} should include the type filters in the toolbar`);
+      assert.match(readSource(screen), /<TableFilters[\s\S]*?owner-machine-type/, `${screen} should include the type filter in the shared toolbar`);
     } else {
       assert.match(readSource(screen), /machineViewTabs/, `${screen} should include machine list controls`);
     }
@@ -301,9 +305,11 @@ test("shared list and detail components enforce summary-before-content hierarchy
   assert.match(readSource("src/components/machines/machines.module.css"), /machineDetailMetric/);
 });
 
-test("standalone Admin and Moderator IoT routes use the shared Smart IoT panel", () => {
+test("standalone IoT routes use shared machine panels", () => {
   assertSharedImport("src/pages/admin/iot/index.page.tsx", "SmartIotPanel", "smart-iot-panel");
-  assertSharedImport("src/pages/moderator/iot/iot-screen.tsx", "SmartIotPanel", "smart-iot-panel");
+  assertSharedImport("src/pages/admin/iot/index.page.tsx", "OfflineReviewPanel", "offline-review-panel");
+  assertSharedImport("src/pages/moderator/iot/iot-screen.tsx", "OfflineReviewPanel", "offline-review-panel");
+  assert.match(readSource("src/components/machines/offline-review-panel.tsx"), /import\s*\{\s*Panel\s*\}\s*from\s*["']@\/components\/panel\/panel["']/);
 });
 
 test("Smart IoT queries stay in role pages rather than the shared presentation", () => {
@@ -320,6 +326,12 @@ test("Smart IoT queries stay in role pages rather than the shared presentation",
 test("shared Smart IoT panel distinguishes loading, empty, error and permission states", () => {
   const { SmartIotPanel } = loadModule("src/components/machines/smart-iot-panel.tsx", {
     "./machines.module.css": styleMap,
+    "@/components/button/button-bar": {
+      ButtonBar: ({ children, ...props }) => React.createElement("button", props, children),
+    },
+    "@/components/panel/panel": {
+      Panel: ({ title, children, ...props }) => React.createElement("section", { ...props, "data-ui-panel": "true" }, title, children),
+    },
   });
   const states = [
     ["loading", "Loading", "status"],
@@ -336,6 +348,7 @@ test("shared Smart IoT panel distinguishes loading, empty, error and permission 
       retryLabel: "Retry",
       onRetry: () => {},
     }));
+    assert.match(markup, /data-ui-panel="true"/);
     assert.match(markup, new RegExp(`data-state="${state}"`));
     assert.match(markup, new RegExp(`role="${role}"`));
     assert.match(markup, new RegExp(stateMessage));
@@ -344,6 +357,7 @@ test("shared Smart IoT panel distinguishes loading, empty, error and permission 
 
 test("shared machine connection badge keeps ONLINE, OFFLINE, UNKNOWN and request error distinct", () => {
   const { MachineConnectionBadge } = loadModule("src/components/machines/machine-connection-badge.tsx", {
+    "@/text/digital-twin/digital-twin-messages": { MACHINE_RECONNECTING_LABEL: "Reconnecting" },
     "./machines.module.css": styleMap,
   });
   for (const state of ["ONLINE", "OFFLINE", "UNKNOWN", "loading", "error", "not-requested", "permission-denied"]) {
@@ -413,23 +427,17 @@ test("all role machine lists query heartbeats only for visible Smart IoT rows an
   }
 });
 
-test("all role machine details poll the current Smart IoT heartbeat and show the shared connection state", () => {
-  const detailScreens = [
-    "src/pages/dashboard/machines/machines-screen.tsx",
-    "src/pages/admin/machines/machine-detail-screen.tsx",
-    "src/pages/moderator/machines/machine-detail-screen.tsx",
+test("all role machine operational screens poll Smart IoT heartbeat and show the shared connection state", () => {
+  const operationalScreens = [
+    "src/pages/dashboard/machines/machine-operational-overview-screen.tsx",
+    "src/pages/admin/machines/machine-operational-overview-screen.tsx",
+    "src/pages/moderator/machines/machine-operational-overview-screen.tsx",
   ];
-  for (const screen of detailScreens) {
+  for (const screen of operationalScreens) {
     const source = readSource(screen);
     assert.ok(/telemetryApi\.getLatestHeartbeat/.test(source), `${screen} should query the selected machine heartbeat`);
     assert.ok(/refetchInterval\s*:[\s\S]{0,160}(?:5_000|5000)/.test(source), `${screen} should refresh every five seconds`);
-    assert.ok(/visibilityState|usePageVisibility|isPageVisible/i.test(source), `${screen} should pause polling while hidden`);
-  }
-  for (const screen of [
-    "src/pages/dashboard/machines/machines-screen.tsx",
-    "src/pages/admin/machines/machine-detail-screen.tsx",
-    "src/pages/moderator/machines/machine-detail-screen.tsx",
-  ]) {
+    assert.ok(/visibilityState|usePageVisibility|isPageVisible|visible/.test(source), `${screen} should pause polling while hidden`);
     assertSharedImport(screen, "MachineHeartbeatPanel", "machine-heartbeat-panel");
   }
 });
@@ -438,17 +446,19 @@ test("Moderator machine detail and standalone IoT route never request telemetry 
   for (const screen of [
     "src/pages/moderator/machines/machine-detail-screen.tsx",
     "src/pages/moderator/iot/iot-screen.tsx",
+    "src/pages/moderator/machines/machine-operational-overview-screen.tsx",
   ]) {
     assert.ok(!/listMachinePoints/.test(readSource(screen)), `${screen} must respect the current Swagger permission boundary`);
   }
-  assert.ok(/MACHINE_OPERATIONAL_OVERVIEW/.test(readSource("src/pages/moderator/machines/machine-detail-screen.tsx")));
+  assert.ok(/telemetryApi\.getLatestHeartbeat/.test(readSource("src/pages/moderator/machines/machine-operational-overview-screen.tsx")));
 });
 
 test("Moderator IoT heartbeat polling stops on the locations route and does not share Admin cache keys", () => {
   const source = readSource("src/pages/moderator/iot/iot-screen.tsx");
-  assert.match(source, /enabled:\s*!isLocationsView\s*&&\s*smartIotVerified\s*&&\s*isPageVisible/);
+  assert.match(source, /enabled:\s*!isLocationsView\s*&&\s*!reviewView\s*&&\s*!priorityView\s*&&\s*isPageVisible\s*&&\s*Boolean\(getAuthenticatedSubjectId\(\)\)/);
   assert.match(source, /queryKey:\s*\["dolores",\s*"moderator",\s*"telemetry",\s*"heartbeat"/);
-  assert.match(readSource("src/pages/admin/machines/machine-detail-screen.tsx"), /queryKey:\s*\["dolores",\s*"admin",\s*"telemetry",\s*"heartbeat"/);
+  assert.match(readSource("src/pages/admin/machines/machine-operational-overview-screen.tsx"), /queryKey:\s*\["monitoring-heartbeat"/);
+  assert.doesNotMatch(source, /queryKey:\s*\["monitoring-heartbeat"/);
 });
 
 test("heartbeat visibility fallback tracks scrolling inside nested main containers", () => {

@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TableFilters } from "@/components/table/table-filters";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { machinesApi } from "@/apis/machines.api";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -31,8 +34,7 @@ export function MachineCheckTable() {
       <header className={styles.pageHeading}>
         <h1 id="technician-machine-check-title">{T.NAVIGATION.MACHINE_CHECK}</h1>
       </header>
-      <section className={styles.machineCheckPanel}>
-        <h2>{T.MACHINE_CHECK.TABLE_TITLE}</h2>
+      <Panel title={T.MACHINE_CHECK.TABLE_TITLE}>
         {machines.isPending && <p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p>}
         {machines.isError && (
           <div className={styles.machineCheckError} role="alert">
@@ -42,19 +44,29 @@ export function MachineCheckTable() {
             </button>
           </div>
         )}
-        <form className={styles.filters} onSubmit={event => { event.preventDefault(); setFilters(draft); setPage(0); }}>
-          <input aria-label="Tìm máy" placeholder="Tìm serial hoặc mẫu máy" value={draft.search} onChange={event => setDraft(value => ({ ...value, search: event.target.value }))} />
-          <select aria-label="Trạng thái máy" value={draft.status} onChange={event => setDraft(value => ({ ...value, status: event.target.value }))}><option value="">Tất cả trạng thái</option>{statuses.map(status => <option key={status} value={status!}>{machineStatusLabel(status)}</option>)}</select>
-          <ButtonBar type="submit">Tìm kiếm</ButtonBar>
-        </form>
+        <TableFilters
+          search={{ ariaLabel: T.MACHINE_CHECK.SEARCH_LABEL, placeholder: T.MACHINE_CHECK.SEARCH_PLACEHOLDER, value: draft.search, onChange: (search) => setDraft((value) => ({ ...value, search })) }}
+          selects={[{
+            id: "machine-status",
+            ariaLabel: T.MACHINE_CHECK.STATUS_FILTER,
+            value: draft.status,
+            options: [
+              { value: "", label: T.MACHINE_CHECK.STATUS_ALL },
+              ...statuses.map((status) => ({ value: status!, label: machineStatusLabel(status) })),
+            ],
+            onChange: (status) => setDraft((value) => ({ ...value, status })),
+          }]}
+          submitLabel={T.MACHINE_CHECK.FILTER_SUBMIT}
+          onSubmit={(event) => { event.preventDefault(); setFilters(draft); setPage(0); }}
+        />
         {machines.data && (
           <DataTable
             rows={filtered.slice(page * 10, (page + 1) * 10)}
             rowKey={(machine) => machine.id}
             emptyMessage={T.MACHINE_CHECK.EMPTY}
             columns={[
-              { key: "machine", header: "Máy", render: (machine) => <TextLinkButton href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>{machine.serialNumber || machine.id}</TextLinkButton> },
-              { key: "owner-id", header: "Khách hàng", render: (machine) => (
+              { key: "machine", header: "Máy", kind: "code", noWrap: true, render: (machine) => <TextLinkButton href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>{machine.serialNumber || machine.id}</TextLinkButton> },
+              { key: "owner-id", header: "Khách hàng", kind: "name", render: (machine) => (
                 (typeof machine.ownerName === "string" && machine.ownerName.trim() ? machine.ownerName.trim() : "")
                   || (machine.ownerId ? ownerNames.data?.[machine.ownerId] : undefined)
                   || "—"
@@ -64,8 +76,8 @@ export function MachineCheckTable() {
             ]}
           />
         )}
-        {machines.data && <div className={styles.pagination}><span>{filtered.length} máy · Trang {page + 1}</span><ButtonBar disabled={page === 0} onClick={() => setPage(value => value - 1)}>Trang trước</ButtonBar><ButtonBar disabled={(page + 1) * 10 >= filtered.length} onClick={() => setPage(value => value + 1)}>Trang sau</ButtonBar></div>}
-      </section>
+        {machines.data && <div className={styles.pagination}><span>{filtered.length} máy</span><Pagination page={page} hasNext={(page + 1) * 10 < filtered.length} ariaLabel={T.MACHINE_CHECK.PAGINATION_LABEL} previousLabel={T.MACHINE_CHECK.PREVIOUS} nextLabel={T.MACHINE_CHECK.NEXT} totalPages={Math.max(1, Math.ceil(filtered.length / 10))} hideWhenSinglePage={false} onPageChange={setPage} /></div>}
+      </Panel>
     </section>
   );
 }

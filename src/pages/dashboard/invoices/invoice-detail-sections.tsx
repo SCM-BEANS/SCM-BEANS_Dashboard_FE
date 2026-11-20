@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import type { InvoiceLineItem, PaymentProof } from "@/schema/billing.schema";
 import { DataTable } from "@/components/table/data-table";
 import type { DataTableColumn } from "@/components/table/data-table";
@@ -19,23 +20,23 @@ export function InvoiceLineItems({
   failed: boolean;
 }) {
   return (
-    <section className={styles.dataPanel} aria-labelledby="owner-invoice-lines">
+    <Panel className={styles.dataPanel} aria-labelledby="owner-invoice-lines">
       <h2 id="owner-invoice-lines">{messages.INVOICE_LINE_ITEMS}</h2>
       <QueryFeedback loading={loading} failed={failed} empty={!items?.length} emptyText={messages.NO_INVOICE_LINES} />
       {items?.length ? (
         <div className={styles.recordList}>
           {items.map((item, index) => (
-            <article className={styles.recordCard} key={item.id ?? `line-${index}`}>
+            <Panel className={styles.recordCard} key={item.id ?? `line-${index}`}>
               <div>
                 <h3>{item.description ?? item.serviceCode ?? messages.INVOICE_LINE}</h3>
                 <p>{messages.FIELD_QUANTITY}: {item.quantity ?? "—"} · {messages.FIELD_UNIT_PRICE}: {formatMoney(item.unitPrice, currency)}</p>
               </div>
               <strong>{formatMoney(item.amount, currency)}</strong>
-            </article>
+            </Panel>
           ))}
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }
 
@@ -84,7 +85,7 @@ export function InvoicePaymentProofs({ proofs, currency, loading, failed }: {
   ];
 
   return (
-    <section className={styles.dataPanel} aria-labelledby="owner-invoice-proofs">
+    <Panel className={styles.dataPanel} aria-labelledby="owner-invoice-proofs">
       <h2 id="owner-invoice-proofs">{messages.PAYMENT_PROOFS}</h2>
       <QueryFeedback loading={loading} failed={failed} empty={!proofs?.length} emptyText={messages.NO_PAYMENT_PROOFS} />
       {proofs?.length ? (
@@ -94,7 +95,7 @@ export function InvoicePaymentProofs({ proofs, currency, loading, failed }: {
           rows={proofs}
         />
       ) : null}
-    </section>
+    </Panel>
   );
 }
 

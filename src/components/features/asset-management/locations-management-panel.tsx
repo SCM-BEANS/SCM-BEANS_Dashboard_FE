@@ -10,6 +10,7 @@ import { PageActionsRenderer } from "@/components/action-bar/page-actions-render
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { Panel } from "@/components/panel/panel";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -131,7 +132,7 @@ export function LocationsManagementPanel({
 
   const Actions = mode === "moderator" ? PageActionsRenderer : PageActions;
   return (
-    <section className={`${styles.panel} ${mode === "moderator" ? styles.locationsPanel : ""}`} aria-labelledby="locations-management-title">
+    <Panel className={`${styles.locationManagementSharedPanel} ${mode === "moderator" ? styles.locationsPanel : ""}`} aria-labelledby="locations-management-title">
       <div className={mode === "moderator" ? styles.locationsHeading : undefined}><h2 id="locations-management-title">{mode === "owner" ? "Địa điểm" : createFormOpen ? "Tạo địa điểm" : "Danh sách địa điểm"}</h2><Actions actions={!validActiveOwner ? [] : createFormOpen ? [
         { id: "location-cancel", label: "Hủy", priority: 100, disabled: create.isPending, onClick: () => setCreateFormOpen(false), confirm: Object.values(form).some(Boolean) ? { title: "Hủy tạo địa điểm?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy tạo" } : undefined },
         { id: "location-save", label: "Lưu địa điểm", variant: "primary", priority: 100, type: "submit", form: "location-create-form", disabled: create.isPending || blockResubmit || !form.name.trim(), disabledReason: "Yêu cầu đang xử lý hoặc cần kiểm tra lại.", pending: create.isPending, pendingLabel: "Đang tạo…" },
@@ -202,7 +203,7 @@ export function LocationsManagementPanel({
           rows={locationRows}
           rowKey={(location) => location.id}
           columns={[
-            { key: "name", header: "Tên địa điểm", render: (location) => (
+            { key: "name", header: "Tên địa điểm", kind: "name", render: (location) => (
               <TextLinkButton
                 shallow
                 href={{
@@ -217,10 +218,10 @@ export function LocationsManagementPanel({
                 {location.name}
               </TextLinkButton>
             ) },
-            { key: "address", header: "Địa chỉ", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
-            { key: "machines", header: "Số máy", render: (location) => location.machineCount ?? "—" },
-            { key: "status", header: "Trạng thái", render: (location) => location.active == null ? "—" : mode === "owner" ? <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> : <span className={styles.locationStatus} data-status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</span> },
-            ...(mode === "owner" ? [{ key: "id", header: "UUID", render: (location: typeof locationRows[number]) => <span className={styles.code}><TruncatedId value={location.id} /></span> }] : []),
+            { key: "address", header: "Địa chỉ", kind: "name", render: (location) => [location.address, location.city].filter(Boolean).join(" · ") || "—" },
+            { key: "machines", header: "Số máy", kind: "amount", align: "right", render: (location) => location.machineCount ?? "—" },
+            { key: "status", header: "Trạng thái", kind: "status", render: (location) => location.active == null ? "—" : <StatusBadge status={location.active ? "ACTIVE" : "INACTIVE"}>{location.active ? "Hoạt động" : "Ngừng hoạt động"}</StatusBadge> },
+            ...(mode === "owner" ? [{ key: "id", header: "UUID", kind: "code" as const, noWrap: true, render: (location: typeof locationRows[number]) => <span className={styles.code}><TruncatedId value={location.id} /></span> }] : []),
           ]}
         />}
         {!hasFilters && locations.hasNextPage && <div className={styles.actions}>
@@ -238,6 +239,6 @@ export function LocationsManagementPanel({
         onClose={() => { if (!create.isPending) setConfirmOpen(false); }}
         closeOnEscape={!create.isPending}
       />}
-    </section>
+    </Panel>
   );
 }

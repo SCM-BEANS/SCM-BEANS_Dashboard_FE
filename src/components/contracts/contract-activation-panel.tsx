@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -171,7 +172,7 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
   if (contract.status !== "DRAFT") return null;
 
   return (
-    <section className={styles.panel} aria-labelledby="contract-activation-title">
+    <Panel className={styles.panel} aria-labelledby="contract-activation-title">
       <h2 id="contract-activation-title">Kích hoạt hợp đồng</h2>
       <p className={styles.description}>Thông tin được lấy tự động từ hợp đồng đã lưu và lệnh lắp đặt đã hoàn tất. Admin hoặc Moderator kiểm tra và xác nhận kích hoạt.</p>
       <dl className={styles.summary}>
@@ -233,6 +234,6 @@ export function ContractActivationPanel({ contract }: { contract: Contract }) {
           </div>
         </div>
       )}
-    </section>
+    </Panel>
   );
 }

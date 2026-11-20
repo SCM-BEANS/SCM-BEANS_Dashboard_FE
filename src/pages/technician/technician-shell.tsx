@@ -107,7 +107,7 @@ export function TechnicianShell({
         <title>{pageTitle} | {TECHNICIAN_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="technician">
+      <div className={styles.shell} data-role="technician" data-ui-dashboard>
         <NotificationRuntime scope="technician" />
         <Sidebar
           brand={TECHNICIAN_MESSAGES.BRAND}

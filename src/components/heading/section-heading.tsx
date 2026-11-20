@@ -18,7 +18,7 @@ export function SectionHeading({
   const className = align === "center" ? "section-heading center" : "section-heading";
 
   return (
-    <div className={className}>
+    <div className={className} data-ui-section-heading>
       {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
       <h2>{title}</h2>
       {description ? <p>{description}</p> : null}

@@ -110,7 +110,7 @@ async function mockMachineApi(page: Page, options: { deniedMachine?: boolean; is
 async function openAdminSetup(page: Page) {
   await page.goto(`/admin/machines/${machineId}`);
   await page.getByRole("tab", { name: "Thiết lập kết nối", exact: true }).click();
-  return page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
+  return page.locator("section").filter({ has: page.getByRole("heading", { name: "Chứng chỉ kết nối", exact: true }) });
 }
 
 for (const role of ["admin", "moderator", "owner", "technician"]) {
@@ -119,7 +119,7 @@ for (const role of ["admin", "moderator", "owner", "technician"]) {
     await mockMachineApi(page);
     let heartbeat = { machineId, status: "ONLINE", latitude: 10.7769, longitude: 106.7009 };
     await page.route("**/api/dolores/v1/telemetry-query/machines/*/heartbeats/latest", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(heartbeat) }));
-    const path = role === "technician" ? `/technician/machine-check/${machineId}` : `/${role === "owner" ? "dashboard" : role}/machines/${machineId}/operations?tab=connection`;
+    const path = role === "technician" ? `/technician/machine-check/${machineId}?tab=connection` : `/${role === "owner" ? "dashboard" : role}/machines/${machineId}/operations?tab=connection`;
     await page.goto(path);
     await expect(page.getByText("10.776900", { exact: true })).toBeVisible();
     await expect(page.getByText("106.700900", { exact: true })).toBeVisible();
@@ -132,7 +132,7 @@ for (const role of ["admin", "moderator", "owner", "technician"]) {
     await expect(page.getByText(/Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ/)).toBeVisible();
     heartbeat = { ...heartbeat, status: "OFFLINE", latitude: 10.7769 };
     await page.reload();
-    await expect(page.getByText("Tọa độ ghi nhận gần nhất", { exact: true })).toBeVisible();
+    await expect(page.getByText("Tọa độ gần nhất", { exact: true })).toBeVisible();
     await expect(page.getByText(/Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ/)).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByText("106.700900", { exact: true })).toBeVisible();
@@ -212,8 +212,13 @@ test.describe("Machine provisioning Phase 02", () => {
   for (const role of ["admin", "technician"]) test(`${role} cannot issue when active device identity differs from serial`, async ({ page, context }) => {
     await context.addCookies([{ name: "access_token", value: tokenFor(role), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page, { identity: "CUSTOM-DEVICE-ID" });
-    if (role === "admin") await openAdminSetup(page); else await page.goto(`/technician/machine-check/${machineId}`);
-    const panel = page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
+    if (role === "admin") await openAdminSetup(page); else {
+      await page.goto(`/technician/machine-check/${machineId}`);
+      await page.getByRole("tab", { name: "Kết nối", exact: true }).click();
+    }
+    const panel = role === "admin"
+      ? page.locator("section").filter({ has: page.getByRole("heading", { name: "Chứng chỉ kết nối", exact: true }) })
+      : page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
     await expect(page.getByText("CUSTOM-DEVICE-ID", { exact: true })).toBeVisible();
     await expect(panel.getByRole("button", { name: "Phát hành chứng chỉ", exact: true })).toBeDisabled();
     expect(calls.some((call) => call.method === "POST")).toBe(false);
@@ -224,17 +229,24 @@ test.describe("Machine provisioning Phase 02", () => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page, { identityDenied: true });
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Kết nối", exact: true }).click();
     const identity = page.getByRole("region", { name: "Định danh thiết bị", exact: true });
-    await expect(identity.getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Phát hành chứng chỉ", exact: true })).toBeDisabled();
-    expect(calls.filter((call) => call.path.endsWith("telemetry-device-identity"))).toHaveLength(1);
+    await expect.poll(() => calls.filter((call) => call.path.endsWith("telemetry-device-identity")).length).toBe(1);
+    await expect(identity).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(Phát hành chứng chỉ|Tải ZIP|Tải JSON|Làm mới định danh)/ })).toHaveCount(0);
+    await expect(page.getByText(certificate.certificateSerial, { exact: true })).toHaveCount(0);
+    // Observe beyond the first retry delay so an automatic retry cannot pass unnoticed.
+    await page.waitForTimeout(1500);
+    expect(calls.filter((call) => call.path.endsWith("telemetry-device-identity"))).toEqual([{ path: `/machines/${machineId}/telemetry-device-identity`, method: "GET" }]);
+    expect(calls.some((call) => call.method === "POST")).toBe(false);
   });
   test("Admin browses public certificate details, issues and confirms deletion", async ({ page, context }) => {
     await context.addCookies([{ name: "access_token", value: tokenFor("admin"), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page);
     const panel = await openAdminSetup(page);
     await expect(panel.getByText("1794029485731", { exact: true })).toBeVisible();
-    await panel.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+    await panel.getByRole("button", { name: "1794029485731", exact: true }).click();
     await expect(panel.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toBeAttached();
     await panel.getByRole("button", { name: "Phát hành chứng chỉ", exact: true }).click();
     await expect(panel.getByText("1794029485732", { exact: true })).toBeVisible();
@@ -243,7 +255,7 @@ test.describe("Machine provisioning Phase 02", () => {
     await row.getByRole("button", { name: "Xóa chứng chỉ", exact: true }).click();
     const confirmation = page.getByRole("alertdialog");
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole("button", { name: "Xóa chứng chỉ", exact: true }).click();
+    await confirmation.getByRole("button", { name: /^Xóa chứng chỉ/ }).click({ delay: 1300 });
     await expect(panel.getByText("1794029485732", { exact: true })).toHaveCount(0);
     expect(calls.filter((call) => call.method === "DELETE")).toHaveLength(1);
   });
@@ -260,10 +272,11 @@ test.describe("Machine provisioning Phase 02", () => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
     await mockMachineApi(page);
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Kết nối", exact: true }).click();
     const panel = page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
     await expect(panel.getByText("1794029485731", { exact: true })).toBeVisible();
     const downloadPromise = page.waitForEvent("download");
-    await panel.getByRole("button", { name: "Tải ZIP", exact: true }).click();
+    await panel.getByRole("button", { name: /^Tải ZIP/ }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.zip$/);
     await expect(page.getByText("PRIVATE_KEY_DOWNLOAD_ONLY", { exact: false })).toHaveCount(0);
@@ -282,8 +295,15 @@ test.describe("Machine provisioning Phase 02", () => {
     await expect(panel.getByRole("alert")).toBeVisible();
     await expect(issue).toBeDisabled();
     expect(calls.filter((call) => call.method === "POST")).toHaveLength(1);
-    await panel.getByRole("button", { name: "Làm mới", exact: true }).click();
+    const readsBeforeReload = calls.filter((call) => call.method === "GET" && call.path.endsWith("/certificates")).length;
+    await page.reload();
+    await page.getByRole("tab", { name: "Thiết lập kết nối", exact: true }).click();
     await expect(issue).toBeEnabled();
+    expect(calls.filter((call) => call.method === "GET" && call.path.endsWith("/certificates")).length).toBeGreaterThan(readsBeforeReload);
+    expect(calls.filter((call) => call.method === "POST")).toHaveLength(1);
+    await issue.click();
+    await expect(issue).toBeDisabled();
+    await expect.poll(() => calls.filter((call) => call.method === "POST").length).toBe(2);
   });
 });
 
@@ -294,7 +314,7 @@ test.describe("Machine active menu Phase 03", () => {
     const menuPutGate = new Promise<void>((resolve) => { releasePut = resolve; });
     const calls = await mockMachineApi(page, { menu: true, syncPanel: true, menuPutGate });
     await page.goto((role === "admin" ? "/admin/menu" : "/dashboard/menu/sync") + `?syncMachineId=${machineId}`);
-    if (role === "admin") await page.getByRole("button", { name: "Theo dõi đồng bộ", exact: true }).click();
+    if (role === "admin") await page.getByRole("button", { name: "Đồng bộ với máy", exact: true }).click();
     const panel = page.getByRole("region", { name: "Menu đang gán cho máy", exact: true });
     const machineSelect = page.getByRole("combobox", { name: /Máy cần theo dõi/ });
     await expect(machineSelect).toHaveValue(machineId);
@@ -313,7 +333,7 @@ test.describe("Machine active menu Phase 03", () => {
     await expect(page.getByText("Cần kiểm tra xác nhận phiên bản từ máy", { exact: true })).toBeVisible();
     await expect(page.getByText("Máy đã áp dụng", { exact: true })).toHaveCount(0);
     await page.reload();
-    if (role === "admin") await page.getByRole("button", { name: "Theo dõi đồng bộ", exact: true }).click();
+    if (role === "admin") await page.getByRole("button", { name: "Đồng bộ với máy", exact: true }).click();
     await expect(machineSelect).toHaveValue(machineId);
     await expect(panel.getByText("Owner summer menu", { exact: true }).first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`syncMachineId=${machineId}`));
@@ -324,6 +344,7 @@ test.describe("Machine active menu Phase 03", () => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page, { menu: true });
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Menu của máy", exact: true }).click();
     const panel = page.getByRole("region", { name: "Menu đang gán cho máy", exact: true });
     await expect(panel.getByText("Menu tiêu chuẩn hệ thống (Mặc định)", { exact: true })).toBeVisible();
     await panel.getByLabel("Chọn menu cho máy", { exact: true }).selectOption(menuId);
@@ -334,6 +355,7 @@ test.describe("Machine active menu Phase 03", () => {
     expect(calls.filter((call) => call.path === `/machines/${machineId}/active-menu` && call.method === "GET").length).toBeGreaterThanOrEqual(2);
     expect(calls.some((call) => call.path.includes("/recipe-menus/local") || call.method === "POST" && call.path.includes("/recipes/sync"))).toBe(false);
     await page.reload();
+    await page.getByRole("tab", { name: "Menu của máy", exact: true }).click();
     await expect(panel.getByText("Owner summer menu", { exact: true }).first()).toBeVisible();
     page.once("dialog", (dialog) => dialog.accept());
     await panel.getByRole("button", { name: "Dùng menu mặc định", exact: true }).click();
@@ -341,6 +363,7 @@ test.describe("Machine active menu Phase 03", () => {
     await expect(panel.getByRole("button", { name: "Dùng menu mặc định", exact: true })).toBeDisabled();
     expect(calls.filter((call) => call.method === "DELETE")).toEqual([{ path: `/machines/${machineId}/active-menu`, method: "DELETE" }]);
     await page.reload();
+    await page.getByRole("tab", { name: "Menu của máy", exact: true }).click();
     await expect(panel.getByText("Menu tiêu chuẩn hệ thống (Mặc định)", { exact: true })).toBeVisible();
   });
 
@@ -348,6 +371,7 @@ test.describe("Machine active menu Phase 03", () => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page, { menu: true, menuPutUnknown: true });
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Menu của máy", exact: true }).click();
     const panel = page.getByRole("region", { name: "Menu đang gán cho máy", exact: true });
     await panel.getByLabel("Chọn menu cho máy", { exact: true }).selectOption(menuId);
     await panel.getByRole("button", { name: "Gán menu & đồng bộ", exact: true }).click();
@@ -362,6 +386,7 @@ test.describe("Machine active menu Phase 03", () => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
     const calls = await mockMachineApi(page, { menu: true, menuReadStatus: status });
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Menu của máy", exact: true }).click();
     const panel = page.getByRole("region", { name: "Menu đang gán cho máy", exact: true });
     await expect(panel.getByRole("alert")).toHaveText(status === 404 ? /Không tìm thấy thông tin thiết bị hoặc bạn không có quyền/ : /Dịch vụ chưa hỗ trợ cấu hình menu/);
     await expect(panel.getByRole("button", { name: "Gán menu & đồng bộ", exact: true })).toHaveCount(0);
@@ -372,22 +397,29 @@ test.describe("Machine active menu Phase 03", () => {
 test.describe("Machine provisioning cross-role Phase 04", () => {
   test("Technician certificate access revocation removes previously loaded public details and download actions", async ({ page, context }) => {
     await context.addCookies([{ name: "access_token", value: tokenFor("technician"), domain: "127.0.0.1", path: "/" }]);
-    await mockMachineApi(page);
+    const calls = await mockMachineApi(page);
     await page.goto(`/technician/machine-check/${machineId}`);
+    await page.getByRole("tab", { name: "Kết nối", exact: true }).click();
     const panel = page.getByRole("region", { name: "Chứng chỉ kết nối", exact: true });
-    await panel.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+    await panel.getByRole("button", { name: "1794029485731", exact: true }).click();
     await expect(panel.getByRole("heading", { name: "Chi tiết chứng chỉ", exact: true })).toBeVisible();
     await expect(panel.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toBeAttached();
+    let deniedReads = 0;
     await page.route(`**/api/dolores/v1/machines/${machineId}/certificates?**`, async (route) => {
+      deniedReads += 1;
       await route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ message: "Machine grant revoked" }) });
     });
     await panel.getByRole("button", { name: "Làm mới", exact: true }).click();
-    await expect(panel.getByRole("alert")).toBeVisible();
-    await expect(panel.getByRole("button", { name: "Phát hành chứng chỉ", exact: true })).toBeDisabled();
-    await expect(panel.getByRole("heading", { name: "Chi tiết chứng chỉ", exact: true })).toHaveCount(0);
-    await expect(panel.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toHaveCount(0);
-    await expect(panel.getByText("PUBLIC_CA_PEM", { exact: false })).toHaveCount(0);
-    await expect(panel.getByRole("button", { name: /^(Tải ZIP|Tải JSON|Xóa chứng chỉ)$/ })).toHaveCount(0);
+    await expect(panel).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Phát hành chứng chỉ", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Chi tiết chứng chỉ", exact: true })).toHaveCount(0);
+    await expect(page.getByText("PUBLIC_CLIENT_PEM", { exact: false })).toHaveCount(0);
+    await expect(page.getByText("PUBLIC_CA_PEM", { exact: false })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(Tải ZIP|Tải JSON|Xóa chứng chỉ)$/ })).toHaveCount(0);
+    await expect(page.getByText(certificate.certificateSerial, { exact: true })).toHaveCount(0);
+    await page.waitForTimeout(1500);
+    expect(deniedReads).toBe(1);
+    expect(calls.some((call) => call.method === "POST")).toBe(false);
   });
 
   test("Owner denied active-menu readback cannot fetch candidates or mutate device setup", async ({ page, context }) => {
@@ -441,7 +473,7 @@ test.describe("Machine provisioning cross-role Phase 04", () => {
     });
     await page.goto("/moderator/menu");
     await expect(page.getByText("Moderator shared library", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Theo dõi đồng bộ", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Đồng bộ với máy", exact: true })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Menu đang gán cho máy", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Phát hành chứng chỉ", exact: true })).toHaveCount(0);
     expect(calls.some((call) => /certificates|telemetry-device-identity|active-menu|available-menus/.test(call.path))).toBe(false);

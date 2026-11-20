@@ -82,7 +82,7 @@ test("owner opens a support request and can see the current acknowledgement step
   const listResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith("/maintenance-requests"));
   await page.goto("/dashboard/support");
   expect(new URL((await listResponse).url()).searchParams.get("size")).toBe("10");
-  await page.getByRole("link", { name: "Xem yêu cầu" }).click();
+  await page.locator(`a[href="/dashboard/support/${id}"]`).click();
   await expect(page.getByText(request.issueDescription)).toBeVisible();
   await page.reload();
   await page.getByRole("link", { name: "Hồ sơ sửa chữa", exact: true }).click();

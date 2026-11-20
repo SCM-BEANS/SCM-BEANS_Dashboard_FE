@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable } from "@/components/table/data-table";
 import type { TelemetryPoint } from "@/schema/telemetry.schema";
@@ -208,7 +209,7 @@ export function TelemetryHistoryPanel({
             })}
           </select>
         </label> : null}
-        <div className={styles.telemetryRangePresets} role="group" aria-label="Cách xem thông số"><button type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</button><button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</button></div>
+        <SectionTabList role="group" aria-label="Cách xem thông số"><button type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</button><button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</button></SectionTabList>
         </div>
         {fieldInfo(field).group === fieldGroups[3] ? <p className={styles.telemetryRangeCaption}>Thông số nâng cao · {field}. Dùng để chẩn đoán kỹ thuật, không dùng để đếm ly.</p> : null}
         {field.startsWith("total_volume_") ? <p className={styles.telemetryRangeCaption}>Thể tích nước không phải số ly pha chế.</p> : null}

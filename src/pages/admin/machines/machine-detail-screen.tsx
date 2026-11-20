@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { MachineSpecificationsView } from "./create-machine-model-form";
 import axios from "axios";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
@@ -95,8 +98,8 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
   return <>
     <SmartIotPanel title="Thiết lập kết nối">
       <div className={styles.machineConnectionLayout}>
-        <section>
-          <h3>Định danh thiết bị</h3>
+        <section aria-labelledby="admin-machine-identity-title">
+          <h3 id="admin-machine-identity-title">Định danh thiết bị</h3>
           {identity.isFetching ? <p role="status">Đang kiểm tra định danh thiết bị…</p> : identity.isSuccess ? <>
             <div className={styles.operationsGrid}>
               <div><span>Mã thiết bị đang hoạt động</span><strong>{identity.data.deviceId}</strong></div>
@@ -324,7 +327,7 @@ function MachineDetailContent() {
     });
   };
 
-  if (!router.isReady) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
+  if (!router.isReady) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel></div></AdminShell>;
   if (!validId) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
     <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{T.MACHINES.INVALID_ID}</p></div>
@@ -338,7 +341,7 @@ function MachineDetailContent() {
       headingClassName={styles.pageHeading}
     />
   </div></AdminShell>;
-  if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<section className={styles.panel} role="status">{T.COMMON.LOADING}</section></div></AdminShell>;
+  if (machine.isPending) return <AdminShell><div className={styles.pageContent}>{renderHeading()}<Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel></div></AdminShell>;
   if (machine.isError) return <AdminShell><div className={styles.pageContent}>
     {renderHeading()}
             <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar type="button" onClick={() => void machine.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>
@@ -359,7 +362,7 @@ function MachineDetailContent() {
       <MachineDetailView className={styles.machineWorkspace} summary={[]}>
 
       <div className={styles.machineInventoryGroup}>
-        <div className={styles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
+        <SectionTabList role="tablist" aria-label="Chi tiết máy">
           <button
             id="machine-profile-tab"
             className={`${styles.machineViewTab} ${detailTab === "profile" ? styles.machineViewTabActive : ""}`}
@@ -387,13 +390,13 @@ function MachineDetailContent() {
             aria-controls="machine-connection-panel" disabled={editing}
             className={`${styles.machineViewTab} ${detailTab === "connection" ? styles.machineViewTabActive : ""}`}
             onClick={() => setDetailTab("connection")}>Thiết lập kết nối</button>
-        <button type="button" className={`${styles.machineViewTab} ${detailTab === "history" ? styles.machineViewTabActive : ""}`} role="tab" aria-selected={detailTab === "history"} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
-        </div>
+        <button type="button" className={`${styles.machineViewTab} ${detailTab === "history" ? styles.machineViewTabActive : ""}`} id="machine-history-tab" aria-controls="machine-history-panel" role="tab" aria-selected={detailTab === "history"} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
+        </SectionTabList>
 
         {detailTab === "connection" ? <div id="machine-connection-panel" role="tabpanel" aria-labelledby="machine-connection-tab">
           <AdminMachineConnectionSetup key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
         </div> : detailTab === "profile" ? (
-          <section id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
+          <Panel id="machine-profile-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-profile-tab">
             <div className={styles.machineInventoryHeading}>
               <h2>{T.MACHINES.DETAIL}</h2>
               {actionBar()}
@@ -437,12 +440,12 @@ function MachineDetailContent() {
               </label>
               {!device.ownerId && <p className={styles.panelSubtitle}>{T.MACHINES.OWNER_REQUIRED}</p>}
               {locations.isPending && device.ownerId && <p className={styles.panelSubtitle} role="status">{T.COMMON.LOADING}</p>}
-              {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><button type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {locations.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(locations.error)}</p><ButtonBar type="button" onClick={() => void locations.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
             </form>}
             {machineActionError && <p className={styles.accountInlineWarning} role="alert">{machineActionError}</p>}
-          </section>
+          </Panel>
         ) : detailTab === "machine-type" ? (
-          <section id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
+          <Panel id="machine-type-panel" className={styles.panel} role="tabpanel" aria-labelledby="machine-type-tab">
             <h2>{T.MACHINES.MACHINE_TYPE}</h2>
             <div className={styles.machineProfileGroups}>
               <section className={styles.machineProfileGroup}>
@@ -461,7 +464,7 @@ function MachineDetailContent() {
                 <h3>{T.MACHINE_MODELS.DETAIL}</h3>
             {device.modelId ? <>
               {machineModel.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-              {machineModel.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModel.error)}</p><button type="button" onClick={() => void machineModel.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {machineModel.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModel.error)}</p><ButtonBar type="button" onClick={() => void machineModel.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
               {machineModel.data && <>
                 <div className={styles.machineProfileFields}>
                   <div><span>{T.MACHINE_MODELS.DISPLAY_NAME}</span><strong>{machineModel.data.displayName}</strong></div>
@@ -479,18 +482,18 @@ function MachineDetailContent() {
             </> : <p className={styles.emptyText}>{T.MACHINES.MODEL_UNLINKED}</p>}
               </section>
             </div>
-          </section>
+          </Panel>
         ) : null}
       </div>
 
-      {detailTab === "history" && <>
+      {detailTab === "history" && <div id="machine-history-panel" role="tabpanel" aria-labelledby="machine-history-tab">
       {schedule.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><ButtonBar type="button" onClick={() => void schedule.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-      <section className={styles.panel}>
+      <Panel className={styles.panel}>
         <div className={styles.machineInventoryHeading}>
           <h2>{T.MACHINES.TICKET_HISTORY}</h2>
         </div>
         {maintenanceTickets.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-        {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><button type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {maintenanceTickets.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(maintenanceTickets.error)}</p><ButtonBar type="button" onClick={() => void maintenanceTickets.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
         {maintenanceTickets.data && maintenanceTickets.data.items.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
         {machine.data && <MachineMaintenanceTicketActions
           machineId={machineId}
@@ -501,15 +504,11 @@ function MachineDetailContent() {
           previewLimit={10}
           onRefresh={() => maintenanceTickets.refetch()}
         />}
-        {maintenanceTickets.data && <nav className={styles.machinePagination} aria-label="Phân trang bảo trì">
-          <ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar>
-          <span>Trang {ticketPage + 1} · tối đa 10 phiếu</span>
-          <ButtonBar disabled={!maintenanceTickets.data.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar>
-        </nav>}
-      </section>
+        {maintenanceTickets.data && <Pagination page={ticketPage} hasNext={!(!maintenanceTickets.data.hasNext || maintenanceTickets.isFetching)} isFetching={maintenanceTickets.isFetching} ariaLabel="Phân trang bảo trì" onPageChange={setTicketPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>Trang {ticketPage + 1} · tối đa 10 phiếu</span></Pagination>}
+      </Panel>
 
       {machineId && <MachineContractHistory machineId={machineId} role="ADMIN" />}
-      </>}
+      </div>}
         </MachineDetailView>
     </div>
     {confirmDelete && <NotificationDialog

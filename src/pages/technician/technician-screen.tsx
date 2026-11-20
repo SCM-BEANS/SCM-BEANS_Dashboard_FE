@@ -2,6 +2,7 @@ import type { ActionBarAction } from "@/components/action-bar/action-bar-actions
 import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
+import { Panel } from "@/components/panel/panel";
 import { TECHNICIAN_MESSAGES } from "@/text/technician/technician-messages";
 import styles from "./technician-shell.module.css";
 
@@ -75,13 +76,12 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
         ) : null}
       </div>
       {screen.fields?.length ? (
-        <details className={styles.secondaryDetails}>
-        <summary>Thông tin cần chuẩn bị</summary>
-        <fieldset className={styles.workflowFields} disabled aria-label={screen.title}>
-          <legend>{TECHNICIAN_MESSAGES.WORKFLOWS.FIELDS_TITLE}</legend>
-          {screen.fields.map(renderField)}
-        </fieldset>
-        </details>
+        <Panel>
+          <fieldset className={styles.workflowFields} disabled aria-label={screen.title}>
+            <legend>{TECHNICIAN_MESSAGES.WORKFLOWS.FIELDS_TITLE}</legend>
+            {screen.fields.map(renderField)}
+          </fieldset>
+        </Panel>
       ) : null}
       <PageActions actions={actions.map((action, index) => ({ ...action, id: String(index) }))} />
     </section>

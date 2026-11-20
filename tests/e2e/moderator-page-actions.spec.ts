@@ -135,7 +135,13 @@ test("invoice lists expose export and customer creation uses the dock", async ({
   await page.route("**/api/dolores/v1/billing/invoices*", async (route) => route.fulfill({ json: [{ id: contractId, ownerId, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" }] }));
   for (const route of ["/moderator/invoices", "/moderator/invoices/list"]) {
     await page.goto(route);
-    await expect(pageActionBar(page).locator('[data-action-id="invoice-export"]')).toBeVisible();
+    await expect(page.locator("[data-ui-panel]")).toBeVisible();
+    await expect(page.getByLabel("Khách hàng")).toBeVisible();
+    await expect(page.getByLabel("Kỳ hóa đơn")).toHaveAttribute("type", "month");
+    await expect(page.getByLabel("Trạng thái")).toBeVisible();
+    await expect(page.getByLabel("Loại hóa đơn")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tìm kiếm" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Xuất danh sách" })).toBeVisible();
   }
   await page.goto("/moderator/customers/new");
   await expect(pageActionBar(page).locator('[data-action-id="customer-create-submit"]')).toBeVisible();
@@ -167,4 +173,36 @@ test("selected offline review exposes its decision in the dock", async ({ page }
   await expect(action).toBeEnabled();
   await action.click();
   await expect(page.getByRole("alertdialog")).toBeVisible();
+});
+
+
+test("shared model pagination follows the clamped page when refreshed data shrinks", async ({ page, context }) => {
+  const claims = Buffer.from(JSON.stringify({ roles: ["moderator"] })).toString("base64url");
+  await context.addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  let size = 21;
+  let reads = 0;
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    if (!path.endsWith("/machine-models")) return route.fulfill({ json: [] });
+    reads++;
+    return route.fulfill({ json: Array.from({ length: size }, (_, index) => ({
+      id: `f5000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`,
+      modelCode: `MODEL-${index + 1}`, manufacturer: "TEST_DATA", displayName: `Model ${index + 1}`, machineType: "CONVENTIONAL", active: true,
+    })) });
+  });
+  await page.goto("/moderator/machines/models");
+  const pagination = page.getByRole("navigation", { name: "Phân trang mẫu máy", exact: true });
+  await pagination.getByRole("button", { name: "Sau", exact: true }).click();
+  await pagination.getByRole("button", { name: "Sau", exact: true }).click();
+  await expect(pagination).toContainText("Trang 3");
+  size = 1;
+  const previousReads = reads;
+  await page.clock.install();
+  await page.clock.fastForward(31_000);
+  await page.evaluate(() => { window.dispatchEvent(new Event("offline")); window.dispatchEvent(new Event("online")); });
+  await expect.poll(() => reads).toBeGreaterThan(previousReads);
+  await expect(pagination).toContainText("Trang 1");
+  await expect(pagination.getByRole("button", { name: "Trước", exact: true })).toBeDisabled();
+  await expect(pagination.getByRole("button", { name: "Sau", exact: true })).toBeDisabled();
+  await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(1);
 });

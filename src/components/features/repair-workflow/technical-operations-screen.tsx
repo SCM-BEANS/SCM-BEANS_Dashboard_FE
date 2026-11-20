@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
@@ -94,7 +95,7 @@ function QueryFeedback({
     return (
       <div className={styles.pendingNotice} role="alert">
         <p>{errorMessage ?? getApiErrorMessage(query.error)}</p>
-        <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>{messages.RETRY}</button>
+        <ButtonBar  type="button" onClick={() => void query.refetch()}>{messages.RETRY}</ButtonBar>
       </div>
     );
   }
@@ -220,7 +221,7 @@ function WorkOrderDispatchPanel({ details, milestones }: { details: Installation
   };
 
   return (
-    <section className={`${styles.panel} ${styles.workOrderDispatch}`} aria-labelledby="work-order-dispatch-title">
+    <Panel className={`${styles.panel} ${styles.workOrderDispatch}`} aria-labelledby="work-order-dispatch-title">
       <h2 id="work-order-dispatch-title">Kỹ thuật viên &amp; lịch hẹn</h2>
       <div className={styles.workOrderTechnician}>
         <span className={styles.workOrderTechnicianAvatar} aria-hidden="true">{initials}</span>
@@ -254,9 +255,9 @@ function WorkOrderDispatchPanel({ details, milestones }: { details: Installation
                   {eligibleTechnicians.map((profile) => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}
                 </select>
               </label>
-              <button className={styles.inlineButton} type="submit" disabled={!technicianId || !eligibleTechnicians.some((profile) => profile.idaasUserId === technicianId) || assign.isPending}>
+              <ButtonBar  type="submit" disabled={!technicianId || !eligibleTechnicians.some((profile) => profile.idaasUserId === technicianId) || assign.isPending}>
                 {assign.isPending ? "Đang giao…" : workOrder.assignedTechnicianId ? "Cập nhật phân công" : "Giao kỹ thuật viên"}
-              </button>
+              </ButtonBar>
             </form>
           </details>
           <details className={styles.workOrderEditDisclosure}>
@@ -266,15 +267,15 @@ function WorkOrderDispatchPanel({ details, milestones }: { details: Installation
                 Lịch lắp đặt
                 <input type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.currentTarget.value)} disabled={reschedule.isPending} required />
               </label>
-              <button className={styles.inlineButton} type="submit" disabled={!scheduledFor || reschedule.isPending}>
+              <ButtonBar  type="submit" disabled={!scheduledFor || reschedule.isPending}>
                 {reschedule.isPending ? "Đang lưu…" : "Lưu lịch hẹn"}
-              </button>
+              </ButtonBar>
             </form>
           </details>
         </div>
       </>}
       {feedback && <p className={`${styles.workOrderFeedback} ${feedback.type === "error" ? styles.workOrderFeedbackError : styles.workOrderFeedbackSuccess}`} role={feedback.type === "error" ? "alert" : "status"}>{feedback.message}</p>}
-    </section>
+    </Panel>
   );
 }
 function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers, ticketHref }: {
@@ -369,7 +370,7 @@ function MaintenanceRequestTable({
         const isCurrentRequestPending = isPending && pendingRequestId === request.id;
         return request.status === "REQUESTED" && request.requestType === "REPAIR" ? (
           <div className={styles.technicalRequestActions}>
-            <button
+            <ButtonBar
               className={styles.technicalRequestAccept}
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: true })}
@@ -378,8 +379,8 @@ function MaintenanceRequestTable({
               {isCurrentRequestPending && pendingAccepted
                 ? messages.TECHNICAL_ACCEPTING
                 : messages.TECHNICAL_ACCEPT}
-            </button>
-            <button
+            </ButtonBar>
+            <ButtonBar
               className={styles.technicalRequestReject}
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: false })}
@@ -388,7 +389,7 @@ function MaintenanceRequestTable({
               {isCurrentRequestPending && pendingAccepted === false
                 ? messages.TECHNICAL_REJECTING
                 : messages.TECHNICAL_REJECT}
-            </button>
+            </ButtonBar>
           </div>
         ) : request.status === "TRIAGED" ? (
           request.technicianId === null || request.technicianId === undefined
@@ -450,9 +451,9 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
       </div>
       <div className={styles.workOrderPageActions}>
         <Link className={styles.workOrderContractLink} href={contractHref}>Về hợp đồng</Link>
-        <button className={styles.workOrderRefreshButton} type="button" onClick={onRefresh} disabled={isRefreshing}>
+        <ButtonBar className={styles.workOrderRefreshButton} type="button" onClick={onRefresh} disabled={isRefreshing}>
           {isRefreshing ? "Đang tải…" : "Làm mới"}
-        </button>
+        </ButtonBar>
       </div>
     </header>
     <section
@@ -482,7 +483,7 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
       {terminalIssue && <p className={styles.workOrderTerminalNotice} role="status">{workOrder.failureReason || workOrderStatusLabels[workOrder.status]}</p>}
     </section>
     <div className={styles.workOrderOverviewGrid}>
-      <section className={`${styles.panel} ${styles.workOrderInfoPanel}`} aria-labelledby="work-order-info-title">
+      <Panel className={`${styles.panel} ${styles.workOrderInfoPanel}`} aria-labelledby="work-order-info-title">
         <h2 id="work-order-info-title">Thông tin lắp đặt</h2>
         <dl className={styles.workOrderInfoFacts}>
           <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
@@ -492,14 +493,14 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
           <div><dt>Trạng thái</dt><dd>{workOrderStatusLabels[workOrder.status]}</dd></div>
           {workOrder.locationName && <div><dt>Địa điểm</dt><dd>{workOrder.locationName}</dd></div>}
         </dl>
-      </section>
-      {role === "moderator" ? <WorkOrderDispatchPanel details={details} milestones={milestones} /> : <section className={styles.panel}>
+      </Panel>
+      {role === "moderator" ? <WorkOrderDispatchPanel details={details} milestones={milestones} /> : <Panel className={styles.panel}>
         <h2>Kỹ thuật viên &amp; lịch hẹn</h2>
         <dl className={styles.workOrderInfoFacts}>
           <div><dt>Kỹ thuật viên</dt><dd>{workOrder.technicianName || (workOrder.assignedTechnicianId ? <TruncatedId value={workOrder.assignedTechnicianId} /> : "Chưa phân công")}</dd></div>
           <div><dt>Lịch lắp đặt</dt><dd>{formatDate(workOrder.scheduledFor)}</dd></div>
         </dl>{milestones}
-      </section>}
+      </Panel>}
     </div>
     <InstallationWorkOrderRecords
       workOrderId={workOrder.id}
@@ -610,7 +611,7 @@ export function TechnicalOperationsScreen({
       <div className={styles.pageContent}>
         <PageHeading title={messages.TECHNICAL_TITLE} />
         {routes.role === "moderator" && <>
-          <button type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</button>
+          <ButtonBar type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</ButtonBar>
           <p className={styles.pendingNotice} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
         </>}
       </div>
@@ -669,24 +670,24 @@ export function TechnicalOperationsScreen({
     if (historyMachineId && !validHistoryMachineId) return <div className={styles.pageContent}><PageHeading title={messages.MACHINE_TICKETS} description={messages.MACHINE_HISTORY_SCOPE} /><p className={styles.pendingNotice} role="status">{historyMachineId}: {messages.MACHINE_LEGACY_ID}</p></div>;
     return <div className={styles.pageContent}>
       <BackButtonHeading className={styles.pageHeading} titleId="machine-history-title" title="Lịch sử máy" back={historyMachineId ? { fallbackHref: routes.machineDetail(historyMachineId), label: "Về hồ sơ máy" } : null} />
-      <section className={styles.panel} aria-labelledby="machine-history-list-title">
+      <Panel className={styles.panel} aria-labelledby="machine-history-list-title">
         <div className={styles.listHeading}><h2 id="machine-history-list-title">Phiếu bảo trì</h2></div>
-        <form className={`${filterStyles.filters} ${styles.historyFilters}`} onSubmit={(event) => { event.preventDefault(); setHistoryFilters(historyDraft); setTicketPage(0); }}>
+        <TableFilters className={`${filterStyles.filters} ${styles.historyFilters}`} onSubmit={(event) => { event.preventDefault(); setHistoryFilters(historyDraft); setTicketPage(0); }}>
           <select aria-label="Lọc theo máy" value={historyMachineId || historyDraft.machineId} disabled={Boolean(historyMachineId) || historyMachines.isPending || historyMachines.isError} onChange={(event) => setHistoryDraft((value) => ({ ...value, machineId: event.target.value }))}>
             <option value="">Tất cả máy</option>{historyMachineId && !historyMachines.data?.some((machine) => machine.id === historyMachineId) ? <option value={historyMachineId}>Máy đang xem</option> : null}{historyMachines.data?.map((machine) => <option key={machine.id} value={machine.id}>{machine.serialNumber || machine.id}</option>)}
           </select>
           <select aria-label="Lọc trạng thái phiếu" value={historyDraft.status} onChange={(event) => setHistoryDraft((value) => ({ ...value, status: event.target.value as typeof historyDraft.status }))}>
             <option value="">Tất cả trạng thái</option>{["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED"].map((status) => <option key={status} value={status}>{maintenanceTicketStatusLabel(status)}</option>)}
           </select>
-          <button type="submit" disabled={tickets.isFetching}>Tìm kiếm</button>
-        </form>
+          <ButtonBar type="submit" disabled={tickets.isFetching}>Tìm kiếm</ButtonBar>
+        </TableFilters>
         {shouldLoadMachineSerials && <QueryFeedback query={historyMachines} loadingMessage={messages.LOADING_MACHINES} />}
         <QueryFeedback query={tickets} loadingMessage={messages.LOADING_TICKETS} />
         {tickets.data && !tickets.isError && <>
           <MaintenanceTicketTable tickets={tickets.data.items} machineId={historyMachineId || historyFilters.machineId || undefined} role={routes.role} machineSerialNumbers={machineSerialNumbers} ticketHref={(id) => PATH_MODERATOR.MACHINE_HISTORY_TICKET(id, historyMachineId || undefined)} />
           <RepairWorkflowPagination page={tickets.data.page} hasNext={tickets.data.hasNext} isFetching={tickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" onPageChange={setTicketPage} />
         </>}
-      </section>
+      </Panel>
     </div>;
   }
 
@@ -714,7 +715,7 @@ export function TechnicalOperationsScreen({
           {triageFeedback.message}
         </p>
       )}
-      <section className={styles.panel} aria-labelledby="technical-request-list-title">
+      <Panel className={styles.panel} aria-labelledby="technical-request-list-title">
         <div className={styles.listHeading}><h2 id="technical-request-list-title">Danh sách yêu cầu</h2></div>
         <div className={routes.role === "admin" ? styles.technicalRequestList : styles.technicalRequestListPassthrough}>
           <TableFilters
@@ -763,7 +764,7 @@ export function TechnicalOperationsScreen({
             ) : null}
           </div>
         </div>
-      </section>
+      </Panel>
       {routes.role === "moderator" ? (
         <RepairCaseListPanel
           role={routes.role}

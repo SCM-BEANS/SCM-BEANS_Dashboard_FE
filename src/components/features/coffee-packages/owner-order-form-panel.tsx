@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { Panel } from "@/components/panel/panel";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackage } from "@/schema/coffee-packages.schema";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -34,7 +35,7 @@ export function OwnerOrderFormPanel({
   };
 
   return (
-    <section className={`${styles.panel} ${styles.ownerOrderForm}`} aria-labelledby="coffee-package-order-title">
+    <Panel className={`${styles.panel} ${styles.ownerOrderForm}`} aria-labelledby="coffee-package-order-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-package-order-title">Đặt gói mới</h2>
@@ -110,6 +111,6 @@ export function OwnerOrderFormPanel({
           </div>
         </form>
       ) : null}
-    </section>
+    </Panel>
   );
 }

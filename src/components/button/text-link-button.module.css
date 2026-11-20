@@ -1,6 +1,9 @@
 button.link,
 .action {
   appearance: none;
+  display: inline-flex;
+  min-height: var(--ui-control-height, 44px);
+  align-items: center;
   padding: 0;
   border: 0;
   background: transparent;

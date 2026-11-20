@@ -5,6 +5,8 @@ import { useRouter } from "next/router";
 import { PageActions } from "@/components/action-bar/page-actions";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { FormField } from "@/components/form-field/form-field";
+import { Panel } from "@/components/panel/panel";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { getCustomerWorkflowActions, getCustomerWorkflowDescriptor, type CustomerWorkflowDescriptor, type WorkflowField } from "./customer-workflow-descriptor";
 import { RepairIntakeForm } from "./repair-intake-screen";
@@ -44,14 +46,13 @@ function renderField(field: WorkflowField, index: number) {
   const id = "customer-workflow-field-" + index;
 
   return (
-    <label className={styles.workflowField} htmlFor={id} key={field.label}>
-      <span>{field.label}</span>
+    <FormField id={id} label={field.label} key={field.label}>
       {field.type === "textarea" ? (
         <textarea id={id} disabled rows={3} />
       ) : (
         <input id={id} disabled type={field.type} />
       )}
-    </label>
+    </FormField>
   );
 }
 
@@ -117,14 +118,14 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
       <div className={repairStyles.operatorWorkspace}>
         <section className={repairStyles.pageContent} aria-labelledby="recipe-support-title">
           <BackButtonHeading back={screen.back ?? null} title="Hỗ trợ công thức" titleId="recipe-support-title" className={repairStyles.pageHeading} />
-          <section className={repairStyles.panel}>
+          <Panel>
             <h2>Công thức chưa cập nhật trên máy?</h2>
             <p>Kiểm tra lịch sử đồng bộ để xem máy đã nhận công thức mới chưa.</p>
             <div className={repairStyles.technicalRequestActions}>
               <ButtonBar variant="primary" href={PATH_CUSTOMER.MENU_SYNC}>Kiểm tra đồng bộ</ButtonBar>
               <ButtonBar href={PATH_CUSTOMER.MACHINES}>Xem máy của tôi</ButtonBar>
             </div>
-          </section>
+          </Panel>
         </section>
       </div>
     );
@@ -153,23 +154,25 @@ export function CustomerWorkflowScreen({ sectionPath }: { sectionPath: string })
           : null}
       </div>
       {screen.fields?.length ? (
-        <fieldset className={styles.workflowFields} disabled aria-label={screen.title}>
-          <legend>{messages.FIELDS_TITLE}</legend>
-          {screen.fields.map(renderField)}
-        </fieldset>
+        <Panel>
+          <fieldset className={styles.workflowFields} disabled aria-label={screen.title}>
+            <legend>{messages.FIELDS_TITLE}</legend>
+            {screen.fields.map(renderField)}
+          </fieldset>
+        </Panel>
       ) : null}
       {screen.filters?.length ? (
         <div className={styles.workflowActions} role="group" aria-label={messages.NOTIFICATIONS_FILTER_LABEL}>
           {screen.filters.map((filter) => (
-            <button
+            <ButtonBar
               aria-describedby="customer-workflow-reason"
-              className={styles.workflowAction}
+
               disabled
               key={filter}
               type="button"
             >
               {filter}
-            </button>
+            </ButtonBar>
           ))}
         </div>
       ) : null}

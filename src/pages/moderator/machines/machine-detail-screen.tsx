@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { ButtonBar } from "@/components/button/button-bar";
 import { MachineSpecificationsView } from "@/pages/admin/machines/create-machine-model-form";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
@@ -55,7 +58,7 @@ function QueryFeedback({ query, loadingMessage }: { query: QueryFeedbackState; l
   return (
     <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert">
       <p>{getApiErrorMessage(query.error)}</p>
-      <button type="button" onClick={() => void query.refetch()}>{messages.RETRY}</button>
+      <ButtonBar type="button" onClick={() => void query.refetch()}>{messages.RETRY}</ButtonBar>
     </div>
   );
 }
@@ -122,7 +125,7 @@ function MachineManagementActions({ machine }: { machine: Machine }) {
   };
 
   return (
-    <section className={adminStyles.panel} aria-labelledby="moderator-machine-management-title">
+    <Panel className={adminStyles.panel} aria-labelledby="moderator-machine-management-title">
       <h2 id="moderator-machine-management-title">{messages.MACHINE_MANAGEMENT_ACTIONS}</h2>
       <div className={adminStyles.machineManagementGroups}>
         <form className={adminStyles.machineManagementGroup} onSubmit={submitType}>
@@ -139,9 +142,9 @@ function MachineManagementActions({ machine }: { machine: Machine }) {
           </label>
           <p className={adminStyles.panelSubtitle}>Nhập lý do để lưu lịch sử thay đổi loại thiết bị.</p>
           <div className={adminStyles.operationsButtons}>
-            <button className={adminStyles.accountPrimaryButton} type="submit" disabled={pending || !machineType || !typeReason.trim()}>
+            <ButtonBar variant="primary" type="submit" disabled={pending || !machineType || !typeReason.trim()}>
               {updateType.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TYPE_UPDATE}
-            </button>
+            </ButtonBar>
           </div>
         </form>
         <div className={adminStyles.machineManagementGroup}>
@@ -155,15 +158,15 @@ function MachineManagementActions({ machine }: { machine: Machine }) {
               </select>
             </label>
             <div className={adminStyles.operationsButtons}>
-              <button className={adminStyles.accountPrimaryButton} type="button" disabled={!technicianId || pending} onClick={() => assign.mutate()}>{assign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_ASSIGN}</button>
-              <button className={adminStyles.accountSecondaryButton} type="button" disabled={!technicianId || pending} onClick={() => unassign.mutate()}>{unassign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_UNASSIGN}</button>
+              <ButtonBar variant="primary" type="button" disabled={!technicianId || pending} onClick={() => assign.mutate()}>{assign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_ASSIGN}</ButtonBar>
+              <ButtonBar  type="button" disabled={!technicianId || pending} onClick={() => unassign.mutate()}>{unassign.isPending ? messages.MACHINE_SAVING : messages.MACHINE_TECHNICIAN_UNASSIGN}</ButtonBar>
             </div>
           </> : <p className={adminStyles.emptyText}>{messages.MACHINE_OWNER_ASSIGNMENT_REQUIRED}</p>}
         </div>
       </div>
       {error && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{error}</p></div>}
       {success && <p className={adminStyles.panelSubtitle} role="status">{success}</p>}
-    </section>
+    </Panel>
   );
 }
 
@@ -281,18 +284,18 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
         <MachineDetailView className={adminStyles.machineWorkspace} summary={[]}>
 
         <div className={adminStyles.machineInventoryGroup}>
-          <div className={adminStyles.machineViewTabs} role="tablist" aria-label="Chi tiết máy">
+          <SectionTabList role="tablist" aria-label="Chi tiết máy">
             <button id="moderator-machine-profile-tab" type="button" role="tab" aria-selected={detailTab === "profile"} aria-controls="moderator-machine-profile-panel" className={`${adminStyles.machineViewTab} ${detailTab === "profile" ? adminStyles.machineViewTabActive : ""}`} onClick={() => setDetailTab("profile")}>{ADMIN_T.MACHINES.DETAIL}</button>
             <button id="moderator-machine-type-tab" type="button" role="tab" aria-selected={detailTab === "machine-type"} aria-controls="moderator-machine-type-panel" className={`${adminStyles.machineViewTab} ${detailTab === "machine-type" ? adminStyles.machineViewTabActive : ""}`} disabled={editing} onClick={() => setDetailTab("machine-type")}>{ADMIN_T.MACHINES.MACHINE_TYPE}</button>
             <button id="moderator-machine-history-tab" aria-controls="moderator-machine-history-panel" type="button" role="tab" aria-selected={detailTab === "history"} className={[adminStyles.machineViewTab, detailTab === "history" ? adminStyles.machineViewTabActive : ""].join(" ")} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
-          </div>
+          </SectionTabList>
           {detailTab === "profile" ? (
-            <section id="moderator-machine-profile-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-profile-tab">
+            <Panel id="moderator-machine-profile-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-profile-tab">
               <div className={adminStyles.machineInventoryHeading}>
                 <h2>{ADMIN_T.MACHINES.DETAIL}</h2>
                 <div className={adminStyles.machineInventoryActions}>
                   {!editing && device.ownerId && <TransferMachineAction machine={device} role="moderator" />}
-                  {!editing && <button className={adminStyles.accountSecondaryButton} type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</button>}
+                  {!editing && <ButtonBar  type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</ButtonBar>}
                 </div>
               </div>
               <div className={adminStyles.machineProfileGroups}>
@@ -316,7 +319,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                 </section>
               </div>
               {device.locationId && locationScopeMismatch && <p className={moderatorStyles.partialNotice} role="note">{messages.LOCATION_MACHINE_SCOPE_MISMATCH}</p>}
-              {device.locationId && !locationScopeMismatch && location.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(location.error)}</p><button type="button" onClick={() => void location.refetch()}>{messages.RETRY}</button></div>}
+              {device.locationId && !locationScopeMismatch && location.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(location.error)}</p><ButtonBar type="button" onClick={() => void location.refetch()}>{messages.RETRY}</ButtonBar></div>}
               {editing && <form className={adminStyles.machineEditForm} onSubmit={submitMachineEdit}>
                 <h3>{ADMIN_T.MACHINES.ALLOCATION_TITLE}</h3>
                 <div className={adminStyles.machineEditFields}>
@@ -338,14 +341,14 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                 {!device.ownerId && <p className={adminStyles.panelSubtitle}>{ADMIN_T.MACHINES.OWNER_REQUIRED}</p>}
                 {!currentStatus && <p className={adminStyles.accountInlineWarning} role="note">Không thể lưu vì API chưa trả về trạng thái hiện tại của máy.</p>}
                 <div className={adminStyles.operationsButtons}>
-                  <button className={adminStyles.accountPrimaryButton} type="submit" disabled={updateMachine.isPending || !serialNumber.trim() || !currentStatus}>{updateMachine.isPending ? messages.MACHINE_SAVING : ADMIN_T.MACHINES.SAVE_CHANGES}</button>
-                  <button className={adminStyles.accountSecondaryButton} type="button" disabled={updateMachine.isPending} onClick={() => { setSerialNumber(device.serialNumber ?? ""); setRegion(device.region ?? ""); setLocationId(device.locationId ?? ""); setActionError(""); setEditing(false); }}>{ADMIN_T.MACHINES.CANCEL_EDIT}</button>
+                  <ButtonBar variant="primary" type="submit" disabled={updateMachine.isPending || !serialNumber.trim() || !currentStatus}>{updateMachine.isPending ? messages.MACHINE_SAVING : ADMIN_T.MACHINES.SAVE_CHANGES}</ButtonBar>
+                  <ButtonBar  type="button" disabled={updateMachine.isPending} onClick={() => { setSerialNumber(device.serialNumber ?? ""); setRegion(device.region ?? ""); setLocationId(device.locationId ?? ""); setActionError(""); setEditing(false); }}>{ADMIN_T.MACHINES.CANCEL_EDIT}</ButtonBar>
                 </div>
               </form>}
               {actionError && <p className={adminStyles.accountInlineWarning} role="alert">{actionError}</p>}
-            </section>
+            </Panel>
           ) : detailTab === "machine-type" ? (
-            <section id="moderator-machine-type-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-type-tab">
+            <Panel id="moderator-machine-type-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-type-tab">
               <h2>{ADMIN_T.MACHINES.MACHINE_TYPE}</h2>
               <div className={adminStyles.machineProfileGroups}>
                 <section className={adminStyles.machineProfileGroup}>
@@ -379,13 +382,13 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
               </> : <p className={adminStyles.emptyText}>{ADMIN_T.MACHINES.MODEL_UNLINKED}</p>}
                 </section>
               </div>
-            </section>
+            </Panel>
           ) : null}
         </div>
 
         {detailTab === "history" && <div id="moderator-machine-history-panel" role="tabpanel" aria-labelledby="moderator-machine-history-tab">
-        {schedule.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><button type="button" onClick={() => void schedule.refetch()}>{messages.RETRY}</button></div>}
-        <section className={adminStyles.panel}>
+        {schedule.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><ButtonBar type="button" onClick={() => void schedule.refetch()}>{messages.RETRY}</ButtonBar></div>}
+        <Panel className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
             <h2>{ADMIN_T.MACHINES.TICKET_HISTORY}</h2>
           </div>
@@ -400,8 +403,8 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
             previewLimit={10}
             onRefresh={() => tickets.refetch()}
           />}
-          {tickets.data && <nav className={adminStyles.machinePagination} aria-label="Phân trang bảo trì"><ButtonBar disabled={ticketPage === 0 || tickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar><span>Trang {ticketPage + 1}</span><ButtonBar disabled={!tickets.data.hasNext || tickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar></nav>}
-        </section>
+          {tickets.data && <Pagination page={ticketPage} hasNext={!(!tickets.data.hasNext || tickets.isFetching)} isFetching={tickets.isFetching} ariaLabel="Phân trang bảo trì" onPageChange={setTicketPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>Trang {ticketPage + 1}</span></Pagination>}
+        </Panel>
 
 
         <MachineContractHistory machineId={machineId} role="MODERATOR" /></div>}

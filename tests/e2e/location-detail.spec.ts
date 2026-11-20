@@ -132,6 +132,19 @@ async function openLocation(page: Page, role: RoleCase) {
   await expect(page.getByRole("heading", { name: "Quầy Cà phê Trung Tâm" })).toBeVisible();
 }
 
+test("Owner location list uses the shared panel and keeps location creation available", async ({ page }) => {
+  const api = await installMockApi(page);
+  await page.context().addCookies([{ name: "access_token", value: tokenFor("owner", ownerId), domain: "127.0.0.1", path: "/" }]);
+  await page.goto("/dashboard/locations");
+
+  await expect(page.getByRole("heading", { name: "Địa điểm của tôi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Địa điểm", exact: true })).toBeVisible();
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(1);
+  await expect(page.getByRole("row")).toHaveCount(4);
+  await expect(page.getByRole("button", { name: "Tạo địa điểm" })).toBeVisible();
+  expect(api.calls.every((call) => call.method === "GET")).toBe(true);
+});
+
 test.describe("location detail and machine transfer", () => {
   test.setTimeout(120_000);
 

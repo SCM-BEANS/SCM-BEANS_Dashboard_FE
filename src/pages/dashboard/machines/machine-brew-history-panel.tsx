@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import type { OwnerBrewRecordsPage } from "@/schema/owner-analytics.schema";
@@ -8,7 +9,7 @@ export function MachineBrewHistoryPanel({ data, loading, error, onRetry, onPageC
   data?: OwnerBrewRecordsPage; loading: boolean; error?: string;
   onRetry: () => void; onPageChange: (page: number) => void;
 }) {
-  return <section className={styles.operationalOverviewPanel} aria-labelledby="owner-brew-history-title">
+  return <Panel className={styles.operationalOverviewPanel} aria-labelledby="owner-brew-history-title">
     <h2 id="owner-brew-history-title">Lịch sử pha chế</h2>
     {error ? <div className={styles.operationalOverviewError} role="alert"><p>{error}</p><ButtonBar onClick={onRetry}>Thử lại</ButtonBar></div>
       : loading ? <p role="status">Đang tải lịch sử pha chế…</p>
@@ -24,5 +25,5 @@ export function MachineBrewHistoryPanel({ data, loading, error, onRetry, onPageC
             <ButtonBar disabled={data.last || loading} onClick={() => onPageChange(data.page + 1)}>Trang sau</ButtonBar>
           </nav>
         </> : null}
-  </section>;
+  </Panel>;
 }

@@ -1,3 +1,5 @@
+import { TableFilters } from "@/components/table/table-filters";
+import { Panel } from "@/components/panel/panel";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -115,7 +117,7 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
             </div>
           ) : repairRequest && (
             <div className={repairStyles.requestOverview}>
-              <section className={repairStyles.panel}>
+              <Panel className={repairStyles.panel}>
                 <h2>Thông tin yêu cầu</h2>
                 <dl className={repairStyles.detailGrid}>
                   <div className={repairStyles.detailItem}><dt>Mã yêu cầu</dt><dd><TruncatedId value={repairRequest.id} /></dd></div>
@@ -125,7 +127,7 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
                   <h3>Nội dung yêu cầu</h3>
                   <p>{repairRequest.issueDescription?.trim() || "Chưa ghi nhận nội dung."}</p>
                 </div>
-              </section>
+              </Panel>
               <aside className={repairStyles.panel}>
                 <h2>Tình trạng xử lý</h2>
                 <span className={repairStyles.requestStatus} data-status={repairRequest.status}>
@@ -158,13 +160,13 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
       {validId && requestQuery.isError ? (
         <div className={[styles.notice, styles.error].join(" ")} role="alert">
           <p>{getApiErrorMessage(requestQuery.error)}</p>
-          <button className={styles.button} type="button" onClick={() => void requestQuery.refetch()}>Thử lại</button>
+          <ButtonBar className={styles.button} type="button" onClick={() => void requestQuery.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
       {request ? (
         <>
           <div className={styles.overview}>
-          <section className={styles.panel}>
+          <Panel className={styles.panel}>
           <h2>Thông tin bảo trì</h2>
           <dl className={styles.detailGrid}>
             <div><dt>Mã yêu cầu</dt><dd><TruncatedId value={request.id} /></dd></div>
@@ -174,8 +176,8 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
           </dl>
           {request.issueDescription ? <div className={styles.description}><h3>Nội dung yêu cầu</h3><p>{request.issueDescription}</p></div> : null}
           <details className={styles.references}><summary>Mã liên kết</summary><p>Phiếu bảo trì: {request.maintenanceTicketId || "Chưa tạo"}</p></details>
-          </section>
-          <section className={styles.panel}>
+          </Panel>
+          <Panel className={styles.panel}>
           <h2>Lịch hẹn bảo trì</h2>
           <dl className={styles.detailGrid}>
             <div><dt>Lịch bắt đầu</dt><dd>{formatDateTime(request.windowStart ?? request.scheduledDueAt)}</dd></div>
@@ -200,7 +202,7 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
             </form>
             </>
           ) : null}
-          </section>
+          </Panel>
           </div>
           {request.requestType === "PREVENTIVE" ? (
             <MaintenanceCustodyStepper requestId={request.id} role="owner" initialRequest={request} />
@@ -236,18 +238,18 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
         titleId="owner-maintenance-title"
         className={styles.pageHeading}
       />
-      <section className={styles.panel} aria-labelledby="maintenance-list-title">
+      <Panel className={styles.panel} aria-labelledby="maintenance-list-title">
       <div className={styles.panelHeading}><h2 id="maintenance-list-title">Danh sách bảo trì</h2></div>
-      <form className={styles.filters} onSubmit={event => { event.preventDefault(); setFilters(draft); setPage(0); }}>
+      <TableFilters className={styles.filters} onSubmit={event => { event.preventDefault(); setFilters(draft); setPage(0); }}>
         <select aria-label="Máy bảo trì" value={draft.machineId} onChange={event => setDraft(value => ({ ...value, machineId: event.target.value }))}><option value="">Tất cả máy</option>{machines.data?.map(machine => <option key={machine.id} value={machine.id}>{machine.serialNumber || machine.id}</option>)}</select>
         <select aria-label="Trạng thái bảo trì" value={draft.status} onChange={event => setDraft(value => ({ ...value, status: event.target.value }))}><option value="">Tất cả trạng thái</option>{(["REQUESTED", "TRIAGED", "RESCHEDULE_REQUESTED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CLOSED", "OVERDUE_REVIEW", "CANCELLED"] as const).map(status => <option key={status} value={status}>{maintenanceRequestStatusLabel(status)}</option>)}</select>
         <ButtonBar type="submit" disabled={requests.isFetching}>Tìm kiếm</ButtonBar>
-      </form>
+      </TableFilters>
       {requests.isPending ? <p className={styles.notice} role="status">Đang tải lịch bảo trì…</p> : null}
       {requests.isError ? (
         <div className={[styles.notice, styles.error].join(" ")} role="alert">
           <p>{getApiErrorMessage(requests.error)}</p>
-          <button className={styles.button} type="button" onClick={() => void requests.refetch()}>Thử lại</button>
+          <ButtonBar className={styles.button} type="button" onClick={() => void requests.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
       {requests.data ? (
@@ -257,11 +259,10 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
             rowKey={(request) => request.id}
             emptyMessage="Chưa có yêu cầu bảo trì định kỳ."
             columns={[
-              { key: "machine", header: "Máy / yêu cầu", render: (request) => <div className={styles.identity}><strong>{machines.data?.find(machine => machine.id === request.machineId)?.serialNumber || <TruncatedId value={request.machineId} />}</strong><span>Yêu cầu <TruncatedId value={request.id} /></span></div> },
+              { key: "machine", header: "Máy / yêu cầu", render: (request) => <div className={styles.identity}><strong>{machines.data?.find(machine => machine.id === request.machineId)?.serialNumber || <TruncatedId value={request.machineId} />}</strong><span><TextLinkButton href={PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>Yêu cầu <TruncatedId value={request.id} /></TextLinkButton></span></div> },
               { key: "status", header: "Trạng thái", render: (request) => <StatusBadge variant="dot" status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge> },
               { key: "appointment", header: "Lịch hẹn", render: (request) => formatDateTime(request.confirmedAppointmentAt ?? request.requestedAppointmentAt ?? request.scheduledDueAt) },
               { key: "updated", header: "Cập nhật", render: (request) => formatDateTime(request.updatedAt ?? request.createdAt) },
-              { key: "action", header: "Thao tác", align: "right", render: request => <ButtonBar rollingLabel href={PATH_CUSTOMER.MAINTENANCE_DETAIL(request.id)}>Mở lịch bảo trì</ButtonBar> },
             ]}
           />
           <RepairWorkflowPagination
@@ -273,7 +274,7 @@ export function OwnerMaintenanceScreen({ requestId }: { requestId?: string }) {
           />
         </>
       ) : null}
-      </section>
+      </Panel>
     </section>
   );
 }

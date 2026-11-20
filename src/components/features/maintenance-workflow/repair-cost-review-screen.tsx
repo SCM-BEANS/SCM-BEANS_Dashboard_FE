@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { DataTable } from "@/components/table/data-table";
@@ -53,14 +55,14 @@ function ActionGate({ role, status }: { role: RepairWorkflowRole; status: Repair
       <p>{message}</p>
       {role === "owner" && ownerMustAct ? (
         <div className={styles.actions}>
-          <button className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Xác nhận số tiền</button>
-          <button className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Tranh chấp chi phí</button>
+          <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Xác nhận số tiền</ButtonBar>
+          <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Tranh chấp chi phí</ButtonBar>
         </div>
       ) : null}
       {(role === "admin" || role === "moderator") && operatorMustAct ? (
         <div className={styles.actions}>
-          <button className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Ghi quyết định</button>
-          {status === "DISPUTED" ? <button className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Phân xử tranh chấp</button> : null}
+          <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Ghi quyết định</ButtonBar>
+          {status === "DISPUTED" ? <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="repair-cost-action-reason">Phân xử tranh chấp</ButtonBar> : null}
         </div>
       ) : null}
       <p className={styles.hint} id="repair-cost-action-reason">Các thao tác tài chính không được tự động bỏ qua điều kiện minh chứng hoặc quyền của Owner.</p>
@@ -98,7 +100,7 @@ export function RepairCostReviewScreen({
       {validId && review.isError ? (
         <div className={[styles.notice, styles.error].join(" ")} role="alert">
           <p>{getApiErrorMessage(review.error)}</p>
-          <button className={styles.button} type="button" onClick={() => void review.refetch()}>Thử lại</button>
+          <ButtonBar className={styles.button} type="button" onClick={() => void review.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
       {review.data ? (
@@ -117,7 +119,7 @@ export function RepairCostReviewScreen({
               <p>Phần chưa tranh chấp: {formatAmount(review.data.undisputedAmount, review.data.currency)}</p>
             </section>
           ) : null}
-          <section className={styles.panel}>
+          <Panel className={styles.panel}>
             <h2>Thành phần chi phí ({review.data.costComponents.length})</h2>
             <DataTable
               rows={review.data.costComponents}
@@ -131,10 +133,10 @@ export function RepairCostReviewScreen({
                 { key: "amount", header: "Thành tiền", render: (item) => formatAmount(item.amount, review.data?.currency) },
               ]}
             />
-          </section>
+          </Panel>
           </div>
           <aside className={styles.reviewSidebar}>
-            <section className={styles.panel}><h2>Tóm tắt chi phí</h2>
+            <Panel className={styles.panel}><h2>Tóm tắt chi phí</h2>
           <dl className={styles.detailGrid}>
             <div><dt>Trạng thái</dt><dd>{labels[review.data.status] ?? review.data.status}</dd></div>
             <div><dt>Nguyên nhân đề xuất</dt><dd>{labels[review.data.cause] ?? review.data.cause}</dd></div>
@@ -142,7 +144,7 @@ export function RepairCostReviewScreen({
             <div><dt>Số tiền đề xuất</dt><dd>{formatAmount(review.data.estimatedAmount, review.data.currency)}</dd></div>
             <div><dt>Số tiền đã duyệt</dt><dd>{formatAmount(review.data.approvedAmount, review.data.currency)}</dd></div>
             <div><dt>Trách nhiệm đã duyệt</dt><dd>{review.data.approvedResponsibleParty ? labels[review.data.approvedResponsibleParty] ?? review.data.approvedResponsibleParty : "Chưa quyết định"}</dd></div>
-          </dl>            </section>
+          </dl>            </Panel>
             <ActionGate role={role} status={review.data.status} />
           </aside>
           </div>

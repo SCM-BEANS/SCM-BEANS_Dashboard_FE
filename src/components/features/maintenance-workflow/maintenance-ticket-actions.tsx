@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
@@ -377,9 +378,9 @@ export function MaintenanceTicketDetailsPage({
         className={headingClassName}
         back={{ fallbackHref: backHref, label: backLabel }}
       />
-      <section className={styles.detailPanel} aria-labelledby="maintenance-ticket-detail-page-title">
+      <Panel className={styles.detailPanel} aria-labelledby="maintenance-ticket-detail-page-title">
         <MaintenanceTicketDetailsPanel key={ticketId} ticketId={ticketId} role={role} embedded />
-      </section>
+      </Panel>
     </div>
   );
 }
@@ -396,7 +397,7 @@ export function MachineMaintenanceTicketActions({
   machineId: string;
   tickets: MaintenanceTicket[];
   role: MaintenanceTicketActionRole;
-  ticketHref: (ticketId: string) => string;
+  ticketHref: (ticketId: string, ticket: MaintenanceTicket) => string;
   onRefresh?: () => unknown;
   /** "table": compact table with a row limit. */
   presentation?: "cards" | "table";
@@ -429,7 +430,7 @@ export function MachineMaintenanceTicketActions({
             rowKey={(ticket, index) => ticket.id ?? index}
             emptyMessage="Chưa có phiếu bảo trì."
             columns={[
-              { key: "ticket", header: "Phiếu bảo trì", render: (ticket) => ticket.id ? <TextLinkButton href={ticketHref(ticket.id)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Chưa có mã" },
+              { key: "ticket", header: "Phiếu bảo trì", render: (ticket) => ticket.id ? <TextLinkButton href={ticketHref(ticket.id, ticket)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Chưa có mã" },
               { key: "status", header: "Trạng thái", render: (ticket) => role === "OWNER" ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge> },
               { key: "due", header: "Lịch dự kiến", render: (ticket) => formatDate(ticket.scheduledDueAt ?? ticket.completedAt) },
               { key: "origin", header: "Nguồn", render: (ticket) => ticket.preventiveSubtype || ticket.source ? maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!) : "—" },
@@ -446,7 +447,7 @@ export function MachineMaintenanceTicketActions({
         <div className={styles.ticketCards} aria-label="Phiếu bảo trì của máy">
           {tickets.map((ticket, index) => (
             <article className={styles.ticketCard} key={ticket.id ?? index}>
-              <div><h3>{ticket.id ? <TextLinkButton href={ticketHref(ticket.id)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Phiếu bảo trì"}</h3><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
+              <div><h3>{ticket.id ? <TextLinkButton href={ticketHref(ticket.id, ticket)}>Phiếu {ticket.id.slice(0, 8).toUpperCase()}</TextLinkButton> : "Phiếu bảo trì"}</h3><StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>
                 <p>{formatDate(ticket.scheduledDueAt ?? ticket.completedAt)}</p>
                 {ticket.preventiveSubtype || ticket.source ? <p>{maintenanceTicketOriginLabel((ticket.preventiveSubtype ?? ticket.source)!)}</p> : null}
               </div>
@@ -461,7 +462,7 @@ export function MachineMaintenanceTicketActions({
           onPendingChange={setCreatePending}
           onCreated={(ticket) => {
             setCreating(false);
-            if (ticket.id) void router.push(ticketHref(ticket.id));
+            if (ticket.id) void router.push(ticketHref(ticket.id, ticket));
             void onRefresh?.();
           }}
         />

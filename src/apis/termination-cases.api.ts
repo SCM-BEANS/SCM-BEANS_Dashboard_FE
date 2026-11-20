@@ -13,12 +13,16 @@ import {
   TerminationCaseSchema,
   TerminationInspectionRequestSchema,
   TerminationRejectionRequestSchema,
+  TerminationSettlementPreviewRequestSchema,
+  TerminationSettlementPreviewSchema,
   TerminationSettlementRequestSchema,
   type TerminationActionRequest,
+  type TerminationCase,
   type TerminationCaseCreateRequest,
   type TerminationCaseListParams,
   type TerminationInspectionRequest,
   type TerminationRejectionRequest,
+  type TerminationSettlementPreviewRequest,
   type TerminationSettlementRequest,
 } from "@/schema/termination-workflow.schema";
 import { ContractIdSchema } from "@/schema/contracts.schema";
@@ -49,11 +53,14 @@ export const terminationCasesApi =  {
   async findByContractId(contractId: string, signal?: AbortSignal) {
     const validContractId = ContractIdSchema.parse(contractId);
     // shortcut: The collection has no contractId filter; add one when the API supports it.
+    let rejectedCase: TerminationCase | null = null;
     for (let page = 0; ; page += 1) {
       const result = await terminationCasesApi.list({ page, size: 100 }, signal);
-      const terminationCase = result.content.find((item) => item.contractId.toLowerCase() === validContractId.toLowerCase());
-      if (terminationCase) return terminationCase;
-      if (page + 1 >= result.totalPages) return null;
+      const contractCases = result.content.filter((item) => item.contractId.toLowerCase() === validContractId.toLowerCase());
+      const currentCase = contractCases.find((item) => item.status !== "REJECTED");
+      if (currentCase) return currentCase;
+      rejectedCase ??= contractCases[0] ?? null;
+      if (page + 1 >= result.totalPages) return rejectedCase;
     }
   },
   async create(contractId: string, input: TerminationCaseCreateRequest) {
@@ -98,18 +105,34 @@ export const terminationCasesApi =  {
     if (!terminationCase.inspectionTicketId) throw new Error("Dolores did not return the termination inspection ticket ID.");
     return terminationCase;
   },
-  async completeInspection(id: string, input: TerminationInspectionRequest, files: File[]) {
+  async completeInspection(id: string, input: TerminationInspectionRequest, files: File[], idempotencyKey: string) {
     const validId = TerminationCaseIdSchema.parse(id);
     const request = TerminationInspectionRequestSchema.parse(input);
     validateEvidenceFiles(files, { min: 1, max: 1 });
     const response = await axiosClient.post<unknown>(
       `${casePath(validId)}/inspection`,
       buildEvidenceForm(request, files),
-      { baseURL: DOLORES_API_BASE_URL, headers: EVIDENCE_MULTIPART_HEADERS },
+      { baseURL: DOLORES_API_BASE_URL, headers: { ...EVIDENCE_MULTIPART_HEADERS, "Idempotency-Key": idempotencyKey } },
     );
     const terminationCase = verifyCaseIdentity(response.data, validId);
-    if (terminationCase.status !== "SETTLEMENT_PENDING") throw new Error("Dolores did not confirm the termination inspection.");
+    if (terminationCase.inspectionTicketId !== request.maintenanceTicketId
+      || !["SETTLEMENT_PENDING", "APPROVED", "COMPLETED"].includes(terminationCase.status)) {
+      throw new Error("Dolores chưa xác nhận kết quả cho phiếu kiểm tra này.");
+    }
     return terminationCase;
+  },
+  async previewSettlement(id: string, contractId: string, input: TerminationSettlementPreviewRequest) {
+    const validId = TerminationCaseIdSchema.parse(id);
+    const validContractId = ContractIdSchema.parse(contractId);
+    const request = TerminationSettlementPreviewRequestSchema.parse(input);
+    const response = await axiosClient.post<unknown>(
+      `${casePath(validId)}/settlement-preview`, request, { baseURL: DOLORES_API_BASE_URL },
+    );
+    const preview = TerminationSettlementPreviewSchema.parse(response.data);
+    if (preview.terminationCaseId !== validId || preview.contractId !== validContractId) {
+      throw new Error("Bảng kê quyết toán không thuộc hồ sơ đang xem.");
+    }
+    return preview;
   },
   async settle(id: string, input: TerminationSettlementRequest, files: File[]) {
     const validId = TerminationCaseIdSchema.parse(id);

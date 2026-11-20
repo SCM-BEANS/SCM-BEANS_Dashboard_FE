@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useState, type FormEvent } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -64,20 +65,20 @@ export function OperatorOrderActionsPanel({
       ] : ["PAID", "WAITING_STOCK"].includes(order.status) ? [{ id: "coffee-order-handover", label: "Xác nhận bàn giao", priority: 50, variant: "primary", type: "submit", form: "coffee-order-handover-form", disabled: !recipient.trim() || Number(handoverQuantity) < 1 || workflow.pending, disabledReason: "Nhập người nhận và số lượng hợp lệ.", pending: workflow.pending }] : []} />
       {order.status === "PENDING_APPROVAL" ? (
         <>
-          <form id="coffee-order-approve-form" className={styles.subpanel} onSubmit={approveOrder}>
+          <form id="coffee-order-approve-form"  onSubmit={approveOrder}><Panel className={styles.subpanel}>
             <h3>Duyệt đơn</h3>
             <p>Xác nhận đã kiểm tra nguồn cung trước khi duyệt.</p>
             <label className={styles.field}><span>Ghi chú</span><textarea maxLength={2000} value={orderNote} onChange={(event) => setOrderNote(event.target.value)} required /></label>
-          </form>
-          <form id="coffee-order-reject-form" className={styles.subpanel} onSubmit={rejectOrder}>
+          </Panel></form>
+          <form id="coffee-order-reject-form"  onSubmit={rejectOrder}><Panel className={styles.subpanel}>
             <h3>Từ chối đơn</h3>
             <label className={styles.field}><span>Lý do</span><textarea maxLength={2000} value={orderReason} onChange={(event) => setOrderReason(event.target.value)} required /></label>
-          </form>
+          </Panel></form>
         </>
       ) : null}
 
       {order.status === "PAID" ? (
-        <form className={styles.subpanel} onSubmit={markWaitingStock}>
+        <form  onSubmit={markWaitingStock}><Panel className={styles.subpanel}>
           <h3>Báo đang chờ hàng</h3>
           <p>Cho Owner biết lý do và thời điểm dự kiến có hàng để họ quyết định có tiếp tục chờ.</p>
           <div className={styles.formGrid}>
@@ -85,11 +86,11 @@ export function OperatorOrderActionsPanel({
             <label className={styles.field}><span>Dự kiến có hàng</span><input type="datetime-local" value={expectedStockAt} onChange={(event) => setExpectedStockAt(event.target.value)} required /></label>
           </div>
           <ButtonBar type="submit" disabled={!orderReason.trim() || !expectedStockAt || workflow.pending}>Cập nhật chờ hàng</ButtonBar>
-        </form>
+        </Panel></form>
       ) : null}
 
       {["PAID", "WAITING_STOCK"].includes(order.status) ? (
-        <form id="coffee-order-handover-form" className={styles.subpanel} onSubmit={recordHandover}>
+        <form id="coffee-order-handover-form"  onSubmit={recordHandover}><Panel className={styles.subpanel}>
           <h3>Ghi nhận bàn giao</h3>
           <p>{order.status === "WAITING_STOCK" ? "Owner cần xác nhận tiếp tục chờ hàng trước khi ghi nhận bàn giao." : "Đơn đã thanh toán và có thể ghi nhận bàn giao."} Dolores sẽ kiểm tra điều kiện trước khi đổi trạng thái.</p>
           <div className={styles.formGrid}>
@@ -98,7 +99,7 @@ export function OperatorOrderActionsPanel({
             <label className={styles.field}><span>Số lượng bàn giao</span><input type="number" min="1" step="1" value={handoverQuantity} onChange={(event) => setHandoverQuantity(event.target.value)} required /></label>
           </div>
           <label className={styles.checkboxField}><input type="checkbox" checked readOnly /> Đã kiểm tra hạn sử dụng</label>
-        </form>
+        </Panel></form>
       ) : null}
     </div>
   );

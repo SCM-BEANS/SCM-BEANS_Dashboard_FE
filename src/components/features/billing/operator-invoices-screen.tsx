@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useRouter } from "next/router";
 import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
@@ -8,9 +9,12 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
-import tableStyles from "@/components/table/data-table.module.css";
+import { TableFilters } from "@/components/table/table-filters";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { profilesApi } from "@/apis/profiles.api";
 import { useOwnerNames } from "@/hooks/use-owner-names";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -58,38 +62,8 @@ function invoiceStatus(status: string): string {
   return messages.INVOICE_STATUSES[status as keyof typeof messages.INVOICE_STATUSES] ?? status;
 }
 
-function BillingStatus({ status, label }: { status: string; label: string }) {
-  return <span className={styles.status} data-status={status}><i aria-hidden="true" />{label}</span>;
-}
-
 function periodText(value: string) {
   return /^\d{4}-\d{2}$/.test(value) ? `${value.slice(5)}/${value.slice(0, 4)}` : value;
-}
-
-function Pagination({
-  page,
-  hasNext,
-  disabled,
-  label,
-  onChange,
-}: {
-  page: number;
-  hasNext: boolean;
-  disabled: boolean;
-  label: string;
-  onChange: (page: number) => void;
-}) {
-  return (
-    <nav className={styles.pagination} aria-label={label}>
-      <ButtonBar type="button" disabled={page === 0 || disabled} onClick={() => onChange(page - 1)}>
-        {messages.PREVIOUS_PAGE}
-      </ButtonBar>
-      <span>{messages.PAGE} {page + 1}</span>
-      <ButtonBar type="button" disabled={!hasNext || disabled} onClick={() => onChange(page + 1)}>
-        {messages.NEXT_PAGE}
-      </ButtonBar>
-    </nav>
-  );
 }
 
 function InlineQueryState({
@@ -112,7 +86,7 @@ function InlineQueryState({
     return (
       <div className={`${styles.notice} ${styles.error}`} role="alert">
         <p>{getApiErrorMessage(error) || messages.UNKNOWN_ERROR}</p>
-        <button type="button" onClick={() => void retry()}>{messages.RETRY}</button>
+        <ButtonBar type="button" onClick={() => void retry()}>{messages.RETRY}</ButtonBar>
       </div>
     );
   }
@@ -146,25 +120,48 @@ function InvoiceFilters({
     onApply(draft);
   }
 
-    return (
-      <form className={styles.listFilters} onSubmit={submit}>
-        {role !== "owner" && <label>Khách hàng<select value={draft.ownerId} onChange={(event) => setDraft((current) => ({ ...current, ownerId: event.target.value }))}>
-          <option value="">Tất cả khách hàng</option>
-          {customers.data?.pages.flatMap((page) => page.items).map((profile) => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName || profile.email}</option>)}
-        </select></label>}
-        <label>Kỳ hóa đơn<input type="month" value={draft.period} onChange={(event) => setDraft((current) => ({ ...current, period: event.target.value }))} /></label>
-        <label>Trạng thái<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as InvoiceFilters["status"] }))}>
-          <option value="">Tất cả trạng thái</option>{Object.entries(messages.INVOICE_STATUSES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select></label>
-        <label>Loại hóa đơn<select value={draft.type} onChange={(event) => setDraft((current) => ({ ...current, type: event.target.value as InvoiceFilters["type"] }))}>
-            <option value="">Tất cả loại hóa đơn</option>{Object.entries(messages.INVOICE_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select></label>
-        <ButtonBar type="submit" disabled={disabled}>Tìm kiếm</ButtonBar>
-        {role !== "owner" && customers.isPending && <p className={styles.filterFeedback} role="status">Đang tải khách hàng…</p>}
-        {customers.hasNextPage && <div className={styles.filterFeedback}><ButtonBar type="button" disabled={customers.isFetchingNextPage} onClick={() => void customers.fetchNextPage()}>Tải thêm khách hàng</ButtonBar></div>}
-        {customers.isError && <div className={styles.filterFeedback} role="alert">Không tải được khách hàng. <ButtonBar type="button" onClick={() => void customers.refetch()}>Thử lại</ButtonBar></div>}
-      </form>
-    );
+  const statusOptions = [{ value: "", label: messages.ALL_STATUSES }, ...Object.entries(messages.INVOICE_STATUSES).map(([value, label]) => ({ value, label }))];
+  const typeOptions = [{ value: "", label: messages.ALL_TYPES }, ...Object.entries(messages.INVOICE_TYPES).map(([value, label]) => ({ value, label }))];
+  const selects = [
+    ...(role === "owner" ? [] : [{
+      id: "invoice-owner",
+      ariaLabel: messages.OWNER,
+      label: messages.OWNER,
+      value: draft.ownerId,
+      options: [{ value: "", label: messages.ALL_CUSTOMERS }, ...(customers.data?.pages.flatMap((page) => page.items).map((profile) => ({ value: profile.idaasUserId, label: profile.fullName || profile.email })) ?? [])],
+      onChange: (ownerId: string) => setDraft((current) => ({ ...current, ownerId })),
+    }]),
+    {
+      id: "invoice-status",
+      ariaLabel: messages.STATUS,
+      label: messages.STATUS,
+      value: draft.status,
+      options: statusOptions,
+      onChange: (status: string) => setDraft((current) => ({ ...current, status: status as InvoiceFilters["status"] })),
+    },
+    {
+      id: "invoice-type",
+      ariaLabel: messages.TYPE,
+      label: messages.TYPE,
+      value: draft.type,
+      options: typeOptions,
+      onChange: (type: string) => setDraft((current) => ({ ...current, type: type as InvoiceFilters["type"] })),
+    },
+  ];
+
+  return (
+    <TableFilters
+      selects={selects}
+      inputs={[{ id: "invoice-period", ariaLabel: messages.PERIOD_FILTER, label: messages.PERIOD_FILTER, type: "month", value: draft.period, onChange: (period) => setDraft((current) => ({ ...current, period })) }]}
+      submitLabel={messages.SEARCH_FILTERS}
+      onSubmit={submit}
+      disabled={disabled}
+    >
+      {role !== "owner" && customers.isPending && <p className={styles.filterFeedback} role="status">{messages.LOADING_CUSTOMERS}</p>}
+      {customers.hasNextPage && <div className={styles.filterFeedback}><ButtonBar type="button" disabled={customers.isFetchingNextPage} onClick={() => void customers.fetchNextPage()}>{messages.LOAD_MORE_CUSTOMERS}</ButtonBar></div>}
+      {customers.isError && <div className={styles.filterFeedback} role="alert">{messages.LOAD_CUSTOMERS_ERROR} <ButtonBar type="button" onClick={() => void customers.refetch()}>{messages.RETRY}</ButtonBar></div>}
+    </TableFilters>
+  );
 }
 
 function InvoiceStatusControls({ invoice, role }: { invoice: Invoice; role: OperatorRole }) {
@@ -231,7 +228,7 @@ function InvoiceList({
         {showHeading ? <div className={styles.heading}><h1>Hóa đơn</h1></div> : <span />}
         <ButtonBar variant="primary" disabled={Boolean(exportReason) || exportJob.isPending} title={exportReason} onClick={() => exportJob.mutate()}>{exportJob.isPending ? "Đang xuất…" : "Xuất danh sách"}</ButtonBar>
       </header>
-    <section className={role === "admin" ? tableStyles.listPanel : styles.panel} aria-labelledby="operator-invoice-list-title">
+    <Panel aria-labelledby="operator-invoice-list-title">
       <div className={styles.listTitle}><h2 id="operator-invoice-list-title">Danh sách hóa đơn</h2></div>
       {exportReason && <p className={styles.hint}>{exportReason}</p>}
       {exportJob.isError && <p role="alert">{getApiErrorMessage(exportJob.error)}</p>}
@@ -282,16 +279,16 @@ function InvoiceList({
                 : profileName || "—";
               return customerName;
             } }] : []),
-            { key: "period", header: messages.PERIOD, render: (invoice) => periodText(invoice.period) },
-            { key: "amount", header: "Số tiền", align: isModerator ? "left" : "right", render: (invoice) => <span className={styles.money}>{amountText(invoice.amount, invoice.currency)}</span> },
-            { key: "status", header: messages.STATUS, render: (invoice) => <BillingStatus status={invoice.status} label={invoiceStatus(invoice.status)} /> },
+            { key: "period", header: messages.PERIOD, kind: "date", render: (invoice) => periodText(invoice.period) },
+            { key: "amount", header: "Số tiền", kind: "amount", render: (invoice) => <span className={styles.money}>{amountText(invoice.amount, invoice.currency)}</span> },
+            { key: "status", header: messages.STATUS, kind: "status", render: (invoice) => <StatusBadge status={invoice.status}>{invoiceStatus(invoice.status)}</StatusBadge> },
           ]}
         />
       )}
       {query.data && (
-        <Pagination page={query.data.page} hasNext={query.data.hasNext} disabled={query.isFetching} label={messages.PAGINATE_INVOICES} onChange={setPage} />
+        <Pagination page={query.data.page} hasNext={query.data.hasNext} isFetching={query.isFetching} ariaLabel={messages.PAGINATE_INVOICES} onPageChange={setPage} previousLabel={messages.PREVIOUS_PAGE} nextLabel={messages.NEXT_PAGE} hideWhenSinglePage={false} />
       )}
-    </section>
+    </Panel>
     </>
   );
 }
@@ -409,10 +406,10 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
           emptyText="Không tìm thấy chứng từ trên trang danh sách hiện tại. Hãy quay lại danh sách để mở hồ sơ."
           retry={proofs.refetch}
         />
-        {selectedProof ? <section className={styles.panel} aria-labelledby="moderator-payment-proof-detail-title">
+        {selectedProof ? <Panel className={styles.panel} aria-labelledby="moderator-payment-proof-detail-title">
           <h2 id="moderator-payment-proof-detail-title">{selectedProof.originalFilename}</h2>
           <dl className={styles.detailGrid}>
-            <div><dt>Trạng thái</dt><dd><BillingStatus status={selectedProof.status} label={messages.PROOF_STATUSES[selectedProof.status]} /></dd></div>
+            <div><dt>Trạng thái</dt><dd><StatusBadge status={selectedProof.status}>{messages.PROOF_STATUSES[selectedProof.status]}</StatusBadge></dd></div>
             <div><dt>Số tiền trên chứng từ</dt><dd>{selectedProof.amount == null ? "Chưa có dữ liệu" : amountText(selectedProof.amount, selectedProof.currency ?? record.currency)}</dd></div>
             <div><dt>Đã gửi lúc</dt><dd>{dateTimeText(selectedProof.submittedAt)}</dd></div>
             <div><dt>Đã xử lý lúc</dt><dd>{dateTimeText(selectedProof.reviewedAt)}</dd></div>
@@ -436,7 +433,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
             </div>
             {review.isError && review.variables?.proofId === selectedProof.id ? <p className={styles.errorText} role="alert">{getApiErrorMessage(review.error, "mutation") || messages.REVIEW_ERROR}</p> : null}
           </> : null}
-        </section> : null}
+        </Panel> : null}
       </div>
     );
   }
@@ -447,7 +444,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         <ButtonBar href={invoiceListPath(role)}>Về danh sách</ButtonBar>
       </div>
       <div className={styles.invoiceLayout}>
-      <section className={`${styles.panel} ${styles.invoiceMain}`}>
+      <Panel className={`${styles.panel} ${styles.invoiceMain}`}>
         <h2>Thông tin hóa đơn</h2>
         <dl className={styles.detailGrid}>
           <div><dt>{messages.OWNER}</dt><dd>{record.ownerName || (typeof ownerId === "string" ? ownerNames.data?.[ownerId] : null) || "—"}</dd></div>
@@ -476,26 +473,26 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
             ]}
           />
         ) : null}
-        {lineItems.data && (linePage > 0 || lineItems.data.hasNext) && <Pagination page={lineItems.data.page} hasNext={lineItems.data.hasNext} disabled={lineItems.isFetching} label={messages.PAGINATE_LINE_ITEMS} onChange={setLinePage} />}
+        {lineItems.data && (linePage > 0 || lineItems.data.hasNext) && <Pagination page={lineItems.data.page} hasNext={lineItems.data.hasNext} isFetching={lineItems.isFetching} ariaLabel={messages.PAGINATE_LINE_ITEMS} onPageChange={setLinePage} previousLabel={messages.PREVIOUS_PAGE} nextLabel={messages.NEXT_PAGE} />}
         <div className={styles.total}><span>Tổng tiền hóa đơn</span><strong>{amountText(record.amount, record.currency)}</strong></div>
-      </section>
+      </Panel>
       <aside className={styles.panel} aria-label="Thanh toán">
         <h2>Thanh toán</h2>
         <div className={styles.paymentAmountRow}>
           <strong className={styles.amount}>{amountText(record.amount, record.currency)}</strong>
-          <BillingStatus status={record.status} label={invoiceStatus(record.status)} />
+          <StatusBadge status={record.status}>{invoiceStatus(record.status)}</StatusBadge>
         </div>
         <dl className={styles.paymentFacts}><div><dt>Hạn thanh toán</dt><dd>{dateText(record.dueDate)}</dd></div><div><dt>Ngày thanh toán</dt><dd>{record.paidAt ? dateTimeText(record.paidAt) : "Chưa ghi nhận"}</dd></div></dl>
         {role === "moderator" && <InvoiceStatusControls invoice={record} role={role} />}
       </aside>
       </div>
-      <nav className={styles.tabs} aria-label="Nội dung hồ sơ hóa đơn">
+      <SectionTabList role="navigation" aria-label="Nội dung hồ sơ hóa đơn">
         <button type="button" aria-pressed={section === "proofs"} onClick={() => setSection("proofs")}>Chứng từ thanh toán</button>
         <button type="button" aria-pressed={section === "refund"} onClick={() => setSection("refund")}>Hoàn tiền</button>
-      </nav>
+      </SectionTabList>
       <div hidden={section !== "refund"}><InvoiceRefundPanel key={`${role}:${record.id}`} invoice={{ ...record, ownerId: record.ownerId ?? (typeof record.tenantId === "string" ? record.tenantId : undefined) }} role={role === "owner" ? "OWNER" : role === "admin" ? "ADMIN" : "MODERATOR"} /></div>
       {role === "owner" && <div hidden={section !== "proofs"}>{["PENDING", "UNPAID", "OVERDUE"].includes(record.status.toUpperCase()) ? paymentForm : null}</div>}
-      <section hidden={section !== "proofs"} className={styles.panel} aria-labelledby="operator-payment-proofs">
+      <Panel hidden={section !== "proofs"} className={styles.panel} aria-labelledby="operator-payment-proofs">
         <h2 id="operator-payment-proofs">{messages.PAYMENT_PROOFS}</h2>
         <InlineQueryState
           pending={proofs.isPending}
@@ -523,7 +520,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
                   </span>
                 ),
               },
-              { key: "status", header: messages.STATUS, render: (proof) => <BillingStatus status={proof.status} label={messages.PROOF_STATUSES[proof.status]} /> },
+              { key: "status", header: messages.STATUS, kind: "status", render: (proof) => <StatusBadge status={proof.status}>{messages.PROOF_STATUSES[proof.status]}</StatusBadge> },
               { key: "submitted", header: messages.SUBMITTED_AT, render: (proof) => <time className={styles.proofDate} dateTime={proof.submittedAt}>{dateText(proof.submittedAt)}<small>{new Date(proof.submittedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</small></time> },
               ...(role !== "admin" ? [{ key: "proof-amount", header: "Số tiền trên chứng từ", align: "right" as const, render: (proof: PaymentProof) => <span className={styles.money}>{proof.amount == null ? "Chưa có dữ liệu" : amountText(proof.amount, proof.currency ?? record.currency)}</span> }] : []),
               ...(role === "moderator" ? [] : [{
@@ -545,7 +542,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
             ]}
           />
         ) : null}
-        {proofs.data && (proofPage > 0 || proofs.data.hasNext) && <Pagination page={proofs.data.page} hasNext={proofs.data.hasNext} disabled={proofs.isFetching} label={messages.PAGINATE_PAYMENT_PROOFS} onChange={setProofPage} />}
+        {proofs.data && (proofPage > 0 || proofs.data.hasNext) && <Pagination page={proofs.data.page} hasNext={proofs.data.hasNext} isFetching={proofs.isFetching} ariaLabel={messages.PAGINATE_PAYMENT_PROOFS} onPageChange={setProofPage} previousLabel={messages.PREVIOUS_PAGE} nextLabel={messages.NEXT_PAGE} />}
         {downloadError ? <p className={styles.errorText} role="alert">{downloadError}</p> : null}
         {review.isError ? (
           <>
@@ -556,7 +553,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
           </>
         ) : null}
         {review.isSuccess ? <p className={styles.successText} role="status">{messages.REVIEW_SUCCESS} · {messages.PROOF_STATUSES[review.data.status]}</p> : null}
-      </section>
+      </Panel>
 
       {previewProof && <NotificationDialog variant="info" title="Chứng từ thanh toán" description={previewProof.originalFilename} primaryAction={{ label: "Đóng", onClick: () => setPreviewProof(null) }} onClose={() => setPreviewProof(null)}>
         {!previewSupported ? <p>Định dạng này chưa hỗ trợ xem trước. Hãy tải chứng từ để kiểm tra.</p> : <>
@@ -616,8 +613,8 @@ export function InvoiceExportJobScreen({ jobId, routerReady, role }: { jobId: st
     <header className={styles.panelHeading}><div className={styles.heading}><h1>Xuất danh sách hóa đơn</h1></div><ButtonBar href={backHref}>Về danh sách</ButtonBar></header>
     {!routerReady ? <p role="status">Đang tải…</p> : !valid ? <p className={`${styles.notice} ${styles.error}`} role="alert">Mã xuất dữ liệu không hợp lệ.</p> : <>
       <InlineQueryState pending={job.isPending} error={job.isError ? job.error : null} loadingText="Đang tải trạng thái xuất dữ liệu…" retry={job.refetch} />
-      {job.data && !job.isError && <section className={`${styles.panel} ${styles.exportPanel}`}>
-        <div className={styles.panelHeading}><h2>Tệp xuất hóa đơn</h2><BillingStatus status={job.data.status} label={statusLabels[job.data.status]} /></div>
+      {job.data && !job.isError && <Panel className={`${styles.panel} ${styles.exportPanel}`}>
+        <div className={styles.panelHeading}><h2>Tệp xuất hóa đơn</h2><StatusBadge status={job.data.status}>{statusLabels[job.data.status]}</StatusBadge></div>
         <p className={styles.exportFilename}>{filename}</p>
         <dl className={styles.exportFacts}><div><dt>Định dạng</dt><dd>{job.data.format ?? "—"}</dd></div><div><dt>Số hóa đơn</dt><dd>{job.data.invoiceCount ?? "—"}</dd></div><div><dt>Thời điểm tạo</dt><dd>{dateTimeText(job.data.createdAt)}</dd></div><div><dt>Hoàn tất lúc</dt><dd>{dateTimeText(job.data.completedAt)}</dd></div></dl>
         {job.data.status === "FAILED" && <p className={styles.errorText} role="alert">{job.data.message || job.data.errorCode || "Không thể tạo tệp xuất."}</p>}
@@ -626,7 +623,7 @@ export function InvoiceExportJobScreen({ jobId, routerReady, role }: { jobId: st
           {job.data.status === "COMPLETED" ? <ProgressDownloadButton filename={filename} download={(signal, onProgress) => { setDownloadError(""); return billingApi.downloadExportContent(jobId, signal, onProgress); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải xuống</ProgressDownloadButton> : <ButtonBar disabled>Tệp chưa sẵn sàng</ButtonBar>}
         </div>
         {["QUEUED", "PROCESSING"].includes(job.data.status) && <p className={styles.hint} role="status">Đang xử lý. Trạng thái tự cập nhật mỗi 3 giây.</p>}
-      </section>}
+      </Panel>}
     </>}
   </div>;
 }

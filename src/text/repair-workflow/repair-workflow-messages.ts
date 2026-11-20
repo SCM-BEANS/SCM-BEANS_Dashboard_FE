@@ -173,6 +173,11 @@ export const REPAIR_WORKFLOW_MESSAGES = {
   PAGE: "Trang",
   PREVIOUS: "Trước",
   NEXT: "Tiếp",
+  PREVIOUS_PAGE: "Trang trước",
+  NEXT_PAGE: "Trang sau",
+  PAGINATE_BUYBACK: "Phân trang hồ sơ thu mua",
+  PAGINATE_OFFLINE_REVIEWS: "Phân trang rà soát mất kết nối",
+  PAGINATE_MACHINE_CONTRACT_HISTORY: "Phân trang lịch sử hợp đồng máy",
   STATUS_LABELS: {
     REPORTED: "Đã báo lỗi",
     TRIAGE: "Đang phân loại",

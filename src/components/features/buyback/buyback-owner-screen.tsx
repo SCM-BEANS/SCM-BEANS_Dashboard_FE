@@ -1,3 +1,5 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Panel } from "@/components/panel/panel";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { EvidenceList } from "@/components/evidence/evidence-list";
@@ -49,7 +51,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>
           {workflow.ownerDecisionAvailable ? (
-            <div className={styles.formPanel}>
+            <Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Quyết định giá thu mua</h3>
               <p className={styles.formHint}>Giá được duyệt: {formatBuybackMoney(caseData.approvedPrice, caseData.currency)}. Nếu chấp nhận, Dolores sẽ báo cho Moderator để điều phối thu máy; bạn không cần tạo khoản thanh toán.</p>
               <label className={styles.formField}>
@@ -61,7 +63,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
                   const key = workflow.operationKey(accepted ? "owner-decision-accept" : "owner-decision-reject", caseData.id, JSON.stringify({ accepted, reason }));
                   workflow.decideOwnerPrice.mutate({ id: caseData.id, accepted, reason, idempotencyKey: key, correlationId: key });
                 } }))} />
-            </div>
+            </Panel>
           ) : null}
           {workflow.isExternalBuyback && caseData.ownerAccepted === true && ["APPROVED", "COLLECTION_PENDING"].includes(caseData.status) ? <p className={styles.notice} role="status">Bạn đã chấp nhận giá {formatBuybackMoney(caseData.approvedPrice, caseData.currency)}. Dolores đang điều phối việc thu máy.</p> : null}
           {workflow.isExternalBuyback && caseData.ownerAccepted === false && caseData.ownerDecisionReason ? <p className={styles.notice} role="status">Bạn đã từ chối giá: {caseData.ownerDecisionReason}</p> : null}
@@ -79,18 +81,18 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
           {workflow.isExternalBuyback && caseData.status === "PAID" ? <p className={styles.notice} role="status">Bạn đã xác nhận nhận khoản thanh toán. Hồ sơ đang tiếp tục sang bước tân trang.</p> : null}
 
           {!workflow.isExternalBuyback && caseData.status === "APPROVED" ? (
-            <form id="buyback-payment-form" className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form id="buyback-payment-form"  onSubmit={workflow.perform(() => {
               const key = workflow.operationKey("create-payment", caseData.id);
               workflow.createPayment.mutate({ id: caseData.id, paymentMethod: workflow.paymentMethod.trim(), ...(workflow.externalReference.trim() ? { externalReference: workflow.externalReference.trim() } : {}), idempotencyKey: key, correlationId: key });
-            })}>
+            })}><Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Tạo nghĩa vụ thanh toán</h3>
               <label className={styles.formField}><span>Phương thức thanh toán</span><input required maxLength={64} value={workflow.paymentMethod} onChange={(event) => workflow.setPaymentMethod(event.target.value)} /></label>
               <label className={styles.formField}><span>Mã tham chiếu bên ngoài (tùy chọn)</span><input maxLength={256} value={workflow.externalReference} onChange={(event) => workflow.setExternalReference(event.target.value)} /></label>
               <PageActions actions={[{ id: "create-payment", label: "Tạo thông tin thanh toán", variant: "primary", priority: 100, type: "submit", form: "buyback-payment-form", disabled: !workflow.paymentMethod.trim(), disabledReason: "Nhập phương thức thanh toán.", pending: workflow.createPayment.isPending }]} />
-            </form>
+            </Panel></form>
           ) : null}
           {!workflow.isExternalBuyback && caseData.status === "PAYMENT_PENDING" ? (
-            <div className={styles.formPanel}>
+            <Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Chứng từ thanh toán riêng tư</h3>
               {workflow.paymentId ? <p className={styles.notice} role="status">Mã khoản thanh toán: <span className={styles.codeValue}>{workflow.paymentId}</span></p> : <p className={styles.formHint}>Nếu vừa tạo khoản thanh toán trong phiên này, mã sẽ hiện ở đây.</p>}
               {workflow.paymentId ? (
@@ -104,15 +106,15 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
                 </form>
               ) : null}
               {workflow.proofId ? <p className={styles.notice} role="status">Đã tải chứng từ. Chia sẻ mã hồ sơ/chứng từ với operator để họ duyệt: <span className={styles.codeValue}>{workflow.proofId}</span></p> : null}
-            </div>
+            </Panel>
           ) : null}
-          <nav className={adminStyles.recordTabs} aria-label="Chi tiết lệnh thu mua">
+          <SectionTabList role="navigation" aria-label="Chi tiết lệnh thu mua">
             <button type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</button>
             <button type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</button>
-          </nav>
+          </SectionTabList>
           <div hidden={recordsTab !== "payment"}>
           {workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải chứng từ thanh toán…</p> : null}
-          {workflow.paymentProofs.isError ? <div className={styles.formPanel}><BuybackErrorNotice error={workflow.paymentProofs.error} /><ButtonBar type="button" onClick={() => void workflow.paymentProofs.refetch()}>Tải lại chứng từ</ButtonBar></div> : null}
+          {workflow.paymentProofs.isError ? <Panel className={styles.formPanel}><BuybackErrorNotice error={workflow.paymentProofs.error} /><ButtonBar type="button" onClick={() => void workflow.paymentProofs.refetch()}>Tải lại chứng từ</ButtonBar></Panel> : null}
           {workflow.paymentProofs.isSuccess && workflow.paymentProofs.data.items.length === 0 ? <p className={styles.formHint}>Chưa có chứng từ thanh toán trong hồ sơ này.</p> : null}
           {workflow.paymentProofs.data?.items.length ? (
             <section className={adminStyles.paymentPanel} aria-label="Chứng từ Dolores thanh toán hồ sơ thu mua">

@@ -9,7 +9,8 @@
 .tabs button:hover { background: #fdf4f4; }
 .workspace { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
 .workspace[data-detail="true"] { grid-template-columns: minmax(0, 1fr) minmax(290px, 340px); }
-.feed { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.alertFeed { min-width: 0; }
+.feed { min-width: 0; }
 .panelHeading { min-height: 52px; }
 .panelHeading h2, .panel h2 { margin: 0; font-size: 18px; line-height: 1.4; }
 .readAll { border: 0; background: transparent; color: var(--color-primary); font: inherit; font-size: 13px; font-weight: 600; min-height: 44px; padding: 6px 0 6px 12px; cursor: pointer; }

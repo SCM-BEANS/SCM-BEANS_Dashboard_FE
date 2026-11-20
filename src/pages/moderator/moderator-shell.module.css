@@ -261,7 +261,7 @@
   .workspace :global(footer) { bottom: 0; }
   .pageContent { padding-bottom: 104px; }
   .invoiceDetailOverview { grid-template-columns: minmax(0, 1fr) minmax(260px, .9fr); }
-  .formPanel { padding: 14px; }
+  .formPanel:not([data-ui-panel]) { padding: 14px; }
   .installationActions > * { flex: 1 1 180px; }
 }
 

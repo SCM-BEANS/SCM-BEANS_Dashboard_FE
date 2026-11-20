@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { MachineStatusSchema } from "@/schema/machines.schema";
@@ -26,11 +28,11 @@ export function MachineInventorySummary() {
         <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
         <article className={`${styles.metricCard} ${styles.metricCardCentered}`}><span>{T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
       </div>
-      {summary.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+      {summary.isPending && <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>}
       {summary.isError && (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
           <p>{getApiErrorMessage(summary.error)}</p>
-          <button type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</button>
+          <ButtonBar type="button" onClick={() => void summary.refetch()}>{T.COMMON.RETRY}</ButtonBar>
         </div>
       )}
     </>

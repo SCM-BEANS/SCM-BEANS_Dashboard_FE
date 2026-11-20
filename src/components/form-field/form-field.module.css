@@ -1,0 +1,24 @@
+.field { display: grid; min-width: 0; gap: 8px; }
+.label { color: var(--ui-color-text, #302927); font-size: 14px; font-weight: 600; }
+.description, .error { font-size: 13px; line-height: 1.45; }
+.description { color: var(--ui-color-muted, #665e59); }
+.error { color: var(--ui-color-danger, #9b2f35); }
+
+.field > :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not([type="color"]), select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ui-control-height, 44px);
+  padding: 10px 12px;
+  border: 1px solid var(--ui-color-border, #e9e2dc);
+  border-radius: var(--ui-control-radius, 10px);
+  background: var(--ui-color-surface, #fff);
+  color: var(--ui-color-text, #302927);
+  font: inherit;
+}
+
+.field > textarea { min-height: 110px; resize: vertical; }
+.field > :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ui-color-primary, #b81724);
+  outline-offset: 2px;
+}

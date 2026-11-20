@@ -1,5 +1,7 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar } from "@/components/button/button-bar";
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
@@ -191,7 +193,7 @@ export function ContractInstallationRequestScreen({
             <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
               <div className={styles.detailItem}>
                 <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_ID}</dt>
-                <dd><code className={styles.codeValue}>{contract.data.id}</code></dd>
+                <dd><TextLinkButton href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)} title={contract.data.id}>{contract.data.id.slice(0, 8).toUpperCase()}</TextLinkButton></dd>
               </div>
               <div className={styles.detailItem}>
                 <dt>{MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_OWNER_ID}</dt>
@@ -214,7 +216,6 @@ export function ContractInstallationRequestScreen({
           {documents.isSuccess && !hasMainContract && (
             <div className={`${styles.contractNotice} ${styles.installationPrerequisite}`} role="note">
               <p>Cần tải lên tài liệu MAIN_CONTRACT chưa lưu trữ trước khi tạo lệnh.</p>
-              <ButtonBar rollingLabel href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Mở chi tiết hợp đồng</ButtonBar>
             </div>
           )}
 
@@ -231,7 +232,7 @@ export function ContractInstallationRequestScreen({
               <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
                 <div className={styles.detailItem}>
                   <dt>Mã lệnh</dt>
-                  <dd><code className={styles.codeValue}>{currentWorkOrder.id}</code></dd>
+                  <dd><TextLinkButton href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(currentWorkOrder.id)} title={currentWorkOrder.id}>{currentWorkOrder.id.slice(0, 8).toUpperCase()}</TextLinkButton></dd>
                 </div>
                 <div className={styles.detailItem}>
                   <dt>Trạng thái</dt>
@@ -249,10 +250,6 @@ export function ContractInstallationRequestScreen({
               {currentWorkOrder.status === "COMPLETED"
                 ? <p>Kỹ thuật viên đã hoàn tất bàn giao. Mở lại hợp đồng để tiếp tục kích hoạt.</p>
                 : <p>Hợp đồng này đã có lệnh đang mở nên không thể tạo lệnh trùng.</p>}
-              <div className={styles.installationActions}>
-                <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(currentWorkOrder.id)}>Mở chi tiết lệnh</ButtonBar>
-                <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
-              </div>
             </section>
           )}
 
@@ -281,7 +278,7 @@ export function ContractInstallationRequestScreen({
               <dl className={`${styles.detailGrid} ${styles.installationDetails}`}>
                 <div className={styles.detailItem}>
                   <dt>Mã lệnh</dt>
-                  <dd><code className={styles.codeValue}>{createWorkOrder.data.id}</code></dd>
+                  <dd><TextLinkButton href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(createWorkOrder.data.id)} title={createWorkOrder.data.id}>{createWorkOrder.data.id.slice(0, 8).toUpperCase()}</TextLinkButton></dd>
                 </div>
                 <div className={styles.detailItem}>
                   <dt>Trạng thái</dt>
@@ -295,15 +292,11 @@ export function ContractInstallationRequestScreen({
               {createWorkOrder.data.status === "ASSIGNED"
                 ? <p>Kỹ thuật viên sẽ hoàn thành checklist và bàn giao trên tài khoản của họ. Hợp đồng chỉ được kích hoạt sau khi lệnh chuyển sang COMPLETED.</p>
                 : <p>API đã tạo lệnh nhưng trạng thái trả về chưa phải ASSIGNED. Hãy kiểm tra lại lệnh trước khi tiếp tục.</p>}
-              <div className={styles.installationActions}>
-                <ButtonBar rollingLabel href={PATH_MODERATOR.TECHNICAL_REQUEST_DETAIL(createWorkOrder.data.id)}>Mở chi tiết lệnh</ButtonBar>
-                <ButtonBar href={PATH_MODERATOR.CONTRACT_DETAIL(contractId)}>Chi tiết hợp đồng</ButtonBar>
-              </div>
             </section>
           )}
 
           {!createWorkOrder.data && !currentWorkOrder && documents.isSuccess && hasMainContract && workOrders.isSuccess && (
-            <form className={styles.formPanel} onSubmit={handleSubmit}>
+            <form  onSubmit={handleSubmit}><Panel className={styles.formPanel}>
               <div>
                 <h2 className={styles.panelHeading}>Giao lệnh cho kỹ thuật viên</h2>
                 <p className={styles.formHint}>Chọn người phụ trách và thời gian dự kiến. Lệnh sẽ được giao ngay sau khi tạo.</p>
@@ -362,7 +355,7 @@ export function ContractInstallationRequestScreen({
                   {createWorkOrder.isPending ? "Đang tạo lệnh…" : "Tạo và giao lệnh"}
                 </ButtonBar>
               </div>
-            </form>
+            </Panel></form>
           )}
         </>
       )}

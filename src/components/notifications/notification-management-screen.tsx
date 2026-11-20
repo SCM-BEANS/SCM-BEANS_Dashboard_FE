@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { TableFilters } from "@/components/table/table-filters";
 import { AlertAcknowledgementButton } from "@/components/features/operations/alert-acknowledgement-button";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -10,7 +12,7 @@ import { NotificationInbox, formatDate } from "@/components/notifications/notifi
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
-import { ALERT_LEVEL_LABELS, getAlertPresentation } from "@/text/notification-inbox-messages";
+import { ALERT_LEVEL_LABELS, getAlertPresentation, NOTIFICATION_INBOX_MESSAGES as messages } from "@/text/notification-inbox-messages";
 import styles from "@/components/notifications/notification-management.module.css";
 
 export function NotificationManagementScreen({ scope, initialSection = "notifications", scopeNotice }: { scope: "admin" | "moderator" | "technician"; initialSection?: "notifications" | "alerts"; scopeNotice?: string }) {
@@ -39,7 +41,7 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
   return <NotificationInbox scope={scope} variant="management" initialSection={initialSection} title="Thông báo"
     showOwnerId={scope === "admin"} onRefreshExtra={scope === "technician" ? undefined : () => alerts.refetch()}>
     {scope !== "technician" ? <div className={styles.workspace} data-detail={Boolean(selected)}>
-      <section className={styles.feed} aria-labelledby="alerts-list-title">
+      <Panel className={styles.alertFeed} aria-labelledby="alerts-list-title">
         <div className={styles.panelHeading}><div><h2 id="alerts-list-title">Cảnh báo máy</h2><p>{alerts.isSuccess ? `${alerts.data.filter((alert) => !alert.acknowledged).length} chưa xác nhận · ${filtered.length} cảnh báo trong danh sách` : "Theo dõi cảnh báo và tình trạng xử lý của máy."}</p></div></div>
         {scopeNotice ? <p className={styles.scopeNote} role="note">{scopeNotice}</p> : null}
         <TableFilters search={{ ariaLabel: "Tìm cảnh báo", placeholder: "Tìm nội dung hoặc mã máy", value: draft.search, onChange: (search) => setDraft((value) => ({ ...value, search })) }} selects={[
@@ -56,8 +58,17 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
           }}><span className={styles.categoryIcon} data-category="alert"><AlertTriangle size={22} aria-hidden="true" /></span><span className={styles.rowContent}><strong>{alert.title}</strong><span className={styles.preview}>{alert.message}</span><time dateTime={alert.ts}>{formatDate(alert.ts)}{alert.machineId ? ` · Máy ${alert.machineId.slice(0, 8).toUpperCase()}` : ""}</time></span></button>
           {!alert.acknowledged ? <span className={styles.alertDot} role="img" aria-label="Chưa xác nhận" /> : null}
         </article>)}</div> : null}
-        {alerts.isSuccess && filtered.length > 0 ? <nav className={styles.pagination} aria-label="Phân trang cảnh báo"><span className={styles.pageSize}>10 cảnh báo / trang</span><span>Trang {currentPage + 1} / {Math.max(1, Math.ceil(filtered.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => { setPage(currentPage - 1); setSelectedId(undefined); }}>Trang trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= filtered.length} onClick={() => { setPage(currentPage + 1); setSelectedId(undefined); }}>Trang sau</ButtonBar></nav> : null}
-      </section>
+        {alerts.isSuccess && filtered.length > 0 ? <Pagination
+          page={currentPage}
+          hasNext={(currentPage + 1) * 10 < filtered.length}
+          ariaLabel={messages.PAGINATE_ALERTS}
+          onPageChange={(nextPage) => { setPage(nextPage); setSelectedId(undefined); }}
+          previousLabel={messages.PREVIOUS_PAGE}
+          nextLabel={messages.NEXT_PAGE}
+          totalPages={Math.max(1, Math.ceil(filtered.length / 10))}
+          hideWhenSinglePage={false}
+        ><span className={styles.pageSize}>{messages.ALERTS_PER_PAGE}</span></Pagination> : null}
+      </Panel>
       {selected ? <aside id="alert-detail" ref={detailRef} tabIndex={-1} className={styles.detailPane} aria-labelledby="alert-detail-title">
         <header><h2 id="alert-detail-title">Chi tiết cảnh báo</h2><button className={styles.closeDetail} aria-label="Đóng chi tiết cảnh báo" onClick={() => { document.getElementById(`alert-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></button></header>
         <div className={styles.detailMeta}><StatusBadge variant="dot" tone={selected.acknowledged ? "success" : "warning"}>{selected.acknowledged ? "Đã xác nhận" : "Chưa xác nhận"}</StatusBadge><time dateTime={selected.ts}>{formatDate(selected.ts)}</time></div>

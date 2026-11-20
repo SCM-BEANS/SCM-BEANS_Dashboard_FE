@@ -103,15 +103,31 @@ test('offline decision sends multipart files and requires matching reviewed resu
   await assert.rejects(conflicting.decide(id, decision, {}, files), error => error === conflict); assert.equal(conflictCalls, 1);
 });
 
+const React = require('react');
+
+function TestTableFilters({ selects = [] }) {
+  return React.createElement('form', {}, selects.map(select => React.createElement('label', { key: select.id },
+    select.label,
+    React.createElement('select', { 'aria-label': select.ariaLabel, value: select.value, onChange: event => select.onChange(event.target.value) },
+      select.options.map(option => React.createElement('option', { key: option.value, value: option.value }, option.label)),
+    ),
+  )));
+}
+
 function panelWith(props = {}) {
-  const React = require('react');
   const { renderToStaticMarkup } = require('react-dom/server');
   const { OfflineReviewPanel } = loadTypescript('src/components/machines/offline-review-panel.tsx', {
     '@/components/button/button-bar': { ButtonBar: ({ children, ...rest }) => React.createElement('button', rest, children) },
+    '@/components/button/text-link-button': { TextLinkButton: ({ children, onClick, href }) => href ? React.createElement('a', { href }, children) : React.createElement('button', { type: 'button', onClick }, children) },
     '@/components/action-bar/page-actions': { PageActions: ({ actions }) => React.createElement('footer', { 'aria-label': 'Thao tác trang' }, actions.map((action) => React.createElement('button', { key: action.id, type: action.type ?? 'button', disabled: action.disabled }, action.label))) },
     '@/components/evidence/evidence-list': { EvidenceList: () => null },
     '@/components/table/data-table': { DataTable: ({ rows, columns }) => React.createElement('table', {}, React.createElement('tbody', {}, rows.map(row => React.createElement('tr', { key: row.id }, columns.map(column => React.createElement('td', { key: column.key }, column.render(row))))))) },
+    '@/components/panel/panel': { Panel: ({ title, actions, children, ...props }) => React.createElement('section', { ...props, 'data-ui-panel': 'true' }, title ? React.createElement('h2', {}, title) : null, actions, children) },
+    '@/components/pagination/pagination': { Pagination: ({ page, hasNext, ariaLabel, previousLabel, nextLabel }) => React.createElement('nav', { 'aria-label': ariaLabel }, previousLabel, ` ${page + 1} `, hasNext ? nextLabel : null) },
+    '@/components/table/table-filters': { TableFilters: TestTableFilters },
     '@/components/notification-dialog/notification-dialog': { NotificationDialog: () => null },
+    '@/text/repair-workflow/repair-workflow-messages': { REPAIR_WORKFLOW_MESSAGES: { PAGINATE_OFFLINE_REVIEWS: 'Rà soát', PREVIOUS_PAGE: 'Trước', NEXT_PAGE: 'Sau' } },
+    './operational-overview': { businessToday: () => '2026-11-06', calendarPresets: [], getDefaultOperationalRange: () => ({ fromDate: '', toDate: '' }), makePresetRange: () => ({ fromDate: '', toDate: '' }) },
     './machines.module.css': new Proxy({}, { get: (_target, property) => String(property) }),
   });
   return renderToStaticMarkup(React.createElement(OfflineReviewPanel, {

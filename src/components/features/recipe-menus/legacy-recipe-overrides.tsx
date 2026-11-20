@@ -1,7 +1,10 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { recipesApi } from "@/apis/recipes.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getRecipeApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -72,7 +75,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
   const selectItem = (itemId: string) => { setSelectedId(itemId); setRemoveTarget(null); };
   const owner = role === "OWNER";
   const editForm = "legacy-recipe-form";
-  return <section className={styles.recipeMenuPanel} data-admin-legacy>
+  return <Panel className={styles.recipeMenuPanel} data-admin-legacy>
 
     <div className={styles.panelHeading}><div><h2>Điều chỉnh định lượng cũ</h2>{role === "OWNER" ? <p>Điều chỉnh định lượng cho công thức dùng chung. Bản sao trong Menu của tôi được quản lý riêng.</p> : null}</div></div>
     {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
@@ -83,18 +86,17 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
     {local.data ? <>
       <DataTable rows={local.data.items} rowKey={(item) => item.id}
         columns={[
-          { key: "recipe", header: "Công thức", render: (item) => <strong>{item.globalRecipeName ?? "Công thức tương thích"}</strong> },
+          { key: "recipe", header: "Công thức", render: (item) => <TextActionButton aria-pressed={item.id === id} disabled={busy} onClick={() => selectItem(item.id)}>{item.globalRecipeName ?? "Công thức tương thích"}</TextActionButton> },
           ...(owner ? [] : [{ key: "owner", header: "Mã khách hàng", cellProps: (item: NonNullable<typeof local.data>["items"][number]) => ({ title: item.ownerId }), render: (item: NonNullable<typeof local.data>["items"][number]) => item.ownerId.slice(0, 8).toUpperCase() }]),
-          { key: "action", header: "", align: "right", render: (item) => <ButtonBar rollingLabel aria-pressed={item.id === id} disabled={busy} onClick={() => selectItem(item.id)}>Xem điều chỉnh</ButtonBar> },
         ]} />
       {!local.data.items.length ? <p className={styles.recipeMenuEmpty}>Chưa có điều chỉnh cũ.</p> : null}
-      {page > 0 || local.data.hasNext ? <nav className={styles.recipeMenuPagination} aria-label="Điều chỉnh cũ"><ButtonBar disabled={!page || busy} onClick={() => changePage(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={!local.data.hasNext || busy} onClick={() => changePage(page + 1)}>Trang sau</ButtonBar></nav> : null}
+      {page > 0 || local.data.hasNext ? <Pagination page={page} hasNext={!(!local.data.hasNext || busy)} isFetching={busy} ariaLabel="Điều chỉnh cũ" onPageChange={(nextPage) => changePage(nextPage)} previousLabel="Trang trước" nextLabel="Trang sau" showPage={false} hideWhenSinglePage={false}><span>Trang {page + 1}</span></Pagination> : null}
     </> : null}
     </div>
     <div>
     {detail.isFetching ? <p role="status">Đang tải chi tiết…</p> : null}
     {detail.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(detail.error)}</p><ButtonBar onClick={() => void detail.refetch()}>Thử lại</ButtonBar></div> : null}
-    {detail.data ? <div className={styles.recipeMenuDetail}>
+    {detail.data ? <Panel className={styles.recipeMenuDetail}>
       <h3>{detail.data.globalRecipeName ?? "Định lượng đã lưu"}</h3>
       {role === "ADMIN" ? <h4>Định lượng đã lưu</h4> : null}
       <dl className={styles.adminRecipeFacts}>{detail.data.dosageOverrides.map((raw, index) => {
@@ -107,7 +109,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
         <ButtonBar variant={role === "ADMIN" ? "danger" : "secondary"} disabled={busy} onClick={() => setRemoveTarget(detail.data.id)}>Xóa điều chỉnh</ButtonBar>
       </div>
       {removeTarget ? <div><p>Xóa điều chỉnh đã chọn?</p><div className={styles.recipeMenuActions}><ButtonBar holdToConfirm disabled={busy} onClick={() => remove.mutate(removeTarget)}>Xác nhận xóa</ButtonBar><ButtonBar disabled={busy} onClick={() => setRemoveTarget(null)}>Hủy</ButtonBar></div></div> : null}
-    </div> : null}
+    </Panel> : null}
     </div>
     </div>
     {role === "OWNER" ? <form id={editForm} className={styles.recipeMenuEditor} onSubmit={submit}>
@@ -122,7 +124,7 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
         {editId && globalId && !global.data?.items.some((item) => item.id === globalId) ? <option value={globalId}>{detail.data?.globalRecipeName ?? "Nguồn của điều chỉnh đang sửa"}</option> : null}
         {global.data?.items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select></label>
-      {!editId && global.data && (globalPage > 0 || global.data.hasNext) ? <nav className={styles.recipeMenuPagination} aria-label="Công thức nguồn"><ButtonBar disabled={!globalPage} onClick={() => setGlobalPage(globalPage - 1)}>Trang trước</ButtonBar><span>Trang {globalPage + 1}</span><ButtonBar disabled={!global.data.hasNext} onClick={() => setGlobalPage(globalPage + 1)}>Trang sau</ButtonBar></nav> : null}
+      {!editId && global.data && (globalPage > 0 || global.data.hasNext) ? <Pagination page={globalPage} hasNext={!(!global.data.hasNext)} isFetching={false} ariaLabel="Công thức nguồn" onPageChange={setGlobalPage} previousLabel="Trang trước" nextLabel="Trang sau" showPage={false} hideWhenSinglePage={false}><span>Trang {globalPage + 1}</span></Pagination> : null}
       <fieldset className={styles.legacyDosageFields} disabled={busy}>
         <legend>Định lượng tùy chỉnh</legend>
         <p className={styles.recipeMenuMeta}>Dùng mã thông số của công thức nguồn. Có thể để trống nếu không cần đổi định lượng.</p>
@@ -144,5 +146,5 @@ export function LegacyRecipeOverrides({ role }: { role: "OWNER" | "ADMIN" }) {
       </div>
     </form> : null}
     {remove.isError ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(remove.error, "mutation")}</p> : null}
-  </section>;
+  </Panel>;
 }

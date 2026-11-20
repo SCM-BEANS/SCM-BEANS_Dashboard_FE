@@ -1,7 +1,12 @@
+import { Panel } from "@/components/panel/panel";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { lazy, Suspense } from "react";
 import { isSupportedModeratorSection, MODERATOR_NAVIGATION_LINKS } from "@/routes/routes";
 import { PATH_MODERATOR } from "@/routes/path";
+import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
+import { CoffeePackageOrderIdSchema } from "@/schema/coffee-packages.schema";
+import { BuybackIdSchema } from "@/schema/buybacks.schema";
+import { ContractIdSchema } from "@/schema/contracts.schema";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { ModeratorShell, moderatorStyles } from "./moderator-shell";
 import { ModeratorPageHeading } from "./moderator-page-heading";
@@ -18,8 +23,7 @@ interface ModeratorPageProps {
 
 export function isModeratorReadRoute(sectionPath: string): boolean {
   return sectionPath === "" ||
-    /^contracts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/history$/i.test(sectionPath) ||
-    /^contracts\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/installation-request$/i.test(sectionPath) ||
+    (/^contracts\/[^/]+\/(?:history|installation-request)$/.test(sectionPath) && ContractIdSchema.safeParse(sectionPath.split("/")[1]).success) ||
     sectionPath === "notifications" ||
     sectionPath === "notifications/alerts" ||
     sectionPath === "machines" ||
@@ -34,14 +38,15 @@ export function isModeratorReadRoute(sectionPath: string): boolean {
     sectionPath === "machine-history" ||
     sectionPath.startsWith("machine-history/") ||
     sectionPath === "coffee-packages" ||
-    /^coffee-packages\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath) ||
+    (sectionPath.startsWith("coffee-packages/") && CoffeePackageOrderIdSchema.safeParse(sectionPath.slice("coffee-packages/".length)).success) ||
     sectionPath === "menu" ||
     sectionPath === "menu/new" ||
-    /^menu\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath) ||
+    (sectionPath.startsWith("menu/") && GlobalRecipeIdSchema.safeParse(sectionPath.slice("menu/".length)).success) ||
     sectionPath === "buyback" ||
     sectionPath === "buyback/list" ||
     sectionPath === "buyback/new" ||
-    /^buyback\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|MB-[A-Z0-9-]+)$/i.test(sectionPath);
+    (sectionPath.startsWith("buyback/") && BuybackIdSchema.safeParse(sectionPath.slice("buyback/".length)).success) ||
+    /^buyback\/MB-[A-Z0-9-]+$/i.test(sectionPath);
 }
 
 export const getServerSideProps: GetServerSideProps<ModeratorPageProps> = async ({ params, query }) => {
@@ -106,9 +111,9 @@ export default function ModeratorRoutePage({
         : (
           <div className={moderatorStyles.pageContent}>
             <ModeratorPageHeading title={pageTitle} />
-            <section className={moderatorStyles.pendingNotice} aria-live="polite">
+            <Panel role="status" className={moderatorStyles.pendingNotice} aria-live="polite">
               {MODERATOR_MESSAGES.ROUTES.PENDING}
-            </section>
+            </Panel>
           </div>
         )}
     </ModeratorShell>

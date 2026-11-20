@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { ContractTable } from "@/components/table/contract-table";
@@ -126,9 +127,9 @@ export function ContractListScreen() {
         {filteredContracts.length > 0 && <div className={adminStyles.accountPagination}>
           <span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
           <div>
-            <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Trang trước</button>
+            <ButtonBar  type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Trang trước</ButtonBar>
             <span>Trang {currentPage}/{totalPages}</span>
-            <button className={adminStyles.accountSecondaryButton} type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Trang sau</button>
+            <ButtonBar  type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Trang sau</ButtonBar>
           </div>
         </div>}
       </section>
@@ -157,7 +158,7 @@ export function ContractHistoryScreen({ id }: { id: string }) {
       {!validId && <div className={adminStyles.notice} role="alert">Mã hợp đồng không hợp lệ.</div>}
       {validId && <QueryFeedback query={contract} loadingMessage={T.COMMON.LOADING} />}
       {contract.data && !contract.data.machineId && <p className={adminStyles.emptyText} role="status">Hợp đồng này chưa gắn với máy.</p>}
-      {contract.data?.machineId && <section className={`${adminStyles.panel} ${adminStyles.contractListPanel}`} aria-labelledby="moderator-contract-history-title">
+      {contract.data?.machineId && <Panel className={`${adminStyles.panel} ${adminStyles.contractListPanel}`} aria-labelledby="moderator-contract-history-title">
         <div className={adminStyles.userSectionHeading}>
           <h2 id="moderator-contract-history-title">Hợp đồng theo máy</h2>
           {history.data && <span className={adminStyles.contractListCount}>{history.data.length.toLocaleString("vi-VN")} hợp đồng</span>}
@@ -174,7 +175,7 @@ export function ContractHistoryScreen({ id }: { id: string }) {
             { key: "status", header: "Trạng thái", render: (item) => <StatusBadge status={item.status}>{item.status === "ACTIVE" ? T.CONTRACTS.ACTIVE : item.status === "DRAFT" ? T.CONTRACTS.DRAFT : T.CONTRACTS.TERMINATED}</StatusBadge> },
           ]}
         />}
-      </section>}
+      </Panel>}
     </div>
   );
 }

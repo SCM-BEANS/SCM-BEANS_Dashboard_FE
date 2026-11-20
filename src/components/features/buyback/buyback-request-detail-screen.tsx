@@ -1,6 +1,8 @@
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { buybacksApi } from "@/apis/buybacks.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -30,7 +32,7 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
     {query.isError ? <div role="alert"><p>{getApiErrorMessage(query.error)}</p><ButtonBar type="button" onClick={() => void query.refetch()}>Thử lại</ButtonBar></div> : null}
     {item ? <>
       <div className={styles.requestLayout}>
-        <section className={styles.card} aria-labelledby="buyback-request-info">
+        <Panel className={styles.card} aria-labelledby="buyback-request-info">
           <h2 id="buyback-request-info">Thông tin yêu cầu</h2>
           <dl className={styles.requestFacts}>
             <div><dt>Khách hàng</dt><dd>{role === "OWNER" ? "Bạn" : item.ownerName || names.data?.[item.ownerId] || <TruncatedId value={item.ownerId} />}</dd></div>
@@ -45,18 +47,18 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
             <div><dt>Hợp đồng</dt><dd>{item.contractId ? <TruncatedId value={item.contractId} /> : "Không có hợp đồng liên kết"}</dd></div>
             <div><dt>Máy đã đăng ký</dt><dd>{item.registeredMachineId ? <TruncatedId value={item.registeredMachineId} /> : "Chưa đăng ký máy"}</dd></div>
           </dl></details>
-        </section>
-        <section className={`${styles.card} ${styles.requestStatus}`} aria-labelledby="buyback-request-status">
+        </Panel>
+        <Panel className={`${styles.card} ${styles.requestStatus}`} aria-labelledby="buyback-request-status">
           <h2 id="buyback-request-status">Tình trạng xử lý</h2>
           <StatusBadge variant="dot" status={item.status}>{buybackStatusLabels[item.status]}</StatusBadge>
           <dl className={styles.facts}>
             <div><dt>Điều phối viên</dt><dd>{item.responsibleModeratorId ? names.data?.[item.responsibleModeratorId] || <TruncatedId value={item.responsibleModeratorId} /> : "Chưa phân công"}</dd></div>
             <div><dt>Cập nhật gần nhất</dt><dd>{formatBuybackDateTime(item.updatedAt)}</dd></div>
           </dl>
-          <ButtonBar rollingLabel href={`${requestHref}${role === "MODERATOR" ? "?" : "&"}view=work-order`}>Mở chi tiết lệnh</ButtonBar>
-        </section>
+          <TextLinkButton href={`${requestHref}${role === "MODERATOR" ? "?" : "&"}view=work-order`}>Lệnh xử lý hồ sơ</TextLinkButton>
+        </Panel>
       </div>
-      <section className={styles.card} aria-labelledby="buyback-related-records">
+      <Panel className={styles.card} aria-labelledby="buyback-related-records">
         <h2 id="buyback-related-records">Phiếu và tài liệu liên quan</h2>
         <div className={styles.relatedRecords}>
           {item.inspection ? <article><h3>Biên bản kiểm tra máy</h3><dl className={styles.facts}>
@@ -73,7 +75,7 @@ export function BuybackRequestDetailScreen({ caseId, role = "ADMIN", listHref = 
           {!item.inspection && !item.refurbishment ? <p>Chưa có biên bản kiểm tra hoặc tân trang.</p> : null}
         </div>
         <div className={styles.relatedEvidence}><EvidenceList resource="BUYBACK_CASE" parentId={item.id} title="Tài liệu yêu cầu" showSize={false} pageSize={10} /></div>
-      </section>
+      </Panel>
     </> : null}
   </BuybackWorkflowLayout>;
 }

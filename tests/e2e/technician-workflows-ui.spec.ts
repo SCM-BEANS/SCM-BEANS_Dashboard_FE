@@ -14,7 +14,7 @@ test("recall uses a compact list and a separate progress detail with collapsed h
   await page.goto("/technician/tasks/retrieval");
   await expect(page.getByRole("table")).toHaveCount(1);
   await page.screenshot({ path: ".playwright-cli/technician-retrieval-list.png" });
-  await page.getByRole("button", { name: "Mở chi tiết", exact: true }).click();
+  await page.getByRole("button", { name: "DOLORES-001", exact: true }).click();
   await expect(page.getByRole("region", { name: "Tiến độ thu hồi", exact: true })).toBeVisible();
   await expect(page.locator("details").filter({ has: page.locator("summary", { hasText: "Lịch sử xử lý" }) })).not.toHaveAttribute("open");
   await page.getByText("Lịch sử xử lý", { exact: true }).click();
@@ -34,11 +34,15 @@ test("machine history opens each request on a dedicated technician page", async 
     return route.fulfill({ json: path.endsWith(`/maintenance-requests/${id}`) ? request : path.endsWith("/maintenance-requests") ? [request] : [] });
   });
   await page.goto("/technician/history");
-  await page.getByRole("link", { name: "Mở yêu cầu", exact: true }).click();
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(2);
+  await expect(page.getByRole("navigation", { name: "Phân trang phiếu bảo trì" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Phân trang yêu cầu bảo trì" })).toContainText("1 / 1");
+  await page.getByRole("region", { name: "Yêu cầu bảo trì và sửa chữa" }).getByRole("link", { name: id, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/technician/history/requests/${id}$`));
   await expect(page.getByRole("heading", { name: "Chi tiết yêu cầu kỹ thuật", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Thông tin yêu cầu", exact: true })).toHaveAttribute("data-ui-panel", "true");
   await expect(page.getByText("Máy cần kiểm tra", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Xem phiếu bảo trì", exact: true })).toHaveAttribute("href", `/technician/tasks/maintenance-tickets/${id}`);
+  await expect(page.getByRole("link", { name: id.slice(0, 8).toUpperCase(), exact: true })).toHaveAttribute("href", `/technician/tasks/maintenance-tickets/${id}`);
 });
 test("closed repair case uses the compact workspace and related documents route", async ({ page }) => {
   const forbidden: string[] = [];
@@ -76,6 +80,11 @@ test("machine profile hides forbidden sections and stops forbidden heartbeat pol
   });
   await page.goto(`/technician/machine-check/${id}`);
   await expect(page.getByRole("heading", { name: /Chi tiết máy/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Tổng quan máy" })).toHaveAttribute("data-ui-panel", "true");
+  const tabs = page.getByRole("tablist", { name: "Nội dung hồ sơ máy" });
+  await expect(tabs.getByRole("tab")).toHaveCount(4);
+  await expect(tabs.getByRole("tab", { name: "Bảo trì", exact: true })).toHaveAttribute("aria-selected", "true");
+  await tabs.getByRole("tab", { name: "Kết nối", exact: true }).click();
   await expect.poll(() => heartbeatReads).toBe(1);
   await expect(page.getByRole("heading", { name: "Định danh thiết bị", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Chứng chỉ kết nối", exact: true })).toHaveCount(0);
@@ -83,4 +92,118 @@ test("machine profile hides forbidden sections and stops forbidden heartbeat pol
   await page.screenshot({ path: ".playwright-cli/technician-machine-permissions.png" });
   await page.waitForTimeout(5500); // Verify that the former five-second polling loop stays stopped after a 403.
   expect(heartbeatReads).toBe(1);
+});
+
+test("machine check detail tabs support keyboard navigation and keep the selected URL tab", async ({ page }) => {
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({ json: path.endsWith(`/machines/${id}`) ? { id, serialNumber: "DOLORES-001", status: "DEPLOYED_CONTRACT_OWNER", machineType: "CONVENTIONAL" } : [] });
+  });
+  await page.goto(`/technician/machine-check/${id}`);
+  const tabs = page.getByRole("tablist", { name: "Nội dung hồ sơ máy" });
+  const maintenance = tabs.getByRole("tab", { name: "Bảo trì", exact: true });
+  await expect(maintenance).toHaveAttribute("aria-selected", "true");
+  await maintenance.focus();
+  await maintenance.press("ArrowRight");
+  const profile = tabs.getByRole("tab", { name: "Hồ sơ máy", exact: true });
+  await expect(profile).toHaveAttribute("aria-selected", "true");
+  await expect(page).toHaveURL(new RegExp(`/technician/machine-check/${id}\\?tab=profile$`));
+  await expect(page.getByRole("tabpanel", { name: "Hồ sơ máy" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Thông tin máy" })).toBeVisible();
+});
+
+test("machine check list uses shared filters, panel, pagination and semantic columns", async ({ page }) => {
+  const machine = {
+    id,
+    ownerName: "Cà phê Deer",
+    serialNumber: "DOLORES-001",
+    status: "DEPLOYED_CONTRACT_OWNER",
+    machineType: "CONVENTIONAL",
+    modelName: "Dolores One",
+  };
+  await page.route("**/api/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({ json: path.endsWith("/machines") ? [machine] : [] });
+  });
+
+  await page.goto("/technician/machine-check");
+  await expect(page.getByRole("heading", { name: "Danh sách máy", exact: true })).toBeVisible();
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(1);
+  const search = page.getByRole("textbox", { name: "Tìm máy", exact: true });
+  await expect(search).toHaveCSS("height", "44px");
+  const table = page.getByRole("table");
+  await expect(table.locator('thead th[data-column-kind="code"]')).toHaveCount(1);
+  await expect(table.locator('thead th[data-column-kind="name"]')).toHaveCount(1);
+  await expect(table.locator('thead th[data-column-kind="status"]')).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Trang sau", exact: true })).toHaveCSS("min-height", "44px");
+
+  await search.fill("missing serial");
+  await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
+  await expect(table.getByText("Chưa có máy nào.", { exact: true })).toBeVisible();
+});
+
+test("task list infers the shared date and name column styles", async ({ page }) => {
+  const item = {
+    workType: "INSTALLATION",
+    id,
+    status: "ASSIGNED",
+    scheduledAt: "2026-11-20T09:00:00Z",
+    createdAt: "2026-11-19T09:00:00Z",
+    machineId: id,
+    serialNumber: "DOLORES-001",
+    machineType: "CONVENTIONAL",
+    modelName: "Dolores One",
+    ownerId: id,
+    ownerName: "Cà phê Deer",
+    locationId: null,
+    locationName: "Cửa hàng trung tâm",
+    locationAddress: null,
+    summary: "Bàn giao máy",
+    detailPath: `/technician/tasks/${id}`,
+    relatedSteps: [],
+  };
+  await page.route("**/api/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({ json: path.endsWith("/technician/work-items") ? { items: [item], page: 0, size: 10, hasNext: false } : [] });
+  });
+
+  await page.goto("/technician/tasks");
+  const table = page.getByRole("table");
+  await expect(table.locator("thead th").first()).toBeVisible();
+  await expect(table.locator('thead th[data-column-kind="name"]')).toHaveCount(2);
+  await expect(table.locator('thead th[data-column-kind="date"]')).toHaveCount(1);
+  await expect(table.locator('thead th[data-column-kind="status"]')).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Trang sau", exact: true })).toHaveCSS("min-height", "44px");
+});
+
+test("task categories use shared filter toggles and keep the selected work type", async ({ page }) => {
+  const requestedTypes: string[] = [];
+  await page.route("**/api/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/technician/work-items")) requestedTypes.push(url.searchParams.get("workType") ?? "ALL");
+    return route.fulfill({ json: { items: [], page: 0, size: 10, hasNext: false } });
+  });
+
+  await page.goto("/technician/tasks");
+  const all = page.locator('[data-filter-value="all"]');
+  const repair = page.locator('[data-filter-value="repair"]');
+  await expect(all).toHaveAttribute("aria-pressed", "true");
+  await repair.click();
+  await expect(repair).toHaveAttribute("aria-pressed", "true");
+  await expect(all).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => requestedTypes).toContain("REPAIR");
+});
+
+test("workflow placeholder uses a shared panel and shows locked fields directly", async ({ page }) => {
+  await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
+  await page.goto("/technician/tasks/standard-handover");
+
+  await expect(page.getByRole("heading", { name: "Chưa thể hiển thị dữ liệu", exact: true })).toBeVisible();
+  const panel = page.locator("[data-ui-panel]");
+  await expect(panel).toHaveCount(1);
+  const fields = panel.getByRole("group", { name: "Bàn giao máy thường" });
+  await expect(fields).toHaveAttribute("disabled", "");
+  await expect(fields.locator("input, textarea").first()).toBeDisabled();
+  await expect(fields.locator("input, textarea").first()).toBeVisible();
+  await expect(page.locator("details")).toHaveCount(0);
 });

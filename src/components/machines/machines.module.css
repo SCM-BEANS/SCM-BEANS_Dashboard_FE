@@ -331,6 +331,9 @@
   display: grid;
   gap: 14px;
   min-width: 0;
+}
+
+.operationalOverviewPanel:not([data-ui-panel]) {
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -551,14 +554,6 @@
   padding-top: 18px;
   border-top: 1px solid var(--color-border);
   min-width: 0;
-}
-
-.offlineReviewPagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
 }
 
 .offlineReviewForm {
@@ -931,11 +926,6 @@
 @media (max-width: 560px) {
   .machineDetailSummary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .smartIotPanel {
-    padding: 16px;
-    border-radius: 12px;
   }
 
   .telemetryRangeForm {

@@ -121,17 +121,17 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
                 </td>
                 <td>
                   <div className={styles.proofActionCell}>
-                    <button className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={downloadingId === proof.id} onClick={() => void download(proof)}>
+                    <ButtonBar className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={downloadingId === proof.id} onClick={() => void download(proof)}>
                       {downloadingId === proof.id ? messages.DOWNLOADING_PROOF : messages.DOWNLOAD_PROOF}
-                    </button>
+                    </ButtonBar>
                     {proof.status === "SUBMITTED" && (
                       <div className={styles.proofReviewChoices}>
-                        <button className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection({ proofId: proof.id, approve: true }); setReviewReason(""); setReviewError(null); }}>
+                        <ButtonBar className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection({ proofId: proof.id, approve: true }); setReviewReason(""); setReviewError(null); }}>
                           {messages.APPROVE_PROOF}
-                        </button>
-                        <button className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection({ proofId: proof.id, approve: false }); setReviewReason(""); setReviewError(null); }}>
+                        </ButtonBar>
+                        <ButtonBar className={`${styles.retryButton} ${styles.proofActionButton}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection({ proofId: proof.id, approve: false }); setReviewReason(""); setReviewError(null); }}>
                           {messages.REJECT_PROOF}
-                        </button>
+                        </ButtonBar>
                       </div>
                     )}
                   </div>
@@ -148,9 +148,9 @@ export function PaymentProofList({ proofs, invoiceId, currency }: { proofs: Paym
                           </h3>
                           <p className={styles.proofReviewHelp}>Ghi rõ căn cứ đối soát để lưu cùng kết quả xử lý chứng từ này.</p>
                         </div>
-                        <button className={`${styles.retryButton} ${styles.proofReviewCancel}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection(null); setReviewReason(""); setReviewError(null); }}>
+                        <ButtonBar className={`${styles.retryButton} ${styles.proofReviewCancel}`} type="button" disabled={review.isPending} onClick={() => { setReviewSelection(null); setReviewReason(""); setReviewError(null); }}>
                           {messages.CANCEL}
-                        </button>
+                        </ButtonBar>
                       </div>
                       <label className={styles.proofReviewLabel} htmlFor={`payment-proof-reason-${proof.id}`}>
                         {messages.PROOF_REVIEW_REASON} <span>Bắt buộc</span>

@@ -1,4 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
+import { GlobalRecipeIdSchema } from "@/schema/recipes.schema";
+import { BuybackIdSchema } from "@/schema/buybacks.schema";
 import { moderatorStyles as styles } from "./moderator-shell";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 
@@ -73,11 +75,12 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
     return loadScreen(<ModeratorInvoicesScreen sectionPath={sectionPath} />);
   }
   if (sectionPath === "menu" ||
-      /^menu\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {
+      (sectionPath.startsWith("menu/") && GlobalRecipeIdSchema.safeParse(sectionPath.slice("menu/".length)).success)) {
     return loadScreen(<ModeratorRecipesScreen sectionPath={sectionPath} />);
   }
   if (sectionPath === "buyback" || sectionPath === "buyback/list" ||
-      /^buyback\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|MB-[A-Z0-9-]+)$/i.test(sectionPath)) {
+      (sectionPath.startsWith("buyback/") && BuybackIdSchema.safeParse(sectionPath.slice("buyback/".length)).success) ||
+      /^buyback\/MB-[A-Z0-9-]+$/i.test(sectionPath)) {
     return loadScreen(<ModeratorBuybackScreen sectionPath={sectionPath} />);
   }
   if (sectionPath === "customers" || sectionPath === "customers/list") {

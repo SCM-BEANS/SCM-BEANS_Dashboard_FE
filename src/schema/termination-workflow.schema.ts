@@ -85,13 +85,49 @@ export const TerminationInspectionRequestSchema = z.object({
   notes: z.string().max(2000).optional(),
   correlationId: z.string().trim().min(1).max(128),
   inspectionDecision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
-}).strict();
+  usageSyncConfirmed: z.boolean(),
+}).strict().refine(
+  (input) => input.inspectionDecision !== "NO_DAMAGE" || (input.actualCost ?? 0) === 0,
+  { message: "Không hư hỏng thì chi phí thực tế phải bằng 0.", path: ["actualCost"] },
+);
 
-export const TerminationSettlementRequestSchema = z.object({
+const settlementAmounts = z.object({
   decision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
   damageAmount: z.number().finite().nonnegative(),
   penaltyAmount: z.number().finite().nonnegative(),
-  outstandingAmount: z.number().finite().nonnegative(),
+}).strict();
+
+export const TerminationSettlementPreviewRequestSchema = settlementAmounts.refine(
+  (input) => input.decision !== "NO_DAMAGE" || input.damageAmount === 0,
+  { message: "NO_DAMAGE cannot include a damage amount.", path: ["damageAmount"] },
+);
+
+const settlementPreviewVersion = z.string().regex(/^[a-f0-9]{64}$/);
+
+export const TerminationSettlementPreviewSchema = z.object({
+  terminationCaseId: TerminationCaseIdSchema,
+  contractId: z.string().uuid(),
+  previewVersion: settlementPreviewVersion.nullish(),
+  ready: z.boolean(),
+  invoiceDebtTotal: z.number().finite(),
+  unbilledUsageTotal: z.number().finite(),
+  damageAmount: z.number().finite(),
+  penaltyAmount: z.number().finite(),
+  totalLiability: z.number().finite(),
+  depositAvailable: z.number().finite(),
+  depositOffsetAmount: z.number().finite(),
+  receivableAmount: z.number().finite(),
+  depositRefundAmount: z.number().finite(),
+  blockers: z.array(z.string()),
+  debts: z.array(z.object({
+    description: z.string().nullish(),
+    sourceType: z.string().nullish(),
+    amount: z.number().finite(),
+  })),
+});
+
+export const TerminationSettlementRequestSchema = settlementAmounts.extend({
+  previewVersion: settlementPreviewVersion,
   idempotencyKey: z.string().trim().min(1).max(128),
   correlationId: z.string().trim().min(1).max(128),
 }).strict().refine(
@@ -249,6 +285,7 @@ export type TerminationCaseCreateRequest = z.infer<typeof TerminationCaseCreateR
 export type TerminationActionRequest = z.infer<typeof TerminationActionRequestSchema>;
 export type TerminationInspectionRequest = z.infer<typeof TerminationInspectionRequestSchema>;
 export type TerminationSettlementRequest = z.infer<typeof TerminationSettlementRequestSchema>;
+export type TerminationSettlementPreviewRequest = z.infer<typeof TerminationSettlementPreviewRequestSchema>;
 export type TerminationRejectionRequest = z.infer<typeof TerminationRejectionRequestSchema>;
 export type RecallWorkOrderSummary = z.infer<typeof RecallWorkOrderSummarySchema>;
 export type RecallWorkOrder = z.infer<typeof RecallWorkOrderSchema>;

@@ -112,7 +112,7 @@ export function CustomerShell({
         <title>{pageTitle} | {CUSTOMER_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="customer">
+      <div className={styles.shell} data-role="customer" data-ui-dashboard>
         <NotificationRuntime scope="customer" />
         <Sidebar
           brand={CUSTOMER_MESSAGES.BRAND}

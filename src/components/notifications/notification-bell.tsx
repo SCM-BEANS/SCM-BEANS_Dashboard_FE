@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useEffect, useId, useRef, useState } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { createPortal } from "react-dom";
@@ -72,7 +73,7 @@ export function NotificationBell({ scope, viewAllHref, settingsHref, logout }: N
       </button>
       {settingsHref && logout ? <SettingsMenu settingsHref={settingsHref} logout={logout} variant="icon" /> : settingsHref ? <Link className={bellStyles.settingsButton} href={settingsHref} aria-label="Cài đặt hồ sơ"><Settings size={20} aria-hidden="true" /></Link> : null}
     </div>
-    {open ? createPortal(<dialog ref={dialog} id={id} className={styles.drawer} data-closing={closing} aria-labelledby={`${id}-title`} onCancel={(event) => { event.preventDefault(); close(); }} onClose={() => { setOpen(false); setClosing(false); trigger.current?.focus(); }} onClick={(event) => {
+    {open ? createPortal(<dialog data-ui-dashboard ref={dialog} id={id} className={styles.drawer} data-closing={closing} aria-labelledby={`${id}-title`} onCancel={(event) => { event.preventDefault(); close(); }} onClose={() => { setOpen(false); setClosing(false); trigger.current?.focus(); }} onClick={(event) => {
       if (event.target !== event.currentTarget) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
@@ -88,7 +89,7 @@ export function NotificationBell({ scope, viewAllHref, settingsHref, logout }: N
       }}><option value="off">Không làm phiền: Tắt</option>{dnd ? <option value="active">{dndLabel}</option> : null}<option value="1">Trong 1 giờ</option><option value="2">Trong 2 giờ</option><option value="4">Trong 4 giờ</option><option value="tomorrow">Đến 08:00 ngày mai</option><option value="custom">Chọn thời gian…</option></select></div>
       {customDnd ? <form className={styles.customTime} onSubmit={(event) => { event.preventDefault(); const until = new Date(customTime).getTime(); if (!Number.isFinite(until) || until <= Date.now()) { setTimeError("Chọn thời gian sau thời điểm hiện tại."); return; } update({ dndUntil: until }); setCustomDnd(false); }}><label>Tạm tắt đến<input type="datetime-local" required value={customTime} onChange={(event) => setCustomTime(event.target.value)} /></label><button type="submit">Áp dụng</button>{timeError ? <p role="alert">{timeError}</p> : null}</form> : null}
       {settings ? <section className={styles.preferences} aria-label="Cài đặt thông báo"><label><input type="checkbox" checked={preferences.sound} onChange={(event) => { if (event.target.checked) prepareNotificationSound(); update({ sound: event.target.checked }); }} />Âm thanh thông báo</label><label>Vị trí thông báo nổi<select aria-label="Vị trí thông báo nổi" value={preferences.position} onChange={(event) => update({ position: event.target.value as keyof typeof NOTIFICATION_POSITIONS })}>{Object.entries(NOTIFICATION_POSITIONS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><p>Cài đặt được lưu trên trình duyệt này. Không làm phiền chỉ tạm tắt thông báo nổi và âm thanh.</p></section> : null}
-      <div className={styles.categories} role="group" aria-label="Loại thông báo">{["", ...Array.from(new Set(rows.map((item) => item.typeLabel)))].map((value) => <button type="button" key={value} aria-pressed={category === value} onClick={() => { setCategory(value); setExpanded(null); }}>{value || "Tất cả"}</button>)}</div>
+      <SectionTabList role="group" aria-label="Loại thông báo">{["", ...Array.from(new Set(rows.map((item) => item.typeLabel)))].map((value) => <button type="button" key={value} aria-pressed={category === value} onClick={() => { setCategory(value); setExpanded(null); }}>{value || "Tất cả"}</button>)}</SectionTabList>
       <div className={styles.feed}>
         {count.isError ? <p className={styles.error} role="alert">Chưa tải được số chưa đọc. <button type="button" onClick={() => void count.refetch()}>Thử lại</button></p> : null}
         {markOne.isError || markAll.isError ? <p className={styles.error} role="alert">Chưa cập nhật được trạng thái. {markAll.isError ? markAll.error.message : getApiErrorMessage(markOne.error)}</p> : null}

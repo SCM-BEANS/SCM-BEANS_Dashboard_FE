@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { MachineSpecificationsFields, MachineSpecificationsView } from "./create-machine-model-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
@@ -130,13 +132,13 @@ export function MachineModelDetail({
     return <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>;
   }
   if (machineModels.isPending) {
-    return <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>;
+    return <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>;
   }
   if (machineModels.isError) {
     return (
       <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
         <p>{getApiErrorMessage(machineModels.error)}</p>
-        <button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button>
+        <ButtonBar type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</ButtonBar>
       </div>
     );
   }
@@ -183,7 +185,7 @@ export function MachineModelDetail({
       ] : []} />
       </div>
       <div className={editing ? `${styles.machineFormLayout} ${styles.machineModelEditingLayout}` : undefined}>
-      <section className={`${styles.panel} ${styles.contractForm}`}>
+      <Panel className={`${styles.panel} ${styles.contractForm}`}>
         <h2>{T.MACHINE_MODELS.DETAIL}</h2>
         <div className={styles.operationsGrid}>
           <div><span>{T.MACHINE_MODELS.ID}</span><strong><TruncatedId value={machineModel.id} /></strong></div>
@@ -199,8 +201,8 @@ export function MachineModelDetail({
             <MachineSpecificationsView value={machineModel.specifications} />
           </div>
         </div>
-      </section>
-      {editing && <form id="machine-model-edit-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+      </Panel>
+      {editing && <form id="machine-model-edit-form"  onSubmit={submit}><Panel className={`${styles.panel} ${styles.contractForm}`}>
         <h2>Chỉnh sửa mẫu máy</h2>
         <div className={styles.operationsGrid}>
           <label>{T.MACHINE_MODELS.MODEL_CODE}<input required maxLength={100} value={form.modelCode} onChange={(event) => setForm((current) => ({ ...current, modelCode: event.target.value }))} /></label>
@@ -212,7 +214,7 @@ export function MachineModelDetail({
           <MachineSpecificationsFields value={specificationsText} onChange={setSpecificationsText} />
         </div>
         {formError && <p className={styles.operationsNotice} role="alert">{formError}</p>}
-      </form>}
+      </Panel></form>}
       </div>
       {formError && !editing && <p className={styles.operationsNotice} role="alert">{formError}</p>}
 

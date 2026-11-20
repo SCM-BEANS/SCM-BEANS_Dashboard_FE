@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import Link from "next/link";
 import { RecipeManagementScreen } from "@/components/features/recipe-menus/recipe-menus-screen";
 import { PATH_CUSTOMER } from "@/routes/path";
@@ -16,10 +17,10 @@ export function OwnerMenuHeader({ active }: { active: "library" | "mine" | "sync
       <h1>Công thức pha chế</h1>
       <p>{active === "library" ? "Khám phá công thức Dolores và lưu món yêu thích vào menu riêng." : active === "mine" ? "Quản lý menu, thêm món riêng và giữ các công thức bạn đã lưu." : "Chọn máy để gửi công thức và theo dõi kết quả cập nhật."}</p>
     </header>
-    <nav className={styles.recipeMenuTabs} aria-label="Khu vực công thức">
+    <SectionTabList role="navigation" aria-label="Khu vực công thức">
       {ownerMenuSections.map((item) => <Link key={item.key} href={item.href} aria-current={active === item.key ? "page" : undefined}
         className={active === item.key ? styles.recipeMenuTabActive : undefined}>{item.label}</Link>)}
-    </nav>
+    </SectionTabList>
   </>;
 }
 

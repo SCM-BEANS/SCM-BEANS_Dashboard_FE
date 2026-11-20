@@ -137,7 +137,7 @@ export function ModeratorShell({
         <title>{pageTitle} | {MODERATOR_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell} data-role="moderator">
+      <div className={styles.shell} data-role="moderator" data-ui-dashboard>
         <NotificationRuntime scope="moderator" />
         <Sidebar
           brand={MODERATOR_MESSAGES.BRAND}

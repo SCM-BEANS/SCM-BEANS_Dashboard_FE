@@ -1,5 +1,8 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -65,7 +68,6 @@ export function InstallationWorkOrderRecords({
     accessories: 0,
     evidence: 0,
   });
-  const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
 
   const checklist = useQuery({
     queryKey: installationWorkOrderRecordsQueryKey(workOrderId, "checklist", pages.checklist),
@@ -90,32 +92,11 @@ export function InstallationWorkOrderRecords({
     setPages((current) => ({ ...current, [activeTab]: Math.max(0, nextPage) }));
   };
 
-  const moveTabFocus = (event: KeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
-    const keyDirection = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-    const nextIndex = event.key === "Home" ? 0
-      : event.key === "End" ? tabs.length - 1
-        : keyDirection ? (currentIndex + keyDirection + tabs.length) % tabs.length
-          : -1;
-    if (nextIndex < 0) return;
-    event.preventDefault();
-    const nextTab = tabs[nextIndex];
-    setActiveTab(nextTab.id);
-    tabButtons.current[nextIndex]?.focus();
-  };
 
   const renderPager = (currentPage: number, hasNext: boolean, isFetching: boolean, tab: InstallationWorkOrderRecordsTab) => {
     if (currentPage === 0 && !hasNext) return null;
     return (
-      <nav className={styles.pagination} aria-label={`Phân trang ${tabs.find((item) => item.id === tab)?.label.toLowerCase()}`}>
-        <ButtonBar type="button" disabled={currentPage === 0 || isFetching} onClick={() => setActivePage(currentPage - 1)}>
-          Trang trước
-        </ButtonBar>
-        <span>Trang {currentPage + 1}</span>
-        <ButtonBar type="button" disabled={!hasNext || isFetching} onClick={() => setActivePage(currentPage + 1)}>
-          Trang sau
-        </ButtonBar>
-      </nav>
+      <Pagination page={currentPage} hasNext={!(!hasNext || isFetching)} isFetching={isFetching} ariaLabel={`Phân trang ${tabs.find((item) => item.id === tab)?.label.toLowerCase()}`} onPageChange={(nextPage) => setActivePage(nextPage)} previousLabel="Trang trước" nextLabel="Trang sau" showPage={false} hideWhenSinglePage={false}><span>Trang {currentPage + 1}</span></Pagination>
     );
   };
 
@@ -196,12 +177,11 @@ export function InstallationWorkOrderRecords({
   }
 
   return (
-    <section className={styles.panel} aria-label="Hồ sơ lắp đặt">
-      <div className={styles.tabs} role="tablist" aria-label="Hồ sơ lắp đặt" onKeyDown={moveTabFocus}>
-        {tabs.map((tab, index) => (
+    <Panel className={styles.panel} aria-label="Hồ sơ lắp đặt">
+      <SectionTabList role="tablist" aria-label="Hồ sơ lắp đặt">
+        {tabs.map((tab) => (
           <button
             key={tab.id}
-            ref={(element) => { tabButtons.current[index] = element; }}
             className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ""}`}
             type="button"
             role="tab"
@@ -214,11 +194,11 @@ export function InstallationWorkOrderRecords({
             {tab.label}
           </button>
         ))}
-      </div>
+      </SectionTabList>
       <div className={styles.content} role="tabpanel" id="installation-records-panel" aria-labelledby={`installation-records-tab-${activeTab}`}>
         <h2 className={styles.heading}>{tabs.find((tab) => tab.id === activeTab)?.label}</h2>
         {content}
       </div>
-    </section>
+    </Panel>
   );
 }

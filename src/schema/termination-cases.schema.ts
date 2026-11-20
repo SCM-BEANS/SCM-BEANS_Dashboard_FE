@@ -50,16 +50,7 @@ export const TerminationActionRequestSchema = z.object({
   correlationId: z.string().trim().min(1),
 }).strict();
 
-export const TerminationInspectionRequestSchema = z.object({
-  maintenanceTicketId: z.string().uuid(),
-  diagnosis: z.string().trim().min(1),
-  responsibility: z.enum(["TENANT", "COMPANY", "UNKNOWN"]),
-  actualCost: z.number().finite().nonnegative().optional(),
-  resolutionResult: z.string().trim().min(1),
-  notes: z.string().optional(),
-  correlationId: z.string().trim().min(1),
-  inspectionDecision: z.enum(["NO_DAMAGE", "DAMAGE", "PARTIAL_DAMAGE"]),
-}).strict();
+export { TerminationInspectionRequestSchema, type TerminationInspectionRequest } from "./termination-workflow.schema";
 
 export const TerminationInspectionResultSchema = z.object({
   caseId: z.string().uuid(),
@@ -80,4 +71,3 @@ export const TerminationRejectionRequestSchema = z.object({
 export type TerminationCaseRequest = z.infer<typeof TerminationCaseRequestSchema>;
 export type TerminationCaseResponse = z.infer<typeof TerminationCaseResponseSchema>;
 export type TerminationCaseStatus = z.infer<typeof TerminationCaseStatusSchema>;
-export type TerminationInspectionRequest = z.infer<typeof TerminationInspectionRequestSchema>;

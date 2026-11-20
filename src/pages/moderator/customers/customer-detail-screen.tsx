@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useEffect, useState, type FormEvent } from "react";
@@ -37,9 +39,9 @@ function QueryFeedback({
     return (
       <div className={styles.pendingNotice} role="alert">
         <p>{getApiErrorMessage(query.error)}</p>
-        <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>
+        <ButtonBar  type="button" onClick={() => void query.refetch()}>
           {MODERATOR_MESSAGES.READ_SCREENS.RETRY}
-        </button>
+        </ButtonBar>
       </div>
     );
   }
@@ -114,7 +116,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
       {profile.data && !profile.isError && (
         <div className={styles.customerDetailLayout}>
           <div className={styles.customerDetailMain}>
-          <section className={styles.formPanel} aria-labelledby="moderator-contact-title">
+          <Panel className={styles.formPanel} aria-labelledby="moderator-contact-title">
           <h2 id="moderator-contact-title" className={styles.sectionTitle}>Thông tin liên hệ</h2>
           <dl className={styles.customerAccountInfo}>
             <div>
@@ -141,8 +143,8 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
               {updateContact.isSuccess && <p role="status">{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PHONE_SAVED}</p>}
             </form>
           )}
-          </section>
-          {isOwner && <section className={styles.formPanel} aria-labelledby="moderator-owner-contracts">
+          </Panel>
+          {isOwner && <Panel className={styles.formPanel} aria-labelledby="moderator-owner-contracts">
             <h2 id="moderator-owner-contracts" className={styles.sectionTitle}>Hồ sơ khách hàng</h2>
             <details className={styles.customerTechnicalDetails}><summary>Thông tin đồng bộ</summary><dl className={styles.customerAccountInfo}><div><dt>Mã hồ sơ</dt><dd><TruncatedId value={profile.data.idaasUserId} /></dd></div><div><dt>Vai trò</dt><dd>{profile.data.roles.map(role => ({ OWNER: "Khách hàng", MODERATOR: "Điều phối viên", TECHNICIAN: "Kỹ thuật viên", ADMIN: "Quản trị viên" } as Record<string, string>)[role.toUpperCase()] ?? role).join(", ")}</dd></div></dl></details>
             <h3 className={styles.sectionTitle}>Hợp đồng liên quan</h3>
@@ -170,14 +172,10 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                     );
                   })}
                 </DataTable>
-                <div className={styles.profilePagination}>
-                  <button className={styles.retryButton} type="button" disabled={contractsPage <= 0} onClick={() => setContractsPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
-                  <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(contracts.data.page + 1, Math.max(1, contracts.data.totalPages), contracts.data.totalElements)}</span>
-                  <button className={styles.retryButton} type="button" disabled={contractsPage + 1 >= contracts.data.totalPages} onClick={() => setContractsPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
-                </div>
+                <Pagination page={contractsPage} hasNext={!(contractsPage + 1 >= contracts.data.totalPages)} isFetching={false} ariaLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGINATION} onPageChange={(nextPage) => setContractsPage(nextPage)} previousLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS} nextLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT} showPage={false} hideWhenSinglePage={false}><span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(contracts.data.page + 1, Math.max(1, contracts.data.totalPages), contracts.data.totalElements)}</span></Pagination>
               </>
             )}
-          </section>}
+          </Panel>}
         <details className={`${styles.formPanel} ${styles.customerTechnicalDetails}`}>
           <summary>Lịch sử hồ sơ</summary>
           <QueryFeedback query={history} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_PROFILE} />
@@ -201,11 +199,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
                   </tr>
                 ))}
               </DataTable>
-              <div className={styles.profilePagination}>
-                <button className={styles.retryButton} type="button" disabled={historyPage <= 0} onClick={() => setHistoryPage((page) => page - 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}</button>
-                <span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(history.data.page + 1, Math.max(1, history.data.totalPages), history.data.totalElements)}</span>
-                <button className={styles.retryButton} type="button" disabled={historyPage + 1 >= history.data.totalPages} onClick={() => setHistoryPage((page) => page + 1)}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}</button>
-              </div>
+              <Pagination page={historyPage} hasNext={!(historyPage + 1 >= history.data.totalPages)} isFetching={false} ariaLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGINATION} onPageChange={(nextPage) => setHistoryPage(nextPage)} previousLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS} nextLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT} showPage={false} hideWhenSinglePage={false}><span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(history.data.page + 1, Math.max(1, history.data.totalPages), history.data.totalElements)}</span></Pagination>
             </>
           )}
         </details>

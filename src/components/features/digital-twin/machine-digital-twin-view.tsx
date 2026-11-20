@@ -1,3 +1,4 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { notificationsApi } from "@/apis/notifications.api";
@@ -315,7 +316,7 @@ export function MachineDigitalTwinView({
             <header className={styles.viewerHeader}>
               {smartMachine ? (
                 <div className={styles.modeRow}>
-                  <div className={styles.modeSwitch} role="group" aria-label={T.mode_label}>
+                  <SectionTabList role="group" aria-label={T.mode_label}>
                     <button
                       type="button"
                       className={styles.modeButton}
@@ -332,7 +333,7 @@ export function MachineDigitalTwinView({
                     >
                       {LIVE_T.digital_twin_live_mode_simulation}
                     </button>
-                  </div>
+                  </SectionTabList>
                 </div>
               ) : null}
               <span className={styles.caption}>{T.camera_hint}</span>

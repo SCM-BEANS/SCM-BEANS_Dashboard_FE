@@ -1,3 +1,5 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -211,7 +213,7 @@ export function MaintenanceRequestDetailScreen({
       {validId && requestQuery.isError && (
         <div className={styles.pendingNotice} role="alert">
           <p>{getApiErrorMessage(requestQuery.error)}</p>
-          <button className={styles.retryButton} type="button" onClick={() => void requestQuery.refetch()}>{messages.RETRY}</button>
+          <ButtonBar  type="button" onClick={() => void requestQuery.refetch()}>{messages.RETRY}</ButtonBar>
         </div>
       )}
       {request && <RequestActions actions={[
@@ -226,7 +228,7 @@ export function MaintenanceRequestDetailScreen({
         }),
       ]} />}
       {request && !requestQuery.isError && <div className={styles.requestOverview}>
-        <section className={styles.panel}><h2>Thông tin yêu cầu</h2><MaintenanceRequestDetails request={request} compact /></section>
+        <Panel className={styles.panel}><h2>Thông tin yêu cầu</h2><MaintenanceRequestDetails request={request} compact /></Panel>
         <aside className={styles.panel}>
           <h2>Tình trạng xử lý</h2>
           <span className={styles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status)}</span>
@@ -297,10 +299,10 @@ export function MaintenanceRequestDetailScreen({
         </section>
       ) : null}
       {request && !requestQuery.isError && <section className={styles.relatedContent} aria-label="Nội dung liên quan">
-        <nav className={styles.relatedNav} aria-label="Chứng từ và phiếu bảo trì">
+        <SectionTabList role="navigation" aria-label="Chứng từ và phiếu bảo trì">
           <button type="button" aria-pressed={relatedView === "ticket"} onClick={() => setRelatedView("ticket")}>Phiếu bảo trì liên quan</button>
           <button type="button" aria-pressed={relatedView === "evidence"} onClick={() => setRelatedView("evidence")}>Chứng từ yêu cầu</button>
-        </nav>
+        </SectionTabList>
         <div hidden={relatedView !== "ticket"}>
           {ticketQuery.data?.id ? <MaintenanceRequestTicketDetail ticketId={ticketQuery.data.id} role={role} /> : <p className={styles.formHint}>Chưa có phiếu bảo trì liên quan.</p>}
         </div>

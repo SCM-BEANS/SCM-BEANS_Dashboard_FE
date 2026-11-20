@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { useState, type FormEvent } from "react";
@@ -23,7 +24,15 @@ function formatDateTime(value: string | null | undefined) {
     : new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(timestamp);
 }
 
-function TicketDetail({ ticketId }: { ticketId: string }) {
+function TicketDetail({
+  ticketId,
+  backHref = PATH_TECHNICIAN.TASKS,
+  backLabel = "Danh sách công việc",
+}: {
+  ticketId: string;
+  backHref?: string;
+  backLabel?: string;
+}) {
   const queryClient = useQueryClient();
   const [partsReplaced, setPartsReplaced] = useState("");
   const [partsCost, setPartsCost] = useState("");
@@ -85,7 +94,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
   return (
     <section className={styles.pageContent} aria-labelledby="technician-maintenance-ticket-title">
       <div className={styles.pageHeader}><BackButtonHeading
-        back={{ label: "Danh sách công việc", fallbackHref: PATH_TECHNICIAN.TASKS }}
+        back={{ label: backLabel, fallbackHref: backHref }}
         title="Chi tiết phiếu bảo trì"
         titleId="technician-maintenance-ticket-title"
         className={styles.pageHeading}
@@ -97,7 +106,7 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
       {validId && ticketQuery.isError ? (
         <div className={[styles.notice, styles.error].join(" ")} role="alert">
           <p>{getApiErrorMessage(ticketQuery.error)}</p>
-          <button className={styles.button} type="button" onClick={() => void ticketQuery.refetch()}>Thử lại</button>
+          <ButtonBar className={styles.button} type="button" onClick={() => void ticketQuery.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
       {ticket ? (
@@ -124,20 +133,20 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
           </dl>
           {ticket.actionableInstructions ? <p className={styles.notice}>{ticket.actionableInstructions}</p> : null}
           {canRecordParts ? (
-            <form id="maintenance-ticket-parts-form" className={styles.panel} onSubmit={submitParts}>
+            <form id="maintenance-ticket-parts-form"  onSubmit={submitParts}><Panel className={styles.panel}>
               <h2>Ghi nhận vật tư</h2>
               <label htmlFor="maintenance-parts">Linh kiện đã thay</label>
               <textarea id="maintenance-parts" value={partsReplaced} maxLength={4000} onChange={(event) => setPartsReplaced(event.target.value)} rows={3} />
               <label htmlFor="maintenance-parts-cost">Chi phí vật tư</label>
               <input id="maintenance-parts-cost" type="number" min="0" step="0.01" value={partsCost} onChange={(event) => setPartsCost(event.target.value)} />
-            </form>
+            </Panel></form>
           ) : null}
           {ticket.status === "IN_PROGRESS" && !ticket.repairCaseId ? (
             <div className={styles.notice}>
               <h2>Hoàn tất và duyệt chi phí</h2>
               <p>Chưa thể hoàn tất hoặc gửi đề xuất chi phí vì hệ thống hiện chưa có API upload và đọc minh chứng riêng tư cho ticket bảo trì. Khi có nguồn minh chứng này, quy trình sẽ mở các bước tiếp theo.</p>
-              <button className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Hoàn tất ticket</button>
-              <button className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Gửi đề xuất chi phí</button>
+              <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Hoàn tất ticket</ButtonBar>
+              <ButtonBar className={styles.disabledButton} type="button" disabled aria-describedby="maintenance-evidence-block">Gửi đề xuất chi phí</ButtonBar>
               <p className={styles.hint} id="maintenance-evidence-block">Cần API lưu trữ minh chứng riêng tư được liên kết với ticket.</p>
             </div>
           ) : null}
@@ -148,6 +157,10 @@ function TicketDetail({ ticketId }: { ticketId: string }) {
   );
 }
 
-export function TechnicianMaintenanceTicketScreen({ ticketId }: { ticketId: string }) {
-  return <TicketDetail ticketId={ticketId} />;
+export function TechnicianMaintenanceTicketScreen({ ticketId, backHref, backLabel }: {
+  ticketId: string;
+  backHref?: string;
+  backLabel?: string;
+}) {
+  return <TicketDetail ticketId={ticketId} backHref={backHref} backLabel={backLabel} />;
 }

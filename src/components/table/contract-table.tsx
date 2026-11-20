@@ -23,11 +23,14 @@ export function ContractTable({
   const contractColumn: DataTableColumn<Contract> = {
     key: "contract",
     header: "Hợp đồng",
+    kind: "code",
+    noWrap: true,
     render: (contract) => <TextLinkButton href={contractHref(contract.id)} title={contract.id}>{contract.id.slice(0, 8).toUpperCase()}</TextLinkButton>,
   };
   const ownerColumn: DataTableColumn<Contract> = {
     key: "owner",
     header: "Khách hàng",
+    kind: "name",
     render: renderOwner,
   };
   const typeColumn: DataTableColumn<Contract> = {
@@ -40,6 +43,7 @@ export function ContractTable({
   const statusColumn: DataTableColumn<Contract> = {
     key: "status",
     header: CONTRACT_TABLE_HEADERS.status,
+    kind: "status",
     render: (contract) => {
       const label = contract.status === "ACTIVE" ? "Đang hiệu lực"
         : contract.status === "DRAFT" ? "Bản nháp"

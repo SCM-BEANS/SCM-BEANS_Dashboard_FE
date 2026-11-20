@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
@@ -301,13 +303,13 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
   };
 
   const revenuePanel = (
-    <section className={`${styles.panel} ${styles.summaryProfit}`}>
+    <Panel className={`${styles.panel} ${styles.summaryProfit}`}>
       <div className={styles.summarySectionHeading}><h2>Doanh thu đã thu</h2><span>{usagePeriod}</span></div>
       <strong className={styles.summaryValue}>{amount(periodVnd?.collectionQuality?.status === "UNAVAILABLE" ? null : periodVnd?.amountCollectedInPeriod)}</strong>
       {periodVnd?.collectionQuality?.status === "PARTIAL" && <p className={styles.summaryQuality} role="status">Số liệu thu tiền chưa đầy đủ</p>}
       {periodVnd?.collectionQuality?.status === "UNAVAILABLE" && <p className={styles.summaryQuality} role="status">Chưa có số liệu thu tiền cho kỳ này</p>}
       {revenue.isPending && <div className={`${styles.summaryRevenueChart} ${styles.summaryLoading}`} role="status">Đang tải biểu đồ doanh thu…</div>}
-      {revenue.isError && <div className={`${styles.summaryRevenueChart} ${styles.summaryLoading}`} role="alert"><p>{getApiErrorMessage(revenue.error)}</p><button type="button" onClick={() => void revenue.refetch()}>Thử lại</button></div>}
+      {revenue.isError && <div className={`${styles.summaryRevenueChart} ${styles.summaryLoading}`} role="alert"><p>{getApiErrorMessage(revenue.error)}</p><ButtonBar type="button" onClick={() => void revenue.refetch()}>Thử lại</ButtonBar></div>}
       {revenue.data && (revenue.data.some(point => point.amount != null) ? <>
         <div className={styles.summaryRevenueChart} role="img" aria-label="Biểu đồ tiền đã thu theo kỳ">
           <ResponsiveContainer width="100%" height="100%">
@@ -323,11 +325,11 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
         <p className={styles.summaryChartCaption}>{revenue.data.some(point => point.fromDate !== point.toDate) ? "Tổng theo khoảng ngày · Xem kỳ cụ thể trong biểu đồ" : "Tiền đã thu theo ngày"}{revenue.data.some(point => point.partial || point.amount == null) ? " · Có kỳ chưa đủ dữ liệu" : ""}</p>
       </> : <div className={`${styles.summaryRevenueChart} ${styles.summaryLoading}`}>Chưa có dữ liệu doanh thu cho biểu đồ.</div>)}
       {!moderator && <div className={styles.summaryRevenueCollected}><span>Giá trị hóa đơn phát hành trong kỳ{periodVnd?.issuanceQuality?.status === "PARTIAL" ? " · Chưa đầy đủ" : ""}</span><strong>{amount(periodVnd?.issuanceQuality?.status === "UNAVAILABLE" ? null : periodVnd?.amountIssuedInPeriod)}</strong></div>}
-    </section>
+    </Panel>
   );
 
   const cupsPanel = (
-    <section className={styles.panel}>
+    <Panel className={styles.panel}>
       <div className={styles.summarySectionHeading}><h2>Số ly ghi nhận</h2><span>{usagePeriod}</span></div>
       <strong className={styles.summaryValue}>{count(metrics?.cupsInSelectedPeriod)} {(!moderator || metrics?.cupsInSelectedPeriod != null) && <small>ly</small>}</strong>
       {days.some(day => day.cups != null) ? <>
@@ -348,11 +350,11 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
           </DataTable>
         </details>
       </> : <p className={styles.emptyText}>{ADMIN_MESSAGES.OVERVIEW.NO_DAILY_DATA}</p>}
-    </section>
+    </Panel>
   );
 
   const rentalPanel = (
-    <section className={styles.panel}>
+    <Panel className={styles.panel}>
       <div className={styles.summarySectionHeading}><h2>Máy đang cho thuê</h2><Link href={moderator ? PATH_MODERATOR.MACHINES_LIST : PATH_ADMIN.MACHINES}>{moderator ? "Xem danh sách máy" : "Xem kho máy"}</Link></div>
       {machineCounts ? <>
         <div className={styles.summaryGauge}>
@@ -365,7 +367,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
         </div>
         <p className={styles.summaryGaugeCaption}>{moderator ? "Trong phạm vi hợp đồng bạn quản lý" : "Máy đang triển khai theo hợp đồng thuê"}</p>
       </> : <p className={styles.emptyText}>Chưa có dữ liệu trạng thái máy.</p>}
-    </section>
+    </Panel>
   );
 
   const invoiceRows = invoices.data?.items ?? [];
@@ -375,10 +377,10 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
   const spotlightInvoices = [...invoiceRows].sort((a, b) => invoiceGroup(a.status) - invoiceGroup(b.status)).slice(0, 3);
 
   const invoicePanel = (
-    <section className={`${styles.panel} ${styles.invoiceOverview}`} aria-labelledby="overview-invoices-title">
+    <Panel className={`${styles.panel} ${styles.invoiceOverview}`} aria-labelledby="overview-invoices-title">
       <div className={styles.summarySectionHeading}><h2 id="overview-invoices-title">Hóa đơn</h2><Link href={moderator ? PATH_MODERATOR.INVOICES_LIST : PATH_ADMIN.INVOICES}>Xem tất cả hóa đơn</Link></div>
       {invoices.isPending && <p role="status">Đang tải hóa đơn…</p>}
-      {invoices.isError && <div role="alert"><p>{getApiErrorMessage(invoices.error)}</p><button type="button" onClick={() => void invoices.refetch()}>Thử lại</button></div>}
+      {invoices.isError && <div role="alert"><p>{getApiErrorMessage(invoices.error)}</p><ButtonBar type="button" onClick={() => void invoices.refetch()}>Thử lại</ButtonBar></div>}
       {invoices.data && (invoiceRows.length ? (
         <div className={styles.invoiceSnapshot}>
           <div>
@@ -411,7 +413,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
           </div>
         </div>
       ) : <p className={styles.emptyText}>Chưa có hóa đơn.</p>)}
-    </section>
+    </Panel>
   );
 
   return (
@@ -520,9 +522,9 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
                     </label>
                   </div>
                 </div>
-                <button className={styles.overviewApplyRange} type="submit" disabled={!today}>
+                <ButtonBar className={styles.overviewApplyRange} type="submit" disabled={!today}>
                   Áp dụng kỳ
-                </button>
+                </ButtonBar>
               </form>
               {rangeError && <p className={styles.accountInlineWarning} role="alert">{rangeError}</p>}
               {appliedRange && (
@@ -547,9 +549,9 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
       {overview.isError && (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
           <p>{getApiErrorMessage(overview.error)}</p>
-          <button type="button" onClick={() => void overview.refetch()}>
+          <ButtonBar type="button" onClick={() => void overview.refetch()}>
             {ADMIN_MESSAGES.OVERVIEW.RETRY}
-          </button>
+          </ButtonBar>
         </div>
       )}
 
@@ -584,7 +586,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
             </div>
             {hasPeriodFinance && rentalPanel}
             {invoicePanel}
-            <section className={styles.panel} aria-labelledby="moderator-operations-title">
+            <Panel className={styles.panel} aria-labelledby="moderator-operations-title">
               <h2 id="moderator-operations-title" className={styles.summaryTitle}>Chỉ số vận hành</h2>
               <dl className={styles.moderatorOverviewStats}>
                 {[
@@ -594,7 +596,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
                   { label: "Phiếu bảo trì đang mở", value: metrics?.openMaintenanceTickets },
                 ].map(item => <div key={item.label}><dt>{item.label}</dt><dd>{count(item.value)}</dd></div>)}
               </dl>
-            </section>
+            </Panel>
           </> : <div className={styles.summaryGrid}>
             <div className={styles.summaryColumn}>
               {revenuePanel}

@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
-const { join } = require("node:path");
+const { existsSync, readFileSync } = require("node:fs");
+const { dirname, join, relative } = require("node:path");
 const test = require("node:test");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
@@ -21,8 +21,17 @@ function loadModule(relativePath, mocks = {}) {
     },
   });
   const loaded = { exports: {} };
-  const mockedRequire = (id) =>
-    Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id] : require(id);
+  const mockedRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(mocks, id)) return mocks[id];
+    const sourcePath = id.startsWith("@/schema/")
+      ? join(root, "src", id.slice(2) + ".ts")
+      : id.startsWith(".") && id.includes(".schema")
+        ? join(dirname(fileName), id + ".ts")
+        : null;
+    return sourcePath && existsSync(sourcePath)
+      ? loadModule(relative(root, sourcePath))
+      : require(id);
+  };
   new Function("require", "module", "exports", outputText)(
     mockedRequire,
     loaded,
@@ -71,6 +80,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
   const sidebarModule = loadModule("src/components/sidebar/sidebar.tsx", {
     "lucide-react": { LogOut: () => null },
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "./settings-menu": { SettingsMenu: () => null },
     "./navigation-route": loadModule("src/components/sidebar/navigation-route.ts"),
     "./sidebar.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
@@ -172,6 +182,7 @@ test("Moderator Pages Router entry returns 404 for unsupported sections", async 
     "@/text/moderator/moderator-messages": {
       MODERATOR_MESSAGES: loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES,
     },
+    "@/components/panel/panel": { Panel: ({ children, ...props }) => React.createElement("section", props, children) },
     "./moderator-shell": {
       ModeratorShell: ({ children }) => children,
       moderatorStyles: new Proxy({}, { get: (_target, key) => String(key) }),

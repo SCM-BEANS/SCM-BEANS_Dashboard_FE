@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import Cookies from "js-cookie";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -172,7 +173,7 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
         ...(operator && role === "ADMIN" && data.refundKind === "DEPOSIT" && data.terminationCaseId && ["REJECTED", "DISPUTED"].includes(data.status) ? [{ id: "refund-reopen", label: "Mở lại yêu cầu", priority: 50, variant: "primary" as const, disabled: !reason.trim() || mutation.isPending, onClick: () => { const signature = `${refundId}:${reason.trim()}`; const key = reopenKeys.current.get(signature) ?? crypto.randomUUID(); reopenKeys.current.set(signature, key); ask({ action: "reopen", reason: reason.trim(), key }); } }] : []),
       ] : [];
   return (
-    <section className={styles.panel} aria-label="Khoản hoàn tiền">
+    <Panel className={styles.panel} aria-label="Khoản hoàn tiền">
 
       <div className={styles.heading}><h3>Khoản hoàn tiền</h3><ButtonBar disabled={refund.isFetching || mutation.isPending} onClick={() => void refund.refetch()}>Làm mới</ButtonBar></div>
       {!RefundIdSchema.safeParse(refundId).success ? <p className={styles.error} role="alert">Mã khoản hoàn không hợp lệ.</p> : null}
@@ -227,6 +228,6 @@ export function RefundWorkflowPanel({ refundId, role, context, initialRefund, on
         secondaryAction={{ label: "Quay lại", disabled: mutation.isPending, onClick: () => setPending(null) }} onClose={() => { if (!mutation.isPending) setPending(null); }} closeOnEscape={!mutation.isPending}>
         {mutation.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(mutation.error, "mutation")}</p> : null}
       </NotificationDialog> : null}
-    </section>
+    </Panel>
   );
 }

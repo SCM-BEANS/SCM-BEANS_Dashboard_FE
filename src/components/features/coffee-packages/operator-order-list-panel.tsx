@@ -1,7 +1,10 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { Pagination } from "@/components/pagination/pagination";
+import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_ADMIN } from "@/routes/path";
@@ -25,7 +28,7 @@ export function OperatorOrderListPanel({
   )) ?? []);
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-operator-orders-title">
+    <Panel className={styles.panel} aria-labelledby="coffee-operator-orders-title">
       <div className={styles.panelHeading}>
         <div><h2 id="coffee-operator-orders-title">Đơn gói cà phê</h2></div>
       </div>
@@ -67,12 +70,8 @@ export function OperatorOrderListPanel({
         ]} />
       ) : null}
       {workflow.orders.data ? (
-        <div className={styles.pagination}>
-          <ButtonBar type="button" disabled={workflow.page === 0} onClick={() => workflow.setPage((current) => Math.max(0, current - 1))}>Trang trước</ButtonBar>
-          <span>Trang {workflow.orders.data.page + 1}</span>
-          <ButtonBar type="button" disabled={!workflow.orders.data.hasNext} onClick={() => workflow.setPage((current) => current + 1)}>Trang sau</ButtonBar>
-        </div>
+        <Pagination page={workflow.orders.data.page} hasNext={workflow.orders.data.hasNext} isFetching={workflow.orders.isFetching} ariaLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_PAGINATION} onPageChange={workflow.setPage} previousLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_PREVIOUS} nextLabel={CUSTOMER_MESSAGES.READ_SCREENS.COFFEE_ORDERS_NEXT} hideWhenSinglePage={false} />
       ) : null}
-    </section>
+    </Panel>
   );
 }

@@ -404,7 +404,7 @@
 
 @media (max-width: 600px) {
   .pageContent { padding-bottom: 100px; }
-  .panel {
+  .panel:not([data-ui-panel]) {
     padding: 14px;
   }
 
@@ -928,6 +928,9 @@
   display: grid;
   min-width: 0;
   gap: 16px;
+}
+
+.recipeMenuDetail:not([data-ui-panel]), .recipeMenuEditor {
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -1287,7 +1290,6 @@ fieldset.recipeMenuEditorGroup {
 }
 
 @media (max-width: 700px) {
-  .recipeMenuPanel { padding: 16px; }
   .recipeMenuToolbar,
   .recipeMenuCreateForm,
   .recipeMenuAddForm,
@@ -1308,8 +1310,7 @@ fieldset.recipeMenuEditorGroup {
   .recipeMenuFormGrid,
   .recipeMenuStatus { grid-template-columns: minmax(0, 1fr); }
   .recipeMenuFormGrid .recipeMenuFieldWide { grid-column: auto; }
-  .recipeMenuDetail,
-  .recipeMenuEditor { padding: 14px; }
+  .recipeMenuDetail:not([data-ui-panel]), .recipeMenuEditor { padding: 14px; }
   .recipeMenuTabs button { flex: 1 1 100%; justify-content: flex-start; text-align: left; }
   .recipeMenuEditorGroup { padding: 12px; }
   .recipeMenuEditorGroupHeading { align-items: flex-start; flex-direction: column; }
@@ -1454,7 +1455,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 }
 @media (max-width: 560px) {
  .operatorWorkspace .detailGrid { grid-template-columns: minmax(0, 1fr); }
- .operatorWorkspace .panel, .operatorWorkspace .formPanel { padding: 16px; }
+ .operatorWorkspace .panel:not([data-ui-panel]), .operatorWorkspace .formPanel:not([data-ui-panel]) { padding: 16px; }
 }
 
 .issueDescription { min-width: 0; }
@@ -1623,9 +1624,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .adminRecipeDialog h2 { margin: 0; font-size: 20px; }
 .adminRecipeDialog .formField { width: 100%; }
 .adminRecipeDialog .recipeMenuActions { justify-content: flex-end; }
-[data-recipe-layout][data-recipe-mode="detail"] > .recipeMenuPanel,
-[data-recipe-layout][data-recipe-mode="editor"] > .recipeMenuPanel,
-[data-recipe-layout] .recipeMenuWorkspace > .recipeMenuDetail { padding: 0; border: 0; background: transparent; }
+[data-recipe-layout][data-recipe-mode="detail"] > .recipeMenuPanel:not([data-ui-panel]), [data-recipe-layout][data-recipe-mode="editor"] > .recipeMenuPanel:not([data-ui-panel]), [data-recipe-layout] .recipeMenuWorkspace > .recipeMenuDetail:not([data-ui-panel]) { padding: 0; border: 0; background: transparent; }
 [data-recipe-layout] .recipeMenuWorkspace { grid-template-columns: minmax(0, 1fr); }
 .adminRecipeColumns,
 .ownerRecipePage .recipeMenuWorkspace[data-private-editor],
@@ -1668,7 +1667,6 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 }
 @media (max-width: 600px) {
   [data-recipe-layout] .recipeMenuTabs > button { flex: 0 1 auto; }
-  [data-recipe-layout] .recipeMenuPanel { padding: 14px; }
   .adminRecipeHeader .recipeMenuActions > *, .adminRecipeDialog .recipeMenuActions > * { flex: 0 1 auto; }
 }
 .adminRecipeDialogClose { border: 0; background: transparent; color: inherit; min-width: 44px; min-height: 44px; font-size: 20px; cursor: pointer; }

@@ -1,3 +1,6 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { TableFilters } from "@/components/table/table-filters";
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
@@ -40,9 +43,9 @@ function QueryFeedback({
     return (
       <div className={styles.pendingNotice} role="alert">
         <p>{getApiErrorMessage(query.error)}</p>
-        <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>
+        <ButtonBar  type="button" onClick={() => void query.refetch()}>
           {MODERATOR_MESSAGES.READ_SCREENS.RETRY}
-        </button>
+        </ButtonBar>
       </div>
     );
   }
@@ -100,9 +103,9 @@ export function CustomerProfileListScreen() {
       <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CUSTOMER}>Tạo khách hàng</ButtonBar>
       </div>
 
-      <section className={`${styles.formPanel} ${styles.customerListPanel}`}>
+      <Panel className={`${styles.formPanel} ${styles.customerListPanel}`}>
       <div className={styles.customerListHeading}><h2>Danh sách khách hàng</h2>{pageData && <span>{pageData.totalElements.toLocaleString("vi-VN")} {search || status ? "kết quả" : "khách hàng"}</span>}</div>
-      <form className={styles.customerFilters} onSubmit={handleSearch}>
+      <TableFilters className={styles.customerFilters} onSubmit={handleSearch}>
         <div className={styles.formRow}>
           <label className={styles.formField}>
             {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SEARCH}
@@ -124,11 +127,11 @@ export function CustomerProfileListScreen() {
           </label>
         </div>
         <div className={styles.contractActions}>
-          <button className={styles.retryButton} type="submit">
+          <ButtonBar  type="submit">
             {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SEARCH_ACTION}
-          </button>
+          </ButtonBar>
         </div>
-      </form>
+      </TableFilters>
 
       <QueryFeedback query={profiles} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_PROFILES} />
       {pageData?.items.length === 0 && !profiles.isPending && !profiles.isError && (
@@ -161,30 +164,12 @@ export function CustomerProfileListScreen() {
               </tr>
             ))}
           </DataTable>
-          <nav className={styles.profilePagination} aria-label={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGINATION}>
-            <button
-              className={styles.retryButton}
-              type="button"
-              disabled={page === 0 || profiles.isFetching}
-              onClick={() => setPage((currentPage) => Math.max(0, currentPage - 1))}
-            >
-              {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS}
-            </button>
-            <span>
+          <Pagination page={page} hasNext={!(page + 1 >= totalPages || profiles.isFetching)} isFetching={profiles.isFetching} ariaLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGINATION} onPageChange={setPage} previousLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS} nextLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT} showPage={false} hideWhenSinglePage={false}><span>
               {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGE(page + 1, Math.max(totalPages, 1), pageData.totalElements)}
-            </span>
-            <button
-              className={styles.retryButton}
-              type="button"
-              disabled={page + 1 >= totalPages || profiles.isFetching}
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              {MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT}
-            </button>
-          </nav>
+            </span></Pagination>
         </>
       )}
-      </section>
+      </Panel>
     </div>
   );
 }

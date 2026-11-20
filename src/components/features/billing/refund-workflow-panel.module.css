@@ -17,7 +17,7 @@
 .panel summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 4px; }
 .createForm { max-width: 960px; }
 .createForm .grid { grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); align-items: start; }
-.refundResult > .panel { border: 0; padding: 12px 0 0; }
+.refundResult > .panel:not([data-ui-panel]) { border: 0; padding: 12px 0 0; }
 .refundStatus { display: inline-flex; align-items: baseline; gap: 8px; font-weight: 400; }
 .refundStatus::before { content: ""; width: 7px; height: 7px; flex: none; border-radius: 50%; background: #c78c2d; }
 .refundStatus[data-status="COMPLETED"]::before { background: #2d8a63; }
@@ -37,5 +37,5 @@
 .queue button { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); text-align: left; font: inherit; cursor: pointer; }
 .queue button:hover { background: #faf5f4; }
 .queue button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-@media (max-width: 640px) { .panel { padding: 16px; } .grid, .summary, .invoiceTools, .createForm .grid { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
+@media (max-width: 640px) { .panel:not([data-ui-panel]) { padding: 16px; } .grid, .summary, .invoiceTools, .createForm .grid { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
 @media (prefers-reduced-motion: no-preference) { .queue button { transition: background-color 150ms ease; } }

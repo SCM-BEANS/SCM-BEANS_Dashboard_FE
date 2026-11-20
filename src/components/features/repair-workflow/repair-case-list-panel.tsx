@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { repairCasesApi } from "@/apis/repair-cases.api";
@@ -72,23 +73,23 @@ export function RepairCaseListPanel({
   ];
 
   return (
-    <section className={styles.panel} aria-labelledby="repair-case-list-title">
+    <Panel className={styles.panel} aria-labelledby="repair-case-list-title">
       <header className={styles.panelHeading}>
         <div>
           <h2 id="repair-case-list-title">{title}</h2>
           {description ? <p>{description}</p> : null}
         </div>
-        <button type="button" className={styles.inlineButton} disabled={cases.isFetching} onClick={() => void cases.refetch()}>
+        <ButtonBar type="button"  disabled={cases.isFetching} onClick={() => void cases.refetch()}>
           {cases.isFetching ? M.CASE_REFRESHING : M.CASE_REFRESH}
-        </button>
+        </ButtonBar>
       </header>
       {cases.isPending ? <p className={styles.notice} role="status">{M.CASE_LIST_LOADING}</p> : null}
       {cases.isError ? (
         <div className={`${styles.notice} ${styles.error}`} role="alert">
           <p>{getApiErrorMessage(cases.error)}</p>
-          <button type="button" className={styles.inlineButton} onClick={() => void cases.refetch()}>
+          <ButtonBar type="button"  onClick={() => void cases.refetch()}>
             {M.CASE_RETRY}
-          </button>
+          </ButtonBar>
         </div>
       ) : null}
       {cases.data ? (
@@ -108,7 +109,7 @@ export function RepairCaseListPanel({
           />
         </>
       ) : null}
-    </section>
+    </Panel>
   );
 }
 

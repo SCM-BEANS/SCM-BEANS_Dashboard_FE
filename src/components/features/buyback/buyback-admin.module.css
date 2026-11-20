@@ -88,4 +88,4 @@
 .progress li[data-state="current"] { color: color-mix(in srgb, var(--color-primary) 87%, black); }
 .progress li[data-state="current"] > span { border-color: var(--color-primary); color: color-mix(in srgb, var(--color-primary) 87%, black); }
 @media (max-width: 1000px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .progress { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
-@media (max-width: 600px) { .screen [data-buyback-list], .card { padding: 16px; } .summary, .disclosure :global(dl) { grid-template-columns: minmax(0, 1fr); } .progress { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .screen [data-buyback-list], .card:not([data-ui-panel]) { padding: 16px; } .summary, .disclosure :global(dl) { grid-template-columns: minmax(0, 1fr); } .progress { grid-template-columns: minmax(0, 1fr); } }

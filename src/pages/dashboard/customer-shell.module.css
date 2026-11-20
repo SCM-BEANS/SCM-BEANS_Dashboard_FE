@@ -148,10 +148,6 @@
   margin: 0;
 }
 
-.workflowStatus p + p {
-  margin-top: 8px;
-}
-
 .workflowFields {
   min-width: 0;
   display: grid;
@@ -597,8 +593,9 @@
 .main { padding-bottom: var(--action-bar-height, 0px); }
 
 .contractPage { max-width: 1440px; width: 100%; margin-inline: auto; }
-.contractLayout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .9fr); gap: 18px; align-items: start; }
-.contractLayout > section { min-width: 0; margin: 0; }
+.contractLayout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .9fr); gap: 18px; }
+.contractLayout > section { min-width: 0; margin: 0; align-content: start; }
+.contractRelated { grid-column: 1 / -1; }
 .contractOverview .detailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 18px 0 0; }
 .contractOverview .detailGrid > div { min-width: 0; overflow-wrap: anywhere; }
 .contractPage .detailItem { border: 0; border-radius: 0; padding: 0; background: transparent; }
@@ -617,7 +614,7 @@
 .contractTerms summary { cursor: pointer; font-weight: 600; }
 .contractTerms p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
 @media (max-width: 1000px) { .contractLayout { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 600px) { .contractFilters, .contractOverview .detailGrid { grid-template-columns: minmax(0, 1fr); } .contractListHeading { flex-wrap: wrap; gap: 8px; } }
+@media (max-width: 600px) { .contractFilters, .contractOverview .detailGrid { grid-template-columns: minmax(0, 1fr); } }
 
 .machineWorkspace .detailGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; }
 .machineWorkspace .detailGrid > div { min-width: 0; overflow-wrap: anywhere; }

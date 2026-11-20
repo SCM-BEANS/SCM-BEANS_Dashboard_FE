@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
@@ -49,14 +50,14 @@ export function OperatorPayoutAttemptsPanel({
         ]} />
       ) : !workflow.payoutAttempts.isPending && !workflow.payoutAttempts.isError ? <p className={styles.notice}>Chưa có lần chuyển khoản nào.</p> : null}
       {failedAttemptNumber != null ? (
-        <form className={styles.reviewBox} onSubmit={markPayoutFailed}>
+        <form  onSubmit={markPayoutFailed}><Panel className={styles.reviewBox}>
           <h4>Ghi nhận lần chuyển {failedAttemptNumber} không thành công</h4>
           <label className={styles.field}><span>Lý do</span><textarea maxLength={2000} value={failedReason} onChange={(event) => setFailedReason(event.target.value)} required /></label>
           <div className={styles.actionRow}>
             <ButtonBar type="submit" disabled={!failedReason.trim() || workflow.pending}>Lưu lý do</ButtonBar>
             <ButtonBar type="button" onClick={() => { setFailedAttemptNumber(null); setFailedReason(""); }}>Hủy</ButtonBar>
           </div>
-        </form>
+        </Panel></form>
       ) : null}
     </section>
   );

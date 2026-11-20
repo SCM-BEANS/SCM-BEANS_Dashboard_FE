@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import { useState } from "react";
 import { InAppHistoryProvider } from "@/components/navigation/in-app-history-provider";
 import { DevQuickLoginControls } from "@/components/dev-quick-login-controls";
+import "@/styles/ui-tokens.css";
 
 export default function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(

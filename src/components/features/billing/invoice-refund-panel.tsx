@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import Cookies from "js-cookie";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
@@ -60,7 +61,7 @@ export function InvoiceRefundPanel({ invoice, role }: {
   const items = overdue.data?.items.filter((item) => item.invoiceId === invoice.id && item.refundKind === "OVERPAYMENT") ?? [];
   const initialRefund = created?.id === refundId ? created : items.find((item) => item.id === refundId);
   return (
-    <section className={styles.panel} aria-label="Hoàn khoản thanh toán dư">
+    <Panel className={styles.panel} aria-label="Hoàn khoản thanh toán dư">
       <div className={styles.heading}><h2>Hoàn khoản thanh toán dư</h2>{canCreate && <ButtonBar aria-expanded={creating} aria-controls={createFormId} onClick={() => setCreating((value) => !value)}>{creating ? "Đóng biểu mẫu" : "Tạo yêu cầu hoàn tiền"}</ButtonBar>}</div>
       {canCreate ? <form id={createFormId} hidden={!creating} className={`${styles.form} ${styles.createForm}`} onSubmit={submit}><div className={styles.grid}>
           <label>Số tiền đề nghị hoàn (VND) *<input required type="number" min="0.01" step="any" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
@@ -78,7 +79,7 @@ export function InvoiceRefundPanel({ invoice, role }: {
       <details className={styles.tool}><summary>Khoản hoàn quá hạn</summary>
         {overdue.isLoading ? <p role="status">Đang tải khoản hoàn quá hạn…</p> : null}
         {overdue.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(overdue.error)}</p> : null}
-        <ul className={styles.queue}>{items.map((item) => <li key={item.id}><button type="button" onClick={() => open(item.id)}><strong>{refundMoney(item.amount)}</strong><span>{refundStatusLabels[item.status]}</span><span>{item.id.slice(0, 8).toUpperCase()}</span></button></li>)}</ul>
+        <ul className={styles.queue}>{items.map((item) => <li key={item.id}><ButtonBar type="button" onClick={() => open(item.id)}><strong>{refundMoney(item.amount)}</strong><span>{refundStatusLabels[item.status]}</span><span>{item.id.slice(0, 8).toUpperCase()}</span></ButtonBar></li>)}</ul>
         <div className={styles.actions}>{(page > 0 || overdue.data?.hasNext) && <><ButtonBar disabled={page === 0 || overdue.isFetching} onClick={() => setPage((value) => value - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={!overdue.data?.hasNext || overdue.isFetching} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar></>}<ButtonBar disabled={overdue.isFetching} onClick={() => void overdue.refetch()}>Làm mới</ButtonBar></div>
       </details>
       </div>
@@ -88,6 +89,6 @@ export function InvoiceRefundPanel({ invoice, role }: {
         secondaryAction={{ label: "Quay lại", disabled: create.isPending, onClick: () => setPending(null) }} onClose={() => { if (!create.isPending) setPending(null); }} closeOnEscape={!create.isPending}>
         {create.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(create.error, "mutation")}</p> : null}
       </NotificationDialog> : null}
-    </section>
+    </Panel>
   );
 }

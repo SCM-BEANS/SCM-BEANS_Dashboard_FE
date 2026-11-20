@@ -11,12 +11,15 @@ import { DataTable, type DataTableColumn } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { Panel } from "@/components/panel/panel";
+import { Pagination } from "@/components/pagination/pagination";
 import { useOwnerNames } from "@/hooks/use-owner-names";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR, PATH_TECHNICIAN } from "@/routes/path";
 import { BuybackSerialSchema, type BuybackCase, type BuybackCaseSummary as BuybackCaseSummaryType } from "@/schema/buybacks.schema";
 import { buybackStatusLabels, formatBuybackDateTime, formatBuybackMoney } from "./buyback-formatters";
+import { REPAIR_WORKFLOW_MESSAGES as messages } from "@/text/repair-workflow/repair-workflow-messages";
 import type { BuybackWorkflowController, BuybackWorkflowRole } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
 import adminStyles from "./buyback-admin.module.css";
@@ -300,7 +303,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         const canAccept = item.workflowVersion !== 2 && item.contractId != null
           || Boolean(workflow.ownerId && item.inspectionTechnicianId === workflow.ownerId);
         return (
-          <button
+          <ButtonBar
             className={styles.buybackDetailAction}
             type="button"
             aria-label={canAccept ? `Tiếp nhận hồ sơ ${item.id}` : `Hồ sơ ${item.id} chưa được giao cho bạn`}
@@ -308,7 +311,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             onClick={() => { if (canAccept) setAcceptanceCase(item); }}
           >
             {canAccept ? "Tiếp nhận" : "Chưa được giao"}
-          </button>
+          </ButtonBar>
         );
       },
     });
@@ -322,35 +325,35 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         if (item.status === "VALUATION_PENDING" && (item.workflowVersion !== 2 || item.responsibleModeratorId === workflow.ownerId)) {
           return (
             <div className={styles.technicalRequestActions}>
-              <button
+              <ButtonBar
                 className={styles.technicalRequestAccept}
                 type="button"
                 disabled={workflow.decideValuation.isPending || item.proposedPrice == null || !Number.isFinite(item.proposedPrice) || item.proposedPrice <= 0}
                 onClick={() => openValuationDialog(item, true)}
               >
                 Duyệt giá
-              </button>
-              <button
+              </ButtonBar>
+              <ButtonBar
                 className={styles.technicalRequestReject}
                 type="button"
                 disabled={workflow.decideValuation.isPending}
                 onClick={() => openValuationDialog(item, false)}
               >
                 Không duyệt
-              </button>
+              </ButtonBar>
             </div>
           );
         }
         if (canRequestCollectionForItem(item)) {
           return (
-            <button
+            <ButtonBar
               className={styles.technicalRequestAccept}
               type="button"
               disabled={workflow.requestCollection.isPending}
               onClick={() => openCollectionRequestDialog(item)}
             >
               Yêu cầu thu máy
-            </button>
+            </ButtonBar>
           );
         }
         if (canAssignCollectionForItem(item)) {
@@ -373,22 +376,22 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         && Number(item.approvedPrice) > 0
         && item.ownerAccepted == null ? (
           <div className={styles.technicalRequestActions}>
-            <button
+            <ButtonBar
               className={styles.technicalRequestAccept}
               type="button"
               disabled={workflow.decideOwnerPrice.isPending}
               onClick={() => openOwnerDecisionDialog(item, true)}
             >
               Chấp nhận giá
-            </button>
-            <button
+            </ButtonBar>
+            <ButtonBar
               className={styles.technicalRequestReject}
               type="button"
               disabled={workflow.decideOwnerPrice.isPending}
               onClick={() => openOwnerDecisionDialog(item, false)}
             >
               Từ chối giá
-            </button>
+            </ButtonBar>
           </div>
         ) : null,
     });
@@ -435,7 +438,7 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
         <p className={styles.notice} role="status">Chưa có hồ sơ trong phạm vi tài khoản.</p>
       ) : null}
       {isWorkspace || list.data?.items.length ? (
-        <section className={styles.panel} data-buyback-list aria-label="Danh sách hồ sơ thu mua">
+        <Panel data-buyback-list aria-label="Danh sách hồ sơ thu mua">
           <div className={styles.panelHeading}>
             <div><h2 className={styles.sectionTitle}>Hồ sơ thu mua</h2></div>
           </div>
@@ -448,12 +451,8 @@ export function BuybackCaseList({ workflow }: { workflow: BuybackWorkflowControl
             rowKey={(item) => item.id}
             emptyMessage="Chưa có hồ sơ thu mua."
           />
-          <div className={isWorkspace ? adminStyles.pagination : styles.technicalRequestActions}>
-            <ButtonBar type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))}>Trang trước</ButtonBar>
-            <span>Trang {(list.data?.page ?? page) + 1}</span>
-            <ButtonBar type="button" disabled={!list.data?.hasNext} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar>
-          </div>
-        </section>
+          <Pagination page={list.data?.page ?? page} hasNext={Boolean(list.data?.hasNext)} isFetching={list.isFetching} ariaLabel={messages.PAGINATE_BUYBACK} onPageChange={setPage} previousLabel={messages.PREVIOUS_PAGE} nextLabel={messages.NEXT_PAGE} hideWhenSinglePage={false} className={isWorkspace ? adminStyles.pagination : styles.technicalRequestActions} />
+        </Panel>
       ) : null}
       {acceptanceCase ? (
         <NotificationDialog
@@ -569,7 +568,7 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
   if (!createFormOpen) return null;
 
   return (
-    <section className={styles.panel} aria-labelledby="buyback-create-title">
+    <Panel aria-labelledby="buyback-create-title">
       <h2 id="buyback-create-title" className={styles.sectionTitle}>Mở hồ sơ thu mua máy cũ</h2>
       <p className={styles.formHint}>Nhập serial của máy bạn muốn bán. Dolores sẽ kiểm tra và gửi giá để bạn quyết định.</p>
       {!ownerId ? <p className={styles.notice} role="alert">Không xác định được Owner đăng nhập.</p> : null}
@@ -594,7 +593,7 @@ export function BuybackCreatePanel({ workflow }: { workflow: BuybackWorkflowCont
           { id: "buyback-create-submit", label: "Gửi yêu cầu thu mua", variant: "primary", type: "submit", form: "buyback-create-form", disabled: !validSerial || !createConfirmed || !ownerId || contracts.isPending || contracts.isError || !hasActiveContract, disabledReason: "Nhập serial hợp lệ, xác nhận yêu cầu và kiểm tra điều kiện hợp đồng.", pending: create.isPending, pendingLabel: "Đang mở hồ sơ…" },
         ]} />
       </form>
-    </section>
+    </Panel>
   );
 }
 
@@ -663,10 +662,10 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
             </p>
           ) : null}
           {isWorkspace ? <div className={adminStyles.detailBody}>
-            <div className={`${adminStyles.card} ${adminStyles.mainContent}`}>
+            <Panel className={`${adminStyles.card} ${adminStyles.mainContent}`}>
               {children}
               {workflow.role === "technician" ? <EvidenceList resource="BUYBACK_CASE" parentId={caseData.id} title="Chứng từ thu mua" /> : null}
-            </div>
+            </Panel>
             <aside className={`${adminStyles.card} ${adminStyles.sidebar}`} aria-label="Thông tin hồ sơ">
               <section><h3>Người phụ trách</h3><dl className={adminStyles.facts}>
                 {assignees.map((person) => <div key={person.label}><dt>{person.label}</dt><dd>{person.id ? assigneeNames.data?.[person.id] || <TruncatedId value={person.id} /> : "Chưa phân công"}</dd></div>)}

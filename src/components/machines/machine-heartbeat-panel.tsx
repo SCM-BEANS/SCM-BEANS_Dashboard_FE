@@ -1,6 +1,7 @@
 import { MachineConnectionBadge } from "./machine-connection-badge";
 import { SmartIotPanel } from "./smart-iot-panel";
 import type { MachineHeartbeat } from "@/schema/telemetry.schema";
+import { MACHINE_CONNECTION_MESSAGES as T } from "@/text/machine-connection-messages";
 import styles from "./machines.module.css";
 
 function formatHeartbeatDate(value: string) {
@@ -38,9 +39,7 @@ export function MachineHeartbeatPanel({
       || heartbeat?.evaluatedAt
       || heartbeat?.deviceReportedAt
       || heartbeat?.healthReportedAt
-      || heartbeat?.healthDeviceReportedAt
-      || heartbeat?.status === "ONLINE"
-      || hasGps,
+      || heartbeat?.healthDeviceReportedAt,
   );
 
   return (
@@ -54,6 +53,12 @@ export function MachineHeartbeatPanel({
       {heartbeat && !error ? <>
         <div className={styles.monitoringHeartbeatSummary}><div><span className={styles.telemetryRangeCaption}>Kết nối hiện tại</span><MachineConnectionBadge state={heartbeat.status} /></div><div><span className={styles.telemetryRangeCaption}>Tín hiệu gần nhất · Giờ Việt Nam</span><strong>{heartbeat.lastSeenAt ? formatHeartbeatDate(heartbeat.lastSeenAt) : "Chưa ghi nhận"}</strong></div></div>
         {heartbeat.status === "UNKNOWN" ? <p className={styles.telemetryRangeCaption}>Chưa đủ tín hiệu để xác định máy đang kết nối hay mất kết nối.</p> : null}
+        {hasGps ? <dl className={styles.machineHeartbeatFields}>
+          <div><dt>Vị trí</dt><dd>{heartbeat.status === "ONLINE" ? "Đã ghi nhận tọa độ" : "Tọa độ gần nhất"}</dd></div>
+          <div><dt>Vĩ độ</dt><dd>{heartbeat.latitude!.toFixed(6)}</dd></div>
+          <div><dt>Kinh độ</dt><dd>{heartbeat.longitude!.toFixed(6)}</dd></div>
+        </dl> : <p className={styles.telemetryRangeCaption}>{T.GPS_MISSING}</p>}
+        {!hasGps && heartbeat.status === "ONLINE" ? <p>Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS.</p> : null}
         {hasHeartbeatDetails ? <details className={styles.machineHeartbeatDetails}>
           <summary>Chi tiết kết nối và thiết bị</summary>
           <div className={styles.machineHeartbeatDetailsContent}>
@@ -63,12 +68,6 @@ export function MachineHeartbeatPanel({
               {heartbeat.healthReportedAt ? <div><dt>Hệ thống nhận thông số lúc</dt><dd>{formatHeartbeatDate(heartbeat.healthReportedAt)}</dd></div> : null}
               {heartbeat.healthDeviceReportedAt ? <div><dt>Thiết bị ghi thông số lúc</dt><dd>{formatHeartbeatDate(heartbeat.healthDeviceReportedAt)}</dd></div> : null}
             </dl> : null}
-            {hasGps ? <dl className={styles.machineHeartbeatFields}>
-              <div><dt>Vị trí</dt><dd>{heartbeat.status === "ONLINE" ? "Đã ghi nhận tọa độ" : "Tọa độ gần nhất"}</dd></div>
-              <div><dt>Vĩ độ</dt><dd>{heartbeat.latitude!.toFixed(6)}</dd></div>
-              <div><dt>Kinh độ</dt><dd>{heartbeat.longitude!.toFixed(6)}</dd></div>
-            </dl> : null}
-            {!hasGps && heartbeat.status === "ONLINE" ? <p>Máy đang kết nối nhưng chưa gửi vị trí GPS hợp lệ. Hãy kiểm tra quyền truy cập vị trí trên thiết bị và anten GPS.</p> : null}
             {health ? <>
               {heartbeat.status !== "ONLINE" || !heartbeat.healthReportedAt ? <p>Dữ liệu đã ghi nhận, không phản ánh tình trạng hiện tại của máy.</p> : <p>Thông số bên dưới được ghi nhận tại một thời điểm, không phải dữ liệu đo liên tục.</p>}
               <dl className={styles.machineHeartbeatFields}>

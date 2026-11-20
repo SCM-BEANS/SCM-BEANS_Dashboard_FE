@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { adminStyles } from "@/pages/admin/admin-shell";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { locationsApi } from "@/apis/locations.api";
@@ -13,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { DataTable } from "@/components/table/data-table";
+import { Pagination } from "@/components/pagination/pagination";
 import { TableFilters } from "@/components/table/table-filters";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -252,7 +254,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               <div className={`${styles.ownerProfileNavigation} ${detailTab === "model" ? twinStyles.navigation : ""}`}><MachineSectionTabs label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} /><div className={styles.ownerContextActions}>{isSmartIot && <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Xem vận hành</ButtonBar>}<ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar></div></div>
               <div className={`${machineStyles.machineDetailSections} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("overview")} role="tabpanel" aria-labelledby="owner-machine-tab-overview" hidden={detailTab !== "overview"}>
               <div className={styles.ownerOverviewColumns}>
-                <section className={styles.dataPanel} aria-labelledby="owner-machine-profile">
+                <Panel className={styles.dataPanel} aria-labelledby="owner-machine-profile">
                   <div className={styles.ownerSectionHeading}><h2 id="owner-machine-profile">Thông tin máy</h2>{detail.data.ownerId && <TransferMachineAction machine={detail.data} role="owner" currentLocationName={locationName(detail.data.locationId)} />}</div>
                   <dl className={styles.ownerProfileRows}>
                     <DetailItem label="Serial" value={detail.data.serialNumber} />
@@ -261,7 +263,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                     <DetailItem label="Trạng thái" value={<span className={adminStyles.machinePlainStatus} data-status={detail.data.status ?? undefined}>{ownerMachineStatusLabel(detail.data.status)}</span>} />
                     <DetailItem label="Menu đang dùng" value={detail.data.activeMenuId === undefined ? "Chưa có thông tin menu" : detail.data.activeMenuId === null ? "Menu mặc định" : detail.data.activeMenuName || "Menu riêng"} />
                   </dl>
-                </section>
+                </Panel>
                 <aside className={styles.dataPanel}><h2>Lịch bảo trì</h2>
                   <dl className={styles.ownerProfileRows}>
                     <DetailItem label="Bảo trì tiếp theo" value={formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)} />
@@ -279,7 +281,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               </dl></details>
               {isSmartIot && activeScope?.isSuccess && (!activeContract || cups.data?.activeMachineCount === 0) ? <p className={styles.emptyNotice}>Dữ liệu vận hành chỉ gồm máy có hợp đồng đang hiệu lực.</p> : null}
               </div>
-              <section className={`${styles.dataPanel} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("maintenance")} role="tabpanel" aria-labelledby="owner-machine-tab-maintenance" hidden={detailTab !== "maintenance"}>
+              <Panel className={`${styles.dataPanel} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("maintenance")} role="tabpanel" aria-labelledby="owner-machine-tab-maintenance" hidden={detailTab !== "maintenance"}>
                 <div className={machineStyles.ownerOperationsHeader}>
                   <h2 id="owner-machine-history-maintenance">Bảo trì và hỗ trợ</h2>
                   <TextLinkButton href={PATH_CUSTOMER.MAINTENANCE}>Xem tất cả</TextLinkButton>
@@ -306,7 +308,7 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   previewLimit={10}
                   onRefresh={() => maintenanceTickets.refetch()}
                 />}
-                <nav className={machineStyles.ownerHistoryPagination} aria-label="Phân trang phiếu bảo trì"><ButtonBar disabled={ticketPage === 0 || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage - 1)}>Trước</ButtonBar><span>Trang {ticketPage + 1}</span><ButtonBar disabled={!maintenanceTickets.data?.hasNext || maintenanceTickets.isFetching} onClick={() => setTicketPage(ticketPage + 1)}>Sau</ButtonBar></nav>
+                <div className={machineStyles.ownerHistoryPagination}><Pagination page={ticketPage} hasNext={Boolean(maintenanceTickets.data?.hasNext)} isFetching={maintenanceTickets.isFetching} ariaLabel="Phân trang phiếu bảo trì" previousLabel={messages.PREVIOUS} nextLabel={messages.NEXT} hideWhenSinglePage={false} onPageChange={setTicketPage} /></div>
                 <h3>Yêu cầu hỗ trợ ({maintenanceRequests.data?.length ?? 0})</h3>
                 <DataTable
                   rows={(maintenanceRequests.data ?? []).slice(requestPage * 10, requestPage * 10 + 10)}
@@ -319,8 +321,8 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                     { key: "description", header: "Mô tả", render: (request) => <span className={machineStyles.truncateLine} title={request.issueDescription ?? undefined}>{request.issueDescription?.trim() || "Không có mô tả"}</span> },
                   ]}
                 />
-                <nav className={machineStyles.ownerHistoryPagination} aria-label="Phân trang yêu cầu hỗ trợ"><ButtonBar disabled={requestPage === 0} onClick={() => setRequestPage(requestPage - 1)}>Trước</ButtonBar><span>Trang {requestPage + 1}</span><ButtonBar disabled={(requestPage + 1) * 10 >= (maintenanceRequests.data?.length ?? 0)} onClick={() => setRequestPage(requestPage + 1)}>Sau</ButtonBar></nav>
-              </section>
+                <div className={machineStyles.ownerHistoryPagination}><Pagination page={requestPage} hasNext={(requestPage + 1) * 10 < (maintenanceRequests.data?.length ?? 0)} ariaLabel="Phân trang yêu cầu hỗ trợ" previousLabel={messages.PREVIOUS} nextLabel={messages.NEXT} hideWhenSinglePage={false} onPageChange={setRequestPage} /></div>
+              </Panel>
               <div className={machineStyles.ownerDetailTabPanel} id={detailPanelId("contracts")} role="tabpanel" aria-labelledby="owner-machine-tab-contracts" hidden={detailTab !== "contracts"}>
                 <MachineContractHistory machineId={machineId!} role="OWNER" />
               </div>
@@ -378,7 +380,20 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   ]}
                 />
               </div>}
-          <nav className={machineStyles.ownerHistoryPagination} aria-label="Phân trang máy"><span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => setMachinePage(currentPage - 1)}>Trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => setMachinePage(currentPage + 1)}>Sau</ButtonBar></nav>
+          <div className={machineStyles.ownerHistoryPagination}>
+            <span>{visibleMachines.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span>
+            <Pagination
+              page={currentPage}
+              hasNext={(currentPage + 1) * 10 < visibleMachines.length}
+              isFetching={list.isFetching}
+              ariaLabel={messages.MACHINES_PAGINATION_LABEL}
+              previousLabel={messages.PREVIOUS}
+              nextLabel={messages.NEXT}
+              showPage={false}
+              hideWhenSinglePage={false}
+              onPageChange={setMachinePage}
+            />
+          </div>
         </MachineListView>
       )}
     </section>

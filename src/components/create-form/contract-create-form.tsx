@@ -1,3 +1,5 @@
+import { FormField } from "@/components/form-field/form-field";
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -279,16 +281,16 @@ export function ContractCreateForm({
         <fieldset className={styles.contractFormFields} disabled={locked}>
           <div className={styles.createLayout}>
             <div className={styles.createMain}>
-              <section className={styles.panel}>
+              <Panel className={styles.panel}>
                 <h2>Thông tin hợp đồng</h2>
                 <div className={styles.operationsGrid}>
-                  <label htmlFor="contract-owner">
-                    <span>Owner *</span>
+                  <FormField id="contract-owner" label={<> Owner * </>}>
+
                     <select id="contract-owner" name="ownerId" required value={form.ownerId} disabled={owners.isPending || owners.isError || Boolean(createdContractId)} onChange={(event) => setField("ownerId", event.target.value)}>
                       <option value="">{owners.isPending ? T.COMMON.LOADING : "Chọn Owner"}</option>
                       {owners.data?.map((owner) => <option key={owner.idaasUserId} value={owner.idaasUserId}>{owner.fullName} · {owner.idaasUserId.slice(0, 8)}</option>)}
                     </select>
-                  </label>
+                  </FormField>
                   <label htmlFor="contract-machine">
                     <span>{selectMachineBySerial ? "Serial number của máy *" : "Máy đang ở kho *"}</span>
                     <select id="contract-machine" aria-label={selectMachineBySerial ? "Serial number của máy *" : undefined} name="machineId" required value={form.machineId} disabled={machines.isPending || machines.isError || warehouseMachines.length === 0 || Boolean(createdContractId)} onChange={(event) => setField("machineId", event.target.value)}>
@@ -297,35 +299,35 @@ export function ContractCreateForm({
                     </select>
                     {selectMachineBySerial ? <small>Chỉ hiển thị máy sẵn sàng cho thuê.</small> : null}
                   </label>
-                  <label htmlFor="contract-start-date"><span>Ngày bắt đầu *</span><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></label>
-                  <label htmlFor="contract-end-date"><span>Ngày kết thúc *</span><input id="contract-end-date" name="endDate" type="date" required min={form.startDate || undefined} value={form.endDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("endDate", event.target.value)} /></label>
-                  <label htmlFor="contract-monthly-rental-fee"><span>Phí thuê hàng tháng (VND) *</span><input id="contract-monthly-rental-fee" name="monthlyRentalFee" type="number" min="0" step="any" required value={form.monthlyRentalFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("monthlyRentalFee", event.target.value)} /></label>
-                  <label htmlFor="contract-payg-unit-price"><span>Đơn giá PAYG (VND / đơn vị)</span><input id="contract-payg-unit-price" name="paygUnitPrice" type="number" min="0" step="any" value={form.paygUnitPrice} disabled={Boolean(createdContractId)} onChange={(event) => setField("paygUnitPrice", event.target.value)} /></label>
-                  <label htmlFor="contract-installation-fee"><span>Phí lắp đặt (VND)</span><input id="contract-installation-fee" name="installationFee" type="number" min="0" step="any" value={form.installationFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("installationFee", event.target.value)} /></label>
-                  <label htmlFor="contract-deposit-amount"><span>Tiền cọc (VND)</span><input id="contract-deposit-amount" name="depositAmount" type="number" min="0" step="any" value={form.depositAmount} disabled={Boolean(createdContractId)} onChange={(event) => setField("depositAmount", event.target.value)} /></label>
-                  <label htmlFor="contract-offline-limit"><span>Giới hạn offline (phút)</span><input id="contract-offline-limit" name="offlineLimitMinutes" type="number" min="1" step="1" value={form.offlineLimitMinutes} disabled={Boolean(createdContractId)} onChange={(event) => setField("offlineLimitMinutes", event.target.value)} /></label>
+                  <FormField id="contract-start-date" label={<> Ngày bắt đầu * </>}><input id="contract-start-date" name="startDate" type="date" required value={form.startDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("startDate", event.target.value)} /></FormField>
+                  <FormField id="contract-end-date" label={<> Ngày kết thúc * </>}><input id="contract-end-date" name="endDate" type="date" required min={form.startDate || undefined} value={form.endDate} disabled={Boolean(createdContractId)} onChange={(event) => setField("endDate", event.target.value)} /></FormField>
+                  <FormField id="contract-monthly-rental-fee" label={<> Phí thuê hàng tháng (VND) * </>}><input id="contract-monthly-rental-fee" name="monthlyRentalFee" type="number" min="0" step="any" required value={form.monthlyRentalFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("monthlyRentalFee", event.target.value)} /></FormField>
+                  <FormField id="contract-payg-unit-price" label={<> Đơn giá PAYG (VND / đơn vị) </>}><input id="contract-payg-unit-price" name="paygUnitPrice" type="number" min="0" step="any" value={form.paygUnitPrice} disabled={Boolean(createdContractId)} onChange={(event) => setField("paygUnitPrice", event.target.value)} /></FormField>
+                  <FormField id="contract-installation-fee" label={<> Phí lắp đặt (VND) </>}><input id="contract-installation-fee" name="installationFee" type="number" min="0" step="any" value={form.installationFee} disabled={Boolean(createdContractId)} onChange={(event) => setField("installationFee", event.target.value)} /></FormField>
+                  <FormField id="contract-deposit-amount" label={<> Tiền cọc (VND) </>}><input id="contract-deposit-amount" name="depositAmount" type="number" min="0" step="any" value={form.depositAmount} disabled={Boolean(createdContractId)} onChange={(event) => setField("depositAmount", event.target.value)} /></FormField>
+                  <FormField id="contract-offline-limit" label={<> Giới hạn offline (phút) </>}><input id="contract-offline-limit" name="offlineLimitMinutes" type="number" min="1" step="1" value={form.offlineLimitMinutes} disabled={Boolean(createdContractId)} onChange={(event) => setField("offlineLimitMinutes", event.target.value)} /></FormField>
                   <label htmlFor="contract-terms"><span>Điều khoản *</span><textarea id="contract-terms" name="terms" required rows={4} value={form.terms} disabled={Boolean(createdContractId)} onChange={(event) => setField("terms", event.target.value)} /></label>
                 </div>
-              </section>
+              </Panel>
 
-              <section className={`${styles.panel} ${styles.policyPanel}`}>
+              <Panel className={`${styles.panel} ${styles.policyPanel}`}>
                 <div className={styles.policyHeading}><div><h2>Điều khoản vận hành</h2><p>Thiết lập lịch bảo trì, thanh toán, kết nối và thay thế máy cho hợp đồng.</p></div><span>Phiên bản 1</span></div>
                 <div className={styles.operationsGrid}>
                   <div><span>Phiên bản policy</span><strong>1</strong></div>
-                  <label htmlFor="contract-maintenance-interval"><span>Chu kỳ bảo trì (tháng) *</span><input id="contract-maintenance-interval" name="contractTermsSnapshot.maintenanceIntervalMonths" type="number" min="1" max="24" step="1" required value={form.contractTermsSnapshot.maintenanceIntervalMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceIntervalMonths", event.target.value)} /></label>
-                  <label htmlFor="contract-maintenance-window"><span>Thời hạn bảo trì (ngày) *</span><input id="contract-maintenance-window" name="contractTermsSnapshot.maintenanceWindowDays" type="number" min="0" max="30" step="1" required value={form.contractTermsSnapshot.maintenanceWindowDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceWindowDays", event.target.value)} /></label>
-                  <label htmlFor="contract-payment-due-days"><span>Số ngày thanh toán được phép *</span><input id="contract-payment-due-days" name="contractTermsSnapshot.paymentDueEligibleDays" type="number" min="1" max="60" step="1" required value={form.contractTermsSnapshot.paymentDueEligibleDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDueEligibleDays", event.target.value)} /></label>
-                  <label htmlFor="contract-repair-responsibility">
-                    <span>Trách nhiệm chi phí sửa chữa *</span>
+                  <FormField id="contract-maintenance-interval" label={<> Chu kỳ bảo trì (tháng) * </>}><input id="contract-maintenance-interval" name="contractTermsSnapshot.maintenanceIntervalMonths" type="number" min="1" max="24" step="1" required value={form.contractTermsSnapshot.maintenanceIntervalMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceIntervalMonths", event.target.value)} /></FormField>
+                  <FormField id="contract-maintenance-window" label={<> Thời hạn bảo trì (ngày) * </>}><input id="contract-maintenance-window" name="contractTermsSnapshot.maintenanceWindowDays" type="number" min="0" max="30" step="1" required value={form.contractTermsSnapshot.maintenanceWindowDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("maintenanceWindowDays", event.target.value)} /></FormField>
+                  <FormField id="contract-payment-due-days" label={<> Số ngày thanh toán được phép * </>}><input id="contract-payment-due-days" name="contractTermsSnapshot.paymentDueEligibleDays" type="number" min="1" max="60" step="1" required value={form.contractTermsSnapshot.paymentDueEligibleDays} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDueEligibleDays", event.target.value)} /></FormField>
+                  <FormField id="contract-repair-responsibility" label={<> Trách nhiệm chi phí sửa chữa * </>}>
+
                     <select id="contract-repair-responsibility" name="contractTermsSnapshot.repairCostResponsibility" value={form.contractTermsSnapshot.repairCostResponsibility} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("repairCostResponsibility", event.target.value as ContractFormState["contractTermsSnapshot"]["repairCostResponsibility"])}>
                       <option value="UNKNOWN">Chưa xác định</option><option value="TENANT">Bên thuê</option><option value="COMPANY">Công ty</option>
                     </select>
-                  </label>
-                  <label htmlFor="contract-payment-destination"><span>Mã tham chiếu nơi nhận thanh toán</span><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></label>
+                  </FormField>
+                  <FormField id="contract-payment-destination" label={<> Mã tham chiếu nơi nhận thanh toán </>}><input id="contract-payment-destination" name="contractTermsSnapshot.paymentDestinationReference" type="text" maxLength={128} value={form.contractTermsSnapshot.paymentDestinationReference} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("paymentDestinationReference", event.target.value)} /></FormField>
                   <label htmlFor="contract-heartbeat-tolerance"><span>Ngưỡng mất kết nối (giây) *</span><input id="contract-heartbeat-tolerance" name="contractTermsSnapshot.heartbeatToleranceSeconds" type="number" required min="5" max="86400" step="1" value={form.contractTermsSnapshot.heartbeatToleranceSeconds} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("heartbeatToleranceSeconds", event.target.value)} /><small>Chuyển sang mất kết nối khi quá thời gian này chưa có tín hiệu mới.</small></label>
-                  <label htmlFor="contract-offline-action"><span>Hành động khi máy offline vượt giới hạn *</span><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></label>
-                  <label htmlFor="contract-buyback-valuation"><span>Phương pháp định giá mua lại *</span><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></label>
-                  <label htmlFor="contract-buyback-minimum"><span>Số tháng tối thiểu để mua lại *</span><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></label>
+                  <FormField id="contract-offline-action" label={<> Hành động khi máy offline vượt giới hạn * </>}><input id="contract-offline-action" name="contractTermsSnapshot.offlineViolationAction" type="text" required maxLength={64} value={form.contractTermsSnapshot.offlineViolationAction} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("offlineViolationAction", event.target.value)} /></FormField>
+                  <FormField id="contract-buyback-valuation" label={<> Phương pháp định giá mua lại * </>}><input id="contract-buyback-valuation" name="contractTermsSnapshot.buybackValuationMethod" type="text" required maxLength={64} value={form.contractTermsSnapshot.buybackValuationMethod} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackValuationMethod", event.target.value)} /></FormField>
+                  <FormField id="contract-buyback-minimum" label={<> Số tháng tối thiểu để mua lại * </>}><input id="contract-buyback-minimum" name="contractTermsSnapshot.buybackMinimumMonths" type="number" min="0" max="120" step="1" required value={form.contractTermsSnapshot.buybackMinimumMonths} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackMinimumMonths", event.target.value)} /></FormField>
                   <div>
                     <span>Loại máy thay thế được phép</span>
                     <div className={styles.contractCheckboxGroup}>
@@ -335,11 +337,11 @@ export function ContractCreateForm({
                   </div>
                   <label className={styles.contractCheckbox}><input type="checkbox" name="contractTermsSnapshot.buybackEnabled" checked={form.contractTermsSnapshot.buybackEnabled} disabled={Boolean(createdContractId)} onChange={(event) => setSnapshotField("buybackEnabled", event.target.checked)} /><span>Cho phép mua lại máy</span></label>
                 </div>
-              </section>
+              </Panel>
             </div>
 
             <aside className={styles.createSummary} aria-label="Tóm tắt hợp đồng">
-              <section className={styles.panel}>
+              <Panel className={styles.panel}>
                 <h2>Tóm tắt hợp đồng</h2>
                 <dl className={styles.summaryFields}>
                   <div><dt>Owner</dt><dd>{selectedOwner?.fullName || "Chưa chọn"}</dd></div>
@@ -349,11 +351,11 @@ export function ContractCreateForm({
                   <div><dt>Tiền cọc</dt><dd>{previewMoney(form.depositAmount)}</dd></div>
                   <div><dt>Phí lắp đặt</dt><dd>{previewMoney(form.installationFee)}</dd></div>
                 </dl>
-              </section>
-              <section className={`${styles.panel} ${styles.createContext}`}>
+              </Panel>
+              <Panel className={`${styles.panel} ${styles.createContext}`}>
                 <h2>Trước khi tạo</h2>
                 <p>Kiểm tra Owner, máy, thời hạn và các khoản phí. Điều khoản vận hành sẽ được lưu cùng hợp đồng.</p>
-              </section>
+              </Panel>
             </aside>
           </div>
         </fieldset>

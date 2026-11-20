@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CheckCircle2, Fingerprint, Mail, Phone, RefreshCw, UserRound, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -93,7 +94,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
             { id: "profile-account-title", label: "Tài khoản", icon: Fingerprint },
           ].map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={activeSection === id ? "location" : undefined} onClick={() => setActiveSection(id)}><Icon size={17} aria-hidden="true" />{label}</a>)}
         </nav>
-      <section className={styles.profileCard} aria-labelledby="profile-details-title">
+      <Panel className={styles.profileCard} aria-labelledby="profile-details-title">
         <h2 id="profile-details-title" className={styles.cardTitle}>Hồ sơ của tôi</h2>
         {profile.isPending ? <p className={styles.loading} role="status">Đang tải hồ sơ…</p> : null}
         {profile.isError ? (
@@ -216,7 +217,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
             </div>
           </>
         ) : null}
-      </section>
+      </Panel>
       </div>
     </div>
   );

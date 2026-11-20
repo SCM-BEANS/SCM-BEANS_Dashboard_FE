@@ -5,10 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { machineCertificatesApi } from "@/apis/machine-certificates.api";
 import { MachineActiveMenuPanel } from "@/components/features/recipe-menus/recipe-sync-panel";
 import { MachineCertificatesPanel } from "@/components/machines/machine-certificates-panel";
+import { MachineSectionTabs } from "@/components/machines/operational-overview";
+import { Panel } from "@/components/panel/panel";
 import type { MachineCertificateStatus } from "@/schema/machine-certificates.schema";
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { ButtonBar } from "@/components/button/button-bar";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
@@ -17,15 +19,31 @@ import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel } from "@/components/machines/telemetry-history-panel";
 import { usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { MachineMaintenanceTicketActions } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
+import { TechnicianMaintenanceTicketScreen } from "@/components/features/maintenance-workflow/technician-maintenance-ticket-screen";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_TECHNICIAN } from "@/routes/path";
-import { MachineIdSchema, type Machine } from "@/schema/machines.schema";
+import { MachineIdSchema, type Machine, type MaintenanceTicket } from "@/schema/machines.schema";
 import { TelemetryPointsParamsSchema } from "@/schema/telemetry.schema";
 import { TECHNICIAN_MESSAGES as T } from "@/text/technician/technician-messages";
 import { TechnicianShell } from "../technician-shell";
 import styles from "../technician-shell.module.css";
+import detailStyles from "./machine-detail-screen.module.css";
+
+const machineSections = [
+  { id: "maintenance", label: "Bảo trì" },
+  { id: "profile", label: "Hồ sơ máy" },
+  { id: "connection", label: "Kết nối" },
+  { id: "menu", label: "Menu của máy" },
+] as const;
+
+function maintenanceTicketHref(ticketId: string, ticket: MaintenanceTicket) {
+  return ticket.source === "TERMINATION_INSPECTION"
+    ? PATH_TECHNICIAN.TASK_DETAIL(ticketId)
+    : PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(ticketId);
+}
 
 function isForbidden(error: unknown) { return axios.isAxiosError(error) && error.response?.status === 403; }
 
@@ -53,17 +71,14 @@ function getStatusLabel(status: Machine["status"]): string {
 
 function MachineDetailFields({ machine }: { machine: Machine }) {
   const fields = [
+    [T.MACHINE_CHECK.SERIAL, machine.serialNumber],
+    [T.MACHINE_CHECK.DETAIL_FIELDS.DEPLOYED_AT, formatDate(machine.deployedAt)],
+    [T.MACHINE_CHECK.DETAIL_FIELDS.REGION, machine.region],
+  ] as const;
+  const linkedFields = [
     [T.MACHINE_CHECK.ID, machine.id],
     [T.MACHINE_CHECK.OWNER_ID, machine.ownerId],
-    [T.MACHINE_CHECK.SERIAL, machine.serialNumber],
-    ["Menu đang gán", machine.activeMenuId === undefined ? "Chưa có thông tin menu" : machine.activeMenuId === null ? "Menu mặc định" : machine.activeMenuName || "Menu riêng"],
-    [T.MACHINE_CHECK.STATUS, getStatusLabel(machine.status)],
-    [T.MACHINE_CHECK.DETAIL_FIELDS.DEPLOYED_AT, formatDate(machine.deployedAt)],
-    [T.MACHINE_CHECK.DETAIL_FIELDS.NEXT_MAINTENANCE_AT, formatDate(machine.nextPreventiveMaintenanceAt)],
-    [T.MACHINE_CHECK.DETAIL_FIELDS.CUPS_SINCE_DESCALE, formatNumber(machine.cupsServedSinceLastDescale)],
-    [T.MACHINE_CHECK.DETAIL_FIELDS.REGION, machine.region],
     [T.MACHINE_CHECK.DETAIL_FIELDS.LOCATION_ID, machine.locationId],
-    [T.MACHINE_CHECK.MACHINE_TYPE, getMachineTypeLabel(machine.machineType)],
     [T.MACHINE_CHECK.DETAIL_FIELDS.MACHINE_TYPE_MAPPED_AT, formatDate(machine.machineTypeMappedAt)],
     [T.MACHINE_CHECK.DETAIL_FIELDS.MACHINE_TYPE_MAPPED_BY, machine.machineTypeMappedBy],
     [T.MACHINE_CHECK.DETAIL_FIELDS.MACHINE_TYPE_MAPPING_REASON, machine.machineTypeMappingReason],
@@ -75,20 +90,22 @@ function MachineDetailFields({ machine }: { machine: Machine }) {
 
   return (
     <>
-    <div className={styles.machineDetailGrid}>
-      {[2, 4, 10, 6, 7, 3].map(index => fields[index]).map(([label, value]) => (
-        <div className={styles.machineDetailField} key={label}>
-          <span>{label}</span>
-          <strong>{value || "—"}</strong>
-        </div>
+    <dl className={detailStyles.facts}>
+      {fields.map(([label, value]) => (
+        <div key={label}><dt>{label}</dt><dd>{value || "—"}</dd></div>
       ))}
-    </div>
-    <details className={styles.secondaryDetails}><summary>Thông tin bổ sung & mã liên kết</summary><div className={styles.machineDetailGrid}>{fields.filter((_, index) => ![2, 4, 10, 6, 7, 3].includes(index)).map(([label, value]) => <div className={styles.machineDetailField} key={label}><span>{label}</span><strong>{value || "—"}</strong></div>)}</div></details>
+    </dl>
+    <details className={detailStyles.disclosure}>
+      <summary>Mã liên kết và cấu hình mẫu máy</summary>
+      <dl className={detailStyles.facts}>{linkedFields.map(([label, value]) => (
+        <div key={label}><dt>{label}</dt><dd>{value || "—"}</dd></div>
+      ))}</dl>
+    </details>
     </>
   );
 }
 
-function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { machineId: string; subject: string; serialNumber?: string | null }) {
+function TechnicianMachineCertificates({ machineId, subject, serialNumber, showUnavailable }: { machineId: string; subject: string; serialNumber?: string | null; showUnavailable: boolean }) {
   const [status, setStatus] = useState<MachineCertificateStatus | "">("");
   const [pageNumber, setPageNumber] = useState(0);
   const [selectedCertificateId, setSelectedCertificateId] = useState("");
@@ -160,7 +177,9 @@ function TechnicianMachineCertificates({ machineId, subject, serialNumber }: { m
       if (alive.current) setBusy(false);
     }
   }
-  if (isForbidden(identity.error) || isForbidden(certificates.error)) return null;
+  if (isForbidden(identity.error) || isForbidden(certificates.error)) {
+    return showUnavailable ? <p className={styles.pendingNotice}>Không có thông tin kết nối để hiển thị cho máy này.</p> : null;
+  }
   return <>
     <SmartIotPanel title="Định danh thiết bị">
       {identity.isPending ? <p role="status">Đang tải định danh…</p>
@@ -198,6 +217,7 @@ export function TechnicianMachineDetailScreen() {
   const machineId = typeof router.query.machineId === "string" ? router.query.machineId : "";
   const maintenanceTicketId = router.query.maintenanceTicketId;
   const isMaintenanceTicketDetail = router.isReady && maintenanceTicketId !== undefined;
+  const activeSection = machineSections.find(({ id }) => router.query.tab === id)?.id ?? "maintenance";
   const validId = router.isReady && MachineIdSchema.safeParse(machineId).success;
   const authenticated = Boolean(getAuthenticatedSubjectId());
   const machineQueryKey = ["dolores", "machines", "technician-detail", subject, machineId] as const;
@@ -209,22 +229,22 @@ export function TechnicianMachineDetailScreen() {
   const maintenanceTickets = useQuery({
     queryKey: ["dolores", "technician", "machine-tickets", machineId],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTickets({ machineId, page: 0, size: 100 }, signal),
-    enabled: validId && Boolean(machine.data),
+    enabled: validId && Boolean(machine.data) && !isMaintenanceTicketDetail,
     retry: false,
   });
   const smartIot = validId && authenticated && machine.isSuccess && machine.data?.machineType === "SMART_IOT";
   const heartbeat = useQuery({
     queryKey: ["technician-machine-heartbeat", subject, machineId],
     queryFn: ({ signal }) => telemetryApi.getLatestHeartbeat(machineId, signal),
-    enabled: smartIot && pageVisible, retry: false,
-    refetchInterval: query => smartIot && pageVisible && !isForbidden(query.state.error) ? 5_000 : false, refetchIntervalInBackground: false,
+    enabled: smartIot && activeSection === "connection" && pageVisible && !isMaintenanceTicketDetail, retry: false,
+    refetchInterval: query => !isForbidden(query.state.error) ? 5_000 : false, refetchIntervalInBackground: false,
   });
   const points = useInfiniteQuery({
     queryKey: ["technician-machine-telemetry", subject, machineId, telemetryRange],
     queryFn: ({ pageParam, signal }) => telemetryApi.listMachinePoints(machineId, telemetryRange!, pageParam, signal),
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => lastPage.length === TELEMETRY_POINTS_PAGE_SIZE && pages.length * TELEMETRY_POINTS_PAGE_SIZE <= 100_000 ? pages.length * TELEMETRY_POINTS_PAGE_SIZE : undefined,
-    enabled: smartIot && pageVisible && Boolean(telemetryRange), retry: false,
+    enabled: smartIot && activeSection === "connection" && pageVisible && !isMaintenanceTicketDetail && Boolean(telemetryRange), retry: false,
   });
   const telemetryPoints = useMemo(() => points.data?.pages.flat() ?? [], [points.data]);
   const statusUpdate = useMutation({
@@ -240,7 +260,7 @@ export function TechnicianMachineDetailScreen() {
   });
 
   const actionBar = () => (
-    <PageActions actions={machine.data?.status === "IN_WAREHOUSE" ? [{
+    <PageActionsRenderer actions={machine.data?.status === "IN_WAREHOUSE" ? [{
       id: "mark-ready", label: T.MACHINE_CHECK.UPDATE_STATUS, variant: "primary", priority: 50,
       disabled: !machine.data.serialNumber || statusUpdate.isPending,
       disabledReason: "Cần số sê-ri để cập nhật trạng thái.",
@@ -248,11 +268,10 @@ export function TechnicianMachineDetailScreen() {
       onClick: () => statusUpdate.mutate(),
     }] : []} />
   );
-  const heading = (title: string = T.MACHINE_CHECK.DETAIL_TITLE, description?: string) => (
+  const heading = (title: string = T.MACHINE_CHECK.DETAIL_TITLE) => (
     <BackButtonHeading
       title={title}
       titleId="technician-machine-detail-title"
-      description={description}
       className={styles.pageHeading}
       back={{ label: T.MACHINE_CHECK.BACK_TO_LIST, fallbackHref: PATH_TECHNICIAN.MACHINE_CHECK }}
     />
@@ -261,33 +280,26 @@ export function TechnicianMachineDetailScreen() {
   if (!router.isReady) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p></section>
-      {actionBar()}
     </TechnicianShell>;
   }
 
   if (!validId) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<div className={styles.machineCheckError} role="alert"><p>{T.MACHINE_CHECK.INVALID_ID}</p></div></section>
-      {actionBar()}
     </TechnicianShell>;
   }
 
   if (isMaintenanceTicketDetail) return <TechnicianShell pageTitle="Chi tiết phiếu bảo trì">
-    <section className={styles.pageContent}>
-      <MaintenanceTicketDetailsPage
-        ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
-        role="TECHNICIAN"
-        backHref={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machineId)}
-        backLabel="Về lịch sử máy"
-        headingClassName={styles.pageHeading}
-      />
-    </section>
+    <TechnicianMaintenanceTicketScreen
+      ticketId={typeof maintenanceTicketId === "string" ? maintenanceTicketId : ""}
+      backHref={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machineId)}
+      backLabel="Về lịch sử máy"
+    />
   </TechnicianShell>;
 
   if (machine.isPending) {
     return <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>{heading()}<p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p></section>
-      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -300,7 +312,6 @@ export function TechnicianMachineDetailScreen() {
           <button className={styles.machineCheckRetry} type="button" onClick={() => void machine.refetch()}>{T.MACHINE_CHECK.RETRY}</button>
         </div>
       </section>
-      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -310,7 +321,6 @@ export function TechnicianMachineDetailScreen() {
         {heading()}
         <p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.NOT_FOUND}</p>
       </section>
-      {actionBar()}
     </TechnicianShell>;
   }
 
@@ -318,7 +328,10 @@ export function TechnicianMachineDetailScreen() {
   return (
     <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>
-        {heading(`${T.MACHINE_CHECK.DETAIL_TITLE} · ${device.serialNumber ?? device.id}`, device.id)}
+        <div className={detailStyles.header}>
+          {heading(`${T.MACHINE_CHECK.DETAIL_TITLE} · ${device.serialNumber || "Chưa có số sê-ri"}`)}
+          {actionBar()}
+        </div>
         {statusUpdate.isSuccess && <p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.STATUS_UPDATE_SUCCESS}</p>}
         {statusUpdate.isError && (
           <div className={styles.machineCheckError} role="alert">
@@ -330,13 +343,24 @@ export function TechnicianMachineDetailScreen() {
             ) : null}
           </div>
         )}
-        <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-profile-title">
-          <h2 id="technician-machine-profile-title">Thông tin máy</h2>
-          <MachineDetailFields machine={device} />
-          <details className={styles.secondaryDetails}><summary>Lịch sử hợp đồng</summary><MachineContractHistory machineId={machineId} role="TECHNICIAN" /></details>
-        </section>
-        <section className={styles.machineCheckPanel} aria-labelledby="technician-machine-tickets-title">
-          <h2 id="technician-machine-tickets-title">Phiếu bảo trì</h2>
+        <Panel title="Tổng quan máy" aria-label="Tổng quan máy">
+        <dl className={detailStyles.summary}>
+          <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={device.status}>{getStatusLabel(device.status)}</StatusBadge></dd></div>
+          <div><dt>Loại máy</dt><dd>{getMachineTypeLabel(device.machineType)}</dd></div>
+          <div><dt>Bảo trì tiếp theo</dt><dd>{formatDate(device.nextPreventiveMaintenanceAt)}</dd></div>
+          <div><dt>Số ly từ lần xả cặn gần nhất</dt><dd>{formatNumber(device.cupsServedSinceLastDescale)}</dd></div>
+        </dl>
+        </Panel>
+        <MachineSectionTabs
+          label="Nội dung hồ sơ máy"
+          tabs={machineSections.map(({ id, label }) => ({ value: id, label }))}
+          activeTab={activeSection}
+          onTabChange={(tab) => { if (activeSection !== tab) void router.push({ pathname: router.pathname, query: { ...router.query, tab } }, undefined, { shallow: true, scroll: false }); }}
+          idPrefix="machine-section"
+          panelId={(tab) => `machine-section-${tab}`}
+        />
+        <div id="machine-section-maintenance" role="tabpanel" aria-labelledby="machine-section-tab-maintenance" hidden={activeSection !== "maintenance"}>
+        <Panel aria-label="Phiếu bảo trì">
           {maintenanceTickets.isPending && <p className={styles.pendingNotice} role="status">Đang tải phiếu bảo trì…</p>}
           {maintenanceTickets.isError && (
             <div className={styles.machineCheckError} role="alert">
@@ -344,25 +368,45 @@ export function TechnicianMachineDetailScreen() {
               <button className={styles.machineCheckRetry} type="button" onClick={() => void maintenanceTickets.refetch()}>Thử lại</button>
             </div>
           )}
-          {maintenanceTickets.isSuccess && maintenanceTickets.data.length === 0 && <p className={styles.pendingNotice}>Chưa có phiếu bảo trì cho máy này.</p>}
-          <MachineMaintenanceTicketActions
+          {maintenanceTickets.isSuccess && <MachineMaintenanceTicketActions
             machineId={machineId}
-            tickets={maintenanceTickets.data ?? []}
+            tickets={maintenanceTickets.data}
             role="TECHNICIAN"
-            ticketHref={(ticketId) => `${PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machineId)}?maintenanceTicketId=${encodeURIComponent(ticketId)}`}
-            onRefresh={() => maintenanceTickets.refetch()}
+            ticketHref={maintenanceTicketHref}
+            presentation="table"
+          />}
+        </Panel>
+        </div>
+        <div id="machine-section-profile" role="tabpanel" aria-labelledby="machine-section-tab-profile" hidden={activeSection !== "profile"}>
+          <div className={detailStyles.stack}>
+            <Panel aria-labelledby="technician-machine-profile-title" className={detailStyles.profilePanel}>
+              <h2 id="technician-machine-profile-title">Thông tin máy</h2>
+              <MachineDetailFields machine={device} />
+            </Panel>
+            {activeSection === "profile" && <MachineContractHistory machineId={machineId} role="TECHNICIAN" />}
+          </div>
+        </div>
+        <div id="machine-section-connection" role="tabpanel" aria-labelledby="machine-section-tab-connection" hidden={activeSection !== "connection"}>
+          <div className={detailStyles.stack}>
+            {smartIot && !isForbidden(heartbeat.error) && <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />}
+            {smartIot && !isForbidden(points.error) && <SmartIotPanel title="Lịch sử thông số">
+              <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
+            </SmartIotPanel>}
+            <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} showUnavailable={!smartIot || (isForbidden(heartbeat.error) && isForbidden(points.error))} />
+          </div>
+        </div>
+        <div id="machine-section-menu" role="tabpanel" aria-labelledby="machine-section-tab-menu" hidden={activeSection !== "menu"}>
+          <MachineActiveMenuPanel
+            key={`menu:${subject}:${machineId}`}
+            machineId={machineId}
+            subject={subject}
+            onChanged={() => machine.refetch()}
+            forbiddenFallback={<SmartIotPanel title="Menu đang gán">
+              <p>{device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || (device.activeMenuId ? "Menu riêng" : "Chưa có thông tin menu.")}</p>
+            </SmartIotPanel>}
           />
-        </section>
-        <TechnicianMachineCertificates key={`${subject}:${machineId}`} machineId={machineId} subject={subject} serialNumber={device.serialNumber} />
-        <MachineActiveMenuPanel hideForbidden key={`menu:${subject}:${machineId}`} machineId={machineId} subject={subject} onChanged={() => machine.refetch()} />
-        {smartIot ? <>
-          {!isForbidden(heartbeat.error) && <MachineHeartbeatPanel title="Kết nối & sức khỏe máy" heartbeat={heartbeat.data} loading={heartbeat.isPending} error={heartbeat.isError ? getApiErrorMessage(heartbeat.error) : undefined} onRetry={() => void heartbeat.refetch()} />}
-          {!isForbidden(points.error) && <SmartIotPanel title="Lịch sử thông số">
-            <TelemetryHistoryPanel range={telemetryRange} onRangeChange={setTelemetryRange} selectedField={typeof router.query.field === "string" ? router.query.field : undefined} onFieldChange={(field) => { void router.push({ pathname: router.pathname, query: { ...router.query, field } }, undefined, { shallow: true }); }} points={telemetryPoints} loading={points.isPending && Boolean(telemetryRange)} error={!telemetryRange ? "Khoảng thời gian không hợp lệ. Hãy chọn lại khoảng tối đa 30 ngày." : points.isError ? getApiErrorMessage(points.error) : undefined} onRetry={telemetryRange ? () => void points.refetch() : undefined} hasMore={points.hasNextPage} loadingMore={points.isFetchingNextPage} onLoadMore={() => void points.fetchNextPage()} />
-          </SmartIotPanel>}
-        </> : null}
+        </div>
       </section>
-      {actionBar()}
     </TechnicianShell>
   );
 }

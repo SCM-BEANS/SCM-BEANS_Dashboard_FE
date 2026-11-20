@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useEffect, useState, type FormEvent } from "react";
@@ -141,17 +142,17 @@ export function AdminUserDetailView({
       {!validUserId ? (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.INVALID_ID}</div>
       ) : detail.isPending ? (
-        <section className={styles.panel} role="status">{T.FORM.DETAIL_LOADING}</section>
+        <Panel className={styles.panel} role="status">{T.FORM.DETAIL_LOADING}</Panel>
       ) : detail.isError ? (
         <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
           <p>{getApiErrorMessage(detail.error)}</p>
-          <button className={styles.accountSecondaryButton} type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button>
+          <ButtonBar  type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</ButtonBar>
         </div>
       ) : user ? (
         <>
           <div className={styles.userDetailLayout}>
           <div className={styles.userMainColumn}>
-          <form id="admin-user-edit-form" className={styles.panel} onSubmit={prepareUpdate}>
+          <form id="admin-user-edit-form"  onSubmit={prepareUpdate}><Panel className={styles.panel}>
             <h2>Thông tin đăng nhập</h2>
             {!currentRole && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">{T.FORM.UNSUPPORTED_ROLE}</div>}
             <div className={styles.accountFormGrid}>
@@ -173,14 +174,14 @@ export function AdminUserDetailView({
             <p className={styles.userFormNote}>Đổi email hoặc vai trò có thể yêu cầu xác minh và đăng nhập lại.</p>
             {requestError && <p className={styles.accountInlineWarning} role="alert">{requestError}</p>}
             {updateUser.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(updateUser.error, "mutation")}</p>}
-          </form>
-          {currentRole === "owner" && <section className={styles.panel} aria-labelledby="owner-profile-verification-title">
+          </Panel></form>
+          {currentRole === "owner" && <Panel className={styles.panel} aria-labelledby="owner-profile-verification-title">
             <h2 id="owner-profile-verification-title">Hồ sơ khách hàng</h2>
             {doloresProfile.isPending && <p role="status">Đang tải hồ sơ Dolores…</p>}
             {doloresProfile.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
               <p>{getApiErrorMessage(doloresProfile.error)}</p>
               <p>Hồ sơ có thể đang được đồng bộ. Hãy thử lại sau.</p>
-              <button className={styles.accountSecondaryButton} type="button" disabled={doloresProfile.isFetching} onClick={() => void doloresProfile.refetch()}>{T.COMMON.RETRY}</button>
+              <ButtonBar  type="button" disabled={doloresProfile.isFetching} onClick={() => void doloresProfile.refetch()}>{T.COMMON.RETRY}</ButtonBar>
             </div>}
             {doloresProfile.data && <details className={styles.userTechnicalDetails}><summary>Thông tin đồng bộ</summary><div className={styles.accountFormGrid}>
               <div><span>UUID IDaaS</span><strong><TruncatedId value={doloresProfile.data.idaasUserId} /></strong></div>
@@ -194,7 +195,7 @@ export function AdminUserDetailView({
               {ownerContracts.isPending && <p role="status">Đang tải hợp đồng…</p>}
               {ownerContracts.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
                 <p>{getApiErrorMessage(ownerContracts.error)}</p>
-                <button className={styles.accountSecondaryButton} type="button" disabled={ownerContracts.isFetching} onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</button>
+                <ButtonBar  type="button" disabled={ownerContracts.isFetching} onClick={() => void ownerContracts.refetch()}>{T.COMMON.RETRY}</ButtonBar>
               </div>}
               {ownerContracts.data && <DataTable
                 rows={ownerContracts.data.items}
@@ -211,27 +212,27 @@ export function AdminUserDetailView({
                 <div className={styles.accountPagination} aria-label="Phân trang hợp đồng Owner">
                   <span>Trang {contractPage + 1}/{ownerContracts.data.totalPages}</span>
                   <div>
-                    <button
-                      className={styles.accountSecondaryButton}
+                    <ButtonBar
+
                       type="button"
                       disabled={contractPage <= 0 || ownerContracts.isFetching}
                       onClick={() => onNavigate({ contractPage: String(contractPage) })}
                     >
                       {T.LIST.PREVIOUS}
-                    </button>
-                    <button
-                      className={styles.accountSecondaryButton}
+                    </ButtonBar>
+                    <ButtonBar
+
                       type="button"
                       disabled={contractPage + 1 >= ownerContracts.data.totalPages || ownerContracts.isFetching}
                       onClick={() => onNavigate({ contractPage: String(contractPage + 2) })}
                     >
                       {T.LIST.NEXT}
-                    </button>
+                    </ButtonBar>
                   </div>
                 </div>
               )}
             </div>}
-          </section>}
+          </Panel>}
           </div>
           <aside className={`${styles.panel} ${styles.userContext}`} aria-label="Trạng thái tài khoản">
             <h2>Trạng thái tài khoản</h2>

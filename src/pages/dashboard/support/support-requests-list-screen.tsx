@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { Panel } from "@/components/panel/panel";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -37,30 +40,33 @@ export function SupportRequestsListScreen() {
     {
       key: "request-id",
       header: messages.SUPPORT_TABLE_REQUEST_ID,
+      kind: "code",
+      noWrap: true,
       render: (request) => <TextLinkButton href={PATH_CUSTOMER.SUPPORT_DETAIL(request.id)}><TruncatedId value={request.id} /></TextLinkButton>,
     },
     {
       key: "machine",
       header: messages.SUPPORT_TABLE_MACHINE,
+      kind: "code",
+      noWrap: true,
       render: (request) => machineLabels.get(request.machineId) || <TruncatedId value={request.machineId} />,
     },
     {
       key: "status",
       header: messages.SUPPORT_TABLE_STATUS,
-      render: (request) => <span className={repairStyles.requestStatus} data-status={request.status}>{maintenanceRequestStatusLabel(request.status, request.requestType)}</span>,
+      kind: "status",
+      render: (request) => <StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status, request.requestType)}</StatusBadge>,
     },
   ];
 
   return (
     <div className={repairStyles.operatorWorkspace}>
       <section className={repairStyles.pageContent} aria-labelledby="customer-support-title">
-        <header className={repairStyles.supportListHeading}>
-          <div className={repairStyles.pageHeading}>
-            <h1 id="customer-support-title">{messages.SUPPORT_TITLE}</h1>
-          </div>
+        <div className={repairStyles.supportListHeading}>
+          <BackButtonHeading back={null} className={repairStyles.pageHeading} title={messages.SUPPORT_TITLE} titleId="customer-support-title" />
           <ButtonBar href={PATH_CUSTOMER.SUPPORT_NEW} variant="primary">Gửi yêu cầu mới</ButtonBar>
-        </header>
-        <section className={repairStyles.panel} aria-labelledby="customer-support-list-heading">
+        </div>
+        <Panel aria-labelledby="customer-support-list-heading">
           <h2 id="customer-support-list-heading">{messages.SUPPORT_LIST_TITLE}</h2>
           {isListLoading ? (
             <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p>
@@ -98,7 +104,7 @@ export function SupportRequestsListScreen() {
               onPageChange={setPage}
             />
           ) : null}
-        </section>
+        </Panel>
         <RepairCaseListPanel
           role="owner"
           detailHref={PATH_CUSTOMER.SUPPORT_REPAIR_CASE_DETAIL}

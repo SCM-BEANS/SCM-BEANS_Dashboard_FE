@@ -20,7 +20,7 @@ export function BackButtonHeading({
 }: BackButtonHeadingProps) {
   const showBackButton = useContext(BackButtonHeadingVisibilityContext);
   return (
-    <header className={className}>
+    <header className={className} data-ui-page-heading>
       {showBackButton && back ? <BackButton label={back.label} fallbackHref={back.fallbackHref} /> : null}
       <h1 id={titleId}>{title}</h1>
       {description ? <p>{description}</p> : null}

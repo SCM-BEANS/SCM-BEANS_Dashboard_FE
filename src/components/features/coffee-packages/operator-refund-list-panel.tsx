@@ -1,4 +1,5 @@
-import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton } from "@/components/button/text-link-button";
+import { Panel } from "@/components/panel/panel";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
@@ -14,7 +15,7 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
   )) ?? []);
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-operator-refunds-title">
+    <Panel className={styles.panel} aria-labelledby="coffee-operator-refunds-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-refunds-title">Hoàn tiền</h2>
@@ -29,15 +30,14 @@ export function OperatorRefundListPanel({ workflow }: { workflow: CoffeePackageW
           { key: "refund", header: "Khoản hoàn / khách hàng", render: (item) => <>
             <strong className={styles.orderCustomer}>{item.ownerName?.trim() || (item.ownerId ? ownerNames.data?.[item.ownerId] : undefined) || "Chưa có tên khách hàng"}</strong>
             <div className={styles.orderMeta}>
-              <span>Khoản hoàn <TruncatedId value={item.id} /></span>
+              <TextActionButton onClick={() => workflow.setSelectedRefundId(item.id)}>Khoản hoàn <TruncatedId value={item.id} /></TextActionButton>
               <span>{formatCoffeePackageDateTime(item.createdAt)}</span>
             </div>
           </> },
           { key: "amount", header: "Số tiền", align: "right", render: (item) => formatCoffeePackageMoney(item.amount, item.currency ?? "VND") },
           { key: "status", header: "Trạng thái", render: (item) => <StatusBadge variant="dot" status={item.status}>{coffeePackageStatusLabel(item.status)}</StatusBadge> },
-          { key: "actions", header: "Thao tác", render: (item) => <ButtonBar rollingLabel type="button" onClick={() => workflow.setSelectedRefundId(item.id)}>Mở khoản hoàn</ButtonBar> },
         ]} />
       ) : null}
-    </section>
+    </Panel>
   );
 }

@@ -1,4 +1,6 @@
-import Link from "next/link";
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Panel } from "@/components/panel/panel";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dashboardApi } from "@/apis/dashboard.api";
@@ -222,11 +224,15 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
     const key = createIdempotencyKey();
     setPaymentReceiptDecision({ actionKey, caseId, proofId, received, idempotencyKey: key, correlationId: key });
   };
+  const workLabel = (item: TDashboardActionItem, label: string) => {
+    const href = (role === "OWNER" ? ownerPaymentReceiptTarget(item)?.href : undefined) ?? safeWorkflowHref(item, role);
+    return href ? <TextLinkButton href={href}>{label}</TextLinkButton> : label;
+  };
   const columns: readonly DataTableColumn<TDashboardActionItem>[] = [
     {
       key: "work",
       header: "Công việc",
-      render: (item) => <strong className={styles.workTitle}>{item.title}</strong>,
+      render: (item) => <strong className={styles.workTitle}>{workLabel(item, item.title)}</strong>,
     },
     {
       key: "priority",
@@ -243,15 +249,14 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
     }] : []),
     { key: "owner", header: "Khách hàng", render: (item) => item.ownerName || "—" },
     { key: "machine", header: "Máy", render: (item) => item.machineSerialNumber || "—" },
-    {
+    ...(role === "OWNER" && (items.data?.items ?? []).some(item => ownerPaymentReceiptTarget(item) || ownerCustodyAcknowledgementTarget(item)) ? [{
       key: "action",
       header: "Thao tác",
-      render: (item) => {
+      render: (item: TDashboardActionItem) => {
         const paymentReceiptTarget = role === "OWNER" ? ownerPaymentReceiptTarget(item) : undefined;
         if (paymentReceiptTarget) {
           return (
             <div className={styles.acknowledgementForm}>
-              <Link className={styles.openLink} href={paymentReceiptTarget.href}>Xem hồ sơ và chứng từ</Link>
               <div className={styles.acknowledgementActions}>
                 <ButtonBar
                   type="button"
@@ -310,13 +315,9 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
             </ButtonBar>
           );
         }
-        const href = safeWorkflowHref(item, role);
-        return href
-          ? queueView ? <ButtonBar rollingLabel href={href} className={styles.queueOpen}>Mở công việc</ButtonBar>
-            : <Link className={styles.openLink} href={href}>Mở công việc</Link>
-          : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>;
+        return safeWorkflowHref(item, role) ? null : <span className={styles.unavailable}>Chưa có màn hình chi tiết cho vai trò này</span>;
       },
-    },
+    }] : []),
   ];
 
   const workGroups = new Map<string, TDashboardActionItem[]>();
@@ -332,7 +333,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
   const actionColumn = columns.find(column => column.key === "action");
 
   return (
-    <section className={queueView ? `${styles.panel} ${styles.moderatorQueue}` : styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
+    <Panel className={queueView ? `${styles.panel} ${styles.moderatorQueue}` : styles.panel} aria-labelledby={`action-items-${role.toLowerCase()}`}>
       <header className={styles.header}>
         <div>
           <h2 id={`action-items-${role.toLowerCase()}`}>Công việc cần xử lý</h2>
@@ -345,7 +346,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         </label>}
       </header>
 
-      {queueView && <div className={styles.queueBuckets} role="group" aria-label="Thời hạn">
+      {queueView && <SectionTabList role="group" aria-label="Thời hạn">
         {(["ALL", "OVERDUE", "TODAY", "UPCOMING", "UNSCHEDULED"] as const).map(value => {
           const label = value === "ALL" ? "Tất cả" : bucketOptions.find(option => option.value === value)?.label;
           const total = value === "ALL" ? summary?.actionableItems : summary?.workByTimeBucket[value];
@@ -353,12 +354,12 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
             {label}{total != null && <strong>{total.toLocaleString("vi-VN")}</strong>}
           </button>;
         })}
-      </div>}
+      </SectionTabList>}
       {items.isPending && <p className={styles.notice} role="status">Đang tải công việc…</p>}
       {items.isError && (
         <div className={`${styles.notice} ${styles.error}`} role="alert">
           <p>{getApiErrorMessage(items.error)}</p>
-          <button type="button" onClick={() => void items.refetch()}>Thử lại</button>
+          <ButtonBar type="button" onClick={() => void items.refetch()}>Thử lại</ButtonBar>
         </div>
       )}
       {queueView && items.data && (workGroups.size ? (
@@ -376,7 +377,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
                   return (
                     <li key={item.actionKey}>
                       <div className={styles.workIdentity}>
-                        <strong className={styles.workTitle}>{item.ownerName || item.machineSerialNumber || `Hồ sơ ${reference}`}</strong>
+                        <strong className={styles.workTitle}>{workLabel(item, item.ownerName || item.machineSerialNumber || `Hồ sơ ${reference}`)}</strong>
                         {(item.ownerName || item.machineSerialNumber) && <small>
                           {[item.ownerName && item.machineSerialNumber, `Mã hồ sơ: ${reference}`].filter(Boolean).join(" · ")}
                         </small>}
@@ -415,8 +416,8 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
       {(!queueView || page > 0 || items.data?.hasMore) && <footer className={styles.pagination}>
         <span>Trang {page + 1}{items.data?.hasMore ? "+" : ""}</span>
         <div>
-          <button type="button" disabled={page === 0 || items.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trước</button>
-          <button type="button" disabled={!items.data?.hasMore || items.isFetching} onClick={() => setPage((current) => current + 1)}>Tiếp</button>
+          <ButtonBar type="button" disabled={page === 0 || items.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trước</ButtonBar>
+          <ButtonBar type="button" disabled={!items.data?.hasMore || items.isFetching} onClick={() => setPage((current) => current + 1)}>Tiếp</ButtonBar>
         </div>
       </footer>}
       {items.data?.workflowAvailability.some((workflow) => !workflow.available) && (
@@ -456,6 +457,6 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
           {respondToOwnerPaymentReceipt.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(respondToOwnerPaymentReceipt.error)}</p> : null}
         </NotificationDialog>
       ) : null}
-    </section>
+    </Panel>
   );
 }

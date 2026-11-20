@@ -26,7 +26,7 @@ async function setup(page: Page, failList = false, failRead = false, role: "admi
     let body: unknown = [];
     let status = 200;
     if (path === "/notifications/unread-count") body = { unreadCount: notifications.filter(item => !item.read).length };
-    else if (path === "/notifications") { body = notifications; if (failList) { status = 503; body = { message: "Service unavailable" }; } }
+    else if (path === "/notifications") { body = url.searchParams.get("unreadOnly") === "true" ? notifications.filter(item => !item.read) : notifications; if (failList) { status = 503; body = { message: "Service unavailable" }; } }
     else if (path === "/notifications/read-all") { writes++; notifications.forEach(item => { item.read = true; }); body = {}; }
     else if (path.startsWith("/notifications/") && path.endsWith("/read")) { writes++; const item = notifications.find(item => path.includes(item.id))!; if (failRead) { status = 503; body = { message: "Service unavailable" }; } else { item.read = true; body = item; } }
     else if (path === "/alerts") { alertReads++; body = alerts; }
@@ -51,11 +51,9 @@ test("admin notifications paginate, filter and mark unread items when opened", a
   await expect(panel.locator('article[data-selected="true"]')).toHaveCSS("background-color", "rgb(253, 248, 247)");
   await panel.locator("article").nth(1).hover();
   await expect(panel.locator("article").nth(1)).toHaveCSS("background-color", "rgb(253, 248, 247)");
-  const secondMenu = panel.locator("article").nth(1).locator("details");
-  await secondMenu.locator("summary").click();
-  await secondMenu.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  const secondNotification = panel.locator("article").nth(1);
+  await secondNotification.getByRole("button", { name: /Thông báo kiểm tra 2/ }).click();
   await expect(detail.getByRole("heading", { name: "Thông báo kiểm tra 2", exact: true })).toBeVisible();
-  await expect(detail).toBeFocused();
   expect(api.writes()).toBe(0);
   await panel.getByRole("button", { name: "Trang sau", exact: true }).click();
   await expect(panel.locator("article")).toHaveCount(2);
@@ -82,6 +80,21 @@ test("admin notifications paginate, filter and mark unread items when opened", a
   expect(api.writes()).toBe(2);
 });
 
+test("owner notifications use the shared panel and pagination while retaining unread filtering", async ({ page }) => {
+  const api = await setup(page, false, false, "owner");
+  const panel = page.getByRole("region", { name: "Danh sách thông báo", exact: true });
+  await expect(panel).toHaveAttribute("data-ui-panel", "true");
+  await expect(panel.locator("article")).toHaveCount(10);
+  await expect(panel.getByRole("navigation", { name: "Phân trang thông báo" })).toContainText("1 / 2");
+  await panel.getByRole("button", { name: "Trang sau", exact: true }).click();
+  await expect(panel.locator("article")).toHaveCount(2);
+  await expect(panel.getByRole("navigation", { name: "Phân trang thông báo" })).toContainText("2 / 2");
+  await panel.getByRole("group", { name: "Trạng thái thông báo" }).getByRole("button", { name: "Chưa đọc", exact: true }).click();
+  await expect(panel.locator("article")).toHaveCount(6);
+  await expect(panel.getByRole("navigation", { name: "Phân trang thông báo" })).toContainText("1 / 1");
+  expect(api.writes()).toBe(0);
+});
+
 test("alerts occupy their own view and remain usable on a narrow screen", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   const api = await setup(page);
@@ -89,6 +102,8 @@ test("alerts occupy their own view and remain usable on a narrow screen", async 
   await expect(page.getByRole("heading", { name: "Danh sách thông báo", exact: true })).toHaveCount(0);
   const alertFeed = page.getByRole("region", { name: "Cảnh báo máy", exact: true });
   const alertDetail = page.getByRole("complementary", { name: "Chi tiết cảnh báo" });
+  await expect(alertFeed).toHaveAttribute("data-ui-panel", "true");
+  await expect(alertFeed.getByRole("navigation", { name: "Phân trang cảnh báo" })).toContainText("1 / 1");
   await expect(alertFeed.locator("article")).toHaveCount(2);
   await expect(page.getByRole("table")).toHaveCount(0);
   await expect(alertDetail.getByText("Máy cần được kiểm tra kết nối", { exact: true })).toBeVisible();

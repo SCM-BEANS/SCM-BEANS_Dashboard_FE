@@ -145,7 +145,7 @@
 }
 
 @media (max-width: 560px) {
-  .detailPanel {
+  .detailPanel:not([data-ui-panel]) {
     padding: 0.85rem;
   }
 

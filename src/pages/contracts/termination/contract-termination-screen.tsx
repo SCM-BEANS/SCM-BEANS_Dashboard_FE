@@ -1,18 +1,23 @@
+import { TableFilters } from "@/components/table/table-filters";
+import { Panel } from "@/components/panel/panel";
 import { useState, type FormEvent } from "react";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { contractsApi } from "@/apis/contracts.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { billingApi } from "@/apis/billing.api";
 import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
+import { TextActionButton, TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TerminationWorkflowPanel } from "@/components/contracts/termination-workflow-panel";
+import { RecallWorkOrdersScreen } from "@/components/features/contract-termination/recall-work-orders-screen";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { DataTable } from "@/components/table/data-table";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
 import { getBillingWorkflowErrorMessage as getApiErrorMessage } from "@/lib/api-errors";
 import { TerminationCaseIdSchema } from "@/schema/termination-cases.schema";
@@ -27,8 +32,8 @@ const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "curren
 const invoiceStatuses: Record<string, string> = { DRAFT: "Bản nháp", PENDING: "Chờ xử lý", UNPAID: "Chưa thanh toán", PAID: "Đã thanh toán", OVERDUE: "Quá hạn", CANCELLED: "Đã hủy" };
 
 // Keep collection lookup beside the termination page; proof upload/review stays on the existing invoice routes.
-function DepositCollectionSection({ contractId, ownerId, depositAmount, startDate, role }: {
-  contractId: string; ownerId: string; depositAmount?: number | null; startDate?: string | null; role: TerminationRole;
+function DepositCollectionSection({ contractId, ownerId, depositAmount, startDate, role, embedded }: {
+  contractId: string; ownerId: string; depositAmount?: number | null; startDate?: string | null; role: TerminationRole; embedded?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const initialPeriod = startDate && /^\d{4}-(0[1-9]|1[0-2])-/.test(startDate) ? startDate.slice(0, 7) : "";
@@ -62,28 +67,28 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
   const invoiceHref = selectedInvoice ? role === "ADMIN" ? PATH_ADMIN.INVOICE_DETAIL(selectedInvoice.id)
     : role === "MODERATOR" ? PATH_MODERATOR.INVOICE_DETAIL(selectedInvoice.id) : PATH_CUSTOMER.INVOICE_DETAIL(selectedInvoice.id) : "";
 
-  return <section className={styles.contractCard} aria-label="Thu tiền cọc">
+  const DepositContainer = embedded ? "section" : Panel;
+  return <DepositContainer className={embedded ? styles.depositEmbedded : styles.contractCard} aria-label="Thu tiền cọc">
     <div className={styles.depositHeading}>
-      <div><h2>Thu tiền cọc</h2><p className={styles.depositDescription}>Tiền cọc theo hợp đồng: <strong>{depositAmount == null ? "Chưa có dữ liệu" : money(depositAmount)}</strong></p></div>
+      {embedded ? <h3>Thu tiền cọc</h3> : <div><h2>Thu tiền cọc</h2><p className={styles.depositDescription}>Tiền cọc theo hợp đồng: <strong>{depositAmount == null ? "Chưa có dữ liệu" : money(depositAmount)}</strong></p></div>}
       <ButtonBar type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Thu gọn" : "Kiểm tra hóa đơn tiền cọc"}</ButtonBar>
     </div>
     {open ? <div className={styles.depositContent}>
       <p className={styles.depositDescription}>Tiền cọc được thu qua hóa đơn thuê máy. Hóa đơn chứa dòng tiền cọc cần được thanh toán đủ và đối soát trước khi quyết toán chấm dứt.</p>
-      <form className={styles.depositFilters} onSubmit={(event) => {
+      <TableFilters className={styles.depositFilters} onSubmit={(event) => {
         event.preventDefault(); setPeriod(periodInput); setPage(0); setSelectedInvoiceId(""); setLinePage(0);
         if (periodInput === period && page === 0) void invoices.refetch();
       }}>
         <label>Kỳ hóa đơn<input type="month" value={periodInput} onChange={(event) => setPeriodInput(event.target.value)} /></label>
         <ButtonBar type="submit">Tìm hóa đơn</ButtonBar>
-      </form>
+      </TableFilters>
       {invoices.isFetching ? <p role="status">Đang tải hóa đơn…</p> : null}
       {invoices.isError ? <p className={styles.error} role="alert">{getApiErrorMessage(invoices.error)}</p> : null}
       {invoices.isSuccess ? <>
-        <DataTable headers={["Hóa đơn", "Kỳ", "Tổng hóa đơn", "Trạng thái", ""]}>
+        <DataTable headers={["Hóa đơn", "Kỳ", "Tổng hóa đơn", "Trạng thái"]}>
           {invoices.data.items.map((invoice) => <tr key={invoice.id}>
-            <td>{invoice.id.slice(0, 8).toUpperCase()}</td><td>{invoice.period}</td>
+            <td><TextActionButton aria-pressed={selectedInvoice?.id === invoice.id} onClick={() => { setSelectedInvoiceId(invoice.id); setLinePage(0); }}>{invoice.id.slice(0, 8).toUpperCase()}</TextActionButton></td><td>{invoice.period}</td>
             <td>{money(invoice.amount)}</td><td>{invoiceStatuses[invoice.status] ?? invoice.status}</td>
-            <td><ButtonBar type="button" aria-pressed={selectedInvoice?.id === invoice.id} onClick={() => { setSelectedInvoiceId(invoice.id); setLinePage(0); }}>Xem dòng tiền cọc</ButtonBar></td>
           </tr>)}
         </DataTable>
         {!invoices.data.items.length ? <p className={styles.notice}>Chưa có hóa đơn trong kỳ đang chọn. Có thể đổi kỳ hoặc xóa kỳ để tìm tất cả. Nếu hóa đơn chưa được sinh, cần bộ phận vận hành kiểm tra lịch tạo hóa đơn; trang này không tự tạo hóa đơn hoặc dòng tiền cọc.</p> : null}
@@ -109,10 +114,10 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
             <ButtonBar type="button" disabled={!lines.data.hasNext || lines.isFetching} onClick={() => setLinePage(linePage + 1)}>Dòng tiếp</ButtonBar>
           </div>
         </> : null}
-        <Link className={styles.invoiceLink} href={invoiceHref}>{role === "OWNER" ? "Mở hóa đơn và gửi chứng từ" : "Mở hóa đơn và đối soát chứng từ"}</Link>
+        <TextLinkButton href={invoiceHref}>Hồ sơ hóa đơn {selectedInvoice.id.slice(0, 8).toUpperCase()}</TextLinkButton>
       </div> : null}
     </div> : null}
-  </section>;
+  </DepositContainer>;
 }
 
 export function ContractTerminationScreen({
@@ -133,6 +138,7 @@ export function ContractTerminationScreen({
   const [createdCaseId, setCreatedCaseId] = useState("");
   const [formError, setFormError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [recallLookupVisited, setRecallLookupVisited] = useState(false);
   const validId = ContractIdSchema.safeParse(contractId).success;
   const contract = useQuery({
     queryKey: ["dolores", "contracts", "id", contractId],
@@ -154,8 +160,9 @@ export function ContractTerminationScreen({
   });
   const requestTermination = useMutation({
     mutationFn: (input: TerminationCaseRequest) => {
-      if (!canCreateCase || activeCaseId) throw new Error("Hợp đồng đã có hồ sơ hoặc chưa kiểm tra xong hồ sơ hiện có.");
-      if (readSavedCaseId()) {
+      if (!canCreateCase || (activeCaseId && !existingCaseWasRejected)) throw new Error("Hợp đồng đã có hồ sơ hoặc chưa kiểm tra xong hồ sơ hiện có.");
+      const savedCaseId = readSavedCaseId();
+      if (savedCaseId && !(existingCaseWasRejected && savedCaseId === existingCase.data?.id)) {
         void existingCase.refetch();
         throw new Error("Hợp đồng đã có hồ sơ chấm dứt.");
       }
@@ -200,23 +207,31 @@ export function ContractTerminationScreen({
     ?? "";
   const requestedCaseId = typeof router.query.caseId === "string" ? router.query.caseId : "";
   const invalidCaseId = requestedCaseId !== "" && !TerminationCaseIdSchema.safeParse(requestedCaseId).success;
-  const linkedCaseId = createdCaseId || expiry.data?.terminationCaseId || latestRecallCaseId || (invalidCaseId ? "" : requestedCaseId);
+  const viewTerminationHistory = contract.data?.status === "TERMINATED";
+  const validRequestedCaseId = invalidCaseId ? "" : requestedCaseId;
+  const linkedCaseId = createdCaseId || (role === "OWNER" ? validRequestedCaseId : "")
+    || expiry.data?.terminationCaseId || latestRecallCaseId || validRequestedCaseId;
   const caseStorageKey = `dolores:termination-case:${querySubject(role === "ADMIN" ? "admin" : role === "MODERATOR" ? "moderator" : "owner")}:${contractId}`;
   function readSavedCaseId() {
     try { return window.localStorage.getItem(caseStorageKey) || ""; } catch { return ""; }
   }
   const existingCase = useQuery({
-    queryKey: ["dolores", "contract-termination-existing", caseStorageKey, linkedCaseId],
+    queryKey: ["dolores", "contract-termination-existing", caseStorageKey, linkedCaseId, viewTerminationHistory],
     queryFn: async ({ signal }) => {
       const savedCaseId = readSavedCaseId();
       const id = linkedCaseId || (role === "OWNER" ? savedCaseId : "");
-      const result = id
+      let result = id
         ? await terminationCasesApi.getById(TerminationCaseIdSchema.parse(id), signal).catch(error => {
-          if (linkedCaseId || role !== "OWNER" || !isAxiosError(error) || error.response?.status !== 404) throw error;
+          const canLookUpAnotherCase = viewTerminationHistory || (!linkedCaseId && role === "OWNER");
+          if (!canLookUpAnotherCase || !isAxiosError(error) || error.response?.status !== 404) throw error;
           if (readSavedCaseId() === id) window.localStorage.removeItem(caseStorageKey);
           return null;
         })
-        : role === "OWNER" ? null : await terminationCasesApi.findByContractId(contractId, signal);
+        : null;
+      if (role !== "OWNER" && (!result || result.status === "REJECTED")) {
+        const listedCase = await terminationCasesApi.findByContractId(contractId, signal);
+        if (listedCase && (listedCase.status !== "REJECTED" || !result)) result = listedCase;
+      }
       if (!result) return null;
       if (result.contractId.toLowerCase() !== contractId.toLowerCase()) throw new Error("Hồ sơ chấm dứt không thuộc hợp đồng này.");
       try { window.localStorage.setItem(caseStorageKey, result.id); } catch { /* The verified case remains available for this visit. */ }
@@ -226,7 +241,8 @@ export function ContractTerminationScreen({
       && (role !== "OWNER" || Boolean(linkedCaseId) || (expiry.isSuccess && recallOrders.isSuccess)),
     retry: false,
   });
-  const activeCaseId = linkedCaseId || existingCase.data?.id || "";
+  const activeCaseId = existingCase.data?.id || (viewTerminationHistory && existingCase.isSuccess ? "" : linkedCaseId);
+  const existingCaseWasRejected = existingCase.data?.status === "REJECTED";
   const canOfferCreation = role !== "OWNER"
     && contract.data?.status === "ACTIVE"
     && expiry.isSuccess
@@ -235,32 +251,48 @@ export function ContractTerminationScreen({
     && !expiry.isFetching
     && !recallOrders.isFetching
     && !invalidCaseId
-    && !activeCaseId
+    && (!activeCaseId || existingCaseWasRejected)
     && existingCase.isSuccess
     && !existingCase.isFetching
-    && !existingCase.data;
+    && (!existingCase.data || existingCaseWasRejected);
   const canCreateCase = canOfferCreation && showCreate;
   const detailHref = role === "ADMIN"
     ? PATH_ADMIN.CONTRACT_DETAIL(contractId)
     : role === "MODERATOR"
       ? PATH_MODERATOR.CONTRACT_DETAIL(contractId)
       : PATH_CUSTOMER.CONTRACT_DETAIL(contractId);
+  const focused = role === "MODERATOR";
+  const workflowFirst = focused || role === "OWNER";
+  const depositLookup = activeCaseId && contract.data ? (
+    <DepositCollectionSection key={`${role}:${contractId}:${contract.data.ownerId}`} contractId={contractId} ownerId={contract.data.ownerId} depositAmount={contract.data.depositAmount} startDate={contract.data.startDate} role={role} embedded={workflowFirst} />
+  ) : null;
+  const workflow = activeCaseId ? (
+    <TerminationWorkflowPanel
+      key={`${role}:${contractId}:${activeCaseId}`}
+      mode={role === "OWNER" ? "owner" : "operator"}
+      role={role}
+      contractId={contractId}
+      contractStatus={contract.data?.status}
+      caseId={activeCaseId}
+    />
+  ) : null;
 
   return (
-    <section className={styles.page} aria-labelledby="termination-page-title">
+    <section className={workflowFirst ? `${styles.page} ${styles.focusedPage}` : styles.page} aria-labelledby="termination-page-title">
       <BackButtonHeading
         back={{ label: "Về chi tiết hợp đồng", fallbackHref: backHref || detailHref }}
-        title={activeCaseId ? "Chi tiết hồ sơ chấm dứt hợp đồng" : "Chấm dứt hợp đồng"}
+        title={activeCaseId || viewTerminationHistory ? "Chi tiết hồ sơ chấm dứt hợp đồng" : "Chấm dứt hợp đồng"}
         titleId="termination-page-title"
-        description="Theo dõi yêu cầu, thu hồi máy và các bước xử lý liên quan đến hợp đồng."
         className={styles.heading}
       />
 
       {!validId ? <p className={styles.error} role="alert">Mã hợp đồng không hợp lệ.</p> : null}
       {invalidCaseId ? <p className={styles.error} role="alert">Mã hồ sơ chấm dứt trong đường dẫn không hợp lệ.</p> : null}
-      {existingCase.isFetching ? <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p> : null}
-      {existingCase.isError ? <div className={styles.error} role="alert"><p>Không xác minh được hồ sơ hiện có. Chưa thể tạo hồ sơ mới.</p><p>{getApiErrorMessage(existingCase.error)}</p><ButtonBar onClick={() => void existingCase.refetch()}>Thử lại</ButtonBar></div> : null}
-      {canOfferCreation && !showCreate ? <section className={styles.contractCard}><h2>Hồ sơ chấm dứt hợp đồng</h2><p>Chưa có hồ sơ được liên kết trong dữ liệu hiện tại.</p><ButtonBar onClick={() => setShowCreate(true)}>Tạo hồ sơ chấm dứt</ButtonBar></section> : null}
+      {existingCase.isFetching && (!focused || !activeCaseId) ? <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p> : null}
+      {existingCase.isError ? <div className={styles.error} role="alert"><p>{viewTerminationHistory ? "Không tải được hồ sơ chấm dứt của hợp đồng." : "Không xác minh được hồ sơ hiện có. Chưa thể tạo hồ sơ mới."}</p><p>{getApiErrorMessage(existingCase.error)}</p><ButtonBar onClick={() => void existingCase.refetch()}>Thử lại</ButtonBar></div> : null}
+      {viewTerminationHistory && existingCase.isSuccess && !existingCase.isFetching && !expiry.isFetching && !recallOrders.isFetching && !activeCaseId
+        ? <p className={styles.notice} role="status">Không tìm thấy hồ sơ chấm dứt của hợp đồng này.</p> : null}
+      {canOfferCreation && !showCreate ? <Panel className={styles.contractCard}><h2>Hồ sơ chấm dứt hợp đồng</h2><p>{existingCaseWasRejected ? "Hồ sơ trước đã bị từ chối. Bạn có thể tạo hồ sơ chấm dứt mới." : "Chưa có hồ sơ được liên kết trong dữ liệu hiện tại."}</p><ButtonBar onClick={() => setShowCreate(true)}>Tạo hồ sơ chấm dứt</ButtonBar></Panel> : null}
       {contract.isPending && validId ? <p className={styles.notice} role="status">Đang tải thông tin hợp đồng…</p> : null}
       {contract.isError ? (
         <div className={styles.error} role="alert">
@@ -268,7 +300,7 @@ export function ContractTerminationScreen({
           <ButtonBar type="button" onClick={() => void contract.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
-      {role !== "OWNER" && contract.data?.status === "ACTIVE" && expiry.isPending ? (
+      {role !== "OWNER" && contract.data?.status === "ACTIVE" && expiry.isPending && (!focused || !activeCaseId) ? (
         <p className={styles.notice} role="status">Đang kiểm tra hồ sơ chấm dứt hiện có…</p>
       ) : null}
       {role !== "OWNER" && contract.data?.status === "ACTIVE" && expiry.isSuccess && recallOrders.isPending && !activeCaseId ? (
@@ -280,24 +312,26 @@ export function ContractTerminationScreen({
           <ButtonBar type="button" onClick={() => void recallOrders.refetch()}>Thử lại</ButtonBar>
         </div>
       ) : null}
+      {workflowFirst && !canCreateCase ? workflow : null}
       {contract.data ? (
         <div className={canCreateCase ? styles.terminationStartLayout : styles.terminationReadLayout}>
-          <section className={styles.contractCard} aria-label="Thông tin hợp đồng">
+          <Panel className={styles.contractCard} aria-label="Thông tin hợp đồng">
             <div className={styles.contractCardHeading}>
               <h2>Hợp đồng</h2>
-              <span className={styles.terminationState}>{contract.data.status === "ACTIVE" ? T.CONTRACTS.ACTIVE : contract.data.status === "TERMINATED" ? T.CONTRACTS.TERMINATED : T.CONTRACTS.DRAFT}</span>
+              <StatusBadge variant="dot" status={contract.data.status}>{contract.data.status === "ACTIVE" ? T.CONTRACTS.ACTIVE : contract.data.status === "TERMINATED" ? T.CONTRACTS.TERMINATED : T.CONTRACTS.DRAFT}</StatusBadge>
             </div>
             <dl className={styles.contractSummary}>
-              <div><dt>Mã hợp đồng</dt><dd>{contract.data.id}</dd></div>
+              <div><dt>Mã hợp đồng</dt><dd><TruncatedId value={contract.data.id} /></dd></div>
               <div><dt>Chủ sở hữu</dt><dd>{contract.data.ownerName || contract.data.ownerId}</dd></div>
-              <div><dt>Máy</dt><dd>{contract.data.machineId ?? "Chưa gắn máy"}</dd></div>
+              <div><dt>Máy</dt><dd>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : "Chưa gắn máy"}</dd></div>
               <div><dt>Thời hạn</dt><dd>{contract.data.startDate && contract.data.endDate ? `${contract.data.startDate} – ${contract.data.endDate}` : "Chưa xác định"}</dd></div>
               <div><dt>Phí thuê tháng</dt><dd>{contract.data.monthlyRentalFee == null ? "—" : `${contract.data.monthlyRentalFee.toLocaleString("vi-VN")} ₫`}</dd></div>
               <div><dt>Tiền cọc</dt><dd>{contract.data.depositAmount == null ? "—" : `${contract.data.depositAmount.toLocaleString("vi-VN")} ₫`}</dd></div>
             </dl>
-          </section>
+            {workflowFirst ? depositLookup : null}
+          </Panel>
           {canCreateCase ? (
-            <form className={styles.form} onSubmit={submitRequest}>
+            <form  onSubmit={submitRequest}><Panel className={styles.form}>
               <h2>Tạo hồ sơ chấm dứt</h2>
               <p>Sau khi tạo hồ sơ, máy chuyển sang trạng thái bảo trì. Hợp đồng vẫn có hiệu lực cho đến khi quy trình hoàn tất.</p>
               <div className={styles.formGrid}>
@@ -321,12 +355,12 @@ export function ContractTerminationScreen({
               <ButtonBar type="submit" disabled={requestTermination.isPending}>
                 {requestTermination.isPending ? "Đang gửi yêu cầu…" : "Tạo hồ sơ chấm dứt"}
               </ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
         </div>
       ) : null}
 
-      {role !== "OWNER" && contract.data?.status === "ACTIVE" && activeCaseId ? (
+      {!focused && role !== "OWNER" && contract.data?.status === "ACTIVE" && activeCaseId ? (
         <p className={styles.notice} role="status">Hợp đồng đã có hồ sơ chấm dứt. Các bước xử lý được theo dõi bên dưới.</p>
       ) : null}
       {role === "OWNER" && !activeCaseId && expiry.isSuccess && recallOrders.isSuccess ? (
@@ -338,18 +372,13 @@ export function ContractTerminationScreen({
           <ButtonBar type="button" onClick={() => void expiry.refetch()}>Thử tải lại</ButtonBar>
         </div>
       ) : null}
-      {activeCaseId && contract.data ? (
-        <DepositCollectionSection key={`${role}:${contractId}:${contract.data.ownerId}`} contractId={contractId} ownerId={contract.data.ownerId} depositAmount={contract.data.depositAmount} startDate={contract.data.startDate} role={role} />
-      ) : null}
-      {activeCaseId ? (
-        <TerminationWorkflowPanel
-          key={`${role}:${contractId}:${activeCaseId}`}
-          mode={role === "OWNER" ? "owner" : "operator"}
-          role={role}
-          contractId={contractId}
-          contractStatus={contract.data?.status}
-          caseId={activeCaseId}
-        />
+      {!workflowFirst ? depositLookup : null}
+      {!workflowFirst || canCreateCase ? workflow : null}
+      {focused && validId ? (
+        <details className={styles.recallLookup} onToggle={(event) => { if (event.currentTarget.open) setRecallLookupVisited(true); }}>
+          <summary>Tra cứu lệnh thu hồi theo hợp đồng</summary>
+          {recallLookupVisited && <RecallWorkOrdersScreen key={contractId} contractId={contractId} role="operator" queryScopeRole="MODERATOR" embedded />}
+        </details>
       ) : null}
 
       {pendingRequest ? (

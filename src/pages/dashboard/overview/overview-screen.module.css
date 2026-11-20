@@ -51,7 +51,11 @@
 }
 
 .panelLink {
+  display: inline-flex;
+  min-height: var(--ui-control-height, 44px);
   flex: 0 0 auto;
+  align-items: center;
+  padding: 0 8px;
   color: #a81521;
   font-size: 13px;
   font-weight: 600;

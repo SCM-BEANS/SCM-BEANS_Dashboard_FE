@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import axios from "axios";
 import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -126,7 +128,7 @@ export function EvidenceList({
   ];
 
   return (
-    <section className={styles.panel} aria-labelledby={headingId}>
+    <Panel className={styles.panel} aria-labelledby={headingId}>
       <h2 className={styles.heading} id={headingId}>{title}</h2>
       {query.isPending ? <p className={styles.state} role="status">Đang tải chứng từ…</p> : null}
       {query.isError && !forbidden ? (
@@ -147,26 +149,10 @@ export function EvidenceList({
             <p className={styles.errorText} role="alert">{downloadError}</p>
           ) : null}
           {showPagination ? (
-            <nav className={styles.pagination} aria-label="Phân trang chứng từ">
-              <ButtonBar
-                type="button"
-                disabled={page === 0 || query.isFetching}
-                onClick={() => setPage(page - 1)}
-              >
-                Trang trước
-              </ButtonBar>
-              <span>Trang {page + 1}</span>
-              <ButtonBar
-                type="button"
-                disabled={!data.hasNext || query.isFetching}
-                onClick={() => setPage(page + 1)}
-              >
-                Trang sau
-              </ButtonBar>
-            </nav>
+            <Pagination page={page} hasNext={!(!data.hasNext || query.isFetching)} isFetching={query.isFetching} ariaLabel="Phân trang chứng từ" onPageChange={setPage} previousLabel="Trang trước" nextLabel="Trang sau" showPage={false} hideWhenSinglePage={false}><span>Trang {page + 1}</span></Pagination>
           ) : null}
         </>
       ) : null}
-    </section>
+    </Panel>
   );
 }

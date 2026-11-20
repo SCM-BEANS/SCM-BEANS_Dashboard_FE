@@ -24,8 +24,8 @@
 
 .table {
   width: 100%;
-  min-width: 32rem;
-  --table-cell-inline: 12px;
+  min-width: 100%;
+  --table-cell-inline: var(--ui-table-cell-padding, 12px);
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
@@ -42,6 +42,37 @@
 }
 
 .table th, .table td { overflow-wrap: anywhere; }
+
+.table :is(th, td)[data-column-kind="code"],
+.table :is(th, td)[data-column-kind="date"] {
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.table :is(th, td)[data-column-kind="name"] { min-width: 220px; }
+
+.table :is(th, td)[data-column-kind="amount"] {
+  min-width: 150px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(th, td)[data-column-kind="status"] { min-width: 140px; }
+
+.table :is(th, td)[data-column-kind="actions"] {
+  width: 144px;
+  min-width: 144px;
+  max-width: 144px;
+  text-align: right;
+  white-space: normal;
+}
+
+.table tbody td[colspan] {
+  padding: 28px 16px;
+  color: var(--ui-color-muted, #665e59);
+  text-align: center;
+}
 
 .table th:first-child {
   border-top-left-radius: 8px;
@@ -97,6 +128,6 @@
 }
 
 @media (max-width: 640px) {
-  .listPanel { padding: 14px; }
+  .listPanel { padding: 16px; }
 }
 

@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { buildContractDetailActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
@@ -15,6 +16,7 @@ import {
   type ContractPolicyAmendmentRequest,
 } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
 import { ContractOverviewPanel } from "@/components/contracts/contract-overview-panel";
@@ -370,9 +372,9 @@ function ContractsContent() {
       {filteredContracts.length > 0 && <div className={styles.accountPagination}>
         <span>{(contractPage - 1) * contractPageSize + 1}–{Math.min(contractPage * contractPageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
         <div>
-          <button className={styles.accountSecondaryButton} type="button" disabled={contractPage <= 1} onClick={() => setContractPage((page) => Math.max(1, page - 1))}>Trang trước</button>
+          <ButtonBar  type="button" disabled={contractPage <= 1} onClick={() => setContractPage((page) => Math.max(1, page - 1))}>Trang trước</ButtonBar>
           <span>Trang {contractPage}/{contractTotalPages}</span>
-          <button className={styles.accountSecondaryButton} type="button" disabled={contractPage >= contractTotalPages} onClick={() => setContractPage((page) => Math.min(contractTotalPages, page + 1))}>Trang sau</button>
+          <ButtonBar  type="button" disabled={contractPage >= contractTotalPages} onClick={() => setContractPage((page) => Math.min(contractTotalPages, page + 1))}>Trang sau</ButtonBar>
         </div>
       </div>}
     </section>}
@@ -385,17 +387,17 @@ function ContractsContent() {
     />}
     {view === "detail" && <>
       {!ContractIdSchema.safeParse(contractId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã hợp đồng không hợp lệ.</div>}
-      {contract.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+      {contract.isPending && <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>}
       {contract.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contract.error)}</p><ButtonBar type="button" onClick={() => void contract.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contract.data && <>
         <div className={styles.contractDetailLayout}>
         <ContractOverviewPanel contract={contract.data} ownerName={ownerName(contract.data.ownerId)} />
-        <section className={`${styles.panel} ${styles.contractExpiryPanel}`}><h2>Trạng thái hết hạn</h2>
+        <Panel className={`${styles.panel} ${styles.contractExpiryPanel}`}><h2>Trạng thái hết hạn</h2>
           {expiry.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {expiry.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(expiry.error)} <ButtonBar type="button" onClick={() => void expiry.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {expiry.data && <div className={styles.operationsGrid}><div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div><div><span>Ngày nhắc</span><strong>{date(expiry.data.reminderDate)}</strong></div><div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div><div><span>Quyết định</span><strong>{expiry.data.decision ?? "Chưa có"}</strong></div><div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div></div>}
-        </section>
-        <section className={`${styles.panel} ${styles.contractHistoryPanel}`}>
+        </Panel>
+        <Panel className={`${styles.panel} ${styles.contractHistoryPanel}`}>
           <h2>Lịch sử chính sách</h2>
           {policyHistory.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {policyHistory.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(policyHistory.error)} <ButtonBar type="button" onClick={() => void policyHistory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
@@ -410,8 +412,8 @@ function ContractsContent() {
               { key: "actor", header: "Vai trò cập nhật", render: (item) => item.actorRole },
             ]}
           />}
-        </section>
-        {contract.data.status === "ACTIVE" && <section className={`${styles.panel} ${styles.contractDocumentsPanel}`} aria-labelledby="admin-contract-installation-orders">
+        </Panel>
+        {contract.data.status === "ACTIVE" && <Panel className={`${styles.panel} ${styles.contractDocumentsPanel}`} aria-labelledby="admin-contract-installation-orders">
           <h2 id="admin-contract-installation-orders">Điều phối lắp đặt</h2>
           {installationOrders.isPending && <p role="status">Đang tải lệnh lắp đặt…</p>}
           {installationOrders.isError && <div role="alert"><p>{getApiErrorMessage(installationOrders.error)}</p><ButtonBar type="button" onClick={() => void installationOrders.refetch()}>Thử lại</ButtonBar></div>}
@@ -419,15 +421,14 @@ function ContractsContent() {
             rows={installationOrders.data.filter((order) => order.ownerId === contract.data!.ownerId && order.contractId === contract.data!.id && order.machineId === contract.data!.machineId).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))}
             rowKey={(order) => order.id} emptyMessage="Chưa có lệnh lắp đặt thuộc hợp đồng này."
             columns={[
-              { key: "id", header: "Mã lệnh", render: (order) => <TruncatedId value={order.id} /> },
+              { key: "id", header: "Mã lệnh", render: (order) => <TextLinkButton href={`${PATH_ADMIN.TECHNICAL_REQUESTS}/${encodeURIComponent(order.id)}`}><TruncatedId value={order.id} /></TextLinkButton> },
               { key: "status", header: "Trạng thái", render: (order) => <StatusBadge variant="dot" status={order.status}>{({ PENDING: "Chờ phân công", ASSIGNED: "Đã phân công", IN_PROGRESS: "Đang lắp đặt", COMPLETED: "Đã hoàn tất bàn giao", FAILED: "Lắp đặt chưa thành công", CANCELLED: "Đã hủy" })[order.status]}</StatusBadge> },
               { key: "technician", header: "Kỹ thuật viên", render: (order) => order.assignedTechnicianId ? <TruncatedId value={order.assignedTechnicianId} /> : "Chưa phân công" },
               { key: "scheduled", header: "Lịch hẹn", render: (order) => dateTime(order.scheduledFor) },
               { key: "completed", header: "Hoàn tất", render: (order) => dateTime(order.completedAt) },
-              { key: "action", header: "", render: (order) => <ButtonBar rollingLabel href={`${PATH_ADMIN.TECHNICAL_REQUESTS}/${encodeURIComponent(order.id)}`}>Mở chi tiết lệnh</ButtonBar> },
             ]} />}
-        </section>}
-        {lifecycleView === "amend" && <form id="contract-policy-amend-form" className={`${styles.panel} ${styles.contractLifecyclePanel}`} onSubmit={submitPolicyAmendment}>
+        </Panel>}
+        {lifecycleView === "amend" && <form id="contract-policy-amend-form"  onSubmit={submitPolicyAmendment}><Panel className={`${styles.panel} ${styles.contractLifecyclePanel}`}>
           <h2>Điều chỉnh chính sách</h2>
           {policySnapshot ? <>
             <p className={styles.panelSubtitle}>Chỉnh các điều khoản bằng trường nhập rõ ràng. Phiên bản hiện tại được giữ nguyên; máy chủ sẽ ghi nhận bản sửa đổi sau khi bạn xác nhận.</p>
@@ -478,8 +479,8 @@ function ContractsContent() {
           </> : <p className={styles.operationsNotice}>Hợp đồng này chưa có snapshot chính sách có cấu trúc nên chưa thể tạo bản sửa đổi.</p>}
           {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
           {amendPolicy.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(amendPolicy.error, "mutation")}</p>}
-        </form>}
-        {lifecycleView === "continue" && <form id="contract-continuation-form" className={`${styles.panel} ${styles.contractLifecyclePanel}`} onSubmit={submitContinuation}>
+        </Panel></form>}
+        {lifecycleView === "continue" && <form id="contract-continuation-form"  onSubmit={submitContinuation}><Panel className={`${styles.panel} ${styles.contractLifecyclePanel}`}>
           <h2>Tạo hợp đồng tiếp nối</h2>
           <p className={styles.panelSubtitle}>Owner và máy sẽ được kế thừa từ hợp đồng cũ. Chỉ tiếp tục sau khi quy trình chấm dứt đã hoàn tất.</p>
           <div className={styles.operationsGrid}>
@@ -493,8 +494,8 @@ function ContractsContent() {
           </div>
           {lifecycleError && <p className={styles.accountInlineWarning} role="alert">{lifecycleError}</p>}
           {continueContract.isError && <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(continueContract.error, "mutation")}</p>}
-        </form>}
-        <section className={`${styles.panel} ${styles.contractDocumentsPanel}`}><h2>{T.CONTRACTS.DOCUMENTS}</h2>
+        </Panel></form>}
+        <Panel className={`${styles.panel} ${styles.contractDocumentsPanel}`}><h2>{T.CONTRACTS.DOCUMENTS}</h2>
           {documents.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {documents.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(documents.error)} <ButtonBar type="button" onClick={() => void documents.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
           {documents.data && documents.data.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
@@ -517,25 +518,25 @@ function ContractsContent() {
             ]}
           />}
           {downloadError && <p className={styles.operationsNotice} role="alert">{downloadError}</p>}
-        </section>
+        </Panel>
         </div>
       </>}
     </>}
     {view === "detail" && contract.data && <ContractActivationPanel contract={contract.data} />}
     {view === "history" && <>
       {!ContractIdSchema.safeParse(machineId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã máy không hợp lệ.</div>}
-      {history.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
+      {history.isPending && <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>}
       {history.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(history.error)}</p><ButtonBar type="button" onClick={() => void history.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-      {history.data && <section className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
+      {history.data && <Panel className={styles.panel}><h2>Hợp đồng theo máy</h2>{history.data.length === 0 ? <p className={styles.emptyText}>{T.COMMON.EMPTY}</p> : <DataTable
         rows={history.data}
         rowKey={(item) => item.id}
         columns={[
-          { key: "contract", header: "Hợp đồng", render: (item) => <button className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}><TruncatedId value={item.id} /></button> },
+          { key: "contract", header: "Hợp đồng", render: (item) => <ButtonBar className={styles.accountTextButton} type="button" onClick={() => navigate({ view: "detail", id: item.id })}><TruncatedId value={item.id} /></ButtonBar> },
           { key: "owner", header: "Khách hàng", render: (item) => ownerName(item.ownerId) },
           { key: "period", header: "Thời hạn", render: (item) => `${date(item.startDate)} – ${date(item.endDate)}` },
           { key: "status", header: "Trạng thái", render: (item) => <StatusBadge status={item.status}>{status(item.status)}</StatusBadge> },
         ]}
-      />}</section>}
+      />}</Panel>}
     </>}
   </div>
   <PageActions actions={view === "detail" && contract.data ? buildContractDetailActions({

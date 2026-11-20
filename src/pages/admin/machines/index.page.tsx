@@ -1,3 +1,6 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { MachineListFilters, type MachineListFilterValue } from "@/components/machines/machine-list-filters";
 import { useRouter } from "next/router";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
@@ -187,7 +190,7 @@ function MachinesContent() {
           >
 
             <div className={styles.machineInventoryGroup}>
-              <div className={styles.machineViewTabs} role="group" aria-label="Chọn danh sách máy">
+              <SectionTabList role="group" aria-label="Chọn danh sách máy">
                 <button
                   type="button"
                   className={`${styles.machineViewTab} ${!isMachineTypesView ? styles.machineViewTabActive : ""}`}
@@ -204,8 +207,8 @@ function MachinesContent() {
                 >
                   Mẫu máy
                 </button>
-              </div>
-              <section className={styles.panel}>
+              </SectionTabList>
+              <Panel className={styles.panel}>
               <div className={styles.machineInventoryHeading}>
                 <h2>{isMachineTypesView ? T.MACHINE_MODELS.TITLE : T.MACHINES.TITLE}</h2>
                 {isMachineTypesView ? machineModels.data && (
@@ -223,9 +226,9 @@ function MachinesContent() {
                 void router.push({ pathname: PATH_ADMIN.MACHINES, query: { ...(filterDraft.status ? { status: filterDraft.status } : {}), page: "0" } }, undefined, { shallow: true });
               }} />}
               {!isMachineTypesView && inventory.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-              {!isMachineTypesView && inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><button type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {!isMachineTypesView && inventory.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(inventory.error)}</p><ButtonBar type="button" onClick={() => void inventory.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
               {isMachineTypesView && machineModels.isPending && <p className={styles.emptyText} role="status">{T.COMMON.LOADING}</p>}
-              {isMachineTypesView && machineModels.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModels.error)}</p><button type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</button></div>}
+              {isMachineTypesView && machineModels.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(machineModels.error)}</p><ButtonBar type="button" onClick={() => void machineModels.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
               {inventory.data && !isMachineTypesView && visibleMachines.length === 0 && <p className={styles.emptyText}>{inventory.data.length ? T.MACHINES.NO_MATCH : T.COMMON.EMPTY}</p>}
               {isMachineTypesView && machineModels.data?.length === 0 && <p className={styles.emptyText}>{T.COMMON.EMPTY}</p>}
               {isMachineTypesView && machineModels.data && machineModels.data.length > 0 && <>
@@ -240,12 +243,7 @@ function MachinesContent() {
                     { key: "machine-type", header: T.MACHINES.MACHINE_TYPE, render: (machineModel) => machineTypeLabel(machineModel.machineType) },
                   ]}
                 />
-                <nav className={styles.machinePagination} aria-label="Phân trang mẫu máy">
-                  <span>{modelPage * 10 + 1}–{Math.min((modelPage + 1) * 10, machineModels.data.length)} / {machineModels.data.length} mẫu máy</span>
-                  <ButtonBar disabled={modelPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage - 1) } }, undefined, { shallow: true })}>Trước</ButtonBar>
-                  <span>Trang {modelPage + 1}/{Math.max(1, Math.ceil(machineModels.data.length / 10))}</span>
-                  <ButtonBar disabled={(modelPage + 1) * 10 >= machineModels.data.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(modelPage + 1) } }, undefined, { shallow: true })}>Sau</ButtonBar>
-                </nav>
+                <Pagination page={modelPage} hasNext={!((modelPage + 1) * 10 >= machineModels.data.length)} isFetching={false} ariaLabel="Phân trang mẫu máy" onPageChange={(nextPage) => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(nextPage) } }, undefined, { shallow: true })} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{modelPage * 10 + 1}–{Math.min((modelPage + 1) * 10, machineModels.data.length)} / {machineModels.data.length} mẫu máy</span><span>Trang {modelPage + 1}/{Math.max(1, Math.ceil(machineModels.data.length / 10))}</span></Pagination>
               </>}
               {inventory.data && !isMachineTypesView && visibleMachines.length > 0 && <>
                 <p className={styles.adminTableHint}>Vuốt ngang để xem đầy đủ cột.</p>
@@ -276,14 +274,9 @@ function MachinesContent() {
                     ]}
                   />
                 </div>
-                <nav className={styles.machinePagination} aria-label="Phân trang máy">
-                  <span>{currentPage * 10 + 1}–{Math.min((currentPage + 1) * 10, visibleMachines.length)} / {visibleMachines.length} máy</span>
-                  <ButtonBar disabled={currentPage === 0} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage - 1) } }, undefined, { shallow: true })}>Trước</ButtonBar>
-                  <span>Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span>
-                  <ButtonBar disabled={(currentPage + 1) * 10 >= visibleMachines.length} onClick={() => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(currentPage + 1) } }, undefined, { shallow: true })}>Sau</ButtonBar>
-                </nav>
+                <Pagination page={currentPage} hasNext={!((currentPage + 1) * 10 >= visibleMachines.length)} isFetching={false} ariaLabel="Phân trang máy" onPageChange={(nextPage) => void router.push({ pathname: router.pathname, query: { ...router.query, page: String(nextPage) } }, undefined, { shallow: true })} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{currentPage * 10 + 1}–{Math.min((currentPage + 1) * 10, visibleMachines.length)} / {visibleMachines.length} máy</span><span>Trang {currentPage + 1}/{Math.max(1, Math.ceil(visibleMachines.length / 10))}</span></Pagination>
               </>}
-              </section>
+              </Panel>
             </div>
           </MachineListView>
         )}

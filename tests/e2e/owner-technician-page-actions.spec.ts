@@ -155,6 +155,30 @@ test("location creation submits from the action bar", async ({ page }) => {
   await expect(pageActionBar(page).locator('[data-action-id="location-save"]')).toHaveAttribute("form", "location-create-form");
 });
 
+test("buyback issue placeholder uses the shared labeled field without enabling submission", async ({ page }) => {
+  const id = "f3000000-0000-4000-8000-000000000001";
+  const claims = Buffer.from(JSON.stringify({ roles: ["owner"], sub: id })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
+  await page.goto("/dashboard/buyback/issue");
+
+  await expect(page.getByRole("heading", { name: "Trao đổi về chứng từ thu mua" })).toBeVisible();
+  await expect(page.locator("[data-ui-field]")).toHaveCount(1);
+  await expect(page.getByRole("textbox", { name: "Nội dung cần kiểm tra" })).toBeDisabled();
+  await expect(page.getByText("Các trường nhập và nút thao tác đang khóa. Chưa có thông tin nào được gửi.")).toBeVisible();
+});
+
+test("support menu page uses the shared panel and keeps both destinations", async ({ page }) => {
+  const claims = Buffer.from(JSON.stringify({ roles: ["owner"] })).toString("base64url");
+  await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
+  await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
+  await page.goto("/dashboard/support/menu");
+
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Kiểm tra đồng bộ" })).toHaveAttribute("href", "/dashboard/menu/sync");
+  await expect(page.getByRole("link", { name: "Xem máy của tôi" })).toHaveAttribute("href", "/dashboard/machines");
+});
+
 test("legacy recipe form submits from the action bar", async ({ page }) => {
   const id = "f3000000-0000-4000-8000-000000000001";
   const claims = Buffer.from(JSON.stringify({ roles: ["owner"], sub: id })).toString("base64url");
@@ -205,7 +229,7 @@ test("operator coffee refund approval submits from the footer", async ({ page })
   });
   await page.goto("/admin/coffee-packages");
   await page.getByRole("button", { name: "Hoàn tiền", exact: true }).click();
-  await page.getByRole("button", { name: "Mở khoản hoàn" }).click();
+  await page.getByRole("button", { name: /^Khoản hoàn / }).click();
   await expectFooter(page, "coffee-refund-approve", "coffee-refund-approve-form");
 });
 
@@ -308,18 +332,25 @@ test("owner exports visible invoices and can download the completed job", async 
     return route.fulfill({ json: [] });
   });
   await page.goto("/dashboard/invoices");
-  const button = pageActionBar(page).getByRole("button", { name: "Xuất hóa đơn" });
+  await expect(page.locator("[data-ui-panel]")).toBeVisible();
+  await expect(page.getByLabel("Kỳ hóa đơn")).toHaveAttribute("type", "month");
+  await expect(page.getByLabel("Trạng thái")).toBeVisible();
+  await expect(page.getByLabel("Loại hóa đơn")).toBeVisible();
+  const button = page.getByRole("button", { name: "Xuất danh sách" });
   await expect(button).toBeEnabled();
   await button.click();
   await expect.poll(() => posted).toEqual({ format: "CSV", invoiceIds: [id] });
-  await expect(page.getByRole("button", { name: "Tải file hóa đơn" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tải xuống" })).toBeVisible();
 });
 
 
-test("owner menu lists creation actions in the action bar", async ({ page }) => {
+test("owner menu shows create menu and recipe actions", async ({ page }) => {
   await actionLogin(page, "owner");
-  await page.route("**/api/**", route => route.fulfill({ json: [] }));
+  await page.route("**/api/**", route => new URL(route.request().url()).pathname.endsWith("/recipe-menus/local")
+    ? route.fulfill({ json: { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0, first: true, last: true } })
+    : route.fulfill({ json: [] }));
   await page.goto("/dashboard/menu/adjustments");
-  await expect(pageActionBar(page).locator('[data-action-id="owner-menu-create"]')).toBeVisible();
-  await expectPrimaryPageAction(page, "owner-recipe-create");
+  await expect(page.locator("[data-ui-panel]")).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Tạo menu", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tạo công thức riêng", exact: true })).toBeEnabled();
 });

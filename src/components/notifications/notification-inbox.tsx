@@ -1,10 +1,14 @@
-﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { Fragment, useRef, useState, type ReactNode } from "react";
-import { MoreHorizontal, Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { Panel } from "@/components/panel/panel";
+import { Pagination } from "@/components/pagination/pagination";
+import { TableFilters } from "@/components/table/table-filters";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
 import type { SidebarLogoutProps } from "@/components/sidebar/sidebar";
@@ -98,6 +102,8 @@ function NotificationInboxContent({
     ...getNotificationPresentation(notification),
     recordHref: getNotificationRecordHref(scope, notification),
   }));
+  const currentInboxPage = Math.min(page, Math.max(0, Math.ceil((notifications?.length ?? 0) / 10) - 1));
+  const inboxRows = (notifications ?? []).slice(currentInboxPage * 10, currentInboxPage * 10 + 10);
 
   if (variant === "management") {
     const filtered = (notifications ?? []).filter((item) => (!filters.type || item.typeLabel === filters.type)
@@ -107,30 +113,32 @@ function NotificationInboxContent({
     const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
     const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
     const selected = list.isSuccess && selectedId !== null ? rows.find((item) => item.id === selectedId) ?? rows[0] : undefined;
-    const selectNotification = (notification: { id: string; read: boolean }, focusDetail = false) => {
+    const selectNotification = (notification: { id: string; read: boolean }) => {
       setSelectedId(notification.id);
       if (!notification.read && !markOne.isPending) markOne.mutate(notification.id);
-      if (focusDetail || window.matchMedia("(max-width: 1100px)").matches) requestAnimationFrame(() => { detailRef.current?.focus(); detailRef.current?.scrollIntoView({ behavior: "instant", block: "nearest" }); });
+      if (window.matchMedia("(max-width: 1100px)").matches) requestAnimationFrame(() => { detailRef.current?.focus(); detailRef.current?.scrollIntoView({ behavior: "instant", block: "nearest" }); });
     };
     return <div className={management.screen}>
       <header className={management.heading}>
         <BackButtonHeading back={back} title={title ?? "Thông báo"} titleId="notification-inbox-title" description={description} />
         <ButtonBar disabled={list.isFetching || unreadCount.isFetching} onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}>{list.isFetching || unreadCount.isFetching ? "Đang làm mới…" : messages.REFRESH}</ButtonBar>
       </header>
-      {children ? <div className={management.tabs} role="group" aria-label="Phạm vi thông báo">
+      {children ? <SectionTabList role="group" aria-label="Phạm vi thông báo">
         <button type="button" aria-pressed={section === "notifications"} onClick={() => setSection("notifications")}>Thông báo</button>
         <button type="button" aria-pressed={section === "alerts"} onClick={() => setSection("alerts")}>Cảnh báo máy</button>
-      </div> : null}
-      {section === "notifications" ? <div className={management.workspace} data-detail={Boolean(selected)}><section className={management.feed} aria-labelledby="notification-list-title">
+      </SectionTabList> : null}
+      {section === "notifications" ? <div className={management.workspace} data-detail={Boolean(selected)}><Panel className={management.feed} aria-labelledby="notification-list-title">
         <div className={management.panelHeading}>
           <div><h2 id="notification-list-title">Danh sách thông báo</h2><p aria-live="polite">{unreadCount.isSuccess ? `${unreadCount.data.unreadCount} chưa đọc` : unreadCount.isError ? "Chưa tải được số thông báo chưa đọc" : "Đang tải số thông báo chưa đọc…"}{list.isSuccess ? ` · ${filtered.length} thông báo trong danh sách` : ""}</p></div>
           <button className={management.readAll} disabled={markAll.isPending || markOne.isPending || !unreadCount.isSuccess || unreadCount.data.unreadCount === 0} onClick={() => markAll.mutate()}>{markAll.isPending ? messages.MARKING : messages.MARK_ALL}</button>
         </div>
-        <form className={management.feedFilters} onSubmit={(event) => { event.preventDefault(); setFilters((value) => ({ ...value, search: draft.search.trim() })); setPage(0); setSelectedId(undefined); }}>
-          <label className={management.search}><Search size={18} aria-hidden="true" /><input aria-label="Tìm thông báo" placeholder="Tìm thông báo" value={draft.search} onChange={(event) => setDraft((value) => ({ ...value, search: event.target.value }))} /><button type="submit" aria-label="Tìm kiếm"><Search size={18} aria-hidden="true" /></button></label>
-          <select aria-label="Loại thông báo" value={filters.type} onChange={(event) => { setFilters((value) => ({ ...value, type: event.target.value })); setPage(0); setSelectedId(undefined); }}><option value="">Tất cả loại</option>{Array.from(new Set(notifications?.map((item) => item.typeLabel) ?? [])).map((value) => <option key={value} value={value}>{value}</option>)}</select>
-          <div className={management.readFilters} role="group" aria-label="Trạng thái thông báo">{[{ value: "", label: "Tất cả" }, { value: "unread", label: messages.UNREAD }, { value: "read", label: messages.READ }].map((option) => <button key={option.value} type="button" aria-pressed={filters.read === option.value} onClick={() => { setFilters((value) => ({ ...value, read: option.value })); setPage(0); setSelectedId(undefined); }}>{option.label}</button>)}</div>
-        </form>
+        <TableFilters
+          search={{ ariaLabel: messages.SEARCH_NOTIFICATIONS, placeholder: messages.SEARCH_NOTIFICATIONS_PLACEHOLDER, value: draft.search, onChange: (search) => setDraft((value) => ({ ...value, search })) }}
+          selects={[{ id: "notification-type", ariaLabel: messages.FILTER_NOTIFICATION_TYPE, value: filters.type, options: [{ value: "", label: messages.FILTER_ALL_NOTIFICATION_TYPES }, ...Array.from(new Set(notifications?.map((item) => item.typeLabel) ?? [])).map((value) => ({ value, label: value }))], onChange: (type) => { setFilters((value) => ({ ...value, type })); setPage(0); setSelectedId(undefined); } }]}
+          toggleGroup={{ ariaLabel: messages.FILTER_READ_STATE, value: filters.read, options: [{ value: "", label: messages.FILTER_ALL }, { value: "unread", label: messages.UNREAD }, { value: "read", label: messages.READ }], onChange: (read) => { setFilters((value) => ({ ...value, read })); setPage(0); setSelectedId(undefined); } }}
+          submitLabel="Tìm kiếm"
+          onSubmit={() => { setFilters((value) => ({ ...value, search: draft.search.trim() })); setPage(0); setSelectedId(undefined); }}
+        />
         {unreadCount.isError ? <p className={management.error} role="alert">{messages.COUNT_ERROR} {getApiErrorMessage(unreadCount.error)}</p> : null}
         {markOne.isError || markAll.isError ? <p className={management.error} role="alert">{messages.MARK_ERROR} {getApiErrorMessage(markOne.error ?? markAll.error, "mutation")}</p> : null}
         {markOne.isSuccess || markAll.isSuccess ? <p className={management.feedback} role="status">{markAll.isSuccess ? messages.MARKED_ALL : messages.MARKED_ONE}</p> : null}
@@ -142,15 +150,20 @@ function NotificationInboxContent({
                 <NotificationTypeIcon label={notification.typeLabel} /><span className={management.rowContent}><strong>{notification.title}</strong><span className={management.preview}>{notification.message}</span><time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time></span>
               </button>
               {!notification.read ? <span className={management.unreadDot} role="img" aria-label="Chưa đọc" /> : null}
-              <details className={management.rowMenu} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false; }}>
-                <summary aria-label={`Thao tác thông báo: ${notification.title}`}><MoreHorizontal size={20} aria-hidden="true" /></summary>
-                <div className={management.menuContent}><button type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); selectNotification(notification, true); }}>Xem chi tiết</button></div>
-              </details>
             </article>
           </Fragment>)}
         </div>}
-        {list.isSuccess && filtered.length > 0 ? <nav className={management.pagination} aria-label="Phân trang thông báo"><span className={management.pageSize}>10 thông báo / trang</span><span>Trang {currentPage + 1} / {Math.max(1, Math.ceil(filtered.length / 10))}</span><ButtonBar disabled={currentPage === 0} onClick={() => { setPage(currentPage - 1); setSelectedId(undefined); }}>Trang trước</ButtonBar><ButtonBar disabled={(currentPage + 1) * 10 >= filtered.length} onClick={() => { setPage(currentPage + 1); setSelectedId(undefined); }}>Trang sau</ButtonBar></nav> : null}
-      </section>{selected ? <aside id="notification-detail" ref={detailRef} tabIndex={-1} className={management.detailPane} aria-labelledby="notification-detail-title">
+        {list.isSuccess && filtered.length > 0 ? <Pagination
+          page={currentPage}
+          hasNext={(currentPage + 1) * 10 < filtered.length}
+          ariaLabel={messages.PAGINATE_NOTIFICATIONS}
+          onPageChange={(nextPage) => { setPage(nextPage); setSelectedId(undefined); }}
+          previousLabel={messages.PREVIOUS_PAGE}
+          nextLabel={messages.NEXT_PAGE}
+          totalPages={Math.max(1, Math.ceil(filtered.length / 10))}
+          hideWhenSinglePage={false}
+        ><span className={management.pageSize}>{messages.NOTIFICATIONS_PER_PAGE}</span></Pagination> : null}
+      </Panel>{selected ? <aside id="notification-detail" ref={detailRef} tabIndex={-1} className={management.detailPane} aria-labelledby="notification-detail-title">
         <header><h2 id="notification-detail-title">Chi tiết thông báo</h2><button className={management.closeDetail} aria-label="Đóng chi tiết thông báo" onClick={() => { document.getElementById(`notification-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></button></header>
         <div className={management.detailMeta}><span className={management.readState} data-unread={!selected.read}>{selected.read ? messages.READ : messages.UNREAD}</span><time dateTime={selected.createdAt ?? undefined}>{formatDate(selected.createdAt)}</time></div>
         <h3>{selected.recordHref ? <TextLinkButton href={selected.recordHref}>{selected.title}</TextLinkButton> : selected.title}</h3>
@@ -171,41 +184,25 @@ function NotificationInboxContent({
         className={styles.pageHeading}
       />
 
-      <section className={styles.panel} aria-labelledby="notification-list-title">
+      <Panel className={styles.notificationPanel} aria-labelledby="notification-list-title">
         <h2 id="notification-list-title">{messages.LIST_TITLE}</h2>
-        <div className={styles.toolbar}>
-          <div className={styles.filters} role="group" aria-label={messages.FILTER_LABEL}>
-            <button
-              className={styles.button}
-              aria-pressed={!unreadOnly}
-              onClick={() => setUnreadOnly(false)}
-              type="button"
-            >
-              {messages.FILTER_ALL}
-            </button>
-            <button
-              className={styles.button}
-              aria-pressed={unreadOnly}
-              onClick={() => setUnreadOnly(true)}
-              type="button"
-            >
-              {messages.FILTER_UNREAD}
-            </button>
-          </div>
+        <TableFilters className={styles.toolbar} showSubmit={false} toggleGroup={{
+          ariaLabel: messages.FILTER_LABEL,
+          value: unreadOnly ? "unread" : "all",
+          options: [{ value: "all", label: messages.FILTER_ALL }, { value: "unread", label: messages.FILTER_UNREAD }],
+          onChange: (value) => { setUnreadOnly(value === "unread"); setPage(0); },
+        }}>
           <span className={styles.unreadCount} aria-live="polite">
             {messages.UNREAD_COUNT}: {unreadCount.data?.unreadCount ?? "—"}
           </span>
-          <div className={styles.filters}>
-            <button
-              className={styles.button}
-              disabled={list.isFetching || unreadCount.isFetching}
-              onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}
-              type="button"
-            >
-              {messages.REFRESH}
-            </button>
-          </div>
-        </div>
+          <ButtonBar
+            type="button"
+            disabled={list.isFetching || unreadCount.isFetching}
+            onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}
+          >
+            {messages.REFRESH}
+          </ButtonBar>
+        </TableFilters>
 
         {unreadCount.isError && (
           <p className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
@@ -240,7 +237,7 @@ function NotificationInboxContent({
 
         {list.data?.length ? (
           <div className={styles.notificationList}>
-            {notifications?.map((notification) => (
+            {inboxRows.map((notification) => (
               <article className={[styles.notificationCard, notification.read ? "" : styles.unreadCard].join(" ")} key={notification.id}>
                 <div className={styles.notificationMeta}>
                   <span className={notification.read ? styles.readBadge : styles.unreadBadge}>
@@ -258,7 +255,8 @@ function NotificationInboxContent({
             ))}
           </div>
         ) : null}
-      </section>
+        {list.data?.length ? <Pagination page={currentInboxPage} hasNext={(currentInboxPage + 1) * 10 < list.data.length} ariaLabel={messages.PAGINATE_NOTIFICATIONS} onPageChange={setPage} previousLabel={messages.PREVIOUS_PAGE} nextLabel={messages.NEXT_PAGE} totalPages={Math.max(1, Math.ceil(list.data.length / 10))} hideWhenSinglePage={false}><span>{messages.NOTIFICATIONS_PER_PAGE}</span></Pagination> : null}
+      </Panel>
 
       <PageActions actions={[{ id: "notifications-read-all", label: messages.MARK_ALL, variant: "secondary", pending: markAll.isPending, pendingLabel: messages.MARKING, disabled: unreadCount.isSuccess && unreadCount.data.unreadCount === 0, disabledReason: "Không có thông báo chưa đọc.", onClick: () => markAll.mutate() }]} />
       {children ? <div className={styles.extraContent}>{children}</div> : null}

@@ -16,8 +16,7 @@
 }
 
 .panelHeading,
-.actionRow,
-.pagination {
+.actionRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,22 +55,21 @@
   overflow-wrap: anywhere;
 }
 
-.panel,
 .subpanel,
 .selectedPackage,
 .reviewBox,
 .permissionNotice {
   min-width: 0;
+}
+
+.subpanel:not([data-ui-panel]), .selectedPackage, .reviewBox:not([data-ui-panel]), .permissionNotice {
   padding: 20px;
   border: 1px solid #e7ded8;
   border-radius: 10px;
   background: var(--color-surface);
 }
 
-.panel {
-  display: grid;
-  gap: 16px;
-}
+.panel { min-width: 0; }
 
 .panelHeading {
   flex-wrap: wrap;
@@ -174,6 +172,9 @@
 .reviewBox {
   display: grid;
   gap: 8px;
+}
+
+.selectedPackage, .reviewBox:not([data-ui-panel]) {
   background: #fbf9f8;
 }
 
@@ -293,7 +294,7 @@
   color: #a51e2b;
 }
 
-.reviewBox {
+.reviewBox:not([data-ui-panel]) {
   border-color: #edc9cd;
   background: #fffafa;
 }
@@ -327,7 +328,6 @@
 .managementScreen .field select,
 .managementScreen .field textarea { min-height: 44px; border-color: var(--color-border); border-radius: 8px; font-size: 14px; }
 .managementScreen .actionRow { justify-content: flex-end; flex-wrap: wrap; }
-.managementScreen .pagination { font-size: 13px; }
 .orderCustomer { display: block; font-weight: 600; }
 .orderMeta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; color: var(--color-text-muted); font-size: 12px; }
 .orderQuantity { display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 12px; }
@@ -359,7 +359,6 @@
 .proofList > li[aria-current="true"] { background: var(--color-primary-soft); border-radius: 8px; }
 .invoiceSection { display: grid; min-width: 0; gap: 16px; }
 .invoiceSection h3 { margin: 0; font-size: 16px; }
-.managementScreen .ownerOrderDetail { gap: 18px; }
 .ownerOrderDetail .paymentSection > summary { font-size: 14px; }
 .managementScreen .paymentSection > .tableWrap { margin-top: 12px; }
 .linkedIds { min-width: 0; color: var(--color-text-muted); font-size: 13px; }
@@ -376,7 +375,6 @@
   .managementScreen .orderSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ownerOrderForm .formGrid, .ownerOrderForm .selectedPackage { grid-template-columns: minmax(0, 1fr); }
   .packageTotal { text-align: left; }
-  .managementScreen .panel { padding: 16px; }
   .managementScreen .actionGrid { grid-template-columns: minmax(0, 1fr); }
 }
 

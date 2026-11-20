@@ -2,6 +2,7 @@ import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { CoffeePackageDownloadButton } from "./coffee-package-download-button";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -25,7 +26,7 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
   const latestAttempt = attempts[attempts.length - 1];
 
   return (
-    <section className={styles.panel} aria-labelledby="coffee-package-refund-title">
+    <Panel className={styles.panel} aria-labelledby="coffee-package-refund-title">
       <div className={styles.panelHeading}>
         <div><h2 id="coffee-package-refund-title">Khoản hoàn tiền</h2></div>
         <ButtonBar type="button" onClick={() => void workflow.refundDetail.refetch()}>Làm mới</ButtonBar>
@@ -59,14 +60,14 @@ export function OwnerRefundPanel({ workflow }: { workflow: CoffeePackageWorkflow
             <div className={styles.actionRow}><span className={styles.hint}>Kiểm tra khoản tiền đã nhận trước khi xác nhận.</span><PageActions actions={[{ id: "confirm-refund", label: "Xác nhận đã nhận tiền", variant: "primary", priority: 50, pending: workflow.pending, onClick: () => workflow.run({ type: "CONFIRM_REFUND_RECEIVED", refundId: workflow.selectedRefundId }) }]} /></div>
           ) : null}
           {refund.status === "PAYOUT_RECORDED" ? (
-            <form id="owner-refund-dispute-form" className={styles.subpanel} onSubmit={createDispute}>
+            <form id="owner-refund-dispute-form"  onSubmit={createDispute}><Panel className={styles.subpanel}>
               <h3>Báo khoản hoàn chưa chính xác</h3>
               <label className={styles.field}><span>Nội dung cần Dolores kiểm tra</span><textarea maxLength={2000} value={disputeReason} onFocus={() => setEditingDispute(true)} onChange={(event) => setDisputeReason(event.target.value)} required /></label>
               {editingDispute ? <PageActions actions={[{ id: "submit-refund-dispute", label: "Gửi yêu cầu kiểm tra", variant: "primary", priority: 100, type: "submit", form: "owner-refund-dispute-form", disabled: !disputeReason.trim(), disabledReason: "Nhập nội dung cần kiểm tra.", pending: workflow.pending }]} /> : <ButtonBar type="button" onClick={() => setEditingDispute(true)}>Báo khoản hoàn</ButtonBar>}
-            </form>
+            </Panel></form>
           ) : null}
         </>
       ) : null}
-    </section>
+    </Panel>
   );
 }

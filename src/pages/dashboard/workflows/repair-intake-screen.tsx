@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
 import { PATH_CUSTOMER } from "@/routes/path";
 import repairStyles from "@/components/features/repair-workflow/repair-workflow.module.css";
@@ -70,7 +71,7 @@ export function RepairIntakeForm({
           description={description}
           className={repairStyles.pageHeading}
         />
-        <form id="repair-intake-form" className={repairStyles.formPanel} onSubmit={submit}>
+        <form id="repair-intake-form"  onSubmit={submit}><Panel className={repairStyles.formPanel}>
           <h2>Thông tin yêu cầu</h2>
           {machineQuery.isPending ? <p className={styles.loadingNotice} role="status">{CUSTOMER_MESSAGES.READ_SCREENS.LOADING}</p> : null}
           {machineQuery.isError ? <p className={styles.errorNotice} role="alert">{messages.REPAIR_INTAKE_MACHINES_ERROR}</p> : null}
@@ -125,7 +126,7 @@ export function RepairIntakeForm({
 
             </>
           ) : null}
-        </form>
+        </Panel></form>
         <PageActions actions={[
           { id: "repair-intake-cancel", label: "Hủy", variant: "secondary", onClick: () => { void router.push(PATH_CUSTOMER.SUPPORT); }, ...(machineId || issueDescription || files.length ? { confirm: { title: "Hủy yêu cầu?", description: "Thông tin đã nhập sẽ bị mất.", confirmLabel: "Hủy yêu cầu" } } : {}) },
           { id: "repair-intake-submit", label: messages.REPAIR_INTAKE_SUBMIT, variant: "primary", type: "submit", form: "repair-intake-form", disabled: !machineId || !issueDescription.trim() || issueDescription.trim().length > 4000 || machineQuery.isPending || machineQuery.isError || Boolean(fileError), disabledReason: fileError ?? "Chọn máy và nhập nội dung yêu cầu.", pending: submitMutation.isPending, pendingLabel: messages.REPAIR_INTAKE_SENDING },

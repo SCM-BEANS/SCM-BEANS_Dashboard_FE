@@ -4,12 +4,16 @@ import { useRef, useState } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
+import { Panel } from "@/components/panel/panel";
+import { Pagination } from "@/components/pagination/pagination";
+import { TableFilters } from "@/components/table/table-filters";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { businessToday, calendarPresets, getDefaultOperationalRange, makePresetRange, type CalendarPreset } from "./operational-overview";
 import { DashboardDateRangeSchema } from "@/schema/dashboard.schema";
 import { OfflineViolationReviewDecisionRequestSchema, type OfflineViolationReview, type OfflineViolationReviewDecisionRequest } from "@/schema/offline-violation-reviews.schema";
 import styles from "./machines.module.css";
+import { REPAIR_WORKFLOW_MESSAGES as M } from "@/text/repair-workflow/repair-workflow-messages";
 
 const labels = { OBSERVING: "Đang theo dõi", REVIEW_REQUIRED: "Cần rà soát", REVIEWED: "Đã rà soát", CLEARED: "Đã kết thúc theo dõi" };
 const formatTime = (value: string | null) => value ? `${value.slice(11, 19)} ${value.slice(0, 10).split("-").reverse().join("/")}` : "—";
@@ -56,13 +60,8 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
         <option value="">Chọn kỳ</option>{calendarPresets.map(({ key, label }) => <option value={key} key={key}>{label}</option>)}
       </select>
     </div> : null}
-    <section className={styles.smartIotPanel} aria-label="Rà soát mất kết nối">
-    {selectedId ? <ButtonBar onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}
-    <div className={styles.operationalOverviewPanelHeading}><h2>Rà soát mất kết nối</h2></div>
-    {!selectedId && <><div className={styles.offlineReviewFilters}><label className={styles.reviewFilter}>Trạng thái rà soát<select value={status} onChange={(event) => onFilterChange(event.target.value)}>
-      <option value="">Tất cả</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-    </select></label>
-    </div>
+    <Panel title="Rà soát mất kết nối" aria-label="Rà soát mất kết nối" actions={selectedId ? <ButtonBar type="button" onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}>
+    {!selectedId && <><TableFilters className={styles.offlineReviewFilters} selects={[{ id: "offline-review-status", ariaLabel: "Trạng thái rà soát", label: "Trạng thái rà soát", value: status, options: [{ value: "", label: "Tất cả" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))], onChange: onFilterChange }]} showSubmit={false} />
     {loading ? <p role="status">Đang tải hồ sơ rà soát…</p> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
       <DataTable rows={filteredItems ?? []} rowKey={(row) => row.id} emptyMessage={dateFilter.fromDate || dateFilter.toDate ? "Không có hồ sơ phù hợp trên trang đang xem." : "Chưa có hồ sơ rà soát trong phạm vi đã chọn."} columns={[
@@ -71,13 +70,13 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
         { key: "status", header: "Trạng thái", render: (row) => <span className={styles.offlineReviewStatus} data-status={row.status}>{labels[row.status]}</span> },
       ]} />
-      <div className={styles.offlineReviewPagination}><ButtonBar disabled={page.page === 0 || loading} onClick={() => onPageChange(page.page - 1)}>Trang trước</ButtonBar><span>Trang {page.page + 1}</span><ButtonBar disabled={!page.hasNext || loading} onClick={() => onPageChange(page.page + 1)}>Trang sau</ButtonBar></div>
+      <Pagination page={page.page} hasNext={page.hasNext} isFetching={loading} ariaLabel={M.PAGINATE_OFFLINE_REVIEWS} onPageChange={onPageChange} previousLabel={M.PREVIOUS_PAGE} nextLabel={M.NEXT_PAGE} hideWhenSinglePage={false} />
     </> : null}
     </>}
     {detailLoading ? <p role="status">Đang tải chi tiết rà soát…</p> : null}
     {detailError ? <p className={styles.operationalOverviewErrorText} role="alert">{detailError}</p> : null}
     {detail && !detailLoading ? <OfflineReviewDetail key={detail.id} review={detail} canDecide={canDecide && !detailError} onDecide={onDecide} onClose={() => onSelect(undefined)} /> : null}
-    </section>
+    </Panel>
   </>;
 }
 

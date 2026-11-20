@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { useQuery } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRouter } from "next/router";
@@ -98,7 +100,7 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
         </div>
 
         {view === "list" ? (
-          <section className={`${styles.panel} ${styles.userListPanel}`}>
+          <Panel className={`${styles.panel} ${styles.userListPanel}`}>
             <div className={styles.userSectionHeading}><h2>{T.LIST.PANEL}</h2>{users.data && <span>{users.data.total.toLocaleString("vi-VN")} {search || roleFilter.success || statusFilter.success ? "kết quả" : "tài khoản"}</span>}</div>
             <TableFilters
               search={{
@@ -139,7 +141,7 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
             ) : users.isError ? (
               <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">
                 <p>{getApiErrorMessage(users.error)}</p>
-                <button className={styles.accountSecondaryButton} type="button" onClick={() => void users.refetch()}>{T.COMMON.RETRY}</button>
+                <ButtonBar  type="button" onClick={() => void users.refetch()}>{T.COMMON.RETRY}</ButtonBar>
               </div>
             ) : users.data.items.length === 0 ? (
               <p className={styles.emptyText}>{T.LIST.EMPTY}</p>
@@ -161,17 +163,10 @@ function AdminUsersContent({ detailUserId }: { detailUserId?: string }) {
                     ) },
                   ]}
                 />
-                <div className={styles.accountPagination}>
-                  <span>{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} / {total}</span>
-                  <div>
-                    <button className={styles.accountSecondaryButton} type="button" disabled={page <= 1 || users.isFetching} onClick={() => navigate({ page: String(page - 1) })}>{T.LIST.PREVIOUS}</button>
-                    <span>{T.LIST.PAGE} {page}/{totalPages}</span>
-                    <button className={styles.accountSecondaryButton} type="button" disabled={page >= totalPages || users.isFetching} onClick={() => navigate({ page: String(page + 1) })}>{T.LIST.NEXT}</button>
-                  </div>
-                </div>
+                <Pagination page={page - 1} hasNext={!(page >= totalPages || users.isFetching)} isFetching={users.isFetching} ariaLabel={T.LIST.PAGE} onPageChange={(nextPage) => navigate({ page: String(nextPage + 1) })} previousLabel={T.LIST.PREVIOUS} nextLabel={T.LIST.NEXT} showPage={false} hideWhenSinglePage={false}><span>{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} / {total}</span><span>{T.LIST.PAGE} {page}/{totalPages}</span></Pagination>
               </>
             )}
-          </section>
+          </Panel>
         ) : view === "create" ? (
           <AdminUserCreateView />
         ) : (

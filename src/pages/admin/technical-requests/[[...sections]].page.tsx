@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { Suspense } from "react";
 import { AdminShell, adminStyles } from "@/pages/admin/admin-shell";
@@ -65,7 +66,7 @@ export default function AdminTechnicalRequestsPage({
     <AdminShell>
       <Suspense fallback={
         <div className={adminStyles.pageContent}>
-          <section className={adminStyles.panel} role="status">Đang tải yêu cầu kỹ thuật…</section>
+          <Panel className={adminStyles.panel} role="status">Đang tải yêu cầu kỹ thuật…</Panel>
         </div>
       }>
         <div className={technicalStyles.operatorWorkspace}><TechnicalOperationsScreen path={path} routes={routes} /></div>

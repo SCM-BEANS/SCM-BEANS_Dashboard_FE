@@ -3,6 +3,7 @@ import { coffeePackagesApi } from "@/apis/coffee-packages.api";
 import { useState, type FormEvent } from "react";
 import { ButtonBar } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { Panel } from "@/components/panel/panel";
 import { buildCoffeeOrderReceiptActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -24,7 +25,7 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
   };
 
   return (
-    <section className={`${styles.panel} ${styles.ownerOrderDetail}`} aria-labelledby="coffee-package-order-detail-title">
+    <Panel className={`${styles.panel} ${styles.ownerOrderDetail}`} aria-labelledby="coffee-package-order-detail-title">
       <div className={styles.panelHeading}>
         <div><h2 id="coffee-package-order-detail-title">Đơn {workflow.selectedOrderId.slice(0, 8).toUpperCase()}</h2></div>
         <ButtonBar type="button" onClick={() => void workflow.orderDetail.refetch()}>Làm mới đơn</ButtonBar>
@@ -70,12 +71,12 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
             </div>
           ) : null}
           {order.status === "WAITING_STOCK" ? (
-            <form className={styles.subpanel} onSubmit={cancelOrder}>
+            <form  onSubmit={cancelOrder}><Panel className={styles.subpanel}>
               <h3>Hủy đơn và yêu cầu hoàn tiền</h3>
               <p className={styles.hint}>Gửi yêu cầu hủy đơn để Dolores kiểm tra và xử lý khoản hoàn theo trạng thái thanh toán.</p>
               <label className={styles.field}><span>Lý do hủy</span><textarea maxLength={2000} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} required /></label>
               <ButtonBar type="submit" disabled={!cancelReason.trim() || workflow.pending}>Hủy đơn và yêu cầu hoàn tiền</ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
           {order.status !== "WAITING_STOCK" && !["CANCELLED", "CANCELLATION_REFUND_PENDING", "CANCELLED_REFUNDED", "REJECTED"].includes(order.status) ? (
             <details className={styles.linkedIds}>
@@ -91,6 +92,6 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
           </div>
         </>
       ) : null}
-    </section>
+    </Panel>
   );
 }

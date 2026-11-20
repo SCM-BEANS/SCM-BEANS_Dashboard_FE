@@ -278,7 +278,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .filterButton,
   .taskCard {
     transition: none;
   }

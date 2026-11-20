@@ -10,6 +10,7 @@ import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getCustomerScreenDescriptor } from "./customer-read-descriptor";
 import { OverviewScreen } from "../overview/overview-screen";
 import { ContractsScreen } from "../contracts/contracts-screen";
+import { ContractEndListScreen } from "../contracts/contract-end-list-screen";
 import { MachinesScreen } from "../machines/machines-screen";
 import { CustomerMachineOperationalOverviewScreen } from "../machines/machine-operational-overview-screen";
 import { MenuScreen } from "../menu/menu-screen";
@@ -47,6 +48,9 @@ export function CustomerReadScreen({ sectionPath }: { sectionPath: string }) {
     : "";
 
   if (!sectionPath) return withCustomerActions(<OverviewScreen />, screen.actions);
+  if (sectionPath === "contracts/end" || sectionPath === "contracts/deposit-complete") {
+    return <ContractEndListScreen title={screen.title} back={screen.back} completedOnly={sectionPath === "contracts/deposit-complete"} />;
+  }
   if (sectionPath === "locations") return withCustomerActions(<LocationsScreen />, screen.actions);
   if (sectionPath === "machines/new") return withCustomerActions(<MachineRegistrationScreen />, screen.actions);
   if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {

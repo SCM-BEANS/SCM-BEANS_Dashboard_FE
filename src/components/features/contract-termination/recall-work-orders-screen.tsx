@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
@@ -12,18 +14,19 @@ import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import viewStyles from "./recall-work-orders-screen.module.css";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { buildRecallLegacyReviewActions } from "@/components/action-bar/entity-page-actions";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { createIdempotencyKey } from "@/lib/idempotency-key";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import type { RecallEvidence, RecallEvidenceType, RecallWorkOrderSummary } from "@/schema/termination-workflow.schema";
+import type { RecallEvidence, RecallEvidenceType } from "@/schema/termination-workflow.schema";
 import styles from "../repair-workflow/repair-workflow.module.css";
+import { recallEventLabel } from "./recall-event-label";
 
 type Role = "owner" | "technician" | "operator";
-type Props = { role: Role; queryScopeRole?: "ADMIN" | "MODERATOR"; contractId?: string; workOrderId?: string; onOpen?: (id: string) => void; backHref?: string };
+type Props = { role: Role; queryScopeRole?: "ADMIN" | "MODERATOR"; contractId?: string; workOrderId?: string; onOpen?: (id: string) => void; backHref?: string; embedded?: boolean };
 
 const recallLabels: Record<string, string> = { UNASSIGNED: "Chưa phân công", ASSIGNED: "Đã phân công", SCHEDULED: "Đã lên lịch", PICKUP_IN_PROGRESS: "Đang thu hồi", OWNER_ACK_PENDING: "Chờ chủ sở hữu xác nhận", CUSTODY_VERIFICATION_PENDING: "Chờ xác minh tại kho", RECEIPT_REVIEW_PENDING: "Chờ duyệt nhận kho", RECEIVED_AT_DEPOT: "Đã nhận tại kho", LEGACY_REVIEW_REQUIRED: "Cần rà soát hồ sơ cũ", CANCELLED: "Đã hủy" };
-const eventLabels: Record<string, string> = { CREATED: "Tạo lệnh thu hồi", ASSIGNED: "Phân công nhận máy", PICKUP_STARTED: "Bắt đầu nhận máy", EVIDENCE_UPLOADED: "Bổ sung chứng từ", PICKUP_CONFIRMED: "Xác nhận đã nhận máy", OWNER_HANDOVER_ACKNOWLEDGED: "Khách hàng xác nhận bàn giao", DEPOT_RECEIPT_SUBMITTED: "Gửi biên nhận kho", DEPOT_RECEIPT_APPROVED: "Duyệt tiếp nhận tại kho", DEPOT_RECEIPT_REJECTED: "Từ chối biên nhận kho", LEGACY_REVIEWED: "Rà soát hồ sơ cũ", CANCELLED: "Hủy lệnh thu hồi" };
 function correlationId() { return createIdempotencyKey(); }
 
 function localDateTime(value?: string | null) {
@@ -40,7 +43,7 @@ function evidenceFilename(disposition?: string) {
   return raw.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 180) || "recall-evidence";
 }
 
-export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workOrderId, onOpen, backHref }: Props) {
+export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workOrderId, onOpen, backHref, embedded }: Props) {
   const queryClient = useQueryClient();
   const subject = authScopedQuerySubject(role === "operator" ? queryScopeRole ?? role : role.toUpperCase());
   const currentSubjectId = getAuthenticatedSubjectId();
@@ -180,14 +183,13 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   const refreshButton = <ButtonBar type="button" disabled={list.isFetching || workOrder.isFetching} onClick={() => void refresh()}>Làm mới</ButtonBar>;
 
   if (!id) {
-    const isModerator = queryScopeRole === "MODERATOR";
     const openWorkOrder = onOpen ?? setSelectedId;
 
     return (
-      <div className={styles.pageContent}>
-        <BackButtonHeading title="Thu hồi máy" titleId="recall-list-title" className={styles.pageHeading} back={null} />
-        <section className={styles.panel} aria-labelledby="recall-list-title">
-          <div className={viewStyles.heading}><h2>Danh sách lệnh thu hồi</h2>{refreshButton}</div>
+      <div className={embedded ? undefined : styles.pageContent}>
+        {!embedded && <BackButtonHeading title="Thu hồi máy" titleId="recall-page-title" className={styles.pageHeading} back={null} />}
+        <section className={embedded ? undefined : styles.panel} aria-labelledby="recall-list-title">
+          <div className={viewStyles.heading}><h2 id="recall-list-title">Danh sách lệnh thu hồi</h2>{refreshButton}</div>
           {list.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
           {list.isError ? <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><ButtonBar type="button" onClick={() => void list.refetch()}>Thử lại</ButtonBar></div> : null}
           {list.data?.content.length === 0 && !list.isError ? <p className={styles.notice} role="status">Không có lệnh thu hồi trong phạm vi tài khoản.</p> : null}
@@ -200,9 +202,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
                 return (
                   <div className={viewStyles.identity}>
                     <strong>
-                      {isModerator ? (
-                        <TextActionButton onClick={() => openWorkOrder(item.id)}>{machineLabel}</TextActionButton>
-                      ) : machineLabel}
+                      <TextActionButton onClick={() => openWorkOrder(item.id)}>{machineLabel}</TextActionButton>
                     </strong>
                     <span>Lệnh <TruncatedId value={item.id} /></span>
                   </div>
@@ -212,21 +212,9 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
             { key: "customer", header: "Khách hàng", render: item => item.ownerName || <TruncatedId value={item.ownerId} /> },
             { key: "schedule", header: "Lịch nhận máy", render: item => localDateTime(item.scheduledPickupAt) },
             { key: "status", header: "Trạng thái", render: item => <StatusBadge variant="dot" status={item.status}>{recallLabels[item.status] ?? item.status}</StatusBadge> },
-            ...(isModerator ? [] : [{
-              key: "action",
-              header: "Thao tác",
-              align: "right" as const,
-              render: (item: RecallWorkOrderSummary) => (
-                <ButtonBar rollingLabel type="button" onClick={() => openWorkOrder(item.id)}>Mở chi tiết</ButtonBar>
-              ),
-            }]),
           ]} /> : null}
           {list.data && list.data.totalPages > 1 ? (
-            <nav className={styles.pagination} aria-label="Phân trang lệnh thu hồi">
-              <ButtonBar type="button" disabled={page <= 0 || list.isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Trước</ButtonBar>
-              <span>Trang {list.data.page + 1} / {list.data.totalPages}</span>
-              <ButtonBar type="button" disabled={page + 1 >= list.data.totalPages || list.isFetching} onClick={() => setPage((value) => value + 1)}>Sau</ButtonBar>
-            </nav>
+            <Pagination page={page} hasNext={!(page + 1 >= list.data.totalPages || list.isFetching)} isFetching={list.isFetching} ariaLabel="Phân trang lệnh thu hồi" onPageChange={setPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>Trang {list.data.page + 1} / {list.data.totalPages}</span></Pagination>
           ) : null}
         </section>
       </div>
@@ -234,13 +222,14 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   }
 
   if (!currentWorkOrder && workOrder.isPending) return <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p>;
-  if (workOrder.isError) return <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(workOrder.error)}</p><ButtonBar type="button" onClick={() => void workOrder.refetch()}>Thử lại</ButtonBar></div>;
+  if (workOrder.isError) return <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(workOrder.error)}</p><ButtonBar type="button" onClick={() => void workOrder.refetch()}>Thử lại</ButtonBar>{embedded && <ButtonBar type="button" onClick={() => setSelectedId("")}>Danh sách lệnh</ButtonBar>}</div>;
   if (!currentWorkOrder) return null;
 
   const relevantEvidenceTypes: RecallEvidenceType[] = role === "owner" ? ["OWNER_HANDOVER"] : role === "technician" ? ["PICKUP", "DEPOT_RECEIPT"] : ["PICKUP", "OWNER_HANDOVER", "DEPOT_RECEIPT"];
   const eligibleEvidence = (type: RecallEvidenceType): RecallEvidence[] => evidence.data?.filter((item) => item.evidenceType === type) ?? [];
   const eventBusy = assign.isPending || startPickup.isPending || pickupAttempt.isPending || acknowledgeOwner.isPending || submitDepotReceipt.isPending || reviewDepotReceipt.isPending || createInspectionTicket.isPending || uploadEvidence.isPending;
   const progressIndex = currentWorkOrder.status === "RECEIVED_AT_DEPOT" ? 4 : ["CUSTODY_VERIFICATION_PENDING", "RECEIPT_REVIEW_PENDING"].includes(currentWorkOrder.status) ? 3 : currentWorkOrder.status === "OWNER_ACK_PENDING" ? 2 : currentWorkOrder.status === "PICKUP_IN_PROGRESS" ? 1 : ["CANCELLED", "LEGACY_REVIEW_REQUIRED"].includes(currentWorkOrder.status) ? -1 : 0;
+  const RecallActions = embedded ? PageActionsRenderer : PageActions;
 
   const handleUpload = (event: FormEvent<HTMLFormElement>, type: RecallEvidenceType) => {
     event.preventDefault();
@@ -248,8 +237,11 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
   };
 
   return (
-    <div className={styles.pageContent}>
-      <BackButtonHeading
+    <div className={embedded ? undefined : styles.pageContent}>
+      {embedded ? <div className={viewStyles.heading}>
+        <h2 id="recall-detail-title">Chi tiết thu hồi máy</h2>
+        <ButtonBar type="button" onClick={() => setSelectedId("")}>Danh sách lệnh</ButtonBar>
+      </div> : <BackButtonHeading
         title="Chi tiết thu hồi máy"
         titleId="recall-detail-title"
         className={styles.pageHeading}
@@ -257,8 +249,8 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           label: "Danh sách thu hồi",
           fallbackHref: backHref ?? (role === "owner" ? "/dashboard/contracts" : role === "operator" ? "/admin/contracts" : "/technician/tasks/retrieval"),
         }}
-      />
-      <PageActions actions={[...buildRecallLegacyReviewActions({
+      />}
+      <RecallActions actions={[...buildRecallLegacyReviewActions({
         role: role === "operator" ? "admin" : role,
         workOrder: currentWorkOrder,
         onReview: () => { setLegacyDecision("PICKUP_REQUIRED"); setLegacyReason(""); setTechnicianId(""); setLegacyCorrelation(globalThis.crypto.randomUUID()); setLegacyOpen(true); },
@@ -277,11 +269,11 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
         ] : []),
         ...(role === "operator" && terminationCase.data?.status === "INSPECTION_PENDING" && !terminationCase.data.inspectionTicketId ? [{ id: "recall-create-inspection", label: "Tạo inspection ticket", variant: "primary" as const, priority: 20, disabled: eventBusy, pending: createInspectionTicket.isPending, pendingLabel: "Đang tạo ticket…", onClick: () => createInspectionTicket.mutate() }] : []),
       ]} />
-      <section className={`${styles.panel} ${styles.workOrderProgressPanel}`} aria-label="Tiến độ thu hồi">
+      <Panel className={`${styles.panel} ${styles.workOrderProgressPanel}`} aria-label="Tiến độ thu hồi">
         <div className={viewStyles.heading}><h2>Tiến độ thu hồi</h2><StatusBadge variant="dot" status={currentWorkOrder.status}>{recallLabels[currentWorkOrder.status]}</StatusBadge></div>
         <ol className={styles.workOrderProgress}>{["Phân công", "Nhận máy", "Xác nhận bàn giao", "Tiếp nhận tại kho"].map((label, index) => <li key={label} className={[styles.workOrderProgressStep, index < progressIndex ? styles.workOrderProgressComplete : index === progressIndex ? styles.workOrderProgressCurrent : ""].join(" ")} aria-current={index === progressIndex ? "step" : undefined}><span aria-hidden="true">{index < progressIndex ? "✓" : index + 1}</span><small>{label}</small></li>)}</ol>
-      </section>
-      <section className={styles.panel} aria-labelledby="recall-info-title">
+      </Panel>
+      <Panel className={styles.panel} aria-labelledby="recall-info-title">
         <div className={viewStyles.heading}><h2 id="recall-info-title">Thông tin thu hồi</h2>{refreshButton}</div>
         <dl className={viewStyles.facts}>
           <div><dt>Máy</dt><dd>{currentWorkOrder.machineSerialNumber || <TruncatedId value={currentWorkOrder.machineId} />}</dd></div>
@@ -335,14 +327,14 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
         ) : null}
 
         {role === "technician" && isAssignedTechnician && ["ASSIGNED", "SCHEDULED"].includes(currentWorkOrder.status) ? (
-          <div className={styles.formPanel}>
+          <Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Nhận máy</h2>
             {startPickup.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(startPickup.error)}</p> : null}
-          </div>
+          </Panel>
         ) : null}
 
         {uploadType ? (
-          <form className={styles.formPanel} onSubmit={(event) => handleUpload(event, uploadType)}>
+          <form  onSubmit={(event) => handleUpload(event, uploadType)}><Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Tải evidence riêng tư — {uploadType}</h2>
             <p className={styles.formHint}>Tối đa 20 MB, chỉ PDF/JPEG/PNG. Dolores giữ file riêng tư; giao diện chỉ nhận mã evidence và metadata.</p>
             <label className={styles.formField}>
@@ -351,37 +343,37 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
             </label>
             {uploadEvidence.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(uploadEvidence.error)}</p> : null}
             <ButtonBar type="submit" disabled={!selectedFile || eventBusy}>{uploadEvidence.isPending ? "Đang tải file riêng tư…" : "Tải evidence"}</ButtonBar>
-          </form>
+          </Panel></form>
         ) : null}
 
         {role === "technician" && isAssignedTechnician && currentWorkOrder.status === "PICKUP_IN_PROGRESS" ? (
-          <form id="recall-pickup-form" className={styles.formPanel} onSubmit={(event) => { event.preventDefault(); const evidenceId = selectedEvidence.PICKUP ?? eligibleEvidence("PICKUP").at(-1)?.id; if (evidenceId) pickupAttempt.mutate({ successful: true, evidenceId }); }}>
+          <form id="recall-pickup-form"  onSubmit={(event) => { event.preventDefault(); const evidenceId = selectedEvidence.PICKUP ?? eligibleEvidence("PICKUP").at(-1)?.id; if (evidenceId) pickupAttempt.mutate({ successful: true, evidenceId }); }}><Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Kết quả lần nhận máy</h2>
             <label className={styles.formField}><span>Evidence đã tải lên</span><select value={selectedEvidence.PICKUP ?? ""} onChange={(event) => setSelectedEvidence((current) => ({ ...current, PICKUP: event.target.value }))}><option value="">Chọn evidence PICKUP</option>{eligibleEvidence("PICKUP").map((item) => <option key={item.id} value={item.id}>{item.originalFilename} · {item.id}</option>)}</select></label>
             {pickupAttempt.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(pickupAttempt.error)}</p> : null}
-          </form>
+          </Panel></form>
         ) : null}
 
         {role === "owner" && currentWorkOrder.status === "OWNER_ACK_PENDING" ? (
-          <form id="recall-owner-form" className={styles.formPanel} onSubmit={(event) => { event.preventDefault(); if (conditionNotes.trim() && selectedEvidence.OWNER_HANDOVER) acknowledgeOwner.mutate(); }}>
+          <form id="recall-owner-form"  onSubmit={(event) => { event.preventDefault(); if (conditionNotes.trim() && selectedEvidence.OWNER_HANDOVER) acknowledgeOwner.mutate(); }}><Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Xác nhận bàn giao máy</h2>
             <label className={styles.formField}><span>Tình trạng máy lúc bàn giao</span><textarea required maxLength={2000} value={conditionNotes} onChange={(event) => setConditionNotes(event.target.value)} /></label>
             <label className={styles.formField}><span>Evidence OWNER_HANDOVER</span><select required value={selectedEvidence.OWNER_HANDOVER ?? ""} onChange={(event) => setSelectedEvidence((current) => ({ ...current, OWNER_HANDOVER: event.target.value }))}><option value="">Chọn evidence đã tải lên</option>{eligibleEvidence("OWNER_HANDOVER").map((item) => <option key={item.id} value={item.id}>{item.originalFilename} · {item.id}</option>)}</select></label>
             {acknowledgeOwner.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(acknowledgeOwner.error)}</p> : null}
-          </form>
+          </Panel></form>
         ) : null}
 
         {role === "technician" && isAssignedTechnician && currentWorkOrder.status === "CUSTODY_VERIFICATION_PENDING" ? (
-          <form id="recall-depot-form" className={styles.formPanel} onSubmit={(event) => { event.preventDefault(); if (depotLocation.trim() && selectedEvidence.DEPOT_RECEIPT) submitDepotReceipt.mutate(); }}>
+          <form id="recall-depot-form"  onSubmit={(event) => { event.preventDefault(); if (depotLocation.trim() && selectedEvidence.DEPOT_RECEIPT) submitDepotReceipt.mutate(); }}><Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Gửi xác nhận nhận tại kho</h2>
             <label className={styles.formField}><span>Địa điểm kho</span><input required maxLength={500} value={depotLocation} onChange={(event) => setDepotLocation(event.target.value)} /></label>
             <label className={styles.formField}><span>Evidence DEPOT_RECEIPT</span><select required value={selectedEvidence.DEPOT_RECEIPT ?? ""} onChange={(event) => setSelectedEvidence((current) => ({ ...current, DEPOT_RECEIPT: event.target.value }))}><option value="">Chọn evidence đã tải lên</option>{eligibleEvidence("DEPOT_RECEIPT").map((item) => <option key={item.id} value={item.id}>{item.originalFilename} · {item.id}</option>)}</select></label>
             {submitDepotReceipt.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(submitDepotReceipt.error)}</p> : null}
-          </form>
+          </Panel></form>
         ) : null}
 
         {role === "operator" && currentWorkOrder.status === "RECEIPT_REVIEW_PENDING" ? (
-          <div className={styles.formPanel}>
+          <Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Duyệt nhận máy tại kho</h2>
             {evidence.data?.filter((item) => item.evidenceType === "DEPOT_RECEIPT").map((item) => <div className={styles.detailItem} key={item.id}><strong>{item.originalFilename}</strong><p>{item.contentType} · {item.sizeBytes} bytes · {item.sha256}</p><ButtonBar type="button" disabled={downloadEvidence.isPending} onClick={() => downloadEvidence.mutate(item.id)}>Tải evidence riêng tư</ButtonBar></div>)}
             {downloadEvidence.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(downloadEvidence.error)}</p> : null}
@@ -389,19 +381,19 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
             {reviewDepotReceipt.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(reviewDepotReceipt.error)}</p> : null}
             <div className={styles.technicalRequestActions}>
             </div>
-          </div>
+          </Panel>
         ) : null}
 
         {role === "operator" && terminationCase.data?.status === "INSPECTION_PENDING" && !terminationCase.data.inspectionTicketId ? (
-          <div className={styles.formPanel}>
+          <Panel className={styles.formPanel}>
             <h2 className={styles.sectionTitle}>Kiểm tra máy tại kho</h2>
             <p className={styles.formHint}>Biên nhận kho đã được duyệt. Tạo ticket kiểm tra bắt buộc cho hồ sơ chấm dứt.</p>
             {createInspectionTicket.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(createInspectionTicket.error)}</p> : null}
-          </div>
+          </Panel>
         ) : null}
 
         {terminationCase.data ? (
-          <section className={styles.formPanel} aria-labelledby="termination-status-title">
+          <Panel className={styles.formPanel} aria-labelledby="termination-status-title">
             <h2 className={styles.sectionTitle} id="termination-status-title">Hồ sơ chấm dứt hợp đồng</h2>
             <dl className={styles.detailGrid}>
               <div className={styles.detailItem}><dt>Trạng thái</dt><dd>{terminationCase.data.status}</dd></div>
@@ -411,10 +403,10 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
             </dl>
             {terminationCase.data.inspectionTicketId ? <p className={styles.notice} role="status">Ticket kiểm tra đã được tạo. Hoàn tất kiểm tra, settlement và kết thúc đang chờ Maintenance Ticket evidence upload/read được xác nhận; Contract chưa được hiển thị là đã chấm dứt.</p> : null}
             {terminationCase.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(terminationCase.error)}</p> : null}
-          </section>
+          </Panel>
         ) : null}
 
-        <section className={styles.formPanel} aria-labelledby="recall-evidence-title">
+        <Panel className={styles.formPanel} aria-labelledby="recall-evidence-title">
           <h2 className={styles.sectionTitle} id="recall-evidence-title">Chứng từ bàn giao</h2>
           {evidence.isPending ? <p role="status">Đang tải chứng từ…</p> : null}
           {evidence.isError ? <p role="alert">{getApiErrorMessage(evidence.error)}</p> : null}
@@ -425,18 +417,18 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
             { key: "download", header: "Thao tác", align: "right", render: item => <ButtonBar type="button" disabled={downloadEvidence.isPending} onClick={() => downloadEvidence.mutate(item.id)}>{downloadEvidence.isPending && downloadEvidence.variables === item.id ? "Đang tải…" : "Tải xuống"}</ButtonBar> },
           ]} />}
           {downloadEvidence.isError ? <p role="alert">{getApiErrorMessage(downloadEvidence.error)}</p> : null}
-        </section>
+        </Panel>
 
         <details className={viewStyles.disclosure}>
           <summary>Lịch sử xử lý</summary>
           {events.isPending ? <p className={styles.notice} role="status">Đang tải lịch sử…</p> : null}
           {events.isError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{getApiErrorMessage(events.error)}</p> : null}
           <ol className={viewStyles.events}>
-            {events.data?.content.slice(0, expandedHistoryId === id ? undefined : 5).map((event) => <li key={event.id}><details className={viewStyles.disclosure}><summary className={viewStyles.event}><strong>{eventLabels[event.eventType] || event.eventType.replaceAll("_", " ")}</strong><span>{localDateTime(event.occurredAt)}</span></summary><p>{event.reason || "Không có ghi chú."}</p><p>{event.fromStatus ? `${recallLabels[event.fromStatus] || event.fromStatus} → ` : ""}{event.toStatus ? recallLabels[event.toStatus] || event.toStatus : "—"}</p></details></li>)}
+            {events.data?.content.slice(0, expandedHistoryId === id ? undefined : 5).map((event) => <li key={event.id}><details className={viewStyles.disclosure}><summary className={viewStyles.event}><strong>{recallEventLabel(event.eventType)}</strong><span>{localDateTime(event.occurredAt)}</span></summary><p>{event.reason || "Không có ghi chú."}</p><p>{event.fromStatus ? `${recallLabels[event.fromStatus] || event.fromStatus} → ` : ""}{event.toStatus ? recallLabels[event.toStatus] || event.toStatus : "—"}</p></details></li>)}
           </ol>
           {(events.data?.content.length ?? 0) > 5 ? <ButtonBar onClick={() => setExpandedHistoryId(expandedHistoryId === id ? "" : id)}>{expandedHistoryId === id ? "Thu gọn" : `Xem thêm ${events.data!.content.length - 5} sự kiện`}</ButtonBar> : null}
         </details>
-      </section>
+      </Panel>
     </div>
   );
 }

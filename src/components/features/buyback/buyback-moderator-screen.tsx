@@ -1,3 +1,5 @@
+import { SectionTabList } from "@/components/tabs/section-tab-list";
+import { Panel } from "@/components/panel/panel";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { BuybackRequestDetailScreen } from "./buyback-request-detail-screen";
@@ -81,7 +83,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
         : "Gán Moderator phụ trách";
 
   return (
-    <form className={styles.formPanel} onSubmit={submit} aria-labelledby="buyback-assignment-title">
+    <form  onSubmit={submit} aria-labelledby="buyback-assignment-title"><Panel className={styles.formPanel}>
       <h3 id="buyback-assignment-title" className={styles.sectionTitle}>{actionLabel}</h3>
       <p className={styles.formHint}>
         {assigningInspectionTechnician
@@ -156,7 +158,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
           </ButtonBar>
         </>
       ) : null}
-    </form>
+    </Panel></form>
   );
 }
 
@@ -249,22 +251,22 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
           {workflow.isExternalBuyback && caseData.ownerAccepted === true && ["APPROVED", "COLLECTION_PENDING"].includes(caseData.status) ? <p className={styles.notice} role="status">Khách hàng đã chấp nhận giá {formatBuybackMoney(caseData.acceptedPrice, caseData.currency)}. Hồ sơ đang ở bước điều phối thu máy.</p> : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTED" ? <p className={styles.notice} role="status">Dolores đã xác nhận nhận máy. Có thể tạo khoản thanh toán mua lại.</p> : null}
           {workflow.isExternalBuyback && workflow.canManageExternalPayment && caseData.status === "COLLECTED" ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form  onSubmit={workflow.perform(() => {
               const paymentMethod = workflow.paymentMethod.trim();
               const externalReference = workflow.externalReference.trim();
               const key = workflow.operationKey("create-payment", caseData.id, JSON.stringify({ paymentMethod, externalReference }));
               workflow.createPayment.mutate({ id: caseData.id, paymentMethod, ...(externalReference ? { externalReference } : {}), idempotencyKey: key, correlationId: key });
-            })}>
+            })}><Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Tạo khoản chi thu mua</h3>
               <p className={styles.formHint}>Dolores tự tính số tiền theo giá Owner đã chấp nhận. Không nhập số tiền ở màn hình này.</p>
               <label className={styles.formField}><span>Phương thức thanh toán</span><input required maxLength={64} value={workflow.paymentMethod} onChange={(event) => workflow.setPaymentMethod(event.target.value)} /></label>
               <label className={styles.formField}><span>Mã tham chiếu thanh toán (tùy chọn)</span><input maxLength={256} value={workflow.externalReference} onChange={(event) => workflow.setExternalReference(event.target.value)} /></label>
               <ButtonBar type="submit" disabled={!workflow.paymentMethod.trim() || workflow.createPayment.isPending}>Tạo khoản chi</ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
           {workflow.isExternalBuyback && workflow.createPayment.data?.buybackCaseId === caseData.id ? <p className={styles.notice} role="status">Dolores đã tạo khoản chi {formatBuybackMoney(workflow.createPayment.data.amount, workflow.createPayment.data.currency)}. Mã khoản chi: <span className={styles.codeValue}><TruncatedId value={workflow.createPayment.data.id} /></span></p> : null}
           {workflow.isExternalBuyback && workflow.canManageExternalPayment && canUploadPaymentProof && caseData.status === "PAYMENT_PENDING" ? (
-            <section className={styles.formPanel} aria-label="Tải chứng từ khoản chi thu mua">
+            <Panel className={styles.formPanel} aria-label="Tải chứng từ khoản chi thu mua">
               <h3 className={styles.sectionTitle}>{hasOwnerReportedPaymentNotReceived ? "Cập nhật chứng từ thanh toán" : "Tải chứng từ thanh toán"}</h3>
               <p className={styles.formHint}>
                 {hasOwnerReportedPaymentNotReceived
@@ -282,10 +284,10 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                 <ButtonBar type="submit" disabled={!workflow.paymentId || !workflow.proofFile || workflow.submitProof.isPending || workflow.paymentProofs.isFetching}>Tải chứng từ riêng tư</ButtonBar>
               </form>
               {workflow.proofId ? <p className={styles.notice} role="status">Đã tải chứng từ. Mã chứng từ: <span className={styles.codeValue}><TruncatedId value={workflow.proofId} /></span></p> : null}
-            </section>
+            </Panel>
           ) : null}
           {workflow.canDecideValuation ? (
-            <section className={styles.formPanel} aria-label="Quyết định giá thu mua">
+            <Panel className={styles.formPanel} aria-label="Quyết định giá thu mua">
               <h3 className={styles.sectionTitle}>Duyệt đánh giá Technician</h3>
               <p className={styles.formHint}>Giá kỹ thuật viên đề xuất: {formatBuybackMoney(caseData.proposedPrice, caseData.currency)}.</p>
               <label className={styles.formField}><span>Giá duyệt ({caseData.currency})</span>
@@ -307,10 +309,10 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                   onClick={() => { workflow.decideValuation.reset(); setValuationDecision(false); }}
                 >Không duyệt</ButtonBar>
               </div>
-            </section>
+            </Panel>
           ) : null}
           {caseData.status === "PAYMENT_PENDING" && !workflow.isExternalBuyback ? (
-            <div className={styles.formPanel}>
+            <Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Kiểm tra chứng từ thanh toán</h3>
               <p className={styles.formHint}>Nhập mã chứng từ của hồ sơ; nội dung tệp chỉ được đọc qua endpoint riêng tư.</p>
               <label className={styles.formField}><span>Mã chứng từ</span><input value={workflow.proofId} onChange={(event) => workflow.setProofId(event.target.value)} /></label>
@@ -326,39 +328,39 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                   workflow.reviewProof.mutate({ caseId: caseData.id, proofId: workflow.proofId, approved: false, reason: workflow.proofReviewReason.trim(), idempotencyKey: key, correlationId: key });
                 }}>Từ chối</ButtonBar>
               </div>
-            </div>
+            </Panel>
           ) : null}
           {workflow.isExternalBuyback && workflow.canRequestCollection ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form  onSubmit={workflow.perform(() => {
               const reason = workflow.collectionReason.trim();
               const key = workflow.operationKey("collection-request", caseData.id, reason);
               workflow.requestCollection.mutate({ id: caseData.id, reason, idempotencyKey: key, correlationId: key });
-            })}>
+            })}><Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Điều phối thu máy</h3>
               <p className={styles.formHint}>Owner đã chấp nhận đúng giá Dolores duyệt. Yêu cầu này chuyển hồ sơ sang COLLECTION_PENDING.</p>
               <label className={styles.formField}><span>Lý do / hướng dẫn thu máy</span><textarea required maxLength={2000} value={workflow.collectionReason} onChange={(event) => workflow.setCollectionReason(event.target.value)} /></label>
               <ButtonBar type="submit" disabled={!workflow.collectionReason.trim() || workflow.requestCollection.isPending}>Yêu cầu thu máy</ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
           {caseData.status === "PAID" && !workflow.isExternalBuyback ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form  onSubmit={workflow.perform(() => {
               const key = workflow.operationKey("collection-request", caseData.id);
               workflow.requestCollection.mutate({ id: caseData.id, reason: workflow.collectionReason.trim(), idempotencyKey: key, correlationId: key });
-            })}>
+            })}><Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Yêu cầu thu máy</h3>
               <label className={styles.formField}><span>Lý do / hướng dẫn thu máy</span><textarea required maxLength={2000} value={workflow.collectionReason} onChange={(event) => workflow.setCollectionReason(event.target.value)} /></label>
               <ButtonBar type="submit" disabled={!workflow.collectionReason.trim() || workflow.requestCollection.isPending}>Yêu cầu thu máy</ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
           {workflow.isExternalBuyback && caseData.status === "COLLECTION_PENDING" ? <>
             <p className={styles.notice} role="note">Dolores đang điều phối Technician đến thu máy. Chỉ Technician được gán mới ghi serial, địa điểm và evidence reference.</p>
             {workflow.canConfirmCollection ? (
-              <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+              <form  onSubmit={workflow.perform(() => {
                 if (!collectionFile || workflow.collectionEvidence.isFetching || workflow.collectionEvidence.isError || workflow.detail.isFetching || workflow.confirmCollection.isPending) return;
                 const evidenceReference = collectionFile.id;
                 const key = workflow.operationKey("collection-confirm", caseData.id, evidenceReference);
                 workflow.confirmCollection.mutate({ id: caseData.id, evidenceReference, idempotencyKey: key, correlationId: key });
-              })}>
+              })}><Panel className={styles.formPanel}>
                 <h3 className={styles.sectionTitle}>Xác nhận đã nhận máy</h3>
                 {workflow.collectionEvidence.isFetching ? <p role="status">Đang tải chứng cứ thu máy…</p> : null}
                 {workflow.collectionEvidence.isError ? <BuybackErrorNotice error={workflow.collectionEvidence.error} /> : null}
@@ -367,19 +369,19 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                   download={(signal) => evidenceApi.download("BUYBACK_CASE", caseData.id, collectionFile.id, signal)}
                   onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải chứng cứ thu máy</ProgressDownloadButton> : null}
                 <ButtonBar type="submit" disabled={!collectionFile || workflow.collectionEvidence.isFetching || workflow.collectionEvidence.isError || workflow.detail.isFetching || workflow.confirmCollection.isPending}>Xác nhận đã thu máy</ButtonBar>
-              </form>
+              </Panel></form>
             ) : !caseData.collectionEvidenceRecorded ? <p className={styles.formHint}>Chưa có chứng cứ thu máy.</p>
               : <p className={styles.formHint}>Cần xác minh lại serial đã ghi trên chứng cứ trước khi xác nhận nhận máy.</p>}
           </> : null}
           {workflow.canRegisterMachine ? (
-            <form className={styles.formPanel} onSubmit={workflow.perform(() => {
+            <form  onSubmit={workflow.perform(() => {
               const modelId = workflow.registrationModelId;
               const reason = workflow.registrationReason.trim();
               const region = workflow.registrationRegion.trim();
               const request = { machineType: workflow.registrationMachineType, modelId, ...(region ? { region } : {}), reason };
               const key = workflow.operationKey("machine-register", caseData.id, JSON.stringify(request));
               workflow.registerMachine.mutate({ id: caseData.id, ...request, idempotencyKey: key, correlationId: key });
-            })}>
+            })}><Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Đăng ký máy Dolores</h3>
               <p className={styles.formHint}>Chỉ Moderator phụ trách đăng ký được hồ sơ đã tân trang xong. Chọn model đang hoạt động từ danh mục Dolores.</p>
               {workflow.machineModels.isPending || workflow.machineModels.isFetching ? <p className={styles.notice} role="status">Đang tải danh mục model…</p> : null}
@@ -390,13 +392,13 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
               <label className={styles.formField}><span>Khu vực (tùy chọn)</span><input maxLength={128} value={workflow.registrationRegion} onChange={(event) => workflow.setRegistrationRegion(event.target.value)} /></label>
               <label className={styles.formField}><span>Lý do đăng ký</span><textarea required maxLength={2000} value={workflow.registrationReason} onChange={(event) => workflow.setRegistrationReason(event.target.value)} /></label>
               <ButtonBar type="submit" disabled={!workflow.registrationModelId || !workflow.registrationReason.trim() || workflow.machineModels.isPending || workflow.machineModels.isError || workflow.registerMachine.isPending}>Đăng ký máy</ButtonBar>
-            </form>
+            </Panel></form>
           ) : null}
           {workflow.isResponsibleModerator && workflow.isExternalBuyback && caseData.status === "READY_FOR_REGISTRATION" && !workflow.canRegisterMachine
             ? <p className={styles.notice}>Cần kỹ thuật viên thu máy xác minh lại serial và gửi chứng cứ trước khi đăng ký máy vào kho.</p> : null}
           {operatorRole !== "ADMIN" && workflow.isExternalBuyback && caseData.status === "REGISTERED" && caseData.registeredMachineId ? <p className={styles.notice} role="status">Dolores đã đăng ký máy <span className={styles.codeValue}><TruncatedId value={caseData.registeredMachineId} /></span>.</p> : null}
           {!workflow.isExternalBuyback && caseData.status === "QA_PENDING" ? (
-            <div className={styles.formPanel}>
+            <Panel className={styles.formPanel}>
               <h3 className={styles.sectionTitle}>Kiểm định độc lập</h3>
               <label className={styles.formField}><span>Kết quả</span><select value={workflow.qaPassed ? "true" : "false"} onChange={(event) => workflow.setQaPassed(event.target.value === "true")}><option value="true">Đạt</option><option value="false">Chưa đạt</option></select></label>
               <label className={styles.formField}><span>Lý do</span><textarea required maxLength={2000} value={workflow.qaReason} onChange={(event) => workflow.setQaReason(event.target.value)} /></label>
@@ -404,15 +406,15 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                 const key = workflow.operationKey("qa-decision", caseData.id);
                 workflow.decideQa.mutate({ id: caseData.id, passed: workflow.qaPassed, reason: workflow.qaReason.trim(), idempotencyKey: key, correlationId: key });
               }}>Ghi nhận kiểm định</ButtonBar>
-            </div>
+            </Panel>
           ) : null}
-            <nav className={adminStyles.recordTabs} aria-label="Chi tiết lệnh thu mua">
+            <SectionTabList role="navigation" aria-label="Chi tiết lệnh thu mua">
             <button type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</button>
             <button type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</button>
-          </nav>
+          </SectionTabList>
           <div hidden={recordsTab !== "payment"}>
               {workflow.isExternalBuyback && workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải thông tin chứng từ thanh toán…</p> : null}
-          {workflow.isExternalBuyback && workflow.paymentProofs.isError ? <div className={styles.formPanel}><BuybackErrorNotice error={workflow.paymentProofs.error} /><ButtonBar type="button" onClick={() => void workflow.paymentProofs.refetch()}>Tải lại danh sách chứng từ</ButtonBar></div> : null}
+          {workflow.isExternalBuyback && workflow.paymentProofs.isError ? <Panel className={styles.formPanel}><BuybackErrorNotice error={workflow.paymentProofs.error} /><ButtonBar type="button" onClick={() => void workflow.paymentProofs.refetch()}>Tải lại danh sách chứng từ</ButtonBar></Panel> : null}
           {workflow.isExternalBuyback && workflow.paymentProofs.data ? (
             <section className={adminStyles.paymentPanel} aria-label="Thông tin chứng từ thanh toán thu mua">
               <h3 className={styles.sectionTitle}>Thanh toán thu mua</h3>

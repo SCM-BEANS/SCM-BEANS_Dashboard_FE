@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { billingApi } from "@/apis/billing.api";
@@ -59,7 +60,7 @@ export function PaymentProofForm({
   };
 
   return (
-    <form className={styles.panel} onSubmit={submit}>
+    <form  onSubmit={submit}><Panel className={styles.panel}>
       <h2>{title}</h2>
       <p className={styles.hint}>{description}</p>
       <div className={styles.proofUpload}>
@@ -101,6 +102,6 @@ export function PaymentProofForm({
       <div className={styles.proofUploadFooter}><ButtonBar variant="primary" disabled={mutation.isPending} type="submit">
         {mutation.isPending ? messages.ACTION_SENDING : messages.ACTION_SEND_PROOF}
       </ButtonBar></div>
-    </form>
+    </Panel></form>
   );
 }

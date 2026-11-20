@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import axios from "axios";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,10 +8,15 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { EvidenceList } from "@/components/evidence/evidence-list";
+import { maintenanceTicketStatusLabel } from "@/components/features/maintenance-workflow/maintenance-status-labels";
+import { recallEventLabel } from "@/components/features/contract-termination/recall-event-label";
+import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getBillingWorkflowErrorMessage as getApiErrorMessage } from "@/lib/api-errors";
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
 import type { TerminationCaseStatus } from "@/schema/termination-cases.schema";
 import type { RecallWorkOrderStatus } from "@/schema/recall-work-orders.schema";
+import type { TerminationSettlementPreviewRequest } from "@/schema/termination-workflow.schema";
 import { RefundWorkflowPanel, useRefundDetail } from "@/components/features/billing/refund-workflow-panel";
 import styles from "./termination-workflow-panel.module.css";
 
@@ -96,6 +102,7 @@ function ErrorNotice({ error }: { error: unknown }) {
 }
 
 export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contractStatus }: Props) {
+  const focused = role === "MODERATOR";
   const queryClient = useQueryClient();
   const [selectedRecallId, setSelectedRecallId] = useState("");
   const [technicianId, setTechnicianId] = useState("");
@@ -110,7 +117,6 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   const [settlementDecision, setSettlementDecision] = useState<"NO_DAMAGE" | "DAMAGE" | "PARTIAL_DAMAGE">("NO_DAMAGE");
   const [damageAmount, setDamageAmount] = useState("0");
   const [penaltyAmount, setPenaltyAmount] = useState("0");
-  const [outstandingAmount, setOutstandingAmount] = useState("0");
   const [settlementFiles, setSettlementFiles] = useState<File[]>([]);
   const settlementFileError = evidenceFileError(settlementFiles, { min: 1, max: 1 });
   const settlementAttempts = useRef(new Map<string, { idempotencyKey: string; correlationId: string }>());
@@ -182,7 +188,6 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   const workflowProgress = currentWorkflowStep < 0 ? 0 : Math.min(1, currentWorkflowStep / (terminationSteps.length - 1));
   const parsedDamageAmount = Number(damageAmount);
   const parsedPenaltyAmount = Number(penaltyAmount);
-  const parsedOutstandingAmount = Number(outstandingAmount);
   const settlementRuleError = caseData?.type === "NORMAL" && parsedPenaltyAmount > 0
     ? "Hợp đồng kết thúc theo kỳ hạn không được tính tiền phạt."
     : caseData?.type !== "NORMAL" && caseData?.type !== undefined && parsedPenaltyAmount <= 0
@@ -190,14 +195,11 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
       : settlementDecision === "NO_DAMAGE" && parsedDamageAmount > 0
         ? "Không ghi nhận hư hỏng thì chi phí hư hỏng phải bằng 0."
         : "";
-  const canSubmitSettlement = Boolean(
-    !settlementFileError
-    && damageAmount.trim() !== ""
+  const validSettlementInputs = Boolean(
+    damageAmount.trim() !== ""
     && penaltyAmount.trim() !== ""
-    && outstandingAmount.trim() !== ""
     && Number.isFinite(parsedDamageAmount) && parsedDamageAmount >= 0
     && Number.isFinite(parsedPenaltyAmount) && parsedPenaltyAmount >= 0
-    && Number.isFinite(parsedOutstandingAmount) && parsedOutstandingAmount >= 0
     && !settlementRuleError,
   );
   const refundContext = { ownerId: caseData?.ownerId ?? "", contractId, terminationCaseId: resolvedCaseId, kind: "DEPOSIT" as const };
@@ -259,10 +261,29 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
     mutationFn: () => terminationCasesApi.complete(resolvedCaseId, { correlationId: correlationId("termination-complete") }),
     onSuccess: () => refresh(),
   });
+  const settlementInputs: TerminationSettlementPreviewRequest = {
+    decision: settlementDecision,
+    damageAmount: parsedDamageAmount,
+    penaltyAmount: parsedPenaltyAmount,
+  };
+  const settlementPreview = useMutation({
+    mutationFn: ({ caseId, input }: { caseId: string; input: TerminationSettlementPreviewRequest }) =>
+      terminationCasesApi.previewSettlement(caseId, contractId, input),
+  });
+  const preview = settlementPreview.data;
+  const previewInput = settlementPreview.variables?.input;
+  const previewVersion = validSettlementInputs && preview?.ready && preview.blockers.length === 0
+    && preview.terminationCaseId === resolvedCaseId
+    && previewInput?.decision === settlementInputs.decision
+    && previewInput.damageAmount === settlementInputs.damageAmount
+    && previewInput.penaltyAmount === settlementInputs.penaltyAmount
+    ? preview.previewVersion : undefined;
   const settleCase = useMutation({
     mutationFn: () => {
-      const payload = { decision: settlementDecision, damageAmount: parsedDamageAmount,
-        penaltyAmount: parsedPenaltyAmount, outstandingAmount: parsedOutstandingAmount };
+      if (!previewVersion || settlementFileError || caseData?.status !== "SETTLEMENT_PENDING") {
+        throw new Error("Cần bảng kê quyết toán hợp lệ và chứng từ trước khi xác nhận.");
+      }
+      const payload = { ...settlementInputs, previewVersion };
       const signature = JSON.stringify({ caseId: resolvedCaseId, ...payload, files: settlementFiles.map(({ name, size, lastModified }) => ({ name, size, lastModified })) });
       const attempt = settlementAttempts.current.get(signature) ?? {
         idempotencyKey: correlationId("termination-settlement-idempotency"), correlationId: correlationId("termination-settlement"),
@@ -270,8 +291,14 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
       settlementAttempts.current.set(signature, attempt);
       return terminationCasesApi.settle(resolvedCaseId, { ...payload, ...attempt }, settlementFiles);
     },
-    onSuccess: () => refresh(),
-    onError: () => refresh(),
+    onSuccess: (result) => {
+      queryClient.setQueryData(["dolores", "termination-cases", "id", result.id], result);
+      return refresh();
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error) && [409, 422].includes(error.response?.status ?? 0)) settlementPreview.reset();
+      return refresh();
+    },
   });
   const assignRecall = useMutation({
     mutationFn: () => recallWorkOrdersApi.assign(recallId, {
@@ -311,6 +338,23 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   });
 
   const recallData = recallOrder.data;
+  const recallStatus = recallData?.status ?? selectedRecallSummary?.status;
+  const openRecallByDefault = caseData?.status === "RECOVERY_PENDING"
+    || Boolean(recallStatus && ["UNASSIGNED", "ASSIGNED", "SCHEDULED", "RECEIPT_REVIEW_PENDING", "LEGACY_REVIEW_REQUIRED"].includes(recallStatus));
+  const showInspectionResult = !focused || Boolean(
+    inspectionResolved
+    || inspectionResult.data?.inspectionDecision
+    || inspectionResult.data?.diagnosis
+    || inspectionResult.data?.completedAt
+    || inspectionResult.data?.actualCost != null
+    || (inspectionResult.isError && !(axios.isAxiosError(inspectionResult.error) && inspectionResult.error.response?.status === 404))
+  );
+  const caseDocuments = <>
+    {resolvedCaseId ? <EvidenceList resource="TERMINATION_CASE" parentId={resolvedCaseId} title="Chứng từ chấm dứt hợp đồng" /> : null}
+    {contractId && role !== "OWNER" ? <EvidenceList resource="DEPOSIT" parentId={contractId} title="Chứng từ tiền cọc" /> : null}
+  </>;
+  const RecallSection = focused ? "details" : "div";
+  const EvidenceSection = focused ? "details" : "div";
   const downloadEvidence = async (evidenceId: string, filename: string) => {
     setDownloadError("");
     try {
@@ -327,17 +371,17 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
   };
 
   return (
-    <section className={styles.panel} aria-labelledby="termination-workflow-title">
+    <Panel className={focused ? `${styles.panel} ${styles.focused}` : styles.panel} aria-labelledby="termination-workflow-title">
       <div className={styles.heading}>
         <div>
-          <h2 id="termination-workflow-title">Chấm dứt hợp đồng và thu hồi máy</h2>
-          <p>{mode === "operator"
+          <h2 id="termination-workflow-title">{focused ? "Tiến độ xử lý" : "Chấm dứt hợp đồng và thu hồi máy"}</h2>
+          {!focused && <p>{mode === "operator"
             ? "Theo dõi hồ sơ, điều phối thu hồi và kiểm tra máy theo tiến độ xử lý."
-            : "Theo dõi lịch thu hồi và xác nhận tình trạng máy khi bàn giao cho kỹ thuật viên."}</p>
+            : "Theo dõi lịch thu hồi và xác nhận tình trạng máy khi bàn giao cho kỹ thuật viên."}</p>}
         </div>
         <div className={styles.actions}>
           {caseData ? <span className={styles.status}>{caseStatusLabels[caseData.status]}</span> : null}
-          <ButtonBar type="button" disabled={terminationCase.isFetching || recallOrders.isFetching || recallOrder.isFetching || inspectionTicket.isFetching || refund.isFetching} onClick={() => { void refresh(); if (caseData?.refundId) void refund.refetch(); }}>Làm mới hồ sơ</ButtonBar>
+          <ButtonBar type="button" disabled={terminationCase.isFetching || recallOrders.isFetching || recallOrder.isFetching || inspectionTicket.isFetching || refund.isFetching || settleCase.isPending} onClick={() => { settlementPreview.reset(); void refresh(); if (caseData?.refundId) void refund.refetch(); }}>Làm mới hồ sơ</ButtonBar>
         </div>
       </div>
 
@@ -363,14 +407,15 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
             })}
           </ol> : null}
           <dl className={styles.summary}>
-            <div><dt>Mã hồ sơ</dt><dd>{caseData.id}</dd></div>
+            <div><dt>Mã hồ sơ</dt><dd>{focused ? <TruncatedId value={caseData.id} /> : caseData.id}</dd></div>
             <div><dt>Loại yêu cầu</dt><dd>{caseData.type === "NORMAL" ? "Kết thúc theo kỳ hạn" : caseData.type === "EARLY" ? "Chấm dứt trước hạn" : "Chấm dứt do vi phạm"}</dd></div>
             <div><dt>Lý do</dt><dd>{caseData.reason || "Chưa ghi lý do"}</dd></div>
             <div><dt>Ngày hiệu lực</dt><dd>{caseData.effectiveDate ?? "Chưa xác định"}</dd></div>
             <div><dt>Cập nhật</dt><dd>{formatDateTime(caseData.updatedAt)}</dd></div>
+            {focused && caseData.status === "REJECTED" && caseData.rejectedReason && <div><dt>Lý do từ chối</dt><dd>{caseData.rejectedReason}</dd></div>}
           </dl>
 
-          {mode === "operator" ? (
+          {mode === "operator" && (!focused || caseData.status === "REQUESTED" || caseData.status === "APPROVED" || beginRecovery.isError || rejectCase.isError || completeCase.isError) ? (
             <div className={styles.actions}>
               {caseData.status === "REQUESTED" ? (
                 <>
@@ -412,8 +457,18 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
               {inspectionTicket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(inspectionTicket.error)}</p> : null}
               {inspectionTicket.data ? (
                 <>
-                  <p>Mã phiếu: <code>{inspectionTicket.data.id}</code></p>
-                  <p>Trạng thái: <strong>{inspectionTicket.data.status ?? "Chưa cập nhật"}</strong></p>
+                  {focused ? <>
+                    <dl className={styles.summary}>
+                      <div><dt>Mã phiếu</dt><dd>{inspectionTicket.data.id ? <TruncatedId value={inspectionTicket.data.id} /> : "—"}</dd></div>
+                      <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={inspectionTicket.data.status}>{maintenanceTicketStatusLabel(inspectionTicket.data.status)}</StatusBadge></dd></div>
+                      {inspectionTicket.data.assignedTo && <div><dt>Kỹ thuật viên</dt><dd>{inspectionTicket.data.assignedTo}</dd></div>}
+                    </dl>
+                    {inspectionTicket.data.status === "ASSIGNED" && <p>Chờ kỹ thuật viên bắt đầu kiểm tra.</p>}
+                    {inspectionTicket.data.status === "IN_PROGRESS" && <p>Kỹ thuật viên đang kiểm tra máy.</p>}
+                  </> : <>
+                    <p>Mã phiếu: <code>{inspectionTicket.data.id}</code></p>
+                    <p>Trạng thái: <strong>{inspectionTicket.data.status ?? "Chưa cập nhật"}</strong></p>
+                  </>}
                   {mode === "operator" && inspectionTicket.data.status === "PENDING" ? (
                     <div className={styles.formGrid}>
                       <label>Kỹ thuật viên đã xác minh
@@ -433,7 +488,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
             </div>
           ) : null}
 
-          {role !== "OWNER" && inspectionTicketId ? (
+          {role !== "OWNER" && inspectionTicketId && showInspectionResult ? (
             <div className={styles.step}>
               <h3>Kết quả kiểm tra</h3>
               {inspectionResult.isPending ? <p role="status">Đang tải kết quả kiểm tra…</p> : null}
@@ -461,43 +516,72 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
           {caseData.status === "SETTLEMENT_PENDING" && mode === "operator" ? (
             <div className={styles.step}>
               <h3>Quyết toán chấm dứt hợp đồng</h3>
-              <p>Ghi nhận kết quả kiểm tra và các khoản phải khấu trừ. Gửi quyết toán sẽ tự chuyển hồ sơ sang trạng thái đã duyệt.</p>
+              <p>Nhập chi phí hư hỏng và tiền phạt nếu có, sau đó xem bảng kê trước khi xác nhận quyết toán.</p>
               <div className={styles.formGrid}>
                 <label>Đánh giá tình trạng
-                  <select value={settlementDecision} onChange={(event) => setSettlementDecision(event.target.value as typeof settlementDecision)}>
+                  <select disabled={settleCase.isPending} value={settlementDecision} onChange={(event) => { settlementPreview.reset(); settleCase.reset(); setSettlementDecision(event.target.value as typeof settlementDecision); }}>
                     <option value="NO_DAMAGE">Không ghi nhận hư hỏng</option>
                     <option value="DAMAGE">Có hư hỏng</option>
                     <option value="PARTIAL_DAMAGE">Hư hỏng một phần</option>
                   </select>
                 </label>
                 <label>Chi phí hư hỏng (VND)
-                  <input type="number" min="0" step="1" value={damageAmount} onChange={(event) => setDamageAmount(event.target.value)} />
+                  <input type="number" min="0" step="1" disabled={settleCase.isPending} value={damageAmount} onChange={(event) => { settlementPreview.reset(); settleCase.reset(); setDamageAmount(event.target.value); }} />
                 </label>
                 <label>Tiền phạt (VND)
-                  <input type="number" min="0" step="1" value={penaltyAmount} onChange={(event) => setPenaltyAmount(event.target.value)} />
-                </label>
-                <label>Công nợ còn lại (VND)
-                  <input type="number" min="0" step="1" value={outstandingAmount} onChange={(event) => setOutstandingAmount(event.target.value)} />
-                </label>
-                <label className={styles.fullWidth}>Tệp biên bản kiểm tra / chứng cứ
-                  <input type="file" accept={EVIDENCE_ACCEPT} onChange={(event) => setSettlementFiles(Array.from(event.target.files ?? []))} />
-                  {settlementFiles.map((file) => <span key={file.name}>{file.name}</span>)}
+                  <input type="number" min="0" step="1" disabled={settleCase.isPending} value={penaltyAmount} onChange={(event) => { settlementPreview.reset(); settleCase.reset(); setPenaltyAmount(event.target.value); }} />
                 </label>
               </div>
-              {!inspectionResolved || !handoverReady ? <p className={styles.notice}>Chờ xác nhận biên nhận kho, bàn giao và phiếu kiểm tra đã hoàn tất trước khi quyết toán.</p> : null}
               {settlementRuleError ? <p className={styles.error} role="alert">{settlementRuleError}</p> : null}
-              <p className={styles.notice}>
-                Quy tắc: hợp đồng kết thúc đúng hạn không tính tiền phạt; chấm dứt sớm hoặc do vi phạm cần ghi nhận tiền phạt lớn hơn 0. Không ghi nhận hư hỏng thì chi phí hư hỏng phải bằng 0.
-              </p>
-              {settlementFileError ? <p id="settlement-file-error">{settlementFileError}</p> : null}
-              <ButtonBar type="button" aria-describedby={settlementFileError ? "settlement-file-error" : undefined} disabled={!canSubmitSettlement || !inspectionResolved || !handoverReady || settleCase.isPending} onClick={() => { if (canSubmitSettlement) settleCase.mutate(); }}>
-                {settleCase.isPending ? "Đang gửi quyết toán…" : "Ghi nhận quyết toán"}
+              <ButtonBar type="button" disabled={!validSettlementInputs || settlementPreview.isPending || settleCase.isPending} onClick={() => {
+                settleCase.reset();
+                settlementPreview.mutate({ caseId: resolvedCaseId, input: settlementInputs });
+              }}>
+                {settlementPreview.isPending ? "Đang tính bảng kê…" : preview ? "Tính lại bảng kê" : "Xem trước quyết toán"}
               </ButtonBar>
-              {settleCase.isError ? <ErrorNotice error={settleCase.error} /> : null}
+              {settlementPreview.isError ? <ErrorNotice error={settlementPreview.error} /> : null}
+              {preview && !settlementPreview.isPending && (
+                <>
+                  <h4>Bảng kê quyết toán</h4>
+                  <dl className={styles.summary}>
+                    <div><dt>Công nợ hóa đơn</dt><dd>{formatVnd(preview.invoiceDebtTotal)}</dd></div>
+                    <div><dt>Lượt pha chưa xuất hóa đơn</dt><dd>{formatVnd(preview.unbilledUsageTotal)}</dd></div>
+                    <div><dt>Chi phí hư hỏng</dt><dd>{formatVnd(preview.damageAmount)}</dd></div>
+                    <div><dt>Tiền phạt</dt><dd>{formatVnd(preview.penaltyAmount)}</dd></div>
+                    <div><dt>Tổng nghĩa vụ</dt><dd>{formatVnd(preview.totalLiability)}</dd></div>
+                    <div><dt>Cọc khả dụng</dt><dd>{formatVnd(preview.depositAvailable)}</dd></div>
+                    <div><dt>Cọc dùng để cấn trừ</dt><dd>{formatVnd(preview.depositOffsetAmount)}</dd></div>
+                    <div><dt>Còn phải thu sau cấn trừ</dt><dd>{formatVnd(preview.receivableAmount)}</dd></div>
+                    <div><dt>Cọc còn hoàn</dt><dd>{formatVnd(preview.depositRefundAmount)}</dd></div>
+                  </dl>
+                  {preview.debts.length > 0 && <details className={styles.disclosure}>
+                    <summary>Chi tiết các khoản phải thu</summary>
+                    <ul className={styles.eventList}>{preview.debts.map((line, index) => <li key={index}><span>{line.description || "Khoản phải thu"}</span><strong>{formatVnd(line.amount)}</strong></li>)}</ul>
+                  </details>}
+                  {!previewVersion && <div className={styles.notice} role="status">
+                    <strong>Chưa đủ điều kiện xác nhận quyết toán</strong>
+                    {preview.blockers.length > 0 && <ul>{preview.blockers.map((blocker, index) => <li key={index}>{blocker}</li>)}</ul>}
+                  </div>}
+                </>
+              )}
+              {previewVersion && !settlementPreview.isPending && <>
+                <label>Tệp biên bản kiểm tra / chứng cứ
+                  <input type="file" accept={EVIDENCE_ACCEPT} disabled={settleCase.isPending} onChange={(event) => setSettlementFiles(Array.from(event.target.files ?? []))} />
+                  {settlementFiles.map((file) => <span key={file.name}>{file.name}</span>)}
+                </label>
+                {settlementFileError ? <p id="settlement-file-error">{settlementFileError}</p> : null}
+                <ButtonBar variant="primary" type="button" aria-describedby={settlementFileError ? "settlement-file-error" : undefined} disabled={Boolean(settlementFileError) || settleCase.isPending} onClick={() => settleCase.mutate()}>
+                  {settleCase.isPending ? "Đang gửi quyết toán…" : "Xác nhận quyết toán"}
+                </ButtonBar>
+              </>}
+              {settleCase.isError ? <>
+                <ErrorNotice error={settleCase.error} />
+                {!previewVersion && <p className={styles.notice}>Xem trước lại bảng kê để kiểm tra dữ liệu mới nhất trước khi xác nhận.</p>}
+              </> : null}
             </div>
           ) : null}
 
-            <div className={styles.step}>
+            {(!focused || caseData.settlementId || caseData.refundId || caseData.status === "APPROVED" || caseData.status === "COMPLETED") && <div className={styles.step}>
               <h3>Hoàn tiền cọc</h3>
               {!caseData.settlementId && caseData.status !== "APPROVED" && caseData.status !== "COMPLETED" ? (
                 <p className={styles.notice} role="status">{caseData.status === "REJECTED"
@@ -520,7 +604,7 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
               ) : null}
               {role === "MODERATOR" && caseData.refundId && caseData.refundStatus === "REQUESTED" ? <p className={styles.notice}>Đang chờ khách hàng xác nhận yêu cầu hoàn cọc. Sau đó Admin duyệt, rồi nhân viên vận hành mới gửi chứng từ chuyển khoản.</p> : null}
               </>}
-            </div>
+            </div>}
 
           {caseData.status === "SETTLEMENT_PENDING" && mode === "owner" ? (
             <div className={styles.step} role="status">
@@ -531,31 +615,39 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
         </>
       ) : null}
 
-      {resolvedCaseId ? <EvidenceList resource="TERMINATION_CASE" parentId={resolvedCaseId} title="Chứng từ chấm dứt hợp đồng" /> : null}
-      {contractId && role !== "OWNER" ? <EvidenceList resource="DEPOSIT" parentId={contractId} title="Chứng từ tiền cọc" /> : null}
-
-      <div className={styles.recallSection}>
-        <div className={styles.subheading}>
+      {!focused && caseDocuments}
+      <RecallSection
+        key={focused ? `${resolvedCaseId}:${openRecallByDefault}` : undefined}
+        className={focused ? styles.disclosure : styles.recallSection}
+        open={focused ? openRecallByDefault : undefined}
+      >
+        {focused ? <summary>
+          <span>Thu hồi máy</span>
+          {recallStatus && <span className={styles.disclosureMeta}>{recallStatusLabels[recallStatus]}</span>}
+        </summary> : <div className={styles.subheading}>
           <h3>Lệnh thu hồi máy</h3>
           {recallOrders.data ? <span>{recallOrders.data.totalElements} lệnh</span> : null}
-        </div>
+        </div>}
+        <div className={focused ? styles.disclosureContent : styles.recallContent}>
         {recallOrders.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
         {recallOrders.isError ? <p className={styles.error} role="alert">Không tải được lệnh thu hồi: {getApiErrorMessage(recallOrders.error)}</p> : null}
         {recallOrders.isSuccess && contractRecallOrders.length === 0 ? <p className={styles.notice}>{resolvedCaseId ? "Chưa có lệnh thu hồi cho hồ sơ này." : "Chưa có lệnh thu hồi cho hợp đồng này."}</p> : null}
-        {contractRecallOrders.length ? (
+        {contractRecallOrders.length > (focused ? 1 : 0) ? (
           <label className={styles.orderPicker}>Chọn lệnh
             <select value={recallId} onChange={(event) => { setSelectedRecallId(event.target.value); setOwnerEvidenceId(""); setOwnerConditionNotes(""); setEvidenceFile(null); }}>
               {contractRecallOrders.map((order) => <option key={order.id} value={order.id}>Máy {order.machineId.slice(0, 8).toUpperCase()} · {recallStatusLabels[order.status]}</option>)}
             </select>
           </label>
         ) : null}
+        {focused && recallId && recallOrder.isPending && <p className={styles.notice} role="status">Đang tải chi tiết lệnh thu hồi…</p>}
+        {focused && recallOrder.isError && <p className={styles.error} role="alert">{getApiErrorMessage(recallOrder.error)}</p>}
         {recallData ? (
           <>
             <dl className={styles.summary}>
-              <div><dt>Mã lệnh</dt><dd>{recallData.id}</dd></div>
-              <div><dt>Trạng thái</dt><dd>{recallStatusLabels[recallData.status]}</dd></div>
-              <div><dt>Máy</dt><dd>{recallData.machineId}</dd></div>
-              <div><dt>Kỹ thuật viên</dt><dd>{recallData.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
+              <div><dt>Mã lệnh</dt><dd>{focused ? <TruncatedId value={recallData.id} /> : recallData.id}</dd></div>
+              {!focused && <div><dt>Trạng thái</dt><dd>{recallStatusLabels[recallData.status]}</dd></div>}
+              {!focused && <div><dt>Máy</dt><dd>{recallData.machineId}</dd></div>}
+              <div><dt>Kỹ thuật viên</dt><dd>{focused && recallData.assignedTechnicianId ? technicians.data?.find((profile) => profile.idaasUserId === recallData.assignedTechnicianId)?.fullName || <TruncatedId value={recallData.assignedTechnicianId} /> : recallData.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
               <div><dt>Lịch nhận máy</dt><dd>{formatDateTime(recallData.scheduledPickupAt)}</dd></div>
               <div><dt>Đã nhận tại kho</dt><dd>{formatDateTime(recallData.depotReceivedAt)}</dd></div>
             </dl>
@@ -614,32 +706,40 @@ export function TerminationWorkflowPanel({ mode, role, contractId, caseId, contr
               </div>
             ) : null}
             {recallEvidence.data?.length ? (
-              <div className={styles.step}>
-                <h3>Chứng cứ đã lưu</h3>
+              <EvidenceSection className={focused ? styles.disclosure : styles.step}>
+                {focused ? <summary>Chứng từ thu hồi <span className={styles.disclosureMeta}>{recallEvidence.data.length} tệp</span></summary> : <h3>Chứng cứ đã lưu</h3>}
                 <ul className={styles.evidenceList}>{recallEvidence.data.map((item) => <li key={item.id}>
                   <span>{item.evidenceType === "PICKUP" ? "Nhận máy" : item.evidenceType === "OWNER_HANDOVER" ? "Bàn giao của khách hàng" : "Nhận máy tại kho"} · {item.originalFilename}</span>
                   <ButtonBar type="button" onClick={() => void downloadEvidence(item.id, item.originalFilename)}>Tải tệp</ButtonBar>
                 </li>)}</ul>
-              </div>
+              </EvidenceSection>
             ) : null}
             {downloadError ? <p className={styles.error} role="alert">{downloadError}</p> : null}
             {recallEvents.data?.content.length ? (
-              <div className={styles.step}>
-                <h3>Lịch sử thu hồi</h3>
+              <EvidenceSection className={focused ? styles.disclosure : styles.step}>
+                {focused ? <summary>Lịch sử thu hồi <span className={styles.disclosureMeta}>{recallEvents.data.content.length} sự kiện</span></summary> : <h3>Lịch sử thu hồi</h3>}
                 <ol className={styles.eventList}>{recallEvents.data.content.map((event) => <li key={event.id}>
-                  <strong>{event.eventType.replaceAll("_", " ")}</strong>
+                  <strong>{focused ? recallEventLabel(event.eventType) : event.eventType.replaceAll("_", " ")}</strong>
                   <span>{formatDateTime(event.occurredAt)}</span>
                   {event.reason ? <p>{event.reason}</p> : null}
                 </li>)}</ol>
-              </div>
+              </EvidenceSection>
             ) : null}
             {recallEvents.isError || recallEvidence.isError ? <p className={styles.error} role="alert">Không tải đầy đủ lịch sử hoặc chứng cứ của lệnh thu hồi.</p> : null}
           </>
         ) : null}
-      </div>
+        </div>
+      </RecallSection>
 
-      {mode === "operator" && caseData?.status === "APPROVED" ? <p className={styles.notice}>Hồ sơ đã được duyệt. Hoàn tất sẽ chấm dứt hợp đồng và cập nhật máy về kho.</p> : null}
+      {focused && (resolvedCaseId || contractId) ? (
+        <details className={styles.disclosure}>
+          <summary>Chứng từ hồ sơ và tiền cọc</summary>
+          <div className={styles.disclosureContent}>{caseDocuments}</div>
+        </details>
+      ) : null}
+
+      {!focused && mode === "operator" && caseData?.status === "APPROVED" ? <p className={styles.notice}>Hồ sơ đã được duyệt. Hoàn tất sẽ chấm dứt hợp đồng và cập nhật máy về kho.</p> : null}
       {mode === "operator" && caseData?.status === "COMPLETED" ? <p className={styles.success}>Hợp đồng đã chấm dứt và máy đã được trả về kho.</p> : null}
-    </section>
+    </Panel>
   );
 }

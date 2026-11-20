@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
@@ -10,7 +11,7 @@ import { OperatorPaymentReviewPanel } from "./operator-payment-review-panel";
 export function OperatorOrderDetailPanel({ workflow }: { workflow: CoffeePackageWorkflowController }) {
   const order = workflow.selectedOrder;
   return (
-    <section className={`${styles.panel} ${styles.ownerOrderDetail}`} aria-labelledby="coffee-operator-order-detail-title">
+    <Panel className={`${styles.panel} ${styles.ownerOrderDetail}`} aria-labelledby="coffee-operator-order-detail-title">
       <div className={styles.panelHeading}>
         <div>
           <h2 id="coffee-operator-order-detail-title">Chi tiết đơn</h2>
@@ -45,6 +46,6 @@ export function OperatorOrderDetailPanel({ workflow }: { workflow: CoffeePackage
           </div>
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }

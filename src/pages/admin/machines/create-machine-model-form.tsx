@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { Panel } from "@/components/panel/panel";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { machineModelsApi } from "@/apis/machine-models.api";
@@ -50,16 +52,16 @@ export function MachineSpecificationsFields({ value, onChange }: { value: string
         const next = event.target.value;
         onChange(JSON.stringify({ ...specifications, [key]: typeof item === "number" && next.trim() && Number.isFinite(Number(next)) ? Number(next) : typeof item === "boolean" && ["true", "false"].includes(next) ? next === "true" : next }));
       }} />}
-      <button type="button" onClick={() => onChange(JSON.stringify(Object.fromEntries(entries.filter(([name]) => name !== key))))} aria-label={`Xóa thông số ${key}`}>Xóa dòng</button>
+      <ButtonBar type="button" onClick={() => onChange(JSON.stringify(Object.fromEntries(entries.filter(([name]) => name !== key))))} aria-label={`Xóa thông số ${key}`}>Xóa dòng</ButtonBar>
     </div>)}
     <div className={styles.specificationRow}>
       <label>Tên thông số<input ref={draftInput} value={name} onChange={(event) => setName(event.target.value)} placeholder="Ví dụ: Công suất" /></label>
       <label>Giá trị và đơn vị<input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Ví dụ: 2200 W" /></label>
-      <button type="button" onClick={() => {
+      <ButtonBar type="button" onClick={() => {
         if (!name.trim() || !amount.trim()) { setError("Nhập tên và giá trị trước khi thêm thông số."); return; }
         if (Object.hasOwn(specifications, name.trim())) { setError("Tên thông số đã có. Hãy sửa giá trị ở dòng tương ứng."); return; }
         onChange(JSON.stringify({ ...specifications, [name.trim()]: amount.trim() })); setName(""); setAmount(""); setError("");
-      }}>Thêm thông số</button>
+      }}>Thêm thông số</ButtonBar>
     </div>
     {error && <p role="alert">{error}</p>}
   </section>;
@@ -184,7 +186,7 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
       ]} />
       </div>
       <div className={styles.machineFormLayout}>
-      <form id="machine-model-create-form" className={`${styles.panel} ${styles.contractForm}`} onSubmit={submit}>
+      <form id="machine-model-create-form"  onSubmit={submit}><Panel className={`${styles.panel} ${styles.contractForm}`}>
         <h2>{T.MACHINE_MODELS.CREATE_FORM_TITLE}</h2>
         <div className={styles.operationsGrid}>
           <label>{T.MACHINE_MODELS.MODEL_CODE} *<input required autoComplete="off" value={form.modelCode} onChange={(event) => setField("modelCode", event.target.value)} /></label>
@@ -204,7 +206,7 @@ export function CreateMachineModelForm({ onCancel, onCreated }: CreateMachineMod
           <MachineSpecificationsFields value={form.specifications} onChange={(value) => setField("specifications", value)} />
         </div>
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-      </form>
+      </Panel></form>
       <aside className={`${styles.panel} ${styles.machineFormSummary}`} aria-label="Kiểm tra thông tin mẫu máy">
         <h2>Kiểm tra thông tin</h2>
         <dl className={styles.specificationsList}>

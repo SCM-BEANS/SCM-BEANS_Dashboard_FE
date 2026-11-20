@@ -196,6 +196,7 @@ test("customer workflow screen passes navigation to its specialized repair form"
     "@/components/action-bar/action-bar": { ActionBar: () => null },
     "@/components/action-bar/action-bar-actions": { ActionBarActions: () => null },
     "@/components/navigation/back-button-heading": { BackButtonHeading },
+    "@/components/panel/panel": { Panel: ({ children }) => React.createElement("section", { "data-ui-panel": "true" }, children) },
     "@/text/customer/customer-messages": { CUSTOMER_MESSAGES: customerMessages },
     "./customer-workflow-descriptor": loadCustomerWorkflowDescriptor(),
     "./repair-intake-screen": { RepairIntakeForm },

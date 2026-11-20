@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import { moderatorStyles as styles } from "../moderator-shell";
@@ -35,9 +36,9 @@ export function QueryFeedback({
   return (
     <div className={styles.pendingNotice} role="alert">
       <p>{getApiErrorMessage(query.error)}</p>
-      <button className={styles.retryButton} type="button" onClick={() => void query.refetch()}>
+      <ButtonBar  type="button" onClick={() => void query.refetch()}>
         {messages.RETRY}
-      </button>
+      </ButtonBar>
     </div>
   );
 }

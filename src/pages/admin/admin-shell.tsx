@@ -92,7 +92,7 @@ export function AdminShell({
         <title>{pageTitle} | {ADMIN_MESSAGES.BRAND}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <div className={styles.shell}>
+      <div className={styles.shell} data-ui-dashboard>
         <NotificationRuntime scope="admin" />
         <AdminSidebarMenu loggingOut={loggingOut} onLogout={handleLogout} />
         <div className={styles.workspace}>

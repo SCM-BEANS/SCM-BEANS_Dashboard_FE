@@ -13,7 +13,7 @@ function loadTypescript(relativePath, mocks = {}) {
   });
   const mockModule = { exports: {} };
   const mockedRequire = (id) => Object.prototype.hasOwnProperty.call(mocks, id) ? mocks[id]
-    : id.startsWith('@/schema/') ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
+    : (id.startsWith('@/schema/') || id.startsWith('@/text/')) ? loadTypescript(`src/${id.slice(2)}.ts`, mocks) : (id === "@/lib/evidence-multipart" ? require("./evidence-multipart-helper.cjs") : require(id));
   new Function('require', 'exports', 'module', outputText)(mockedRequire, mockModule.exports, mockModule);
   return mockModule.exports;
 }
@@ -93,7 +93,7 @@ test('shared heartbeat GPS distinguishes missing, valid, stale and incomplete lo
   assert.match(render({ status: 'ONLINE', latitude: 0, longitude: 106.7 }), /0\.000000/);
   assert.match(render({ status: 'ONLINE', latitude: 0, longitude: 106.7 }), /106\.700000/);
   const stale = render({ status: 'OFFLINE', latitude: 10.7, longitude: 106.7 });
-  assert.match(stale, /Tọa độ ghi nhận gần nhất/);
+  assert.match(stale, /Tọa độ gần nhất/);
   assert.doesNotMatch(stale, /Máy đang kết nối nhưng/);
 });
 

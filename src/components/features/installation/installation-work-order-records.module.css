@@ -1,6 +1,7 @@
 .panel {
   display: grid;
   gap: 16px;
+}.panel:not([data-ui-panel]) {
   padding: 20px;
   border: 1px solid var(--border-subtle, #dce3e8);
   border-radius: 16px;
@@ -97,7 +98,7 @@
 }
 
 @media (max-width: 640px) {
-  .panel { padding: 14px; }
+  .panel:not([data-ui-panel]) { padding: 14px; }
   .tabs { display: grid; grid-template-columns: 1fr; border: 0; }
   .tab { border: 1px solid var(--border-subtle, #dce3e8); border-radius: 10px; text-align: left; }
   .activeTab { border-color: var(--color-primary); color: var(--color-primary); }

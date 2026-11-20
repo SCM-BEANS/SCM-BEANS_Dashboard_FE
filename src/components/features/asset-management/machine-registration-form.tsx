@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ZodError } from "zod";
@@ -87,7 +88,7 @@ export function MachineRegistrationForm({
 
   const RegistrationActions = mode === "owner" ? PageActionsRenderer : PageActions;
   return (
-    <section className={[styles.panel, mode === "owner" ? styles.ownerRegistration : ""].join(" ")} aria-labelledby="machine-registration-title">
+    <Panel className={[styles.panel, mode === "owner" ? styles.ownerRegistration : ""].join(" ")} aria-labelledby="machine-registration-title">
       <h2 id="machine-registration-title">Đăng ký máy</h2>
       <p className={styles.description}>
         Máy mới được tạo ở trạng thái Trong kho. {mode === "owner" ? "Máy được đăng ký cho tài khoản đang đăng nhập." : "Chọn một Owner mà hồ sơ Moderator hiện tại được phép xem."}
@@ -141,6 +142,6 @@ export function MachineRegistrationForm({
         { id: "machine-cancel", label: "Hủy", priority: 100, onClick: onCancel, disabled: create.isPending, confirm: serialNumber || region || selectedOwnerId || machineType !== "CONVENTIONAL" ? { title: "Hủy đăng ký máy?", description: "Các thay đổi chưa lưu sẽ bị mất.", confirmLabel: "Hủy đăng ký" } : undefined },
         { id: "machine-register", label: "Đăng ký máy", variant: "primary", priority: 100, type: "submit", form: "machine-registration-form", disabled: create.isPending || blockResubmit || !serialNumber.trim() || !validOwnerId || (mode === "moderator" && (ownerProfiles.isPending || ownerProfiles.isError || !selectedOwnerId)), disabledReason: "Kiểm tra thông tin Owner và trạng thái yêu cầu.", pending: create.isPending, pendingLabel: "Đang đăng ký…" },
       ]} />
-    </section>
+    </Panel>
   );
 }

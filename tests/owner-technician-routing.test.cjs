@@ -31,6 +31,8 @@ const paths = loadModule("src/routes/path.ts");
 const customerMessages = loadModule("src/text/customer/customer-messages.ts").CUSTOMER_MESSAGES;
 const technicianMessages = loadModule("src/text/technician/technician-messages.ts").TECHNICIAN_MESSAGES;
 const actionBar = loadModule("src/components/action-bar/action-bar.tsx", {
+  "./page-actions-registry": loadModule("src/components/action-bar/page-actions-registry.ts"),
+  "./page-actions-renderer": { PageActionsRenderer: () => null },
   "./action-bar.module.css": {
     dock: "actionDock",
     actions: "actionActions",
@@ -78,6 +80,7 @@ const customerWorkflowScreens = loadModule("src/pages/dashboard/workflows/custom
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
   "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+  "@/components/panel/panel": { Panel: ({ children }) => React.createElement("section", { "data-ui-panel": "true" }, children) },
   "@/routes/path": paths,
   "./customer-workflow-descriptor": customerWorkflowDescriptor,
   "./repair-intake-screen": { RepairIntakeForm: () => null },
@@ -99,6 +102,7 @@ const technicianScreen = loadModule("src/pages/technician/technician-screen.tsx"
   "@/components/action-bar/action-bar": actionBar,
   "@/components/action-bar/action-bar-actions": actionBarActions,
   "@/components/navigation/back-button-heading": { BackButtonHeading: () => null },
+  "@/components/panel/panel": { Panel: ({ children }) => React.createElement("section", { "data-ui-panel": "true" }, children) },
   "@/text/technician/technician-messages": { TECHNICIAN_MESSAGES: technicianMessages },
   "./technician-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
 });
@@ -214,8 +218,7 @@ function renderRoleShell(relativePath, token, pathname) {
     effects = [];
     return renderToStaticMarkup(React.createElement(Shell, {
       pageTitle: isTechnician ? "Việc được giao" : "Tổng quan",
-      children: React.createElement("p", null, "Nội dung"),
-    }));
+    }, React.createElement("p", null, "Nội dung")));
   };
 
   render();
@@ -460,7 +463,11 @@ test("Owner Phase 3 routes resolve to unavailable workflows with disabled action
     assert.match(html, /class="buttonBar"/, section);
     assert.match(html, /role="status"/, section);
     assert.doesNotMatch(html, /C-204|S-018|YC-017|MB-017/, section);
-    if (descriptor.fields?.length) assert.match(html, /<fieldset[^>]*disabled/, section);
+    if (descriptor.fields?.length) {
+      assert.match(html, /data-ui-panel="true"/, section);
+      assert.match(html, /<fieldset[^>]*disabled/, section);
+      assert.doesNotMatch(html, /<details/, section);
+    }
     if ((descriptor.actions?.length && !["support", "buyback"].includes(section)) || descriptor.filters?.length) {
       assert.match(html, /<button[^>]*disabled/, section);
     }

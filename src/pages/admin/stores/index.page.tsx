@@ -1,3 +1,4 @@
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRouter } from "next/router";
@@ -339,7 +340,7 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       } : getStoresBackDestination(router.query, storesPath)}
     />
     {(view === "list" || view === "detail") && <PageActionsRenderer actions={actions} />}</div>
-    {view === "create" && <form id="store-create-form" className={styles.panel} onSubmit={submit}>
+    {view === "create" && <form id="store-create-form"  onSubmit={submit}><Panel className={styles.panel}>
       <h2>Thông tin cửa hàng</h2>
       <div className={styles.operationsGrid}>
         <label>{T.STORES.NAME} *<input required maxLength={160} value={form.name} onChange={(event) => setField("name", event.target.value)} /></label>
@@ -353,13 +354,13 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       </div>
       {owners.isError && <p className={styles.operationsNotice} role="alert">{getApiErrorMessage(owners.error)} Cần tải được danh sách khách hàng để tạo cửa hàng.</p>}
       {requestError && !confirmOpen && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
-    </form>}
+    </Panel></form>}
 
-    {view === "edit" && detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-    {view === "edit" && detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
+    {view === "edit" && detail.isPending && <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>}
+    {view === "edit" && detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><ButtonBar type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
     {view === "edit" && ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
     {view === "edit" && detail.data && !ownerMismatch && <div className={styles.storeLayout}>
-      <form id="store-edit-form" className={`${styles.panel} ${styles.storeForm}`} onSubmit={submitUpdate}>
+      <form id="store-edit-form"  onSubmit={submitUpdate}><Panel className={`${styles.panel} ${styles.storeForm}`}>
         <h2>Thông tin cửa hàng</h2>
         <fieldset disabled={update.isPending || blockResubmit}>
           <label className={styles.storeField}>{T.STORES.NAME} *<input required maxLength={160} value={form.name} onChange={(event) => setField("name", event.target.value)} /></label>
@@ -375,25 +376,25 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
         </fieldset>
         {requestError && <p className={styles.operationsNotice} role="alert">{requestError}</p>}
         <div className={styles.userInlineActions}><PageActionsRenderer actions={actions} /></div>
-      </form>
+      </Panel></form>
       <aside className={`${styles.panel} ${styles.storeOwner}`}><h2>Khách hàng phụ trách</h2><strong>{selectedOwner?.fullName ?? <TruncatedId value={detail.data.ownerId} />}</strong><dl><div><dt>Mã cửa hàng</dt><dd><TruncatedId value={detail.data.id} /></dd></div></dl></aside>
     </div>}
 
 
     {view === "detail" && <>
       {!LocationIdSchema.safeParse(locationId).success && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Mã cửa hàng không hợp lệ.</div>}
-      {detail.isPending && <section className={styles.panel} role="status">{T.COMMON.LOADING}</section>}
-      {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><button type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {detail.isPending && <Panel className={styles.panel} role="status">{T.COMMON.LOADING}</Panel>}
+      {detail.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(detail.error)}</p><ButtonBar type="button" onClick={() => void detail.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {ownerMismatch && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert">Owner trong liên kết không khớp Owner do Dolores trả về. Không hiển thị hồ sơ để tránh gán nhầm.</div>}
       {detail.data && !ownerMismatch && <>
         <div className={styles.storeLayout}>
-          <section className={`${styles.panel} ${styles.storeInfo}`}><h2>Thông tin cửa hàng</h2>
+          <Panel className={`${styles.panel} ${styles.storeInfo}`}><h2>Thông tin cửa hàng</h2>
             <dl className={styles.storeInfoGrid}>
               <div className={styles.storeFullRow}><dt>Địa chỉ</dt><dd>{[detail.data.address, detail.data.city].filter(Boolean).join(", ") || "—"}</dd></div>
               <div><dt>Người liên hệ</dt><dd>{detail.data.contactPerson || "—"}</dd></div>
               <div><dt>Số điện thoại</dt><dd>{detail.data.phoneNumber || "—"}</dd></div>
             </dl>
-          </section>
+          </Panel>
           <aside className={`${styles.panel} ${styles.storeOwner}`}><h2>Khách hàng phụ trách</h2><strong>{selectedOwner?.fullName ?? <TruncatedId value={detail.data.ownerId} />}</strong>
             <dl><div><dt>Trạng thái cửa hàng</dt><dd>{detail.data.active == null ? "—" : <span className={styles.userStatus} data-status={detail.data.active ? "ACTIVE" : "INACTIVE"}>{detail.data.active ? T.STORES.ACTIVE : T.STORES.INACTIVE}</span>}</dd></div><div><dt>Mã cửa hàng</dt><dd><TruncatedId value={detail.data.id} /></dd></div></dl>
           </aside>
@@ -407,7 +408,7 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       </>}
     </>}
 
-    {view === "list" && <section className={`${styles.panel} ${styles.userListPanel}`}>
+    {view === "list" && <Panel className={`${styles.panel} ${styles.userListPanel}`}>
       <div className={styles.userSectionHeading}><h2>{T.STORES.LIST_TITLE}</h2>{listing.data && <span>{visibleLocations.length} cửa hàng</span>}</div>
       <TableFilters
         search={{
@@ -435,9 +436,9 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
         onSubmit={submitFilters}
       />
       {listing.isPending && <p role="status">{T.COMMON.LOADING}</p>}
-      {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(listing.error)}</p><button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
+      {listing.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(listing.error)}</p><ButtonBar type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {listing.data && <>
-        {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <button type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</button></div>}
+        {listing.data.failed.length > 0 && <div className={styles.operationsNotice} role="status">{T.STORES.PARTIAL} {listing.data.failed.join(", ")} <ButtonBar type="button" onClick={() => void listing.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
         {visibleLocations.length === 0 ? <p className={styles.emptyText}>{search || initialOwnerId ? T.STORES.NO_MATCH : T.COMMON.EMPTY}</p> : <DataTable
           rows={visibleLocations.slice(currentStorePage * 10, currentStorePage * 10 + 10)}
           rowKey={({ location }) => location.id}
@@ -451,7 +452,7 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
           ]}
         />}
       </>}
-    </section>}
+    </Panel>}
 
     {view === "list" && visibleLocations.length > 0 && <nav className={styles.userInlineActions} aria-label="Phân trang cửa hàng"><ButtonBar disabled={currentStorePage === 0} onClick={() => setStorePage(currentStorePage - 1)}>Trước</ButtonBar><span>Trang {currentStorePage + 1}/{Math.max(1, Math.ceil(visibleLocations.length / 10))}</span><ButtonBar disabled={(currentStorePage + 1) * 10 >= visibleLocations.length} onClick={() => setStorePage(currentStorePage + 1)}>Sau</ButtonBar></nav>}
     {view === "create" && <div className={styles.userInlineActions}><PageActionsRenderer actions={actions} /></div>}

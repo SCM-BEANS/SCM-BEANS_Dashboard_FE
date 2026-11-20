@@ -1,7 +1,9 @@
+import { Panel } from "@/components/panel/panel";
 import { useState } from "react";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { adminStyles } from "@/pages/admin/admin-shell";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextActionButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import type { OwnerCleaningRecord, OwnerCleaningRecordsPage } from "@/schema/owner-analytics.schema";
 import styles from "@/components/machines/machines.module.css";
@@ -35,16 +37,15 @@ export function MachineCleaningHistoryPanel({ data, loading, error, onRetry, onP
   onRetry: () => void; onPageChange: (page: number) => void;
 }) {
   const [selected, setSelected] = useState<OwnerCleaningRecord | null>(null);
-  return <section className={styles.operationalOverviewPanel} aria-labelledby="owner-cleaning-history-title">
+  return <Panel className={styles.operationalOverviewPanel} aria-labelledby="owner-cleaning-history-title">
     <h2 id="owner-cleaning-history-title">Lịch sử vệ sinh</h2>
     {error ? <div className={styles.operationalOverviewError} role="alert"><p>{error}</p><ButtonBar onClick={onRetry}>Thử lại</ButtonBar></div>
       : loading ? <p role="status">Đang tải lịch sử vệ sinh…</p>
         : data ? <>
           <DataTable rows={data.content} rowKey={(row) => row.id} emptyMessage="Chưa có bản ghi vệ sinh trong khoảng đã chọn." columns={[
-            { key: "started", header: "Bắt đầu", render: (row) => <time dateTime={row.startedAt}>{formatOwnerRecordTime(row.startedAt)}</time> },
+            { key: "started", header: "Bắt đầu", render: (row) => <TextActionButton onClick={() => setSelected(row)}><time dateTime={row.startedAt}>{formatOwnerRecordTime(row.startedAt)}</time></TextActionButton> },
             { key: "type", header: "Loại vệ sinh", render: (row) => row.cleaningType === "STARTUP" ? "Đầu ngày" : "Cuối ngày" },
             { key: "status", header: "Kết quả", render: (row) => <span className={adminStyles.machinePlainStatus} data-status={row.status}>{statusLabels[row.status]}</span> },
-            { key: "content", header: "", render: (row) => <ButtonBar rollingLabel onClick={() => setSelected(row)}>Xem chi tiết</ButtonBar> },
 
           ]} />
           <nav className={styles.ownerHistoryPagination} aria-label="Phân trang lịch sử vệ sinh">
@@ -61,5 +62,5 @@ export function MachineCleaningHistoryPanel({ data, loading, error, onRetry, onP
         <div><dt>Ghi chú</dt><dd>{selected.notes || "Chưa có ghi chú."}</dd></div>
       </dl>
     </NotificationDialog>}
-  </section>;
+  </Panel>;
 }

@@ -1,6 +1,8 @@
+import { Pagination } from "@/components/pagination/pagination";
+import { Panel } from "@/components/panel/panel";
 import axios from "axios";
 import { useRouter } from "next/router";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { recipesApi } from "@/apis/recipes.api";
@@ -42,7 +44,7 @@ function menuError(error: unknown) {
   return getRecipeApiErrorMessage(error, "mutation");
 }
 
-export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetrySync, syncing = false, onBusyChange, hideForbidden = false }: { machineId: string; subject: string; onChanged?: () => Promise<unknown>; onRetrySync?: () => void; syncing?: boolean; onBusyChange?: (busy: boolean) => void; hideForbidden?: boolean }) {
+export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetrySync, syncing = false, onBusyChange, forbiddenFallback }: { machineId: string; subject: string; onChanged?: () => Promise<unknown>; onRetrySync?: () => void; syncing?: boolean; onBusyChange?: (busy: boolean) => void; forbiddenFallback?: ReactNode }) {
   const client = useQueryClient();
   const [selectedMenu, setSelectedMenu] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,8 +93,8 @@ export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetryS
       locked.current = false; setBusy(false); onBusyChange?.(false);
     }
   };
-  if (hideForbidden && (isStatus(current.error, 403) || isStatus(menus.error, 403))) return null;
-  return <section className={styles.recipeMenuDetail} aria-label="Menu đang gán cho máy">
+  if (forbiddenFallback !== undefined && (isStatus(current.error, 403) || isStatus(menus.error, 403))) return <>{forbiddenFallback}</>;
+  return <Panel className={styles.recipeMenuDetail} aria-label="Menu đang gán cho máy">
     <div className={styles.panelHeading}><h3>Menu của máy</h3><ButtonBar disabled={busy || current.isFetching} onClick={() => void refresh()}>Kiểm tra menu</ButtonBar></div>
     {current.isPending ? <p role="status">Đang tải menu của máy…</p> : null}
     {current.isError ? <p className={styles.recipeMenuError} role="alert">{menuError(current.error)}</p> : null}
@@ -109,7 +111,7 @@ export function MachineActiveMenuPanel({ machineId, subject, onChanged, onRetryS
     {needsSync && onRetrySync ? <ButtonBar disabled={busy || syncing || uncertain} onClick={onRetrySync}>Thử đồng bộ lại</ButtonBar> : null}
     {error ? <p className={styles.recipeMenuError} role="alert">{error}</p> : null}
     {uncertain ? <p role="status">Chưa xác minh được kết quả. Bấm Kiểm tra menu trước khi thao tác tiếp.</p> : null}
-  </section>;
+  </Panel>;
 }
 
 export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
@@ -149,11 +151,9 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
   const replay = useMutation({ mutationFn: (input: { machineId: string; commandId: string }) => recipesApi.replaySyncCommand(input.machineId, input.commandId), onSuccess: (_result, input) => invalidate(input.machineId), retry: false });
   const busy = menuBusy || sync.isPending || replay.isPending;
   const submitSearch = (event: FormEvent) => { event.preventDefault(); if (busy) return; setQ(search); setMachinePage(0); setSelectedMachine(""); setHistoryPage(0); sync.reset(); replay.reset(); };
-  const pageControls = (page: number, hasNext: boolean, change: (page: number) => void, label: string) => role === "ADMIN" && page === 0 && !hasNext ? null : <nav className={styles.recipeMenuPagination} aria-label={label}>
-    <ButtonBar disabled={busy || page === 0} onClick={() => change(page - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={busy || !hasNext} onClick={() => change(page + 1)}>Trang sau</ButtonBar>
-  </nav>;
+  const pageControls = (page: number, hasNext: boolean, change: (page: number) => void, label: string) => role === "ADMIN" && page === 0 && !hasNext ? null : <Pagination page={page} hasNext={!(busy || !hasNext)} isFetching={busy} ariaLabel={label} onPageChange={(nextPage) => change(nextPage)} previousLabel="Trang trước" nextLabel="Trang sau" showPage={false} hideWhenSinglePage={false}><span>Trang {page + 1}</span></Pagination>;
   const requestSync = () => { replay.reset(); sync.mutate(machineId); };
-  return <section className={styles.recipeMenuPanel} data-recipe-sync>
+  return <Panel className={styles.recipeMenuPanel} data-recipe-sync>
     <div className={styles.adminSyncToolbar}>
     <div className={styles.panelHeading}><div><h2>Đồng bộ công thức với máy</h2></div>
       <ButtonBar disabled={!canRead || current.isFetching || history.isFetching} onClick={() => { void current.refetch(); void history.refetch(); }}>Làm mới</ButtonBar>
@@ -180,7 +180,7 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
     <div className={styles.adminRecipeColumns}>
     {machine ? <MachineActiveMenuPanel key={`${subject}:${machineId}`} machineId={machineId} subject={subject} syncing={sync.isPending || replay.isPending} onBusyChange={setMenuBusy} onRetrySync={canRead && !isStatus(current.error, 403) && !isStatus(current.error, 404) ? () => sync.mutate(machineId) : undefined} /> : null}
     {canRead ?
-      <section className={styles.recipeMenuDetail}><h3>Lần đồng bộ gần nhất</h3>
+      <Panel className={styles.recipeMenuDetail}><h3>Lần đồng bộ gần nhất</h3>
         {current.isPending ? <p role="status">Đang tải trạng thái…</p> : null}
         {current.isError ? <div role={isStatus(current.error, 404) ? "status" : "alert"}><p>{isStatus(current.error, 404) ? "Chưa có trạng thái đồng bộ hoặc máy không còn khả dụng." : getRecipeApiErrorMessage(current.error)}</p>{!isStatus(current.error, 403) ? <ButtonBar onClick={() => void current.refetch()}>Kiểm tra lại</ButtonBar> : null}</div> : null}
         {current.data ? <>
@@ -195,7 +195,7 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
           {current.data.lastError ? <p className={styles.recipeMenuError}>{current.data.lastError}</p> : null}
           {role === "ADMIN" && current.data.commandId && ["FAILED", "EXPIRED"].includes(current.data.state) ? <ButtonBar disabled={busy} onClick={() => { sync.reset(); replay.mutate({ machineId: current.data.machineId, commandId: current.data.commandId! }); }}>Phát lại lệnh lỗi / hết hạn</ButtonBar> : null}
         </> : null}
-      </section> : null}
+      </Panel> : null}
     </div>
     {canRead ? <section className={styles.recipeMenuHistory}><h3>Lịch sử đồng bộ</h3>
         {history.isPending ? <p role="status">Đang tải lịch sử…</p> : null}
@@ -215,5 +215,5 @@ export function RecipeSyncPanel({ role }: { role: "OWNER" | "ADMIN" }) {
           {pageControls(history.data.page, history.data.hasNext, setHistoryPage, "Lịch sử đồng bộ")}
         </> : null}
       </section> : null}
-  </section>;
+  </Panel>;
 }

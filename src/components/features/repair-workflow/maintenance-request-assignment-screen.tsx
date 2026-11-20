@@ -1,3 +1,6 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { FormField } from "@/components/form-field/form-field";
+import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
@@ -304,7 +307,7 @@ export function MaintenanceRequestAssignmentScreen({
           {ticketQuery.isError && (
             <div className={styles.pendingNotice} role="alert">
               <p>{getApiErrorMessage(ticketQuery.error)}</p>
-              <button className={styles.retryButton} type="button" onClick={() => void ticketQuery.refetch()}>{messages.RETRY}</button>
+              <ButtonBar  type="button" onClick={() => void ticketQuery.refetch()}>{messages.RETRY}</ButtonBar>
             </div>
           )}
           {machinesQuery.isError && <p className={styles.pendingNotice} role="alert">{getApiErrorMessage(machinesQuery.error)}</p>}
@@ -315,7 +318,7 @@ export function MaintenanceRequestAssignmentScreen({
           {ticketAssignmentMutation.isSuccess && <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_SUCCESS}</p>}
 
           <div className={styles.assignmentColumns}>
-          <section className={styles.formPanel} aria-labelledby="replacement-assignment-step-title">
+          <Panel className={styles.formPanel} aria-labelledby="replacement-assignment-step-title">
             <h2 className={styles.sectionTitle} id="replacement-assignment-step-title">{messages.TECHNICAL_ASSIGNMENT_MACHINE_STEP}</h2>
             {replacementAlreadyAssigned ? (
               <p className={styles.pendingNotice} role="status">
@@ -323,8 +326,8 @@ export function MaintenanceRequestAssignmentScreen({
               </p>
             ) : replacementMutation.isSuccess ? null : (
               <form className={styles.assignmentForm} onSubmit={submitReplacementAssignment}>
-                <label className={styles.formField} htmlFor="replacement-machine-id">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_MACHINE}</span>
+                <FormField id="replacement-machine-id" label={<> {messages.TECHNICAL_ASSIGNMENT_MACHINE} </>}>
+
                   <select
                     id="replacement-machine-id"
                     disabled={machinesQuery.isPending || machinesQuery.isError || replacementMachines.length === 0 || replacementMutation.isPending}
@@ -342,12 +345,12 @@ export function MaintenanceRequestAssignmentScreen({
                       </option>
                     ))}
                   </select>
-                </label>
+                </FormField>
                 <RepairWorkflowPagination page={machinePage} hasNext={(machinePage + 1) * 10 < replacementMachines.length}
                   isFetching={machinesQuery.isFetching || replacementMutation.isPending} ariaLabel="Phân trang máy thay thế"
                   onPageChange={(page) => { setMachinePage(page); handleReplacementPayloadEdit(); setReplacementMachineId(""); }} />
-                <label className={styles.formField} htmlFor="replacement-start-at">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_START_AT}</span>
+                <FormField id="replacement-start-at" label={<> {messages.TECHNICAL_ASSIGNMENT_START_AT} </>}>
+
                   <input
                     id="replacement-start-at"
                     disabled={replacementMutation.isPending}
@@ -359,9 +362,9 @@ export function MaintenanceRequestAssignmentScreen({
                     type="datetime-local"
                     value={startAt}
                   />
-                </label>
-                <label className={styles.formField} htmlFor="replacement-end-at">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_END_AT}</span>
+                </FormField>
+                <FormField id="replacement-end-at" label={<> {messages.TECHNICAL_ASSIGNMENT_END_AT} </>}>
+
                   <input
                     id="replacement-end-at"
                     disabled={replacementMutation.isPending}
@@ -374,7 +377,7 @@ export function MaintenanceRequestAssignmentScreen({
                     type="datetime-local"
                     value={endAt}
                   />
-                </label>
+                </FormField>
                 {startAt && endAt && Date.parse(endAt) < Date.parse(startAt) && (
                   <p className={styles.pendingNotice} role="alert">{messages.TECHNICAL_ASSIGNMENT_INVALID_WINDOW}</p>
                 )}
@@ -391,30 +394,30 @@ export function MaintenanceRequestAssignmentScreen({
                     value={reason}
                   />
                 </label>
-                <details className={styles.technicalDetails}><summary>Mã đối chiếu</summary>                <label className={styles.formField} htmlFor="replacement-idempotency-key">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_IDEMPOTENCY_KEY}</span>
+                <details className={styles.technicalDetails}><summary>Mã đối chiếu</summary>                <FormField id="replacement-idempotency-key" label={<> {messages.TECHNICAL_ASSIGNMENT_IDEMPOTENCY_KEY} </>}>
+
                   <input id="replacement-idempotency-key" readOnly value={idempotencyKey} />
-                </label>
-                <label className={styles.formField} htmlFor="replacement-correlation-id">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_CORRELATION_ID}</span>
+                </FormField>
+                <FormField id="replacement-correlation-id" label={<> {messages.TECHNICAL_ASSIGNMENT_CORRELATION_ID} </>}>
+
                   <input id="replacement-correlation-id" readOnly value={correlationId} />
-                </label>
+                </FormField>
 </details>
                 {machinesQuery.isSuccess && replacementMachines.length === 0 && (
                   <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_NO_MACHINE}</p>
                 )}
-                <button
-                  className={styles.retryButton}
+                <ButtonBar
+
                   disabled={!repairCase || !replacementMachineId || !startAt || !endAt || !reason.trim() || !idempotencyKey || !correlationId || Date.parse(endAt) < Date.parse(startAt) || replacementMutation.isPending || replacementAlreadyAssigned}
                   type="submit"
                 >
                   {replacementMutation.isPending ? messages.TECHNICAL_ASSIGNMENT_SUBMITTING : messages.TECHNICAL_ASSIGNMENT_MACHINE_SUBMIT}
-                </button>
+                </ButtonBar>
               </form>
             )}
-          </section>
+          </Panel>
 
-          <section className={styles.formPanel} aria-labelledby="ticket-assignment-step-title">
+          <Panel className={styles.formPanel} aria-labelledby="ticket-assignment-step-title">
             <h2 className={styles.sectionTitle} id="ticket-assignment-step-title">{messages.TECHNICAL_ASSIGNMENT_TECHNICIAN_STEP}</h2>
             {!ticketId ? (
               <p className={styles.pendingNotice} role="alert">{messages.TECHNICAL_ASSIGNMENT_NO_TICKET}</p>
@@ -428,8 +431,8 @@ export function MaintenanceRequestAssignmentScreen({
               <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_ALREADY_ASSIGNED}: {ticketQuery.data.assignedTechnicianId}</p>
             ) : (
               <>
-                <label className={styles.formField} htmlFor="maintenance-technician-search">
-                  <span>{messages.TECHNICAL_ASSIGNMENT_SEARCH_TECHNICIANS}</span>
+                <FormField id="maintenance-technician-search" label={<> {messages.TECHNICAL_ASSIGNMENT_SEARCH_TECHNICIANS} </>}>
+
                   <input
                     id="maintenance-technician-search"
                     onChange={(event) => {
@@ -440,13 +443,13 @@ export function MaintenanceRequestAssignmentScreen({
                     type="search"
                     value={technicianSearchInput}
                   />
-                </label>
+                </FormField>
                 {techniciansQuery.isSuccess && eligibleTechnicians.length === 0 && (
                   <p className={styles.pendingNotice} role="status">{messages.TECHNICAL_ASSIGNMENT_NO_ELIGIBLE_TECHNICIANS}</p>
                 )}
                 <form className={styles.assignmentForm} onSubmit={submitTicketAssignment}>
-                  <label className={styles.formField} htmlFor="maintenance-technician-id">
-                    <span>{messages.TECHNICAL_ASSIGNMENT_TECHNICIAN}</span>
+                  <FormField id="maintenance-technician-id" label={<> {messages.TECHNICAL_ASSIGNMENT_TECHNICIAN} </>}>
+
                     <select
                       id="maintenance-technician-id"
                       disabled={!replacementStepComplete || !ticketId || techniciansQuery.isPending || techniciansQuery.isError || eligibleTechnicians.length === 0 || ticketAssignmentMutation.isPending}
@@ -461,14 +464,14 @@ export function MaintenanceRequestAssignmentScreen({
                         </option>
                       ))}
                     </select>
-                  </label>
-                  <button
-                    className={styles.retryButton}
+                  </FormField>
+                  <ButtonBar
+
                     disabled={!ticketId || !replacementStepComplete || !selectedTechnician || ticketAssignmentMutation.isPending}
                     type="submit"
                   >
                     {ticketAssignmentMutation.isPending ? messages.TECHNICAL_ASSIGNMENT_SUBMITTING : messages.TECHNICAL_ASSIGN}
-                  </button>
+                  </ButtonBar>
                 </form>
                 {techniciansQuery.data && (
                   <RepairWorkflowPagination
@@ -484,7 +487,7 @@ export function MaintenanceRequestAssignmentScreen({
                 )}
               </>
             )}
-          </section>
+          </Panel>
           </div>
         </>
       )}
