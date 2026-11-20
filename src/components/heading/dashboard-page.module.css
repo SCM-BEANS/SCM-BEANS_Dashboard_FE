@@ -25,6 +25,22 @@
   display: none;
 }
 
+.desktopBreadcrumb nav a,
+.mobileBreadcrumb a {
+  border-radius: 4px;
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 140ms ease, text-decoration-color 140ms ease;
+}
+
+.desktopBreadcrumb nav a:hover,
+.mobileBreadcrumb a:hover {
+  color: var(--color-primary);
+  text-decoration-color: currentColor;
+}
+
 :where(.page) {
   display: flex;
   flex-direction: column;

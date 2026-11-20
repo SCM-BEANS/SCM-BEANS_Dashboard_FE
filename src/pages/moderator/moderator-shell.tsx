@@ -23,6 +23,7 @@ import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { BackButtonHeadingVisibilityContext } from "@/components/navigation/back-button-heading";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -33,6 +34,7 @@ import { PATH_AUTH, PATH_HOME, PATH_MODERATOR } from "@/routes/path";
 import { MODERATOR_NAVIGATION_LINKS } from "@/routes/routes";
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
 import styles from "./moderator-shell.module.css";
+import { getModeratorBreadcrumb } from "./moderator-breadcrumb";
 
 const NAV_ICONS = {
   Receipt,
@@ -126,7 +128,7 @@ export function ModeratorShell({
   const renderBreadcrumb = () => (
     <AdminBreadcrumb
       rootLabel={MODERATOR_MESSAGES.ROLE}
-      currentLabel={currentSection.LABEL}
+      {...getModeratorBreadcrumb(pathname, currentSection)}
     />
   );
   return (
@@ -185,7 +187,11 @@ export function ModeratorShell({
             </div>
           </div>
           <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
-            <main className={styles.main}>{children}</main>
+            <main className={styles.main}>
+              <BackButtonHeadingVisibilityContext.Provider value={false}>
+                {children}
+              </BackButtonHeadingVisibilityContext.Provider>
+            </main>
           </ActionBarLayout>
         </div>
       </div>

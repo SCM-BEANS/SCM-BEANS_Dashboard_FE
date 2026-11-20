@@ -285,6 +285,7 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
         />
         {isCreateMachine ? (
           <CreateMachineForm
+            modelQueryScope="dolores"
             onCancel={returnToMachineList}
             onCreated={(serialNumber) => {
               void queryClient.invalidateQueries({ queryKey: ["dolores", "machines"] });

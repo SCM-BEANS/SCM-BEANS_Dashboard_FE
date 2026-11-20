@@ -17,9 +17,11 @@ const initialMachineForm: MachineCreateForm = { machineModelId: "", serialNumber
 export function CreateMachineForm({
   onCancel,
   onCreated,
+  modelQueryScope = "admin",
 }: {
   onCancel: () => void;
   onCreated: (serialNumber: string) => void;
+  modelQueryScope?: "admin" | "dolores";
 }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<MachineCreateForm>(initialMachineForm);
@@ -27,7 +29,7 @@ export function CreateMachineForm({
   const [blockResubmit, setBlockResubmit] = useState(false);
   const [pendingAssignment, setPendingAssignment] = useState<MachineAssignment | null>(null);
   const machineModels = useQuery({
-    queryKey: ["admin", "machine-models"],
+    queryKey: [modelQueryScope, "machine-models"],
     queryFn: ({ signal }) => machineModelsApi.list(signal),
   });
   const assignMachine = useMutation({
