@@ -1,7 +1,5 @@
 .pageContent {
   composes: page from "../../heading/dashboard-page.module.css";
-  display: grid;
-  box-sizing: border-box;
   min-width: 0;
   padding-bottom: 40px;
 }
@@ -10,8 +8,8 @@
   composes: heading from "../../heading/dashboard-page.module.css";
   min-width: 0;
 }
-.pageHeading h1 { margin: 0; overflow-wrap: anywhere; }
-.pageHeading p { color: var(--color-text-muted); margin: 10px 0 0; }
+.pageHeading h1 { overflow-wrap: anywhere; }
+.pageHeading p { margin: 0; color: var(--color-text-muted); font-size: 14px; line-height: 1.5; }
 .panel { min-width: 0; padding: 22px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
 .panel h2 { margin: 0 0 20px; font-size: 18px; }
 .panelHeading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }

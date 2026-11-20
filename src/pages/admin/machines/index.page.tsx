@@ -158,7 +158,7 @@ function MachinesContent() {
   return (
     <AdminShell>
       <div className={styles.pageContent}>
-        <div className={styles.summarySectionHeading}>
+        <div className={styles.summaryHeading}>
         <BackButtonHeading
           title={isCreateView
             ? T.MACHINES.CREATE_TITLE

@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { getModeratorBackDestination } from "./moderator-back-destination";
-import { moderatorStyles as styles } from "./moderator-shell";
+import styles from "./moderator-shell.module.css";
 
 export function ModeratorPageHeading({
   title,

@@ -129,10 +129,6 @@ export function CustomerShell({
           }}
         />
         <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
-          </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_CUSTOMER.ROOT}>
               {CUSTOMER_MESSAGES.BRAND}
@@ -154,8 +150,14 @@ export function CustomerShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
+          <div className={styles.breadcrumbArea}>
+            <header className={styles.desktopHeader}>
+              <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
+              <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
+            </header>
+            <div className={styles.mobileBreadcrumb}>
+              {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
+            </div>
           </div>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>
             <main className={styles.main}>{children}</main>

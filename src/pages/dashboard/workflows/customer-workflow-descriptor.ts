@@ -224,7 +224,7 @@ export function getCustomerWorkflowDescriptor(sectionPath: string): CustomerWork
 }
 
 export function getCustomerWorkflowBack(sectionPath: string): BackButtonDestination | null {
-  if (sectionPath === "support" || sectionPath === "maintenance" || sectionPath === "buyback" || sectionPath === "notifications") {
+  if (sectionPath === "support" || sectionPath === "maintenance" || sectionPath === "buyback") {
     return { label: "Tổng quan", fallbackHref: "/dashboard" };
   }
   if (sectionPath.startsWith("maintenance/")) {

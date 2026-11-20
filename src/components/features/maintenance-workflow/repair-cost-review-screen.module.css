@@ -1,13 +1,12 @@
 .pageContent {
   composes: page from "../../heading/dashboard-page.module.css";
-  display: grid;
   min-width: 0;
 }
 .pageHeading {
   composes: heading from "../../heading/dashboard-page.module.css";
   min-width: 0;
 }
-.pageHeading h1 { margin: 0; overflow-wrap: anywhere; }
+.pageHeading h1 { overflow-wrap: anywhere; }
 .detailGrid {
   display: grid;
   min-width: 0;
@@ -56,7 +55,7 @@
 .reviewMain, .reviewSidebar { display: grid; min-width: 0; gap: 18px; }
 .reviewSidebar .detailGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .reviewSidebar .detailGrid > div { padding: 0; border: 0; background: transparent; }
-.pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) { padding-bottom: 32px; font-family: var(--font-sans); }
+.pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) { padding-bottom: 32px; }
 .pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) .panel, .pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) .notice { padding: 22px; border-radius: 12px; }
 .panel > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--color-text-secondary); }
 @media (max-width: 900px) { .reviewLayout { grid-template-columns: minmax(0, 1fr); } .pageContent:is([data-role="admin"], [data-role="moderator"], [data-role="owner"]) { padding-bottom: 24px; } }

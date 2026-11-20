@@ -154,10 +154,6 @@ export function ModeratorShell({
           }}
         />
         <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            {renderBreadcrumb()}
-            <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
-          </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_MODERATOR.ROOT}>
               {MODERATOR_MESSAGES.BRAND}
@@ -179,8 +175,14 @@ export function ModeratorShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {renderBreadcrumb()}
+          <div className={styles.breadcrumbArea}>
+            <header className={styles.desktopHeader}>
+              {renderBreadcrumb()}
+              <NotificationInbox scope="moderator" variant="bell" viewAllHref={PATH_MODERATOR.NOTIFICATIONS} />
+            </header>
+            <div className={styles.mobileBreadcrumb}>
+              {renderBreadcrumb()}
+            </div>
           </div>
           <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
             <main className={styles.main}>{children}</main>

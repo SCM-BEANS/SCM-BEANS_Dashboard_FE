@@ -76,6 +76,14 @@ export function AdminShell({
     );
   }
 
+  const renderBreadcrumb = (className?: string) => (
+    <AdminBreadcrumb
+      className={className}
+      rootLabel={ADMIN_MESSAGES.ROLE}
+      currentLabel={currentSection.LABEL}
+    />
+  );
+
   return (
     <>
       <Head>
@@ -86,13 +94,6 @@ export function AdminShell({
         <NotificationRuntime scope="admin" />
         <AdminSidebarMenu loggingOut={loggingOut} onLogout={handleLogout} />
         <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <AdminBreadcrumb
-              rootLabel={ADMIN_MESSAGES.ROLE}
-              currentLabel={currentSection.LABEL}
-            />
-            <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
-          </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_ADMIN.ROOT}>
               {ADMIN_MESSAGES.BRAND}
@@ -117,6 +118,15 @@ export function AdminShell({
               }}
             />
           </header>
+          <div className={styles.breadcrumbArea}>
+            <header className={styles.desktopHeader}>
+              {renderBreadcrumb(styles.desktopTrail)}
+              <div className={styles.desktopNotifications}>
+                <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
+              </div>
+            </header>
+            {renderBreadcrumb(styles.mobileBreadcrumb)}
+          </div>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>
             <main className={styles.main}>{children}</main>
           </ActionBarLayout>

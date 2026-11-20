@@ -1,6 +1,6 @@
-.pageContent { composes: page from "../../heading/dashboard-page.module.css"; display: flex; flex-direction: column; min-width: 0; padding-bottom: 40px; font-size: 14px; line-height: 1.55; }
+.pageContent { composes: page from "../../heading/dashboard-page.module.css"; min-width: 0; padding-bottom: 40px; font-size: 14px; line-height: 1.55; }
 .pageHeading { composes: heading from "../../heading/dashboard-page.module.css"; min-width: 0; }
-.pageHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.pageHeader { composes: headingWithActions from "../../heading/dashboard-page.module.css"; }
 .detailGrid {
   display: grid;
   min-width: 0;
@@ -58,8 +58,8 @@
 @media (max-width: 600px) { .pageContent { padding-bottom: 80px; } .panel, .notice { padding: 14px; } }
 
 .detailGrid > div { min-width: 0; }
-.pageHeading h1 { margin: 0; overflow-wrap: anywhere; }
-.pageHeading p { color: var(--color-text-muted); font-size: 14px; line-height: 1.55; }
+.pageHeading h1 { overflow-wrap: anywhere; }
+.pageHeading p { margin: 0; color: var(--color-text-muted); font-size: 14px; line-height: 1.5; }
 .code { font-family: inherit; font-size: 13px; }
 .panel, .notice { padding: 22px; }
 .panel textarea, .panel input { width: 100%; }

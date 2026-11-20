@@ -1508,6 +1508,10 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .operatorWorkspace .caseProcess .historyDisclosure > summary::after { content: ""; margin-left: 0; }
 .operatorWorkspace .caseProcess .historyDisclosure > summary { align-items: center; }
 .casePageHeader { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.supportListHeading {
+  composes: headingWithActions from "../../heading/dashboard-page.module.css";
+  gap: 16px;
+}
 
 .adminRepairProgress .workOrderProgressComplete { color: var(--color-primary); }
 .adminRepairProgress .workOrderProgressComplete:not(:last-child)::after { background: var(--color-primary); }
@@ -1599,7 +1603,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 
 .ownerRecipePage[data-recipe-layout] { padding-bottom: 32px; }
 .pageContent[data-recipe-layout] { padding-bottom: 32px; }
-.adminRecipeHeader { composes: heading from "../../heading/dashboard-page.module.css"; display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; }
+.adminRecipeHeader { composes: heading headingWithActions from "../../heading/dashboard-page.module.css"; gap: 12px 24px; }
 .adminRecipeHeader > div { min-width: 0; }
 .adminRecipeHeader h1 { margin: 0; overflow-wrap: anywhere; }
 .adminRecipeHeader p { margin: 6px 0 0; color: var(--color-text-muted); overflow-wrap: anywhere; }

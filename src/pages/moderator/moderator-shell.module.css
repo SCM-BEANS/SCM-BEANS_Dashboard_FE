@@ -16,11 +16,33 @@
 .shell a, .shell button, .shell input, .shell select, .shell textarea { transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 100ms ease; }
 
 .workspace { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
-.desktopHeader { display: flex; height: 72px; flex: 0 0 72px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 32px; background: transparent; color: var(--color-text-muted); font-size: 14px; }
+.breadcrumbArea {
+  flex: none;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+.desktopHeader {
+  composes: desktopBreadcrumb from "../../components/heading/dashboard-page.module.css";
+  height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+:where(.desktopHeader) { display: flex; }
 .headerLink { display: inline-flex; min-height: 48px; align-items: center; padding: 0 16px; border: 1px solid var(--color-border); border-radius: 10px; }
-.main { min-height: 0; flex: 1; overflow: auto; }
+.main { min-height: 0; flex: 1; overflow: auto; scrollbar-gutter: stable; }
 .mobileHeader { display: none; }
-.mobileBreadcrumb { display: none; }
+.mobileBreadcrumb {
+  composes: mobileBreadcrumb from "../../components/heading/dashboard-page.module.css";
+  padding-block-start: 4px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
 
 .pageContent {
   composes: page from "../../components/heading/dashboard-page.module.css";
@@ -39,11 +61,7 @@
 .technicalRequestAssign:focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
 .pageHeading {
   composes: heading from "../../components/heading/dashboard-page.module.css";
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
-.pageHeading h1 { margin: 0; }
 .pageHeading p { margin: 6px 0 0; color: var(--color-text-muted); font-size: 14px; line-height: 1.5; }
 .pendingNotice, .notFoundNotice { padding: 18px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 14px; line-height: 1.6; }
 .pendingNotice > p:first-child { margin-top: 0; }
@@ -144,7 +162,10 @@
 .profilePagination button:disabled { cursor: not-allowed; opacity: .55; }
 .customerListHeading { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .pageContent.customerListPage { padding-bottom: 32px; }
-.customerPageHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.customerPageHeading {
+  composes: headingWithActions from "../../components/heading/dashboard-page.module.css";
+  gap: 16px;
+}
 .customerListHeading h2 { margin: 0; font-size: 20px; }
 .customerListHeading > span { color: var(--color-text-muted); font-size: 13px; }
 .customerListPanel .customerFilters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, 240px) auto; gap: 12px; align-items: end; }
@@ -229,8 +250,6 @@
 .accessLinks a { color: var(--color-primary); }
 
 @media (max-width: 1023px) {
-  .desktopHeader { display: none; }
-  .mobileBreadcrumb { display: block; padding: 4px 16px 0; background: transparent; color: var(--color-text-muted); font-size: 14px; }
   .shell { flex-direction: column; }
   .mobileHeader { display: flex; min-height: 64px; flex: 0 0 64px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: transparent; }
   .mobileBrand { color: var(--color-primary) !important; font-size: 24px; font-weight: 600; }

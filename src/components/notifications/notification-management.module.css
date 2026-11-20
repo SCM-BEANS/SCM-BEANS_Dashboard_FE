@@ -1,7 +1,6 @@
 .screen { composes: page from "../heading/dashboard-page.module.css"; min-width: 0; padding-bottom: 32px; color: var(--color-text); }
-.heading { composes: heading from "../heading/dashboard-page.module.css"; flex-direction: row; }
-.heading, .panelHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.heading h1 { margin: 0; }
+.heading { composes: heading headingWithActions from "../heading/dashboard-page.module.css"; }
+.panelHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .heading p, .panelHeading p { margin: 6px 0 0; color: var(--color-text-muted); font-size: 13px; line-height: 1.5; }
 .heading > button { flex-shrink: 0; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -92,6 +91,6 @@
 .alertDot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: #9a6c26; margin: 0 16px 0 4px; }
 .feed > form { margin-bottom: 0; }
 @media (max-width: 1100px) { .workspace[data-detail="true"] { grid-template-columns: minmax(0, 1fr); } .detailPane { position: static; } }
-@media (max-width: 800px) { .screen { padding-bottom: 20px; } .heading, .panelHeading { flex-wrap: wrap; gap: 10px; } .panel { padding: 16px; } }
+@media (max-width: 800px) { .screen { padding-bottom: 20px; } .panelHeading { flex-wrap: wrap; gap: 10px; } .panel { padding: 16px; } }
 @media (max-width: 600px) { .feedFilters { flex-wrap: wrap; } .search { flex-basis: 100%; } .feedFilters select { flex: 1; } .openNotification { gap: 10px; padding: 12px 10px; } .categoryIcon { flex-basis: 36px; height: 36px; } .pagination > button { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .item { transition: none; } }

@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
+import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -124,10 +125,6 @@ export function TechnicianShell({
           }}
         />
         <div className={styles.workspace}>
-          <header className={styles.desktopHeader}>
-            <p>{TECHNICIAN_MESSAGES.ROLE} / {pageTitle}</p>
-            <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
-          </header>
           <header className={styles.mobileHeader}>
             <Link className={styles.mobileBrand} href={PATH_TECHNICIAN.ROOT}>
               {TECHNICIAN_MESSAGES.BRAND}
@@ -149,8 +146,20 @@ export function TechnicianShell({
               }}
             />
           </header>
-          <div className={styles.mobileBreadcrumb}>
-            {TECHNICIAN_MESSAGES.ROLE} / {currentSection.LABEL}
+          <div className={styles.breadcrumbArea}>
+            <header className={styles.desktopHeader}>
+              <AdminBreadcrumb
+                className={styles.desktopTrail}
+                rootLabel={TECHNICIAN_MESSAGES.ROLE}
+                currentLabel={pageTitle}
+              />
+              <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
+            </header>
+            <AdminBreadcrumb
+              className={styles.mobileBreadcrumb}
+              rootLabel={TECHNICIAN_MESSAGES.ROLE}
+              currentLabel={currentSection.LABEL}
+            />
           </div>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>
             <main className={styles.main}>{children}</main>

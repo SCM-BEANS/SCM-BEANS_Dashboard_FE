@@ -48,6 +48,10 @@
 .panel[hidden] { display: none; }
 .panelHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .panelHeading h2 { margin: 0; }
+.screen > .panelHeading:has(> .heading) {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
 .listTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; }
 .listTitle > span { color: var(--color-text-muted); font-size: 13px; }
 .invoiceIdentity { display: grid; gap: 4px; min-width: 0; }

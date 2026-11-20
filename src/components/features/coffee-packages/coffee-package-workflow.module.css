@@ -7,19 +7,12 @@
 }
 
 .heading {
-  composes: heading from "../../heading/dashboard-page.module.css";
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  composes: heading headingWithActions from "../../heading/dashboard-page.module.css";
 }
 
 .detailHeading {
   composes: heading from "../../heading/dashboard-page.module.css";
-  display: grid;
-  justify-items: start;
-  gap: 10px;
+  align-items: flex-start;
 }
 
 .panelHeading,
@@ -31,7 +24,6 @@
   gap: 12px;
 }
 
-.detailHeading h1,
 .detailHeading p {
   margin: 0;
 }
@@ -45,7 +37,6 @@
   line-height: 1.5;
 }
 
-.heading h1,
 .panel h2,
 .subpanel h3,
 .reviewBox h4 {
@@ -387,7 +378,6 @@
   .packageTotal { text-align: left; }
   .managementScreen .panel { padding: 16px; }
   .managementScreen .actionGrid { grid-template-columns: minmax(0, 1fr); }
-  .managementScreen .heading { flex-wrap: wrap; }
 }
 
 @media (max-width: 1023px) {
@@ -414,13 +404,8 @@
   .ownerOrderColumns .invoiceSection { padding: 14px; }
   .proofList > li { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .managementScreen .orderSummary { grid-template-columns: minmax(0, 1fr); }
-  .heading,
   .panelHeading {
     align-items: flex-start;
-  }
-
-  .heading {
-    flex-direction: column;
   }
 
   .formGrid,

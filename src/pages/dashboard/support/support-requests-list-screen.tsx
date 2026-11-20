@@ -54,7 +54,7 @@ export function SupportRequestsListScreen() {
   return (
     <div className={repairStyles.operatorWorkspace}>
       <section className={repairStyles.pageContent} aria-labelledby="customer-support-title">
-        <header className={repairStyles.casePageHeader}>
+        <header className={repairStyles.supportListHeading}>
           <div className={repairStyles.pageHeading}>
             <h1 id="customer-support-title">{messages.SUPPORT_TITLE}</h1>
           </div>
