@@ -54,13 +54,6 @@
   display: flex;
 }
 
-.desktopHeader p {
-  overflow: hidden;
-  margin: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .headerLink {
   display: inline-flex;
   min-height: 48px;

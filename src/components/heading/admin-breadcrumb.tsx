@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fragment } from "react";
+import styles from "./dashboard-page.module.css";
 
 interface AdminBreadcrumbProps {
   rootLabel: string;
@@ -17,7 +18,7 @@ export function AdminBreadcrumb({
   className,
 }: AdminBreadcrumbProps) {
   return (
-    <nav className={className} aria-label="Đường dẫn">
+    <nav className={className ? `${styles.breadcrumb} ${className}` : styles.breadcrumb} aria-label="Đường dẫn">
       {rootHref ? (
         <Link href={rootHref}>
           <span>{rootLabel}</span>

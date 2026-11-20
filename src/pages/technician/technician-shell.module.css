@@ -52,13 +52,6 @@
   font-size: 14px;
 }
 
-.desktopTrail {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .headerLink {
   display: inline-flex;
   min-height: 48px;

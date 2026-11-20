@@ -25,8 +25,13 @@
   display: none;
 }
 
-.desktopBreadcrumb nav a,
-.mobileBreadcrumb a {
+.breadcrumb {
+  min-inline-size: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.breadcrumb a {
   border-radius: 4px;
   text-decoration-line: underline;
   text-decoration-color: transparent;
@@ -35,8 +40,8 @@
   transition: color 140ms ease, text-decoration-color 140ms ease;
 }
 
-.desktopBreadcrumb nav a:hover,
-.mobileBreadcrumb a:hover {
+.breadcrumb a:hover,
+.breadcrumb a:focus-visible {
   color: var(--color-primary);
   text-decoration-color: currentColor;
 }

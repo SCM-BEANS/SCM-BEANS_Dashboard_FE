@@ -17,6 +17,7 @@ import {
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
+import { ContractOverviewPanel } from "@/components/contracts/contract-overview-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -45,9 +46,6 @@ function dateTime(value: string | null | undefined): string {
   if (!value) return "—";
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString("vi-VN");
-}
-function money(value: number | null | undefined): string {
-  return value == null ? "—" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 }).format(value);
 }
 function status(value: string): string {
   if (value === "ACTIVE") return T.CONTRACTS.ACTIVE;
@@ -288,7 +286,7 @@ function ContractsContent() {
     : view === "history"
       ? T.CONTRACTS.HISTORY
       : view === "detail"
-        ? `${T.CONTRACTS.DETAIL} · ${contractId.slice(0, 8).toUpperCase()}`
+        ? T.CONTRACTS.DETAIL
         : isContractList
           ? ADMIN_CONTRACT_LIST_TITLE
           : T.CONTRACTS.TITLE;
@@ -311,6 +309,7 @@ function ContractsContent() {
       <ButtonBar variant="primary" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
     </div> : <BackButtonHeading
       title={pageTitle}
+      description={view === "detail" ? contract.data?.id : undefined}
       titleId="admin-contracts-title"
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
@@ -390,16 +389,7 @@ function ContractsContent() {
       {contract.isError && <div className={`${styles.notice} ${styles.errorNotice}`} role="alert"><p>{getApiErrorMessage(contract.error)}</p><ButtonBar type="button" onClick={() => void contract.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
       {contract.data && <>
         <div className={styles.contractDetailLayout}>
-        <section className={`${styles.panel} ${styles.contractOverviewPanel}`}><div className={styles.contractOverviewHeading}><h2>{T.CONTRACTS.DETAIL}</h2><StatusBadge status={contract.data.status}>{status(contract.data.status)}</StatusBadge></div><div className={styles.operationsGrid}>
-          <div><span>Mã hợp đồng</span><strong><TruncatedId value={contract.data.id} /></strong></div><div><span>{T.COMMON.OWNER}</span><strong>{ownerName(contract.data.ownerId)}</strong></div>
-          <div><span>Mã máy</span><strong>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : T.CONTRACTS.NO_MACHINE}</strong></div>
-          <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div><div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
-          <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div><div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>
-          <div><span>Tiền cọc</span><strong>{money(contract.data.depositAmount)}</strong></div><div><span>Phí lắp đặt</span><strong>{money(contract.data.installationFee)}</strong></div>
-          <div><span>Giới hạn offline</span><strong>{contract.data.offlineLimitMinutes == null ? "—" : `${contract.data.offlineLimitMinutes} phút`}</strong></div>
-          <div><span>Ngưỡng mất kết nối</span><strong>{contract.data.contractTermsSnapshot ? `${contract.data.contractTermsSnapshot.heartbeatToleranceSeconds ?? 45} giây` : "Chưa có chính sách"}</strong></div>
-        </div>
-        {(contract.data.termsSnapshot ?? contract.data.terms) && <p className={styles.panelSubtitle}>{contract.data.termsSnapshot ?? contract.data.terms}</p>}</section>
+        <ContractOverviewPanel contract={contract.data} ownerName={ownerName(contract.data.ownerId)} />
         <section className={`${styles.panel} ${styles.contractExpiryPanel}`}><h2>Trạng thái hết hạn</h2>
           {expiry.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {expiry.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(expiry.error)} <ButtonBar type="button" onClick={() => void expiry.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}

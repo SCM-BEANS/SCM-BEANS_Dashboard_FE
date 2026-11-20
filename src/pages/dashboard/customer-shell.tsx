@@ -6,6 +6,8 @@ import { useRouter } from "next/router";
 import { useEffect, useState, type ReactNode } from "react";
 import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
+import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { getPageBreadcrumb } from "@/components/heading/dashboard-breadcrumb";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
@@ -152,12 +154,19 @@ export function CustomerShell({
           </header>
           <div className={styles.breadcrumbArea}>
             <header className={styles.desktopHeader}>
-              <p>{CUSTOMER_MESSAGES.ROLE} / {pageTitle}</p>
+              <AdminBreadcrumb
+                rootLabel={CUSTOMER_MESSAGES.ROLE}
+                rootHref={PATH_CUSTOMER.ROOT}
+                {...getPageBreadcrumb(pathname, currentSection, pageTitle)}
+              />
               <NotificationInbox scope="customer" variant="bell" viewAllHref={PATH_CUSTOMER.NOTIFICATIONS} />
             </header>
-            <div className={styles.mobileBreadcrumb}>
-              {CUSTOMER_MESSAGES.ROLE} / {currentSection.LABEL}
-            </div>
+            <AdminBreadcrumb
+              className={styles.mobileBreadcrumb}
+              rootLabel={CUSTOMER_MESSAGES.ROLE}
+              rootHref={PATH_CUSTOMER.ROOT}
+              {...getPageBreadcrumb(pathname, currentSection, pageTitle)}
+            />
           </div>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>
             <main className={styles.main}>{children}</main>

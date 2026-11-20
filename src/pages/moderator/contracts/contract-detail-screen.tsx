@@ -15,6 +15,7 @@ import { TruncatedId } from "@/components/truncated-id/truncated-id";
 
 import { contractsApi } from "@/apis/contracts.api";
 import { installationWorkOrdersApi } from "@/apis/installation-work-orders.api";
+import { ContractOverviewPanel } from "@/components/contracts/contract-overview-panel";
 import { profilesApi } from "@/apis/profiles.api";
 
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -64,18 +65,6 @@ function dateTime(value: string | null | undefined): string {
   return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString("vi-VN");
 }
 
-function money(value: number | null | undefined): string {
-  return value == null
-    ? "—"
-    : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 2 }).format(value);
-}
-
-function contractStatus(value: string): string {
-  if (value === "ACTIVE") return T.CONTRACTS.ACTIVE;
-  if (value === "DRAFT") return T.CONTRACTS.DRAFT;
-  if (value === "TERMINATED") return T.CONTRACTS.TERMINATED;
-  return value;
-}
 
 function installationWorkOrderStatus(value: InstallationWorkOrderSummary["status"]): string {
   const labels: Record<InstallationWorkOrderSummary["status"], string> = {
@@ -312,8 +301,9 @@ export function ContractDetailScreen({ id }: { id: string }) {
     <>
       <div className={styles.pageContent}>
         <BackButtonHeading
-          title={contract.data ? `${T.CONTRACTS.DETAIL} · ${contract.data.id.slice(0, 8).toUpperCase()}` : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DETAIL_TITLE}
+          title={contract.data ? T.CONTRACTS.DETAIL : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DETAIL_TITLE}
           titleId="moderator-contract-detail-title"
+          description={contract.data?.id}
           className={styles.pageHeading}
           back={{ label: "Danh sách hợp đồng", fallbackHref: PATH_MODERATOR.CONTRACTS }}
         />
@@ -325,26 +315,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
         </div>}
         {contract.data && !contract.isError && <>
           <div className={adminStyles.contractDetailLayout}>
-          <section className={`${adminStyles.panel} ${adminStyles.contractOverviewPanel}`}>
-            <div className={adminStyles.contractOverviewHeading}>
-              <h2>{T.CONTRACTS.DETAIL}</h2>
-              <StatusBadge status={contract.data.status}>{contractStatus(contract.data.status)}</StatusBadge>
-            </div>
-            <div className={adminStyles.operationsGrid}>
-              <div><span>Mã hợp đồng</span><strong><TruncatedId value={contract.data.id} /></strong></div>
-              <div><span>{T.COMMON.OWNER}</span><strong>{ownerName}</strong></div>
-              <div><span>Mã máy</span><strong>{contract.data.machineId ? <TruncatedId value={contract.data.machineId} /> : T.CONTRACTS.NO_MACHINE}</strong></div>
-              <div><span>Thời hạn</span><strong>{date(contract.data.startDate)} – {date(contract.data.endDate)}</strong></div>
-              <div><span>Loại máy</span><strong>{contract.data.machineTypeSnapshot ?? "—"}</strong></div>
-              <div><span>Phí thuê hàng tháng</span><strong>{money(contract.data.monthlyRentalFee)}</strong></div>
-              <div><span>Giá PAYG</span><strong>{money(contract.data.paygUnitPrice)}</strong></div>
-              <div><span>Tiền cọc</span><strong>{money(contract.data.depositAmount)}</strong></div>
-              <div><span>Phí lắp đặt</span><strong>{money(contract.data.installationFee)}</strong></div>
-              <div><span>Giới hạn offline</span><strong>{contract.data.offlineLimitMinutes == null ? "—" : `${contract.data.offlineLimitMinutes} phút`}</strong></div>
-              <div><span>Ngưỡng mất kết nối</span><strong>{contract.data.contractTermsSnapshot ? `${contract.data.contractTermsSnapshot.heartbeatToleranceSeconds ?? 45} giây` : "Chưa có chính sách"}</strong></div>
-            </div>
-            {(contract.data.termsSnapshot ?? contract.data.terms) && <p className={adminStyles.panelSubtitle}>{contract.data.termsSnapshot ?? contract.data.terms}</p>}
-          </section>
+          <ContractOverviewPanel contract={contract.data} ownerName={ownerName} />
 
           <section className={`${adminStyles.panel} ${adminStyles.contractExpiryPanel}`}>
             <h2>Trạng thái hết hạn</h2>

@@ -8,6 +8,7 @@ import { authApi } from "@/apis/auth.api";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { getPageBreadcrumb } from "@/components/heading/dashboard-breadcrumb";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
@@ -149,16 +150,17 @@ export function TechnicianShell({
           <div className={styles.breadcrumbArea}>
             <header className={styles.desktopHeader}>
               <AdminBreadcrumb
-                className={styles.desktopTrail}
                 rootLabel={TECHNICIAN_MESSAGES.ROLE}
-                currentLabel={pageTitle}
+                rootHref={PATH_TECHNICIAN.ROOT}
+                {...getPageBreadcrumb(pathname, currentSection, pageTitle)}
               />
               <NotificationInbox scope="technician" variant="bell" viewAllHref={PATH_TECHNICIAN.NOTIFICATIONS} />
             </header>
             <AdminBreadcrumb
               className={styles.mobileBreadcrumb}
               rootLabel={TECHNICIAN_MESSAGES.ROLE}
-              currentLabel={currentSection.LABEL}
+              rootHref={PATH_TECHNICIAN.ROOT}
+              {...getPageBreadcrumb(pathname, currentSection, pageTitle)}
             />
           </div>
           <ActionBarLayout label={`Thao tác ${pageTitle}`}>

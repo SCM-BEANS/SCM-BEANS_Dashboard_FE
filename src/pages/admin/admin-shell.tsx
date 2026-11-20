@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ActionBarLayout } from "@/components/action-bar/action-bar";
 import { LiquidSuccessSplash, prepareLiquidSuccessAnimation } from "@/components/feedback/liquid-success-splash";
 import { AdminBreadcrumb } from "@/components/heading/admin-breadcrumb";
+import { getAdminBreadcrumb } from "@/components/heading/dashboard-breadcrumb";
 import { NotificationRuntime } from "@/components/notifications/notification-runtime";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import { MobileNavigation } from "@/components/sidebar/mobile-navigation";
@@ -80,7 +81,8 @@ export function AdminShell({
     <AdminBreadcrumb
       className={className}
       rootLabel={ADMIN_MESSAGES.ROLE}
-      currentLabel={currentSection.LABEL}
+      rootHref={PATH_ADMIN.ROOT}
+      {...getAdminBreadcrumb(router.asPath || router.pathname, currentSection)}
     />
   );
 
@@ -120,7 +122,7 @@ export function AdminShell({
           </header>
           <div className={styles.breadcrumbArea}>
             <header className={styles.desktopHeader}>
-              {renderBreadcrumb(styles.desktopTrail)}
+              {renderBreadcrumb()}
               <div className={styles.desktopNotifications}>
                 <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} />
               </div>
