@@ -308,7 +308,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   return <div className={showHeading ? styles.pageContent : styles.screen} data-recipe-layout data-recipe-mode={view === "global" ? editing ? "editor" : operatorScreen : undefined}>
     {showHeading && !owner ? <header className={styles.adminRecipeHeader}>
       <div>
-        {view === "global" && !library && !editing ? <ButtonBar className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</ButtonBar> : null}
+        {view === "global" && !library && !editing && !isModerator ? <TextLinkButton back className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</TextLinkButton> : null}
         <h1 id="recipe-management-title" tabIndex={-1}>{view !== "global" || library ? "Công thức pha chế" : mode === "create" ? "Thêm công thức" : mode === "edit" ? "Chỉnh sửa công thức" : operatorScreen === "detail" ? detail.data?.name ?? "Chi tiết công thức" : activeMenu}</h1>
         {view === "global" && mode === "create" ? <p>Menu đích: {activeMenu}</p> : null}
         {view === "global" && mode !== "create" && detail.data && (mode === "edit" || operatorScreen === "detail") ? <p>{editing ? detail.data.name : detailMenu} · Phiên bản v{detail.data.revision}</p> : null}
@@ -330,8 +330,8 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
           </>}
       </div> : null}
     </header> : null}
-    {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title" className={styles.pageHeading} back={null} /> : null}
-    {owner && !library ? <div><ButtonBar onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</ButtonBar></div> : null}
+    {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title" className={styles.pageHeading} back={null}
+      backControl={!library ? <TextLinkButton back onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</TextLinkButton> : null} /> : null}
     {showNavigation && (library || view !== "global") ? <SectionTabList role="navigation" aria-label="Khu vực công thức">
       <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</button>
       {owner ? <>
@@ -438,17 +438,17 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
             <div className={styles.adminRecipeColumns}>
               <Panel className={styles.adminRecipeCard + " " + styles.recipeStepCard}><h2>Các bước pha</h2><RecipeSteps steps={detail.data.steps} /></Panel>
               <div className={styles.recipeDetailSide}>
-              <Panel className={styles.adminRecipeCard}><h2>Thông số pha</h2>
+              <Panel className={styles.adminRecipeCard}><h3>Thông số pha</h3>
                 <dl className={styles.adminRecipeFacts}>
                   <div><dt>Lượng cà phê</dt><dd>{coffeeDose ? coffeeDose + " g" : "Chưa có thông số"}</dd></div>
                   <div><dt>Nước chiết xuất</dt><dd>{waterVolume ? waterVolume + " ml" : "Chưa có thông số"}</dd></div>
                 </dl>
               </Panel>
-            <section className={styles.recipeDetailDisclosure}>
+            <Panel className={styles.adminRecipeCard}>
               <h3>Thông số và đồng bộ</h3>
               <p>Các bước trong thư viện có thể chưa phản ánh lần cập nhật gần nhất. Xem trạng thái đồng bộ để biết máy đã xác nhận áp dụng chưa.</p>
               {owner ? <ButtonBar href={PATH_CUSTOMER.MENU_SYNC}>Xem đồng bộ với máy</ButtonBar> : admin ? <ButtonBar onClick={() => setView("sync")}>Xem đồng bộ với máy</ButtonBar> : null}
-            </section>
+            </Panel>
             {owner ? <Panel className={styles.adminRecipeCard + " " + styles.recipeDetailSide}><h2>Lưu vào Menu của tôi</h2><p className={styles.recipeMenuMeta}>Chọn menu nhận bản sao. Công thức gốc trong thư viện vẫn được giữ nguyên.</p>
               {ownerMenus.isPending ? <p>Đang tải menu của bạn…</p> : null}
               {ownerMenus.isError ? <div role="alert"><p>{getRecipeApiErrorMessage(ownerMenus.error)}</p><ButtonBar onClick={() => void ownerMenus.refetch()}>Thử lại</ButtonBar></div> : null}

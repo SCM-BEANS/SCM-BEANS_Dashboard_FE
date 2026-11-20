@@ -18,7 +18,7 @@
 .approveButton { border-color: #b8d9c2; background: var(--color-success-soft); color: var(--color-success); }
 .rejectButton { border-color: var(--color-primary-border); background: var(--color-primary-soft); color: #9b2630; }
 .primaryButton:disabled, .secondaryButton:disabled, .approveButton:disabled, .rejectButton:disabled { cursor: not-allowed; opacity: .5; }
-.textButton, .backLink { min-height: 38px; color: var(--color-primary); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.textButton { min-height: 38px; color: var(--color-primary); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; color: var(--color-text-muted); font-size: 13px; }
 .pagination button { min-height: 38px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
 .pagination button:disabled { cursor: not-allowed; opacity: .5; }

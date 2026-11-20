@@ -123,10 +123,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
 
   return {
     render: () => renderToStaticMarkup(
-      React.createElement(ModeratorShell, {
-        pageTitle: "Hợp đồng",
-        children: React.createElement("p", null, "Nội dung"),
-      }),
+      React.createElement(ModeratorShell, { pageTitle: "Hợp đồng" }, React.createElement("p", null, "Nội dung")),
     ),
   };
 }

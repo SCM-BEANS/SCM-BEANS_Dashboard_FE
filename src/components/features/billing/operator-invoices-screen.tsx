@@ -393,10 +393,10 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
       <div className={styles.detailStack}>
         <header className={styles.panelHeading}>
           <div className={styles.heading}>
+            <TextLinkButton back href={proofListHref}>Về danh sách chứng từ</TextLinkButton>
             <h1>Hồ sơ chứng từ thanh toán</h1>
             <p className={styles.detailSubtitle}>{record.id.slice(0, 8).toUpperCase()} · Kỳ {periodText(record.period)}</p>
           </div>
-          <ButtonBar href={proofListHref}>Về danh sách chứng từ</ButtonBar>
         </header>
         <InlineQueryState
           pending={proofs.isPending || proofs.isFetching && !selectedProof}
@@ -440,8 +440,10 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
   return (
     <div className={styles.detailStack}>
       <div className={styles.panelHeading}>
-        <div className={styles.heading}><h1>Hồ sơ hóa đơn</h1></div>
-        <ButtonBar href={invoiceListPath(role)}>Về danh sách</ButtonBar>
+        <div className={styles.heading}>
+          {role !== "moderator" ? <TextLinkButton back href={invoiceListPath(role)}>Về danh sách</TextLinkButton> : null}
+          <h1>Hồ sơ hóa đơn</h1>
+        </div>
       </div>
       <div className={styles.invoiceLayout}>
       <Panel className={`${styles.panel} ${styles.invoiceMain}`}>
@@ -610,7 +612,7 @@ export function InvoiceExportJobScreen({ jobId, routerReady, role }: { jobId: st
   const filename = `dolores-invoices.${job.data?.format === "PDF" ? "pdf" : "csv"}`;
   const statusLabels = { QUEUED: "Đang chờ", PROCESSING: "Đang xử lý", COMPLETED: "Đã sẵn sàng", FAILED: "Thất bại" };
   return <div className={styles.screen}>
-    <header className={styles.panelHeading}><div className={styles.heading}><h1>Xuất danh sách hóa đơn</h1></div><ButtonBar href={backHref}>Về danh sách</ButtonBar></header>
+    <header className={styles.panelHeading}><div className={styles.heading}>{role !== "moderator" ? <TextLinkButton back href={backHref}>Về danh sách</TextLinkButton> : null}<h1>Xuất danh sách hóa đơn</h1></div></header>
     {!routerReady ? <p role="status">Đang tải…</p> : !valid ? <p className={`${styles.notice} ${styles.error}`} role="alert">Mã xuất dữ liệu không hợp lệ.</p> : <>
       <InlineQueryState pending={job.isPending} error={job.isError ? job.error : null} loadingText="Đang tải trạng thái xuất dữ liệu…" retry={job.refetch} />
       {job.data && !job.isError && <Panel className={`${styles.panel} ${styles.exportPanel}`}>

@@ -49,7 +49,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
     <BuybackWorkflowLayout
       className={styles.operatorWorkspace}
       title="Đánh giá máy thu mua"
-      back={caseId ? { label: "Danh sách đánh giá", fallbackHref: listHref } : null}
+      back={caseId ? { label: "Về công việc", fallbackHref: listHref } : null}
     >
       <BuybackCaseList workflow={workflow} />
       <BuybackDetailPanel workflow={workflow}>

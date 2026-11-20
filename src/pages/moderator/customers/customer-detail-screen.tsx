@@ -102,11 +102,24 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
   }
   const dirty = Boolean(profile.data && phone !== (profile.data.phone ?? ""));
 
+  useEffect(() => {
+    if (!dirty) return;
+    const guardCustomerBreadcrumb = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor || new URL(anchor.href, window.location.href).pathname !== PATH_MODERATOR.CUSTOMERS) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setLeaveTarget(PATH_MODERATOR.CUSTOMERS);
+    };
+    document.addEventListener("click", guardCustomerBreadcrumb, true);
+    return () => document.removeEventListener("click", guardCustomerBreadcrumb, true);
+  }, [dirty]);
+
   return (
     <div className={`${styles.pageContent} ${styles.customerDetailPage}`}>
       <header className={styles.pageHeading}><h1>Hồ sơ khách hàng</h1></header>
       <div className={styles.customerDetailToolbar}>
-        <ButtonBar disabled={updateContact.isPending} onClick={() => dirty ? setLeaveTarget(PATH_MODERATOR.CUSTOMERS) : void router.push(PATH_MODERATOR.CUSTOMERS)}>Về danh sách</ButtonBar>
         {profile.data && !profile.isError && <><div className={styles.customerToolbarIdentity}><strong>{profile.data.fullName || profile.data.email}</strong><span>Khách hàng</span></div>{isOwner && <ButtonBar variant="primary" type="submit" form="moderator-owner-contact" disabled={!dirty || updateContact.isPending}>{updateContact.isPending ? "Đang lưu…" : "Lưu thay đổi"}</ButtonBar>}</>}
       </div>
       {!validId && (

@@ -295,15 +295,6 @@
   .monitoringChartToolbar > label { max-width: none; }
 }
 
-.operationalOverviewBack a {
-  color: var(--color-text-muted);
-  text-decoration: none;
-}
-
-.operationalOverviewBack a:hover {
-  color: var(--color-primary);
-}
-
 .operationalOverviewHeading {
   display: grid;
   gap: 6px;

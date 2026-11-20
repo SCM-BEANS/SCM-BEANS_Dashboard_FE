@@ -452,7 +452,9 @@ test("v2 collection and payout screens follow Dolores role and status gates", as
   }
   await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
   await expect(page.getByRole("link", { name: "Lệnh xử lý hồ sơ" })).toBeVisible();
-  await page.getByRole("button", { name: "Về danh sách thu mua" }).click();
+  const breadcrumb = page.getByRole("navigation", { name: "Đường dẫn" });
+  await expect(breadcrumb.getByRole("link", { name: "Thu mua máy", exact: true })).toBeVisible();
+  await breadcrumb.getByRole("link", { name: "Thu mua máy", exact: true }).click();
   await expect(page.getByRole("region", { name: "Danh sách hồ sơ thu mua" })).toBeVisible();
   await page.locator(`[data-buyback-list] a[href$="${caseId}"]`).first().click();
   await page.getByRole("link", { name: "Lệnh xử lý hồ sơ" }).click();

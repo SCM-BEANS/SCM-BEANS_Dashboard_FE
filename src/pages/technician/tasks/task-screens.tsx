@@ -171,6 +171,9 @@ const taskDetailScreen: TechnicianScreenDescriptor = {
 };
 
 function getTaskBackNavigation(sectionPath: string) {
+  if (sectionPath === "tasks/buyback-assessment") {
+    return { label: "Về công việc", fallbackHref: "/technician/tasks" };
+  }
   if (sectionPath === "tasks/substitute-return") {
     return { label: "Máy thay thế", fallbackHref: "/technician/tasks/substitute" };
   }
@@ -186,7 +189,6 @@ function getTaskBackNavigation(sectionPath: string) {
 const formNavigation: Record<string, ActionBarAction[]> = {
   "tasks/substitute": [link("Ghi nhận trả máy thay", "/technician/tasks/substitute-return", "secondary")],
   "tasks/substitute-return": [link("Về máy thay thế", "/technician/tasks/substitute", "secondary")],
-  "tasks/buyback-assessment": [link("Về công việc", "/technician/tasks", "secondary")],
   "tasks/maintenance-history": [link("Về lịch sử máy", "/technician/history", "secondary")],
 };
 

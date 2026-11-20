@@ -1,7 +1,6 @@
-import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import { navigateBackOrFallback } from "./history-entry";
-import styles from "./back-button.module.css";
+import { TextLinkButton } from "@/components/button/text-link-button";
 
 export type BackButtonDestination = {
   label: string;
@@ -24,15 +23,5 @@ export function BackButton({ label, fallbackHref, className }: BackButtonProps) 
     });
   }
 
-  return (
-    <button
-      type="button"
-      className={[styles.button, className].filter(Boolean).join(" ")}
-      onClick={handleBack}
-      aria-label={label}
-    >
-      <ArrowLeft className={styles.icon} aria-hidden="true" focusable="false" />
-      <span>{label}</span>
-    </button>
-  );
+  return <TextLinkButton back className={className} onClick={handleBack} aria-label={label}>{label}</TextLinkButton>;
 }

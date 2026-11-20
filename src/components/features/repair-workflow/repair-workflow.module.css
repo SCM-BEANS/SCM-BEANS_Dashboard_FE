@@ -427,13 +427,12 @@
   justify-content: space-between;
   gap: 18px;
 }
-.workOrderPageHeading > div:first-child { min-width: 0; }
-.workOrderPageHeading p { margin: 0 0 4px; color: var(--color-text-muted); font-size: 12px; }
+.workOrderPageHeading > div:first-child { display: grid; min-width: 0; gap: 6px; }
+.workOrderPageHeading p { margin: 0; color: var(--color-text-muted); font-size: 12px; }
 .workOrderPageHeading h1 { overflow-wrap: anywhere; margin: 0; color: var(--color-text); }
 .workOrderPageHeading h1 > span { display: inline; }
 .workOrderPageHeading > div:first-child > span { display: block; margin-top: 4px; color: var(--color-text-muted); font-size: 13px; }
 .workOrderPageActions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.workOrderContractLink,
 .workOrderRefreshButton {
   display: inline-flex;
   min-height: 38px;
@@ -450,12 +449,9 @@
   text-decoration: none;
   white-space: nowrap;
 }
-.workOrderContractLink { border-color: #efd2d3; color: color-mix(in srgb, var(--color-primary) 90%, black); }
-.workOrderContractLink:hover,
 .workOrderRefreshButton:hover:not(:disabled) { background: var(--color-primary-soft); }
 .workOrderRefreshButton { cursor: pointer; }
 .workOrderRefreshButton:disabled { cursor: wait; opacity: .6; }
-.workOrderContractLink:focus-visible,
 .workOrderRefreshButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .workOrderSummary {
@@ -1608,7 +1604,7 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .adminRecipeHeader > div { min-width: 0; }
 .adminRecipeHeader h1 { margin: 0; overflow-wrap: anywhere; }
 .adminRecipeHeader p { margin: 6px 0 0; color: var(--color-text-muted); overflow-wrap: anywhere; }
-.adminRecipeBack { margin-bottom: 10px; }
+.adminRecipeBack { margin-bottom: 6px; }
 [data-recipe-layout] .recipeMenuTabs { gap: 6px 20px; padding: 0; margin: 0; border-bottom: 1px solid var(--color-border); }
 [data-recipe-layout] .recipeMenuTabs > a,
 [data-recipe-layout] .recipeMenuTabs > button { color: var(--color-text-secondary); border: 0; border-radius: 0; border-bottom: 2px solid transparent; background: transparent; min-height: 44px; padding: 0 8px; }
@@ -1683,15 +1679,15 @@ details[open] > .workflowStepHeading::after { content: "−"; }
 .legacyDosageRow { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }
 .legacyDosageRow > .formField { width: 100%; max-width: none; }
 .legacySaveActions { justify-content: flex-end; }
-.recipeDetailSide { display: grid; gap: 12px; min-width: 0; }
-.recipeDetailSide > h2, .recipeDetailSide > p { margin: 0; }
+.recipeDetailSide { display: grid; gap: 14px; min-width: 0; }
+.recipeDetailSide > h2, .recipeDetailSide > h3, .recipeDetailSide > p { margin: 0; }
 .recipeStepCard ol { display: grid; gap: 4px; margin: 0; line-height: 1.5; }
 .recipeStepCard li { padding: 2px 0; }
-.recipeDetailDisclosure { padding: 0 14px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); min-width: 0; }
-.recipeDetailDisclosure > summary { cursor: pointer; min-height: 44px; padding-block: 12px; font-weight: 600; line-height: 1.5; }
-.recipeDetailDisclosure > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: 4px; }
-.recipeDetailDisclosure[open] { padding-bottom: 14px; }
-.recipeDetailDisclosure p { margin: 0 0 12px; color: var(--color-text-muted); line-height: 1.5; }
+.recipeDetailDisclosure { display: flex; min-width: 0; flex-direction: column; gap: 14px; padding: var(--ui-panel-padding, 22px 24px); border: 1px solid var(--color-border); border-radius: var(--ui-panel-radius, 16px); background: var(--color-surface); }
+.recipeDetailDisclosure > summary { cursor: pointer; min-height: 44px; padding: 0; color: var(--color-text); font-size: 16px; font-weight: 600; line-height: 1.4; }
+.recipeDetailDisclosure > summary:focus:not(:focus-visible) { outline: none; }
+.recipeDetailDisclosure > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; border-radius: 4px; }
+.recipeDetailDisclosure p { margin: 0; color: var(--color-text-muted); line-height: 1.5; }
 .recipeDetailDisclosure .recipeMenuOperatorTools { border: 0; padding-top: 4px; }
 .recipeDetailDisclosure .recipeMenuOperatorTools .formField { width: 100%; }
 @media (max-width: 520px) {

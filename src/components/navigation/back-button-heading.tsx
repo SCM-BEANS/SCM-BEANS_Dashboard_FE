@@ -9,6 +9,7 @@ export type BackButtonHeadingProps = {
   description?: ReactNode;
   className?: string;
   back: BackButtonDestination | null;
+  backControl?: ReactNode;
 };
 
 export function BackButtonHeading({
@@ -17,11 +18,12 @@ export function BackButtonHeading({
   description,
   className,
   back,
+  backControl,
 }: BackButtonHeadingProps) {
   const showBackButton = useContext(BackButtonHeadingVisibilityContext);
   return (
     <header className={className} data-ui-page-heading>
-      {showBackButton && back ? <BackButton label={back.label} fallbackHref={back.fallbackHref} /> : null}
+      {showBackButton ? backControl ?? (back ? <BackButton label={back.label} fallbackHref={back.fallbackHref} /> : null) : null}
       <h1 id={titleId}>{title}</h1>
       {description ? <p>{description}</p> : null}
     </header>

@@ -60,7 +60,7 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
         <option value="">Chọn kỳ</option>{calendarPresets.map(({ key, label }) => <option value={key} key={key}>{label}</option>)}
       </select>
     </div> : null}
-    <Panel title="Rà soát mất kết nối" aria-label="Rà soát mất kết nối" actions={selectedId ? <ButtonBar type="button" onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}>
+    <Panel title="Rà soát mất kết nối" aria-label="Rà soát mất kết nối" actions={selectedId ? <TextLinkButton back onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</TextLinkButton> : null}>
     {!selectedId && <><TableFilters className={styles.offlineReviewFilters} selects={[{ id: "offline-review-status", ariaLabel: "Trạng thái rà soát", label: "Trạng thái rà soát", value: status, options: [{ value: "", label: "Tất cả" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))], onChange: onFilterChange }]} showSubmit={false} />
     {loading ? <p role="status">Đang tải hồ sơ rà soát…</p> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
-import { TextActionButton } from "@/components/button/text-link-button";
+import { TextActionButton, TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
@@ -25,8 +25,8 @@ export function MachineMonitoringHeader({ machineLabel, backHref, backLabel = "V
   onTabChange: (tab: string) => void; idPrefix?: string;
 }) {
   return <>
-    <div className={styles.operationalOverviewBack}><Link href={backHref}>← {backLabel}</Link></div>
     <header className={styles.operationalOverviewHeading}>
+      <TextLinkButton back href={backHref}>{backLabel}</TextLinkButton>
       <h1 id="machine-operational-overview-title">Giám sát vận hành <span className={styles.monitoringMachineName}>{machineLabel ?? "Máy đang xem"}</span></h1>
     </header>
     <MachineSectionTabs label="Dữ liệu vận hành máy" tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} idPrefix={idPrefix} />
@@ -306,10 +306,8 @@ export function OperationalOverview({
 
   return (
     <section className={styles.operationalOverview} aria-labelledby="machine-operational-overview-title">
-      <div className={styles.operationalOverviewBack}>
-        <Link href={machineLoading || !machineError ? machineHref : machineListHref}>← Quay lại máy</Link>
-      </div>
       <header className={styles.operationalOverviewHeading}>
+        <TextLinkButton back href={machineLoading || !machineError ? machineHref : machineListHref}>Quay lại máy</TextLinkButton>
         <h1 id="machine-operational-overview-title">Tổng quan dữ liệu vận hành</h1>
         <p>Phạm vi tổng hợp: {scopeLabel}. {machineLabel ?? machineId} chỉ là ngữ cảnh mở màn hình, các số liệu bên dưới không được chia theo máy này.</p>
       </header>
@@ -318,7 +316,7 @@ export function OperationalOverview({
       {machineError ? (
         <div className={styles.operationalOverviewError} role="alert">
           <p>Không tải được hồ sơ máy để xác nhận ngữ cảnh.</p>
-          <Link href={machineListHref}>Về danh sách máy</Link>
+          <TextLinkButton back href={machineListHref}>Về danh sách máy</TextLinkButton>
         </div>
       ) : null}
 

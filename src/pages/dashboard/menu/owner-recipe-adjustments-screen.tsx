@@ -5,7 +5,7 @@ import { recipeMenusApi } from "@/apis/recipe-menus.api";
 import { recipesApi } from "@/apis/recipes.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
-import { TextActionButton } from "@/components/button/text-link-button";
+import { TextActionButton, TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { Panel } from "@/components/panel/panel";
@@ -193,7 +193,7 @@ export function OwnerRecipeAdjustmentsScreen({ creating = false }: { creating?: 
   };
   return <section className={pageStyles.pageContent + " " + styles.ownerRecipePage} data-recipe-layout>
     <OwnerMenuHeader active="mine" />
-    {legacy ? <><div><ButtonBar href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>← Về Menu của tôi</ButtonBar></div><LegacyRecipeOverrides role="OWNER" /></> : <>
+    {legacy ? <><div><TextLinkButton back href={PATH_CUSTOMER.MENU_ADJUSTMENTS}>Về Menu của tôi</TextLinkButton></div><LegacyRecipeOverrides role="OWNER" /></> : <>
       {feedback ? <p className={styles.notice} role="status">{feedback}</p> : null}
       {error ? <p className={styles.recipeMenuError} role="alert">{getRecipeApiErrorMessage(error, "mutation")}</p> : null}
       {mode === "view" ? <Panel className={styles.recipeMenuPanel}>

@@ -162,25 +162,6 @@
   width: fit-content;
 }
 
-.backLink :global(a:link),
-.backLink :global(a:visited),
-.backLink :global(a:hover) {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-}
-
-.backLink :global(a:hover) {
-  border-color: #c9bcb4;
-  background: var(--color-surface-subtle);
-}
-
 .error,
 .notice,
 .success {

@@ -18,6 +18,8 @@
   --ui-control-radius: 10px;
   --ui-panel-padding: 22px 24px;
   --ui-panel-radius: 16px;
+  --ui-title-size: 27px;
+  --ui-heading-gap: 6px;
   --ui-page-gap: 18px;
   --ui-section-gap: 14px;
   --ui-table-cell-padding: 12px;
@@ -40,7 +42,7 @@
   line-height: 1.4;
 }
 
-[data-ui-dashboard] main h1 { margin: 0; font-size: 27px; }
+[data-ui-dashboard] main h1 { margin: 0; font-size: var(--ui-title-size); }
 [data-ui-dashboard] main h2 { margin: 0; font-size: 19px; }
 [data-ui-dashboard] main h3 { margin: 0; font-size: 16px; font-weight: 600; }
 
@@ -149,7 +151,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--ui-heading-gap);
   margin: 0;
 }
 
@@ -171,6 +173,10 @@
   color: var(--ui-color-muted);
   font-size: 14px;
   line-height: 1.5;
+}
+
+@media (max-width: 1023px) {
+  [data-ui-dashboard] { --ui-title-size: 24px; }
 }
 
 @media (max-width: 640px) {

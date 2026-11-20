@@ -52,21 +52,15 @@
   gap: var(--dashboard-page-gap);
 }
 
-.heading {
-  --dashboard-heading-gap: 6px;
-}
-
 :where(.heading) {
   display: flex;
   flex-direction: column;
-  gap: var(--dashboard-heading-gap);
+  gap: var(--ui-heading-gap);
 }
 
 .title,
 .heading h1 {
-  --dashboard-title-size: 27px;
   margin: 0;
-  font-size: var(--dashboard-title-size);
   line-height: 1.4;
 }
 
@@ -95,8 +89,4 @@
     display: block;
   }
 
-  .title,
-  .heading h1 {
-    --dashboard-title-size: 24px;
-  }
 }

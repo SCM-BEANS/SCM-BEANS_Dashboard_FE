@@ -415,7 +415,7 @@ export function AdminInvoiceDetailScreen({ invoiceId, routerReady }: { invoiceId
       <div className={styles.pageContent}>
         <BackButtonHeading className={styles.pageHeading} title="Chi tiết hóa đơn" titleId="admin-invoice-detail-title" back={{ label: "Về danh sách hóa đơn", fallbackHref: PATH_ADMIN.INVOICES }} />
         {!routerReady ? <section className={pageStyles.billingPanel} role="status">Đang tải…</section>
-          : !validInvoiceId ? <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">Mã hóa đơn không hợp lệ.<div><ButtonBar href={PATH_ADMIN.INVOICES}>Về danh sách</ButtonBar></div></div>
+          : !validInvoiceId ? <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert">Mã hóa đơn không hợp lệ.</div>
             : invoice.isPending ? <section className={pageStyles.billingPanel} role="status">Đang tải hóa đơn…</section>
               : invoice.isError ? <div className={[pageStyles.inlineNotice, pageStyles.errorNotice].join(" ")} role="alert"><p>{getApiErrorMessage(invoice.error)}</p><ButtonBar type="button" onClick={() => void invoice.refetch()}>Thử lại</ButtonBar></div>
                 : item ? <>

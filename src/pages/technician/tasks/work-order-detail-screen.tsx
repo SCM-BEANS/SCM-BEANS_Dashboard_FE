@@ -228,7 +228,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
         <header className={shellStyles.pageHeading}>
           <h1 id="technician-repair-case-title">Chi tiết sửa chữa</h1>
           <div className={styles.backLink}>
-            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+            <TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>
         </header>
         {repairCase.isPending && <p className={shellStyles.pendingNotice} role="status">Đang tải hồ sơ sửa chữa…</p>}
@@ -493,7 +493,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
         <header className={shellStyles.pageHeading}>
           <h1 id="technician-recall-title">Thu hồi máy theo hợp đồng</h1>
           <p>Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự.</p>
-          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
+          <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
         {orderQuery.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải lệnh thu hồi…</p> : null}
         {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
@@ -725,7 +725,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
         <header className={shellStyles.pageHeading}>
           <h1 id="termination-inspection-title">Kiểm tra máy sau khi thu hồi</h1>
           <p>Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng.</p>
-          <div className={styles.backLink}><TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
+          <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
         {ticket.isPending || terminationCase.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải phiếu kiểm tra…</p> : null}
         {ticket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(ticket.error)}</p> : null}
@@ -1128,7 +1128,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
           <h1 id="technician-work-order-title">{messages.TASK_DETAIL_TITLE}</h1>
           <p>Thực hiện lắp đặt, tải minh chứng bàn giao và xác nhận người nhận theo trạng thái của lệnh.</p>
           <div className={styles.backLink}>
-            <TextLinkButton href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
+            <TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>
         </header>
 

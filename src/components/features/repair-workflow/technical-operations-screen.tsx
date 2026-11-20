@@ -446,11 +446,11 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
   return <div className={styles.workOrderDetail} data-role={role}>
     <header className={styles.workOrderPageHeading}>
       <div>
+        <TextLinkButton back href={contractHref}>Về hợp đồng</TextLinkButton>
         <p>{role === "admin" ? "Admin" : "Moderator"} / Yêu cầu kỹ thuật / Lắp đặt</p>
         <h1>Lệnh lắp đặt · <TruncatedId value={workOrder.id} /></h1>
       </div>
       <div className={styles.workOrderPageActions}>
-        <Link className={styles.workOrderContractLink} href={contractHref}>Về hợp đồng</Link>
         <ButtonBar className={styles.workOrderRefreshButton} type="button" onClick={onRefresh} disabled={isRefreshing}>
           {isRefreshing ? "Đang tải…" : "Làm mới"}
         </ButtonBar>

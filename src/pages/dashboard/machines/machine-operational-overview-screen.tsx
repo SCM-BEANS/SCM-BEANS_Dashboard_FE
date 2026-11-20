@@ -11,6 +11,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { contractsApi } from "@/apis/contracts.api";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { MachineHealthPanel } from "@/components/machines/machine-health-panel";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
@@ -156,7 +157,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
     <div className={[styles.operationalOverview, shellStyles.ownerMonitoringLayout].join(" ")}>
       {state?.tab !== "health" && <ButtonBar disabled={!ready || !state || pending} onClick={refresh}>Làm mới</ButtonBar>}
       <MachineMonitoringHeader machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" />
-      {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><Link href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</Link></div> : null}
+      {router.isReady && !validMachineId ? <div className={styles.operationalOverviewError} role="alert"><p>Mã máy không hợp lệ. Hãy chọn lại máy từ danh sách.</p><TextLinkButton back href={PATH_CUSTOMER.MACHINES}>Về danh sách máy</TextLinkButton></div> : null}
       {!router.isReady || machine.isPending && ready ? <p role="status">Đang tải hồ sơ máy…</p> : null}
       {machine.isError ? <div className={styles.operationalOverviewError} role="alert"><p>{getApiErrorMessage(machine.error)}</p><ButtonBar onClick={() => void machine.refetch()}>Thử lại</ButtonBar></div> : null}
       {parsed.error && router.isReady ? <div className={styles.operationalOverviewError} role="alert"><p>{parsed.error}</p><ButtonBar onClick={() => navigate({ tab: "brewing", fromDate: today, toDate: today, brewPage: undefined, cleaningPage: undefined, recipeName: undefined, cleaningType: undefined, cleaningStatus: undefined, complianceDays: undefined, telemetryFrom: undefined, telemetryTo: undefined, field: undefined })}>Đặt lại bộ lọc</ButtonBar></div> : null}

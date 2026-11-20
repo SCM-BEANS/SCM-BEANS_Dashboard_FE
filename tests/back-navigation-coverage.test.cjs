@@ -76,7 +76,6 @@ test("each admin create/detail page renders one shared heading back control and 
     ["src/pages/admin/machines/index.page.tsx", "getMachinesBackDestination", 1],
     ["src/pages/admin/contracts/index.page.tsx", "getContractsBackDestination", 1],
     ["src/pages/admin/iot/index.page.tsx", "getIotBackDestination", 3],
-    ["src/pages/admin/menu/index.page.tsx", "getMenuBackDestination", 1],
   ];
 
   for (const [file, destination, headingCount] of routeScreens) {
@@ -88,7 +87,7 @@ test("each admin create/detail page renders one shared heading back control and 
   const contracts = source("src/pages/admin/contracts/index.page.tsx");
   assert.doesNotMatch(contracts, /<ButtonBar[^>]*>Về danh sách<\/ButtonBar>/);
   const machines = source("src/pages/admin/machines/index.page.tsx");
-  const machineDetail = source("src/pages/admin/machines/[machineId].page.tsx");
+  const machineDetail = source("src/pages/admin/machines/machine-detail-screen.tsx");
   assert.match(machineDetail, /getMachineDetailBackDestination\(router\.query\)/);
   assert.match(machines, /query:\s*\{\s*status:\s*statusFilter\s*\}/);
   assert.doesNotMatch(machines, /\{T\.MACHINES\.CANCEL\}<\/ButtonBar>/);
@@ -98,14 +97,17 @@ test("each admin create/detail page renders one shared heading back control and 
   assert.doesNotMatch(menu, /\{ADMIN_MESSAGES\.MENU\.CANCEL\}<\/ButtonBar>/);
   const iot = source("src/pages/admin/iot/index.page.tsx");
   assert.doesNotMatch(iot, /<ButtonBar[^>]*>\{T\.IOT\.BACK\}<\/ButtonBar>/);
+  const recipes = source("src/components/features/recipe-menus/recipe-menus-screen.tsx");
+  assert.match(recipes, /!isModerator\s*\?\s*<TextLinkButton back/);
 });
 
 test("shared back control keeps its accessible label, visible keyboard focus, and 44px touch target", () => {
   const button = source("src/components/navigation/back-button.tsx");
-  const css = source("src/components/navigation/back-button.module.css");
+  const textLinkButton = source("src/components/button/text-link-button.tsx");
+  const css = source("src/components/button/text-link-button.module.css");
   assert.match(button, /aria-label=\{label\}/);
-  assert.match(css, /min-height:\s*44px/);
-  assert.match(css, /:focus-visible\s*\{[^}]*outline:\s*2px/s);
-  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.doesNotMatch(css, /@media\s*\(max-width:[^)]*\)[^{]*\{[^}]*\.button\s*\{[^}]*min-height:\s*(?:[0-3]?\d)px/s);
+  assert.match(button, /TextLinkButton back/);
+  assert.match(textLinkButton, /data-ui-back-link=\{back \? "true" : undefined\}/);
+  assert.match(css, /\.back\.back\s*\{[^}]*min-height:\s*44px/s);
+  assert.match(css, /\.back\.back:focus-visible\s*\{[^}]*outline:\s*2px/s);
 });

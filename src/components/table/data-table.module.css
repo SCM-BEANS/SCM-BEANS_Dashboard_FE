@@ -106,12 +106,14 @@
 }
 
 .contractTable .table {
-  min-width: 48rem;
+  min-width: 56rem;
   table-layout: fixed;
 }
 
-.contractTable th:nth-child(2) { width: 22%; }
-.contractTable th:nth-child(4) { width: 18%; }
+.contractTable th:first-child { width: 16.5%; }
+.contractTable th:nth-child(2) { width: 25%; min-width: 220px; }
+.contractTable th:nth-child(3) { width: 16.5%; }
+.contractTable th:nth-child(4) { width: 16%; min-width: 140px; }
 .contractTable th:last-child { width: 26%; }
 
 .contractTable .table .contractDraftAction {

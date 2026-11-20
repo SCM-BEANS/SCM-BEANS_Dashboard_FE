@@ -154,23 +154,32 @@ test("BackButton renders an accessible 44px target and runs its shared navigatio
     replace(href) { calls.push(["replace", href]); },
   }) };
   const icon = (props) => React.createElement("svg", { ...props, "data-icon": "arrow-left" });
+  const { TextLinkButton } = loadTypeScriptModule("src/components/button/text-link-button.tsx", {
+    "next/link": { __esModule: true, default: (props) => React.createElement("a", props) },
+    "lucide-react": { ArrowLeft: icon },
+    "./text-link-button.module.css": { link: "text-link", back: "back-link", backIcon: "back-icon" },
+  });
   const { BackButton } = loadTypeScriptModule("src/components/navigation/back-button.tsx", {
     "next/router": restoreRouter,
-    "lucide-react": { ArrowLeft: icon },
-    "./back-button.module.css": { button: "back-button", icon: "back-icon" },
+    "@/components/button/text-link-button": { TextLinkButton },
     "./history-entry": { ...historyEntry, navigateBackOrFallback },
   });
-  const css = readFileSync(join(root, "src/components/navigation/back-button.module.css"), "utf8");
+  const css = readFileSync(join(root, "src/components/button/text-link-button.module.css"), "utf8");
   const oldWindow = global.window;
   global.window = { history: { state: { [historyEntry.HISTORY_ENTRY_STATE_KEY]: { id: "detail", parentId: "list", path: "/customers/42" } } } };
 
   try {
-    const element = BackButton({ label: "Về danh sách khách hàng", fallbackHref: "/customers" });
+    const backControl = BackButton({ label: "Về danh sách khách hàng", fallbackHref: "/customers" });
+    assert.equal(backControl.type, TextLinkButton);
+    assert.equal(backControl.props.back, true);
+    assert.equal(backControl.props.children, "Về danh sách khách hàng");
+    const element = TextLinkButton(backControl.props);
     assert.equal(element.type, "button");
     assert.equal(element.props.type, "button");
     assert.equal(element.props["aria-label"], "Về danh sách khách hàng");
+    assert.equal(element.props["data-ui-back-link"], "true");
     assert.match(css, /min-height:\s*44px/);
-    assert.match(css, /:focus-visible/);
+    assert.match(css, /\.back\.back:focus-visible\s*\{[^}]*outline:\s*2px/s);
     element.props.onClick({ preventDefault() {} });
     assert.deepEqual(calls, [["back"]]);
 

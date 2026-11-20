@@ -49,16 +49,30 @@
 }
 
 .policy {
-  padding: 14px;
+  padding: var(--ui-panel-padding, 22px 24px);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--ui-panel-radius, 16px);
+  background: var(--color-surface);
 }
 
 .policy summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
   cursor: pointer;
   color: var(--color-text);
   font-size: 14px;
   font-weight: 600;
+}
+
+.policy summary:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.policy summary:focus-visible {
+  outline: 2px solid var(--ui-color-primary, #b81724);
+  outline-offset: -2px;
+  border-radius: 4px;
 }
 
 .policy[open] summary {
@@ -92,7 +106,11 @@
 }
 
 .actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  justify-items: start;
   gap: 8px;
+}
+
+.actions > button:disabled {
+  opacity: 0.65;
 }

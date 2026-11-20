@@ -55,13 +55,7 @@ function RetryableNotice({
   );
 }
 
-export function ContractInstallationRequestScreen({
-  contractId,
-  backHref,
-}: {
-  contractId: string;
-  backHref?: string;
-}) {
+export function ContractInstallationRequestScreen({ contractId, backHref }: { contractId: string; backHref?: string }) {
   const queryClient = useQueryClient();
   const validId = ContractIdSchema.safeParse(contractId).success;
   const [scheduledFor, setScheduledFor] = useState("");
@@ -176,12 +170,16 @@ export function ContractInstallationRequestScreen({
 
   return (
     <div className={styles.pageContent}>
-      <ModeratorPageHeading
+      {backHref ? <div className={styles.pageHeading}>
+        <TextLinkButton back href={backHref}>Về hợp đồng</TextLinkButton>
+        <ModeratorPageHeading
+          title="Tạo lệnh lắp đặt"
+          description="Tạo lệnh lắp đặt từ hợp đồng nháp và giao trực tiếp cho kỹ thuật viên phụ trách."
+        />
+      </div> : <ModeratorPageHeading
         title="Tạo lệnh lắp đặt"
         description="Tạo lệnh lắp đặt từ hợp đồng nháp và giao trực tiếp cho kỹ thuật viên phụ trách."
-      />
-      {backHref && <ButtonBar href={backHref}>Về hợp đồng</ButtonBar>}
-
+      />}
       {!validId && (
         <RetryableNotice message="Mã hợp đồng không hợp lệ; không gửi yêu cầu tới API." />
       )}

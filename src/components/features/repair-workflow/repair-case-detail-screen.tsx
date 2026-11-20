@@ -13,6 +13,7 @@ import { machinesApi } from "@/apis/machines.api";
 import { replacementAssignmentsApi } from "@/apis/replacement-assignments.api";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -968,16 +969,22 @@ export function RepairCaseDetailScreen({
   const screen = (
     <div className={compactLayout ? `${styles.screen} ${styles.operatorWorkspace}` : styles.screen} data-screen="repair-case" data-role={role}>
       <div className={compactLayout ? styles.casePageHeader : undefined}>
-        <BackButtonHeading
+        {relatedOnly ? <div className={styles.pageHeading}>
+          <TextLinkButton back href={caseHref}>Về hồ sơ sửa chữa</TextLinkButton>
+          <BackButtonHeading
+            className={styles.heading}
+            title="Công việc liên quan & chứng từ"
+            titleId="repair-case-detail-title"
+            description={`Hồ sơ sửa chữa · ${caseId.slice(0, 8).toUpperCase()}`}
+            back={null}
+          />
+        </div> : <BackButtonHeading
           className={styles.heading}
-          title={relatedOnly ? "Công việc liên quan & chứng từ" : M.CASE_DETAIL_TITLE}
+          title={M.CASE_DETAIL_TITLE}
           titleId="repair-case-detail-title"
-          description={relatedOnly ? `Hồ sơ sửa chữa · ${caseId.slice(0, 8).toUpperCase()}` : undefined}
-          back={relatedOnly ? null : { label: "Quay lại danh sách", fallbackHref: listHref }}
-        />
-        {relatedOnly ? (
-          <ButtonBar href={caseHref}>Về hồ sơ sửa chữa</ButtonBar>
-        ) : compactLayout && repairCase.isSuccess ? (
+          back={{ label: "Quay lại danh sách", fallbackHref: listHref }}
+        />}
+        {!relatedOnly && compactLayout && repairCase.isSuccess ? (
           <ButtonBar href={relatedHref}>Công việc liên quan &amp; chứng từ</ButtonBar>
         ) : null}
       </div>
