@@ -1,11 +1,16 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { TextLinkButton } from "@/components/button/text-link-button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+
 import { useState } from "react";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TableFilters } from "@/components/table/table-filters";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
+import { MachineListView } from "@/components/machines/machine-list-view";
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { machinesApi } from "@/apis/machines.api";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
@@ -15,6 +20,7 @@ import { useOwnerNames } from "@/hooks/use-owner-names";
 import styles from "../technician-shell.module.css";
 
 export function MachineCheckTable() {
+  const queryClient = useQueryClient();
   const [draft, setDraft] = useState({ search: "", status: "" });
   const [filters, setFilters] = useState(draft);
   const [page, setPage] = useState(0);
@@ -31,16 +37,19 @@ export function MachineCheckTable() {
   return (
     <section className={styles.pageContent} aria-labelledby="technician-machine-check-title">
       <header className={styles.pageHeading}>
-        <h1 id="technician-machine-check-title">{T.NAVIGATION.MACHINE_CHECK}</h1>
+        <h1 id="technician-machine-check-title">Quản lý máy</h1>
       </header>
+      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && ((query.queryKey[1] === "machines" && query.queryKey[2] === "inventory") || (query.queryKey[1] === "profiles" && query.queryKey[2] === "owner-names")) }) }]} />
+      <MachineListView labelledBy="technician-machine-check-title">
+      <SectionTabList aria-label="Chọn danh sách máy"><ButtonBar type="button" aria-pressed="true">Danh sách máy</ButtonBar></SectionTabList>
       <Panel title={T.MACHINE_CHECK.TABLE_TITLE}>
         {machines.isPending && <p className={styles.pendingNotice} role="status">{T.MACHINE_CHECK.LOADING}</p>}
         {machines.isError && (
           <div className={styles.machineCheckError} role="alert">
             <p>{getApiErrorMessage(machines.error)}</p>
-            <button className={styles.machineCheckRetry} type="button" onClick={() => void machines.refetch()}>
+            <ButtonBar className={styles.machineCheckRetry} type="button" onClick={() => void machines.refetch()}>
               {T.MACHINE_CHECK.RETRY}
-            </button>
+            </ButtonBar>
           </div>
         )}
         <TableFilters
@@ -64,7 +73,7 @@ export function MachineCheckTable() {
             rowKey={(machine) => machine.id}
             emptyMessage={T.MACHINE_CHECK.EMPTY}
             columns={[
-              { key: "machine", header: "Máy", kind: "code", noWrap: true, render: (machine) => <TextLinkButton href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>{machine.serialNumber || machine.id}</TextLinkButton> },
+              { key: "machine", header: "Serial", kind: "code", noWrap: true, render: (machine) => <TextLinkButton href={PATH_TECHNICIAN.MACHINE_CHECK_DETAIL(machine.id)}>{machine.serialNumber || machine.id}</TextLinkButton> },
               { key: "owner-id", header: "Khách hàng", kind: "name", render: (machine) => (
                 (typeof machine.ownerName === "string" && machine.ownerName.trim() ? machine.ownerName.trim() : "")
                   || (machine.ownerId ? ownerNames.data?.[machine.ownerId] : undefined)
@@ -77,6 +86,7 @@ export function MachineCheckTable() {
         )}
         {machines.data && <div className={styles.pagination}><span>{filtered.length} máy</span><Pagination page={page} hasNext={(page + 1) * 10 < filtered.length} ariaLabel={T.MACHINE_CHECK.PAGINATION_LABEL} previousLabel={T.MACHINE_CHECK.PREVIOUS} nextLabel={T.MACHINE_CHECK.NEXT} totalPages={Math.max(1, Math.ceil(filtered.length / 10))} hideWhenSinglePage={false} onPageChange={setPage} /></div>}
       </Panel>
+      </MachineListView>
     </section>
   );
 }

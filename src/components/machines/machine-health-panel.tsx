@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import { telemetryApi } from "@/apis/telemetry.api";
 import { ButtonBar } from "@/components/button/button-bar";
-import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MachineConnectionBadge } from "./machine-connection-badge";
@@ -49,11 +48,12 @@ export function MachineHealthStatus({ status }: { status: keyof typeof statusLab
   return <span className={styles.badge} data-status={status}>{statusLabels[status]}</span>;
 }
 
-export function MachineHealthPanel({ machineId, subject, onOpenCleaning, canReadTelemetry = true }: {
+export function MachineHealthPanel({ machineId, subject, onOpenCleaning, canReadTelemetry = true, showRefresh = true }: {
   machineId: string;
   subject: string;
   onOpenCleaning: () => void;
   canReadTelemetry?: boolean;
+  showRefresh?: boolean;
 }) {
   const [showTemperature, setShowTemperature] = useState(false);
   const query = useQuery({
@@ -91,9 +91,9 @@ export function MachineHealthPanel({ machineId, subject, onOpenCleaning, canRead
           {needsAttention.length > 0 && <p className={styles.attention}><strong>Cần chú ý</strong> {needsAttention.join(", ")}</p>}
           {health.connectionStatus === "OFFLINE" && <p className={styles.muted}>Kết quả tại lần đánh giá gần nhất.</p>}
         </div>
-        <ButtonBar disabled={query.isFetching} onClick={() => void query.refetch()}>
+        {showRefresh && <ButtonBar disabled={query.isFetching} onClick={() => void query.refetch()}>
           {query.isFetching ? "Đang cập nhật…" : "Làm mới đánh giá"}
-        </ButtonBar>
+        </ButtonBar>}
       </div>
       <dl className={styles.facts}>
         <div><dt>Đánh giá lúc</dt><dd>{dateTime(health.evaluatedAt)}</dd></div>
@@ -149,7 +149,7 @@ export function MachineHealthPanel({ machineId, subject, onOpenCleaning, canRead
           <div><dt>Vệ sinh lần cuối</dt><dd>{dateTime(cleaningHygiene.lastCleanedAt)}</dd></div>
           <div><dt>Số ly sau lần vệ sinh</dt><dd>{measurement(cleaningHygiene.cupsSinceLastClean, "ly")}</dd></div>
         </dl>
-        <TextLinkButton onClick={onOpenCleaning}>Xem lịch sử vệ sinh</TextLinkButton>
+        <ButtonBar onClick={onOpenCleaning}>Xem lịch sử vệ sinh</ButtonBar>
       </SmartIotPanel>
     </div>
   </div>;

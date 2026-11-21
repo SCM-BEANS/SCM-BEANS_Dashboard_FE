@@ -19,7 +19,9 @@ import { TableFilters } from "@/components/table/table-filters";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
+import { MachineProfileGroups } from "@/components/machines/machine-profile-groups";
 import { MachineListView } from "@/components/machines/machine-list-view";
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { MachineConnectionBadge, type MachineConnectionState } from "@/components/machines/machine-connection-badge";
 import { pollingInterval, staggerHeartbeatRequest, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import machineStyles from "@/components/machines/machines.module.css";
@@ -33,10 +35,11 @@ import { telemetryApi } from "@/apis/telemetry.api";
 import { ownerAnalyticsApi } from "@/apis/owner-analytics.api";
 import { OwnerAnalyticsCalendarRangeSchema } from "@/schema/owner-analytics.schema";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
-import { getVietnamToday, summarizeMachineCleaning } from "./machine-cleaning-history-panel";
+import { getVietnamToday, summarizeMachineCleaning } from "./machine-cleaning-utils";
 import { MachineIdSchema, MachineStatusSchema } from "@/schema/machines.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
+import { ADMIN_OPERATIONS_MESSAGES as ADMIN_T } from "@/text/admin/admin-operations-messages";
 import { DetailItem, formatDate, QueryFeedback, statusLabel, useOwnerSubject } from "../shared/customer-screen-common";
 import styles from "../customer-shell.module.css";
 
@@ -55,7 +58,7 @@ const maintenanceRequestStatusLabels: Record<string, string> = {
 };
 const closedMaintenanceRequestStatuses = new Set(["COMPLETED", "CLOSED", "CANCELLED"]);
 const detailTabs = [
-  { value: "overview", label: "Tổng quan" },
+  { value: "overview", label: "Hồ sơ máy" },
   { value: "maintenance", label: "Bảo trì & hỗ trợ" },
   { value: "contracts", label: "Hợp đồng" },
   { value: "model", label: "Xem máy 3D" },
@@ -241,43 +244,43 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
         titleId="customer-screen-title"
         className={styles.pageHeading}
       />
+      {machineId && detail.data && <div className={styles.machineHeadingActions}>{isSmartIot && <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Xem vận hành</ButtonBar>}<ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar></div>}
+      {!machineId && <ButtonBar href={isHistory ? "/dashboard/support/new" : PATH_CUSTOMER.MACHINE_NEW}>{isHistory ? "Gửi yêu cầu hỗ trợ" : "Đăng ký máy"}</ButtonBar>}
       </div>
       {machineId ? (
-        <MachineDetailView className={styles.ownerProfileLayout} summary={detail.data && detailTab !== "model" ? [
-          { label: "Kết nối", value: isSmartIot ? <MachineConnectionBadge state={heartbeat.isError ? "error" : heartbeat.isPending ? "loading" : heartbeat.data?.status ?? "not-requested"} /> : "Không áp dụng" },
-          { label: summaryDate === getVietnamToday() ? "Số ly hôm nay" : `Số ly ngày ${summaryDate.split("-").reverse().join("/")}`, value: countLabel },
-        ] : []}>
+        <MachineDetailView className={styles.ownerProfileLayout} summary={[]}>
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_MACHINES} />
           {detail.data ? (
             <>
-              <div className={`${styles.ownerProfileNavigation} ${detailTab === "model" ? twinStyles.navigation : ""}`}><MachineSectionTabs label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} /><div className={styles.ownerContextActions}>{isSmartIot && <ButtonBar rollingLabel href={PATH_CUSTOMER.MACHINE_OPERATIONAL_OVERVIEW(machineId)}>Xem vận hành</ButtonBar>}<ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar></div></div>
+              <div className={`${styles.ownerProfileNavigation} ${machineStyles.ownerMachineDetailNavigation} ${detailTab === "model" ? twinStyles.navigation : ""}`}><MachineSectionTabs className={machineStyles.ownerMachineDetailTabs} label="Nội dung chi tiết máy" tabs={detailTabs} activeTab={detailTab} onTabChange={(tab) => setDetailTab(tab as DetailTab)} idPrefix="owner-machine" panelId={detailPanelId} /></div>
               <div className={`${machineStyles.machineDetailSections} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("overview")} role="tabpanel" aria-labelledby="owner-machine-tab-overview" hidden={detailTab !== "overview"}>
-              <div className={styles.ownerOverviewColumns}>
-                <Panel className={styles.dataPanel} aria-labelledby="owner-machine-profile">
-                  <div className={styles.ownerSectionHeading}><h2 id="owner-machine-profile">Thông tin máy</h2>{detail.data.ownerId && <TransferMachineAction machine={detail.data} role="owner" currentLocationName={locationName(detail.data.locationId)} />}</div>
-                  <dl className={styles.ownerProfileRows}>
-                    <DetailItem label="Serial" value={detail.data.serialNumber} />
-                    <DetailItem label="Điểm bán" value={locationName(detail.data.locationId)} />
-                    <DetailItem label="Loại máy" value={detail.data.machineType === "SMART_IOT" ? "Smart IoT" : detail.data.machineType === "CONVENTIONAL" ? "Máy thường" : "Chưa xác định"} />
-                    <DetailItem label="Trạng thái" value={<span className={adminStyles.machinePlainStatus} data-status={detail.data.status ?? undefined}>{ownerMachineStatusLabel(detail.data.status)}</span>} />
-                    <DetailItem label="Menu đang dùng" value={detail.data.activeMenuId === undefined ? "Chưa có thông tin menu" : detail.data.activeMenuId === null ? "Menu mặc định" : detail.data.activeMenuName || "Menu riêng"} />
-                  </dl>
-                </Panel>
-                <aside className={styles.dataPanel}><h2>Lịch bảo trì</h2>
-                  <dl className={styles.ownerProfileRows}>
-                    <DetailItem label="Bảo trì tiếp theo" value={formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt)} />
-                    <DetailItem label="Số ly từ lần xả cặn" value={(schedule.data?.cupsServedSinceLastDescale ?? detail.data.cupsServedSinceLastDescale)?.toLocaleString("vi-VN") ?? "Chưa có dữ liệu"} />
-                    <DetailItem label="Hết hạn hợp đồng" value={formatDate(detail.data.contractEndDate)} />
-                  </dl>
-                  {schedule.isError && <p className={styles.errorNotice}>Chưa tải được lịch bảo trì mới nhất.</p>}
-                  <ButtonBar onClick={() => setDetailTab("maintenance")}>Xem bảo trì & hỗ trợ</ButtonBar>
-                </aside>
-              </div>
-              <details className={styles.ownerExtraDetails}><summary>Thông tin bổ sung</summary><dl className={styles.detailGrid}>
+              <Panel className={adminStyles.panel} aria-labelledby="owner-machine-profile">
+                <div className={adminStyles.machineInventoryHeading}><h2 id="owner-machine-profile">{ADMIN_T.MACHINES.DETAIL}</h2>{detail.data.ownerId && <TransferMachineAction machine={detail.data} role="owner" currentLocationName={locationName(detail.data.locationId)} />}</div>
+                <MachineProfileGroups
+                  identity={[
+                    { label: ADMIN_T.MACHINES.SERIAL, value: detail.data.serialNumber || "—" },
+                    { label: ADMIN_T.MACHINES.MODEL_NAME, value: typeof detail.data.modelName === "string" && detail.data.modelName ? detail.data.modelName : ADMIN_T.MACHINES.MODEL_UNASSIGNED },
+                    { label: ADMIN_T.MACHINES.MACHINE_TYPE, value: detail.data.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : detail.data.machineType === "CONVENTIONAL" ? ADMIN_T.MACHINES.CONVENTIONAL : ADMIN_T.MACHINES.UNCLASSIFIED },
+                    { label: ADMIN_T.MACHINES.REGION, value: detail.data.region || "—" },
+                    { label: "Kết nối", value: isSmartIot ? <MachineConnectionBadge state={heartbeat.isError ? "error" : heartbeat.isPending ? "loading" : heartbeat.data?.status ?? "not-requested"} /> : "Không áp dụng" },
+                    { label: ADMIN_T.MACHINES.STATUS, value: <span className={adminStyles.machinePlainStatus} data-status={detail.data.status ?? undefined}>{ownerMachineStatusLabel(detail.data.status)}</span> },
+                    { label: ADMIN_T.MACHINES.ACTIVE_MENU, value: detail.data.activeMenuId === undefined ? "Chưa có thông tin menu" : detail.data.activeMenuId === null ? "Menu mặc định" : detail.data.activeMenuName || "Menu riêng" },
+                  ]}
+                  allocation={[
+                    { label: ADMIN_T.MACHINES.LOCATION, value: detail.data.locationId ? <TruncatedId value={detail.data.locationId} /> : "—" },
+                    { label: ADMIN_T.MACHINES.DEPLOYED_AT, value: formatDate(detail.data.deployedAt) },
+                    { label: ADMIN_T.MACHINES.CONTRACT_PERIOD, value: detail.data.contractStartDate || detail.data.contractEndDate ? `${formatDate(detail.data.contractStartDate)} – ${formatDate(detail.data.contractEndDate)}` : "—" },
+                    { label: ADMIN_T.MACHINES.MONTHLY_RENTAL_FEE, value: detail.data.monthlyRentalFee == null ? "—" : `${new Intl.NumberFormat("vi-VN").format(detail.data.monthlyRentalFee)} ₫/tháng` },
+                    { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? detail.data.nextPreventiveMaintenanceAt) },
+                    { label: "Số ly hôm nay", value: countLabel },
+                    { label: ADMIN_T.MACHINES.CUPS, value: (schedule.data?.cupsServedSinceLastDescale ?? detail.data.cupsServedSinceLastDescale)?.toLocaleString("vi-VN") ?? "—" },
+                  ]}
+                />
+                {schedule.isError && <p className={styles.errorNotice} role="alert">Chưa tải được lịch bảo trì mới nhất.</p>}
+                <details className={styles.ownerExtraDetails}><summary>{ADMIN_T.MACHINES.SYSTEM_INFO}</summary><dl className={styles.detailGrid}>
                 <DetailItem label="Mã máy" value={<TruncatedId value={detail.data.id} />} />
-                <DetailItem label="Khu vực" value={detail.data.region} />
-                <DetailItem label="Ngày triển khai" value={formatDate(detail.data.deployedAt)} />
-              </dl></details>
+                </dl></details>
+              </Panel>
               {isSmartIot && activeScope?.isSuccess && (!activeContract || cups.data?.activeMachineCount === 0) ? <p className={styles.emptyNotice}>Dữ liệu vận hành chỉ gồm máy có hợp đồng đang hiệu lực.</p> : null}
               </div>
               <Panel className={`${styles.dataPanel} ${machineStyles.ownerDetailTabPanel}`} id={detailPanelId("maintenance")} role="tabpanel" aria-labelledby="owner-machine-tab-maintenance" hidden={detailTab !== "maintenance"}>
@@ -335,17 +338,20 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
         </MachineDetailView>
       ) : (
         <MachineListView
-          className={styles.machineListPanel}
           labelledBy="customer-screen-title"
         >
-          <div className={styles.ownerInventoryTitle}><h2>Danh sách máy</h2><span>{visibleMachines.length} máy</span><div className={styles.ownerListLinks}>
+          <SectionTabList aria-label="Chọn danh sách máy">
+            <ButtonBar href={PATH_CUSTOMER.MACHINES} aria-pressed={!isHistory}>Danh sách máy</ButtonBar>
+            <ButtonBar href="/dashboard/machines/history" aria-pressed={isHistory}>Lịch sử bảo trì</ButtonBar>
+          </SectionTabList>
+          <Panel className={adminStyles.panel}>
+          <div className={styles.ownerInventoryTitle}><h2>{ADMIN_T.MACHINES.TITLE}</h2><span>{visibleMachines.length} máy</span><div className={styles.ownerListLinks}>
               <details className={styles.ownerRelatedMenu} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary>Liên quan</summary><nav aria-label="Liên kết liên quan đến máy">
                 <TextLinkButton href="/dashboard/locations">Địa điểm của tôi</TextLinkButton>
                 <TextLinkButton href="/dashboard/machines/history">Lịch sử bảo trì</TextLinkButton>
                 <TextLinkButton href="/dashboard/contracts">Hợp đồng của tôi</TextLinkButton>
+                <ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar>
               </nav></details>
-              <ButtonBar disabled={cleaning.isFetching || cups.isFetching} onClick={refreshSummary}>Làm mới</ButtonBar>
-              {isHistory ? <ButtonBar href="/dashboard/support/new">Gửi yêu cầu hỗ trợ</ButtonBar> : <ButtonBar variant="primary" href={PATH_CUSTOMER.MACHINE_NEW}>Đăng ký máy</ButtonBar>}
             </div></div>
           <TableFilters search={{ ariaLabel: "Tìm máy", placeholder: "Tìm serial, mẫu máy hoặc điểm bán", value: machineFilterDraft.search, onChange: (search) => setMachineFilterDraft((current) => ({ ...current, search })) }}
             selects={[
@@ -365,16 +371,17 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
                   rowKey={(machine) => machine.id}
                   rowProps={(machine) => machine.machineType === "SMART_IOT" ? { "data-machine-heartbeat-id": machine.id } : {}}
                   columns={[
-                    { key: "serial", header: "Máy", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? messages.MACHINE_NO_SERIAL}</Link> },
-                    { key: "type", header: messages.FIELD_MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Thông thường" : "—" },
+                    { key: "serial", header: "Serial", render: (machine) => <Link className={machineStyles.ownerMachineLink} href={PATH_CUSTOMER.MACHINE_DETAIL(machine.id)}>{machine.serialNumber ?? messages.MACHINE_NO_SERIAL}</Link> },
                     { key: "status", header: messages.FIELD_STATUS, render: (machine) => <span className={adminStyles.machinePlainStatus} data-status={machine.status ?? undefined}>{ownerMachineStatusLabel(machine.status)}</span> },
-                    { key: "location", header: "Điểm bán", render: (machine) => locationName(machine.locationId) },
-                    { key: "connection", header: "Kết nối", render: (machine) => {
+                    { key: "connection", header: "Kết nối", kind: "status", noWrap: true, render: (machine) => {
                       if (machine.machineType !== "SMART_IOT") return <span className={machineStyles.muted}>Không áp dụng</span>;
                       const query = heartbeatByMachineId.get(machine.id);
                       const state: MachineConnectionState = query?.isError ? "error" : query?.isPending ? "loading" : query?.data?.status ?? "not-requested";
                       return <MachineConnectionBadge state={state} onRetry={query ? () => void query.refetch() : undefined} />;
                     } },
+                    { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => machine.contractStartDate || machine.contractEndDate ? `${formatDate(machine.contractStartDate)} – ${formatDate(machine.contractEndDate)}` : "—" },
+                    { key: "type", header: messages.FIELD_MACHINE_TYPE, render: (machine) => machine.machineType === "SMART_IOT" ? "Smart IoT" : machine.machineType === "CONVENTIONAL" ? "Thông thường" : "—" },
+                    { key: "location", header: "Điểm bán", render: (machine) => locationName(machine.locationId) },
                     { key: "cleaning", header: "Vệ sinh trong ngày", render: (machine) => machine.machineType !== "SMART_IOT" ? <span className={machineStyles.muted}>Không áp dụng</span> : <div className={styles.ownerCleaningCell}>{([["startup", "Đầu ngày"], ["closing", "Cuối ngày"]] as const).map(([period, label]) => { const value = cleaningLabel(machine.id, period); return <div key={period}><span>{label}</span><span className={styles.ownerCleaningState} data-complete={value === "Hoàn tất"} title={value}><i aria-hidden="true" />{value}</span></div>; })}</div> },
                   ]}
                 />
@@ -388,11 +395,12 @@ export function MachinesScreen({ sectionPath, back }: { sectionPath: string; bac
               ariaLabel={messages.MACHINES_PAGINATION_LABEL}
               previousLabel={messages.PREVIOUS}
               nextLabel={messages.NEXT}
-              showPage={false}
+              totalPages={Math.max(1, Math.ceil(visibleMachines.length / 10))}
               hideWhenSinglePage={false}
               onPageChange={setMachinePage}
             />
           </div>
+          </Panel>
         </MachineListView>
       )}
     </section>

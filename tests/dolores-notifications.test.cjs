@@ -20,6 +20,17 @@ function loadTypescript(relativePath, mocks = {}) {
 const notificationId = "00000000-0000-4000-8000-000000000001";
 const machineId = "00000000-0000-4000-8000-000000000003";
 
+test("relative notification dates handle recent and missing timestamps", () => {
+  const { formatNotificationRelativeDate } = loadTypescript("src/text/notification-inbox-messages.ts");
+  const now = Date.now;
+  try {
+    Date.now = () => Date.parse("2026-11-21T12:00:00Z");
+    assert.equal(formatNotificationRelativeDate("2026-11-21T10:00:00Z"), "2 giờ trước");
+    assert.equal(formatNotificationRelativeDate("2026-11-20T12:00:00Z"), "Hôm qua");
+    assert.equal(formatNotificationRelativeDate(null), "—");
+  } finally { Date.now = now; }
+});
+
 test("notification preferences reject corrupt storage and unsupported values", () => {
   const { parseNotificationPreferences } = loadTypescript("src/components/notifications/notification-preferences.ts");
   const defaults = { sound: false, position: "top-right", dndUntil: 0 };

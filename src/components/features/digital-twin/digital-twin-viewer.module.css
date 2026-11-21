@@ -51,89 +51,13 @@
 .toolbarButton {
   display: inline-flex;
   min-width: 44px;
-  min-height: 44px;
   max-width: 100%;
   flex: 0 1 auto;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: 8px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
   text-align: center;
   white-space: normal;
-  cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.toolbarButton:focus-visible,
-.retryButton:focus-visible {
-  outline: 3px solid rgb(185 18 34 / 28%);
-  outline-offset: 2px;
-}
-
-.toolbarButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
-
-.toolbarButton:disabled:hover {
-  background: transparent;
-}
-
-.toggleButton[aria-pressed="true"],
-.layerButton[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  background: #fae9eb;
-  color: #9f101e;
-}
-
-.layerButton[aria-pressed="false"] {
-  border-color: var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-}
-
-.iconButton {
-  padding: 8px;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.iconButton:hover:not(:disabled),
-.textButton:hover:not(:disabled) {
-  background: #f6f2ef;
-}
-
-.primaryButton,
-.retryButton {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.primaryButton:hover:not(:disabled),
-.retryButton:hover {
-  background: #9f101e;
-}
-
-.outlineButton {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.outlineButton:hover:not(:disabled) {
-  background: #fae9eb;
-}
-
-.textButton {
-  color: var(--color-text-muted);
 }
 
 .separator {
@@ -200,16 +124,8 @@
 
 .retryButton {
   display: inline-flex;
-  min-height: 44px;
   align-items: center;
   justify-content: center;
-  padding: 8px 20px;
-  border: 1px solid var(--color-primary);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .readyStatus,
@@ -276,24 +192,12 @@
     padding: 4px;
   }
 
-  .toolbarButton {
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .iconButton {
-    padding: 8px;
-  }
-
   .separator {
     display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .toolbarButton {
-    transition: none;
-  }
   .spinner {
     animation: none;
   }
@@ -303,7 +207,7 @@
 .ownerScene { position: relative; overflow: hidden; height: clamp(340px, calc(100vh - 426px), 700px); }
 .ownerViewer .toolbar { position: relative; inset: auto; width: 100%; max-width: 100%; padding: 12px 16px; border: 0; border-radius: 0; background: var(--color-surface); justify-content: flex-start; box-shadow: none; backdrop-filter: none; }
 .ownerViewer .separator { display: none; }
-.ownerViewer .toolbarButton { font-size: 14px; white-space: nowrap; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text); background: var(--color-surface); }
+.ownerViewer .toolbarButton { white-space: nowrap; }
 .ownerViewer .ghostButton { margin-left: auto; }
 .ownerViewer .loadingOverlay, .ownerViewer .errorOverlay { bottom: 68px; }
 .partControls { color: var(--color-text); font-size: 14px; }
@@ -313,6 +217,5 @@
 @media (max-width: 900px) {
   .ownerScene { height: 220px; }
   .ownerViewer .toolbar { padding: 8px; gap: 4px; }
-  .ownerViewer .toolbarButton { font-size: 13px; padding: 8px 10px; }
   .ownerViewer .loadingOverlay, .ownerViewer .errorOverlay { bottom: 108px; }
 }

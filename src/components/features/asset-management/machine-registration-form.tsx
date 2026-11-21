@@ -6,9 +6,11 @@ import { useState, type FormEvent } from "react";
 import { machinesApi } from "@/apis/machines.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
+import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { getApiErrorMessage, isUncertainApiMutation } from "@/lib/api-errors";
 import { CreateMachineRequestSchema, MachineTypeSchema } from "@/schema/machines.schema";
 import { ProfileIdSchema } from "@/schema/profiles.schema";
+import { ADMIN_OPERATIONS_MESSAGES as ADMIN_T } from "@/text/admin/admin-operations-messages";
 import { loadProfilePage, nextProfilePage } from "./asset-management-data";
 import styles from "./asset-management.module.css";
 
@@ -89,7 +91,7 @@ export function MachineRegistrationForm({
   const RegistrationActions = mode === "owner" ? PageActionsRenderer : PageActions;
   return (
     <Panel className={[styles.panel, mode === "owner" ? styles.ownerRegistration : ""].join(" ")} aria-labelledby="machine-registration-title">
-      <h2 id="machine-registration-title">Đăng ký máy</h2>
+      <h2 id="machine-registration-title">{ADMIN_T.MACHINES.CREATE_FORM_TITLE}</h2>
       <p className={styles.description}>
         Máy mới được tạo ở trạng thái Trong kho. {mode === "owner" ? "Máy được đăng ký cho tài khoản đang đăng nhập." : "Chọn một Owner mà hồ sơ Moderator hiện tại được phép xem."}
       </p>
@@ -124,7 +126,7 @@ export function MachineRegistrationForm({
         <label className={styles.field}>Khu vực
           <input maxLength={120} value={region} disabled={create.isPending || blockResubmit} onChange={(event) => setRegion(event.target.value)} />
         </label>
-        <div className={styles.notice} role="note">Trạng thái ban đầu: Trong kho (IN_WAREHOUSE). Số ly từ lần xả cặn gần nhất: 0.</div>
+        <div className={styles.notice} role="note">{ADMIN_T.MACHINES.CREATE_INITIAL_STATUS}: {machineStatusLabel("IN_WAREHOUSE")}. {ADMIN_T.MACHINES.CREATE_INITIAL_CUPS}: 0.</div>
         {requestError && <p className={styles.notice} role="alert">{requestError}</p>}
         {blockResubmit && <p className={styles.notice} role="alert">Kết quả tạo máy chưa xác định. Tải lại danh sách máy và kiểm tra trước khi gửi lại.</p>}
         {mode === "moderator" && ownerProfiles.isError && <ButtonBar type="button" disabled={ownerProfiles.isFetching} onClick={() => void ownerProfiles.refetch()}>Thử tải lại Owner</ButtonBar>}

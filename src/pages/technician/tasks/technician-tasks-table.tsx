@@ -1,5 +1,7 @@
 import { Panel } from "@/components/panel/panel";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+
 import { useState } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY, technicianWorkItemsApi } from "@/apis/technician-work-items.api";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -187,6 +189,7 @@ function TaskCard({ task, compact = false }: { task: AssignedTask; compact?: boo
 }
 
 export function TechnicianTasksTable({ display = "page" }: { display?: "page" | "notifications" }) {
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [page, setPage] = useState(0);
   const tasksQuery = useQuery({
@@ -236,6 +239,7 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
       <header className={shellStyles.pageHeading}>
         <h1 id="technician-tasks-title">{T.NAVIGATION.TASKS}</h1>
       </header>
+      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }) }]} />
       <TableFilters
         showSubmit={false}
         toggleGroup={{
@@ -286,12 +290,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
             ]}
           />
         ) : null}
-        {tasksQuery.data ? (
-          <p className={styles.helperText}>
-            Trang {tasksQuery.data.page + 1}
-            {tasksQuery.data.hasNext ? " · còn trang tiếp theo" : ""}
-          </p>
-        ) : null}
       <Pagination
         page={page}
         hasNext={Boolean(tasksQuery.data?.hasNext)}
@@ -299,7 +297,6 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
         ariaLabel={messages.TASKS_PAGINATION_LABEL}
         previousLabel={messages.TASKS_PREVIOUS}
         nextLabel={messages.TASKS_NEXT}
-        showPage={false}
         hideWhenSinglePage={false}
         onPageChange={setPage}
       />

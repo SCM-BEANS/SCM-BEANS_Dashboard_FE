@@ -3,7 +3,7 @@ import type { MachineCleaningCompliance } from "@/schema/machines.schema";
 import { SmartIotPanel } from "./smart-iot-panel";
 import styles from "./machines.module.css";
 
-export function MachineCleaningCompliancePanel({ data, days, loading, refreshing, error, onDaysChange, onRefresh }: {
+export function MachineCleaningCompliancePanel({ data, days, loading, refreshing, error, onDaysChange, onRefresh, showRefresh = true }: {
   data?: MachineCleaningCompliance;
   days: number;
   loading: boolean;
@@ -11,6 +11,7 @@ export function MachineCleaningCompliancePanel({ data, days, loading, refreshing
   error?: string;
   onDaysChange: (days: number) => void;
   onRefresh: () => void;
+  showRefresh?: boolean;
 }) {
   const presets = [7, 30, 90];
   const periods = presets.includes(days) ? presets : [...presets, days];
@@ -28,7 +29,7 @@ export function MachineCleaningCompliancePanel({ data, days, loading, refreshing
           {periods.map((period) => <option key={period} value={period}>{period} ngày</option>)}
         </select>
       </label>
-      <ButtonBar disabled={loading || refreshing} onClick={onRefresh}>{refreshing ? "Đang cập nhật…" : "Làm mới"}</ButtonBar>
+      {showRefresh && <ButtonBar disabled={loading || refreshing} onClick={onRefresh}>{refreshing ? "Đang cập nhật…" : "Làm mới"}</ButtonBar>}
     </div>
     {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p><ButtonBar onClick={onRefresh}>Thử lại</ButtonBar></div>
       : loading ? <p role="status">Đang tải đánh giá vệ sinh…</p>

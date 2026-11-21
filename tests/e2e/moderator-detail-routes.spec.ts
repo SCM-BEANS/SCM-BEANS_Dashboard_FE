@@ -44,6 +44,19 @@ test("Moderator opens a recipe detail with a backend-valid nil UUID", async ({ p
   await expect(page.getByRole("heading", { name: "Espresso kiểm thử" })).toBeVisible();
 });
 
+test("Moderator menu creation route opens the shared editor", async ({ page }) => {
+  await prepareModeratorPage(page);
+  const response = await page.goto("/moderator/menu/new");
+
+  expect(response?.status()).toBe(200);
+  const dialog = page.getByRole("dialog", { name: "Tạo menu" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("Tên menu *")).toBeVisible();
+  await dialog.getByRole("button", { name: "Hủy", exact: true }).click();
+  await expect(page).toHaveURL("/moderator/menu");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("Moderator opens a machine-model detail", async ({ page }) => {
   await prepareModeratorPage(page);
   const response = await page.goto(`/moderator/machines/models/${modelId}`);

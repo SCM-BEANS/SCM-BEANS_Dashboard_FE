@@ -17,7 +17,7 @@ export function LocationsScreen() {
     <section className={styles.pageContent} aria-labelledby="customer-locations-title">
       <BackButtonHeading
         back={locationId ? { label: "Về danh sách địa điểm", fallbackHref: PATH_CUSTOMER.LOCATIONS } : null}
-        title="Địa điểm của tôi"
+        title={CUSTOMER_MESSAGES.READ_SCREENS.LOCATIONS_TITLE}
         titleId="customer-locations-title"
         className={styles.pageHeading}
       />

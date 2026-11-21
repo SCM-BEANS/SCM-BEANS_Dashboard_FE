@@ -1,0 +1,17 @@
+.groups {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 24px;
+  margin-top: 22px;
+}
+
+.group { display: grid; min-width: 0; align-content: start; gap: 12px; }
+.group h3 { margin: 0; color: var(--ui-color-muted, #665e59); font-size: 14px; }
+.fields { display: grid; min-width: 0; gap: 16px; }
+.fields > div { display: grid; min-width: 0; grid-template-columns: minmax(110px, 1fr) minmax(0, 1.5fr); gap: 14px; }
+.fields span { color: var(--ui-color-muted, #665e59); font-size: 13px; }
+.fields strong { min-width: 0; color: var(--ui-color-text, #302927); font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+
+@media (max-width: 1000px) { .groups { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .fields > div { grid-template-columns: minmax(0, 1fr); gap: 4px; } }

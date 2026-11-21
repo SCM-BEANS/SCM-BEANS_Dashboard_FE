@@ -137,7 +137,7 @@ test("Owner location list uses the shared panel and keeps location creation avai
   await page.context().addCookies([{ name: "access_token", value: tokenFor("owner", ownerId), domain: "127.0.0.1", path: "/" }]);
   await page.goto("/dashboard/locations");
 
-  await expect(page.getByRole("heading", { name: "Địa điểm của tôi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cửa hàng" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Địa điểm", exact: true })).toBeVisible();
   await expect(page.locator("[data-ui-panel]")).toHaveCount(1);
   await expect(page.getByRole("row")).toHaveCount(4);

@@ -105,10 +105,10 @@ test("active contract offers termination and amendment, and the form has two act
   await prepareModeratorPage(page);
   await page.goto(`/moderator/contracts/${contractId}`);
   const bar = pageActionBar(page);
-  await expect(bar.locator('[data-action-id="contract-lifecycle-terminate"]')).toHaveClass(/danger/);
+  await expect(bar.locator('[data-action-id="contract-lifecycle-terminate"]')).toHaveAttribute("data-ui-button-variant", "danger");
   await bar.locator('[data-action-id="contract-lifecycle-amend"]').click();
   await expect(bar.getByRole("button")).toHaveCount(2);
-  await expect(bar.locator('[data-action-id="contract-lifecycle-submit-amend"]')).toHaveClass(/primary/);
+  await expect(bar.locator('[data-action-id="contract-lifecycle-submit-amend"]')).toHaveAttribute("data-ui-button-variant", "primary");
 });
 test("terminated contract offers continuation", async ({ page }) => {
   await prepareModeratorPage(page, "TERMINATED");
@@ -124,10 +124,13 @@ test("list actions omit placeholders and shortcuts", async ({ page }) => {
     await expect(page.getByRole("button", { name: /Đối soát chứng từ|Tạo yêu cầu kỹ thuật|Yêu cầu thu gom/ })).toHaveCount(0);
   }
   await page.goto("/moderator/contracts");
-  await expect(pageActionBar(page).locator('[data-action-id="contracts-create"]')).toHaveClass(/primary/);
-  await expect(pageActionBar(page).locator('[data-action-id="contracts-create"]')).toHaveText("Tạo hợp đồng");
+  const createContract = page.getByRole("main").getByRole("link", { name: "Tạo hợp đồng", exact: true });
+  await expect(createContract).toBeVisible();
+  await expect(createContract).toHaveAttribute("data-ui-button");
+  await expect(pageActionBar(page)).toBeHidden();
   await page.goto("/moderator/machines");
-  await expect(pageActionBar(page).locator('[data-action-id="machine-create"]')).toHaveClass(/primary/);
+  await expect(pageActionBar(page).getByRole("link", { name: "Giám sát Smart IoT" })).toHaveAttribute("href", "/moderator/iot");
+  await expect(pageActionBar(page).locator('[data-action-id="machine-create"]')).toHaveCount(0);
 });
 
 test("invoice lists expose export and customer creation uses the dock", async ({ page }) => {
@@ -160,12 +163,12 @@ test("selected offline review exposes its decision in the dock", async ({ page }
   await prepareModeratorPage(page);
   const claims = Buffer.from(JSON.stringify({ roles: ["moderator"], sub: ownerId })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
-  const review = { id: contractId, ownerId, contractId, machineId, policyVersionId: modelId, policyVersion: 1, offlineLimitMinutes: 60, status: "REVIEW_REQUIRED", source: "VALKEY_HEARTBEAT_TTL", detectedAt: "2026-11-06T08:30:00", lastObservedAt: "2026-11-06T09:40:00", observedOfflineSince: "2026-11-06T08:30:00", observedOfflineUntil: null, reviewRequiredAt: "2026-11-06T09:30:00", decision: null, reviewerId: null, reviewerRole: null, decisionReason: null, evidenceReferences: null, decidedAt: null };
-  await page.route("**/api/dolores/v1/offline-violation-reviews**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(contractId) ? review : [review], headers: { "X-Page": "0", "X-Page-Size": "50", "X-Has-Next": "false" } }));
+  const review = { id: contractId, ownerId, contractId, machineId, policyVersionId: modelId, policyVersion: 1, offlineLimitMinutes: 60, status: "REVIEW_REQUIRED", source: "VALKEY_HEARTBEAT_TTL", detectedAt: "2026-11-19T08:30:00", lastObservedAt: "2026-11-19T09:40:00", observedOfflineSince: "2026-11-19T08:30:00", observedOfflineUntil: null, reviewRequiredAt: "2026-11-19T09:30:00", decision: null, reviewerId: null, reviewerRole: null, decisionReason: null, evidenceReferences: null, decidedAt: null };
+  await page.route("**/api/dolores/v1/offline-violation-reviews**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(contractId) ? review : [review], headers: { "X-Page": "0", "X-Page-Size": "10", "X-Has-Next": "false" } }));
   await page.goto("/moderator/iot");
   await expect(pageActionBar(page)).toBeHidden();
   await page.getByRole("button", { name: "Mất kết nối" }).click();
-  await page.getByRole("button", { name: "08:30:00 06/11/2026", exact: true }).click();
+  await page.getByRole("button", { name: "08:30:00 19/11/2026", exact: true }).click();
   const action = pageActionBar(page).locator('[data-action-id="offline-review-decide"]');
   await expect(action).toBeDisabled();
   await page.getByLabel("Lý do rà soát").fill("Kiểm tra kết nối");

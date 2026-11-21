@@ -34,6 +34,7 @@ function createIcon(name) {
 
 const cssModule = new Proxy({}, { get: (_target, key) => `test-${String(key)}` });
 const Link = ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children);
+const ButtonBar = React.forwardRef(({ children, ...props }, ref) => React.createElement("button", { ...props, ref }, children));
 
 function loadNavigationRoute() {
   return loadTypeScriptModule("src/components/sidebar/navigation-route.ts");
@@ -42,7 +43,9 @@ function loadNavigationRoute() {
 function loadSidebar(routeModule = loadNavigationRoute()) {
   return loadTypeScriptModule("src/components/sidebar/sidebar.tsx", {
     "next/link": Link,
-    "lucide-react": { LogOut: createIcon("logout") },
+    "@/components/button/button-bar": { ButtonBar },
+    "./settings-menu": { SettingsMenu: () => null },
+    "lucide-react": { LogOut: createIcon("logout"), PanelLeftClose: createIcon("close-panel"), PanelLeftOpen: createIcon("open-panel") },
     "./sidebar.module.css": cssModule,
     "./navigation-route": routeModule,
   });
@@ -62,6 +65,7 @@ function loadMobileNavigation({ open = false } = {}) {
 
   return loadTypeScriptModule("src/components/sidebar/mobile-navigation.tsx", {
     react: reactWithControlledState,
+    "@/components/button/button-bar": { ButtonBar },
     "lucide-react": { Menu: createIcon("menu"), X: createIcon("close") },
     "@/components/sidebar/sidebar": sidebar,
     "./mobile-navigation.module.css": cssModule,
@@ -172,7 +176,8 @@ test("the open bottom sheet is named, contains role routes, keeps disabled items
 test("the shared drawer styles provide 44px targets, reduced-motion support, and the 1024px desktop breakpoint", () => {
   const css = readFileSync(join(root, "src/components/sidebar/mobile-navigation.module.css"), "utf8");
 
-  assert.match(css, /min-height:\s*44px/);
+  const tokens = readFileSync(join(root, "src/styles/ui-tokens.css"), "utf8");
+  assert.match(tokens, /min-height:\s*44px/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /min-width:\s*1024px|max-width:\s*1023px/);
 });
@@ -191,4 +196,15 @@ test("Admin renders the shared navigation from its mobile header and keeps its d
   assert.match(mobileHeader, /ADMIN_SIDEBAR_ITEMS/);
   assert.match(menu, /enabled:\s*ADMIN_ENABLED_PATHS\.has\(item\.HREF\)/);
   assert.match(shell, /onLogout:\s*handleLogout/);
+});
+
+
+test("shared pagination places the page between disabled-aware navigation buttons", () => {
+  const { Pagination } = loadTypeScriptModule("src/components/pagination/pagination.tsx", {
+    "@/components/button/button-bar": { ButtonBar },
+    "@/text/repair-workflow/repair-workflow-messages": { REPAIR_WORKFLOW_MESSAGES: { PAGE: "Trang", PREVIOUS_PAGE: "Previous", NEXT_PAGE: "Next" } },
+    "./pagination.module.css": cssModule,
+  });
+  const markup = renderToStaticMarkup(React.createElement(Pagination, { page: 0, hasNext: true, ariaLabel: "Pagination", onPageChange() {}, hideWhenSinglePage: false }));
+  assert.match(markup, /<button[^>]*disabled[^>]*>Previous<\/button><span>Trang 1<\/span><button[^>]*>Next<\/button>/);
 });

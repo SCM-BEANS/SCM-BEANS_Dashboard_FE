@@ -7,7 +7,8 @@ import { ModeratorPageHeading } from "../moderator-page-heading";
 const messages = MODERATOR_MESSAGES.READ_SCREENS;
 
 export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string }) {
-  const isList = sectionPath === "menu";
+  const isCreate = sectionPath === "menu/new";
+  const isList = sectionPath === "menu" || isCreate;
   const requestedId = isList ? "" : sectionPath.slice("menu/".length);
   const validId = GlobalRecipeIdSchema.safeParse(requestedId).success ? requestedId : "";
 
@@ -20,5 +21,6 @@ export function ModeratorRecipesScreen({ sectionPath }: { sectionPath: string })
     role="operator"
     operatorRole="MODERATOR"
     initialGlobalRecipeId={validId || undefined}
+    initialMenuAction={isCreate ? "create" : undefined}
   />;
 }

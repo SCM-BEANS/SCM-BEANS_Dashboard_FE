@@ -4,12 +4,14 @@ import { CalendarDays, CheckCircle2, Fingerprint, Mail, Phone, RefreshCw, UserRo
 import { useEffect, useState } from "react";
 import { profilesApi } from "@/apis/profiles.api";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { Profile } from "@/schema/profiles.schema";
+import { PROFILE_SETTINGS_MESSAGES as T } from "@/text/profile-settings-messages";
 import styles from "./profile-settings-screen.module.css";
 
 const profileStatusLabels: Record<Profile["status"], string> = {
@@ -43,7 +45,7 @@ function getInitials(fullName: string, email: string): string {
   return email.trim().slice(0, 1).toLocaleUpperCase("vi-VN") || "U";
 }
 
-export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
+export function ProfileSettingsScreen({ roleLabel, showRefresh = false }: { roleLabel: string; showRefresh?: boolean }) {
   const queryClient = useQueryClient();
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [phone, setPhone] = useState("");
@@ -85,9 +87,10 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
         className={styles.pageHeading}
       />
 
+      {showRefresh && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ["dolores", "profiles", "me"] }) }]} />}
       <div className={styles.settingsLayout}>
         <nav className={styles.sectionNav} aria-label="Các mục hồ sơ">
-          <h2>Hồ sơ của tôi</h2>
+          <h2>{T.NAV_TITLE}</h2>
           {[
             { id: "profile-personal-title", label: "Thông tin cá nhân", icon: UserRound },
             { id: "profile-contact-title", label: "Thông tin liên hệ", icon: Phone },
@@ -95,7 +98,7 @@ export function ProfileSettingsScreen({ roleLabel }: { roleLabel: string }) {
           ].map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={activeSection === id ? "location" : undefined} onClick={() => setActiveSection(id)}><Icon size={17} aria-hidden="true" />{label}</a>)}
         </nav>
       <Panel className={styles.profileCard} aria-labelledby="profile-details-title">
-        <h2 id="profile-details-title" className={styles.cardTitle}>Hồ sơ của tôi</h2>
+        <h2 id="profile-details-title" className={styles.cardTitle}>{T.DETAILS_TITLE}</h2>
         {profile.isPending ? <p className={styles.loading} role="status">Đang tải hồ sơ…</p> : null}
         {profile.isError ? (
           <div className={styles.notice} role="alert">

@@ -195,7 +195,7 @@ export function getCustomerScreenDescriptor(sectionPath: string): CustomerScreen
     return descriptor(sectionPath, messages.MACHINES_TITLE, messages.MACHINES_DESCRIPTION, "unavailable", getCustomerReadActions(sectionPath));
   }
   if (sectionPath === "locations") {
-    return descriptor(sectionPath, "Địa điểm của tôi", "Danh sách địa điểm thuộc Owner đang đăng nhập.", "unavailable", getCustomerReadActions(sectionPath));
+    return descriptor(sectionPath, messages.LOCATIONS_TITLE, "Danh sách địa điểm thuộc Owner đang đăng nhập.", "unavailable", getCustomerReadActions(sectionPath));
   }
   if (sectionPath === "machines/new") {
     return descriptor(sectionPath, "Đăng ký máy", "Đăng ký máy trong phạm vi Owner đang đăng nhập.", "unavailable", getCustomerReadActions(sectionPath));
@@ -210,7 +210,7 @@ export function getCustomerScreenDescriptor(sectionPath: string): CustomerScreen
   if (machineOperationsMatch && MachineIdSchema.safeParse(machineOperationsMatch[1]).success) {
     return descriptor(
       sectionPath,
-      "Dữ liệu vận hành máy",
+      "Giám sát vận hành",
       "Mức sử dụng và tình trạng hoạt động của máy.",
       "unavailable",
       getCustomerReadActions(sectionPath),

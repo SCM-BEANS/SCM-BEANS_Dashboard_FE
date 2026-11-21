@@ -23,5 +23,5 @@ export function BackButton({ label, fallbackHref, className }: BackButtonProps) 
     });
   }
 
-  return <TextLinkButton back className={className} onClick={handleBack} aria-label={label}>{label}</TextLinkButton>;
+  return <TextLinkButton back href={fallbackHref} className={className} onClick={(event) => { event.preventDefault(); handleBack(); }} aria-label={label}>{label}</TextLinkButton>;
 }

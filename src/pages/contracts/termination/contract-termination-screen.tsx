@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { TableFilters } from "@/components/table/table-filters";
 import { Panel } from "@/components/panel/panel";
 import { useState, type FormEvent } from "react";
@@ -92,12 +93,8 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
           </tr>)}
         </DataTable>
         {!invoices.data.items.length ? <p className={styles.notice}>Chưa có hóa đơn trong kỳ đang chọn. Có thể đổi kỳ hoặc xóa kỳ để tìm tất cả. Nếu hóa đơn chưa được sinh, cần bộ phận vận hành kiểm tra lịch tạo hóa đơn; trang này không tự tạo hóa đơn hoặc dòng tiền cọc.</p> : null}
-        <div className={styles.depositActions}>
-          <ButtonBar type="button" disabled={page === 0 || invoices.isFetching} onClick={() => { setPage(page - 1); setSelectedInvoiceId(""); }}>Trang trước</ButtonBar>
-          <span>Trang {page + 1}</span>
-          <ButtonBar type="button" disabled={!invoices.data.hasNext || invoices.isFetching} onClick={() => { setPage(page + 1); setSelectedInvoiceId(""); }}>Trang sau</ButtonBar>
-          <ButtonBar type="button" disabled={invoices.isFetching} onClick={() => { void invoices.refetch(); if (selectedInvoice) void lines.refetch(); }}>Làm mới</ButtonBar>
-        </div>
+        <Pagination page={page} hasNext={invoices.data.hasNext} isFetching={invoices.isFetching} ariaLabel="Phân trang hóa đơn" onPageChange={(value) => { setPage(value); setSelectedInvoiceId(""); }} hideWhenSinglePage={false} />
+        <div className={styles.depositActions}><ButtonBar type="button" disabled={invoices.isFetching} onClick={() => { void invoices.refetch(); if (selectedInvoice) void lines.refetch(); }}>Làm mới</ButtonBar></div>
       </> : null}
       {selectedInvoice && !invoices.isError ? <div className={styles.depositLines}>
         <h3>Tiền cọc của hợp đồng trong hóa đơn {selectedInvoice.id.slice(0, 8).toUpperCase()}</h3>
@@ -109,10 +106,7 @@ function DepositCollectionSection({ contractId, ownerId, depositAmount, startDat
           </DataTable>
           {!depositLines.length ? <p className={styles.notice}>Không có dòng tiền cọc khớp hợp đồng trên trang chi tiết này.{lines.data.hasNext ? " Hãy xem tiếp các trang còn lại." : " Kiểm tra các trang hoặc hóa đơn khác; nếu thiếu dòng cọc, cần bộ phận vận hành kiểm tra dữ liệu."}</p> : null}
           {depositLines.length > 0 ? <p className={styles.notice}>{selectedInvoice.status === "PAID" ? "Hóa đơn đang ghi nhận đã thanh toán. Backend sẽ kiểm tra thêm nguồn thu khi quyết toán; đây chưa phải xác nhận cọc đủ điều kiện hoàn." : "Hóa đơn chưa ở trạng thái đã thanh toán. Cần thanh toán và đối soát đủ số dư toàn bộ hóa đơn, không chỉ riêng dòng tiền cọc."}</p> : null}
-          <div className={styles.depositActions}>
-            <ButtonBar type="button" disabled={linePage === 0 || lines.isFetching} onClick={() => setLinePage(linePage - 1)}>Dòng trước</ButtonBar><span>Trang chi tiết {linePage + 1}</span>
-            <ButtonBar type="button" disabled={!lines.data.hasNext || lines.isFetching} onClick={() => setLinePage(linePage + 1)}>Dòng tiếp</ButtonBar>
-          </div>
+          <Pagination page={linePage} hasNext={lines.data.hasNext} isFetching={lines.isFetching} ariaLabel="Phân trang dòng hóa đơn" onPageChange={setLinePage} hideWhenSinglePage={false} />
         </> : null}
         <TextLinkButton href={invoiceHref}>Hồ sơ hóa đơn {selectedInvoice.id.slice(0, 8).toUpperCase()}</TextLinkButton>
       </div> : null}

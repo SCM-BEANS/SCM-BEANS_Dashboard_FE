@@ -8,35 +8,6 @@
   background: var(--surface-card, var(--color-surface));
 }
 
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-subtle, #dce3e8);
-}
-
-.tab {
-  min-height: 42px;
-  padding: 8px 14px;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-}
-
-.tab:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.activeTab {
-  border-bottom-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
 .content {
   display: grid;
   gap: 14px;
@@ -99,8 +70,5 @@
 
 @media (max-width: 640px) {
   .panel:not([data-ui-panel]) { padding: 14px; }
-  .tabs { display: grid; grid-template-columns: 1fr; border: 0; }
-  .tab { border: 1px solid var(--border-subtle, #dce3e8); border-radius: 10px; text-align: left; }
-  .activeTab { border-color: var(--color-primary); color: var(--color-primary); }
   .pagination { flex-wrap: wrap; justify-content: center; }
 }

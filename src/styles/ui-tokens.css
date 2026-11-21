@@ -4,6 +4,12 @@
   --ui-color-text: #302927;
   --ui-color-muted: #665e59;
   --ui-color-border: #e9e2dc;
+  --ui-color-button: #ffffff;
+  --ui-color-button-text: #000000;
+  --ui-color-button-disabled-text: #76716d;
+  --ui-color-button-focus: #302927;
+  --ui-color-tab-selected: #efe9e1;
+  --ui-color-tab-text: #5f5752;
   --ui-color-surface: #fff;
   --ui-color-surface-subtle: #f7f5f3;
   --ui-color-success: #28633d;
@@ -58,6 +64,18 @@
 
 [data-ui-dashboard] main textarea { min-height: 110px; }
 
+[data-ui-dashboard] main details > summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  cursor: pointer;
+}
+
+[data-ui-dashboard] main details > summary:focus-visible {
+  outline: 2px solid var(--ui-color-button-focus);
+  outline-offset: 2px;
+}
+
 [data-ui-dashboard] main [role="status"],
 [data-ui-dashboard] main [role="alert"] {
   padding: 14px 16px;
@@ -77,74 +95,199 @@
   color: var(--ui-color-danger);
 }
 
-/* Override legacy role-specific tab rules without changing other controls. */
+/* One dashboard button style; text links and SectionTabList controls opt out. */
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab]) {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 16px !important;
+  border: 1px solid var(--ui-color-border) !important;
+  border-radius: var(--ui-control-radius) !important;
+  background: var(--ui-color-button) !important;
+  color: var(--ui-color-button-text) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  font: 600 14px/1.2 var(--ui-font-family) !important;
+  text-decoration: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  cursor: pointer !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab]):is(:hover, :active) {
+  border-color: var(--ui-color-border) !important;
+  background: var(--ui-color-button) !important;
+  color: var(--ui-color-button-text) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab]):focus-visible {
+  outline: 2px solid var(--ui-color-button-focus) !important;
+  outline-offset: 2px !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab]):is(:disabled, [aria-disabled="true"]) {
+  color: var(--ui-color-button-disabled-text) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab]):is(:disabled, [aria-disabled="true"]):is(:hover, :active) {
+  color: var(--ui-color-button-disabled-text) !important;
+  background: var(--ui-color-button) !important;
+  border-color: var(--ui-color-border) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button]):not([data-ui-text-link]):not([data-ui-tab])[data-ui-button-layout="content"] {
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 44px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+[data-ui-dashboard] :is(button, [role="button"], a[data-ui-button])[data-ui-control-size="compact"] {
+  min-height: 36px !important;
+  height: 36px !important;
+  padding-inline: 12px !important;
+}
+
+[data-ui-dashboard] [data-ui-text-link] {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+[data-ui-dashboard] [data-ui-text-link]:hover,
+[data-ui-dashboard] [data-ui-text-link]:active {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+[data-ui-dashboard] [data-ui-text-link]:focus-visible {
+  outline: 2px solid var(--ui-color-button-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Every tab, segmented switch, and table-view toggle uses the same surface. */
 [data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] {
   display: flex;
   flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 16px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   margin: 0;
-  padding: 3px 0;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--ui-color-border);
-  border-radius: 0;
   background: transparent;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
 }
 
-[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a) {
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]) {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
   gap: 6px;
-  height: 44px;
-  min-height: 44px;
+  height: 44px !important;
+  min-height: 44px !important;
   margin: 0;
-  padding: 0 14px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ui-color-muted);
-  font: 600 14px/20px var(--ui-font-family);
-  text-decoration: none;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--ui-color-tab-text) !important;
+  font: 500 14px/20px var(--ui-font-family) !important;
+  text-decoration: none !important;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: none;
-  transition: none;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
 }
 
 [data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is([aria-selected="true"], [aria-pressed="true"], [aria-current="page"]) {
-  border-bottom-color: var(--ui-color-primary);
-  background: transparent;
-  color: var(--ui-color-primary);
+  border: 0 !important;
+  background: var(--ui-color-tab-selected) !important;
+  color: var(--ui-color-button-text) !important;
+  font-weight: 600 !important;
 }
 
-[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a):hover:not(:disabled) {
-  background: var(--ui-color-surface-subtle);
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):hover:not(:disabled),
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):active {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--ui-color-tab-text) !important;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
 }
 
-[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a):focus-visible {
-  outline: 2px solid var(--ui-color-primary);
-  outline-offset: -2px;
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):is([aria-selected="true"], [aria-pressed="true"], [aria-current="page"]):is(:hover, :active) {
+  background: var(--ui-color-tab-selected) !important;
+  color: var(--ui-color-button-text) !important;
 }
 
-[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):focus-visible {
+  outline: 2px solid var(--ui-color-button-focus) !important;
+  outline-offset: 2px !important;
 }
 
-[data-ui-dashboard] main button:not([data-ui-control-size="compact"]) {
-  min-height: var(--ui-control-height);
-  border-radius: var(--ui-control-radius);
-  font-family: var(--ui-font-family);
-  font-size: 14px;
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):is(:disabled, [aria-disabled="true"]) {
+  color: var(--ui-color-button-disabled-text) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+}
+
+[data-ui-dashboard] [data-ui-tabs][data-ui-tabs][data-ui-tabs] > :is(button, a, [data-ui-button]):is(:disabled, [aria-disabled="true"]):is(:hover, :active) {
+  color: var(--ui-color-button-disabled-text) !important;
+  background: transparent !important;
+}
+
+[data-ui-dashboard] [data-ui-panel] {
+  padding: var(--ui-panel-padding) !important;
+  border: 1px solid var(--ui-color-border) !important;
+  border-radius: var(--ui-panel-radius) !important;
+  background: var(--ui-color-surface) !important;
 }
 
 [data-ui-dashboard] main [data-ui-page-heading] {
@@ -182,3 +325,5 @@
 @media (max-width: 640px) {
   [data-ui-dashboard] { --ui-panel-padding: 16px; }
 }
+
+[data-ui-dashboard] [data-ui-button][data-ui-control-size="icon"] { width: 44px; min-width: 44px !important; padding: 0 !important; }

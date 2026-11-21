@@ -989,6 +989,7 @@ export function RepairCaseDetailScreen({
         ) : null}
       </div>
 
+      {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && (query.queryKey[1] === "repair-workflow" || query.queryKey.includes(caseId)) }) }]} />}
       {repairCase.isPending ? <p className={styles.notice} role="status">{M.CASE_LOADING}</p> : null}
       {repairCase.isError ? <QueryError label={M.CASE_NOT_FOUND} error={repairCase.error} onRetry={() => void repairCase.refetch()} /> : null}
       {repairCase.data && !repairCase.isError && (relatedOnly ? renderRelatedWork(repairCase.data) : (
@@ -1547,8 +1548,8 @@ export function RepairCaseDetailScreen({
               <header className={styles.adminHistoryHeader}>
                 <h2 id="repair-case-history-title">Lịch sử hồ sơ</h2>
                 <SectionTabList role="navigation" aria-label="Lịch sử hồ sơ">
-                  <button type="button" aria-pressed={historyView === "timeline"} onClick={() => setHistoryView("timeline")}>Sự kiện</button>
-                  <button type="button" aria-pressed={historyView === "custody"} onClick={() => setHistoryView("custody")}>Bàn giao máy</button>
+                  <ButtonBar type="button" aria-pressed={historyView === "timeline"} onClick={() => setHistoryView("timeline")}>Sự kiện</ButtonBar>
+                  <ButtonBar type="button" aria-pressed={historyView === "custody"} onClick={() => setHistoryView("custody")}>Bàn giao máy</ButtonBar>
                 </SectionTabList>
               </header>
               <div className={styles.adminHistoryContent} role="region" aria-labelledby="repair-case-history-title" aria-live="polite">

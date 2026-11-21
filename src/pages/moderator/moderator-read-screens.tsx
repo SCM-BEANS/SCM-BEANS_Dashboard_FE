@@ -74,11 +74,11 @@ export function ModeratorReadScreen({ sectionPath }: { sectionPath: string }) {
       /^invoices\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sectionPath)) {
     return loadScreen(<ModeratorInvoicesScreen sectionPath={sectionPath} />);
   }
-  if (sectionPath === "menu" ||
+  if (sectionPath === "menu" || sectionPath === "menu/new" ||
       (sectionPath.startsWith("menu/") && GlobalRecipeIdSchema.safeParse(sectionPath.slice("menu/".length)).success)) {
     return loadScreen(<ModeratorRecipesScreen sectionPath={sectionPath} />);
   }
-  if (sectionPath === "buyback" || sectionPath === "buyback/list" ||
+  if (sectionPath === "buyback" || sectionPath === "buyback/list" || sectionPath === "buyback/new" ||
       (sectionPath.startsWith("buyback/") && BuybackIdSchema.safeParse(sectionPath.slice("buyback/".length)).success) ||
       /^buyback\/MB-[A-Z0-9-]+$/i.test(sectionPath)) {
     return loadScreen(<ModeratorBuybackScreen sectionPath={sectionPath} />);

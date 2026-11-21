@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
@@ -55,7 +56,7 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
       {screen.filters?.length ? (
         <div className={styles.workflowActions} role="group" aria-label={screen.filterLabel}>
           {screen.filters.map((filter) => (
-            <button
+            <ButtonBar
               aria-describedby="technician-screen-reason"
               className={styles.workflowAction}
               disabled
@@ -63,7 +64,7 @@ export function TechnicianScreen({ screen }: { screen: TechnicianScreenDescripto
               type="button"
             >
               {filter}
-            </button>
+            </ButtonBar>
           ))}
         </div>
       ) : null}

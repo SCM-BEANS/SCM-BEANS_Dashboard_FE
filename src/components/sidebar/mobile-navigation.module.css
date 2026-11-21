@@ -2,27 +2,9 @@
   display: none;
   width: 44px;
   min-width: 44px;
-  height: 44px;
-  min-height: 44px;
   flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.trigger:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-primary);
-}
-
-.trigger:focus-visible,
-.closeButton:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 3px;
 }
 
 .backdrop {
@@ -67,20 +49,9 @@
   display: flex;
   width: 44px;
   min-width: 44px;
-  height: 44px;
-  min-height: 44px;
   flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.closeButton:hover {
-  background: var(--color-surface-subtle);
 }
 
 .navigation {
@@ -112,7 +83,6 @@
 
 .sheet :global(button[class*="logoutButton"]) {
   flex: 0 0 auto;
-  min-height: 48px;
 }
 
 @keyframes fade-in {

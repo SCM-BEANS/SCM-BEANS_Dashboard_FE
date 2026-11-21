@@ -9,44 +9,15 @@
 .iconButton {
   display: grid;
   width: 44px;
-  min-height: 44px;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  cursor: pointer;
 }
 
 .wideButton {
   display: flex;
   width: 100%;
-  min-height: 44px;
   align-items: center;
   gap: 10px;
-  padding: 0 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
   text-align: left;
-  cursor: pointer;
-}
-
-.iconButton:hover,
-.wideButton:hover,
-.wideButton[aria-expanded="true"] {
-  background: var(--color-page);
-}
-
-.iconButton:focus-visible,
-.wideButton:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 3px;
 }
 
 .menu {
@@ -77,35 +48,7 @@
 
 .menuItem {
   display: flex;
-  min-height: 40px;
   align-items: center;
   gap: 10px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
   text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.menuItem:hover:not(:disabled) {
-  background: var(--color-page);
-}
-
-.menuItem:last-child {
-  color: #a91d26;
-}
-
-.menuItem:last-child:hover:not(:disabled) {
-  background: #fdf4f4;
-}
-
-.menuItem:disabled {
-  cursor: wait;
-  opacity: .6;
 }

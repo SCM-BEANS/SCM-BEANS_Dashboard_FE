@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -170,13 +171,7 @@ export function LocationDetailPanel({
           columns={role === "MODERATOR" ? columns.filter((column) => column.key !== "connection") : columns}
           emptyMessage={compact ? "Cửa hàng chưa có máy." : "Địa điểm này chưa có máy."}
         />
-        {(!compact || machinePage.totalElements > 0) && <div className={styles.pagination}>
-          <p>Trang {currentPage + 1}/{totalPages} · {numberLabel(machinePage.totalElements)} máy</p>
-          <div className={styles.sectionHeading}>
-            <ButtonBar type="button" disabled={currentPage <= 0 || machines.isFetching} onClick={() => setPage(Math.max(0, currentPage - 1))}>Trang trước</ButtonBar>
-            <ButtonBar type="button" disabled={machinePage.last || machines.isFetching} onClick={() => setPage(currentPage + 1)}>Trang sau</ButtonBar>
-          </div>
-        </div>}
+        {(!compact || machinePage.totalElements > 0) && <><p>{numberLabel(machinePage.totalElements)} máy</p><Pagination page={currentPage} hasNext={!machinePage.last} isFetching={machines.isFetching} ariaLabel="Phân trang máy theo địa điểm" onPageChange={setPage} totalPages={totalPages} hideWhenSinglePage={false} /></>}
       </>}
     </section>
   </section>;

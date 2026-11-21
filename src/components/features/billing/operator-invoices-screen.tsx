@@ -2,7 +2,7 @@ import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useRouter } from "next/router";
 import { buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
-import Link from "next/link";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import Image from "next/image";
 import axios from "axios";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
@@ -11,7 +11,6 @@ import { NotificationDialog } from "@/components/notification-dialog/notificatio
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
-import { TextLinkButton } from "@/components/button/text-link-button";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -106,6 +105,8 @@ function InvoiceFilters({
   disabled: boolean;
 }) {
   const [draft, setDraft] = useState<InvoiceFilters>({ ownerId: "", period: initialPeriod, status: "", type: "" });
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerInvalid, setCustomerInvalid] = useState(false);
   const customers = useInfiniteQuery({
     queryKey: ["billing", "customer-options", querySubject(role)],
     initialPageParam: 0,
@@ -117,20 +118,16 @@ function InvoiceFilters({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onApply(draft);
+    const match = customerOptions.find((option) => option.value === customerSearch.trim());
+    if (role !== "owner" && customerSearch.trim() && !match) { setCustomerInvalid(true); return; }
+    setCustomerInvalid(false);
+    onApply({ ...draft, ownerId: match?.id ?? "" });
   }
 
   const statusOptions = [{ value: "", label: messages.ALL_STATUSES }, ...Object.entries(messages.INVOICE_STATUSES).map(([value, label]) => ({ value, label }))];
   const typeOptions = [{ value: "", label: messages.ALL_TYPES }, ...Object.entries(messages.INVOICE_TYPES).map(([value, label]) => ({ value, label }))];
+  const customerOptions = customers.data?.pages.flatMap((page) => page.items).map((profile) => ({ id: profile.idaasUserId, value: `${profile.fullName || profile.email} (${profile.idaasUserId})`, label: profile.email })) ?? [];
   const selects = [
-    ...(role === "owner" ? [] : [{
-      id: "invoice-owner",
-      ariaLabel: messages.OWNER,
-      label: messages.OWNER,
-      value: draft.ownerId,
-      options: [{ value: "", label: messages.ALL_CUSTOMERS }, ...(customers.data?.pages.flatMap((page) => page.items).map((profile) => ({ value: profile.idaasUserId, label: profile.fullName || profile.email })) ?? [])],
-      onChange: (ownerId: string) => setDraft((current) => ({ ...current, ownerId })),
-    }]),
     {
       id: "invoice-status",
       ariaLabel: messages.STATUS,
@@ -151,12 +148,14 @@ function InvoiceFilters({
 
   return (
     <TableFilters
+      search={role === "owner" ? undefined : { ariaLabel: messages.OWNER, placeholder: "Tìm khách hàng", value: customerSearch, onChange: (value) => { setCustomerSearch(value); setCustomerInvalid(false); }, list: { id: "invoice-customers", options: customerOptions } }}
       selects={selects}
       inputs={[{ id: "invoice-period", ariaLabel: messages.PERIOD_FILTER, label: messages.PERIOD_FILTER, type: "month", value: draft.period, onChange: (period) => setDraft((current) => ({ ...current, period })) }]}
       submitLabel={messages.SEARCH_FILTERS}
       onSubmit={submit}
       disabled={disabled}
     >
+      {customerInvalid && <p className={styles.filterFeedback} role="alert">Chọn khách hàng trong danh sách gợi ý hoặc để trống.</p>}
       {role !== "owner" && customers.isPending && <p className={styles.filterFeedback} role="status">{messages.LOADING_CUSTOMERS}</p>}
       {customers.hasNextPage && <div className={styles.filterFeedback}><ButtonBar type="button" disabled={customers.isFetchingNextPage} onClick={() => void customers.fetchNextPage()}>{messages.LOAD_MORE_CUSTOMERS}</ButtonBar></div>}
       {customers.isError && <div className={styles.filterFeedback} role="alert">{messages.LOAD_CUSTOMERS_ERROR} <ButtonBar type="button" onClick={() => void customers.refetch()}>{messages.RETRY}</ButtonBar></div>}
@@ -450,7 +449,7 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
         <h2>Thông tin hóa đơn</h2>
         <dl className={styles.detailGrid}>
           <div><dt>{messages.OWNER}</dt><dd>{record.ownerName || (typeof ownerId === "string" ? ownerNames.data?.[ownerId] : null) || "—"}</dd></div>
-          <div><dt>{messages.CONTRACT}</dt><dd>{record.contractId ? <Link className={styles.textButton} href={role === "owner" ? `${PATH_CUSTOMER.CONTRACTS}/${encodeURIComponent(record.contractId)}` : role === "admin" ? `${PATH_ADMIN.CONTRACTS}?view=detail&id=${encodeURIComponent(record.contractId)}` : `${PATH_MODERATOR.CONTRACTS}/${encodeURIComponent(record.contractId)}`}><TruncatedId value={record.contractId} /></Link> : "—"}</dd></div>
+          <div><dt>{messages.CONTRACT}</dt><dd>{record.contractId ? <TextLinkButton className={styles.textButton} href={role === "owner" ? `${PATH_CUSTOMER.CONTRACTS}/${encodeURIComponent(record.contractId)}` : role === "admin" ? `${PATH_ADMIN.CONTRACTS}?view=detail&id=${encodeURIComponent(record.contractId)}` : `${PATH_MODERATOR.CONTRACTS}/${encodeURIComponent(record.contractId)}`}><TruncatedId value={record.contractId} /></TextLinkButton> : "—"}</dd></div>
           <div><dt>{messages.PERIOD}</dt><dd>{periodText(record.period)}</dd></div>
           <div><dt>{messages.TYPE}</dt><dd>{messages.INVOICE_TYPES[record.type as keyof typeof messages.INVOICE_TYPES] ?? record.type}</dd></div>
         </dl>
@@ -489,11 +488,11 @@ function InvoiceDetail({ invoiceId, role, paymentForm }: { invoiceId: string; ro
       </aside>
       </div>
       <SectionTabList role="navigation" aria-label="Nội dung hồ sơ hóa đơn">
-        <button type="button" aria-pressed={section === "proofs"} onClick={() => setSection("proofs")}>Chứng từ thanh toán</button>
-        <button type="button" aria-pressed={section === "refund"} onClick={() => setSection("refund")}>Hoàn tiền</button>
+        <ButtonBar type="button" aria-pressed={section === "proofs"} onClick={() => setSection("proofs")}>Chứng từ thanh toán</ButtonBar>
+        <ButtonBar type="button" aria-pressed={section === "refund"} onClick={() => setSection("refund")}>Hoàn tiền</ButtonBar>
       </SectionTabList>
       <div hidden={section !== "refund"}><InvoiceRefundPanel key={`${role}:${record.id}`} invoice={{ ...record, ownerId: record.ownerId ?? (typeof record.tenantId === "string" ? record.tenantId : undefined) }} role={role === "owner" ? "OWNER" : role === "admin" ? "ADMIN" : "MODERATOR"} /></div>
-      {role === "owner" && <div hidden={section !== "proofs"}>{["PENDING", "UNPAID", "OVERDUE"].includes(record.status.toUpperCase()) ? paymentForm : null}</div>}
+      {role === "owner" && paymentForm && ["PENDING", "UNPAID", "OVERDUE"].includes(record.status.toUpperCase()) && <div hidden={section !== "proofs"}>{paymentForm}</div>}
       <Panel hidden={section !== "proofs"} className={styles.panel} aria-labelledby="operator-payment-proofs">
         <h2 id="operator-payment-proofs">{messages.PAYMENT_PROOFS}</h2>
         <InlineQueryState

@@ -1,4 +1,5 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+
 import { isSupportedTechnicianSection } from "@/routes/routes";
 import { MaintenanceTicketIdSchema } from "@/schema/machines.schema";
 import { TechnicianMaintenanceTicketScreen } from "@/components/features/maintenance-workflow/technician-maintenance-ticket-screen";
@@ -24,7 +25,7 @@ export default function TechnicianMaintenanceTicketPage({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   return (
     <TechnicianShell pageTitle="Chi tiết phiếu bảo trì">
-      <TechnicianMaintenanceTicketScreen ticketId={ticketId} />
+      <TechnicianMaintenanceTicketScreen ticketId={ticketId} showRefresh />
     </TechnicianShell>
   );
 }

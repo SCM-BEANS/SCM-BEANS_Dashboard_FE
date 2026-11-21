@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { Panel } from "@/components/panel/panel";
 import { useEffect, useState } from "react";
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
@@ -13,6 +15,7 @@ import { useBuybackWorkflowController } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
 
 export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
+  const queryClient = useQueryClient();
   const listHref = PATH_TECHNICIAN.TASK_BUYBACK_ASSESSMENT;
   const workflow = useBuybackWorkflowController({ role: "technician", initialCaseId: caseId, listHref });
   const { caseData } = workflow;
@@ -51,6 +54,7 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
       title="Đánh giá máy thu mua"
       back={caseId ? { label: "Về công việc", fallbackHref: listHref } : null}
     >
+      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && ((query.queryKey[1] === "technician" && typeof query.queryKey[2] === "string" && query.queryKey[2].startsWith("buyback")) || (query.queryKey[1] === "evidence" && query.queryKey.includes(workflow.detailId))) }) }]} />
       <BuybackCaseList workflow={workflow} />
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>

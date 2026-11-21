@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -65,7 +66,7 @@ function NotificationToast({ notification, dismiss }: { notification: Notificati
   const presentation = getNotificationPresentation(notification);
   return <article className={styles.toast} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}>
     <NotificationTypeIcon label={presentation.typeLabel} /><div><time>{formatNotificationDate(notification.createdAt)}</time><strong>{presentation.title}</strong></div>
-    <button type="button" aria-label={`Đóng thông báo nổi: ${presentation.title}`} onClick={dismiss}><X size={18} aria-hidden="true" /></button>
+    <ButtonBar type="button" aria-label={`Đóng thông báo nổi: ${presentation.title}`} onClick={dismiss}><X size={18} aria-hidden="true" /></ButtonBar>
   </article>;
 }
 

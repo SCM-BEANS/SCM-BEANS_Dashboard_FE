@@ -45,37 +45,6 @@
   justify-content: space-between;
 }
 
-.primaryButton,
-.retryButton {
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.button[aria-pressed="true"] {
-  border-color: var(--color-primary);
-  background: #fff4f4;
-  color: #981421;
-}
-
-.primaryButton {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.primaryButton:disabled,
-.retryButton:disabled {
-  cursor: not-allowed;
-  opacity: .6;
-}
-
 .unreadCount {
   color: #5d524e;
   font-size: 14px;
@@ -112,23 +81,7 @@
 .notificationOpenButton {
   display: block;
   width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   text-align: left;
-  cursor: pointer;
-}
-
-.notificationOpenButton:focus-visible {
-  border-radius: 8px;
-  outline: 3px solid var(--color-primary);
-  outline-offset: 4px;
-}
-
-.notificationOpenButton:hover h3 {
-  color: var(--color-primary);
 }
 
 .detailPanel {
@@ -144,22 +97,9 @@
 
 .backToListButton {
   display: inline-flex;
-  min-height: 42px;
   align-self: flex-start;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.backToListButton:hover {
-  background: var(--color-page);
 }
 
 .notificationDetail {
@@ -280,40 +220,7 @@
   position: relative;
   display: grid;
   width: 44px;
-  min-height: 44px;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.bellButton:hover {
-  background: var(--color-page);
-}
-
-.settingsButton {
-  display: grid;
-  width: 44px;
-  min-height: 44px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.settingsButton:hover {
-  background: var(--color-page);
-}
-
-.settingsButton:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 3px;
 }
 
 .bellBadge {
@@ -367,15 +274,8 @@
 .closeButton {
   display: grid;
   width: 36px;
-  min-height: 36px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  cursor: pointer;
 }
 
 .popover .notificationList {
@@ -401,13 +301,6 @@
 }
 
 /* Secondary action: compact so it does not outweigh the message. */
-.popover .notificationCard .button {
-  min-height: 32px;
-  padding: 0 10px;
-  border-color: transparent;
-  background: var(--color-page);
-  font-size: 13px;
-}
 
 .popover .notificationCard p {
   margin-bottom: 8px;

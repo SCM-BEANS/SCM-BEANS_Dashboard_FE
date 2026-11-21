@@ -105,7 +105,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
 
   const refresh = async () => {
     await Promise.allSettled([
-      list.refetch(),
+      ...(!id ? [list.refetch()] : []),
       ...(id ? [workOrder.refetch(), events.refetch(), evidence.refetch()] : []),
       ...(role === "operator" && terminationCaseId ? [terminationCase.refetch()] : []),
     ]);
@@ -188,8 +188,9 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
     return (
       <div className={embedded ? undefined : styles.pageContent}>
         {!embedded && <BackButtonHeading title="Thu hồi máy" titleId="recall-page-title" className={styles.pageHeading} back={null} />}
+        {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", disabled: list.isFetching, onClick: () => void refresh() }]} />}
         <section className={embedded ? undefined : styles.panel} aria-labelledby="recall-list-title">
-          <div className={viewStyles.heading}><h2 id="recall-list-title">Danh sách lệnh thu hồi</h2>{refreshButton}</div>
+          <div className={viewStyles.heading}><h2 id="recall-list-title">Danh sách lệnh thu hồi</h2>{role !== "technician" && refreshButton}</div>
           {list.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
           {list.isError ? <div className={`${styles.notice} ${styles.error}`} role="alert"><p>{getApiErrorMessage(list.error)}</p><ButtonBar type="button" onClick={() => void list.refetch()}>Thử lại</ButtonBar></div> : null}
           {list.data?.content.length === 0 && !list.isError ? <p className={styles.notice} role="status">Không có lệnh thu hồi trong phạm vi tài khoản.</p> : null}
@@ -250,6 +251,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
           fallbackHref: backHref ?? (role === "owner" ? "/dashboard/contracts" : role === "operator" ? "/admin/contracts" : "/technician/tasks/retrieval"),
         }}
       />}
+      {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", disabled: list.isFetching || workOrder.isFetching, onClick: () => void refresh() }]} />}
       <RecallActions actions={[...buildRecallLegacyReviewActions({
         role: role === "operator" ? "admin" : role,
         workOrder: currentWorkOrder,
@@ -274,7 +276,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
         <ol className={styles.workOrderProgress}>{["Phân công", "Nhận máy", "Xác nhận bàn giao", "Tiếp nhận tại kho"].map((label, index) => <li key={label} className={[styles.workOrderProgressStep, index < progressIndex ? styles.workOrderProgressComplete : index === progressIndex ? styles.workOrderProgressCurrent : ""].join(" ")} aria-current={index === progressIndex ? "step" : undefined}><span aria-hidden="true">{index < progressIndex ? "✓" : index + 1}</span><small>{label}</small></li>)}</ol>
       </Panel>
       <Panel className={styles.panel} aria-labelledby="recall-info-title">
-        <div className={viewStyles.heading}><h2 id="recall-info-title">Thông tin thu hồi</h2>{refreshButton}</div>
+        <div className={viewStyles.heading}><h2 id="recall-info-title">Thông tin thu hồi</h2>{role !== "technician" && refreshButton}</div>
         <dl className={viewStyles.facts}>
           <div><dt>Máy</dt><dd>{currentWorkOrder.machineSerialNumber || <TruncatedId value={currentWorkOrder.machineId} />}</dd></div>
           <div><dt>Khách hàng</dt><dd>{currentWorkOrder.ownerName || <TruncatedId value={currentWorkOrder.ownerId} />}</dd></div>
@@ -290,7 +292,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
 
         {legacyOpen ? <NotificationDialog variant="confirm" title="Rà soát lệnh thu hồi" onClose={() => setLegacyOpen(false)} primaryAction={{ label: "Xác nhận", onClick: () => legacyReview.mutate(), disabled: !legacyReason.trim() || (legacyDecision === "VERIFY_ALREADY_AT_DEPOT" && !technicianId), pending: legacyReview.isPending }} secondaryAction={{ label: "Hủy", onClick: () => setLegacyOpen(false), disabled: legacyReview.isPending }}>
           <fieldset><legend>Quyết định</legend><label><input type="radio" name="legacyDecision" checked={legacyDecision === "PICKUP_REQUIRED"} onChange={() => setLegacyDecision("PICKUP_REQUIRED")} /> Cần thu hồi: đưa lệnh về trạng thái chưa phân công.</label><label><input type="radio" name="legacyDecision" checked={legacyDecision === "VERIFY_ALREADY_AT_DEPOT"} onChange={() => setLegacyDecision("VERIFY_ALREADY_AT_DEPOT")} /> Máy đã ở kho: xác minh và phân công kỹ thuật viên để chờ chủ sở hữu xác nhận.</label></fieldset>
-          {legacyDecision === "VERIFY_ALREADY_AT_DEPOT" ? <><label>Tìm kỹ thuật viên<input value={technicianSearch} onChange={event => { setTechnicianPage(0); setTechnicianSearch(event.target.value); }} /></label><label>Kỹ thuật viên<select required value={technicianId} onChange={event => setTechnicianId(event.target.value)}><option value="">Chọn kỹ thuật viên</option>{technicians.data?.items.filter(profile => profile.status === "ACTIVE" && profile.emailVerified && profile.roles.some(value => value.toUpperCase() === "TECHNICIAN")).map(profile => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}</select></label>{technicians.isError ? <p role="alert">{getApiErrorMessage(technicians.error)}</p> : null}{technicians.data && technicians.data.totalPages > 1 ? <div><ButtonBar type="button" disabled={technicianPage <= 0} onClick={() => setTechnicianPage(technicianPage - 1)}>Trước</ButtonBar><span>Trang {technicianPage + 1} / {technicians.data.totalPages}</span><ButtonBar type="button" disabled={technicianPage + 1 >= technicians.data.totalPages} onClick={() => setTechnicianPage(technicianPage + 1)}>Sau</ButtonBar></div> : null}</> : null}
+          {legacyDecision === "VERIFY_ALREADY_AT_DEPOT" ? <><label>Tìm kỹ thuật viên<input value={technicianSearch} onChange={event => { setTechnicianPage(0); setTechnicianSearch(event.target.value); }} /></label><label>Kỹ thuật viên<select required value={technicianId} onChange={event => setTechnicianId(event.target.value)}><option value="">Chọn kỹ thuật viên</option>{technicians.data?.items.filter(profile => profile.status === "ACTIVE" && profile.emailVerified && profile.roles.some(value => value.toUpperCase() === "TECHNICIAN")).map(profile => <option key={profile.idaasUserId} value={profile.idaasUserId}>{profile.fullName} · {profile.email}</option>)}</select></label>{technicians.isError ? <p role="alert">{getApiErrorMessage(technicians.error)}</p> : null}{technicians.data && technicians.data.totalPages > 1 ? <Pagination page={technicianPage} hasNext={technicianPage + 1 < technicians.data.totalPages} isFetching={technicians.isFetching} ariaLabel="Phân trang kỹ thuật viên" onPageChange={setTechnicianPage} totalPages={technicians.data.totalPages} /> : null}</> : null}
           <label>Lý do<textarea required maxLength={2000} value={legacyReason} onChange={event => setLegacyReason(event.target.value)} /></label>{legacyReview.isError ? <p role="alert">{getApiErrorMessage(legacyReview.error)}</p> : null}
         </NotificationDialog> : null}
 
@@ -312,11 +314,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
               </select>
             </label>
             {technicians.data && technicians.data.totalPages > 1 ? (
-              <div className={styles.technicalRequestActions}>
-                <ButtonBar type="button" disabled={technicianPage <= 0 || technicians.isFetching} onClick={() => setTechnicianPage((value) => value - 1)}>Trước</ButtonBar>
-                <span>Trang {technicians.data.page + 1} / {technicians.data.totalPages}</span>
-                <ButtonBar type="button" disabled={technicianPage + 1 >= technicians.data.totalPages || technicians.isFetching} onClick={() => setTechnicianPage((value) => value + 1)}>Sau</ButtonBar>
-              </div>
+              <Pagination page={technicianPage} hasNext={technicianPage + 1 < technicians.data.totalPages} isFetching={technicians.isFetching} ariaLabel="Phân trang kỹ thuật viên" onPageChange={setTechnicianPage} totalPages={technicians.data.totalPages} />
             ) : null}
             <label className={styles.formField}>
               <span>Lịch nhận máy (tùy chọn)</span>

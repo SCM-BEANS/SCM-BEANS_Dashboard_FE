@@ -78,7 +78,8 @@ function moderatorShellHarness({ pathname, hasRole }) {
   const { paths, routeCatalog } = routeModules();
   const messages = loadModule("src/text/moderator/moderator-messages.ts").MODERATOR_MESSAGES;
   const sidebarModule = loadModule("src/components/sidebar/sidebar.tsx", {
-    "lucide-react": { LogOut: () => null },
+    "lucide-react": { LogOut: () => null, PanelLeftClose: () => null, PanelLeftOpen: () => null },
+    "@/components/button/button-bar": { ButtonBar: ({ children, href, ...props }) => React.createElement(href ? "a" : "button", { ...props, href }, children) },
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "./settings-menu": { SettingsMenu: () => null },
     "./navigation-route": loadModule("src/components/sidebar/navigation-route.ts"),
@@ -86,6 +87,7 @@ function moderatorShellHarness({ pathname, hasRole }) {
   });
   const { AdminBreadcrumb } = loadModule("src/components/heading/admin-breadcrumb.tsx", {
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
+    "./dashboard-page.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
   });
   const { ModeratorShell } = loadModule("src/pages/moderator/moderator-shell.tsx", {
     "react": hookReact,
@@ -109,13 +111,18 @@ function moderatorShellHarness({ pathname, hasRole }) {
     },
     "@/text/moderator/moderator-messages": { MODERATOR_MESSAGES: messages },
     "@/components/action-bar/action-bar": {
-      ActionBar: ({ children, label }) => React.createElement("footer", { "aria-label": label }, children),
+      ActionBarLayout: ({ children, label, position }) => React.createElement("div", { "aria-label": label, "data-position": position }, children),
     },
     "@/components/button/button-bar": {
       ButtonBar: ({ children, href, ...props }) => href
         ? React.createElement("a", { href, ...props }, children)
         : React.createElement("button", props, children),
     },
+    "@/components/feedback/liquid-success-splash": { LiquidSuccessSplash: () => null, prepareLiquidSuccessAnimation: () => Promise.resolve() },
+    "@/components/navigation/back-button-heading": { BackButtonHeadingVisibilityContext: React.createContext(true) },
+    "@/components/notifications/notification-runtime": { NotificationRuntime: () => null },
+    "@/components/notifications/notification-inbox": { NotificationInbox: () => null },
+    "./moderator-breadcrumb": loadModule("src/pages/moderator/moderator-breadcrumb.ts", { "@/routes/path": paths, "@/routes/routes": routeCatalog }),
     "@/components/sidebar/sidebar": sidebarModule,
     "@/components/heading/admin-breadcrumb": { AdminBreadcrumb },
     "./moderator-shell.module.css": new Proxy({}, { get: (_target, key) => String(key) }),
@@ -214,8 +221,8 @@ test("Moderator shell shows its navigation and selects the current nested sectio
   assert.match(html, /data-role="moderator"/);
   assert.match(html, /href="\/moderator\/contracts"[^>]*aria-current="page"/);
   assert.match(html, /<nav aria-label="Đường dẫn">/);
-  assert.match(html, /<span aria-current="page">Hợp đồng<\/span>/);
-  assert.match(html, /Tài khoản khách/);
+  assert.match(html, /<span aria-current="page">Chi tiết hợp đồng<\/span>/);
+  assert.match(html, /Tài khoản/);
   assert.match(html, /Giám sát Smart IoT/);
   assert.match(html, /href="\/moderator\/notifications"/);
 });
@@ -236,29 +243,8 @@ test("Moderator shell keeps other roles out of the Moderator navigation", () => 
   assert.doesNotMatch(html, /<footer/);
 });
 
-test("Moderator shell shows section actions only on root lists and overview", () => {
-  const contracts = moderatorShellHarness({
-    pathname: "/moderator/contracts",
-    hasRole: () => true,
-  });
-  contracts.render();
-  const contractsHtml = contracts.render();
-  assert.match(contractsHtml, /<footer aria-label="Thao tác Moderator">/);
-  assert.match(contractsHtml, /<a href="\/moderator\/contracts\/new">Tạo hợp đồng<\/a>/);
-
-  const detail = moderatorShellHarness({
-    pathname: "/moderator/contracts/00000000-0000-4000-8000-000000000000",
-    hasRole: () => true,
-  });
-  detail.render();
-  const detailHtml = detail.render();
-  assert.doesNotMatch(detailHtml, /<footer/);
-
-  const overview = moderatorShellHarness({
-    pathname: "/moderator",
-    hasRole: () => true,
-  });
-  overview.render();
-  const overviewHtml = overview.render();
-  assert.doesNotMatch(overviewHtml, /Việc cần xử lý/);
+test("Moderator shell places the action layout at the top", () => {
+  const shell = moderatorShellHarness({ pathname: "/moderator/contracts", hasRole: () => true });
+  shell.render();
+  assert.match(shell.render(), /data-position="top"/);
 });

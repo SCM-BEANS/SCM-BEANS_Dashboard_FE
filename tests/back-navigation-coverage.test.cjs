@@ -98,7 +98,8 @@ test("each admin create/detail page renders one shared heading back control and 
   const iot = source("src/pages/admin/iot/index.page.tsx");
   assert.doesNotMatch(iot, /<ButtonBar[^>]*>\{T\.IOT\.BACK\}<\/ButtonBar>/);
   const recipes = source("src/components/features/recipe-menus/recipe-menus-screen.tsx");
-  assert.match(recipes, /!isModerator\s*\?\s*<TextLinkButton back/);
+  assert.match(recipes, /showHeading\s*&&\s*owner\s*\?\s*<BackButtonHeading/);
+  assert.match(recipes, /backControl=\{!library\s*\?\s*detailOnly\s*\?\s*<TextLinkButton back href=\{PATH_CUSTOMER\.MENU\}/);
 });
 
 test("shared back control keeps its accessible label, visible keyboard focus, and 44px touch target", () => {
@@ -108,6 +109,6 @@ test("shared back control keeps its accessible label, visible keyboard focus, an
   assert.match(button, /aria-label=\{label\}/);
   assert.match(button, /TextLinkButton back/);
   assert.match(textLinkButton, /data-ui-back-link=\{back \? "true" : undefined\}/);
-  assert.match(css, /\.back\.back\s*\{[^}]*min-height:\s*44px/s);
-  assert.match(css, /\.back\.back:focus-visible\s*\{[^}]*outline:\s*2px/s);
+  assert.match(css, /\.link\s*\{[^}]*min-height:\s*44px/s);
+  assert.match(css, /\.link:focus-visible\s*\{[^}]*outline:\s*2px/s);
 });

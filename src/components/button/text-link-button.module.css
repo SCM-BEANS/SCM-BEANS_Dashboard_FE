@@ -1,76 +1,52 @@
-button.link,
-.action {
+.link {
   appearance: none;
-  display: inline-flex;
-  min-height: var(--ui-control-height, 44px);
-  align-items: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  text-align: inherit;
-  cursor: pointer;
-}
-
-.link.link,
-.action {
-  color: var(--color-text);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 38%, transparent);
-  text-underline-offset: 3px;
-}
-
-.link.link:hover,
-.link.link:focus-visible,
-.action:enabled:hover,
-.action:focus-visible {
-  color: var(--color-primary);
-  text-decoration-color: currentColor;
-}
-
-.link:focus-visible,
-.action:focus-visible {
-  outline: 2px solid var(--color-text);
-  outline-offset: 2px;
-}
-
-.action:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-.back.back {
   box-sizing: border-box;
   display: inline-flex;
-  gap: 8px;
   min-height: 44px;
   align-items: center;
+  gap: 8px;
+  padding: 0;
   border: 0;
   border-radius: 0;
-  background: transparent;
-  color: #665e59;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  text-decoration-color: transparent;
+  background: transparent !important;
+  color: var(--ui-color-muted, #665e59) !important;
+  font: 600 14px/1.4 var(--ui-font-family, Arial, sans-serif);
+  text-decoration: underline !important;
+  text-decoration-color: color-mix(in srgb, currentColor 38%, transparent) !important;
   text-underline-offset: 3px;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
 }
 
-[data-ui-dashboard] main button.back.back {
-  border-radius: 0;
+.link:hover,
+.link:active {
+  background: transparent !important;
+  color: var(--ui-color-muted, #665e59) !important;
+  text-decoration: underline !important;
+  text-decoration-color: color-mix(in srgb, currentColor 38%, transparent) !important;
+  box-shadow: none !important;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
 }
 
-.back.back:hover:not(:disabled),
-.back.back:focus-visible {
-  color: #b81724;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
-}
-
-.back.back:focus-visible {
-  outline: 2px solid #b81724;
+.link:focus-visible {
+  outline: 2px solid var(--ui-color-button-focus, #302927);
   outline-offset: 2px;
+}
+
+.back {
+  text-decoration: none !important;
+  text-decoration-color: transparent !important;
+}
+
+.back:hover,
+.back:active {
+  text-decoration: none !important;
+  text-decoration-color: transparent !important;
 }
 
 .backIcon {

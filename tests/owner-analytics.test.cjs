@@ -181,9 +181,7 @@ test('Owner cleaning snapshot propagates later-page failures without pretending 
 });
 
 test('Owner cleaning summaries distinguish incomplete reads, completed evidence and missing records per machine', () => {
-  const { summarizeMachineCleaning, getVietnamToday } = loadTypescript('src/pages/dashboard/machines/machine-cleaning-history-panel.tsx', {
-    '@/components/button/button-bar': {}, '@/components/table/data-table': {}, '@/components/machines/machines.module.css': {},
-  });
+  const { summarizeMachineCleaning, getVietnamToday } = loadTypescript('src/pages/dashboard/machines/machine-cleaning-utils.ts');
   assert.deepEqual(summarizeMachineCleaning([], machineId, false), { startup: 'Chưa kiểm tra đầy đủ', closing: 'Chưa kiểm tra đầy đủ' });
   assert.deepEqual(summarizeMachineCleaning([], machineId, true), { startup: 'Chưa ghi nhận', closing: 'Chưa ghi nhận' });
   const records = [{ ...cleaning, machineId: otherMachineId, status: 'COMPLETED' }, { ...cleaning, status: 'FAILED' }];

@@ -9,6 +9,7 @@ import { recallWorkOrdersApi } from "@/apis/recall-work-orders.api";
 import { terminationCasesApi } from "@/apis/termination-cases.api";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { InstallationWorkOrderRecords, installationWorkOrderRecordsQueryPrefix } from "@/components/features/installation/installation-work-order-records";
 import { DataTable } from "@/components/table/data-table";
@@ -231,6 +232,7 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
             <TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>
         </header>
+        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(repairCaseId) || (repairCase.data?.maintenanceTicketId && query.queryKey.includes(repairCase.data.maintenanceTicketId))) }) }]} />
         {repairCase.isPending && <p className={shellStyles.pendingNotice} role="status">Đang tải hồ sơ sửa chữa…</p>}
         {repairCase.isError && <p className={shellStyles.errorNotice} role="alert">{getApiErrorMessage(repairCase.error)}</p>}
         {caseData ? (
@@ -495,6 +497,7 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
           <p>Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự.</p>
           <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
+        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(recallWorkOrderId)) }) }]} />
         {orderQuery.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải lệnh thu hồi…</p> : null}
         {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
         {order ? (
@@ -727,6 +730,7 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
           <p>Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng.</p>
           <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
+        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(maintenanceTicketId) || query.queryKey.includes(terminationCaseId)) }) }]} />
         {ticket.isPending || terminationCase.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải phiếu kiểm tra…</p> : null}
         {ticket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(ticket.error)}</p> : null}
         {terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
@@ -1122,6 +1126,7 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
           </div>
         </header>
 
+        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(workOrderId)) }) }]} />
         {(details.isPending
           || (details.isError && repairCaseDetails.isPending)
           || (details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isPending)

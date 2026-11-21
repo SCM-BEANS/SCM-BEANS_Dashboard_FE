@@ -4,25 +4,6 @@
   margin-top: 1rem;
 }
 
-.ticketLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.65rem;
-  padding: 0.5rem 0.8rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.6rem;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.ticketLink:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
 .detailPanel {
   display: grid;
   gap: 1rem;
@@ -115,8 +96,7 @@
 
 .field input:focus-visible,
 .field select:focus-visible,
-.field textarea:focus-visible,
-.ticketLink:focus-visible {
+.field textarea:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -173,8 +153,8 @@
 .ownerDialogScope [role=dialog] > h2, .ownerDialogScope [role=alertdialog] > h2 { font-size:24px; line-height:1.4; margin:0; }
 .ownerDialogScope [role=alertdialog] { width:min(520px,100%); }
 .ownerDialogScope [role=dialog] > div:last-child, .ownerDialogScope [role=alertdialog] > div:last-child { display:flex; flex-direction:row-reverse; gap:10px; justify-content:flex-start; }
-.ownerDialogScope [data-dialog-primary], .ownerDialogScope [role=alertdialog] > div:last-child > button { width:auto; min-width:100px; min-height:44px; padding:10px 18px; font-weight:600; }
-.ownerDialogScope [role=dialog] [data-dialog-primary] { border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); }
+.ownerDialogScope [data-dialog-primary] { width:auto; min-width:100px; }
+.ownerDialogScope [role=alertdialog] > div:last-child > button { width:auto; min-width:100px; }
 .ownerDialogScope .field label { color:var(--color-text-secondary); }
 .ownerDialogScope .field select { border-color:var(--color-border); background:var(--color-surface); color:var(--color-text); min-height:44px; font:inherit; }
 .ownerDialogScope .field select:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; box-shadow:none; }

@@ -33,6 +33,7 @@ import type { InstallationWorkOrderSummary } from "@/schema/installation-work-or
 import { moderatorStyles as styles } from "../moderator-shell";
 
 import { MODERATOR_MESSAGES } from "@/text/moderator/moderator-messages";
+import { contractExpiryDecisionLabel } from "@/text/contracts/contract-messages";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
 import { PATH_MODERATOR } from "@/routes/path";
 import { adminStyles } from "@/pages/admin/admin-shell";
@@ -304,7 +305,6 @@ export function ContractDetailScreen({ id }: { id: string }) {
         <BackButtonHeading
           title={contract.data ? T.CONTRACTS.DETAIL : MODERATOR_MESSAGES.READ_SCREENS.CONTRACT_DETAIL_TITLE}
           titleId="moderator-contract-detail-title"
-          description={contract.data?.id}
           className={styles.pageHeading}
           back={{ label: "Danh sách hợp đồng", fallbackHref: PATH_MODERATOR.CONTRACTS }}
         />
@@ -325,7 +325,7 @@ export function ContractDetailScreen({ id }: { id: string }) {
               <div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div>
               <div><span>Ngày nhắc Owner</span><strong>{date(expiry.data.reminderDate)}</strong></div>
               <div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div>
-              <div><span>Quyết định</span><strong>{expiry.data.decision ?? "Chưa có"}</strong></div>
+              <div><span>Quyết định</span><strong>{contractExpiryDecisionLabel(expiry.data.decision)}</strong></div>
               <div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div>
               <div><span>Đã xử lý hết hạn</span><strong>{dateTime(expiry.data.expiryProcessedAt)}</strong></div>
             </div>}

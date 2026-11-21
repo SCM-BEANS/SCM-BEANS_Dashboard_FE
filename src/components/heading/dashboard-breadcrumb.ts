@@ -79,6 +79,9 @@ export function getPageBreadcrumb(pathname: string, section: Section, pageTitle:
   if (pathname === section.HREF) return getDashboardBreadcrumb(section);
 
   const parentPath = pathname.slice(0, pathname.lastIndexOf("/"));
+  if (section.HREF === PATH_CUSTOMER.MACHINES && /^\/dashboard\/machines\/[^/]+\/operations$/.test(pathname)) {
+    return getDashboardBreadcrumb(section, pageTitle, [{ label: "Chi tiết máy", href: parentPath }]);
+  }
   if (pathname.endsWith("/termination") && section.HREF === PATH_CUSTOMER.CONTRACTS) {
     return getDashboardBreadcrumb(section, pageTitle, [{ label: "Chi tiết hợp đồng", href: parentPath }]);
   }

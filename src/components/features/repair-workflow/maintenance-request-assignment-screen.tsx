@@ -8,6 +8,7 @@ import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { repairCasesApi } from "@/apis/repair-cases.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { querySubject, type RepairWorkflowRole } from "./repair-workflow-query-identity";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MaintenanceRequestIdSchema } from "@/schema/machines.schema";
@@ -247,7 +248,7 @@ export function MaintenanceRequestAssignmentScreen({
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_ASSIGNEE}</dt>
-              <dd className={styles.codeValue}>{ticketAssignedTechnicianId || "—"}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={ticketAssignedTechnicianId} /></dd>
             </div>
           </dl>
         </section>
@@ -259,19 +260,19 @@ export function MaintenanceRequestAssignmentScreen({
           <dl className={styles.detailGrid}>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ID}</dt>
-              <dd className={styles.codeValue}>{request.id}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={request.id} /></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_MACHINE_ID}</dt>
-              <dd className={styles.codeValue}>{request.machineId}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={request.machineId} /></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_TICKET_ID}</dt>
-              <dd className={styles.codeValue}>{ticketId || "—"}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={ticketId} /></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_CASE_ID}</dt>
-              <dd className={styles.codeValue}>{repairCase?.id ?? "—"}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={repairCase?.id} /></dd>
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_CASE_STATUS}</dt>
@@ -297,7 +298,7 @@ export function MaintenanceRequestAssignmentScreen({
             </div>
             <div className={styles.detailItem}>
               <dt>{messages.TECHNICAL_ASSIGNMENT_ASSIGNEE}</dt>
-              <dd className={styles.codeValue}>{ticketAssignedTechnicianId || "—"}</dd>
+              <dd className={styles.codeValue}><TruncatedId value={ticketAssignedTechnicianId} /></dd>
             </div>
           </dl>
 

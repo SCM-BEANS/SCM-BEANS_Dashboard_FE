@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
+import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { Panel } from "@/components/panel/panel";
 import { Pagination } from "@/components/pagination/pagination";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import type { ActionBarAction } from "@/components/action-bar/action-bar-actions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+
 import { DataTable } from "@/components/table/data-table";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { machinesApi } from "@/apis/machines.api";
@@ -104,6 +107,7 @@ function technicianMachineId(sectionPath: string) {
 }
 
 export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: string }) {
+  const queryClient = useQueryClient();
   const machineId = technicianMachineId(sectionPath);
   const [ticketPage, setTicketPage] = useState(0);
   const [requestPage, setRequestPage] = useState(0);
@@ -144,6 +148,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
           titleId="technician-machine-history-title"
           className={shellStyles.pageHeading}
         />
+        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ["dolores", "technician"] }) }]} />
         {isLoading ? <p className={shellStyles.pendingNotice} role="status">Đang tải lịch sử…</p> : null}
         {tickets.isError ? <p className={tableStyles.error} role="alert">{getApiErrorMessage(tickets.error)}</p> : null}
         {requests.isError ? <p className={tableStyles.error} role="alert">Không tải được danh sách yêu cầu bảo trì.</p> : null}
@@ -151,7 +156,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
         {schedule.isError ? <p className={tableStyles.error} role="alert">Không tải được lịch bảo trì của máy.</p> : null}
         {machineId && machine.data ? (
           <Panel title={machine.data.serialNumber ?? machine.data.id} aria-label="Tổng quan máy">
-            <p>Trạng thái máy: {machine.data.status ?? "—"}</p>
+            <p>Trạng thái máy: {machineStatusLabel(machine.data.status)}</p>
             <p>Lịch bảo trì tiếp theo: {formatDate(schedule.data?.nextPreventiveMaintenanceAt)}</p>
             {typeof schedule.data?.cupsServedSinceLastDescale === "number" ? (
               <p>Số ly từ lần vệ sinh gần nhất: {schedule.data.cupsServedSinceLastDescale.toLocaleString("vi-VN")}</p>

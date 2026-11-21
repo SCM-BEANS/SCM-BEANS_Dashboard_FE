@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { locationsApi } from "@/apis/locations.api";
@@ -118,11 +119,11 @@ export function TransferMachineDialog({
         </select>
         {activeLocations.isError && <p className={styles.dialogError} role="alert">{getApiErrorMessage(activeLocations.error)}</p>}
         {activeLocations.isSuccess && targets.length === 0 && <p className={styles.notice} role="status">Owner chưa có địa điểm đang hoạt động khác để chuyển máy tới.</p>}
-        {activeLocations.hasNextPage && <button
+        {activeLocations.hasNextPage && <ButtonBar
           type="button"
           disabled={activeLocations.isFetchingNextPage}
           onClick={() => void activeLocations.fetchNextPage()}
-        >{activeLocations.isFetchingNextPage ? "Đang tải…" : "Tải thêm địa điểm"}</button>}
+        >{activeLocations.isFetchingNextPage ? "Đang tải…" : "Tải thêm địa điểm"}</ButtonBar>}
       </div>
       <div className={styles.dialogField}>
         <label htmlFor="transfer-machine-reason">Lý do (không bắt buộc)</label>

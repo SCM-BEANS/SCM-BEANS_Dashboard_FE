@@ -1,6 +1,6 @@
 
 import { Panel } from "@/components/panel/panel";
-import { TextLinkButton } from "@/components/button/text-link-button";
+import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { Pagination } from "@/components/pagination/pagination";
@@ -27,10 +27,10 @@ export function OwnerOrderListPanel({ workflow, onOpenOrder }: { workflow: Coffe
       {workflow.orders.data?.items.length ? (
         <DataTable rows={workflow.orders.data.items} rowKey={(order) => order.id} columns={[
           { key: "order", header: "Đơn hàng", render: (order) => <>
-            <TextLinkButton onClick={() => onOpenOrder(order.id)}>Đơn {order.id.slice(0, 8).toUpperCase()}</TextLinkButton>
+            <ButtonBar onClick={() => onOpenOrder(order.id)}>Đơn {order.id.slice(0, 8).toUpperCase()}</ButtonBar>
             <span className={styles.orderQuantity}>{formatCoffeePackageDateTime(order.createdAt)}</span>
           </> },
-          { key: "package", header: "Gói cà phê", render: (order) => <>
+          { key: "package", kind: "name", header: "Gói cà phê", render: (order) => <>
             {order.packageName ?? order.packageCode ?? "—"}
             <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
           </> },

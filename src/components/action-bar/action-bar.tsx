@@ -24,7 +24,7 @@ export function ActionBar({
   );
 }
 
-export function ActionBarLayout({ children, label }: { children: ReactNode; label: string }) {
+export function ActionBarLayout({ children, label, position = "bottom" }: { children: ReactNode; label: string; position?: "top" | "bottom" }) {
   const [actionsElement, setActionsElement] = useState<HTMLDivElement | null>(null);
   const [registry] = useState(() => new PageActionsRegistry());
 
@@ -41,9 +41,10 @@ export function ActionBarLayout({ children, label }: { children: ReactNode; labe
   return (
     <PageActionsRegistryContext.Provider value={registry}>
     <ActionBarSlotContext.Provider value={actionsElement}>
-      <div className={styles.layout} data-visible={visible}>
-        {children}
+      <div className={styles.layout} data-visible={visible} data-position={position}>
+        {position === "bottom" && children}
         <ActionBar label={label} actionsRef={setActionsElement}><RegisteredPageActions registry={registry} /></ActionBar>
+        {position === "top" && children}
       </div>
     </ActionBarSlotContext.Provider>
     </PageActionsRegistryContext.Provider>

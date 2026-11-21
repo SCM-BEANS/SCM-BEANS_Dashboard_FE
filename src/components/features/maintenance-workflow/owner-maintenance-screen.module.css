@@ -19,7 +19,7 @@
 .filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .filters select { flex: 1; min-width: min(100%, 200px); min-height: 44px; padding: 10px 14px; border: 1px solid var(--color-border-strong); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
 .filters select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.overview { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.overview { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .description { margin-top: 24px; }
 .description h3 { font-size: 14px; margin: 0 0 8px; }
 .description p { margin: 0; overflow-wrap: anywhere; line-height: 1.6; }
@@ -76,21 +76,7 @@
   color: var(--color-text);
   font: inherit;
 }
-
-.button {
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid var(--color-primary);
-  border-radius: 8px;
-  background: var(--color-primary);
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.button:disabled { cursor: not-allowed; opacity: .55; }
-.button:focus-visible, .link:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.link:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
 .link { color: #9e1420; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 
 @media (max-width: 600px) {

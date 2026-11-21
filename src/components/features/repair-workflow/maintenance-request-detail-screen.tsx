@@ -70,9 +70,9 @@ function MaintenanceRequestDetails({ request, compact = false }: { request: Main
     <section className={styles.issueDescription}><h3>Nội dung yêu cầu</h3><p>{request.issueDescription || "Chưa có mô tả."}</p></section>
     <details className={styles.technicalDetails}><summary>Mã liên kết</summary>
       <dl className={styles.sidebarFacts}>
-        <DetailValue label="Mã yêu cầu" value={request.id} code />
-        <DetailValue label="Phiếu bảo trì" value={request.maintenanceTicketId || "Chưa có"} code />
-        <DetailValue label="Phân công máy thay thế" value={request.replacementAssignmentId || "Chưa có"} code />
+        <DetailValue label="Mã yêu cầu" value={<TruncatedId value={request.id} />} code />
+        <DetailValue label="Phiếu bảo trì" value={request.maintenanceTicketId ? <TruncatedId value={request.maintenanceTicketId} /> : "Chưa có"} code />
+        <DetailValue label="Phân công máy thay thế" value={request.replacementAssignmentId ? <TruncatedId value={request.replacementAssignmentId} /> : "Chưa có"} code />
       </dl>
     </details>
   </>;
@@ -87,8 +87,8 @@ function MaintenanceRequestDetails({ request, compact = false }: { request: Main
         <DetailValue label={messages.TECHNICAL_MACHINE_ID} value={<TruncatedId value={request.machineId} />} code />
         <DetailValue label={messages.TECHNICAL_SCHEDULED} value={scheduleLabel(request)} />
         <DetailValue label={messages.TECHNICAL_STATUS} value={<StatusBadge status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge>} />
-        <DetailValue label={messages.TECHNICAL_TICKET} value={request.maintenanceTicketId ?? "—"} code />
-        <DetailValue label="Mã phân công máy thay thế" value={request.replacementAssignmentId ?? "—"} code />
+        <DetailValue label={messages.TECHNICAL_TICKET} value={<TruncatedId value={request.maintenanceTicketId} />} code />
+        <DetailValue label="Mã phân công máy thay thế" value={<TruncatedId value={request.replacementAssignmentId} />} code />
         <DetailValue label={messages.TECHNICAL_DATE} value={formatDate(request.createdAt)} />
         <DetailValue label={messages.TECHNICAL_UPDATED} value={formatDate(request.updatedAt)} />
       </dl>
@@ -253,7 +253,7 @@ export function MaintenanceRequestDetailScreen({
       {ticketQuery.data && request?.requestType === "PREVENTIVE" && !ticketQuery.data.assignedTechnicianId ? (
         <section className={styles.pendingNotice} aria-labelledby="preventive-ticket-title">
           <h2 className={styles.sectionTitle} id="preventive-ticket-title">Phiếu bảo trì</h2>
-          <p>Mã ticket: <span className={styles.codeValue}>{ticketQuery.data.id}</span></p>
+          <p>Mã ticket: <span className={styles.codeValue}><TruncatedId value={ticketQuery.data.id} /></span></p>
           <p>Trạng thái: {ticketQuery.data.status ?? "—"}</p>
           <p>Kỹ thuật viên: {ticketQuery.data.assignedTo ?? ticketQuery.data.assignedTechnicianId ?? "Chưa được giao"}</p>
           {!ticketQuery.data.assignedTechnicianId ? isAdmin ? (
@@ -300,8 +300,8 @@ export function MaintenanceRequestDetailScreen({
       ) : null}
       {request && !requestQuery.isError && <section className={styles.relatedContent} aria-label="Nội dung liên quan">
         <SectionTabList role="navigation" aria-label="Chứng từ và phiếu bảo trì">
-          <button type="button" aria-pressed={relatedView === "ticket"} onClick={() => setRelatedView("ticket")}>Phiếu bảo trì liên quan</button>
-          <button type="button" aria-pressed={relatedView === "evidence"} onClick={() => setRelatedView("evidence")}>Chứng từ yêu cầu</button>
+          <ButtonBar type="button" aria-pressed={relatedView === "ticket"} onClick={() => setRelatedView("ticket")}>Phiếu bảo trì liên quan</ButtonBar>
+          <ButtonBar type="button" aria-pressed={relatedView === "evidence"} onClick={() => setRelatedView("evidence")}>Chứng từ yêu cầu</ButtonBar>
         </SectionTabList>
         <div hidden={relatedView !== "ticket"}>
           {ticketQuery.data?.id ? <MaintenanceRequestTicketDetail ticketId={ticketQuery.data.id} role={role} /> : <p className={styles.formHint}>Chưa có phiếu bảo trì liên quan.</p>}

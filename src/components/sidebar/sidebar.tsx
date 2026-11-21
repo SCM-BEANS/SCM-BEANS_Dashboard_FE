@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { LogOut, PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
@@ -32,10 +33,10 @@ export type SidebarLogoutProps = {
 
 export function SidebarLogoutButton({ label, pendingLabel, pending, onLogout }: SidebarLogoutProps) {
   return (
-    <button className={styles.logoutButton} type="button" aria-label={pending ? pendingLabel : label} onClick={() => void onLogout()} disabled={pending}>
+    <ButtonBar data-ui-text-link data-ui-navigation className={styles.logoutButton} type="button" aria-label={pending ? pendingLabel : label} onClick={() => void onLogout()} disabled={pending}>
       <LogOut size={18} aria-hidden="true" />
       <span>{pending ? pendingLabel : label}</span>
-    </button>
+    </ButtonBar>
   );
 }
 
@@ -125,9 +126,9 @@ export function Sidebar({
     <aside className={styles.sidebar} data-collapsed={collapsed}>
       <div className={styles.brandRow}>
         <Link className={styles.brand} href={brandHref}>{brand}</Link>
-        <button type="button" className={styles.collapseButton} aria-label={toggleLabel} title={toggleLabel} aria-controls={navId} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)}>
+        <ButtonBar data-ui-text-link data-ui-navigation type="button" className={styles.collapseButton} aria-label={toggleLabel} title={toggleLabel} aria-controls={navId} aria-expanded={!collapsed} onClick={() => setCollapsed(value => !value)}>
           <ToggleIcon size={20} aria-hidden="true" />
-        </button>
+        </ButtonBar>
       </div>
       <p className={styles.roleLabel}>{roleLabel}</p>
       <SidebarNavigation

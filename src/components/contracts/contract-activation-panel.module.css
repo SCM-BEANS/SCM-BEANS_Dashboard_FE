@@ -110,7 +110,3 @@
   justify-items: start;
   gap: 8px;
 }
-
-.actions > button:disabled {
-  opacity: 0.65;
-}

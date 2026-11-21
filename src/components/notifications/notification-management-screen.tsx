@@ -36,7 +36,7 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
     .sort((a, b) => (Date.parse(b.ts) || 0) - (Date.parse(a.ts) || 0));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
   const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
-  const selected = alerts.isSuccess && selectedId !== null ? rows.find((alert) => alert.id === selectedId) ?? rows[0] : undefined;
+  const selected = alerts.isSuccess && selectedId !== null ? rows.find((alert) => alert.id === selectedId) : undefined;
 
   return <NotificationInbox scope={scope} variant="management" initialSection={initialSection} title="Thông báo"
     showOwnerId={scope === "admin"} onRefreshExtra={scope === "technician" ? undefined : () => alerts.refetch()}>
@@ -52,10 +52,10 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
         {alerts.isError ? <div className={styles.error} role="alert"><p>{getApiErrorMessage(alerts.error)}</p><ButtonBar onClick={() => void alerts.refetch()}>Thử lại</ButtonBar></div> : null}
         {alerts.isSuccess && !filtered.length ? <p className={styles.empty}>Không có cảnh báo phù hợp với bộ lọc.</p> : null}
         {alerts.isSuccess ? <div className={styles.list}>{rows.map((alert) => <article className={styles.item} key={alert.id} data-selected={selected?.id === alert.id}>
-          <button id={`alert-open-${alert.id}`} type="button" className={styles.openNotification} aria-pressed={selected?.id === alert.id} aria-controls={selected ? "alert-detail" : undefined} onClick={() => {
+          <ButtonBar id={`alert-open-${alert.id}`} data-ui-button-layout="content" type="button" className={styles.openNotification} aria-pressed={selected?.id === alert.id} aria-controls={selected ? "alert-detail" : undefined} onClick={() => {
             setSelectedId(alert.id);
             if (window.matchMedia("(max-width: 1100px)").matches) requestAnimationFrame(() => { detailRef.current?.focus(); detailRef.current?.scrollIntoView({ behavior: "instant", block: "nearest" }); });
-          }}><span className={styles.categoryIcon} data-category="alert"><AlertTriangle size={22} aria-hidden="true" /></span><span className={styles.rowContent}><strong>{alert.title}</strong><span className={styles.preview}>{alert.message}</span><time dateTime={alert.ts}>{formatDate(alert.ts)}{alert.machineId ? ` · Máy ${alert.machineId.slice(0, 8).toUpperCase()}` : ""}</time></span></button>
+          }}><span className={styles.categoryIcon} data-category="alert"><AlertTriangle size={22} aria-hidden="true" /></span><span className={styles.rowContent}><strong>{alert.title}</strong><span className={styles.preview}>{alert.message}</span><time dateTime={alert.ts}>{formatDate(alert.ts)}{alert.machineId ? ` · Máy ${alert.machineId.slice(0, 8).toUpperCase()}` : ""}</time></span></ButtonBar>
           {!alert.acknowledged ? <span className={styles.alertDot} role="img" aria-label="Chưa xác nhận" /> : null}
         </article>)}</div> : null}
         {alerts.isSuccess && filtered.length > 0 ? <Pagination
@@ -70,7 +70,7 @@ export function NotificationManagementScreen({ scope, initialSection = "notifica
         ><span className={styles.pageSize}>{messages.ALERTS_PER_PAGE}</span></Pagination> : null}
       </Panel>
       {selected ? <aside id="alert-detail" ref={detailRef} tabIndex={-1} className={styles.detailPane} aria-labelledby="alert-detail-title">
-        <header><h2 id="alert-detail-title">Chi tiết cảnh báo</h2><button className={styles.closeDetail} aria-label="Đóng chi tiết cảnh báo" onClick={() => { document.getElementById(`alert-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></button></header>
+        <header><h2 id="alert-detail-title">Chi tiết cảnh báo</h2><ButtonBar className={styles.closeDetail} aria-label="Đóng chi tiết cảnh báo" onClick={() => { document.getElementById(`alert-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></ButtonBar></header>
         <div className={styles.detailMeta}><StatusBadge variant="dot" tone={selected.acknowledged ? "success" : "warning"}>{selected.acknowledged ? "Đã xác nhận" : "Chưa xác nhận"}</StatusBadge><time dateTime={selected.ts}>{formatDate(selected.ts)}</time></div>
         <h3>{selected.title}</h3><section className={styles.detailContent} aria-label="Nội dung cảnh báo"><h4>Nội dung</h4><p className={styles.detailBody}>{selected.message}</p></section>
         <dl className={styles.detailFacts}><div><dt>Máy liên quan</dt><dd><TruncatedId value={selected.machineId} /></dd></div>{selected.title !== selected.levelLabel ? <div><dt>Mức độ</dt><dd>{selected.levelLabel}</dd></div> : null}</dl>

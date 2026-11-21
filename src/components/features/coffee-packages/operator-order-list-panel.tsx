@@ -1,5 +1,6 @@
 
 import { Panel } from "@/components/panel/panel";
+import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { DataTable } from "@/components/table/data-table";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -51,7 +52,7 @@ export function OperatorOrderListPanel({
                   {isAdmin ? (
                     <TextLinkButton href={PATH_ADMIN.COFFEE_PACKAGE_ORDER_DETAIL(order.id)}>{customerName}</TextLinkButton>
                   ) : (
-                    <TextLinkButton onClick={() => onOpenOrder(order.id)}>{customerName}</TextLinkButton>
+                    <ButtonBar onClick={() => onOpenOrder(order.id)}>{customerName}</ButtonBar>
                   )}
                   <div className={styles.orderMeta}>
                     {!isAdmin ? <span>Đơn <TruncatedId value={order.id} /></span> : null}
@@ -61,7 +62,7 @@ export function OperatorOrderListPanel({
               );
             },
           },
-          { key: "package", header: "Gói cà phê", render: (order) => <>
+          { key: "package", kind: "name", header: "Gói cà phê", render: (order) => <>
             {order.packageName ?? order.packageCode ?? "—"}
             <span className={styles.orderQuantity}>Số lượng: {order.quantity?.toLocaleString("vi-VN") ?? "—"}</span>
           </> },

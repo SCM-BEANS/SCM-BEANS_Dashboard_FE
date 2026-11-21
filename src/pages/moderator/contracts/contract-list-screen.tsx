@@ -1,8 +1,9 @@
 import { Panel } from "@/components/panel/panel";
+import { ContractListPanel, ContractListPagination } from "@/components/contracts/contract-list-panel";
+import { CONTRACT_LIST_MESSAGES as CONTRACT_LIST_T } from "@/text/contracts/contract-messages";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { ContractTable } from "@/components/table/contract-table";
-import tableStyles from "@/components/table/data-table.module.css";
 import { DataTable } from "@/components/table/data-table";
 import { TableFilters } from "@/components/table/table-filters";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -93,28 +94,24 @@ export function ContractListScreen() {
         </div>
         <ButtonBar variant="primary" href={PATH_MODERATOR.NEW_CONTRACT}>{T.CONTRACTS.CREATE}</ButtonBar>
       </div>
-      <section className={tableStyles.listPanel} aria-labelledby="moderator-contract-list-title">
-        <div className={adminStyles.userSectionHeading}>
-          <h2 id="moderator-contract-list-title">Danh sách hợp đồng</h2>
-          {contracts.data && <span className={adminStyles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}
-        </div>
+      <ContractListPanel count={contracts.data ? filteredContracts.length : undefined}>
         <QueryFeedback query={contracts} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACTS} />
         <TableFilters
-          search={{ ariaLabel: "Tìm hợp đồng", maxLength: 100, placeholder: "Tìm mã hợp đồng hoặc khách hàng", value: searchDraft, onChange: setSearchDraft }}
+          search={{ ariaLabel: CONTRACT_LIST_T.SEARCH_LABEL, maxLength: 100, placeholder: CONTRACT_LIST_T.SEARCH_LABEL, value: searchDraft, onChange: setSearchDraft }}
           selects={[
-            { id: "moderator-contract-status-filter", ariaLabel: "Lọc hợp đồng theo trạng thái", value: statusDraft, options: [
-              { value: "", label: "Tất cả trạng thái" },
-              { value: "ACTIVE", label: T.CONTRACTS.ACTIVE },
-              { value: "DRAFT", label: T.CONTRACTS.DRAFT },
-              { value: "TERMINATED", label: T.CONTRACTS.TERMINATED },
+            { id: "moderator-contract-status-filter", ariaLabel: CONTRACT_LIST_T.STATUS_FILTER, value: statusDraft, options: [
+              { value: "", label: CONTRACT_LIST_T.STATUS_ALL },
+              { value: "ACTIVE", label: CONTRACT_LIST_T.STATUS_ACTIVE },
+              { value: "DRAFT", label: CONTRACT_LIST_T.STATUS_DRAFT },
+              { value: "TERMINATED", label: CONTRACT_LIST_T.STATUS_TERMINATED },
             ], onChange: setStatusDraft },
-            { id: "moderator-contract-machine-type-filter", ariaLabel: "Lọc hợp đồng theo loại máy", value: typeDraft, options: [
-              { value: "", label: "Tất cả loại máy" },
-              { value: "CONVENTIONAL", label: T.MACHINES.CONVENTIONAL },
-              { value: "SMART_IOT", label: T.MACHINES.SMART },
+            { id: "moderator-contract-machine-type-filter", ariaLabel: CONTRACT_LIST_T.MACHINE_TYPE_FILTER, value: typeDraft, options: [
+              { value: "", label: CONTRACT_LIST_T.MACHINE_TYPE_ALL },
+              { value: "CONVENTIONAL", label: CONTRACT_LIST_T.MACHINE_TYPE_CONVENTIONAL },
+              { value: "SMART_IOT", label: CONTRACT_LIST_T.MACHINE_TYPE_SMART },
             ], onChange: setTypeDraft },
           ]}
-          submitLabel="Tìm kiếm"
+          submitLabel={CONTRACT_LIST_T.SEARCH_SUBMIT}
           onSubmit={submitFilters}
         />
         {contracts.data?.length === 0 && <p className={adminStyles.emptyText} role="status">{MODERATOR_MESSAGES.READ_SCREENS.EMPTY_CONTRACTS}</p>}
@@ -124,15 +121,13 @@ export function ContractListScreen() {
           contractHref={PATH_MODERATOR.CONTRACT_DETAIL}
           installationRequestHref={PATH_MODERATOR.CONTRACT_INSTALLATION_REQUEST}
         />}
-        {filteredContracts.length > 0 && <div className={adminStyles.accountPagination}>
-          <span>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
-          <div>
-            <ButtonBar  type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Trang trước</ButtonBar>
-            <span>Trang {currentPage}/{totalPages}</span>
-            <ButtonBar  type="button" disabled={currentPage >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Trang sau</ButtonBar>
-          </div>
-        </div>}
-      </section>
+        {filteredContracts.length > 0 && <ContractListPagination
+          page={currentPage - 1}
+          pageSize={pageSize}
+          totalCount={filteredContracts.length}
+          onPageChange={(nextPage) => setPage(nextPage + 1)}
+        />}
+      </ContractListPanel>
     </div>
   );
 }

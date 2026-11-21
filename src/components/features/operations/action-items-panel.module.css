@@ -7,8 +7,6 @@
 .notice { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--color-page); color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; }
 .notice p { margin: 0 0 10px; }
 .error { background: var(--color-warning-soft); }
-.error button, .pagination button { min-height: 40px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
-.error button:disabled, .pagination button:disabled { opacity: .5; cursor: not-allowed; }
 .workTitle { display: inline-block; min-width: 160px; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
 .priority, .overdue { display: inline-flex; min-height: 25px; align-items: center; padding: 2px 8px; border-radius: 999px; background: #f0eeec; color: var(--color-text-secondary); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .overdue { background: #fdebea; color: color-mix(in srgb, var(--color-primary) 87%, black); }
@@ -41,9 +39,7 @@
 }
 
 .queueBuckets { display: flex; flex-wrap: wrap; gap: 8px; }
-.queueBuckets button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; font: inherit; font-size: 13px; }
-.queueBuckets button[aria-pressed="true"] { border-color: #ecc9ca; background: var(--color-primary-soft); color: color-mix(in srgb, var(--color-primary) 87%, black); }
-.queueBuckets button[data-bucket="OVERDUE"] strong { color: color-mix(in srgb, var(--color-primary) 87%, black); }
+.queueBuckets button { display: inline-flex; align-items: center; gap: 8px; }
 .queueBuckets strong { font-variant-numeric: tabular-nums; }
 .queueGroups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
 .queueGroup { min-width: 0; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }

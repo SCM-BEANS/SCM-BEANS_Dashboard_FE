@@ -1,3 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
+import { TextLinkButton } from "@/components/button/text-link-button";
 import Link from "next/link";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -87,7 +89,7 @@ function InvoiceOverview({ invoices, balances }: {
           <h2 id="owner-invoices-title">Hóa đơn cần thanh toán</h2>
           <p>Các khoản đến hạn gần nhất</p>
         </div>
-        <Link className={styles.panelLink} href={PATH_CUSTOMER.INVOICES}>Xem tất cả hóa đơn</Link>
+        <TextLinkButton href={PATH_CUSTOMER.INVOICES}>Xem tất cả hóa đơn</TextLinkButton>
       </header>
 
       <div className={styles.invoiceSnapshot}>
@@ -130,7 +132,7 @@ function InvoiceOverview({ invoices, balances }: {
           ) : invoices.isError ? (
             <div className={styles.panelError} role="alert">
               <span>{getApiErrorMessage(invoices.error)}</span>
-              <button type="button" onClick={() => void invoices.refetch()}>Thử lại</button>
+              <ButtonBar type="button" onClick={() => void invoices.refetch()}>Thử lại</ButtonBar>
             </div>
           ) : openInvoices.length ? (
             <ul className={styles.invoiceSnapshotList}>
@@ -236,7 +238,7 @@ export function OverviewScreen() {
                   <h2 id="owner-cups-title">Ly đã ghi nhận</h2>
                   <p>{formatDate(overview?.usagePeriodStart)} – {formatDate(overview?.usagePeriodEnd)}</p>
                 </div>
-                <Link className={styles.panelLink} href={PATH_CUSTOMER.MACHINES}>Xem máy của tôi</Link>
+                <TextLinkButton href={PATH_CUSTOMER.MACHINES}>Xem máy của tôi</TextLinkButton>
               </header>
               <div className={styles.cupsTotal}>
                 <strong>{operations?.cupsInSelectedPeriod == null ? "—" : numberFormat.format(operations.cupsInSelectedPeriod)}</strong>
@@ -267,7 +269,7 @@ export function OverviewScreen() {
               <Panel className={styles.machinePanel} aria-labelledby="owner-machines-title">
                 <header className={styles.panelHeading}>
                   <h2 id="owner-machines-title">Máy đang hoạt động</h2>
-                  <Link className={styles.panelLink} href={PATH_CUSTOMER.MACHINES}>Xem kho máy</Link>
+                  <TextLinkButton href={PATH_CUSTOMER.MACHINES}>Xem kho máy</TextLinkButton>
                 </header>
                 {machineDataAvailable ? (
                   <>
@@ -292,7 +294,7 @@ export function OverviewScreen() {
                     <h2 id="owner-contracts-title">Hợp đồng</h2>
                     <p>{numberFormat.format(contractCount)} hợp đồng</p>
                   </div>
-                  <Link className={styles.panelLink} href={PATH_CUSTOMER.CONTRACTS}>Xem hợp đồng</Link>
+                  <TextLinkButton href={PATH_CUSTOMER.CONTRACTS}>Xem hợp đồng</TextLinkButton>
                 </header>
                 {contractStatuses ? (
                   <>

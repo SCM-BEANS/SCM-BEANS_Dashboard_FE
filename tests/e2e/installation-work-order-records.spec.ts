@@ -218,13 +218,20 @@ test.describe("installation work-order paged records", () => {
     expect(api.downloads).toHaveLength(1);
   });
 
-  test("Moderator sees brand-colored tabs and can download evidence without file format and size columns", async ({ page }) => {
+  test("Moderator sees shared neutral tabs and can download evidence without file format and size columns", async ({ page }) => {
     const api = await installMockApi(page);
     await openWorkOrder(page, "moderator");
 
     const activeTab = page.getByRole("tab", { name: "Danh sách kiểm tra" });
     await expect(activeTab).toBeVisible();
-    await expect(activeTab).toHaveCSS("color", "rgb(184, 23, 36)");
+    const tabStyle = async () => activeTab.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { background: style.backgroundColor, color: style.color, borderBottom: style.borderBottomWidth, transition: style.transitionProperty, height: element.getBoundingClientRect().height };
+    });
+    const beforeHover = await tabStyle();
+    expect(beforeHover).toEqual({ background: "rgb(239, 233, 225)", color: "rgb(0, 0, 0)", borderBottom: "0px", transition: "none", height: 44 });
+    await activeTab.hover();
+    expect(await tabStyle()).toEqual(beforeHover);
     await page.getByRole("tab", { name: "Chứng từ" }).click();
     await expect(page.getByRole("columnheader", { name: "Định dạng" })).toHaveCount(0);
     await expect(page.getByRole("columnheader", { name: "Dung lượng" })).toHaveCount(0);

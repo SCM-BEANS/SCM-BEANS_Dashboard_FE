@@ -16,16 +16,18 @@ import {
   type ContractPolicyAmendmentRequest,
 } from "@/schema/contracts.schema";
 import { ADMIN_OPERATIONS_MESSAGES as T } from "@/text/admin/admin-operations-messages";
+import { contractExpiryDecisionLabel } from "@/text/contracts/contract-messages";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { ContractCreateForm } from "@/components/create-form/contract-create-form";
 import { ContractOverviewPanel } from "@/components/contracts/contract-overview-panel";
+import { ContractListPanel, ContractListPagination } from "@/components/contracts/contract-list-panel";
+import { CONTRACT_LIST_MESSAGES as CONTRACT_LIST_T } from "@/text/contracts/contract-messages";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { ContractTable } from "@/components/table/contract-table";
-import tableStyles from "@/components/table/data-table.module.css";
 import { TableFilters } from "@/components/table/table-filters";
 import { ContractActivationPanel } from "@/components/contracts/contract-activation-panel";
 import { DataTable } from "@/components/table/data-table";
@@ -311,50 +313,45 @@ function ContractsContent() {
       <ButtonBar variant="primary" onClick={() => navigate({ view: "create" })}>{T.CONTRACTS.CREATE}</ButtonBar>
     </div> : <BackButtonHeading
       title={pageTitle}
-      description={view === "detail" ? contract.data?.id : undefined}
       titleId="admin-contracts-title"
       className={styles.pageHeading}
       back={getContractsBackDestination(router.query)}
     />}
-    {isContractList && <section className={tableStyles.listPanel} aria-labelledby="admin-contract-list-panel-title">
-      <div className={styles.userSectionHeading}>
-        <h2 id="admin-contract-list-panel-title">Danh sách hợp đồng</h2>
-        {contracts.data && <span className={styles.contractListCount}>{filteredContracts.length.toLocaleString("vi-VN")} hợp đồng</span>}
-      </div>
+    {isContractList && <ContractListPanel count={contracts.data ? filteredContracts.length : undefined}>
       <TableFilters
         search={{
-          ariaLabel: "Tìm hợp đồng",
+          ariaLabel: CONTRACT_LIST_T.SEARCH_LABEL,
           maxLength: 100,
-          placeholder: "Tìm mã hợp đồng hoặc khách hàng",
+          placeholder: CONTRACT_LIST_T.SEARCH_LABEL,
           value: contractSearchDraft,
           onChange: setContractSearchDraft,
         }}
         selects={[
           {
             id: "contract-status-filter",
-            ariaLabel: "Lọc hợp đồng theo trạng thái",
+            ariaLabel: CONTRACT_LIST_T.STATUS_FILTER,
             value: contractStatusDraft,
             options: [
-              { value: "", label: "Tất cả trạng thái" },
-              { value: "ACTIVE", label: T.CONTRACTS.ACTIVE },
-              { value: "DRAFT", label: T.CONTRACTS.DRAFT },
-              { value: "TERMINATED", label: T.CONTRACTS.TERMINATED },
+              { value: "", label: CONTRACT_LIST_T.STATUS_ALL },
+              { value: "ACTIVE", label: CONTRACT_LIST_T.STATUS_ACTIVE },
+              { value: "DRAFT", label: CONTRACT_LIST_T.STATUS_DRAFT },
+              { value: "TERMINATED", label: CONTRACT_LIST_T.STATUS_TERMINATED },
             ],
             onChange: setContractStatusDraft,
           },
           {
             id: "contract-machine-type-filter",
-            ariaLabel: "Lọc hợp đồng theo loại máy",
+            ariaLabel: CONTRACT_LIST_T.MACHINE_TYPE_FILTER,
             value: contractTypeDraft,
             options: [
-              { value: "", label: "Tất cả loại máy" },
-              { value: "CONVENTIONAL", label: T.MACHINES.CONVENTIONAL },
-              { value: "SMART_IOT", label: T.MACHINES.SMART },
+              { value: "", label: CONTRACT_LIST_T.MACHINE_TYPE_ALL },
+              { value: "CONVENTIONAL", label: CONTRACT_LIST_T.MACHINE_TYPE_CONVENTIONAL },
+              { value: "SMART_IOT", label: CONTRACT_LIST_T.MACHINE_TYPE_SMART },
             ],
             onChange: setContractTypeDraft,
           },
         ]}
-        submitLabel="Tìm kiếm"
+        submitLabel={CONTRACT_LIST_T.SEARCH_SUBMIT}
         onSubmit={submitContractFilters}
       />
       {contracts.isPending && <p role="status">{T.COMMON.LOADING}</p>}
@@ -369,15 +366,13 @@ function ContractsContent() {
           installationRequestHref={(id) => `/admin/contracts?view=installation-request&id=${encodeURIComponent(id)}`}
         />
       }
-      {filteredContracts.length > 0 && <div className={styles.accountPagination}>
-        <span>{(contractPage - 1) * contractPageSize + 1}–{Math.min(contractPage * contractPageSize, filteredContracts.length)} / {filteredContracts.length} hợp đồng</span>
-        <div>
-          <ButtonBar  type="button" disabled={contractPage <= 1} onClick={() => setContractPage((page) => Math.max(1, page - 1))}>Trang trước</ButtonBar>
-          <span>Trang {contractPage}/{contractTotalPages}</span>
-          <ButtonBar  type="button" disabled={contractPage >= contractTotalPages} onClick={() => setContractPage((page) => Math.min(contractTotalPages, page + 1))}>Trang sau</ButtonBar>
-        </div>
-      </div>}
-    </section>}
+      {filteredContracts.length > 0 && <ContractListPagination
+        page={contractPage - 1}
+        pageSize={contractPageSize}
+        totalCount={filteredContracts.length}
+        onPageChange={(page) => setContractPage(page + 1)}
+      />}
+    </ContractListPanel>}
     {view === "create" && <ContractCreateForm
       onCancel={() => void router.push({ pathname: "/admin/contracts" }, undefined, { shallow: true })}
       onCreated={(id) => {
@@ -395,7 +390,7 @@ function ContractsContent() {
         <Panel className={`${styles.panel} ${styles.contractExpiryPanel}`}><h2>Trạng thái hết hạn</h2>
           {expiry.isPending && <p role="status">{T.COMMON.LOADING}</p>}
           {expiry.isError && <div className={styles.operationsNotice} role="alert">{getApiErrorMessage(expiry.error)} <ButtonBar type="button" onClick={() => void expiry.refetch()}>{T.COMMON.RETRY}</ButtonBar></div>}
-          {expiry.data && <div className={styles.operationsGrid}><div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div><div><span>Ngày nhắc</span><strong>{date(expiry.data.reminderDate)}</strong></div><div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div><div><span>Quyết định</span><strong>{expiry.data.decision ?? "Chưa có"}</strong></div><div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div></div>}
+          {expiry.data && <div className={styles.operationsGrid}><div><span>Ngày hết hạn</span><strong>{date(expiry.data.expiryDate)}</strong></div><div><span>Ngày nhắc</span><strong>{date(expiry.data.reminderDate)}</strong></div><div><span>Đã gửi nhắc lúc</span><strong>{dateTime(expiry.data.reminderSentAt)}</strong></div><div><span>Quyết định</span><strong>{contractExpiryDecisionLabel(expiry.data.decision)}</strong></div><div><span>Thời điểm quyết định</span><strong>{dateTime(expiry.data.decidedAt)}</strong></div></div>}
         </Panel>
         <Panel className={`${styles.panel} ${styles.contractHistoryPanel}`}>
           <h2>Lịch sử chính sách</h2>

@@ -1,6 +1,23 @@
 ﻿import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactElement } from "react";
 
+import { Fragment, type ReactNode } from "react";
+
 // Keep navigation links and pressed view switches in their existing semantics.
+function markTabChildren(children: ReactNode): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    if (child.type === Fragment) {
+      const fragment = child as ReactElement<{ children?: ReactNode }>;
+      return cloneElement(fragment, {}, markTabChildren(fragment.props.children));
+    }
+    const control = child as ReactElement<HTMLAttributes<HTMLButtonElement> & { "data-ui-tab"?: string }>;
+    return cloneElement(control, {
+      "data-ui-tab": "true",
+      ...(control.props.role === "tab" ? { tabIndex: control.props["aria-selected"] ? 0 : -1 } : {}),
+    });
+  });
+}
+
 export function SectionTabList({ children, role = "group", ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div {...props} role={role} data-ui-tabs onKeyDown={(event) => {
     props.onKeyDown?.(event);
@@ -13,9 +30,6 @@ export function SectionTabList({ children, role = "group", ...props }: HTMLAttri
     controls[next].focus();
     controls[next].click();
   }}>
-    {Children.map(children, (child) => {
-      if (!isValidElement(child) || child.props.role !== "tab") return child;
-      return cloneElement(child as ReactElement<HTMLAttributes<HTMLButtonElement>>, { tabIndex: child.props["aria-selected"] ? 0 : -1 });
-    })}
+    {markTabChildren(children)}
   </div>;
 }

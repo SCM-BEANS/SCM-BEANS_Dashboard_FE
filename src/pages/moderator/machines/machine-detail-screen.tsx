@@ -5,14 +5,17 @@ import { ButtonBar } from "@/components/button/button-bar";
 import { MachineSpecificationsView } from "@/pages/admin/machines/create-machine-model-form";
 import { MachineContractHistory } from "@/components/machines/machine-contract-history";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/router";
 import { locationsApi } from "@/apis/locations.api";
 import { machineModelsApi } from "@/apis/machine-models.api";
 import { machinesApi } from "@/apis/machines.api";
 import { profilesApi } from "@/apis/profiles.api";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
+import { MachineProfileGroups } from "@/components/machines/machine-profile-groups";
+import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { PATH_MODERATOR } from "@/routes/path";
 import { LocationIdSchema } from "@/schema/locations.schema";
@@ -75,7 +78,7 @@ async function listVerifiedActiveTechnicians(signal: AbortSignal) {
   return pages.flatMap((page) => page.items).filter((profile) => profile.emailVerified);
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { label: string; value: ReactNode }) {
   return <div><span>{label}</span><strong>{value}</strong></div>;
 }
 
@@ -154,7 +157,7 @@ function MachineManagementActions({ machine }: { machine: Machine }) {
             <label htmlFor="moderator-machine-technician">{messages.MACHINE_SELECT_TECHNICIAN}
               <select id="moderator-machine-technician" value={technicianId} disabled={pending || technicians.isPending} onChange={(event) => setTechnicianId(event.target.value)}>
                 <option value="">{messages.MACHINE_SELECT_TECHNICIAN}</option>
-                {technicians.data?.map((technician) => <option key={technician.idaasUserId} value={technician.idaasUserId}>{technician.fullName || technician.email || technician.idaasUserId}</option>)}
+                {technicians.data?.map((technician, index) => <option key={technician.idaasUserId} value={technician.idaasUserId}>{technician.fullName || technician.email || `${ADMIN_T.MACHINES.TECHNICIAN} ${index + 1}`}</option>)}
               </select>
             </label>
             <div className={adminStyles.operationsButtons}>
@@ -209,12 +212,6 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
     enabled: editing && Boolean(device?.ownerId),
     retry: false,
   });
-  const schedule = useQuery({
-    queryKey: ["dolores", "machines", "maintenance-schedule", machineId],
-    queryFn: ({ signal }) => machinesApi.getMaintenanceSchedule(machineId, signal),
-    enabled: validId && Boolean(device),
-    retry: false,
-  });
   const tickets = useQuery({
     queryKey: ["dolores", "maintenance-tickets", { machineId, page: ticketPage }],
     queryFn: ({ signal }) => machinesApi.listMaintenanceTicketsPage({ machineId, page: ticketPage, size: 10 }, signal),
@@ -266,7 +263,6 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
     <BackButtonHeading
       title={device ? `${messages.MACHINE_DETAIL_TITLE} · ${device.serialNumber ?? device.id.slice(0, 8).toUpperCase()}` : messages.MACHINE_DETAIL_TITLE}
       titleId="moderator-machine-detail-title"
-      description={device?.id ?? messages.MACHINES_DESCRIPTION}
       className={moderatorStyles.pageHeading}
       back={back}
     />
@@ -285,9 +281,9 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
 
         <div className={adminStyles.machineInventoryGroup}>
           <SectionTabList role="tablist" aria-label="Chi tiết máy">
-            <button id="moderator-machine-profile-tab" type="button" role="tab" aria-selected={detailTab === "profile"} aria-controls="moderator-machine-profile-panel" className={`${adminStyles.machineViewTab} ${detailTab === "profile" ? adminStyles.machineViewTabActive : ""}`} onClick={() => setDetailTab("profile")}>{ADMIN_T.MACHINES.DETAIL}</button>
-            <button id="moderator-machine-type-tab" type="button" role="tab" aria-selected={detailTab === "machine-type"} aria-controls="moderator-machine-type-panel" className={`${adminStyles.machineViewTab} ${detailTab === "machine-type" ? adminStyles.machineViewTabActive : ""}`} disabled={editing} onClick={() => setDetailTab("machine-type")}>{ADMIN_T.MACHINES.MACHINE_TYPE}</button>
-            <button id="moderator-machine-history-tab" aria-controls="moderator-machine-history-panel" type="button" role="tab" aria-selected={detailTab === "history"} className={[adminStyles.machineViewTab, detailTab === "history" ? adminStyles.machineViewTabActive : ""].join(" ")} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
+            <ButtonBar id="moderator-machine-profile-tab" type="button" role="tab" aria-selected={detailTab === "profile"} aria-controls="moderator-machine-profile-panel" className={`${adminStyles.machineViewTab} ${detailTab === "profile" ? adminStyles.machineViewTabActive : ""}`} onClick={() => setDetailTab("profile")}>{ADMIN_T.MACHINES.DETAIL}</ButtonBar>
+            <ButtonBar id="moderator-machine-type-tab" type="button" role="tab" aria-selected={detailTab === "machine-type"} aria-controls="moderator-machine-type-panel" className={`${adminStyles.machineViewTab} ${detailTab === "machine-type" ? adminStyles.machineViewTabActive : ""}`} disabled={editing} onClick={() => setDetailTab("machine-type")}>{ADMIN_T.MACHINES.MACHINE_TYPE}</ButtonBar>
+            <ButtonBar id="moderator-machine-history-tab" aria-controls="moderator-machine-history-panel" type="button" role="tab" aria-selected={detailTab === "history"} className={[adminStyles.machineViewTab, detailTab === "history" ? adminStyles.machineViewTabActive : ""].join(" ")} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</ButtonBar>
           </SectionTabList>
           {detailTab === "profile" ? (
             <Panel id="moderator-machine-profile-panel" className={adminStyles.panel} role="tabpanel" aria-labelledby="moderator-machine-profile-tab">
@@ -298,26 +294,26 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                   {!editing && <ButtonBar  type="button" onClick={beginEditing}>{ADMIN_T.MACHINES.EDIT}</ButtonBar>}
                 </div>
               </div>
-              <div className={adminStyles.machineProfileGroups}>
-                <section className={adminStyles.machineProfileGroup}>
-                  <h3>Nhận diện máy</h3>
-                  <div className={adminStyles.machineProfileFields}>
-                    <Field label={ADMIN_T.MACHINES.MACHINE_ID} value={device.id} />
-                  </div>
-                </section>
-                <section className={adminStyles.machineProfileGroup}>
-                  <h3>Phân bổ và hợp đồng</h3>
-                  <div className={adminStyles.machineProfileFields}>
-                    <Field label={ADMIN_T.MACHINES.TENANT_ID} value={device.tenantId ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.OWNER_TYPE} value={device.ownerType ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.REGION} value={device.region ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.LOCATION_ID} value={device.locationId ?? "—"} />
-                    <Field label={ADMIN_T.MACHINES.DEPLOYED_AT} value={formatDate(device.deployedAt)} />
-                    <Field label={ADMIN_T.MACHINES.CONTRACT_PERIOD} value={device.contractStartDate || device.contractEndDate ? `${formatDateOnly(device.contractStartDate)} – ${formatDateOnly(device.contractEndDate)}` : "—"} />
-                    <Field label={ADMIN_T.MACHINES.MONTHLY_RENTAL_FEE} value={device.monthlyRentalFee == null ? "—" : `${formatNumber(device.monthlyRentalFee)} ₫/tháng`} />
-                  </div>
-                </section>
-              </div>
+              <MachineProfileGroups
+                identity={[
+                  { label: ADMIN_T.MACHINES.SERIAL, value: device.serialNumber || "—" },
+                  { label: ADMIN_T.MACHINES.MODEL_NAME, value: typeof device.modelName === "string" && device.modelName ? device.modelName : ADMIN_T.MACHINES.MODEL_UNASSIGNED },
+                  { label: ADMIN_T.MACHINES.MACHINE_TYPE, value: device.machineType === "SMART_IOT" ? ADMIN_T.MACHINES.SMART : device.machineType === "CONVENTIONAL" ? ADMIN_T.MACHINES.CONVENTIONAL : ADMIN_T.MACHINES.UNCLASSIFIED },
+                  { label: ADMIN_T.MACHINES.REGION, value: device.region ?? "—" },
+                  { label: ADMIN_T.MACHINES.STATUS, value: machineStatusLabel(device.status) },
+                  { label: ADMIN_T.MACHINES.ACTIVE_MENU, value: device.activeMenuId === undefined ? "Chưa có thông tin menu" : device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || "Menu riêng" },
+                ]}
+                allocation={[
+                  { label: ADMIN_T.MACHINES.LOCATION, value: location.data?.name ?? (device.locationId ? <TruncatedId value={device.locationId} /> : "—") },
+                  { label: ADMIN_T.MACHINES.DEPLOYED_AT, value: formatDate(device.deployedAt) },
+                  { label: ADMIN_T.MACHINES.CONTRACT_PERIOD, value: device.contractStartDate || device.contractEndDate ? `${formatDateOnly(device.contractStartDate)} – ${formatDateOnly(device.contractEndDate)}` : "—" },
+                  { label: ADMIN_T.MACHINES.MONTHLY_RENTAL_FEE, value: device.monthlyRentalFee == null ? "—" : `${formatNumber(device.monthlyRentalFee)} ₫/tháng` },
+                  { label: ADMIN_T.MACHINES.NEXT_MAINTENANCE, value: formatDate(device.nextPreventiveMaintenanceAt) },
+                  { label: ADMIN_T.MACHINES.CUPS, value: (device.cupsServedSinceLastDescale)?.toLocaleString("vi-VN") ?? "—" },
+                  { label: ADMIN_T.MACHINES.TENANT_ID, value: device.tenantId ? <TruncatedId value={device.tenantId} /> : "—" },
+                  { label: ADMIN_T.MACHINES.OWNER_TYPE, value: device.ownerType ?? "—" },
+                ]}
+              />
               {device.locationId && locationScopeMismatch && <p className={moderatorStyles.partialNotice} role="note">{messages.LOCATION_MACHINE_SCOPE_MISMATCH}</p>}
               {device.locationId && !locationScopeMismatch && location.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(location.error)}</p><ButtonBar type="button" onClick={() => void location.refetch()}>{messages.RETRY}</ButtonBar></div>}
               {editing && <form className={adminStyles.machineEditForm} onSubmit={submitMachineEdit}>
@@ -332,7 +328,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                   <label htmlFor="moderator-machine-location">{messages.MACHINE_LOCATION_UPDATE}
                     <select id="moderator-machine-location" value={locationId} disabled={updateMachine.isPending || !device.ownerId || locations.isPending || locations.isError} onChange={(event) => setLocationId(event.target.value)}>
                       <option value="">{device.locationId ? "Giữ địa điểm hiện tại" : messages.MACHINE_SELECT_LOCATION}</option>
-                      {device.locationId && !locations.data?.some((item) => item.id === device.locationId) && <option value={device.locationId}>{device.locationId}</option>}
+                      {device.locationId && !locations.data?.some((item) => item.id === device.locationId) && <option value={device.locationId}>{messages.MACHINE_LOCATION}</option>}
                       {locations.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                     </select>
                   </label>
@@ -357,7 +353,7 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
                     <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_AT} value={formatDate(device.machineTypeMappedAt)} />
                     <Field label={ADMIN_T.MACHINES.TYPE_MAPPED_BY} value={device.machineTypeMappedBy ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.TYPE_MAPPING_REASON} value={device.machineTypeMappingReason ?? "—"} />
-                    <Field label={ADMIN_T.MACHINE_MODELS.ID} value={machineModelId || ADMIN_T.MACHINES.MODEL_UNASSIGNED} />
+                    <Field label={ADMIN_T.MACHINE_MODELS.ID} value={machineModelId ? <TruncatedId value={machineModelId} /> : ADMIN_T.MACHINES.MODEL_UNASSIGNED} />
                     <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_AT} value={formatDate(device.modelMappedAt)} />
                     <Field label={ADMIN_T.MACHINES.MODEL_MAPPED_BY} value={device.modelMappedBy ?? "—"} />
                     <Field label={ADMIN_T.MACHINES.MODEL_MAPPING_REASON} value={device.modelMappingReason ?? "—"} />
@@ -387,7 +383,6 @@ export function ModeratorMachineDetailScreen({ machineId }: { machineId: string 
         </div>
 
         {detailTab === "history" && <div id="moderator-machine-history-panel" role="tabpanel" aria-labelledby="moderator-machine-history-tab">
-        {schedule.isError && <div className={`${adminStyles.notice} ${adminStyles.errorNotice}`} role="alert"><p>{getApiErrorMessage(schedule.error)}</p><ButtonBar type="button" onClick={() => void schedule.refetch()}>{messages.RETRY}</ButtonBar></div>}
         <Panel className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
             <h2>{ADMIN_T.MACHINES.TICKET_HISTORY}</h2>

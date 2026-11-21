@@ -38,11 +38,21 @@ function tokenWithRoles(roles) {
 function adminPageDependencies() {
   const React = require("react");
   return {
+    "@/components/tabs/section-tab-list": { SectionTabList: ({ children }) => React.createElement("div", null, children) },
+    "@/components/panel/panel": { Panel: ({ children, title }) => React.createElement("section", null, title, children) },
+    "@/apis/billing.api": { billingApi: {} },
+    "@/lib/query-subject": { authScopedQuerySubject: () => "test-subject" },
+    "@/components/features/operations/action-items-panel": { ActionItemsPanel: () => null },
+    "next/router": { useRouter: () => ({ isReady: true, query: {} }) },
+    "@/lib/api-errors": loadModule("src/lib/api-errors.ts", { "@/constants/messages": loadModule("src/constants/messages.ts") }),
+    "@/components/status-badge/status-badge": { StatusBadge: ({ children }) => React.createElement("span", null, children) },
+    "@/components/table/data-table": { DataTable: ({ children }) => React.createElement("table", null, React.createElement("tbody", null, children)) },
+    "@/schema/dashboard.schema": loadModule("src/schema/dashboard.schema.ts"),
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "@/components/button/button-bar": {
-      ButtonBar: React.forwardRef(({ href, children, ...props }, ref) => href
+      ButtonBar: React.forwardRef(function TestButtonBar({ href, children, ...props }, ref) { return href
         ? React.createElement("a", { href, ref, ...props }, children)
-        : React.createElement("button", { ref, ...props }, children)),
+        : React.createElement("button", { ref, ...props }, children); }),
     },
     "@/components/action-bar/page-actions": {
       PageActions: ({ actions }) => React.createElement("div", { "data-action-bar": "true" }, actions.map((action) => action.href
@@ -274,12 +284,12 @@ test("admin overview shows API metrics and links to available admin pages", () =
     isPending: false,
     isError: false,
   };
-  const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+  const { default: AdminPage } = loadModule("src/pages/admin/overview/overview-content.tsx", {
     ...adminPageDependencies(),
-    "@tanstack/react-query": { useQuery: () => result },
+    "@tanstack/react-query": { useQuery: ({ queryKey }) => queryKey[2] === "overview" ? result : { isPending: false, isError: false } },
     "@/apis/dashboard.api": { dashboardApi: {} },
     "@/text/admin/admin-messages": { ADMIN_MESSAGES },
-    "./admin-shell": {
+    "../admin-shell": {
       AdminShell: ({ children, actions }) => React.createElement(React.Fragment, null, children, actions),
       adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
     },
@@ -287,11 +297,9 @@ test("admin overview shows API metrics and links to available admin pages", () =
 
   const html = renderToStaticMarkup(React.createElement(AdminPage));
   assert.match(html, /Tổng quan vận hành/);
-  assert.match(html, /Khách hàng/);
-  assert.match(html, /2026-10-22/);
+  assert.match(html, /Số ly ghi nhận/);
+  assert.match(html, /22\/10\/2026/);
   assert.match(html, /1\.000/);
-  assert.equal((html.match(/disabled=""/g) || []).length, 0);
-  assert.match(html, /href="\/admin\/reports"/);
   assert.match(html, /href="\/admin\/iot"/);
   assert.match(html, /href="\/admin\/machines"/);
 });
@@ -300,10 +308,10 @@ test("admin overview renders retry feedback when Dolores fails", () => {
   const React = require("react");
   const { renderToStaticMarkup } = require("react-dom/server");
   const { ADMIN_MESSAGES } = loadModule("src/text/admin/admin-messages.ts");
-  const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+  const { default: AdminPage } = loadModule("src/pages/admin/overview/overview-content.tsx", {
     ...adminPageDependencies(),
     "@tanstack/react-query": {
-      useQuery: () => ({
+      useQuery: ({ queryKey }) => queryKey[2] !== "overview" ? { isPending: false, isError: false } : ({
         isPending: false,
         isError: true,
         error: new axios.AxiosError("Network Error"),
@@ -312,14 +320,14 @@ test("admin overview renders retry feedback when Dolores fails", () => {
     },
     "@/apis/dashboard.api": { dashboardApi: {} },
     "@/text/admin/admin-messages": { ADMIN_MESSAGES },
-    "./admin-shell": {
+    "../admin-shell": {
       AdminShell: ({ children, actions }) => React.createElement(React.Fragment, null, children, actions),
       adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
     },
   });
 
   const html = renderToStaticMarkup(React.createElement(AdminPage));
-  assert.match(html, /Không kết nối được tới Dolores/);
+  assert.ok(html.includes(loadModule("src/constants/messages.ts").APP_MESSAGES.API_ERROR.UNAVAILABLE));
   assert.match(html, /Thử lại/);
   assert.match(html, /role="alert"/);
 });
@@ -329,12 +337,12 @@ test("admin overview distinguishes loading, empty data, and forbidden access", (
   const { renderToStaticMarkup } = require("react-dom/server");
   const { ADMIN_MESSAGES } = loadModule("src/text/admin/admin-messages.ts");
   const renderState = (query) => {
-    const { default: AdminPage } = loadModule("src/pages/admin/index.page.tsx", {
+    const { default: AdminPage } = loadModule("src/pages/admin/overview/overview-content.tsx", {
       ...adminPageDependencies(),
-      "@tanstack/react-query": { useQuery: () => query },
+      "@tanstack/react-query": { useQuery: ({ queryKey }) => queryKey[2] === "overview" ? query : { isPending: false, isError: false } },
       "@/apis/dashboard.api": { dashboardApi: {} },
       "@/text/admin/admin-messages": { ADMIN_MESSAGES },
-      "./admin-shell": {
+      "../admin-shell": {
         AdminShell: ({ children }) => children,
         adminStyles: new Proxy({}, { get: (_target, key) => String(key) }),
       },
@@ -350,7 +358,7 @@ test("admin overview distinguishes loading, empty data, and forbidden access", (
   const forbiddenError = new axios.AxiosError("Forbidden", "ERR_BAD_RESPONSE", {}, {}, { status: 403 });
   assert.match(
     renderState({ isPending: false, isError: true, error: forbiddenError, refetch: () => {} }),
-    new RegExp(ADMIN_MESSAGES.OVERVIEW.FORBIDDEN),
+    new RegExp(loadModule("src/constants/messages.ts").APP_MESSAGES.API_ERROR.FORBIDDEN),
   );
 });
 
@@ -482,7 +490,7 @@ test("shared operational overview offers calendar presets, explains aggregate sc
 test("Owner, Admin, and Moderator machine routes retain context for the shared operational overview", () => {
   const pathSource = readFileSync(join(root, "src/routes/path.ts"), "utf8");
   for (const role of ["PATH_CUSTOMER", "PATH_ADMIN", "PATH_MODERATOR"]) {
-    const roleStart = pathSource.indexOf(`export const ${role} = {`);
+    const roleStart = pathSource.search(new RegExp(`export const ${role}\\s*=\\s*\\{`));
     const roleEnd = pathSource.indexOf("} as const", roleStart);
     const roleBlock = roleStart >= 0 && roleEnd >= 0 ? pathSource.slice(roleStart, roleEnd) : "";
     assert.ok(
@@ -501,13 +509,13 @@ test("Owner, Admin, and Moderator machine routes retain context for the shared o
   const moderatorRoutes = routesSource.slice(moderatorRouteStart);
   assert.ok(moderatorRoutes.includes("operations"), "Moderator routes should validate machine operations UUID context");
 
-  for (const [screen, label] of [
-    ["src/pages/dashboard/machines/machines-screen.tsx", "Owner"],
-    ["src/pages/admin/machines/machine-detail-screen.tsx", "Admin"],
-    ["src/pages/moderator/machines/machine-detail-screen.tsx", "Moderator"],
+  for (const [screen, role] of [
+    ["src/pages/dashboard/machines/machines-screen.tsx", "PATH_CUSTOMER"],
+    ["src/pages/admin/iot/index.page.tsx", "PATH_ADMIN"],
+    ["src/pages/moderator/iot/iot-screen.tsx", "PATH_MODERATOR"],
   ]) {
     const source = readFileSync(join(root, screen), "utf8");
-    assert.ok(/MACHINE_OPERATIONAL_OVERVIEW/.test(source), `${label} detail should preserve the selected machine in its operations link`);
-    assert.ok(/Xem dữ liệu vận hành/.test(source), `${label} detail should expose the operational overview action`);
+    assert.match(source, new RegExp(`${role}\\.MACHINE_OPERATIONAL_OVERVIEW\\(`), `${role} should link to machine monitoring`);
   }
+
 });

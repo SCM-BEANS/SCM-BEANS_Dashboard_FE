@@ -177,22 +177,22 @@ function MachinesContent() {
 
             <div className={styles.machineInventoryGroup}>
               <SectionTabList role="group" aria-label="Chọn danh sách máy">
-                <button
+                <ButtonBar
                   type="button"
                   className={`${styles.machineViewTab} ${!isMachineTypesView ? styles.machineViewTabActive : ""}`}
                   aria-pressed={!isMachineTypesView}
                   onClick={() => navigateToMachineView("inventory")}
                 >
                   Danh sách máy
-                </button>
-                <button
+                </ButtonBar>
+                <ButtonBar
                   type="button"
                   className={`${styles.machineViewTab} ${isMachineTypesView ? styles.machineViewTabActive : ""}`}
                   aria-pressed={isMachineTypesView}
                   onClick={() => navigateToMachineView("types")}
                 >
                   Mẫu máy
-                </button>
+                </ButtonBar>
               </SectionTabList>
               <Panel className={styles.panel}>
               <div className={styles.machineInventoryHeading}>

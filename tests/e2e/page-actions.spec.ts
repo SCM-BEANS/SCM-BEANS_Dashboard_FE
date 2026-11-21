@@ -21,9 +21,22 @@ test("orders primary and danger actions, supports overflow keyboard use, and can
   const visibleActions = dock.locator("button, a");
   await expect(visibleActions).toHaveCount(4);
   await expect(visibleActions.nth(0)).toHaveAccessibleName("Xóa mục");
-  await expect(visibleActions.nth(0)).toHaveCSS("border-top-color", "rgb(184, 23, 36)");
+  await expect(visibleActions.nth(0)).toHaveAttribute("data-ui-button-variant", "danger");
   await expect(visibleActions.last()).toHaveAccessibleName("Lưu thay đổi");
-  await expect(visibleActions.last()).toHaveCSS("background-color", "rgb(184, 23, 36)");
+  await expect(visibleActions.last()).toHaveAttribute("data-ui-button-variant", "primary");
+  const sharedStyle = await visibleActions.nth(0).evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { background: style.backgroundColor, color: style.color, border: style.borderColor, height: element.getBoundingClientRect().height, transition: style.transitionProperty, transform: style.transform, shadow: style.boxShadow };
+  });
+  expect(sharedStyle).toEqual({ background: "rgb(255, 255, 255)", color: "rgb(0, 0, 0)", border: "rgb(233, 226, 220)", height: 44, transition: "none", transform: "none", shadow: "none" });
+  await expect(visibleActions.last()).toHaveCSS("background-color", sharedStyle.background);
+  await expect(visibleActions.last()).toHaveCSS("color", sharedStyle.color);
+  await visibleActions.nth(0).hover();
+  const hoveredStyle = await visibleActions.nth(0).evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { background: style.backgroundColor, color: style.color, border: style.borderColor, height: element.getBoundingClientRect().height, transition: style.transitionProperty, transform: style.transform, shadow: style.boxShadow };
+  });
+  expect(hoveredStyle).toEqual(sharedStyle);
 
   const trigger = dock.getByRole("button", { name: "Thêm thao tác", exact: true });
   await trigger.focus();
@@ -62,11 +75,11 @@ test("orders primary and danger actions, supports overflow keyboard use, and can
   await expect(page).toHaveURL(/\/dev\/action-bar-fixture$/);
 });
 
-test("confirm action navigates with the client router", async ({ page }) => {
+test("confirmation navigates to the configured destination", async ({ page }) => {
   await page.goto("/dev/action-bar-fixture");
-  let documentRequests = 0;
+  const mainFrameNavigations: string[] = [];
   page.on("request", (request) => {
-    if (request.isNavigationRequest() && request.resourceType() === "document") documentRequests += 1;
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) mainFrameNavigations.push(request.url());
   });
 
   const dock = page.getByRole("contentinfo", { name: "Thao tác kiểm thử" });
@@ -75,60 +88,53 @@ test("confirm action navigates with the client router", async ({ page }) => {
   await page.getByRole("alertdialog", { name: "Xác nhận thao tác" }).getByRole("button", { name: "Thực hiện" }).click();
 
   await expect(page).toHaveURL("/");
-  expect(documentRequests).toBe(0);
+  expect(mainFrameNavigations).toEqual([]);
 });
 
-test("customer machine read screen shows the dock without covering the final content", async ({ page }) => {
+test("owner machine list uses the shared neutral registration link", async ({ page }) => {
   await login(page, "owner");
   await mockApi(page);
   await page.goto("/dashboard/machines");
 
-  const dock = page.getByRole("contentinfo", { name: /Thao tác/ });
-  await expect(dock).toBeVisible();
-  await expect(dock.locator("button, a")).toHaveCount(4);
-  await expect(dock.locator("a").last()).toHaveCSS("background-color", "rgb(184, 23, 36)");
-
-  const main = page.locator("main");
-  await expect(main).toHaveCSS("padding-bottom", "80px");
-  const lastContent = await main.evaluate((element) => {
-    const last = element.lastElementChild;
-    if (!last) return null;
-    const { top, bottom } = last.getBoundingClientRect();
-    return { top, bottom };
+  const register = page.getByRole("main").getByRole("link", { name: "Đăng ký máy", exact: true });
+  await expect(register).toBeVisible();
+  await expect(register).toHaveAttribute("data-ui-button");
+  const style = async () => register.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { background: style.backgroundColor, color: style.color, border: style.borderColor, height: element.getBoundingClientRect().height, transition: style.transitionProperty, transform: style.transform, shadow: style.boxShadow };
   });
-  const dockBox = await dock.boundingBox();
-  expect(lastContent).not.toBeNull();
-  expect(dockBox).not.toBeNull();
-  expect(lastContent!.bottom <= dockBox!.y || lastContent!.top >= dockBox!.y + dockBox!.height).toBe(true);
+  const beforeHover = await style();
+  expect(beforeHover).toEqual({ background: "rgb(255, 255, 255)", color: "rgb(0, 0, 0)", border: "rgb(233, 226, 220)", height: 44, transition: "none", transform: "none", shadow: "none" });
+  await register.hover();
+  expect(await style()).toEqual(beforeHover);
+  await expect(page.locator("[data-ui-page-actions]")).toHaveCount(0);
 });
 
-test("customer machine read screen keeps the mobile dock static with only primary and overflow controls", async ({ page }) => {
+test("mobile owner machine list keeps the registration action in view without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page, "owner");
   await mockApi(page);
   await page.goto("/dashboard/machines");
 
-  const dock = page.getByRole("contentinfo", { name: /Thao tác/ });
-  await expect(dock).toBeVisible();
-  await expect(dock).toHaveCSS("position", "static");
-  await expect(dock.locator("button, a")).toHaveCount(2);
-  await expect(dock.getByRole("button", { name: "Thêm thao tác", exact: true })).toBeVisible();
-  await expect(dock.locator("a")).toHaveCount(1);
-  await expect(page.locator("main")).toHaveCSS("padding-bottom", "0px");
+  const register = page.getByRole("main").getByRole("link", { name: "Đăng ký máy", exact: true });
+  await expect(register).toBeVisible();
+  await expect(register).toHaveAttribute("data-ui-button");
+  await expect(register).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("customer workflow and technician screens register page actions", async ({ page }) => {
   await login(page, "owner");
   await mockApi(page);
   await page.goto("/dashboard/support/new");
-  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toBeVisible();
+  await expect(page.locator("[data-ui-page-actions]").last()).toBeVisible();
 
   await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveAttribute("form", "repair-intake-form");
-  await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveClass(/primary/);
+  await expect(page.locator('[data-action-id="repair-intake-submit"]')).toHaveAttribute("data-ui-button-variant", "primary");
 
   await login(page, "technician");
   await page.goto("/technician/tasks/standard-handover");
-  await expect(page.getByRole("contentinfo", { name: /Thao tác/ })).toHaveCount(0);
+  await expect(page.locator("[data-ui-page-actions]")).toHaveCount(0);
 });
 
 test("customer operational read screen hides the dock when it has no actions", async ({ page }) => {
@@ -138,7 +144,5 @@ test("customer operational read screen hides the dock when it has no actions", a
   await page.goto(`/dashboard/machines/${machineId}/operations`);
 
   await expect(page.locator("main")).toBeVisible();
-  const dock = page.locator('footer[aria-label^="Thao tác"]');
-  await expect(dock).toBeHidden();
-  await expect(dock).toHaveCSS("position", "fixed");
+  await expect(page.locator("[data-ui-page-actions]")).toHaveCount(0);
 });

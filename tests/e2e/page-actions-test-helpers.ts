@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export function pageActionBar(page: Page) {
-  return page.locator('footer[aria-label^="Thao tác"]').last();
+  return page.locator("[data-ui-page-actions]").last();
 }
 
 export async function expectPageAction(page: Page, id: string) {
@@ -21,14 +21,14 @@ export async function expectPrimaryPageAction(page: Page, id: string) {
   const bar = pageActionBar(page);
   const action = bar.locator(`[data-action-id="${id}"]`);
   await expect(action).toBeVisible();
-  await expect(action).toHaveClass(/primary/);
+  await expect(action).toHaveAttribute("data-ui-button-variant", "primary");
   await expect(bar.locator("button").last()).toHaveAttribute("data-action-id", id);
 }
 
 export async function expectNonPrimaryPageAction(page: Page, id: string) {
   const action = pageActionBar(page).locator(`[data-action-id="${id}"]`);
   await expect(action).toBeVisible();
-  await expect(action).not.toHaveClass(/primary/);
+  await expect(action).not.toHaveAttribute("data-ui-button-variant", "primary");
 }
 
 export async function clickPageAction(page: Page, id: string) {

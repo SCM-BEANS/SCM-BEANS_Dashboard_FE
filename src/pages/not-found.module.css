@@ -5,11 +5,11 @@
 .content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: min(100%, 640px); margin: auto; padding: 64px 0; }
 .symbol { display: grid; place-items: center; width: 88px; height: 88px; border: 1px solid #e9ded7; border-radius: 24px; background: white; color: #bd1226; margin-bottom: 24px; }
 .code { color: #706561; font-size: 15px; font-weight: 600; }
-.content h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 12px 0 16px; font-weight: 700; }
+.content h1 { font-size: 27px; line-height: 1.25; margin: 12px 0 16px; font-weight: 700; }
 .content p { color: #706561; font-size: 16px; line-height: 1.7; margin: 0; max-width: 480px; }
 .actions { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 32px 0 20px; }
 .help { display: flex; align-items: center; gap: 8px; color: #706561; font-size: 14px; text-decoration: none; min-height: 44px; }
-.help:hover { color: #302927; text-decoration: underline; }
+.help:hover { color: #706561; text-decoration: none; }
 .page a:focus-visible { outline: 2px solid #bd1226; outline-offset: 4px; }
 .footer { text-align: center; color: #706561; font-size: 13px; }
-@media (max-width: 600px) { .page { padding: 24px; } .content { padding: 48px 0; } .actions { flex-direction: column-reverse; gap: 12px; } }
+@media (max-width: 600px) { .page { padding: 24px; } .content { padding: 48px 0; } .content h1 { font-size: 24px; } .actions { flex-direction: column-reverse; gap: 12px; } }

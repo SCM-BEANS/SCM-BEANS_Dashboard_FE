@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { useEffect, useRef, useState } from "react";
 import styles from "./image-preview.module.css";
 
@@ -29,7 +30,7 @@ export function ImagePreview({
   return (
     <div className={styles.preview} style={{ width, height }}>
       {src ? (
-        <button
+        <ButtonBar
           className={styles.previewButton}
           type="button"
           aria-haspopup="dialog"
@@ -37,7 +38,7 @@ export function ImagePreview({
           onClick={() => setIsOpen(true)}
         >
           <img src={src} alt="" width={width} height={height} decoding="async" />
-        </button>
+        </ButtonBar>
       ) : status === "error" ? "Không thể xem trước ảnh"
         : status === "loading" ? <span role="status">Đang tải ảnh…</span>
           : null}
@@ -50,14 +51,14 @@ export function ImagePreview({
           if (event.target === event.currentTarget) event.currentTarget.close();
         }}
       >
-        <button
+        <ButtonBar
           className={styles.closeButton}
           type="button"
           aria-label="Đóng ảnh"
           onClick={() => dialogRef.current?.close()}
         >
           <span aria-hidden="true">×</span>
-        </button>
+        </ButtonBar>
         {src ? <img className={styles.lightboxImage} src={src} alt={alt} /> : null}
       </dialog>
     </div>

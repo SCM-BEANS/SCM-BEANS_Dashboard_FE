@@ -5,23 +5,6 @@
   overflow-x: auto;
 }
 
-.listPanel {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
-
-.listPanel h2 {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.4;
-}
-
 .table {
   width: 100%;
   min-width: 100%;
@@ -41,7 +24,8 @@
   letter-spacing: .01em;
 }
 
-.table th, .table td { overflow-wrap: anywhere; }
+.table th { overflow-wrap: normal; white-space: nowrap; }
+.table td { overflow-wrap: anywhere; }
 
 .table :is(th, td)[data-column-kind="code"],
 .table :is(th, td)[data-column-kind="date"] {
@@ -66,6 +50,13 @@
   max-width: 144px;
   text-align: right;
   white-space: normal;
+}
+
+.table td[data-column-kind="actions"] [data-ui-button] {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .table tbody td[colspan] {
@@ -106,27 +97,16 @@
 }
 
 .contractTable .table {
-  min-width: 56rem;
+  min-width: 72rem;
   table-layout: fixed;
 }
 
-.contractTable th:first-child { width: 16.5%; }
-.contractTable th:nth-child(2) { width: 25%; min-width: 220px; }
-.contractTable th:nth-child(3) { width: 16.5%; }
-.contractTable th:nth-child(4) { width: 16%; min-width: 140px; }
-.contractTable th:last-child { width: 26%; }
-
-.contractTable .table .contractDraftAction {
-  min-height: 36px;
-  padding-inline: 12px;
-  border-color: var(--contract-draft-color);
-  background: color-mix(in srgb, var(--contract-draft-color) 11%, var(--color-surface));
-  color: #674608;
-}
-
-.contractTable .table .contractDraftAction:hover {
-  background: color-mix(in srgb, var(--contract-draft-color) 20%, var(--color-surface));
-}
+.contractTable th:nth-child(1) { width: 11%; min-width: 120px; }
+.contractTable th:nth-child(2) { width: 18%; min-width: 160px; }
+.contractTable th:nth-child(3) { width: 14%; min-width: 130px; }
+.contractTable th:nth-child(4) { width: 13%; min-width: 120px; }
+.contractTable th:nth-child(5) { width: 17%; min-width: 170px; }
+.contractTable th:nth-child(6) { width: 14%; min-width: 140px; }
 
 .contractStatus {
   display: inline-flex;
@@ -156,6 +136,7 @@
 }
 
 @media (max-width: 640px) {
-  .listPanel { padding: 16px; }
 }
 
+
+.table [data-ui-action-group] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ui-space-2, 8px); }

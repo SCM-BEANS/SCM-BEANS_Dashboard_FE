@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import Cookies from "js-cookie";
 import { useId, useRef, useState, type FormEvent } from "react";
@@ -80,7 +81,7 @@ export function InvoiceRefundPanel({ invoice, role }: {
         {overdue.isLoading ? <p role="status">Đang tải khoản hoàn quá hạn…</p> : null}
         {overdue.isError ? <p className={styles.error} role="alert">{getBillingWorkflowErrorMessage(overdue.error)}</p> : null}
         <ul className={styles.queue}>{items.map((item) => <li key={item.id}><ButtonBar type="button" onClick={() => open(item.id)}><strong>{refundMoney(item.amount)}</strong><span>{refundStatusLabels[item.status]}</span><span>{item.id.slice(0, 8).toUpperCase()}</span></ButtonBar></li>)}</ul>
-        <div className={styles.actions}>{(page > 0 || overdue.data?.hasNext) && <><ButtonBar disabled={page === 0 || overdue.isFetching} onClick={() => setPage((value) => value - 1)}>Trang trước</ButtonBar><span>Trang {page + 1}</span><ButtonBar disabled={!overdue.data?.hasNext || overdue.isFetching} onClick={() => setPage((value) => value + 1)}>Trang sau</ButtonBar></>}<ButtonBar disabled={overdue.isFetching} onClick={() => void overdue.refetch()}>Làm mới</ButtonBar></div>
+        {(page > 0 || overdue.data?.hasNext) && <Pagination page={page} hasNext={Boolean(overdue.data?.hasNext)} isFetching={overdue.isFetching} ariaLabel="Phân trang khoản hoàn" onPageChange={setPage} />}<div className={styles.actions}><ButtonBar disabled={overdue.isFetching} onClick={() => void overdue.refetch()}>Làm mới</ButtonBar></div>
       </details>
       </div>
       {refundId && ownerId ? <div className={styles.refundResult}><RefundWorkflowPanel key={refundId} refundId={refundId} role={role} context={context} initialRefund={initialRefund} onChanged={() => overdue.refetch()} /></div> : null}

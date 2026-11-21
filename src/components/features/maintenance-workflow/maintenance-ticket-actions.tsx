@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { machinesApi } from "@/apis/machines.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { EvidenceList } from "@/components/evidence/evidence-list";
 import { PageActions } from "@/components/action-bar/page-actions";
@@ -302,11 +303,11 @@ export function MaintenanceTicketDetailsPanel({
             onUnassign: () => { setActionError(""); setShowUnassign(true); },
           })} /></div>}
           <dl className={styles.detailGrid}>
-            <div><dt>Mã phiếu</dt><dd>{ticket.id}</dd></div>
+            <div><dt>Mã phiếu</dt><dd><TruncatedId value={ticket.id} /></dd></div>
             <div><dt>Trạng thái</dt><dd>{(role === "OWNER" || modernEmbedded) ? <span className={styles.ownerTicketStatus} data-status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</span> : <StatusBadge status={ticket.status}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge>}</dd></div>
             <div><dt>Mức cảnh báo</dt><dd>{(role === "OWNER" || modernEmbedded) ? (ticket.alertLevel === "INSPECTION" ? "Kiểm tra" : maintenanceAlertLevelLabel(ticket.alertLevel)) : <StatusBadge status={ticket.alertLevel} tone={ticket.alertLevel === "Critical" ? "danger" : ticket.alertLevel === "Warning" ? "warning" : "info"}>{maintenanceAlertLevelLabel(ticket.alertLevel)}</StatusBadge>}</dd></div>
             <div><dt>Lịch dự kiến</dt><dd>{formatDate(ticket.scheduledDueAt)}</dd></div>
-            <div><dt>Kỹ thuật viên</dt><dd>{ticket.assignedTo ?? ticket.assignedTechnicianId ?? "Chưa phân công"}</dd></div>
+            <div><dt>Kỹ thuật viên</dt><dd>{ticket.assignedTo ?? <TruncatedId value={ticket.assignedTechnicianId} />}</dd></div>
             <div><dt>Hướng dẫn xử lý</dt><dd>{ticket.actionableInstructions || "Chưa có hướng dẫn"}</dd></div>
           </dl>
           {modernEmbedded ? <details className={styles.ticketEvidence}><summary>Chứng từ phiếu bảo trì</summary><EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" /></details> : <EvidenceList resource="MAINTENANCE_TICKET" parentId={ticketId} title="Chứng từ phiếu bảo trì" />}

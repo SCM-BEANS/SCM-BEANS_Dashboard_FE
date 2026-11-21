@@ -18,17 +18,9 @@
 .collapseButton {
   display: grid;
   width: 44px;
-  height: 44px;
   flex: none;
   place-items: center;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
 }
-
-.collapseButton:hover { background: var(--color-surface-subtle); }
 
 .sidebar[data-collapsed="true"] {
   width: 68px;
@@ -41,9 +33,9 @@
   display: none;
 }
 
-.sidebar[data-collapsed="true"] .brandRow { margin-bottom: 12px; }
+.sidebar[data-collapsed="true"] .brandRow { margin-bottom: 12px; justify-content: center; }
 .sidebar[data-collapsed="true"] .navItem { justify-content: center; padding: 0; }
-.sidebar[data-collapsed="true"] .logoutButton { justify-content: center; padding: 0; }
+.sidebar[data-collapsed="true"] .logoutButton { justify-content: center; }
 .sidebar[data-collapsed="true"] .logoutButton > span { display: none; }
 
 .brand {
@@ -118,31 +110,11 @@
 .logoutButton {
   display: flex;
   width: 100%;
-  min-height: 44px;
   flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
-  padding: 0 14px;
-  border: 1px solid #f0d9da;
-  border-radius: 12px;
-  background: var(--color-surface);
-  color: #a91d26;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
   text-align: left;
-  cursor: pointer;
-}
-
-.logoutButton:hover:not(:disabled) {
-  border-color: #dfb8bb;
-  background: #fdf4f4;
-}
-
-.logoutButton:disabled {
-  cursor: wait;
-  opacity: .6;
 }
 
 @media (max-width: 1023px) {

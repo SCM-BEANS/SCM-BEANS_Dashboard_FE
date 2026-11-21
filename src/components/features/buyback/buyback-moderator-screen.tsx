@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Panel } from "@/components/panel/panel";
 import { useState } from "react";
@@ -144,11 +145,7 @@ function BuybackAssignmentPanel({ workflow }: { workflow: BuybackWorkflowControl
             />
           </label>
           {totalPages > 1 ? (
-            <div className={styles.technicalRequestActions}>
-              <ButtonBar type="button" disabled={workflow.assignmentPage === 0 || profiles.isFetching} onClick={() => workflow.goToAssignmentPage(workflow.assignmentPage - 1)}>Trang trước</ButtonBar>
-              <span>Trang {workflow.assignmentPage + 1} / {totalPages}</span>
-              <ButtonBar type="button" disabled={workflow.assignmentPage + 1 >= totalPages || profiles.isFetching} onClick={() => workflow.goToAssignmentPage(workflow.assignmentPage + 1)}>Trang sau</ButtonBar>
-            </div>
+            <Pagination page={workflow.assignmentPage} hasNext={workflow.assignmentPage + 1 < totalPages} isFetching={profiles.isFetching} ariaLabel="Phân trang kỹ thuật viên" onPageChange={workflow.goToAssignmentPage} totalPages={totalPages} />
           ) : null}
           <ButtonBar
             type="submit"
@@ -409,8 +406,8 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
             </Panel>
           ) : null}
             <SectionTabList role="navigation" aria-label="Chi tiết lệnh thu mua">
-            <button type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</button>
-            <button type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</button>
+            <ButtonBar type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</ButtonBar>
+            <ButtonBar type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</ButtonBar>
           </SectionTabList>
           <div hidden={recordsTab !== "payment"}>
               {workflow.isExternalBuyback && workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải thông tin chứng từ thanh toán…</p> : null}
@@ -426,7 +423,7 @@ export function BuybackOperatorScreen({ caseId, listHref, operatorRole }: { case
                 emptyMessage="Chưa có chứng từ thanh toán trong hồ sơ này."
               />
               {downloadError ? <p className={`${styles.notice} ${styles.error}`} role="alert">{downloadError}</p> : null}
-              {workflow.paymentProofs.data.hasNext || workflow.proofPage > 0 ? <div className={styles.technicalRequestActions}><ButtonBar type="button" disabled={workflow.proofPage === 0} onClick={() => workflow.setProofPage((value) => Math.max(0, value - 1))}>Chứng từ trước</ButtonBar><span>Trang {workflow.paymentProofs.data.page + 1}</span><ButtonBar type="button" disabled={!workflow.paymentProofs.data.hasNext} onClick={() => workflow.setProofPage((value) => value + 1)}>Chứng từ sau</ButtonBar></div> : null}
+              {workflow.paymentProofs.data.hasNext || workflow.proofPage > 0 ? <Pagination page={workflow.proofPage} hasNext={workflow.paymentProofs.data.hasNext} ariaLabel="Phân trang chứng từ" onPageChange={workflow.setProofPage} /> : null}
             </section>
           ) : null}
           </div>

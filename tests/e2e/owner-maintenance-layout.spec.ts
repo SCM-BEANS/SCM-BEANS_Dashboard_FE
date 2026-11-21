@@ -24,7 +24,7 @@ test("owner maintenance uses ten-row pages, applied filters and explicit detail 
   await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
   await expect.poll(() => new URLSearchParams(reads.at(-1)).get("status")).toBe("CONFIRMED");
   await page.screenshot({ path: ".playwright-cli/owner-maintenance-list.png" });
-  await page.getByRole("link", { name: /^Yêu cầu / }).click();
+  await page.getByRole("row").filter({ hasText: "DOLORES-001" }).getByRole("link", { name: /^Yêu cầu / }).click();
   await expect(page.getByRole("heading", { name: "Thông tin bảo trì", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Lịch hẹn bảo trì", exact: true })).toBeVisible();
   await page.screenshot({ path: ".playwright-cli/owner-maintenance-detail.png" });

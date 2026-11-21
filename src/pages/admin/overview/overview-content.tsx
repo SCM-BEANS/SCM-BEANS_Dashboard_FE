@@ -1,4 +1,5 @@
 import { ButtonBar } from "@/components/button/button-bar";
+import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Panel } from "@/components/panel/panel";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -156,7 +157,6 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
   const [appliedRange, setAppliedRange] = useState<DateRange | null>(null);
   const [activeQuickRange, setActiveQuickRange] = useState<QuickRange | null>(null);
   const [rangeError, setRangeError] = useState("");
-  const [financeExpanded, setFinanceExpanded] = useState(false);
 
   useEffect(() => {
     const closeFilter = (event: PointerEvent) => {
@@ -427,9 +427,9 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
           <div className={styles.summaryFilterPopover}>
             <p className={styles.summaryChartCaption}>{moderator && !hasPeriodFinance ? "Áp dụng cho số ly ghi nhận." : "Áp dụng cho doanh thu và sản lượng."}</p>
             <div className={styles.overviewRangeControls}>
-              <div className={styles.overviewQuickRanges} role="group" aria-label="Chọn nhanh kỳ dữ liệu">
+              <SectionTabList className={styles.overviewQuickRanges} role="group" aria-label="Chọn nhanh kỳ dữ liệu">
                 {quickRanges.map(({ key, label }) => (
-                  <button
+                  <ButtonBar
                     key={key}
                     type="button"
                     aria-pressed={activeQuickRange === key}
@@ -438,9 +438,9 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
                     onClick={() => applyQuickRange(key)}
                   >
                     {label}
-                  </button>
+                  </ButtonBar>
                 ))}
-              </div>
+              </SectionTabList>
 
               <form className={styles.overviewRangeForm} onSubmit={applyCustomRange}>
                 <div className={styles.overviewRangeField}>
@@ -561,8 +561,8 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
 
       {overview.data && (
         <>
-          {(!moderator || hasFinance) && <section className={styles.summaryCumulative} data-expanded={moderator || financeExpanded} aria-labelledby="overview-finance-title">
-            <h2 id="overview-finance-title" className={styles.summaryTitle}><span>Tài chính lũy kế</span>{!moderator && <button type="button" aria-expanded={financeExpanded} aria-controls="overview-finance-values" onClick={() => setFinanceExpanded(value => !value)}>Tài chính lũy kế · {financeExpanded ? "Thu gọn" : "Xem số liệu"}</button>}</h2>
+          {(!moderator || hasFinance) && <details open className={styles.summaryCumulative} aria-labelledby="overview-finance-title">
+            <summary id="overview-finance-title" className={styles.summaryTitle}>Tài chính lũy kế</summary>
             <div id="overview-finance-values" className={styles.summaryFinance}>
               {([
                 { label: ADMIN_MESSAGES.OVERVIEW.ISSUED, field: "amountIssued" },
@@ -576,7 +576,7 @@ export function OperationsOverview({ role }: { role: "ADMIN" | "MODERATOR" }) {
                 ))}
               </div>)}
             </div>
-          </section>}
+          </details>}
 
           {moderator ? <>
             <div className={styles.moderatorOverviewCharts}>

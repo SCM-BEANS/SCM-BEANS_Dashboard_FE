@@ -90,7 +90,7 @@ export function PageActionsRenderer({ actions }: { actions: readonly PageAction[
     </span>;
   };
   if (!actions.length) return null;
-  return <div className={styles.container} data-menu-open={open ? "true" : undefined}>
+  return <div className={styles.container} data-ui-page-actions data-menu-open={open ? "true" : undefined}>
     <div className={styles.danger}>{visibleOthers.filter(a => a.variant === "danger").map(a => renderAction(a))}</div>
     <div className={styles.right}>
       {visibleOthers.filter(a => a.variant !== "danger").map(a => renderAction(a))}

@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { buildInvoiceExportActions, buildInvoiceStatusActions } from "@/components/action-bar/entity-page-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
@@ -236,11 +237,7 @@ export function AdminInvoiceListScreen() {
                   ]}
                 />
               )}
-              <div className={pageStyles.pagination}>
-                <ButtonBar type="button" disabled={page === 0 || invoices.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trang trước</ButtonBar>
-                <span>Trang {invoices.data.page + 1}</span>
-                <ButtonBar type="button" disabled={!invoices.data.hasNext || invoices.isFetching} onClick={() => setPage((current) => current + 1)}>Trang sau</ButtonBar>
-              </div>
+              <Pagination page={page} hasNext={invoices.data.hasNext} isFetching={invoices.isFetching} ariaLabel="Phân trang hóa đơn" onPageChange={setPage} hideWhenSinglePage={false} />
             </>
           )}
         </section>

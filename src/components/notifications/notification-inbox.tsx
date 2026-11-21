@@ -1,3 +1,4 @@
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -111,7 +112,7 @@ function NotificationInboxContent({
       .sort((a, b) => (Date.parse(b.createdAt ?? "") || 0) - (Date.parse(a.createdAt ?? "") || 0));
     const currentPage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 10) - 1));
     const rows = filtered.slice(currentPage * 10, currentPage * 10 + 10);
-    const selected = list.isSuccess && selectedId !== null ? rows.find((item) => item.id === selectedId) ?? rows[0] : undefined;
+    const selected = list.isSuccess && selectedId !== null ? rows.find((item) => item.id === selectedId) : undefined;
     const selectNotification = (notification: { id: string; read: boolean }) => {
       setSelectedId(notification.id);
       if (!notification.read && !markOne.isPending) markOne.mutate(notification.id);
@@ -120,16 +121,16 @@ function NotificationInboxContent({
     return <div className={management.screen}>
       <header className={management.heading}>
         <BackButtonHeading back={back} title={title ?? "Thông báo"} titleId="notification-inbox-title" description={description} />
-        <ButtonBar disabled={list.isFetching || unreadCount.isFetching} onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}>{list.isFetching || unreadCount.isFetching ? "Đang làm mới…" : messages.REFRESH}</ButtonBar>
+        {scope === "technician" ? <PageActionsRenderer actions={[{ id: "refresh", label: messages.REFRESH, disabled: list.isFetching || unreadCount.isFetching, onClick: () => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()]) }]} /> : <ButtonBar disabled={list.isFetching || unreadCount.isFetching} onClick={() => void Promise.all([list.refetch(), unreadCount.refetch(), onRefreshExtra?.()])}>{list.isFetching || unreadCount.isFetching ? "Đang làm mới…" : messages.REFRESH}</ButtonBar>}
       </header>
       {children ? <SectionTabList role="group" aria-label="Phạm vi thông báo">
-        <button type="button" aria-pressed={section === "notifications"} onClick={() => setSection("notifications")}>Thông báo</button>
-        <button type="button" aria-pressed={section === "alerts"} onClick={() => setSection("alerts")}>Cảnh báo máy</button>
+        <ButtonBar type="button" aria-pressed={section === "notifications"} onClick={() => setSection("notifications")}>Thông báo</ButtonBar>
+        <ButtonBar type="button" aria-pressed={section === "alerts"} onClick={() => setSection("alerts")}>Cảnh báo máy</ButtonBar>
       </SectionTabList> : null}
       {section === "notifications" ? <div className={management.workspace} data-detail={Boolean(selected)}><Panel className={management.feed} aria-labelledby="notification-list-title">
         <div className={management.panelHeading}>
           <div><h2 id="notification-list-title">Danh sách thông báo</h2><p aria-live="polite">{unreadCount.isSuccess ? `${unreadCount.data.unreadCount} chưa đọc` : unreadCount.isError ? "Chưa tải được số thông báo chưa đọc" : "Đang tải số thông báo chưa đọc…"}{list.isSuccess ? ` · ${filtered.length} thông báo trong danh sách` : ""}</p></div>
-          <button className={management.readAll} disabled={markAll.isPending || markOne.isPending || !unreadCount.isSuccess || unreadCount.data.unreadCount === 0} onClick={() => markAll.mutate()}>{markAll.isPending ? messages.MARKING : messages.MARK_ALL}</button>
+          <ButtonBar className={management.readAll} disabled={markAll.isPending || markOne.isPending || !unreadCount.isSuccess || unreadCount.data.unreadCount === 0} onClick={() => markAll.mutate()}>{markAll.isPending ? messages.MARKING : messages.MARK_ALL}</ButtonBar>
         </div>
         <TableFilters
           search={{ ariaLabel: messages.SEARCH_NOTIFICATIONS, placeholder: messages.SEARCH_NOTIFICATIONS_PLACEHOLDER, value: draft.search, onChange: (search) => setDraft((value) => ({ ...value, search })) }}
@@ -145,10 +146,9 @@ function NotificationInboxContent({
           {rows.map((notification, index) => <Fragment key={notification.id}>
             {(index === 0 || notificationDay(notification.createdAt) !== notificationDay(rows[index - 1].createdAt)) ? <h3 className={management.dayHeading}>{notificationDay(notification.createdAt)}</h3> : null}
             <article className={management.item} data-selected={selected?.id === notification.id}>
-              <button id={`notification-open-${notification.id}`} type="button" className={management.openNotification} aria-pressed={selected?.id === notification.id} aria-controls={selected ? "notification-detail" : undefined} onClick={() => selectNotification(notification)}>
-                <NotificationTypeIcon label={notification.typeLabel} /><span className={management.rowContent}><strong>{notification.title}</strong><span className={management.preview}>{notification.message}</span><time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time></span>
-              </button>
-              {!notification.read ? <span className={management.unreadDot} role="img" aria-label="Chưa đọc" /> : null}
+              <ButtonBar id={`notification-open-${notification.id}`} data-ui-button-layout="content" type="button" className={management.openNotification} aria-pressed={selected?.id === notification.id} aria-controls={selected ? "notification-detail" : undefined} onClick={() => selectNotification(notification)}>
+                <NotificationTypeIcon label={notification.typeLabel} /><span className={management.rowContent}><strong>{notification.title}{!notification.read ? ` · ${messages.UNREAD}` : ""}</strong><span className={management.preview}>{notification.message}</span><time dateTime={notification.createdAt ?? undefined}>{formatDate(notification.createdAt)}</time></span>
+              </ButtonBar>
             </article>
           </Fragment>)}
         </div>}
@@ -163,7 +163,7 @@ function NotificationInboxContent({
           hideWhenSinglePage={false}
         ><span className={management.pageSize}>{messages.NOTIFICATIONS_PER_PAGE}</span></Pagination> : null}
       </Panel>{selected ? <aside id="notification-detail" ref={detailRef} tabIndex={-1} className={management.detailPane} aria-labelledby="notification-detail-title">
-        <header><h2 id="notification-detail-title">Chi tiết thông báo</h2><button className={management.closeDetail} aria-label="Đóng chi tiết thông báo" onClick={() => { document.getElementById(`notification-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></button></header>
+        <header><h2 id="notification-detail-title">Chi tiết thông báo</h2><ButtonBar className={management.closeDetail} aria-label="Đóng chi tiết thông báo" onClick={() => { document.getElementById(`notification-open-${selected.id}`)?.focus(); setSelectedId(null); }}><X size={20} aria-hidden="true" /></ButtonBar></header>
         <div className={management.detailMeta}><span className={management.readState} data-unread={!selected.read}>{selected.read ? messages.READ : messages.UNREAD}</span><time dateTime={selected.createdAt ?? undefined}>{formatDate(selected.createdAt)}</time></div>
         <h3>{selected.recordHref ? <TextLinkButton href={selected.recordHref}>{selected.title}</TextLinkButton> : selected.title}</h3>
         <section className={management.detailContent} aria-label="Nội dung thông báo"><h4>Nội dung</h4><p className={management.detailBody}>{selected.message}</p></section>
@@ -225,9 +225,9 @@ function NotificationInboxContent({
         {list.isError && (
           <div className={[styles.notice, styles.errorNotice].join(" ")} role="alert">
             <p>{messages.LOAD_ERROR} {getApiErrorMessage(list.error)}</p>
-            <button className={styles.retryButton} type="button" onClick={() => void list.refetch()}>
+            <ButtonBar className={styles.retryButton} type="button" onClick={() => void list.refetch()}>
               {messages.RETRY}
-            </button>
+            </ButtonBar>
           </div>
         )}
         {!list.isPending && !list.isError && !list.data?.length && (

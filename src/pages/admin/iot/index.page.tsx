@@ -208,9 +208,9 @@ function IoTContent() {
   return <AdminShell><div className={styles.pageContent}>
     <BackButtonHeading title="Giám sát máy" titleId="admin-iot-title" className={styles.pageHeading} back={null} />
     <SectionTabList role="group" aria-label="Phạm vi giám sát">
-      <button type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button>
-      <button type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</button>
-      <button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button>
+      <ButtonBar type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</ButtonBar>
+      <ButtonBar type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</ButtonBar>
+      <ButtonBar type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</ButtonBar>
     </SectionTabList>
     {priorityView && <MaintenancePriorityPanel subject={subject} enabled={router.isReady && Boolean(getAuthenticatedSubjectId())} machineHref={machineId => ({ pathname: `${PATH_ADMIN.MACHINES}/[machineId]/operations`, query: { machineId, tab: "health", from: "priority" } })} />}
     {!priorityView && (reviewView ? offlinePanel(Object.fromEntries(allMachines.map((machine) => [machine.id, machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()]))) : <Panel className={styles.panel}>

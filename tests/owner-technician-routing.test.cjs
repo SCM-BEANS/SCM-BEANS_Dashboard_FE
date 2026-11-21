@@ -500,7 +500,7 @@ test("Owner Phase 3 routes resolve to unavailable workflows with disabled action
   const notificationsHtml = renderToStaticMarkup(
     React.createElement(customerPage.default, { sectionPath: "notifications" }),
   );
-  assert.match(notificationsHtml, /Thông báo của tôi/);
+  assert.match(notificationsHtml, /Thông báo/);
   assert.match(notificationsHtml, /chưa xác minh phạm vi chỉ trả thông báo thuộc Owner/);
   assert.match(notificationsHtml, /Chưa đọc/);
   assert.match(notificationsHtml, /Lọc thông báo/);

@@ -317,22 +317,22 @@ export function MachineDigitalTwinView({
               {smartMachine ? (
                 <div className={styles.modeRow}>
                   <SectionTabList role="group" aria-label={T.mode_label}>
-                    <button
+                    <ButtonBar
                       type="button"
                       className={styles.modeButton}
                       aria-pressed={mode === "live"}
                       onClick={() => setMode("live")}
                     >
                       {LIVE_T.digital_twin_live_mode_live}
-                    </button>
-                    <button
+                    </ButtonBar>
+                    <ButtonBar
                       type="button"
                       className={styles.modeButton}
                       aria-pressed={mode === "simulation"}
                       onClick={() => setMode("simulation")}
                     >
                       {LIVE_T.digital_twin_live_mode_simulation}
-                    </button>
+                    </ButtonBar>
                   </SectionTabList>
                 </div>
               ) : null}
@@ -395,7 +395,7 @@ export function MachineDigitalTwinView({
                   {criticalAlert?.message ?? (alertsQuery.isError ? LIVE_T.digital_twin_live_alerts_error : alertsQuery.isPending ? LIVE_T.digital_twin_live_alerts_loading : openAlerts.length ? `${LIVE_T.digital_twin_live_alerts}: ${openAlerts.length}` : LIVE_T.digital_twin_live_alerts_empty)}
                 </p>
               ) : null}
-              <button type="button" className={styles.moreButton} aria-expanded={moreOpen} aria-controls="digital-twin-more" onClick={() => setMoreOpen(value => !value)}>{T.more}<span aria-hidden="true">{moreOpen ? "\u2212" : "+"}</span></button>
+              <ButtonBar type="button" className={styles.moreButton} aria-expanded={moreOpen} aria-controls="digital-twin-more" onClick={() => setMoreOpen(value => !value)}>{T.more}<span aria-hidden="true">{moreOpen ? "\u2212" : "+"}</span></ButtonBar>
               <div id="digital-twin-more" hidden={!moreOpen}>
                 <details className={styles.details}>
                   <summary>{T.recent_cups}</summary>

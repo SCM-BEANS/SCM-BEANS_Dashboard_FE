@@ -97,3 +97,12 @@ export function formatNotificationDate(value?: string | null) {
   const time = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
   return `${time}, ${day}`;
 }
+
+export function formatNotificationRelativeDate(value?: string | null) {
+  if (!value || Number.isNaN(Date.parse(value))) return formatNotificationDate(value);
+  const seconds = (Date.parse(value) - Date.now()) / 1000;
+  const magnitude = Math.abs(seconds);
+  const unit = magnitude < 60 ? "second" : magnitude < 3600 ? "minute" : magnitude < 86400 ? "hour" : magnitude < 2592000 ? "day" : magnitude < 31536000 ? "month" : "year";
+  const divisor = { second: 1, minute: 60, hour: 3600, day: 86400, month: 2592000, year: 31536000 }[unit];
+  return new Intl.RelativeTimeFormat("vi-VN", { numeric: "auto" }).format(Math.round(seconds / divisor), unit);
+}

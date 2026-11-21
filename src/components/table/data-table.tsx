@@ -84,10 +84,10 @@ function columnAlignment(kind: DataTableColumnKind | undefined, explicit?: "left
 
 export function DataTable<Row>(props: DataTableProps<Row>) {
   const isRowsTable = "rows" in props && props.rows !== undefined;
-  const headers: Array<{ key: string; content: ReactNode; kind?: DataTableColumnKind; align?: "left" | "center" | "right" }> = isRowsTable
+  const headers: Array<{ key: string; content: ReactNode; kind?: DataTableColumnKind; align?: "left" | "center" | "right"; width?: CSSProperties["width"]; minWidth?: CSSProperties["minWidth"] }> = isRowsTable
     ? props.columns.map((column) => {
       const kind = column.kind ?? inferColumnKind(column.key, column.header);
-      return { key: column.key, content: column.header, kind, align: columnAlignment(kind, column.align) };
+      return { key: column.key, content: column.header, kind, align: columnAlignment(kind, column.align), width: column.width, minWidth: column.minWidth };
     })
     : props.headers.map((header, index) => {
       const kind = inferColumnKind(`column-${index}`, header);
@@ -142,7 +142,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         <thead>
           <tr>
             {headers.map((header) => (
-              <th key={header.key} scope="col" data-column-kind={header.kind} style={header.align ? { textAlign: header.align } : undefined}>{header.content}</th>
+              <th key={header.key} scope="col" data-column-kind={header.kind} style={{ ...(header.align ? { textAlign: header.align } : {}), ...(header.width ? { width: header.width } : {}), ...(header.minWidth ? { minWidth: header.minWidth } : {}) }}>{header.content}</th>
             ))}
           </tr>
         </thead>

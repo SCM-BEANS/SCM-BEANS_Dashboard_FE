@@ -10,7 +10,6 @@
   height: 80px;
   align-items: center;
   padding: 12px 32px;
-  border-top: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
@@ -22,6 +21,9 @@
   gap: 8px;
   overflow: visible; /* desktop: at most 3 buttons + menu, and overflow would clip the reason tooltip */
 }
+
+.layout[data-position="top"] { --action-bar-height: 0px; }
+.layout[data-position="top"] .dock { position: static; inset: auto; flex: none; width: 100%; height: auto; min-height: 0; padding: 0 32px 8px; background: transparent; }
 
 /* Keep keyboard focus from hiding behind the fixed dock (WCAG 2.2 Focus Not Obscured). */
 :global(html):has(.layout[data-visible="true"]) { scroll-padding-bottom: 96px; }
@@ -42,4 +44,5 @@
     min-height: calc(64px + env(safe-area-inset-bottom));
     padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   }
+  .layout[data-position="top"] .dock { padding: 8px 16px; }
 }

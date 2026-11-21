@@ -16,7 +16,7 @@ for (const role of ["admin", "moderator", "owner"]) test(`${role} has consistent
   const firstLink = navigation.getByRole("link").first();
   await expect(firstLink).toHaveCSS("justify-content", "flex-start");
   await expect(active).toHaveText("Thông báo");
-  await expect(active).toHaveCSS("background-color", "rgb(247, 245, 243)");
+  await expect(active).toHaveCSS("background-color", "rgb(239, 233, 225)");
   await expect(active).toHaveCSS("color", "rgb(48, 41, 39)");
   expect(await active.evaluate(el => getComputedStyle(el, "::before").content)).toBe("none");
   const sidebar = page.getByRole("complementary").filter({ has: navigation });
@@ -36,7 +36,7 @@ for (const role of ["admin", "moderator", "owner"]) test(`${role} has consistent
   await expect(mobile).toBeVisible();
   const mobileLabels = await mobile.getByRole("link").allTextContents();
   expect(mobileLabels.filter(label => common.includes(label))).toEqual(common);
-  await expect(mobile.locator('[aria-current="page"]')).toHaveCSS("background-color", "rgb(247, 245, 243)");
+  await expect(mobile.locator('[aria-current="page"]')).toHaveCSS("background-color", "rgb(239, 233, 225)");
   await expect(mobile.getByRole("link").first()).toHaveCSS("justify-content", "flex-start");
   await page.screenshot({ path: `.playwright-cli/sidebar-${role}-mobile.png` });
 });

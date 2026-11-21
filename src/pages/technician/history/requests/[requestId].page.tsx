@@ -1,10 +1,13 @@
 import type { GetServerSideProps } from "next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+
 import { maintenanceRequestsApi } from "@/apis/maintenance-requests.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { ButtonBar } from "@/components/button/button-bar";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { Panel } from "@/components/panel/panel";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject } from "@/lib/query-subject";
@@ -19,6 +22,7 @@ export const getServerSideProps: GetServerSideProps<{ requestId: string }> = asy
 };
 
 export default function TechnicianRequestPage({ requestId }: { requestId: string }) {
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["dolores", "technician", authScopedQuerySubject("TECHNICIAN"), "maintenance-request", requestId],
     queryFn: ({ signal }) => maintenanceRequestsApi.getById(requestId, signal),
@@ -30,13 +34,14 @@ export default function TechnicianRequestPage({ requestId }: { requestId: string
       <div className={styles.pageHeader}>
         <BackButtonHeading back={{ label: "Lịch sử máy", fallbackHref: PATH_TECHNICIAN.HISTORY }} title="Chi tiết yêu cầu kỹ thuật" titleId="technician-request-title" className={styles.pageHeading} />
       </div>
+      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey.includes(requestId) && query.queryKey.includes("maintenance-request") }) }]} />
       {query.isPending ? <p role="status">Đang tải yêu cầu…</p> : null}
       {query.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(query.error)}</p><ButtonBar onClick={() => void query.refetch()}>Thử lại</ButtonBar></div> : null}
       {request ? <Panel title="Thông tin yêu cầu" aria-label="Thông tin yêu cầu">
         <dl className={`${styles.detailGrid} ${styles.detailGridEmbedded}`}>
-          <div><dt>Mã yêu cầu</dt><dd>{request.id}</dd></div>
+          <div><dt>Mã yêu cầu</dt><dd><TruncatedId value={request.id} /></dd></div>
           {request.maintenanceTicketId && <div><dt>Phiếu bảo trì</dt><dd><TextLinkButton href={PATH_TECHNICIAN.TASK_MAINTENANCE_TICKET_DETAIL(request.maintenanceTicketId)} title={request.maintenanceTicketId}>{request.maintenanceTicketId.slice(0, 8).toUpperCase()}</TextLinkButton></dd></div>}
-          <div><dt>Máy</dt><dd>{request.machineId}</dd></div>
+          <div><dt>Máy</dt><dd><TruncatedId value={request.machineId} /></dd></div>
           <div><dt>Loại yêu cầu</dt><dd>{request.requestType === "REPAIR" ? "Sửa chữa" : "Bảo trì định kỳ"}</dd></div>
           <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={request.status}>{({ REQUESTED: "Đã gửi", TRIAGED: "Đang xem xét", RESCHEDULE_REQUESTED: "Đề nghị đổi lịch", CONFIRMED: "Đã xác nhận", IN_PROGRESS: "Đang xử lý", COMPLETED: "Đã hoàn tất", CLOSED: "Đã đóng", OVERDUE_REVIEW: "Chờ xem xét quá hạn", CANCELLED: "Đã hủy" })[request.status]}</StatusBadge></dd></div>
         </dl>

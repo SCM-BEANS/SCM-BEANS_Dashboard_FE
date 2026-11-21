@@ -94,27 +94,7 @@
   border-bottom: 1px solid #e7ded8;
 }
 
-.tabs button {
-  padding: 10px 14px;
-  border: 1px solid #e7ded8;
-  border-bottom: 0;
-  border-radius: 8px 8px 0 0;
-  background: #f7f4f2;
-  color: #544b48;
-  cursor: pointer;
-  font: inherit;
-}
-
-.tabs .activeTab {
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.tabs button:focus-visible,
-.field input:focus-visible,
-.field select:focus-visible,
-.field textarea:focus-visible {
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
   outline: 3px solid rgb(183 25 42 / 16%);
   outline-offset: 2px;
 }
@@ -300,6 +280,7 @@
 }
 
 .managementScreen {
+  --dashboard-page-gap: 16px;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
@@ -312,10 +293,6 @@
 .managementScreen .panel h2 { font-size: 20px; line-height: 1.4; }
 .managementScreen .subpanel h3 { font-size: 16px; line-height: 1.4; }
 .managementScreen .panelHeading p { max-width: 72ch; font-size: 14px; }
-.managementScreen .tabs { gap: 18px; border-bottom: 1px solid var(--color-border); }
-.managementScreen .tabs button { min-height: 44px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; font-size: 14px; }
-.managementScreen .tabs button:hover { color: var(--color-primary); }
-.managementScreen .tabs .activeTab { background: transparent; border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
 .managementScreen .code { font-family: inherit; font-size: 13px; }
 .managementScreen .muted { font-size: 12px; }
 .managementScreen .details { gap: 20px 28px; }

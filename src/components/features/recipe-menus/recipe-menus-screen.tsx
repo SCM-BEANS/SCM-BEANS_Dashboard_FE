@@ -61,8 +61,8 @@ function readRecipeProcedure(steps: string[]): { draft: RecipeProcedureDraft; dr
   return { draft, dryTamp, unsupported };
 }
 
-export function RecipeManagementScreen({ role, operatorRole, showHeading = true, showNavigation = true, detailOnly = false, initialGlobalRecipeId }: {
-  role: "owner" | "operator"; operatorRole?: "ADMIN" | "MODERATOR"; showHeading?: boolean; showNavigation?: boolean; detailOnly?: boolean; initialGlobalRecipeId?: string;
+export function RecipeManagementScreen({ role, operatorRole, showHeading = true, showNavigation = true, detailOnly = false, initialGlobalRecipeId, initialMenuAction }: {
+  role: "owner" | "operator"; operatorRole?: "ADMIN" | "MODERATOR"; showHeading?: boolean; showNavigation?: boolean; detailOnly?: boolean; initialGlobalRecipeId?: string; initialMenuAction?: "create";
 }) {
   const router = useRouter();
   const editorRef = useRef<HTMLFormElement>(null);
@@ -97,7 +97,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   const [error, setError] = useState<unknown>(null);
   const [validation, setValidation] = useState("");
   const [menuName, setMenuName] = useState("");
-  const [menuAction, setMenuAction] = useState<"create" | "rename" | "delete" | null>(null);
+  const [menuAction, setMenuAction] = useState<"create" | "rename" | "delete" | null>(initialMenuAction ?? null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [editTargetId, setEditTargetId] = useState("");
   const [moveMenuId, setMoveMenuId] = useState("");
@@ -141,6 +141,8 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     }
   }, [initialGlobalRecipeId, owner]);
 
+  useEffect(() => setMenuAction(initialMenuAction ?? null), [initialMenuAction]);
+
   useEffect(() => {
     if (!owner && menuAction && !menuDialog.current?.open) menuDialog.current?.showModal();
     const form = menuAction ? menuEditorRef.current : mode !== "view" ? editorRef.current : null;
@@ -166,7 +168,11 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
     client.invalidateQueries({ queryKey: ["dolores", "recipe-sync-history"] }),
   ]);
   const clearFeedback = () => { setFeedback(""); setError(null); setValidation(""); };
-  const closeMenuDialog = () => { menuDialog.current?.close(); setMenuAction(null); };
+  const closeMenuDialog = () => {
+    menuDialog.current?.close();
+    setMenuAction(null);
+    if (initialMenuAction && isModerator) void router.replace(PATH_MODERATOR.MENU);
+  };
   const write = useMutation({
     mutationFn: async (input: { payload: RecipePublishRequest; id?: string; target: string }) => {
       const recipe = input.id ? await recipesApi.updateGlobal(input.id, input.payload) : await recipesApi.publishGlobal(input.payload);
@@ -308,7 +314,7 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
   return <div className={showHeading ? styles.pageContent : styles.screen} data-recipe-layout data-recipe-mode={view === "global" ? editing ? "editor" : operatorScreen : undefined}>
     {showHeading && !owner ? <header className={styles.adminRecipeHeader}>
       <div>
-        {view === "global" && !library && !editing && !isModerator ? <TextLinkButton back className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</TextLinkButton> : null}
+        {view === "global" && !library && !editing && !isModerator ? <ButtonBar className={styles.adminRecipeBack} onClick={backToList}>{operatorScreen === "detail" ? "Về danh sách món" : "Về danh sách menu"}</ButtonBar> : null}
         <h1 id="recipe-management-title" tabIndex={-1}>{view !== "global" || library ? "Công thức pha chế" : mode === "create" ? "Thêm công thức" : mode === "edit" ? "Chỉnh sửa công thức" : operatorScreen === "detail" ? detail.data?.name ?? "Chi tiết công thức" : activeMenu}</h1>
         {view === "global" && mode === "create" ? <p>Menu đích: {activeMenu}</p> : null}
         {view === "global" && mode !== "create" && detail.data && (mode === "edit" || operatorScreen === "detail") ? <p>{editing ? detail.data.name : detailMenu} · Phiên bản v{detail.data.revision}</p> : null}
@@ -331,15 +337,15 @@ export function RecipeManagementScreen({ role, operatorRole, showHeading = true,
       </div> : null}
     </header> : null}
     {showHeading && owner ? <BackButtonHeading title="Công thức pha chế" titleId="recipe-management-title" className={styles.pageHeading} back={null}
-      backControl={!library ? <TextLinkButton back onClick={backToList}>{detailOnly ? "Về thư viện Dolores" : "Về danh sách menu"}</TextLinkButton> : null} /> : null}
+      backControl={!library ? detailOnly ? <TextLinkButton back href={PATH_CUSTOMER.MENU}>Về thư viện Dolores</TextLinkButton> : <ButtonBar onClick={backToList}>Về danh sách menu</ButtonBar> : null} /> : null}
     {showNavigation && (library || view !== "global") ? <SectionTabList role="navigation" aria-label="Khu vực công thức">
-      <button type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</button>
+      <ButtonBar type="button" aria-pressed={view === "global"} className={view === "global" ? styles.recipeMenuTabActive : ""} onClick={() => setView("global")}>Menu dùng chung</ButtonBar>
       {owner ? <>
         <ButtonBar type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_ADJUSTMENTS)}>Menu của tôi</ButtonBar>
         <ButtonBar type="button" onClick={() => void router.push(PATH_CUSTOMER.MENU_SYNC)}>Đồng bộ với máy</ButtonBar>
       </> : admin ? <>
-        <button type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh định lượng cũ</button>
-        <button type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Đồng bộ với máy</button>
+        <ButtonBar type="button" aria-pressed={view === "legacy"} className={view === "legacy" ? styles.recipeMenuTabActive : ""} onClick={() => setView("legacy")}>Điều chỉnh định lượng cũ</ButtonBar>
+        <ButtonBar type="button" aria-pressed={view === "sync"} className={view === "sync" ? styles.recipeMenuTabActive : ""} onClick={() => setView("sync")}>Đồng bộ với máy</ButtonBar>
       </> : null}
     </SectionTabList> : null}
     {view === "legacy" && admin ? <LegacyRecipeOverrides role="ADMIN" /> : null}

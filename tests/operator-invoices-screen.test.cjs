@@ -38,6 +38,7 @@ const invoice = {
 test('hold-to-confirm fills in 1.2 seconds and backs off faster when released', () => {
   const { ButtonBar, advanceHoldProgress } = loadTypescript('src/components/button/button-bar.tsx', {
     'next/link': {},
+    '@/text/ui-messages': loadTypescript('src/text/ui-messages.ts'),
     './button-bar.module.css': new Proxy({}, { get: (_target, key) => String(key) }),
   });
 
@@ -123,6 +124,9 @@ function makeScreen(queryResults, routerQuery = {}) {
     '@/text/billing/billing-messages': loadTypescript('src/text/billing/billing-messages.ts'),
     '@/components/table/data-table': { DataTable },
     '@/components/table/table-filters': { TableFilters: ({ children }) => React.createElement('div', null, children) },
+    '@/components/tabs/section-tab-list': { SectionTabList: ({ children, ...props }) => React.createElement('nav', props, children) },
+    '@/components/pagination/pagination': { Pagination: ({ ariaLabel }) => React.createElement('nav', { 'aria-label': ariaLabel }) },
+    '@/components/panel/panel': { Panel: ({ children, ...props }) => React.createElement('section', props, children) },
     '@/components/status-badge/status-badge': { StatusBadge: ({ children }) => React.createElement('span', null, children) },
     '@/components/truncated-id/truncated-id': { TruncatedId: ({ value }) => React.createElement('span', null, value ?? '—') },
     './invoice-refund-panel': { InvoiceRefundPanel: () => React.createElement('section', { 'aria-label': 'Hoàn khoản thanh toán dư' }) },
@@ -230,7 +234,8 @@ test('export stays visible while invoices are loading and ready exports use the 
     assert.match(html, /dolores-invoices\.pdf/);
     assert.match(html, /Đã sẵn sàng/);
     assert.match(html, /data-download-effect="true"/);
-    assert.match(html, new RegExp(`/${role}/invoices`));
+    if (role === 'admin') assert.match(html, new RegExp(`/${role}/invoices`));
+    else assert.doesNotMatch(html, /href="\/moderator\/invoices/);
   }
 });
 
@@ -274,4 +279,7 @@ test('owner detail keeps payment and downloads but exposes no operator review or
   assert.deepEqual(screen.ownerLookups, [[]]);
   await screen.queryOptions.find((query) => query.queryKey[0] === 'owner-invoice').queryFn({ signal: undefined });
   assert.deepEqual(screen.invoiceRequests, [{ id: invoiceId, scope: 'owner-detail' }]);
+  const withoutPaymentForm = screen.render({ role: 'owner', invoiceId });
+  const tabContent = withoutPaymentForm.split('aria-label="Nội dung hồ sơ hóa đơn"')[1].split('aria-labelledby="operator-payment-proofs"')[0];
+  assert.doesNotMatch(tabContent, /<div><\/div>/);
 });

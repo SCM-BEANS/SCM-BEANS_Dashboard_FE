@@ -1,5 +1,4 @@
 import { EVIDENCE_ACCEPT, evidenceFileError } from "@/lib/evidence-multipart";
-import { TextLinkButton } from "@/components/button/text-link-button";
 import { useRef, useState } from "react";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { ButtonBar } from "@/components/button/button-bar";
@@ -48,7 +47,7 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
         }}>
           <label>Từ ngày<input type="date" required value={dateDraft.fromDate} max={dateDraft.toDate || businessToday()} onChange={(event) => setDateDraft((current) => ({ ...current, fromDate: event.target.value }))} /></label>
           <label>Đến ngày<input type="date" required value={dateDraft.toDate} min={dateDraft.fromDate || undefined} max={businessToday()} onChange={(event) => setDateDraft((current) => ({ ...current, toDate: event.target.value }))} /></label>
-          <button type="submit">Áp dụng</button>
+          <ButtonBar type="submit">Áp dụng</ButtonBar>
           {dateError ? <p role="alert">{dateError}</p> : null}
         </form>
       </details>
@@ -60,13 +59,13 @@ export function OfflineReviewPanel({ page, detail, selectedId, status, machineId
         <option value="">Chọn kỳ</option>{calendarPresets.map(({ key, label }) => <option value={key} key={key}>{label}</option>)}
       </select>
     </div> : null}
-    <Panel title="Rà soát mất kết nối" aria-label="Rà soát mất kết nối" actions={selectedId ? <TextLinkButton back onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</TextLinkButton> : null}>
+    <Panel title="Rà soát mất kết nối" aria-label="Rà soát mất kết nối" actions={selectedId ? <ButtonBar onClick={() => onSelect(undefined)}>Về danh sách hồ sơ</ButtonBar> : null}>
     {!selectedId && <><TableFilters className={styles.offlineReviewFilters} selects={[{ id: "offline-review-status", ariaLabel: "Trạng thái rà soát", label: "Trạng thái rà soát", value: status, options: [{ value: "", label: "Tất cả" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))], onChange: onFilterChange }]} showSubmit={false} />
     {loading ? <p role="status">Đang tải hồ sơ rà soát…</p> : null}
     {error ? <p className={styles.operationalOverviewErrorText} role="alert">{error}</p> : page ? <>
       <DataTable rows={filteredItems ?? []} rowKey={(row) => row.id} emptyMessage={dateFilter.fromDate || dateFilter.toDate ? "Không có hồ sơ phù hợp trên trang đang xem." : "Chưa có hồ sơ rà soát trong phạm vi đã chọn."} columns={[
         ...(!machineId ? [{ key: "machine", header: "Máy", render: (row: OfflineViolationReview) => <span title={row.machineId}>{machineLabels?.[row.machineId] ?? row.machineId.slice(0, 8).toUpperCase()}</span> }] : []),
-        { key: "time", header: "Thời điểm phát hiện", render: (row) => <TextLinkButton onClick={() => onSelect(row.id)}>{formatTime(row.detectedAt)}</TextLinkButton> },
+        { key: "time", header: "Thời điểm phát hiện", render: (row) => <ButtonBar onClick={() => onSelect(row.id)}>{formatTime(row.detectedAt)}</ButtonBar> },
         { key: "limit", header: "Giới hạn mất kết nối", align: "center", render: (row) => `${row.offlineLimitMinutes} phút` },
         { key: "status", header: "Trạng thái", render: (row) => <span className={styles.offlineReviewStatus} data-status={row.status}>{labels[row.status]}</span> },
       ]} />

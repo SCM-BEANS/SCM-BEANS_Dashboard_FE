@@ -5,7 +5,7 @@ import { TechnicianShell } from "../technician-shell";
 export default function TechnicianSettingsPage() {
   return (
     <TechnicianShell pageTitle={TECHNICIAN_MESSAGES.NAVIGATION.SETTINGS}>
-      <ProfileSettingsScreen roleLabel={TECHNICIAN_MESSAGES.ROLE} />
+      <ProfileSettingsScreen roleLabel={TECHNICIAN_MESSAGES.ROLE} showRefresh />
     </TechnicianShell>
   );
 }

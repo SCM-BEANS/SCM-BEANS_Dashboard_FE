@@ -158,7 +158,7 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
           )}
           </Panel>
           {isOwner && <Panel className={styles.formPanel} aria-labelledby="moderator-owner-contracts">
-            <h2 id="moderator-owner-contracts" className={styles.sectionTitle}>Hồ sơ khách hàng</h2>
+            <h2 id="moderator-owner-contracts" className={styles.sectionTitle}>{MODERATOR_MESSAGES.READ_SCREENS.CUSTOMER_CONTRACTS_TITLE}</h2>
             <details className={styles.customerTechnicalDetails}><summary>Thông tin đồng bộ</summary><dl className={styles.customerAccountInfo}><div><dt>Mã hồ sơ</dt><dd><TruncatedId value={profile.data.idaasUserId} /></dd></div><div><dt>Vai trò</dt><dd>{profile.data.roles.map(role => ({ OWNER: "Khách hàng", MODERATOR: "Điều phối viên", TECHNICIAN: "Kỹ thuật viên", ADMIN: "Quản trị viên" } as Record<string, string>)[role.toUpperCase()] ?? role).join(", ")}</dd></div></dl></details>
             <h3 className={styles.sectionTitle}>Hợp đồng liên quan</h3>
             <QueryFeedback query={contracts} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_CONTRACTS} />
@@ -189,8 +189,9 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
               </>
             )}
           </Panel>}
-        <details className={`${styles.formPanel} ${styles.customerTechnicalDetails}`}>
-          <summary>Lịch sử hồ sơ</summary>
+        <Panel className={styles.formPanel} aria-labelledby="moderator-profile-history-title">
+          <details className={styles.customerTechnicalDetails}>
+          <summary id="moderator-profile-history-title">Lịch sử hồ sơ</summary>
           <QueryFeedback query={history} loadingMessage={MODERATOR_MESSAGES.READ_SCREENS.LOADING_PROFILE} />
           {history.data?.items.length === 0 && !history.isError && (
             <p role="status">{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_HISTORY_EMPTY}</p>
@@ -215,7 +216,8 @@ export function CustomerProfileDetailScreen({ id }: { id: string }) {
               <Pagination page={historyPage} hasNext={!(historyPage + 1 >= history.data.totalPages)} isFetching={false} ariaLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PAGINATION} onPageChange={(nextPage) => setHistoryPage(nextPage)} previousLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_PREVIOUS} nextLabel={MODERATOR_MESSAGES.READ_SCREENS.PROFILE_NEXT} showPage={false} hideWhenSinglePage={false}><span className={styles.formHint}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_SECTION_PAGE(history.data.page + 1, Math.max(1, history.data.totalPages), history.data.totalElements)}</span></Pagination>
             </>
           )}
-        </details>
+          </details>
+        </Panel>
         </div>
         <aside className={styles.formPanel} aria-labelledby="moderator-account-status"><h2 id="moderator-account-status" className={styles.sectionTitle}>Trạng thái tài khoản</h2><dl className={styles.customerMetadata}>
           <div><dt>Trạng thái</dt><dd><span className={styles.customerStatus} data-status={profile.data.status}>{MODERATOR_MESSAGES.READ_SCREENS.PROFILE_STATUS_LABELS[profile.data.status]}</span></dd></div>

@@ -74,17 +74,17 @@ export function SupportRequestsListScreen() {
           {list.isError ? (
             <div className={styles.errorNotice} role="alert">
               <p>{CUSTOMER_MESSAGES.READ_SCREENS.LOAD_ERROR}</p>
-              <button className={styles.secondaryButton} type="button" onClick={() => void list.refetch()}>
+              <ButtonBar className={styles.secondaryButton} type="button" onClick={() => void list.refetch()}>
                 {messages.SUPPORT_RETRY}
-              </button>
+              </ButtonBar>
             </div>
           ) : null}
           {machines.isError ? (
             <div className={styles.errorNotice} role="alert">
               <p>Không tải được tên máy; danh sách vẫn hiển thị mã máy.</p>
-              <button className={styles.secondaryButton} type="button" onClick={() => void machines.refetch()}>
+              <ButtonBar className={styles.secondaryButton} type="button" onClick={() => void machines.refetch()}>
                 {messages.SUPPORT_RETRY}
-              </button>
+              </ButtonBar>
             </div>
           ) : null}
           {!isListLoading && !list.isError ? (

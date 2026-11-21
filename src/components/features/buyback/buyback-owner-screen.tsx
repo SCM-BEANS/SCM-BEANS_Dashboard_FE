@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Panel } from "@/components/panel/panel";
 import { useRouter } from "next/router";
@@ -109,8 +110,8 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
             </Panel>
           ) : null}
           <SectionTabList role="navigation" aria-label="Chi tiết lệnh thu mua">
-            <button type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</button>
-            <button type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</button>
+            <ButtonBar type="button" aria-pressed={recordsTab === "payment"} onClick={() => setRecordsTab("payment")}>Thanh toán</ButtonBar>
+            <ButtonBar type="button" aria-pressed={recordsTab === "documents"} onClick={() => setRecordsTab("documents")}>Tài liệu</ButtonBar>
           </SectionTabList>
           <div hidden={recordsTab !== "payment"}>
           {workflow.paymentProofs.isPending ? <p className={styles.notice} role="status">Đang tải chứng từ thanh toán…</p> : null}
@@ -140,11 +141,7 @@ function BuybackOwnerWorkOrderScreen({ listHref, showCreateForm }: { listHref: s
               ]} />
               {downloadError ? <p role="alert" className={`${styles.notice} ${styles.error}`}>{downloadError}</p> : null}
               {workflow.paymentProofs.data.hasNext || workflow.proofPage > 0 ? (
-                <div className={styles.technicalRequestActions}>
-                  <ButtonBar type="button" disabled={workflow.proofPage === 0} onClick={() => workflow.setProofPage((value) => Math.max(0, value - 1))}>Chứng từ trước</ButtonBar>
-                  <span>Trang {workflow.paymentProofs.data.page + 1}</span>
-                  <ButtonBar type="button" disabled={!workflow.paymentProofs.data.hasNext} onClick={() => workflow.setProofPage((value) => value + 1)}>Chứng từ sau</ButtonBar>
-                </div>
+                <Pagination page={workflow.proofPage} hasNext={workflow.paymentProofs.data.hasNext} ariaLabel="Phân trang chứng từ" onPageChange={workflow.setProofPage} />
               ) : null}
             </section>
           ) : null}

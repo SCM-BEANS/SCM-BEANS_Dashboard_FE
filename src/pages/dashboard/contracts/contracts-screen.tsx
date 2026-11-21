@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DataTable, type DataTableColumn } from "@/components/table/data-table";
+import { ContractTable } from "@/components/table/contract-table";
 import { TableFilters } from "@/components/table/table-filters";
-import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
-import { StatusBadge } from "@/components/status-badge/status-badge";
+import { ContractListPanel, ContractListPagination } from "@/components/contracts/contract-list-panel";
+import { ContractOverviewPanel } from "@/components/contracts/contract-overview-panel";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import type { BackButtonDestination } from "@/components/navigation/back-button";
@@ -16,26 +16,12 @@ import { machinesApi } from "@/apis/machines.api";
 import { ContractIdSchema, type Contract } from "@/schema/contracts.schema";
 import { PATH_CUSTOMER } from "@/routes/path";
 import { CUSTOMER_MESSAGES } from "@/text/customer/customer-messages";
-import { DetailItem, formatDate, formatMoney, QueryFeedback, statusLabel, UnavailableIdentity, useOwnerSubject } from "../shared/customer-screen-common";
+import { CONTRACT_LIST_MESSAGES as CONTRACT_LIST_T } from "@/text/contracts/contract-messages";
+import { DetailItem, formatDate, QueryFeedback, UnavailableIdentity, useOwnerSubject } from "../shared/customer-screen-common";
 import styles from "../customer-shell.module.css";
 
 const messages = CUSTOMER_MESSAGES.READ_SCREENS;
 const PAGE_SIZE = 10;
-
-function formatContractPeriod(startDate?: string | null, endDate?: string | null) {
-  const formatPart = (value?: string | null) => {
-    const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    return match ? { year: match[1], dayMonth: `${match[3]}/${match[2]}` } : null;
-  };
-  const start = formatPart(startDate);
-  const end = formatPart(endDate);
-  if (!start && !end) return "—";
-  if (!start) return `${end!.dayMonth}/${end!.year}`;
-  if (!end) return `${start.dayMonth}/${start.year}`;
-  return start.year === end.year
-    ? `${start.dayMonth}–${end.dayMonth}/${end.year}`
-    : `${start.dayMonth}/${start.year}–${end.dayMonth}/${end.year}`;
-}
 
 function formatDateTime(value?: string | null) {
   if (!value) return "—";
@@ -62,8 +48,8 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
   const queryClient = useQueryClient();
   const { ownerId, checked } = useOwnerSubject();
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [filterDraft, setFilterDraft] = useState({ search: "", status: "", machineType: "" });
+  const [filters, setFilters] = useState(filterDraft);
   const contractCandidate = sectionPath.startsWith("contracts/")
     ? sectionPath.slice("contracts/".length)
     : "";
@@ -112,7 +98,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
   if (!checked && isList) {
     return (
       <section className={styles.pageContent} aria-labelledby="customer-screen-title">
-        <BackButtonHeading title={messages.CONTRACTS_TITLE} titleId="customer-screen-title" className={styles.pageHeading} back={null} />
+        <BackButtonHeading title={CONTRACT_LIST_T.PAGE_TITLE} titleId="customer-screen-title" className={styles.pageHeading} back={null} />
         <div className={styles.loadingNotice} role="status">{messages.LOADING}</div>
       </section>
     );
@@ -121,15 +107,15 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
     return <UnavailableIdentity title={messages.CONTRACTS_TITLE} />;
   }
 
+  const machineById = new Map((machines.data ?? []).map((machine) => [machine.id, machine] as const));
   const contracts = (list.data ?? []).filter((contract) => {
-    const machine = machines.data?.find((item) => item.id === contract.machineId);
-    const matchesSearch = `${contract.id} ${machine?.serialNumber ?? ""}`.toLocaleLowerCase("vi-VN").includes(search.trim().toLocaleLowerCase("vi-VN"));
-    return matchesSearch && (!status || contract.status === status);
+    const machine = contract.machineId ? machineById.get(contract.machineId) : undefined;
+    const matchesSearch = `${contract.id} ${machine?.serialNumber ?? ""}`.toLocaleLowerCase("vi-VN").includes(filters.search.toLocaleLowerCase("vi-VN"));
+    return matchesSearch && (!filters.status || contract.status === filters.status)
+      && (!filters.machineType || (contract.machineTypeSnapshot ?? machine?.machineType) === filters.machineType);
   });
   const isListLoading = !list.isError && list.isPending;
   const visibleContracts = contracts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalPages = Math.max(1, Math.ceil(contracts.length / PAGE_SIZE));
-  const machineById = new Map((machines.data ?? []).map((machine) => [machine.id, machine] as const));
   const expiryDate = expiry.data?.expiryDate ?? detail.data?.endDate ?? null;
   const businessToday = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date());
   const canRecordExpiryDecision = detail.data?.status === "ACTIVE"
@@ -144,57 +130,11 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
       : expiry.data?.decision === "NO_RESPONSE"
         ? "Chưa phản hồi đúng hạn"
         : null;
-  const columns: readonly DataTableColumn<Contract>[] = [
-    {
-      key: "contract-id",
-      header: isExpiryList ? "Hợp đồng cần xem hạn" : messages.FIELD_CONTRACT_ID,
-      kind: "code",
-      noWrap: true,
-      render: (contract) => (
-        <TextLinkButton href={PATH_CUSTOMER.CONTRACT_DETAIL(contract.id)} title={contract.id}>
-          <TruncatedId value={contract.id} />
-        </TextLinkButton>
-      ),
-    },
-    {
-      key: "machine",
-      header: messages.CONTRACT_TABLE_MACHINE,
-      kind: "code",
-      noWrap: true,
-      render: (contract) => {
-        const machine = contract.machineId ? machineById.get(contract.machineId) : undefined;
-        if (machine?.serialNumber) return machine.serialNumber;
-        return contract.machineId ? <TruncatedId value={contract.machineId} /> : "—";
-      },
-    },
-    {
-      key: "machine-type",
-      header: messages.FIELD_MACHINE_TYPE,
-      render: (contract) => {
-        const machineType = contract.machineTypeSnapshot ?? (contract.machineId ? machineById.get(contract.machineId)?.machineType : undefined);
-        return machineType === "SMART_IOT" ? "Smart IoT" : machineType === "CONVENTIONAL" ? "Thông thường" : "—";
-      },
-    },
-    {
-      key: "term",
-      header: messages.CONTRACT_TABLE_TERM,
-      kind: "date",
-      noWrap: true,
-      render: (contract) => formatContractPeriod(contract.startDate, contract.endDate),
-    },
-    {
-      key: "status",
-      header: messages.FIELD_STATUS,
-      kind: "status",
-      render: (contract) => <StatusBadge status={contract.status} variant="dot">{contractStatusLabel(contract)}</StatusBadge>,
-    },
-  ];
-
   return (
     <section className={`${styles.pageContent} ${styles.contractPage}`} aria-labelledby="customer-screen-title">
       <BackButtonHeading
         back={back ?? null}
-        title={contractId ? "Hồ sơ hợp đồng" : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : "Hợp đồng"}
+        title={contractId ? "Hồ sơ hợp đồng" : isExpiryList ? messages.CONTRACT_EXPIRY_TITLE : CONTRACT_LIST_T.PAGE_TITLE}
         titleId="customer-screen-title"
         className={styles.pageHeading}
       />
@@ -203,22 +143,7 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
           <QueryFeedback loading={detail.isPending} failed={detail.isError} empty={!detail.data} emptyText={messages.NO_CONTRACTS} />
           {detail.data ? (
             <div className={styles.contractLayout}>
-              <Panel className={styles.contractOverview}>
-              <h2>Thông tin hợp đồng</h2>
-              <dl className={styles.detailGrid}>
-                <DetailItem label={messages.FIELD_CONTRACT_ID} value={detail.data.id.slice(0, 8).toUpperCase()} />
-                <DetailItem label={messages.FIELD_MACHINE_ID} value={typeof detail.data.machineSerialNumber === "string" ? detail.data.machineSerialNumber : detail.data.machineId} />
-                <DetailItem label={messages.FIELD_STATUS} value={<StatusBadge variant="dot" status={detail.data.status}>{statusLabel(detail.data.status)}</StatusBadge>} />
-                <DetailItem label={messages.FIELD_START_DATE} value={formatDate(detail.data.startDate)} />
-                <DetailItem label={messages.FIELD_END_DATE} value={formatDate(detail.data.endDate)} />
-                <DetailItem label={messages.FIELD_MONTHLY_FEE} value={formatMoney(detail.data.monthlyRentalFee)} />
-                <DetailItem label={messages.FIELD_DEPOSIT} value={formatMoney(detail.data.depositAmount)} />
-                <DetailItem label="Loại máy" value={detail.data.machineTypeSnapshot === "SMART_IOT" ? "Smart IoT" : detail.data.machineTypeSnapshot === "CONVENTIONAL" ? "Máy thường" : "—"} />
-                <DetailItem label="Phí lắp đặt" value={formatMoney(detail.data.installationFee)} />
-                <DetailItem label="Đơn giá theo lượt" value={formatMoney(detail.data.paygUnitPrice)} />
-              </dl>
-              {detail.data.terms && <div className={styles.contractTerms}><h3>Điều khoản hợp đồng</h3><p>{detail.data.terms}</p></div>}
-              </Panel>
+              <ContractOverviewPanel contract={detail.data} ownerName={messages.CONTRACT_OWNER_SCOPE} />
               <Panel aria-labelledby="contract-expiry-title">
                 <h2 id="contract-expiry-title">Hạn hợp đồng và ý định tiếp tục</h2>
                 {expiry.isPending ? <p className={styles.loadingNotice} role="status">Đang tải thông tin hết hạn…</p> : null}
@@ -274,31 +199,43 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
           ) : null}
         </>
       ) : (
-        <Panel className={styles.contractList} aria-label={messages.CONTRACTS_TITLE} title="Danh sách hợp đồng" actions={<span className={styles.contractListCount}>{list.data?.length ?? "—"} hợp đồng</span>}>
+        <ContractListPanel count={list.data ? contracts.length : undefined}>
           <TableFilters
             search={{
-              ariaLabel: messages.CONTRACT_SEARCH_LABEL,
-              placeholder: messages.CONTRACT_SEARCH_LABEL,
-              label: messages.CONTRACT_SEARCH_CAPTION,
-              value: search,
-              onChange: (value) => { setSearch(value); setPage(0); },
+              ariaLabel: CONTRACT_LIST_T.SEARCH_LABEL,
+              placeholder: CONTRACT_LIST_T.SEARCH_LABEL,
+              value: filterDraft.search,
+              maxLength: 100,
+              onChange: (search) => setFilterDraft((current) => ({ ...current, search })),
             }}
             selects={[{
               id: "contract-status",
-              ariaLabel: messages.CONTRACT_STATUS_FILTER,
-              label: messages.CONTRACT_STATUS_CAPTION,
-              value: status,
+              ariaLabel: CONTRACT_LIST_T.STATUS_FILTER,
+              value: filterDraft.status,
               options: [
-                { value: "", label: messages.CONTRACT_STATUS_ALL },
-                { value: "ACTIVE", label: messages.CONTRACT_STATUS_ACTIVE },
-                { value: "DRAFT", label: messages.CONTRACT_STATUS_DRAFT },
-                { value: "TERMINATED", label: messages.CONTRACT_STATUS_TERMINATED },
+                { value: "", label: CONTRACT_LIST_T.STATUS_ALL },
+                { value: "ACTIVE", label: CONTRACT_LIST_T.STATUS_ACTIVE },
+                { value: "DRAFT", label: CONTRACT_LIST_T.STATUS_DRAFT },
+                { value: "TERMINATED", label: CONTRACT_LIST_T.STATUS_TERMINATED },
               ],
-              onChange: (value) => { setStatus(value); setPage(0); },
+              onChange: (status) => setFilterDraft((current) => ({ ...current, status })),
+            }, {
+              id: "contract-machine-type",
+              ariaLabel: CONTRACT_LIST_T.MACHINE_TYPE_FILTER,
+              value: filterDraft.machineType,
+              options: [
+                { value: "", label: CONTRACT_LIST_T.MACHINE_TYPE_ALL },
+                { value: "CONVENTIONAL", label: CONTRACT_LIST_T.MACHINE_TYPE_CONVENTIONAL },
+                { value: "SMART_IOT", label: CONTRACT_LIST_T.MACHINE_TYPE_SMART },
+              ],
+              onChange: (machineType) => setFilterDraft((current) => ({ ...current, machineType })),
             }]}
-            submitLabel={messages.CONTRACT_FILTER_SUBMIT}
-            showSubmit={false}
-            onSubmit={(event) => event.preventDefault()}
+            submitLabel={CONTRACT_LIST_T.SEARCH_SUBMIT}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setFilters({ ...filterDraft, search: filterDraft.search.trim() });
+              setPage(0);
+            }}
           />
           {isListLoading ? <div className={styles.loadingNotice} role="status">{messages.LOADING}</div> : null}
           {list.isError ? <div className={styles.errorNotice} role="alert">{messages.LOAD_ERROR}</div> : null}
@@ -307,25 +244,30 @@ export function ContractsScreen({ sectionPath, back }: { sectionPath: string; ba
           ) : null}
           {!isListLoading && !list.isError && contracts.length > 0 ? (
             <>
-              <DataTable
-                columns={columns.filter((column) => isExpiryList || column.key !== "term")}
-                rows={visibleContracts}
-                rowKey={(contract) => contract.id}
+              <ContractTable
+                contracts={visibleContracts}
+                contractHref={PATH_CUSTOMER.CONTRACT_DETAIL}
+                ownerName={() => messages.CONTRACT_OWNER_SCOPE}
+                machineLabel={(contract) => {
+                  const machine = contract.machineId ? machineById.get(contract.machineId) : undefined;
+                  return machine?.serialNumber ?? (contract.machineId ? <TruncatedId value={contract.machineId} /> : "—");
+                }}
+                machineTypeLabel={(contract) => {
+                  const machineType = contract.machineTypeSnapshot ?? (contract.machineId ? machineById.get(contract.machineId)?.machineType : undefined);
+                  return machineType === "SMART_IOT" ? "Smart IoT" : machineType === "CONVENTIONAL" ? "Máy thường" : "—";
+                }}
+                statusLabel={contractStatusLabel}
+                contractHeader={isExpiryList ? "Hợp đồng cần xem hạn" : undefined}
               />
-              <Pagination
+              <ContractListPagination
                 page={page}
-                hasNext={page + 1 < totalPages}
-                isFetching={list.isFetching}
-                ariaLabel={messages.CONTRACT_PAGINATION_LABEL}
+                pageSize={PAGE_SIZE}
+                totalCount={contracts.length}
                 onPageChange={setPage}
-                previousLabel={messages.PREVIOUS}
-                nextLabel={messages.NEXT}
-                totalPages={totalPages}
-                hideWhenSinglePage={false}
               />
             </>
           ) : null}
-        </Panel>
+        </ContractListPanel>
       )}
     </section>
   );

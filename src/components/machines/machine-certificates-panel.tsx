@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import { TextActionButton } from "@/components/button/text-link-button";
+import { Pagination } from "@/components/pagination/pagination";
 import { DataTable } from "@/components/table/data-table";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { MachineCertificate, MachineCertificateDetail, MachineCertificatePage, MachineCertificateStatus } from "@/schema/machine-certificates.schema";
@@ -67,18 +68,14 @@ export function MachineCertificatesPanel(props: MachineCertificatesPanelProps) {
           { key: "status", header: "Trạng thái", render: (item) => statusLabels[item.status] },
           { key: "issued", header: "Ngày phát hành", render: (item) => formatDate(item.issuedAt) },
           { key: "expires", header: "Ngày hết hạn", render: (item) => formatDate(item.expiresAt) },
-          { key: "actions", header: "Thao tác", render: (item) => <div className={styles.telemetryRangePresets}>
+          { key: "actions", header: "Thao tác", kind: "actions", minWidth: 440, render: (item) => <div data-ui-action-group>
             <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.zip`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "zip", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải ZIP</ProgressDownloadButton>
             <ProgressDownloadButton filename={`machine-${item.machineId}-certificate-${item.id}.json`} download={(signal) => { setDownloadError(""); return props.onDownload(item.id, "json", signal); }} onError={(error) => setDownloadError(getApiErrorMessage(error))}>Tải JSON</ProgressDownloadButton>
             <ButtonBar variant="danger" disabled={props.busy} onClick={() => setDeleting(item)}>Xóa chứng chỉ</ButtonBar>
           </div> },
         ]} />}
     {downloadError && <p className={styles.telemetryError} role="alert">{downloadError}</p>}
-    {props.page && !props.error && <div className={styles.telemetryRangePresets}>
-      <ButtonBar disabled={props.busy || props.loading || props.page.first} onClick={() => props.onPageChange(props.pageNumber - 1)}>Trang trước</ButtonBar>
-      <span>Trang {props.pageNumber + 1} / {Math.max(1, props.page.totalPages)}</span>
-      <ButtonBar disabled={props.busy || props.loading || props.page.last} onClick={() => props.onPageChange(props.pageNumber + 1)}>Trang sau</ButtonBar>
-    </div>}
+    {props.page && !props.error && <Pagination page={props.pageNumber} hasNext={!props.page.last} isFetching={props.busy || props.loading} ariaLabel="Phân trang chứng chỉ kết nối" onPageChange={props.onPageChange} totalPages={Math.max(1, props.page.totalPages)} hideWhenSinglePage={false} />}
     {props.detailLoading ? <p role="status">Đang tải chi tiết chứng chỉ…</p>
       : props.detailError ? <p className={styles.telemetryError} role="alert">{props.detailError}</p>
         : detail && <div className={styles.telemetryHistory}>

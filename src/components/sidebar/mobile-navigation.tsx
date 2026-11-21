@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import {
@@ -110,7 +111,8 @@ export function MobileNavigation({
 
   return (
     <>
-      <button
+      <ButtonBar
+        data-ui-control-size="icon"
         className={styles.trigger}
         type="button"
         ref={triggerRef}
@@ -121,7 +123,7 @@ export function MobileNavigation({
         onClick={() => setOpen(true)}
       >
         <Menu size={21} aria-hidden="true" />
-      </button>
+      </ButtonBar>
       {open && (
         <div
           className={styles.backdrop}
@@ -140,7 +142,7 @@ export function MobileNavigation({
           >
             <div className={styles.sheetHeader}>
               <strong>{drawerLabel}</strong>
-              <button
+              <ButtonBar
                 className={styles.closeButton}
                 type="button"
                 ref={closeRef}
@@ -148,7 +150,7 @@ export function MobileNavigation({
                 onClick={() => setOpen(false)}
               >
                 <X size={20} aria-hidden="true" />
-              </button>
+              </ButtonBar>
             </div>
             <SidebarNavigation
               items={items}

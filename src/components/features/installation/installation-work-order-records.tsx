@@ -180,7 +180,7 @@ export function InstallationWorkOrderRecords({
     <Panel className={styles.panel} aria-label="Hồ sơ lắp đặt">
       <SectionTabList role="tablist" aria-label="Hồ sơ lắp đặt">
         {tabs.map((tab) => (
-          <button
+          <ButtonBar
             key={tab.id}
             className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ""}`}
             type="button"
@@ -192,7 +192,7 @@ export function InstallationWorkOrderRecords({
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
-          </button>
+          </ButtonBar>
         ))}
       </SectionTabList>
       <div className={styles.content} role="tabpanel" id="installation-records-panel" aria-labelledby={`installation-records-tab-${activeTab}`}>

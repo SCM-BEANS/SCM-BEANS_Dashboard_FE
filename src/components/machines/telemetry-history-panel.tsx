@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable } from "@/components/table/data-table";
@@ -134,7 +135,7 @@ export function TelemetryRangeFilter({ range, onRangeChange }: {
       <form className={styles.telemetryRangeForm} onSubmit={submitCustomRange}>
         <label>Từ ngày và giờ (UTC+7)<input type="datetime-local" required value={fromInput} onChange={(event) => { setFromInput(event.target.value); setEditingRange(true); }} /></label>
         <label>Đến ngày và giờ (UTC+7)<input type="datetime-local" required value={toInput} onChange={(event) => { setToInput(event.target.value); setEditingRange(true); }} /></label>
-        <button type="submit">Áp dụng</button>
+        <ButtonBar type="submit">Áp dụng</ButtonBar>
       </form>
     </details>
     {rangeError ? <p className={styles.telemetryRangeError} role="alert">{rangeError}</p> : null}
@@ -196,7 +197,7 @@ export function TelemetryHistoryPanel({
       {showRangeFilter && range ? <TelemetryRangeFilter range={range} onRangeChange={onRangeChange} /> : null}
 
       {loading ? <p role="status">Đang tải lịch sử thông số…</p> : null}
-      {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <button type="button" onClick={onRetry}>Thử lại</button> : null}</div> : null}
+      {error ? <div className={styles.telemetryError} role="alert"><p>{error}</p>{onRetry ? <ButtonBar type="button" onClick={onRetry}>Thử lại</ButtonBar> : null}</div> : null}
       {!loading && !error && orderedPoints.length === 0 && range ? <p className={styles.monitoringEmpty} role="status">Chưa có thông số trong khoảng thời gian này.</p> : null}
       {orderedPoints.length > 0 ? <>
 
@@ -209,7 +210,7 @@ export function TelemetryHistoryPanel({
             })}
           </select>
         </label> : null}
-        <SectionTabList role="group" aria-label="Cách xem thông số"><button type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</button><button type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</button></SectionTabList>
+        <SectionTabList role="group" aria-label="Cách xem thông số"><ButtonBar type="button" aria-pressed={view === "chart"} onClick={() => setView("chart")}>Biểu đồ</ButtonBar><ButtonBar type="button" aria-pressed={view === "table"} onClick={() => setView("table")}>Bảng dữ liệu</ButtonBar></SectionTabList>
         </div>
         {fieldInfo(field).group === fieldGroups[3] ? <p className={styles.telemetryRangeCaption}>Thông số nâng cao · {field}. Dùng để chẩn đoán kỹ thuật, không dùng để đếm ly.</p> : null}
         {field.startsWith("total_volume_") ? <p className={styles.telemetryRangeCaption}>Thể tích nước không phải số ly pha chế.</p> : null}
@@ -242,7 +243,7 @@ export function TelemetryHistoryPanel({
           ]}
         /></> : null}
         {hasMore ? <p className={styles.telemetryRangeCaption}>Thống kê từ dữ liệu đã tải; còn bản ghi trong kỳ.</p> : null}
-        {hasMore && onLoadMore ? <button type="button" className={styles.telemetryLoadMore} disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Đang tải…" : "Tải thêm dữ liệu"}</button> : null}
+        {hasMore && onLoadMore ? <ButtonBar type="button" className={styles.telemetryLoadMore} disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Đang tải…" : "Tải thêm dữ liệu"}</ButtonBar> : null}
       </> : null}
     </div>
   );

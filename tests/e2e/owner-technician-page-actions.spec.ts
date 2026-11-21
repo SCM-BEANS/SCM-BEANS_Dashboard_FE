@@ -19,7 +19,7 @@ test("recall depot review places approval last and rejection in the bar", async 
   const id = "f4000000-0000-4000-8000-000000000002";
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
-  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, status: "RECEIPT_REVIEW_PENDING", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, machineSerialNumber: "RECALL-REVIEW-1", status: "RECEIPT_REVIEW_PENDING", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   const caseData = { id, ownerId: id, contractId: id, machineId: id, type: "NORMAL", status: "RECOVERY_PENDING", requestedBy: id, reason: "test", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   await page.route("**/api/dolores/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
@@ -32,7 +32,7 @@ test("recall depot review places approval last and rejection in the bar", async 
     return route.fulfill({ json: [] });
   });
   await page.goto(`/admin/contracts/${id}/termination`);
-  await page.getByRole("button", { name: "Mở chi tiết" }).click();
+  await page.getByRole("button", { name: "RECALL-REVIEW-1", exact: true }).click();
   await expectPrimaryPageAction(page, "recall-depot-approve");
   await expect(pageActionBar(page).locator('[data-action-id="recall-depot-reject"]')).toBeVisible();
 });
@@ -75,7 +75,7 @@ test("recall inspection creation is the primary page action", async ({ page }) =
   const id = "f4000000-0000-4000-8000-000000000002";
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
-  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, status: "RECEIVED_AT_DEPOT", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, machineSerialNumber: "RECALL-INSPECTION-1", status: "RECEIVED_AT_DEPOT", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   const caseData = { id, ownerId: id, contractId: id, machineId: id, type: "NORMAL", status: "INSPECTION_PENDING", requestedBy: id, reason: "test", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   await page.route("**/api/dolores/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
@@ -88,7 +88,7 @@ test("recall inspection creation is the primary page action", async ({ page }) =
     return route.fulfill({ json: [] });
   });
   await page.goto(`/admin/contracts/${id}/termination`);
-  await page.getByRole("button", { name: "M\u1edf chi ti\u1ebft" }).click();
+  await page.getByRole("button", { name: "RECALL-INSPECTION-1", exact: true }).click();
   await expectPrimaryPageAction(page, "recall-create-inspection");
 });
 
@@ -97,7 +97,7 @@ test("recall assignment submits its form from the action bar", async ({ page }) 
   const id = "f4000000-0000-4000-8000-000000000002";
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
-  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, status: "UNASSIGNED", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
+  const work = { id, terminationCaseId: id, ownerId: id, contractId: id, machineId: id, machineSerialNumber: "RECALL-ASSIGN-1", status: "UNASSIGNED", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   const caseData = { id, ownerId: id, contractId: id, machineId: id, type: "NORMAL", status: "RECOVERY_PENDING", requestedBy: id, reason: "test", createdAt: "2026-01-01", updatedAt: "2026-01-01" };
   await page.route("**/api/dolores/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.replace("/api/dolores/v1", "");
@@ -110,7 +110,7 @@ test("recall assignment submits its form from the action bar", async ({ page }) 
     return route.fulfill({ json: [] });
   });
   await page.goto(`/admin/contracts/${id}/termination`);
-  await page.getByRole("button", { name: "M\u1edf chi ti\u1ebft" }).click();
+  await page.getByRole("button", { name: "RECALL-ASSIGN-1", exact: true }).click();
   await expectPrimaryPageAction(page, "recall-assign");
   await expect(pageActionBar(page).locator('[data-action-id="recall-assign"]')).toHaveAttribute("form", "recall-assign-form");
 });
@@ -122,6 +122,7 @@ test("coffee catalog creation submits from the action bar", async ({ page }) => 
   await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
   await page.goto("/admin/coffee-packages");
   await page.getByRole("button", { name: "Danh mục gói" }).click();
+  await page.getByRole("button", { name: "Tạo gói cà phê", exact: true }).click();
   await expectPrimaryPageAction(page, "coffee-catalog-save");
   await expect(pageActionBar(page).locator('[data-action-id="coffee-catalog-save"]')).toHaveAttribute("form", "coffee-catalog-form");
 });
@@ -135,12 +136,14 @@ test("machine registration submits from the action bar", async ({ page }) => {
   await expect(pageActionBar(page).locator('[data-action-id="machine-register"]')).toHaveAttribute("form", "machine-registration-form");
 });
 
-test("global menu creation is a primary page action", async ({ page }) => {
+test("global menu creation uses the shared button", async ({ page }) => {
   const claims = Buffer.from(JSON.stringify({ roles: ["admin"] })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
   await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
   await page.goto("/admin/menu");
-  await expectPrimaryPageAction(page, "menu-create");
+  const create = page.getByRole("main").getByRole("button", { name: "Tạo menu", exact: true });
+  await expect(create).toBeVisible();
+  await expect(create).toHaveAttribute("data-ui-button");
 });
 
 test("location creation submits from the action bar", async ({ page }) => {
@@ -179,14 +182,16 @@ test("support menu page uses the shared panel and keeps both destinations", asyn
   await expect(page.getByRole("link", { name: "Xem máy của tôi" })).toHaveAttribute("href", "/dashboard/machines");
 });
 
-test("legacy recipe form submits from the action bar", async ({ page }) => {
+test("legacy recipe adjustment uses the shared submit button", async ({ page }) => {
   const id = "f3000000-0000-4000-8000-000000000001";
   const claims = Buffer.from(JSON.stringify({ roles: ["owner"], sub: id })).toString("base64url");
   await page.context().addCookies([{ name: "access_token", value: `header.${claims}.signature`, domain: "127.0.0.1", path: "/" }]);
   await page.route("**/api/**", (route) => route.fulfill({ json: [] }));
   await page.goto("/dashboard/menu/adjustments?view=legacy");
-  await expectPrimaryPageAction(page, "legacy-save");
-  await expect(pageActionBar(page).locator('[data-action-id="legacy-save"]')).toHaveAttribute("form", "legacy-recipe-form");
+  const save = page.getByRole("main").getByRole("button", { name: "Lưu điều chỉnh", exact: true });
+  await expect(save).toBeVisible();
+  await expect(save).toHaveAttribute("data-ui-button");
+  await expect(save).toBeDisabled();
 });
 
 test("recipe sync request is a primary page action", async ({ page }) => {
@@ -275,7 +280,7 @@ test("owner buyback price decision is the primary footer action", async ({ page 
     const data = path.endsWith(`/buybacks/${actionTestId}`) ? { id: actionTestId, ownerId: actionTestId, status: "APPROVED", workflowVersion: 2, approvedPrice: 100, currency: "VND", reason: "Buyback", requestedAt: "2026-01-01", updatedAt: "2026-01-01", createdAt: "2026-01-01", collectionEvidenceRecorded: false } : [];
     return route.fulfill({ json: data });
   });
-  await page.goto(`/dashboard/buyback?caseId=${actionTestId}`);
+  await page.goto(`/dashboard/buyback?caseId=${actionTestId}&view=work-order`);
   await expectFooter(page, "accept-price");
   await expect(pageActionBar(page).locator('[data-action-id="reject-price"]')).toBeVisible();
 });
@@ -292,10 +297,12 @@ test("billing refund rejection is dangerous and requires confirmation", async ({
   await page.goto(`/admin/contracts/${actionTestId}/termination`);
   await expectFooter(page, "refund-approve");
   const reject = pageActionBar(page).locator('[data-action-id="refund-reject"]');
-  await expect(reject).toHaveClass(/danger/);
+  await expect(reject).toHaveAttribute("data-ui-button-variant", "danger");
   await page.getByLabel("Lý do xử lý *").fill("Không đủ điều kiện");
   await reject.click();
-  await expect(page.getByRole("alertdialog")).toBeVisible();
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("[data-dialog-primary] [data-ui-hold-hint]")).toHaveText("Giữ 1,2 giây");
 });
 
 for (const [role, path] of [["owner", "/dashboard/notifications"], ["technician", "/technician/notifications"]] as const) {
@@ -311,8 +318,9 @@ for (const [role, path] of [["owner", "/dashboard/notifications"], ["technician"
       return route.fulfill({ json: url.pathname.endsWith("/notifications/unread-count") ? { unreadCount: 1 } : [] });
     });
     await page.goto(path);
-    const action = pageActionBar(page).locator('[data-action-id="notifications-read-all"]');
+    const action = page.getByRole("main").getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true });
     await expect(action).toBeVisible();
+    await expect(action).toBeEnabled();
     await action.click();
     await expect.poll(() => marked).toBe(true);
   });

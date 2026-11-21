@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
@@ -203,27 +204,7 @@ export function AdminUserDetailView({
                 ]}
               />}
               {ownerContracts.data && ownerContracts.data.totalPages > 0 && (
-                <div className={styles.accountPagination} aria-label="Phân trang hợp đồng Owner">
-                  <span>Trang {contractPage + 1}/{ownerContracts.data.totalPages}</span>
-                  <div>
-                    <ButtonBar
-
-                      type="button"
-                      disabled={contractPage <= 0 || ownerContracts.isFetching}
-                      onClick={() => onNavigate({ contractPage: String(contractPage) })}
-                    >
-                      {T.LIST.PREVIOUS}
-                    </ButtonBar>
-                    <ButtonBar
-
-                      type="button"
-                      disabled={contractPage + 1 >= ownerContracts.data.totalPages || ownerContracts.isFetching}
-                      onClick={() => onNavigate({ contractPage: String(contractPage + 2) })}
-                    >
-                      {T.LIST.NEXT}
-                    </ButtonBar>
-                  </div>
-                </div>
+                <Pagination page={contractPage} hasNext={contractPage + 1 < ownerContracts.data.totalPages} isFetching={ownerContracts.isFetching} ariaLabel="Phân trang hợp đồng Owner" onPageChange={(value) => onNavigate({ contractPage: String(value + 1) })} totalPages={ownerContracts.data.totalPages} hideWhenSinglePage={false} />
               )}
             </div>}
           </Panel>}

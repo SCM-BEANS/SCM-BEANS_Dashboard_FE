@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -454,7 +455,7 @@ export function StoresContent({ role = "ADMIN" }: { role?: "ADMIN" | "MODERATOR"
       </>}
     </Panel>}
 
-    {view === "list" && visibleLocations.length > 0 && <nav className={styles.userInlineActions} aria-label="Phân trang cửa hàng"><ButtonBar disabled={currentStorePage === 0} onClick={() => setStorePage(currentStorePage - 1)}>Trước</ButtonBar><span>Trang {currentStorePage + 1}/{Math.max(1, Math.ceil(visibleLocations.length / 10))}</span><ButtonBar disabled={(currentStorePage + 1) * 10 >= visibleLocations.length} onClick={() => setStorePage(currentStorePage + 1)}>Sau</ButtonBar></nav>}
+    {view === "list" && visibleLocations.length > 0 && <Pagination page={currentStorePage} hasNext={(currentStorePage + 1) * 10 < visibleLocations.length} ariaLabel="Phân trang cửa hàng" onPageChange={setStorePage} totalPages={Math.max(1, Math.ceil(visibleLocations.length / 10))} hideWhenSinglePage={false} />}
     {view === "create" && <div className={styles.userInlineActions}><PageActionsRenderer actions={actions} /></div>}
     {confirmOpen && <NotificationDialog
       variant="confirm"

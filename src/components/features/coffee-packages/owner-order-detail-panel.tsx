@@ -6,6 +6,7 @@ import { PageActions } from "@/components/action-bar/page-actions";
 import { Panel } from "@/components/panel/panel";
 import { buildCoffeeOrderReceiptActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -49,13 +50,13 @@ export function OwnerOrderDetailPanel({ workflow }: { workflow: CoffeePackageWor
           <details className={styles.linkedIds}>
             <summary>Thông tin bổ sung & mã liên kết</summary>
             <dl className={styles.details}>
-              <div><dt>Mã đơn hàng</dt><dd className={styles.code}>{order.id}</dd></div>
+              <div><dt>Mã đơn hàng</dt><dd className={styles.code}><TruncatedId value={order.id} /></dd></div>
               <div><dt>Đơn giá</dt><dd>{formatCoffeePackageMoney(order.unitPrice, order.currency ?? "VND")}</dd></div>
               <div><dt>Thời hạn sử dụng</dt><dd>{order.usageDays != null ? `${order.usageDays} ngày` : "—"}</dd></div>
               {order.reviewNote ? <div><dt>Ghi chú xử lý</dt><dd>{order.reviewNote}</dd></div> : null}
-              <div><dt>Mã gói</dt><dd>{order.packageCode ?? order.packageId ?? "—"}</dd></div>
-              <div><dt>Hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>
-              <div><dt>Máy</dt><dd className={styles.code}>{order.machineId ?? "—"}</dd></div>
+              <div><dt>Mã gói</dt><dd>{order.packageCode ?? <TruncatedId value={order.packageId} />}</dd></div>
+              <div><dt>Hợp đồng</dt><dd className={styles.code}><TruncatedId value={order.contractId} /></dd></div>
+              <div><dt>Máy</dt><dd className={styles.code}><TruncatedId value={order.machineId} /></dd></div>
               <div><dt>Cập nhật lần cuối</dt><dd>{formatCoffeePackageDateTime(order.updatedAt)}</dd></div>
             </dl>
           </details>

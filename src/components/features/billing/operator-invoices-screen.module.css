@@ -5,35 +5,25 @@
 .panel h2 { margin: 0; font-size: 18px; line-height: 1.4; }
 .notice { padding: 14px 16px; margin: 0; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 14px; line-height: 1.55; }
 .notice p { margin: 0 0 8px; }
-.notice button { min-height: 40px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
 .error { border-color: var(--color-primary-border); background: var(--color-primary-soft); color: var(--color-primary-strong); }
 .filters { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; padding: 18px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
 .filters label, .reasonField { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; }
 .filters input, .filters select, .reasonField textarea { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 14px; }
 .filters input:focus-visible, .filters select:focus-visible, .reasonField textarea:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 .filterActions { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; grid-column: 1 / -1; }
-.primaryButton, .secondaryButton, .approveButton, .rejectButton { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.primaryButton { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
-.secondaryButton { background: var(--color-surface); color: var(--color-text); }
-.approveButton { border-color: #b8d9c2; background: var(--color-success-soft); color: var(--color-success); }
-.rejectButton { border-color: var(--color-primary-border); background: var(--color-primary-soft); color: #9b2630; }
-.primaryButton:disabled, .secondaryButton:disabled, .approveButton:disabled, .rejectButton:disabled { cursor: not-allowed; opacity: .5; }
-.textButton { min-height: 38px; color: var(--color-primary); font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.primaryButton, .secondaryButton, .approveButton, .rejectButton { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+.textButton { text-underline-offset: 3px; }
 .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; color: var(--color-text-muted); font-size: 13px; }
-.pagination button { min-height: 38px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
-.pagination button:disabled { cursor: not-allowed; opacity: .5; }
-.detailStack { display: flex; min-width: 0; flex-direction: column; gap: 18px; }
+.detailStack { display: flex; min-width: 0; flex-direction: column; gap: 16px; }
 .detailGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin: 0; }
 .detailGrid > div { min-width: 0; }
 .detailGrid dt { color: var(--color-text-muted); font-size: 12px; }
 .detailGrid dd { overflow-wrap: anywhere; margin: 4px 0 0; color: var(--color-text); font-size: 14px; font-weight: 600; }
 .rowActions { display: flex; min-width: 190px; flex-wrap: wrap; gap: 6px; }
-.rowActions button { min-height: 34px; padding: 0 8px; font-size: 12px; }
 .proofFilename { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .proofDate { display: grid; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .proofDate small { color: var(--color-text-muted); font-size: inherit; }
 .proofActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.proofActions button { min-height: 40px; padding-inline: 12px; font-size: 13px; }
 .proofUpload { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
 .proofUpload label { display: grid; gap: 8px; min-width: 0; color: var(--color-text-muted); font-size: 13px; }
 .proofUpload input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-border-strong); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; }
@@ -87,10 +77,6 @@
 .paymentFacts dd { margin: 0; text-align: right; font-size: 14px; }
 .amount { font-size: clamp(28px, 2.5vw, 36px); line-height: 1.25; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .total { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 20px; font-size: 14px; }
-.tabs { display: flex; gap: 16px; flex-wrap: wrap; }
-.tabs button { min-height: 44px; padding: 8px 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--color-text-secondary); cursor: pointer; font: inherit; }
-.tabs button[aria-pressed="true"] { border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
-.tabs button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .exportPanel { max-width: 900px; width: 100%; }
 .exportFilename { margin: 8px 0; font-size: 20px; font-weight: 600; overflow-wrap: anywhere; }
 .exportFacts { display: grid; gap: 16px; margin: 0; }

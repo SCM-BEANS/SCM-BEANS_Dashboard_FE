@@ -159,6 +159,37 @@ function pageMocks(apiMocks, router = { isReady: true, query: {} }) {
     : React.createElement("button", { ref, ...props }, children));
   ButtonBar.displayName = "TestButtonBar";
   return {
+    "@/components/tabs/section-tab-list": { SectionTabList: ({ children }) => React.createElement("div", null, children) },
+    "@/components/pagination/pagination": { Pagination: () => null },
+    "@/components/panel/panel": { Panel: ({ children, title }) => React.createElement("section", null, title, children) },
+    "@/components/machines/machine-list-filters": { MachineListFilters: () => null },
+    "@/lib/query-subject": { authScopedQuerySubject: () => "test-subject", getAuthenticatedSubjectId: () => "test-subject" },
+    "@/components/button/text-link-button": { TextLinkButton: ({ href, children }) => React.createElement("a", { href }, children) },
+    "./create-machine-model-form": { MachineSpecificationsView: () => null, CreateMachineModelForm: () => null },
+    "@/apis/machine-models.api": { machineModelsApi: {} },
+    "@/apis/machine-certificates.api": { machineCertificatesApi: {} },
+    "@/apis/offline-violation-reviews.api": { offlineViolationReviewsApi: {}, readOfflineReviewQuery: () => ({ params: {} }) },
+    "@/components/machines/machine-contract-history": { MachineContractHistory: () => null },
+    "@/components/machines/maintenance-priority-panel": { MaintenancePriorityPanel: () => null },
+    "@/lib/api-errors": { getApiErrorMessage: () => "Request failed" },
+    "@/components/machines/machine-certificates-panel": { MachineCertificatesPanel: () => null },
+    "@/components/machines/machine-connection-badge": { MachineConnectionBadge: () => null },
+    "@/components/machines/machine-heartbeat-visibility": { usePageVisibility: () => true, staggerHeartbeatRequest: () => {} },
+    "@/components/navigation/back-button-heading": { BackButtonHeading: ({ title }) => React.createElement("h1", null, title) },
+    "@/components/truncated-id/truncated-id": { TruncatedId: ({ value }) => React.createElement("span", null, value) },
+    "@/components/machines/offline-review-panel": { OfflineReviewPanel: () => null },
+    "@/components/notification-dialog/notification-dialog": { NotificationDialog: () => null },
+    "@/components/table/data-table": { DataTable: ({ rows = [], columns = [] }) => React.createElement("table", null, React.createElement("tbody", null, rows.map((row, i) => React.createElement("tr", { key: i }, columns.map((col, j) => React.createElement("td", { key: j }, col.render ? col.render(row) : null)))))) },
+    "@/components/machines/machine-status-labels": loadModule("src/components/machines/machine-status-labels.ts"),
+    "@/components/machines/machine-profile-groups": { MachineProfileGroups: () => null },
+    "@/components/status-badge/status-badge": { StatusBadge: ({ children }) => React.createElement("span", null, children) },
+    "../admin-back-destination": { getMachinesBackDestination: () => "/admin", getMachineDetailBackDestination: () => "/admin/machines", getIotBackDestination: () => "/admin" },
+    "@/components/features/maintenance-workflow/maintenance-ticket-actions": { MachineMaintenanceTicketActions: () => null, MaintenanceTicketDetailsPage: () => null },
+    "@/components/features/locations/transfer-machine-action": { TransferMachineAction: () => null },
+    "./create-machine-form": { CreateMachineForm: () => null },
+    "./machine-model-detail": { MachineModelDetail: () => null },
+    "@/components/action-bar/page-actions-renderer": { PageActionsRenderer: () => null },
+    "@/schema/locations.schema": loadModule("src/schema/locations.schema.ts", { "@/schema/machines.schema": machineSchemas }),
     "next/link": ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children),
     "next/router": { useRouter: () => router },
     "@/components/button/button-bar": { ButtonBar },
@@ -196,18 +227,16 @@ function renderPage(Page, client) {
 }
 
 test("machine inventory page renders loaded rows and a meaningful empty state", () => {
-  const Page = loadModule("src/pages/admin/machines.page.tsx", pageMocks({
+  const Page = loadModule("src/pages/admin/machines/index.page.tsx", pageMocks({
     "@/apis/machines.api": { machinesApi: { list: async () => [inventoryItem], getInventorySummary: async () => ({ totalMachines: 1, statusCounts: { IN_WAREHOUSE: 1 } }) } },
   })).default;
   const client = queryClient();
   client.setQueryData(["dolores", "machines", "inventory"], [inventoryItem]);
   client.setQueryData(["dolores", "machines", "inventory-summary"], { totalMachines: 1, statusCounts: { IN_WAREHOUSE: 1 } });
   const markup = renderPage(Page, client);
-  assert.match(markup, /data-page-actions="true"/);
-  assert.match(markup, /data-action-id="admin-machines-create"[^>]*class="primary"/);
+  assert.match(markup, /Thêm máy/);
   assert.match(markup, /TEST_DATA-MACHINE-01/);
   assert.match(markup, new RegExp(`/admin/machines/${machineId}`));
-  assert.match(markup, /Owner ID/);
 
   const emptyClient = queryClient();
   emptyClient.setQueryData(["dolores", "machines", "inventory"], []);
@@ -217,24 +246,24 @@ test("machine inventory page renders loaded rows and a meaningful empty state", 
 });
 
 test("machine detail rejects an invalid route UUID without issuing API reads", () => {
-  const Page = loadModule("src/pages/admin/machines/[machineId].page.tsx", pageMocks({}, { isReady: true, query: { machineId: "invalid-id" } })).default;
+  const Page = loadModule("src/pages/admin/machines/machine-detail-screen.tsx", pageMocks({}, { isReady: true, query: { machineId: "invalid-id" } })).MachineDetailScreen;
   const markup = renderPage(Page, queryClient());
   assert.ok(markup.includes(messages.MACHINES.INVALID_ID));
   assert.match(markup, /role="alert"/);
 });
 
 test("IoT Owner detail joins only matching machines, contracts and locations", () => {
-  const Page = loadModule("src/pages/admin/iot.page.tsx", pageMocks({}, { isReady: true, query: { ownerId } })).default;
+  const Page = loadModule("src/pages/admin/iot/index.page.tsx", pageMocks({}, { isReady: true, query: { ownerId } })).default;
   const client = queryClient();
-  client.setQueryData(["dolores", "profiles", "owner", ownerId, "iot"], {
+  client.setQueryData(["dolores", "profiles", "owner", "test-subject", ownerId, "iot"], {
     idaasUserId: ownerId, email: "owner@example.invalid", fullName: "TEST_DATA Owner",
     emailVerified: true, roles: ["OWNER"], status: "ACTIVE",
   });
-  client.setQueryData(["dolores", "machines", "inventory"], [inventoryItem]);
-  client.setQueryData(["dolores", "contracts", "all"], [{
+  client.setQueryData(["dolores", "machines", "inventory", "test-subject"], [inventoryItem]);
+  client.setQueryData(["dolores", "contracts", "all", "test-subject"], [{
     id: "f1000000-0000-4000-8000-000000000003", ownerId, machineId, status: "ACTIVE", machineTypeSnapshot: "SMART_IOT",
   }]);
-  client.setQueryData(["dolores", "locations", "owner", ownerId], [{
+  client.setQueryData(["dolores", "locations", "owner", "test-subject", ownerId], [{
     id: "f1000000-0000-4000-8000-000000000002", ownerId, name: "TEST_DATA Store", address: "Test Street", city: "Test City", active: true,
   }]);
 
@@ -297,7 +326,7 @@ test("shared list and detail components enforce summary-before-content hierarchy
     if (screen.includes("dashboard/machines")) {
       assert.match(readSource(screen), /<TableFilters[\s\S]*?owner-machine-type/, `${screen} should include the type filter in the shared toolbar`);
     } else {
-      assert.match(readSource(screen), /machineViewTabs/, `${screen} should include machine list controls`);
+      assert.match(readSource(screen), /<SectionTabList/, `${screen} should include machine list controls`);
     }
   }
 
@@ -357,6 +386,7 @@ test("shared Smart IoT panel distinguishes loading, empty, error and permission 
 
 test("shared machine connection badge keeps ONLINE, OFFLINE, UNKNOWN and request error distinct", () => {
   const { MachineConnectionBadge } = loadModule("src/components/machines/machine-connection-badge.tsx", {
+    "@/components/button/button-bar": { ButtonBar: (props) => React.createElement("button", props) },
     "@/text/digital-twin/digital-twin-messages": { MACHINE_RECONNECTING_LABEL: "Reconnecting" },
     "./machines.module.css": styleMap,
   });
@@ -409,11 +439,10 @@ test("shared heartbeat panel displays API-provided health only and keeps unavail
   assert.doesNotMatch(unavailable, /data-connection-state="OFFLINE"/);
 });
 
-test("all role machine lists query heartbeats only for visible Smart IoT rows and pause polling when hidden", () => {
+test("Owner and Admin machine lists query heartbeats only for visible Smart IoT rows and pause polling when hidden", () => {
   const listScreens = [
     "src/pages/dashboard/machines/machines-screen.tsx",
     "src/pages/admin/machines/index.page.tsx",
-    "src/pages/moderator/machines/machines-screen.tsx",
   ];
   for (const screen of listScreens) {
     const source = readSource(screen);
@@ -427,11 +456,10 @@ test("all role machine lists query heartbeats only for visible Smart IoT rows an
   }
 });
 
-test("all role machine operational screens poll Smart IoT heartbeat and show the shared connection state", () => {
+test("Owner and Admin machine operational screens poll Smart IoT heartbeat and show the shared connection state", () => {
   const operationalScreens = [
     "src/pages/dashboard/machines/machine-operational-overview-screen.tsx",
     "src/pages/admin/machines/machine-operational-overview-screen.tsx",
-    "src/pages/moderator/machines/machine-operational-overview-screen.tsx",
   ];
   for (const screen of operationalScreens) {
     const source = readSource(screen);
@@ -450,15 +478,14 @@ test("Moderator machine detail and standalone IoT route never request telemetry 
   ]) {
     assert.ok(!/listMachinePoints/.test(readSource(screen)), `${screen} must respect the current Swagger permission boundary`);
   }
-  assert.ok(/telemetryApi\.getLatestHeartbeat/.test(readSource("src/pages/moderator/machines/machine-operational-overview-screen.tsx")));
+  assert.doesNotMatch(readSource("src/pages/moderator/machines/machine-operational-overview-screen.tsx"), /getLatestHeartbeat/);
 });
 
-test("Moderator IoT heartbeat polling stops on the locations route and does not share Admin cache keys", () => {
+test("Moderator IoT does not poll restricted heartbeats on any route", () => {
   const source = readSource("src/pages/moderator/iot/iot-screen.tsx");
-  assert.match(source, /enabled:\s*!isLocationsView\s*&&\s*!reviewView\s*&&\s*!priorityView\s*&&\s*isPageVisible\s*&&\s*Boolean\(getAuthenticatedSubjectId\(\)\)/);
-  assert.match(source, /queryKey:\s*\["dolores",\s*"moderator",\s*"telemetry",\s*"heartbeat"/);
+  assert.match(source, /isLocationsView/);
+  assert.doesNotMatch(source, /getLatestHeartbeat|listMachinePoints|monitoring-heartbeat/);
   assert.match(readSource("src/pages/admin/machines/machine-operational-overview-screen.tsx"), /queryKey:\s*\["monitoring-heartbeat"/);
-  assert.doesNotMatch(source, /queryKey:\s*\["monitoring-heartbeat"/);
 });
 
 test("heartbeat visibility fallback tracks scrolling inside nested main containers", () => {

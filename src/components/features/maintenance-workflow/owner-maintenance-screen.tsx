@@ -175,7 +175,7 @@ export function OwnerMaintenanceRequestDetail({ requestId, listHref, support = f
             <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={request.status}>{maintenanceRequestStatusLabel(request.status)}</StatusBadge></dd></div>
           </dl>
           {request.issueDescription ? <div className={styles.description}><h3>Nội dung yêu cầu</h3><p>{request.issueDescription}</p></div> : null}
-          <details className={styles.references}><summary>Mã liên kết</summary><p>Phiếu bảo trì: {request.maintenanceTicketId || "Chưa tạo"}</p></details>
+          <details className={styles.references}><summary>Mã liên kết</summary><p>Phiếu bảo trì: {request.maintenanceTicketId ? <TruncatedId value={request.maintenanceTicketId} /> : "Chưa tạo"}</p></details>
           </Panel>
           <Panel className={styles.panel}>
           <h2>Lịch hẹn bảo trì</h2>

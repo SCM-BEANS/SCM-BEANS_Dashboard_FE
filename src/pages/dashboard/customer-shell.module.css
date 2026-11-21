@@ -193,21 +193,6 @@
   gap: 12px;
 }
 
-.workflowAction {
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid #d7cfca;
-  border-radius: 8px;
-  background: #eee9e4;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-weight: 600;
-}
-
-.workflowAction:disabled {
-  cursor: not-allowed;
-}
-
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
@@ -335,9 +320,7 @@
   font-size: 13px;
 }
 
-.secondaryLink,
-.secondaryButton,
-.primaryButton {
+.secondaryLink {
   min-height: 42px;
   display: inline-flex;
   align-items: center;
@@ -352,28 +335,10 @@
   text-decoration: none;
 }
 
-.tableLink {
-  color: var(--color-text) !important;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.secondaryButton,
-.primaryButton {
-  cursor: pointer;
-}
-
-.primaryButton {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff !important;
-}
-
-.primaryButton:disabled,
-.secondaryButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.secondaryButton, .primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pagination {
@@ -546,13 +511,13 @@
     min-height: 64px;
     flex: 0 0 64px;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: flex-start;
+    gap: 8px;
     padding: 0 16px;
     background: transparent;
   }
 
-  .mobileBrand {
+  .mobileBrand { margin-right: auto;
     color: var(--color-primary) !important;
     font-size: 24px;
     font-weight: 600;
@@ -622,8 +587,6 @@
 
 .machineHeading { margin-bottom: 20px; }
 .machineHeading .pageHeading { margin-bottom: 0; }
-.machineListPanel { background: var(--color-surface, var(--color-surface)); border: 1px solid var(--color-border, var(--color-border)); border-radius: 16px; padding: 24px; }
-@media (max-width: 700px) { .machineListPanel { padding: 16px; } }
 
 .machineHeading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
 .machineHeadingActions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -631,7 +594,6 @@
 .machineListSummary { display:flex; gap:24px; flex-wrap:wrap; padding-bottom:12px; }
 .machineListSummary > article { display:flex; align-items:baseline; gap:10px; border:0; background:none; padding:0; min-height:0; }
 .machineListSummary > article strong { font-size:18px; }
-.machineListPanel > div > h2 { margin:8px 0 18px; font-size:20px; }
 
 .ownerInventoryTitle { display:flex; align-items:baseline; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
 .ownerInventoryTitle h2 { margin:0; font-size:20px; }
@@ -647,20 +609,19 @@
 .ownerProfileLayout > section > article > strong { font-size:18px; }
 @media(max-width:700px) { .ownerInventoryToolbar > label:not(:first-child) { flex:1 1 100%; } .ownerInventoryDate { margin-left:0; } }
 
-.ownerOverviewColumns { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr); gap:20px; align-items:start; }
-.ownerOverviewColumns h2 { margin:0 0 18px; font-size:20px; }
+.ownerOverviewColumns { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr); gap:16px; align-items:stretch; }
+.ownerOverviewColumns h2 { margin:0 0 18px; font-size:19px; }
+.dataPanel { padding:22px 24px; border-radius:16px; }
 .ownerOverviewColumns .dataPanel { margin:0; }
 .ownerProfileRows { margin:0; display:grid; }
 .ownerProfileRows > div { display:grid; grid-template-columns:minmax(120px,.8fr) minmax(0,1.2fr); gap:16px; padding:12px 0; }
 .ownerProfileRows dt { color:var(--color-text-muted); font-size:14px; }
 .ownerProfileRows dd { margin:0; overflow-wrap:anywhere; font-size:14px; font-weight:600; }
 .ownerOverviewColumns aside > button { margin-top:16px; }
-.ownerExtraDetails { padding:16px 20px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); }
+.ownerExtraDetails { display:flex; flex-direction:column; gap:12px; }
 .ownerExtraDetails summary { cursor:pointer; font-weight:600; }
 .ownerExtraDetails .detailGrid { margin-top:18px; }
 .ownerProfileLayout > div > div[role=tablist] { border-bottom:0; padding:0; gap:20px; margin-bottom:20px; }
-.ownerProfileLayout > div > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerProfileLayout > div > div[role=tablist] > button[aria-selected=true] { border-bottom-color:var(--color-primary); color:var(--color-primary); background:none; }
 .ownerListLinks { display:flex; gap:16px; flex-wrap:wrap; margin-left:auto; }
 .ownerMaintenanceSummary { display:flex; flex-wrap:wrap; gap:24px; margin:18px 0 24px; }
 .ownerMaintenanceSummary > article { border:0; padding:0; background:none; min-width:150px; }
@@ -672,18 +633,14 @@
 .ownerMonitoringLayout > button:first-child { position:absolute; right:0; top:28px; z-index:1; }
 .ownerMonitoringLayout > header { padding-right:120px; }
 .ownerMonitoringLayout > div[role=tablist] { border-bottom:0; padding:0; gap:20px; }
-.ownerMonitoringLayout > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerMonitoringLayout > div[role=tablist] > button[aria-selected=true] { border-bottom-color:var(--color-primary); background:none; color:var(--color-primary); }
 @media(max-width:600px) { .ownerMonitoringLayout > button:first-child { position:static; align-self:flex-end; } .ownerMonitoringLayout > header { padding-right:0; } }
 
 .ownerProfileRows > div { border:0; border-radius:0; background:none; box-shadow:none; }
 .ownerProfileLayout > section > article { min-height:0; }
 .ownerMaintenanceSummary > article { min-height:0; }
 
-.ownerProfileNavigation { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; border-bottom:0; }
+.ownerProfileNavigation { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:0; }
 .ownerProfileNavigation > div[role=tablist][role=tablist] { border-bottom:0; gap:20px; margin:0; padding:0; flex-wrap:wrap; }
-.ownerProfileNavigation > div[role=tablist] > button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:12px 4px; }
-.ownerProfileNavigation > div[role=tablist] > button[aria-selected=true] { color:var(--color-primary); background:none; border-bottom-color:var(--color-primary); }
 .ownerContextActions,.ownerSectionHeading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
 .ownerContextActions { padding-bottom:8px; }
 .ownerSectionHeading { margin-bottom:16px; }

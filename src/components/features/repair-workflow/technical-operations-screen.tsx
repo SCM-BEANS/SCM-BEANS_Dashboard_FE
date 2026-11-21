@@ -2,8 +2,6 @@ import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-import Link from "next/link";
-
 import { ButtonBar, ProgressDownloadButton } from "@/components/button/button-bar";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -272,7 +270,8 @@ function MaintenanceTicketTable({ tickets, machineId, role, machineSerialNumbers
   const visibleTickets = machineId ? tickets.filter((ticket) => ticket.machineId === machineId) : tickets;
   return (
     <DataTable
-      headers={["Máy / phiếu bảo trì", messages.TECHNICAL_STATUS, "Thời gian", messages.TECHNICAL_NOTES, "Thao tác"]}
+      headers={["Máy / phiếu bảo trì", messages.TECHNICAL_STATUS, "Thời gian", messages.TECHNICAL_NOTES]}
+      minWidth="760px"
       emptyMessage={visibleTickets.length === 0 ? messages.MACHINE_HISTORY_EMPTY : undefined}
     >
       {visibleTickets.map((ticket, index) => {
@@ -354,7 +353,6 @@ function MaintenanceRequestTable({
         return request.status === "REQUESTED" && request.requestType === "REPAIR" ? (
           <div className={styles.technicalRequestActions}>
             <ButtonBar
-              className={styles.technicalRequestAccept}
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: true })}
               type="button"
@@ -364,7 +362,6 @@ function MaintenanceRequestTable({
                 : messages.TECHNICAL_ACCEPT}
             </ButtonBar>
             <ButtonBar
-              className={styles.technicalRequestReject}
               disabled={isPending}
               onClick={() => onTriage({ requestId: request.id, accepted: false })}
               type="button"
@@ -376,7 +373,7 @@ function MaintenanceRequestTable({
           </div>
         ) : request.status === "TRIAGED" ? (
           request.technicianId === null || request.technicianId === undefined
-            ? <Link className={styles.technicalRequestAssign} href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</Link>
+            ? <ButtonBar href={routes.requestAssign(request.id)}>{messages.TECHNICAL_ASSIGN}</ButtonBar>
             : <span className={styles.technicalRequestAssigned}>{messages.TECHNICAL_ASSIGNED}</span>
         ) : "—";
       },
@@ -434,7 +431,7 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
         <h1>Lệnh lắp đặt · <TruncatedId value={workOrder.id} /></h1>
       </div>
       <div className={styles.workOrderPageActions}>
-        <ButtonBar className={styles.workOrderRefreshButton} type="button" onClick={onRefresh} disabled={isRefreshing}>
+        <ButtonBar type="button" onClick={onRefresh} disabled={isRefreshing}>
           {isRefreshing ? "Đang tải…" : "Làm mới"}
         </ButtonBar>
       </div>
@@ -470,7 +467,7 @@ function WorkOrderDetail({ details, role, contractHref, onRefresh, isRefreshing 
         <h2 id="work-order-info-title">Thông tin lắp đặt</h2>
         <dl className={styles.workOrderInfoFacts}>
           <div><dt>Khách hàng</dt><dd>{workOrder.ownerName || <TruncatedId value={workOrder.ownerId} />}</dd></div>
-          <div><dt>Hợp đồng</dt><dd><Link className={styles.tableLink} href={contractHref}><TruncatedId value={workOrder.contractId} /></Link></dd></div>
+          <div><dt>Hợp đồng</dt><dd><TextLinkButton href={contractHref}><TruncatedId value={workOrder.contractId} /></TextLinkButton></dd></div>
           <div><dt>Máy</dt><dd>{workOrder.machineSerialNumber || <TruncatedId value={workOrder.machineId} />}</dd></div>
           <div><dt>Loại máy</dt><dd>{workOrder.machineModelName || (workOrder.machineType === "SMART_IOT" ? "Smart IoT" : "Máy thường")}</dd></div>
           <div><dt>Trạng thái</dt><dd>{workOrderStatusLabels[workOrder.status]}</dd></div>
@@ -594,7 +591,7 @@ export function TechnicalOperationsScreen({
       <div className={styles.pageContent}>
         <PageHeading title={messages.TECHNICAL_TITLE} />
         {routes.role === "moderator" && <>
-          <ButtonBar type="button" className={styles.disabledAction} disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</ButtonBar>
+          <ButtonBar type="button" disabled aria-describedby="moderator-create-work-order-reason">{messages.TECHNICAL_CREATE}</ButtonBar>
           <p className={styles.pendingNotice} id="moderator-create-work-order-reason" role="note">{messages.TECHNICAL_CREATE_DISABLED}</p>
         </>}
       </div>

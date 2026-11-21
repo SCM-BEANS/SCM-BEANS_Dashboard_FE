@@ -171,6 +171,7 @@ function MachineList({
         columns={[
           { key: "serial", header: ADMIN_T.MACHINES.SERIAL, render: (machine) => <TextLinkButton href={`${PATH_MODERATOR.MACHINE_DETAIL(machine.id)}${statusFilter === "ALL" ? "" : `?status=${encodeURIComponent(statusFilter)}`}`}>{machine.serialNumber ?? "—"}</TextLinkButton> },
           { key: "status", header: ADMIN_T.MACHINES.STATUS, render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{machineStatusLabel(machine.status)}</span> : "—" },
+          { key: "connection", header: "K\u1ebft n\u1ed1i", render: () => "\u2014" },
           { key: "contract-period", header: ADMIN_T.MACHINES.CONTRACT_PERIOD, render: (machine) => formatPeriod(machine.contractStartDate, machine.contractEndDate) },
         ]}
       />
@@ -213,12 +214,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   const inventory = useQuery({
     queryKey: ["dolores", "machines"],
     queryFn: ({ signal }) => machinesApi.list(signal),
-    enabled: !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView,
-    retry: false,
-  });
-  const inventorySummary = useQuery({
-    queryKey: ["dolores", "inventory-summary"],
-    queryFn: ({ signal }) => machinesApi.getInventorySummary(signal),
     enabled: !isDetail && !isHistory && !isUnsupported && !isCreateView && !isMachineModelsView,
     retry: false,
   });
@@ -320,11 +315,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
     : isStock ? "Máy trong kho" : isCustomer ? messages.MACHINE_OWNER_TITLE : messages.MACHINES_TITLE;
   const currentModelPage = Math.min(modelPage, Math.max(0, Math.ceil((machineModels.data?.length ?? 0) / 10) - 1));
   const inventoryCount = visibleMachines.length;
-  const countFor = (...statuses: string[]) => {
-    const counts = inventorySummary.data?.statusCounts;
-    if (!counts) return "—";
-    return numberFormat.format(statuses.reduce((sum, status) => sum + (counts[status] ?? 0), 0));
-  };
   return (
     <>
     <div className={styles.pageContent}>
@@ -332,23 +322,15 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       <PageHeading title={title} />
       <ButtonBar variant="primary" href={isMachineModelsView ? PATH_MODERATOR.NEW_MACHINE_MODEL : PATH_MODERATOR.NEW_MACHINE}>{isMachineModelsView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y"}</ButtonBar>
       </div>
-      <MachineListView label={title} summary={!isMachineModelsView ? <>
-        <div className={adminStyles.metricsGrid}>
-          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.TOTAL}</span><strong>{inventorySummary.data?.totalMachines == null ? "—" : numberFormat.format(inventorySummary.data.totalMachines)}</strong></article>
-          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.WAREHOUSE}</span><strong>{countFor("IN_WAREHOUSE")}</strong></article>
-          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.DEPLOYED}</span><strong>{countFor("DEPLOYED_CONTRACT_OWNER", "DEPLOYED_STORE_OWNER")}</strong></article>
-          <article className={`${adminStyles.metricCard} ${adminStyles.metricCardCentered}`}><span>{ADMIN_T.MACHINES.MAINTENANCE}</span><strong>{countFor("UNDER_MAINTENANCE", "REFURBISHING", "PENDING_QA")}</strong></article>
-        </div>
-        <QueryFeedback query={inventorySummary} loadingMessage={messages.LOADING_MACHINES} />
-      </> : null}>
+      <MachineListView label={title}>
       <div className={adminStyles.machineInventoryGroup}>
         <SectionTabList role="tablist" aria-label="Danh sách máy và loại máy">
-          <button type="button" role="tab" aria-selected={!isMachineModelsView} className={`${adminStyles.machineViewTab} ${!isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINES)}>{ADMIN_T.MACHINES.TITLE}</button>
-          <button type="button" role="tab" aria-selected={isMachineModelsView} className={`${adminStyles.machineViewTab} ${isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODELS)}>{ADMIN_T.MACHINE_MODELS.TITLE}</button>
+          <ButtonBar type="button" role="tab" aria-selected={!isMachineModelsView} className={`${adminStyles.machineViewTab} ${!isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINES)}>Danh sách máy</ButtonBar>
+          <ButtonBar type="button" role="tab" aria-selected={isMachineModelsView} className={`${adminStyles.machineViewTab} ${isMachineModelsView ? adminStyles.machineViewTabActive : ""}`} onClick={() => void router.push(PATH_MODERATOR.MACHINE_MODELS)}>Mẫu máy</ButtonBar>
         </SectionTabList>
         <Panel className={adminStyles.panel}>
           <div className={adminStyles.machineInventoryHeading}>
-            <h2>{isMachineModelsView ? ADMIN_T.MACHINE_MODELS.TITLE : title}</h2>
+            <h2>{isMachineModelsView ? messages.MACHINE_MODELS_LIST_TITLE : ADMIN_T.MACHINES.TITLE}</h2>
             {isMachineModelsView
               ? machineModels.data && <span>{machineModels.data.length} {ADMIN_T.MACHINE_MODELS.COUNT}</span>
               : inventory.data && <span className={adminStyles.machineFilterCount} aria-live="polite">{numberFormat.format(inventoryCount)} / {numberFormat.format(inventory.data.length)} máy</span>}

@@ -1,4 +1,5 @@
 "use client";
+import { ButtonBar } from "@/components/button/button-bar";
 
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
@@ -238,7 +239,7 @@ export function BodyModelViewer({
 
       {interactive ? (
         <div className={styles.toolbar}>
-        <button
+        <ButtonBar
           type="button"
           aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_out}
           title={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_out}
@@ -247,8 +248,8 @@ export function BodyModelViewer({
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
           <span aria-hidden="true">−</span>
-        </button>
-        <button
+        </ButtonBar>
+        <ButtonBar
           type="button"
           aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_in}
           title={DIGITAL_TWIN_MESSAGES.digital_twin_zoom_in}
@@ -257,9 +258,9 @@ export function BodyModelViewer({
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
           <span aria-hidden="true">+</span>
-        </button>
+        </ButtonBar>
         <span className={styles.separator} aria-hidden="true" />
-        <button
+        <ButtonBar
           type="button"
           aria-label={ownerLayout ? T.camera_reset : DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
           title={ownerLayout ? T.camera_reset : DIGITAL_TWIN_MESSAGES.digital_twin_camera_reset}
@@ -268,33 +269,33 @@ export function BodyModelViewer({
           className={`${styles.toolbarButton} ${styles.iconButton}`}
         >
           {ownerLayout ? T.camera_reset : <span aria-hidden="true">↺</span>}
-        </button>
+        </ButtonBar>
         {ownerLayout ? (
-          <button type="button" aria-pressed={ghostShells} onClick={() => setGhostShells(value => !value)} className={`${styles.toolbarButton} ${styles.ghostButton}`}>{T.ghost_shells} {"\u00b7"} {ghostShells ? T.on : T.off}</button>
+          <ButtonBar type="button" aria-pressed={ghostShells} onClick={() => setGhostShells(value => !value)} className={`${styles.toolbarButton} ${styles.ghostButton}`}>{T.ghost_shells} {"\u00b7"} {ghostShells ? T.on : T.off}</ButtonBar>
         ) : presentation ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
-            <button
+            <ButtonBar
               type="button"
               aria-pressed={autoCamera}
               onClick={() => setAutoCamera((value) => !value)}
               className={`${styles.toolbarButton} ${styles.toggleButton}`}
             >
               {T.auto_follow}
-            </button>
-            <button type="button" aria-pressed={layers.shell} onClick={() => toggleLayer("shell")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_shell}</button>
-            <button type="button" aria-pressed={layers.frame} onClick={() => toggleLayer("frame")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_frame}</button>
-            <button type="button" aria-pressed={layers.water} onClick={() => toggleLayer("water")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_water}</button>
-            <button type="button" aria-pressed={brewAssemblyOn} onClick={toggleBrewAssembly} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_brew_unit}</button>
-            <button type="button" aria-pressed={layers.waste} onClick={() => toggleLayer("waste")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_waste}</button>
+            </ButtonBar>
+            <ButtonBar type="button" aria-pressed={layers.shell} onClick={() => toggleLayer("shell")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_shell}</ButtonBar>
+            <ButtonBar type="button" aria-pressed={layers.frame} onClick={() => toggleLayer("frame")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_frame}</ButtonBar>
+            <ButtonBar type="button" aria-pressed={layers.water} onClick={() => toggleLayer("water")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_water}</ButtonBar>
+            <ButtonBar type="button" aria-pressed={brewAssemblyOn} onClick={toggleBrewAssembly} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_brew_unit}</ButtonBar>
+            <ButtonBar type="button" aria-pressed={layers.waste} onClick={() => toggleLayer("waste")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_waste}</ButtonBar>
             {showElectricalLayer ? (
-              <button type="button" aria-pressed={layers.electrical} onClick={() => toggleLayer("electrical")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_electrical}</button>
+              <ButtonBar type="button" aria-pressed={layers.electrical} onClick={() => toggleLayer("electrical")} className={`${styles.toolbarButton} ${styles.layerButton}`}>{T.layer_electrical}</ButtonBar>
             ) : null}
           </>
         ) : includeCompressorMotion ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
-            <button
+            <ButtonBar
               type="button"
               aria-label={
                 DIGITAL_TWIN_MESSAGES[
@@ -322,13 +323,13 @@ export function BodyModelViewer({
                     : "digital_twin_body_motion_run"
                 ]
               }
-            </button>
+            </ButtonBar>
           </>
         ) : null}
         {!ownerLayout && !presentation && enableCoffeeEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
-            <button
+            <ButtonBar
               type="button"
               aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_coffee_simulate_label}
               title={DIGITAL_TWIN_MESSAGES.digital_twin_coffee_simulate_label}
@@ -337,13 +338,13 @@ export function BodyModelViewer({
               className={`${styles.toolbarButton} ${styles.outlineButton}`}
             >
               {DIGITAL_TWIN_MESSAGES.digital_twin_coffee_simulate}
-            </button>
+            </ButtonBar>
           </>
         ) : null}
         {!ownerLayout && !presentation && enableWaterEffect ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
-            <button
+            <ButtonBar
               type="button"
               aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_water_run}
               title={DIGITAL_TWIN_MESSAGES.digital_twin_water_run}
@@ -352,8 +353,8 @@ export function BodyModelViewer({
               className={`${styles.toolbarButton} ${styles.outlineButton}`}
             >
               {DIGITAL_TWIN_MESSAGES.digital_twin_water_run}
-            </button>
-            <button
+            </ButtonBar>
+            <ButtonBar
               type="button"
               aria-label={DIGITAL_TWIN_MESSAGES.digital_twin_water_reset}
               title={DIGITAL_TWIN_MESSAGES.digital_twin_water_reset}
@@ -362,13 +363,13 @@ export function BodyModelViewer({
               className={`${styles.toolbarButton} ${styles.textButton}`}
             >
               {DIGITAL_TWIN_MESSAGES.digital_twin_water_reset}
-            </button>
+            </ButtonBar>
           </>
         ) : null}
         {!ownerLayout && !presentation && enableOperationTest && operationSource !== "external" ? (
           <>
             <span className={styles.separator} aria-hidden="true" />
-            <button
+            <ButtonBar
               type="button"
               aria-label={
                 operationStatus === "running"
@@ -383,7 +384,7 @@ export function BodyModelViewer({
               {operationStatus === "running"
                 ? DIGITAL_TWIN_MESSAGES.digital_twin_operation_running
                 : DIGITAL_TWIN_MESSAGES.digital_twin_operation_run}
-            </button>
+            </ButtonBar>
           </>
         ) : null}
         </div>
@@ -446,13 +447,13 @@ export function BodyModelViewer({
             <p className={styles.errorText}>
               {ownerLayout ? T.model_error : DIGITAL_TWIN_MESSAGES.digital_twin_body_load_error}
             </p>
-            <button
+            <ButtonBar
               type="button"
               onClick={handleRetry}
               className={styles.retryButton}
             >
               {ownerLayout ? T.model_retry : DIGITAL_TWIN_MESSAGES.digital_twin_retry}
-            </button>
+            </ButtonBar>
           </div>
         </div>
       ) : null}

@@ -181,7 +181,7 @@ function LocationRow({ owner, location }: { owner: Profile; location: Location }
       <td>{location.city ?? "—"}</td>
       <td>{location.active == null ? messages.LOCATION_UNKNOWN_STATUS : location.active ? messages.LOCATION_ACTIVE : messages.LOCATION_INACTIVE}</td>
       <td>{location.machineCount == null ? "—" : numberFormat.format(location.machineCount)}</td>
-      <td>
+      <td data-column-kind="actions">
         <ButtonBar  type="button" onClick={() => setEditing((current) => !current)}>
           {editing ? messages.LOCATION_CANCEL : messages.LOCATION_EDIT}
         </ButtonBar>
@@ -283,9 +283,9 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
   return <div className={styles.pageContent}>
     <PageHeading title="Giám sát máy" />
     <SectionTabList role="group" aria-label="Phạm vi giám sát">
-      <button type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</button>
-      <button type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</button>
-      <button type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</button>
+      <ButtonBar type="button" aria-pressed={!reviewView && !priorityView} onClick={() => navigateReview({ view: "machines", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Máy Smart IoT</ButtonBar>
+      <ButtonBar type="button" aria-pressed={priorityView} onClick={() => navigateReview({ view: "priority", machineId: undefined, reviewId: undefined, reviewStatus: undefined, reviewPage: undefined })}>Ưu tiên bảo trì</ButtonBar>
+      <ButtonBar type="button" aria-pressed={reviewView} onClick={() => navigateReview({ view: "reviews" })}>Mất kết nối</ButtonBar>
     </SectionTabList>
     {priorityView && <MaintenancePriorityPanel subject={subject} enabled={router.isReady && Boolean(getAuthenticatedSubjectId())} machineHref={id => `${PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(id)}?tab=health&from=priority`} />}
     {!priorityView && <QueryFeedback query={inventory} loadingMessage={messages.LOADING_MACHINES} />}
@@ -295,6 +295,7 @@ export function ModeratorIoTScreen({ path }: { path: string }) {
       {<DataTable rows={rows} rowKey={(machine) => machine.id} emptyMessage="Không có máy Smart IoT phù hợp với bộ lọc." columns={[
         { key: "serial", header: "Máy", render: (machine) => <TextLinkButton href={PATH_MODERATOR.MACHINE_OPERATIONAL_OVERVIEW(machine.id)}>{machine.serialNumber ?? machine.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
         { key: "status", header: "Trạng thái triển khai", render: (machine) => machine.status ? <span className={adminStyles.machinePlainStatus} data-status={machine.status}>{MACHINE_STATUS_LABELS[machine.status] ?? machine.status}</span> : "—" },
+        { key: "connection", header: "Kết nối", render: () => "—" },
       ]} />}
       <Pagination page={currentPage} hasNext={!((currentPage + 1) * 10 >= filtered.length)} isFetching={false} ariaLabel="Phân trang giám sát" onPageChange={setPage} previousLabel="Trước" nextLabel="Sau" showPage={false} hideWhenSinglePage={false}><span>{filtered.length} máy · Trang {currentPage + 1}/{Math.max(1, Math.ceil(filtered.length / 10))}</span></Pagination>
     </Panel> : null}

@@ -638,7 +638,7 @@ export function BuybackDetailPanel({ workflow, children }: { workflow: BuybackWo
             </div>
             <div className={adminStyles.rowActions}>
               {isWorkspace ? <StatusBadge variant="dot" status={caseData.status}>{detailStatusLabel}</StatusBadge> : null}
-              <ButtonBar type="button" onClick={() => void detail.refetch()}>Làm mới</ButtonBar>
+              {workflow.role !== "technician" && <ButtonBar type="button" onClick={() => void detail.refetch()}>Làm mới</ButtonBar>}
             </div>
           </div>
           {isWorkspace ? <>

@@ -1,115 +1,59 @@
-.button.button {
+.button {
+  box-sizing: border-box;
   display: inline-flex;
-  width: fit-content;
   min-width: max-content;
-  min-height: var(--ui-control-height, 44px);
+  min-height: 44px;
+  height: 44px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 0 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
+  border: 1px solid var(--ui-color-border, #e9e2dc);
+  border-radius: var(--ui-control-radius, 10px);
+  background: #fff;
   color: #000;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.2;
+  font: 600 14px/1.2 var(--ui-font-family, Arial, sans-serif);
   text-align: center;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  box-shadow: none;
+  filter: none;
+  transition: none;
+  animation: none;
+  transform: none;
 }
 
-.button:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-subtle);
-}
+.button strong { font-weight: inherit; }
 
 .button:focus-visible {
-  outline: 2px solid var(--color-text);
+  outline: 2px solid var(--ui-color-button-focus, #302927);
   outline-offset: 2px;
 }
 
 .button:disabled {
+  color: var(--ui-color-button-disabled-text, #76716d);
   cursor: not-allowed;
-  opacity: 0.45;
 }
 
-@media (max-width: 1023px) {
-  .button.button {
-    min-height: 40px;
-    padding: 0 14px;
-    font-size: 13px;
-  }
+.holdHint {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.button.button.primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-.button.button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--color-primary) 78%, black); border-color: color-mix(in srgb, var(--color-primary) 78%, black); }
-.button.button.danger { background: var(--color-surface); border-color: var(--color-primary); color: var(--color-primary); }
-.button.button.danger:hover:not(:disabled) { background: #fff1f2; border-color: color-mix(in srgb, var(--color-primary) 78%, black); }
-
-.button.button.holdToConfirm { position: relative; overflow: hidden; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; }
-.button.button.primary.holdToConfirm .holdFill { background: color-mix(in srgb, var(--color-primary) 78%, black); }
-.holdContent { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: inherit; }
-.holdFill { position: absolute; z-index: 2; inset: 0; display: inline-flex; align-items: center; justify-content: center; gap: inherit; overflow: hidden; border-radius: inherit; background: var(--color-primary); color: #fff; pointer-events: none; clip-path: inset(0 calc(100% - var(--hold-progress, 0%)) 0 0 round 10px); }
-.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.button.button.holdToConfirm[data-holding="true"] { transform: scale(.97); animation: holdToConfirmShake .12s linear infinite; animation-play-state: var(--hold-shake, paused); }
-@keyframes holdToConfirmShake { 0%,100% { translate: 0 0; } 25% { translate: -.6px .3px; } 75% { translate: .6px -.3px; } }
-@media (prefers-reduced-motion: reduce) { .button.button.holdToConfirm { animation: none; transform: none; } }
-
-.button.button.rollingButton { position: relative; overflow: hidden; isolation: isolate; min-height: 44px; background: var(--color-surface); color: #000; transition: transform .5s var(--ease-out), color .45s cubic-bezier(.2,.8,.2,1); }
-.button.button.rollingButton:hover { background: var(--color-surface); }
-.rollingButton::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--color-surface-subtle); border-radius: 50% 50% 0 0 / 40% 40% 0 0; transform: translateY(102%); transition: transform .7s cubic-bezier(.2,.8,.2,1), border-radius .7s cubic-bezier(.2,.8,.2,1); }
-.rollingButton:active { transform: scale(.96); }
-.rollingButton:active::before { transform: none; border-radius: 0; }
-.rollingWord { display: flex; height: 1.4em; overflow: hidden; line-height: 1.4; }
-.rollingLetter { display: flex; flex-direction: column; transition: transform .55s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--letter-index) * 22ms); }
-.rollingLetter::after { content: attr(data-letter); display: block; }
-.rollingButton:focus-visible .rollingLetter { transform: translateY(-1.4em); }
-@media (hover: hover) { .rollingButton:hover .rollingLetter { transform: translateY(-1.4em); } }
-@media (prefers-reduced-motion: reduce) { .button.button.rollingButton, .rollingButton::before, .rollingLetter { transition: none; } .rollingButton:active, .rollingButton:focus-visible .rollingLetter, .rollingButton:hover .rollingLetter { transform: none; } }
-
-.progressDownload { display: inline-flex; position: relative; vertical-align: middle; }
-.progressDownloadButton { --progress: var(--download-progress, 0); position: relative; display: inline-flex; width: 132px; height: 44px; align-items: center; justify-content: center; padding: 0; overflow: hidden; isolation: isolate; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: width .6s cubic-bezier(.2,.8,.2,1), border-radius .6s cubic-bezier(.2,.8,.2,1), transform .5s var(--ease-out), background-color .4s ease, color .4s ease; }
-.progressDownloadButton:hover { border-color: var(--color-border-strong); background: var(--color-surface-subtle); }
-.progressDownloadButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
-.progressDownloadButton:active { transform: scale(.97); }
-.progressDownloadTrack { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; background: #f7eeee; opacity: 0; transition: opacity .4s ease; }
-.progressDownloadBar { position: absolute; inset: 0; border-radius: inherit; background: #edc9cd; transform: scaleX(var(--progress)); transform-origin: 0 50%; transition: transform .12s linear, opacity .3s ease; }
-.progressDownloadIdle, .progressDownloadRun, .progressDownloadDone { position: absolute; z-index: 1; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity .35s cubic-bezier(.2,.8,.2,1), transform .5s cubic-bezier(.2,.8,.2,1); }
-.progressDownloadIdle { gap: 8px; }
-.progressDownloadIcon { display: grid; width: 28px; height: 28px; place-items: center; overflow: hidden; border-radius: 50%; background: #f8eeee; color: var(--color-primary); }
-.progressDownloadIcon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.progressDownloadArrow { transition: transform .5s cubic-bezier(.2,.8,.2,1); }
-.progressDownloadIdle b { font-size: 14px; font-weight: 600; }
-.progressDownloadRun { justify-content: space-between; padding: 0 16px; color: #65111a; opacity: 0; transform: translateY(10px); }
-.progressDownloadRun b { font-size: 14px; font-variant-numeric: tabular-nums; }
-.progressDownloadRun small { font-size: 12px; opacity: .86; }
-.progressDownloadDone { gap: 8px; color: var(--color-success); opacity: 0; transform: scale(.7); }
-.progressDownloadDone i { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: #cfead6; }
-.progressDownloadDone svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
-.progressDownloadDone path { stroke-dasharray: 18; stroke-dashoffset: 18; transition: stroke-dashoffset .45s cubic-bezier(.2,.8,.2,1) .2s; }
-.progressDownloadDone > span { max-width: 0; overflow: hidden; font-size: 13px; font-weight: 600; opacity: 0; white-space: nowrap; transition: max-width .6s cubic-bezier(.2,.8,.2,1), opacity .4s ease; }
-.progressDownload[data-state="run"] .progressDownloadButton { width: 166px; border-color: #e2b5ba; background: var(--color-surface); color: var(--color-text); }
-.progressDownload[data-state="run"] .progressDownloadTrack { opacity: 1; }
-.progressDownload[data-state="run"] .progressDownloadBar { transform: scaleX(var(--progress)); }
-.progressDownload[data-state="run"][data-progress-known="false"] .progressDownloadBar { width: 38%; transform: none; animation: progressDownloadIndeterminate 1.2s ease-in-out infinite; background: var(--color-primary); }
-@keyframes progressDownloadIndeterminate { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
-.progressDownload[data-state="run"] .progressDownloadArrow { transform: translateY(24px); }
-.progressDownload[data-state="run"] .progressDownloadIdle { opacity: 0; transform: translateY(-10px); }
-.progressDownload[data-state="run"] .progressDownloadRun { opacity: 1; transform: none; }
-.progressDownload[data-state="fold"] .progressDownloadButton, .progressDownload[data-state="done"] .progressDownloadButton { width: 44px; border-color: #cfe3d5; border-radius: 50%; background: var(--color-success-soft); color: var(--color-success); }
-.progressDownload[data-state="fold"] .progressDownloadIdle, .progressDownload[data-state="done"] .progressDownloadIdle { opacity: 0; }
-.progressDownload[data-state="fold"] .progressDownloadBar, .progressDownload[data-state="done"] .progressDownloadBar { opacity: 0; }
-.progressDownload[data-state="fold"] .progressDownloadDone, .progressDownload[data-state="done"] .progressDownloadDone { opacity: 1; transform: none; }
-.progressDownload[data-state="fold"] .progressDownloadDone path, .progressDownload[data-state="done"] .progressDownloadDone path { stroke-dashoffset: 0; }
-.progressDownload[data-state="done"] .progressDownloadButton { width: 150px; border-radius: 10px; transition-timing-function: var(--ease-out); }
-.progressDownload[data-state="done"] .progressDownloadDone > span { max-width: 100px; opacity: 1; }
-.progressDownloadLive { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (prefers-reduced-motion: reduce) {
-  .progressDownloadButton, .progressDownloadTrack, .progressDownloadBar, .progressDownloadIdle, .progressDownloadRun, .progressDownloadDone, .progressDownloadDone path, .progressDownloadDone > span { transition: none; }
-  .progressDownload[data-state="run"][data-progress-known="false"] .progressDownloadBar { animation: none; transform: none; }
-  .progressDownload[data-state="run"] .progressDownloadArrow { transform: none; }
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
+
+.button[data-ui-navigation] { min-width: 0; padding: 0 12px; border: 0; background: transparent; color: var(--color-text-muted); }

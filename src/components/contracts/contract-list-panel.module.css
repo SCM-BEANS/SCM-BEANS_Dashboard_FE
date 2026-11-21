@@ -1,0 +1,5 @@
+.heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.heading h2 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.4; }
+.heading span { color: var(--ui-color-muted, #665e59); font-size: 13px; }
+.pagination, .pagination > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pagination { justify-content: space-between; margin-top: 4px; color: var(--ui-color-muted, #665e59); font-size: 13px; }

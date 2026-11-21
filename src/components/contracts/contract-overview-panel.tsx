@@ -24,6 +24,12 @@ function contractStatus(value: string): string {
   return value;
 }
 
+function machineType(value: string | null | undefined): string {
+  if (value === "SMART_IOT") return T.MACHINES.SMART;
+  if (value === "CONVENTIONAL") return T.MACHINES.CONVENTIONAL;
+  return T.MACHINES.UNCLASSIFIED;
+}
+
 export function ContractOverviewPanel({ contract, ownerName }: { contract: Contract; ownerName: string }) {
   const machineId = contract.machineId;
   const contractMachineSerial = contract.machineSerialNumber;
@@ -37,14 +43,14 @@ export function ContractOverviewPanel({ contract, ownerName }: { contract: Contr
   return (
     <section className={`${adminStyles.panel} ${adminStyles.contractOverviewPanel}`}>
       <div className={adminStyles.contractOverviewHeading}>
-        <h2>{T.CONTRACTS.DETAIL}</h2>
+        <h2>{T.CONTRACTS.OVERVIEW}</h2>
         <StatusBadge status={contract.status}>{contractStatus(contract.status)}</StatusBadge>
       </div>
       <div className={adminStyles.operationsGrid}>
         <div><span>{T.COMMON.OWNER}</span><strong>{ownerName}</strong></div>
         <div><span>Serial</span><strong>{machineId ? (serialNumber || machine.data?.serialNumber || "—") : T.CONTRACTS.NO_MACHINE}</strong></div>
         <div><span>Thời hạn</span><strong>{date(contract.startDate)} – {date(contract.endDate)}</strong></div>
-        <div><span>Loại máy</span><strong>{contract.machineTypeSnapshot ?? "—"}</strong></div>
+        <div><span>Loại máy</span><strong>{machineType(contract.machineTypeSnapshot)}</strong></div>
         <div><span>Phí thuê hàng tháng</span><strong>{money(contract.monthlyRentalFee)}</strong></div>
         <div><span>Giá PAYG</span><strong>{money(contract.paygUnitPrice)}</strong></div>
         <div><span>Tiền cọc</span><strong>{money(contract.depositAmount)}</strong></div>

@@ -5,14 +5,16 @@ import { useState, type FormEvent } from "react";
 import { TECHNICIAN_WORK_ITEMS_QUERY_KEY } from "@/apis/technician-work-items.api";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { buildTechnicianMaintenanceTicketActions } from "@/components/action-bar/entity-page-actions";
 import { StatusBadge } from "@/components/status-badge/status-badge";
 import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { MaintenanceTicketIdSchema } from "@/schema/machines.schema";
 import { querySubject } from "@/components/features/repair-workflow/repair-workflow-query-identity";
-import { maintenanceTicketStatusLabel } from "./maintenance-status-labels";
+import { maintenanceTicketOriginLabel, maintenanceTicketStatusLabel } from "./maintenance-status-labels";
 import { PATH_TECHNICIAN } from "@/routes/path";
 import styles from "./technician-maintenance-ticket-screen.module.css";
 
@@ -26,10 +28,12 @@ function formatDateTime(value: string | null | undefined) {
 
 function TicketDetail({
   ticketId,
+  showRefresh = false,
   backHref = PATH_TECHNICIAN.TASKS,
   backLabel = "Danh sách công việc",
 }: {
   ticketId: string;
+  showRefresh?: boolean;
   backHref?: string;
   backLabel?: string;
 }) {
@@ -101,6 +105,7 @@ function TicketDetail({
       />
       {ticket?.repairCaseId ? <TextLinkButton href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Hồ sơ sửa chữa</TextLinkButton> : null}
       </div>
+      {showRefresh && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ticketKey }) }]} />}
       {!validId ? <p className={styles.notice} role="alert">Mã ticket bảo trì không hợp lệ.</p> : null}
       {validId && ticketQuery.isPending ? <p className={styles.notice} role="status">Đang tải ticket…</p> : null}
       {validId && ticketQuery.isError ? (
@@ -122,12 +127,12 @@ function TicketDetail({
             onStart: () => startWork.mutate(),
           })} />
           <dl className={styles.detailGrid}>
-            <div><dt>Mã phiếu</dt><dd className={styles.code}>{ticket.id ?? "—"}</dd></div>
-            <div><dt>Thiết bị</dt><dd className={styles.code}>{ticket.machineId ?? "—"}</dd></div>
+            <div><dt>Mã phiếu</dt><dd className={styles.code}>{ticket.id ? <TruncatedId value={ticket.id} /> : "—"}</dd></div>
+            <div><dt>Thiết bị</dt><dd className={styles.code}>{ticket.machineId ? <TruncatedId value={ticket.machineId} /> : "—"}</dd></div>
             <div><dt>Trạng thái</dt><dd><StatusBadge variant="dot" status={ticket.status} tone={ticket.status === "RESOLVED" ? "success" : undefined}>{maintenanceTicketStatusLabel(ticket.status)}</StatusBadge></dd></div>
-            <div><dt>Nguồn</dt><dd>{ticket.source ?? "—"}</dd></div>
+            <div><dt>Nguồn</dt><dd>{ticket.source ? maintenanceTicketOriginLabel(ticket.source) : "—"}</dd></div>
             <div><dt>Lịch dự kiến</dt><dd>{formatDateTime(ticket.scheduledDueAt ?? ticket.maintenanceWindowDeadline)}</dd></div>
-            <div><dt>Kỹ thuật viên được giao</dt><dd className={styles.code}>{ticket.assignedTechnicianId ?? "—"}</dd></div>
+            <div><dt>Kỹ thuật viên được giao</dt><dd className={styles.code}>{ticket.assignedTechnicianId ? <TruncatedId value={ticket.assignedTechnicianId} /> : "—"}</dd></div>
             <div><dt>Vật tư đã thay</dt><dd>{ticket.partsReplaced ?? "Chưa ghi nhận"}</dd></div>
             <div><dt>Chi phí vật tư</dt><dd>{ticket.partsCost ?? "Chưa ghi nhận"}</dd></div>
           </dl>
@@ -157,10 +162,11 @@ function TicketDetail({
   );
 }
 
-export function TechnicianMaintenanceTicketScreen({ ticketId, backHref, backLabel }: {
+export function TechnicianMaintenanceTicketScreen({ ticketId, backHref, backLabel, showRefresh }: {
   ticketId: string;
+  showRefresh?: boolean;
   backHref?: string;
   backLabel?: string;
 }) {
-  return <TicketDetail ticketId={ticketId} backHref={backHref} backLabel={backLabel} />;
+  return <TicketDetail ticketId={ticketId} backHref={backHref} backLabel={backLabel} showRefresh={showRefresh} />;
 }

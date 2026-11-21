@@ -1,6 +1,7 @@
 import { ButtonBar } from "@/components/button/button-bar";
 import { Panel } from "@/components/panel/panel";
 import { StatusBadge } from "@/components/status-badge/status-badge";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import type { CoffeePackageWorkflowController } from "./coffee-package-workflow-controller";
 import { coffeePackageStatusLabel, formatCoffeePackageDateTime, formatCoffeePackageMoney } from "./coffee-package-workflow-controller";
@@ -37,9 +38,9 @@ export function OperatorOrderDetailPanel({ workflow }: { workflow: CoffeePackage
           <details className={styles.linkedIds}>
             <summary>Mã liên kết</summary>
             <dl className={styles.details}>
-              <div><dt>Mã đơn hàng</dt><dd className={styles.code}>{order.id}</dd></div>
-              <div><dt>Mã khách hàng</dt><dd className={styles.code}>{order.ownerId ?? "—"}</dd></div>
-              <div><dt>Mã hợp đồng</dt><dd className={styles.code}>{order.contractId ?? "—"}</dd></div>
+              <div><dt>Mã đơn hàng</dt><dd className={styles.code}><TruncatedId value={order.id} /></dd></div>
+              <div><dt>Mã khách hàng</dt><dd className={styles.code}><TruncatedId value={order.ownerId} /></dd></div>
+              <div><dt>Mã hợp đồng</dt><dd className={styles.code}><TruncatedId value={order.contractId} /></dd></div>
             </dl>
           </details>
           <OperatorOrderActionsPanel workflow={workflow} order={order} />

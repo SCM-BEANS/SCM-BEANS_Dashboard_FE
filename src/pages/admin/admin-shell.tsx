@@ -100,9 +100,6 @@ export function AdminShell({
             <Link className={styles.mobileBrand} href={PATH_ADMIN.ROOT}>
               {ADMIN_MESSAGES.BRAND}
             </Link>
-            <span className={styles.mobileHeaderStatus}>
-              {currentSection.LABEL}
-            </span>
             <NotificationInbox scope="admin" variant="bell" viewAllHref={PATH_ADMIN.NOTIFICATIONS} settingsHref={PATH_ADMIN.SETTINGS} logout={{ label: ADMIN_MESSAGES.AUTH.LOGOUT, pendingLabel: ADMIN_MESSAGES.AUTH.LOGGING_OUT, pending: loggingOut, onLogout: handleLogout }} />
             <MobileNavigation
               items={ADMIN_SIDEBAR_ITEMS}

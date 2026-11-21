@@ -95,16 +95,18 @@ async function prepareAdminPage(page: Page, contractStatus: "ACTIVE" | "TERMINAT
       }];
     } else if (path.startsWith("/dashboard/overview")) {
       response = overview;
+    } else if (path === "/notifications/unread-count") {
+      response = { unreadCount: 1 };
     }
 
     await route.fulfill({ status: 200, json: response });
   });
 }
 
-test("report summary links to invoice management in the action bar", async ({ page }) => {
+test("admin overview links to invoice management", async ({ page }) => {
   await prepareAdminPage(page);
-  await page.goto("/admin/reports?fromDate=2026-11-01&toDate=2026-11-07");
-  const link = pageActionBar(page).getByRole("link", { name: "Quản lý hóa đơn" });
+  await page.goto("/admin");
+  const link = page.getByRole("link", { name: "Xem tất cả hóa đơn" });
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute("href", "/admin/invoices");
 });
@@ -126,7 +128,7 @@ test("active contract shows termination and policy amendment", async ({ page }) 
   const bar = pageActionBar(page);
   const terminate = bar.locator('[data-action-id="contract-lifecycle-terminate"]');
   await expect(terminate).toBeVisible();
-  await expect(terminate).toHaveClass(/danger/);
+  await expect(terminate).toHaveAttribute("data-ui-button-variant", "danger");
   await expect(bar.locator('[data-action-id="contract-lifecycle-amend"]')).toBeVisible();
 });
 
@@ -154,26 +156,30 @@ test("opening contract policy amendment shows cancel and the primary submit acti
   const submit = bar.locator('[data-action-id="contract-lifecycle-submit-amend"]');
   await expect(submit).toBeVisible();
   await expect(submit).toHaveText("Xác nhận sửa đổi");
-  await expect(submit).toHaveClass(/primary/);
+  await expect(submit).toHaveAttribute("data-ui-button-variant", "primary");
   await expect(submit).toHaveAttribute("type", "submit");
   await expect(submit).toHaveAttribute("form", "contract-policy-amend-form");
 });
 
-test("contract list puts create first and keeps retry out of the action bar", async ({ page }) => {
+test("contract list uses the shared create button without moving retry into an action bar", async ({ page }) => {
   await prepareAdminPage(page);
   await page.goto("/admin/contracts");
 
-  const bar = pageActionBar(page);
-  await expectPrimaryPageAction(page, "contracts-create");
-  await expect(bar.getByRole("button", { name: "Thử lại", exact: true })).toHaveCount(0);
+  const create = page.getByRole("main").getByRole("button", { name: "Tạo hợp đồng", exact: true });
+  await expect(create).toBeVisible();
+  await expect(create).toHaveAttribute("data-ui-button");
+  await expect(pageActionBar(page)).toBeHidden();
+  await expect(page.getByRole("main").getByRole("button", { name: "Thử lại", exact: true })).toHaveCount(0);
 });
 
-test("machine list uses create as its primary page action", async ({ page }) => {
+test("machine list uses the shared registration button", async ({ page }) => {
   await prepareAdminPage(page);
   await page.goto("/admin/machines");
 
-  await expectPrimaryPageAction(page, "admin-machines-create");
-  await expect(pageActionBar(page).locator('[data-action-id="admin-machines-create"]')).toHaveText("Tạo máy");
+  const create = page.getByRole("main").getByRole("button", { name: "Thêm máy", exact: true });
+  await expect(create).toBeVisible();
+  await expect(create).toHaveAttribute("data-ui-button");
+  await expect(pageActionBar(page)).toBeHidden();
 });
 
 test("machine create form exposes a disabled primary submit with a reason until valid", async ({ page }) => {
@@ -184,7 +190,7 @@ test("machine create form exposes a disabled primary submit with a reason until 
   const submit = bar.locator('[data-action-id="machine-create-submit"]');
   await expect(submit).toBeVisible();
   await expect(submit).toHaveText("Tạo máy");
-  await expect(submit).toHaveClass(/primary/);
+  await expect(submit).toHaveAttribute("data-ui-button-variant", "primary");
   await expect(submit).toHaveAttribute("type", "submit");
   await expect(submit).toHaveAttribute("form", "machine-create-form");
   await expect(submit).toBeDisabled();
@@ -193,17 +199,19 @@ test("machine create form exposes a disabled primary submit with a reason until 
   await expect(page.locator(`[id="${reasonId}"]`)).toHaveText("Chọn mẫu máy trước khi tạo máy.");
 });
 
-test("overview actions are secondary shortcuts without a primary", async ({ page }) => {
+test("overview exposes its two secondary shortcuts without a primary", async ({ page }) => {
   await prepareAdminPage(page);
   await page.goto("/admin");
 
   const bar = pageActionBar(page);
   await expect(bar).toBeVisible();
   const actions = bar.locator("[data-action-id]");
-  await expect(actions).toHaveCount(3);
+  await expect(actions).toHaveCount(2);
   const actionClasses = await actions.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("class") ?? ""));
   expect(actionClasses.every((className) => !className.includes("primary"))).toBe(true);
-  await expect(bar.locator("a[data-action-id]")).toHaveCount(3);
+  await expect(bar.locator("a[data-action-id]")).toHaveCount(2);
+  await expect(bar.getByRole("link", { name: "Giám sát Smart IoT" })).toHaveAttribute("href", "/admin/iot");
+  await expect(bar.getByRole("link", { name: "Quản lý máy" })).toHaveAttribute("href", "/admin/machines");
 });
 
 test("mobile contract detail shows only primary and overflow controls", async ({ page }) => {
@@ -217,37 +225,79 @@ test("mobile contract detail shows only primary and overflow controls", async ({
   const visibleActions = bar.locator('[data-action-id]:visible');
   await expect(visibleActions).toHaveCount(1);
   await expect(visibleActions.first()).toHaveAttribute("data-action-id", "contract-lifecycle-continue");
-  await expect(visibleActions.first()).toHaveClass(/primary/);
+  await expect(visibleActions.first()).toHaveAttribute("data-ui-button-variant", "primary");
 });
 
 
-test("invoice export requires one owner and submits filtered invoices", async ({ page }) => {
+test("invoice export uses a neutral shared button and sends the visible invoice IDs", async ({ page }) => {
   await prepareAdminPage(page);
   const otherOwner = "f5000000-0000-4000-8000-000000000005";
-  const invoice = (id: string, owner: string) => ({ id, ownerId: owner, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" });
+  const invoices = [
+    { id: contractId, ownerId, amount: 100, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" },
+    { id: machineId, ownerId: otherOwner, amount: 200, period: "2026-01", type: "RENTAL", status: "UNPAID", currency: "VND" },
+  ];
   let posted: unknown;
-  await page.route("**/api/dolores/v1/billing/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith("/exports")) { posted = route.request().postDataJSON(); return route.fulfill({ json: { id: contractId, status: "QUEUED" } }); }
-    const rows = [invoice(contractId, ownerId), invoice(machineId, otherOwner)];
-    return route.fulfill({ json: url.searchParams.has("ownerId") ? rows.slice(0, 1) : rows });
+  await page.route("**/api/dolores/v1/billing/invoices**", (route) => route.fulfill({ json: invoices }));
+  await page.route("**/api/dolores/v1/billing/exports", async (route) => {
+    posted = route.request().postDataJSON();
+    return route.fulfill({ json: { id: modelId, status: "QUEUED" } });
   });
   await page.goto("/admin/invoices");
-  const button = pageActionBar(page).getByRole("button", { name: "Xuất hóa đơn" });
+  const button = page.getByRole("main").getByRole("button", { name: "Xuất danh sách", exact: true });
   await expect(button).toBeVisible();
-  await expect(button).toBeDisabled();
-  await expect(button).toHaveAccessibleDescription("Lọc theo một chủ sở hữu để xuất hóa đơn.");
-  await page.getByPlaceholder(/Owner ID/).fill(ownerId);
-  await page.getByRole("button", { name: "Tìm kiếm" }).click();
   await expect(button).toBeEnabled();
+  await expect(button).toHaveAttribute("data-ui-button");
+  const style = await button.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return { background: computed.backgroundColor, color: computed.color, border: computed.borderColor, height: element.getBoundingClientRect().height, transition: computed.transitionProperty, transform: computed.transform, shadow: computed.boxShadow };
+  });
+  expect(style).toEqual({ background: "rgb(255, 255, 255)", color: "rgb(0, 0, 0)", border: "rgb(233, 226, 220)", height: 44, transition: "none", transform: "none", shadow: "none" });
+  await button.hover();
+  await expect.poll(() => button.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return { background: computed.backgroundColor, color: computed.color, border: computed.borderColor, height: element.getBoundingClientRect().height, transition: computed.transitionProperty, transform: computed.transform, shadow: computed.boxShadow };
+  })).toEqual(style);
   await button.click();
-  await expect.poll(() => posted).toEqual({ format: "CSV", ownerId, invoiceIds: [contractId] });
+  await expect.poll(() => posted).toEqual({ format: "CSV", invoiceIds: [contractId, machineId] });
 });
 
-test("notifications expose bulk read in the action bar", async ({ page }) => {
+test("notification management keeps bulk read inside the shared panel", async ({ page }) => {
   await prepareAdminPage(page);
+  await page.route("**/api/**/alerts", route => route.fulfill({ json: [{
+    id: machineId,
+    level: "MEDIUM",
+    machineId,
+    message: "Kiểm tra tình trạng máy tại cửa hàng.",
+    acknowledged: false,
+    ts: "2026-11-18T08:00:00.000Z",
+  }] }));
   await page.goto("/admin/notifications");
-  await expect(pageActionBar(page)).toBeVisible();
+  const action = page.getByRole("main").getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true });
+  await expect(action).toBeVisible();
+  await expect(action).toBeEnabled();
+  await expect(action).toHaveAttribute("data-ui-button");
+
+  await page.getByRole("group", { name: "Phạm vi thông báo" }).getByRole("button", { name: "Cảnh báo máy" }).click();
+  const alertRow = page.locator('[data-ui-button-layout="content"]');
+  await expect(alertRow).toBeVisible();
+  const style = () => alertRow.evaluate(element => {
+    const computed = getComputedStyle(element);
+    return {
+      background: computed.backgroundColor,
+      color: computed.color,
+      border: computed.borderColor,
+      height: element.getBoundingClientRect().height,
+      transition: computed.transitionProperty,
+      transform: computed.transform,
+      shadow: computed.boxShadow,
+    };
+  });
+  const before = await style();
+  expect(before.background).toBe("rgb(255, 255, 255)");
+  expect(before.color).toBe("rgb(0, 0, 0)");
+  expect(before.height).toBeGreaterThanOrEqual(44);
+  await alertRow.hover();
+  expect(await style()).toEqual(before);
 });
 
 
@@ -256,8 +306,8 @@ test("pending coffee order decisions use the action bar", async ({ page }) => {
   await page.route("**/api/**", route => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith(`/coffee-package-orders/${contractId}`) ? { id: contractId, status: "PENDING_APPROVAL", quantity: 1 } : [] }));
   await page.goto(`/admin/coffee-packages/${contractId}`);
   const bar = pageActionBar(page);
-  await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toHaveClass(/primary/);
-  await expect(bar.locator('[data-action-id="coffee-order-reject"]')).toHaveClass(/danger/);
+  await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toHaveAttribute("data-ui-button-variant", "primary");
+  await expect(bar.locator('[data-action-id="coffee-order-reject"]')).toHaveAttribute("data-ui-button-variant", "danger");
   await page.getByLabel("Ghi chú", { exact: true }).fill("Đã kiểm tra nguồn cung");
   await page.getByLabel("Lý do", { exact: true }).fill("Không đủ nguồn cung");
   await expect(bar.locator('[data-action-id="coffee-order-approve"]')).toBeEnabled();

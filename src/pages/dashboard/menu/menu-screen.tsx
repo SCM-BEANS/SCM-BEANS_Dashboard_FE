@@ -26,8 +26,7 @@ export function OwnerMenuHeader({ active }: { active: "library" | "mine" | "sync
 
 export function MenuScreen({ initialGlobalRecipeId }: { initialGlobalRecipeId?: string }) {
   return <section className={pageStyles.pageContent + " " + styles.ownerRecipePage} data-recipe-layout>
-    <OwnerMenuHeader active="library" />
-    <RecipeManagementScreen key={initialGlobalRecipeId ?? "library"} role="owner" showHeading={false} showNavigation={false}
+    <RecipeManagementScreen key={initialGlobalRecipeId ?? "library"} role="owner"
       initialGlobalRecipeId={initialGlobalRecipeId} detailOnly={Boolean(initialGlobalRecipeId)} />
   </section>;
 }

@@ -1,4 +1,4 @@
-import { SectionTabList } from "@/components/tabs/section-tab-list";
+﻿import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { MachineSpecificationsView } from "./create-machine-model-form";
@@ -16,7 +16,10 @@ import { machinesApi } from "@/apis/machines.api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { authScopedQuerySubject, getAuthenticatedSubjectId } from "@/lib/query-subject";
 import { ButtonBar } from "@/components/button/button-bar";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { MachineDetailView } from "@/components/machines/machine-detail-view";
+import { MachineProfileGroups } from "@/components/machines/machine-profile-groups";
+import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { MachineMaintenanceTicketActions, MaintenanceTicketDetailsPage } from "@/components/features/maintenance-workflow/maintenance-ticket-actions";
@@ -105,7 +108,7 @@ function AdminMachineConnectionSetup({ machineId, subject, serialNumber }: { mac
               <div><span>Mã thiết bị đang hoạt động</span><strong>{identity.data.deviceId}</strong></div>
               <div><span>Máy</span><strong>{serialNumber ?? machineId}</strong></div>
             </div>
-            <ButtonBar variant="danger" disabled={busy || identityBlocked} onClick={() => setConfirmRevoke({ id: identity.data.id, deviceId: identity.data.deviceId })}>Thu hồi định danh</ButtonBar>
+            <div className={styles.machineInventoryActions}><ButtonBar variant="danger" disabled={busy || identityBlocked} onClick={() => setConfirmRevoke({ id: identity.data.id, deviceId: identity.data.deviceId })}>Thu hồi định danh</ButtonBar></div>
           </> : identityAbsent ? <p>Chưa có định danh đang hoạt động.</p> : <p className={styles.accountInlineWarning} role="alert">{getApiErrorMessage(identity.error)}</p>}
           {identityAbsent && !identity.isFetching && <form className={styles.machineEditForm} onSubmit={(event) => {
             event.preventDefault();
@@ -363,7 +366,7 @@ function MachineDetailContent() {
 
       <div className={styles.machineInventoryGroup}>
         <SectionTabList role="tablist" aria-label="Chi tiết máy">
-          <button
+          <ButtonBar
             id="machine-profile-tab"
             className={`${styles.machineViewTab} ${detailTab === "profile" ? styles.machineViewTabActive : ""}`}
             type="button"
@@ -373,8 +376,8 @@ function MachineDetailContent() {
             onClick={() => setDetailTab("profile")}
           >
             {T.MACHINES.DETAIL}
-          </button>
-          <button
+          </ButtonBar>
+          <ButtonBar
             id="machine-type-tab"
             className={`${styles.machineViewTab} ${detailTab === "machine-type" ? styles.machineViewTabActive : ""}`}
             type="button"
@@ -385,12 +388,12 @@ function MachineDetailContent() {
             onClick={() => setDetailTab("machine-type")}
           >
             {T.MACHINES.MACHINE_TYPE}
-          </button>
-          <button id="machine-connection-tab" type="button" role="tab" aria-selected={detailTab === "connection"}
+          </ButtonBar>
+          <ButtonBar id="machine-connection-tab" type="button" role="tab" aria-selected={detailTab === "connection"}
             aria-controls="machine-connection-panel" disabled={editing}
             className={`${styles.machineViewTab} ${detailTab === "connection" ? styles.machineViewTabActive : ""}`}
-            onClick={() => setDetailTab("connection")}>Thiết lập kết nối</button>
-        <button type="button" className={`${styles.machineViewTab} ${detailTab === "history" ? styles.machineViewTabActive : ""}`} id="machine-history-tab" aria-controls="machine-history-panel" role="tab" aria-selected={detailTab === "history"} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</button>
+            onClick={() => setDetailTab("connection")}>Thiết lập kết nối</ButtonBar>
+        <ButtonBar type="button" className={`${styles.machineViewTab} ${detailTab === "history" ? styles.machineViewTabActive : ""}`} id="machine-history-tab" aria-controls="machine-history-panel" role="tab" aria-selected={detailTab === "history"} disabled={editing} onClick={() => setDetailTab("history")}>Hợp đồng & bảo trì</ButtonBar>
         </SectionTabList>
 
         {detailTab === "connection" ? <div id="machine-connection-panel" role="tabpanel" aria-labelledby="machine-connection-tab">
@@ -401,31 +404,30 @@ function MachineDetailContent() {
               <h2>{T.MACHINES.DETAIL}</h2>
               {actionBar()}
             </div>
-            <div className={styles.machineProfileGroups}>
-              <section className={styles.machineProfileGroup}>
-                <h3>Nhận diện máy</h3>
-                <div className={styles.machineProfileFields}>
-                  <div><span>Mẫu máy</span><strong>{typeof device.modelName === "string" && device.modelName ? device.modelName : "Chưa có thông tin"}</strong></div>
-                  <div><span>Loại máy</span><strong>{machineTypeLabel}</strong></div>
-                  <div><span>Khu vực</span><strong>{device.region ?? "—"}</strong></div>
-                  <div><span>Menu đang gán</span><strong>{device.activeMenuId === undefined ? "Chưa có thông tin menu" : device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || "Menu riêng"}</strong></div>
-                </div>
-              </section>
-              <section className={styles.machineProfileGroup}>
-                <h3>Phân bổ và hợp đồng</h3>
-                <div className={styles.machineProfileFields}>
-                  <div><span>{T.MACHINES.DEPLOYED_AT}</span><strong>{formatDate(device.deployedAt, true)}</strong></div>
-                  <div><span>{T.MACHINES.CONTRACT_PERIOD}</span><strong>{device.contractStartDate || device.contractEndDate ? formatDate(device.contractStartDate) + " – " + formatDate(device.contractEndDate) : "—"}</strong></div>
-                  <div><span>{T.MACHINES.MONTHLY_RENTAL_FEE}</span><strong>{device.monthlyRentalFee == null ? "—" : formatNumber(device.monthlyRentalFee) + " ₫/tháng"}</strong></div>
-                </div>
-              </section>
-            </div>
+            <MachineProfileGroups
+              identity={[
+                { label: T.MACHINES.SERIAL, value: device.serialNumber || "—" },
+                { label: T.MACHINES.MODEL_NAME, value: typeof device.modelName === "string" && device.modelName ? device.modelName : T.MACHINES.MODEL_UNASSIGNED },
+                { label: T.MACHINES.MACHINE_TYPE, value: machineTypeLabel },
+                { label: T.MACHINES.REGION, value: device.region ?? "—" },
+                { label: T.MACHINES.STATUS, value: machineStatusLabel(device.status) },
+                { label: T.MACHINES.ACTIVE_MENU, value: device.activeMenuId === undefined ? "Chưa có thông tin menu" : device.activeMenuId === null ? "Menu mặc định" : device.activeMenuName || "Menu riêng" },
+              ]}
+              allocation={[
+                { label: T.MACHINES.LOCATION_ID, value: device.locationId ? <TruncatedId value={device.locationId} /> : "—" },
+                { label: T.MACHINES.DEPLOYED_AT, value: formatDate(device.deployedAt, true) },
+                { label: T.MACHINES.CONTRACT_PERIOD, value: device.contractStartDate || device.contractEndDate ? `${formatDate(device.contractStartDate)} – ${formatDate(device.contractEndDate)}` : "—" },
+                { label: T.MACHINES.MONTHLY_RENTAL_FEE, value: device.monthlyRentalFee == null ? "—" : `${formatNumber(device.monthlyRentalFee)} ₫/tháng` },
+                { label: T.MACHINES.NEXT_MAINTENANCE, value: formatDate(schedule.data?.nextPreventiveMaintenanceAt ?? device.nextPreventiveMaintenanceAt) },
+                { label: T.MACHINES.CUPS, value: (schedule.data?.cupsServedSinceLastDescale ?? device.cupsServedSinceLastDescale)?.toLocaleString("vi-VN") ?? "—" },
+              ]}
+            />
             <details className={styles.machineSystemDetails}><summary>Thông tin hệ thống</summary><div className={styles.operationsGrid}>
-              <div><span>Mã máy</span><strong>{device.id}</strong></div>
-              <div><span>Mã chủ sở hữu</span><strong>{device.ownerId ?? "—"}</strong></div>
-              <div><span>Mã khách thuê</span><strong>{device.tenantId ?? "—"}</strong></div>
-              <div><span>Mã cửa hàng</span><strong>{device.locationId ?? "—"}</strong></div>
-              <div><span>Loại chủ sở hữu</span><strong>{device.ownerType ?? "—"}</strong></div>
+              <div><span>Mã máy</span><strong><TruncatedId value={device.id} /></strong></div>
+              <div><span>Mã chủ sở hữu</span><strong>{device.ownerId ? <TruncatedId value={device.ownerId} /> : "—"}</strong></div>
+              <div><span>Mã khách thuê</span><strong>{device.tenantId ? <TruncatedId value={device.tenantId} /> : "—"}</strong></div>
+              <div><span>Mã cửa hàng</span><strong>{device.locationId ? <TruncatedId value={device.locationId} /> : "—"}</strong></div>
+              <div><span>Loại chủ sở hữu</span><strong>{device.ownerType === "COMPANY" ? T.MACHINES.OWNER_COMPANY : device.ownerType === "INDIVIDUAL" ? T.MACHINES.OWNER_INDIVIDUAL : T.MACHINES.OWNER_TYPE_UNKNOWN}</strong></div>
             </div></details>
             {editing && <form id="machine-edit-form" className={styles.machineEditForm} onSubmit={submitMachineEdit}>
               <h3>{T.MACHINES.ALLOCATION_TITLE}</h3>

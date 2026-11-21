@@ -26,8 +26,8 @@
 .facts dd { margin: 4px 0 0; font-weight: 600; overflow-wrap: anywhere; }
 .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .profilePanel h2 { margin: 0; font-size: 18px; }
-.disclosure { margin-top: 16px; border-top: 1px solid #e9e2dc; }
-.disclosure summary { padding-block: 12px; font-weight: 600; cursor: pointer; }
+.disclosure { margin-top: 16px; }
+.disclosure summary { padding-block: 8px; font-weight: 600; cursor: pointer; }
 .disclosure .facts { margin-top: 4px; }
 
 @media (max-width: 760px) {

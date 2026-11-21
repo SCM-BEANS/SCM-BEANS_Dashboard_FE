@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import type { FormEventHandler, ReactNode } from "react";
 import styles from "./table-filters.module.css";
@@ -40,6 +41,7 @@ export type TableFiltersProps = {
     label?: string;
     value: string;
     maxLength?: number;
+    list?: { id: string; options: readonly TableFilterOption[] };
     onChange: (value: string) => void;
   };
   inputs?: readonly TableFilterInput[];
@@ -55,23 +57,25 @@ export type TableFiltersProps = {
   };
   children?: ReactNode;
   className?: string;
+  compact?: boolean;
 };
 
 type TableFiltersExtendedProps = Omit<TableFiltersProps, "search" | "submitLabel" | "onSubmit"> & Pick<Partial<TableFiltersProps>, "search" | "submitLabel" | "onSubmit">;
 
 export type TableFiltersComponentProps = TableFiltersProps | TableFiltersExtendedProps;
 
-export function TableFilters({ search, inputs = [], selects = [], toggleGroup, submitLabel, onSubmit, showSubmit = true, disabled = false, reset, children, className }: TableFiltersComponentProps) {
+export function TableFilters({ search, inputs = [], selects = [], toggleGroup, submitLabel, onSubmit, showSubmit = true, disabled = false, reset, children, className, compact = false }: TableFiltersComponentProps) {
   return (
-    <form className={[styles.filters, className].filter(Boolean).join(" ")} onSubmit={(event) => { event.preventDefault(); onSubmit?.(event); }}>
+    <form className={[styles.filters, compact && styles.compact, className].filter(Boolean).join(" ")} onSubmit={(event) => { event.preventDefault(); onSubmit?.(event); }}>
       {search?.label ? (
         <label className={styles.fieldLabel}>
           <span>{search.label}</span>
-          <input aria-label={search.ariaLabel} maxLength={search.maxLength} placeholder={search.placeholder} value={search.value} disabled={disabled} onChange={(event) => search.onChange(event.target.value)} />
+          <input aria-label={search.ariaLabel} list={search.list?.id} maxLength={search.maxLength} placeholder={search.placeholder} value={search.value} disabled={disabled} onChange={(event) => search.onChange(event.target.value)} />
         </label>
       ) : search ? (
-        <input aria-label={search.ariaLabel} maxLength={search.maxLength} placeholder={search.placeholder} value={search.value} disabled={disabled} onChange={(event) => search.onChange(event.target.value)} />
+        <input aria-label={search.ariaLabel} list={search.list?.id} maxLength={search.maxLength} placeholder={search.placeholder} value={search.value} disabled={disabled} onChange={(event) => search.onChange(event.target.value)} />
       ) : null}
+      {search?.list && <datalist id={search.list.id}>{search.list.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</datalist>}
       {inputs.map((input) => input.label ? (
         <label key={input.id} className={styles.fieldLabel}>
           <span>{input.label}</span>
@@ -82,10 +86,10 @@ export function TableFilters({ search, inputs = [], selects = [], toggleGroup, s
       ))}
       {toggleGroup && <SectionTabList role="group" aria-label={toggleGroup.ariaLabel}>
         {toggleGroup.options.map((option) => (
-          <button key={option.value} className={styles.toggle} data-filter-value={option.value} type="button" aria-pressed={toggleGroup.value === option.value} disabled={disabled} onClick={() => toggleGroup.onChange(option.value)}>
+          <ButtonBar key={option.value} className={styles.toggle} data-filter-value={option.value} type="button" aria-pressed={toggleGroup.value === option.value} disabled={disabled} onClick={() => toggleGroup.onChange(option.value)}>
             <span>{option.label}</span>
             {option.count !== undefined && <span className={styles.toggleCount}>{option.count}</span>}
-          </button>
+          </ButtonBar>
         ))}
       </SectionTabList>}
       {selects.map((select) => select.label ? (
@@ -100,9 +104,9 @@ export function TableFilters({ search, inputs = [], selects = [], toggleGroup, s
           {select.options.map((option) => <option key={`${select.id}-${option.value}`} value={option.value}>{option.label}</option>)}
         </select>
       ))}
-      {showSubmit && submitLabel && onSubmit ? <button type="submit" disabled={disabled}>{submitLabel}</button> : null}
+      {showSubmit && submitLabel && onSubmit ? <ButtonBar type="submit" disabled={disabled}>{submitLabel}</ButtonBar> : null}
       {children}
-      {reset && <button type="button" disabled={disabled} onClick={reset.onClick}>{reset.label}</button>}
+      {reset && <ButtonBar type="button" disabled={disabled} onClick={reset.onClick}>{reset.label}</ButtonBar>}
     </form>
   );
 }

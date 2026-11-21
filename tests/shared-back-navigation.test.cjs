@@ -154,10 +154,12 @@ test("BackButton renders an accessible 44px target and runs its shared navigatio
     replace(href) { calls.push(["replace", href]); },
   }) };
   const icon = (props) => React.createElement("svg", { ...props, "data-icon": "arrow-left" });
+  const mockLink = (props) => React.createElement("a", props);
   const { TextLinkButton } = loadTypeScriptModule("src/components/button/text-link-button.tsx", {
-    "next/link": { __esModule: true, default: (props) => React.createElement("a", props) },
+    "next/link": { __esModule: true, default: mockLink },
     "lucide-react": { ArrowLeft: icon },
     "./text-link-button.module.css": { link: "text-link", back: "back-link", backIcon: "back-icon" },
+    "@/components/button/button-bar": { ButtonBar: (props) => React.createElement("button", props) },
   });
   const { BackButton } = loadTypeScriptModule("src/components/navigation/back-button.tsx", {
     "next/router": restoreRouter,
@@ -174,12 +176,15 @@ test("BackButton renders an accessible 44px target and runs its shared navigatio
     assert.equal(backControl.props.back, true);
     assert.equal(backControl.props.children, "Về danh sách khách hàng");
     const element = TextLinkButton(backControl.props);
-    assert.equal(element.type, "button");
-    assert.equal(element.props.type, "button");
+    assert.equal(element.type, mockLink);
+    const anchor = element.type(element.props);
+    assert.equal(anchor.type, "a");
+    assert.equal(element.props.href, "/customers");
     assert.equal(element.props["aria-label"], "Về danh sách khách hàng");
+    assert.equal(element.props["data-ui-text-link"], true);
     assert.equal(element.props["data-ui-back-link"], "true");
     assert.match(css, /min-height:\s*44px/);
-    assert.match(css, /\.back\.back:focus-visible\s*\{[^}]*outline:\s*2px/s);
+    assert.match(css, /\.link:focus-visible\s*\{[^}]*outline:\s*2px/s);
     element.props.onClick({ preventDefault() {} });
     assert.deepEqual(calls, [["back"]]);
 

@@ -1,3 +1,4 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { Loader2, Wifi, X } from "lucide-react";
 import { MACHINE_RECONNECTING_LABEL } from "@/text/digital-twin/digital-twin-messages";
 import styles from "./machines.module.css";
@@ -30,9 +31,9 @@ export function MachineConnectionBadge({
       </span>
       <span>{labels[state]}</span>
       {state === "error" && onRetry ? (
-        <button type="button" className={styles.machineConnectionRetry} onClick={onRetry} aria-label="Tải lại trạng thái kết nối">
+        <ButtonBar type="button" className={styles.machineConnectionRetry} onClick={onRetry} aria-label="Tải lại trạng thái kết nối">
           Thử lại
-        </button>
+        </ButtonBar>
       ) : null}
     </span>
   );

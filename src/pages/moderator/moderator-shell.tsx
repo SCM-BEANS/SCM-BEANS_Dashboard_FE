@@ -186,7 +186,7 @@ export function ModeratorShell({
               {renderBreadcrumb()}
             </div>
           </div>
-          <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL}>
+          <ActionBarLayout label={MODERATOR_MESSAGES.ACTION_BAR.LABEL} position="top">
             <main className={styles.main}>
               <BackButtonHeadingVisibilityContext.Provider value={false}>
                 {children}

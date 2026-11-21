@@ -1,8 +1,14 @@
 .machineListView,
 .machineDetailView {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
+}
+
+.machineDetailView {
+  width: 100%;
+  max-width: 100%;
 }
 
 .ownerOperationsHeader {
@@ -23,55 +29,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.ownerOperationsTabs button {
-  min-height: 44px;
-  padding: 10px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: #5e5551;
-  cursor: pointer;
-  font: inherit;
-  transition: background-color 140ms ease, border-color 140ms ease;
-}
-
-.ownerOperationsTabs button[aria-selected="true"],
-.ownerOperationsTabs button[aria-pressed="true"] {
-  border-color: #d9a6aa;
-  background: #fae9eb;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.ownerOperationsFilters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 12px;
-}
-
-.ownerOperationsFilters label {
-  display: grid;
-  flex: 1 1 170px;
-  gap: 6px;
-  min-width: 0;
-  color: var(--color-text-muted);
-  font-size: 14px;
-}
-
-.ownerOperationsFilters input,
-.ownerOperationsFilters select {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 42px;
-  padding: 8px 12px;
-  border: 1px solid #e3d9d2;
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
 }
 
 .ownerHistoryPagination {
@@ -122,23 +79,12 @@
   text-decoration: none;
 }
 
-.ownerMachineLink:hover {
-  color: var(--color-primary);
-}
-
-.ownerOperationsTabs button:focus-visible,
-.ownerOperationsFilters input:focus-visible,
-.ownerOperationsFilters select:focus-visible,
 .ownerMachineLink:focus-visible {
   outline: 3px solid rgb(185 18 34 / 28%);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ownerOperationsTabs button,
-  .machineListFilterButton {
-    transition: none;
-  }
 }
 
 .machineListSummary,
@@ -208,30 +154,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.machineListFilterButton {
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: #5e5551;
-  cursor: pointer;
-  font: inherit;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.machineListFilterButton[aria-pressed="true"] {
-  border-color: #d9a6aa;
-  background: #fae9eb;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.machineListFilterButton:focus-visible {
-  outline: 3px solid rgb(185 18 34 / 28%);
-  outline-offset: 2px;
 }
 
 .operationalOverview {
@@ -349,33 +271,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.operationalQuickRanges button,
-.operationalDateForm button,
-.operationalOverviewError button {
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: #5e5551;
-  cursor: pointer;
-  font: inherit;
-}
-
-.operationalQuickRanges button[aria-pressed="true"] {
-  border-color: #d9a6aa;
-  background: #fae9eb;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.operationalQuickRanges button:focus-visible,
-.operationalDateForm button:focus-visible,
-.operationalOverviewError button:focus-visible {
-  outline: 3px solid rgb(185 18 34 / 28%);
-  outline-offset: 2px;
 }
 
 .operationalDateForm {
@@ -640,22 +535,6 @@
   margin: 0;
 }
 
-.smartIotRetryButton {
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-}
-
-.smartIotRetryButton:focus-visible {
-  outline: 3px solid rgb(185 18 34 / 28%);
-  outline-offset: 2px;
-}
-
 .machineConnectionBadge {
   display: inline-flex;
   align-items: center;
@@ -706,20 +585,7 @@
 }
 
 .machineConnectionRetry {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.machineConnectionRetry:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
 }
 
 .machineHeartbeatFields {
@@ -768,31 +634,6 @@
   gap: 8px;
 }
 
-.telemetryRangePresets button,
-.telemetryRangeForm button,
-.telemetryError button,
-.telemetryLoadMore {
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  font: inherit;
-}
-
-.telemetryRangePresets button[aria-pressed="true"] {
-  border-color: #d9a6aa;
-  background: #fae9eb;
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.telemetryRangePresets button:focus-visible,
-.telemetryRangeForm button:focus-visible,
-.telemetryError button:focus-visible,
-.telemetryLoadMore:focus-visible,
 .telemetryFieldSelector select:focus-visible {
   outline: 3px solid rgb(185 18 34 / 28%);
   outline-offset: 2px;
@@ -946,18 +787,17 @@
 .historyFilter select:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 20%, transparent); outline-offset: 2px; }
 
 .copyIdRow { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.copyIdButton { padding: 2px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-.copyIdButton:hover { border-color: var(--color-primary); color: var(--color-primary); }
-.copyIdButton:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .ownerDetailTabPanel[hidden] { display: none; }
+.ownerMachineDetailNavigation { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ownerMachineDetailTabs { flex: 1 1 100%; min-width: 0; max-width: 100%; }
 .truncateLine { display: block; max-width: 36ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .showMoreButton { justify-self: start; }
 .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-.machineConnectionBadge.machineConnectionBadge { border: 0; border-radius: 0; background: transparent; padding: 0; font: inherit; color: var(--color-text); white-space: normal; }
+.machineConnectionBadge.machineConnectionBadge { border: 0; border-radius: 0; background: transparent; padding: 0; font: inherit; color: var(--color-text); white-space: nowrap; }
 .machineConnectionBadge::before { display: none; }
-.connectionIcon { position: relative; display: inline-flex; flex: 0 0 22px; width: 22px; height: 22px; align-items: center; color: #807974; }
+.connectionIcon { position: relative; display: inline-flex; flex: 0 0 22px; width: 22px; height: 22px; align-items: center; color: #76716d; }
 .connectionIcon > svg { width: 20px; height: 20px; stroke-width: 2; }
 .machineConnectionBadge[data-state="ONLINE"] .connectionIcon { color: #23815b; filter: drop-shadow(0 0 3px #2c8b6940); }
 .machineConnectionBadge[data-state="OFFLINE"] .connectionIcon { color: var(--color-primary); }
@@ -986,8 +826,6 @@
 .offlineReviewStatus[data-status="REVIEW_REQUIRED"]::before { background: #ca8b20; }
 .offlineReviewStatus[data-status="REVIEWED"]::before, .offlineReviewStatus[data-status="CLEARED"]::before { background: #23815b; }
 .ownerOperationsTabs.ownerOperationsTabs { border-bottom: 1px solid var(--color-border); gap: 16px; }
-.ownerOperationsTabs.ownerOperationsTabs button { background: none; border: 0; border-radius: 0; border-bottom: 2px solid transparent; min-height: 44px; }
-.ownerOperationsTabs.ownerOperationsTabs button[aria-selected="true"], .ownerOperationsTabs.ownerOperationsTabs button[aria-pressed="true"] { background: none; border-bottom-color: var(--color-primary); color: var(--color-primary); }
 @media (max-width: 700px) { .cleaningDetailFields { grid-template-columns: 1fr; } .compactPeriod { justify-content: flex-start; } }
 @media (max-width: 560px) {
   .operationalDateForm,
@@ -998,13 +836,11 @@
 @keyframes connectionSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .connectionSpinner { animation: none; } }
 
-.ownerCompactFilters { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
-.ownerDatePopover { position:relative; }
-.ownerDatePopover > summary { padding:12px 14px; border:1px solid var(--color-border); border-radius:10px; cursor:pointer; list-style:none; background:var(--color-surface); }
-.ownerDatePopover[open] > form { position:absolute; right:0; top:calc(100% + 8px); z-index:20; width:min(600px,calc(100vw - 64px)); padding:18px; border:1px solid var(--color-border); border-radius:12px; background:var(--color-surface); box-shadow:0 8px 24px #302b2914; }
-.ownerPeriodSelect { display:flex; align-items:center; gap:8px; font-size:14px; }
-.ownerPeriodSelect select { min-height:44px; border:1px solid var(--color-border); border-radius:10px; padding:8px 12px; background:var(--color-surface); color:var(--color-text); font:inherit; }
 .ownerProductionLine { min-width:0; }
-.ownerDatePopover summary:focus-visible { outline:2px solid var(--color-primary); outline-offset:3px; }
-@media(max-width:700px) { .ownerCompactFilters { justify-content:flex-start; } .ownerDatePopover[open] > form { position:static; width:100%; box-sizing:border-box; margin-top:8px; } }
 .machineRowActions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.machineTabRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.machineTabRow > * { min-width: 0; max-width: 100%; }
+.machineTabRow > :last-child { margin-left: auto; }
+.machineTabRow .compactPeriod { margin-bottom: 0; }
+.machineTabRow > [data-ui-tabs] { flex: 1 1 650px; }

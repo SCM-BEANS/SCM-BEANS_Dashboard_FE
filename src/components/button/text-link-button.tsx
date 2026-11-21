@@ -1,9 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link, { type LinkProps } from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
+import { ButtonBar } from "@/components/button/button-bar";
 import styles from "./text-link-button.module.css";
 
 interface TextLinkButtonProps {
+  href: LinkProps["href"];
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   shallow?: boolean;
   title?: string;
   back?: boolean;
@@ -12,20 +15,10 @@ interface TextLinkButtonProps {
   children: ReactNode;
 }
 
-type TextLinkTarget = { href: LinkProps["href"]; onClick?: never } | { href?: never; onClick: () => void };
-
-export function TextLinkButton({ href, onClick, shallow, title, back, className, "aria-label": ariaLabel, children }: TextLinkButtonProps & TextLinkTarget) {
+export function TextLinkButton({ href, onClick, shallow, title, back, className, "aria-label": ariaLabel, children }: TextLinkButtonProps) {
   const linkClassName = [styles.link, back ? styles.back : undefined, className].filter(Boolean).join(" ");
-  if (href === undefined) {
-    return (
-      <button type="button" className={linkClassName} title={title} aria-label={ariaLabel} onClick={onClick} data-ui-back-link={back ? "true" : undefined}>
-        {back ? <ArrowLeft className={styles.backIcon} aria-hidden="true" focusable="false" /> : null}
-        {children}
-      </button>
-    );
-  }
   return (
-    <Link className={linkClassName} href={href} shallow={shallow} title={title} aria-label={ariaLabel} data-ui-back-link={back ? "true" : undefined}>
+    <Link className={linkClassName} href={href} shallow={shallow} title={title} aria-label={ariaLabel} onClick={onClick} data-ui-text-link data-ui-back-link={back ? "true" : undefined}>
       {back ? <ArrowLeft className={styles.backIcon} aria-hidden="true" focusable="false" /> : null}
       {children}
     </Link>
@@ -48,8 +41,7 @@ export function TextActionButton({
   children,
 }: TextActionButtonProps) {
   return (
-    <button
-      className={styles.action}
+    <ButtonBar
       type="button"
       onClick={onClick}
       disabled={disabled}
@@ -57,6 +49,6 @@ export function TextActionButton({
       aria-pressed={pressed}
     >
       {children}
-    </button>
+    </ButtonBar>
   );
 }

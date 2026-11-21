@@ -2,6 +2,7 @@ import { adminStyles } from "@/pages/admin/admin-shell";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TextLinkButton } from "@/components/button/text-link-button";
+import { TruncatedId } from "@/components/truncated-id/truncated-id";
 import { contractsApi } from "@/apis/contracts.api";
 import { ButtonBar } from "@/components/button/button-bar";
 import { DataTable } from "@/components/table/data-table";
@@ -25,7 +26,7 @@ export function MachineContractHistory({ machineId, role }: { machineId: string;
     {query.isPending ? <p role="status">Đang tải lịch sử hợp đồng…</p> : null}
     {query.isError ? <p role="alert">{getApiErrorMessage(query.error)}</p> : null}
     {query.data ? <><DataTable rows={query.data.items} rowKey={row => row.id} emptyMessage="Không có lịch sử hợp đồng." columns={[
-      { key: "id", header: "Mã hợp đồng", render: row => role === "TECHNICIAN" ? row.id : <TextLinkButton href={role === "ADMIN" ? `/admin/contracts?view=detail&id=${encodeURIComponent(row.id)}` : `${base}/${encodeURIComponent(row.id)}`}>{row.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
+      { key: "id", header: "Mã hợp đồng", render: row => role === "TECHNICIAN" ? <TruncatedId value={row.id} /> : <TextLinkButton href={role === "ADMIN" ? `/admin/contracts?view=detail&id=${encodeURIComponent(row.id)}` : `${base}/${encodeURIComponent(row.id)}`}>{row.id.slice(0, 8).toUpperCase()}</TextLinkButton> },
       { key: "status", header: "Trạng thái", render: row => role === "OWNER" ? <span className={adminStyles.machinePlainStatus} data-status={row.status}>{labels[row.status]}</span> : <StatusBadge status={row.status}>{labels[row.status]}</StatusBadge> },
       { key: "start", header: "Ngày bắt đầu", render: row => row.startDate ?? "—" },
       { key: "end", header: "Ngày kết thúc", render: row => row.endDate ?? "—" },

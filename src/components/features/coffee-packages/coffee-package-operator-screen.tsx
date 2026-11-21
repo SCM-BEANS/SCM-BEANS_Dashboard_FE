@@ -47,9 +47,9 @@ export function CoffeePackageOperatorScreen({ role }: { role: OperatorRole }) {
 
       <SectionTabList role="navigation" aria-label="Nhóm quản lý gói cà phê">
         {tabs.map((item) => (
-          <button key={item.id} type="button" aria-pressed={tab === item.id} className={tab === item.id ? styles.activeTab : undefined} onClick={() => setTab(item.id)}>
+          <ButtonBar key={item.id} type="button" aria-pressed={tab === item.id} className={tab === item.id ? styles.activeTab : undefined} onClick={() => setTab(item.id)}>
             {item.label}
-          </button>
+          </ButtonBar>
         ))}
       </SectionTabList>
 

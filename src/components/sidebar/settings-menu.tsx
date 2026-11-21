@@ -1,5 +1,5 @@
+import { ButtonBar } from "@/components/button/button-bar";
 import { LogOut, Settings, User } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import type { SidebarLogoutProps } from "./sidebar";
 import styles from "./settings-menu.module.css";
@@ -24,7 +24,8 @@ export function SettingsMenu({
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}
       onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
     >
-      <button
+      <ButtonBar
+        data-ui-text-link data-ui-navigation data-ui-control-size={variant === "icon" || compact ? "icon" : undefined}
         className={variant === "wide" && !compact ? styles.wideButton : styles.iconButton}
         type="button"
         aria-label="Cài đặt"
@@ -35,17 +36,17 @@ export function SettingsMenu({
       >
         <Settings aria-hidden="true" size={variant === "wide" ? 18 : 20} />
         {variant === "wide" && !compact && <span>Cài đặt</span>}
-      </button>
+      </ButtonBar>
       {open && (
         <div className={`${styles.menu} ${variant === "wide" ? styles.menuUp : styles.menuDown} ${compact ? styles.compactMenu : ""}`} role="menu">
-          <Link className={styles.menuItem} role="menuitem" href={settingsHref} onClick={() => setOpen(false)}>
+          <ButtonBar data-ui-text-link data-ui-navigation className={styles.menuItem} role="menuitem" href={settingsHref} onClick={() => setOpen(false)}>
             <User aria-hidden="true" size={16} />
             Hồ sơ
-          </Link>
-          <button className={styles.menuItem} role="menuitem" type="button" disabled={logout.pending} onClick={() => void logout.onLogout()}>
+          </ButtonBar>
+          <ButtonBar data-ui-text-link data-ui-navigation className={styles.menuItem} role="menuitem" type="button" disabled={logout.pending} onClick={() => void logout.onLogout()}>
             <LogOut aria-hidden="true" size={16} />
             {logout.pending ? logout.pendingLabel : logout.label}
-          </button>
+          </ButtonBar>
         </div>
       )}
     </div>

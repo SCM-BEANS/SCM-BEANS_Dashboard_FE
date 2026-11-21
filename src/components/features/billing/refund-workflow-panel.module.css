@@ -34,8 +34,6 @@
 .success { color: var(--color-success); border-color: #c5dfcf; background: #f3faf5; }
 .panel summary { cursor: pointer; font-size: 14px; font-weight: 600; }
 .queue { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.queue button { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); text-align: left; font: inherit; cursor: pointer; }
-.queue button:hover { background: #faf5f4; }
-.queue button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.queue button { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; text-align: left; }
 @media (max-width: 640px) { .panel:not([data-ui-panel]) { padding: 16px; } .grid, .summary, .invoiceTools, .createForm .grid { grid-template-columns: 1fr; } .lookup > button { width: 100%; } }
-@media (prefers-reduced-motion: no-preference) { .queue button { transition: background-color 150ms ease; } }
+@media (prefers-reduced-motion: no-preference) { }

@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/pagination/pagination";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Panel } from "@/components/panel/panel";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -350,9 +351,9 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         {(["ALL", "OVERDUE", "TODAY", "UPCOMING", "UNSCHEDULED"] as const).map(value => {
           const label = value === "ALL" ? "Tất cả" : bucketOptions.find(option => option.value === value)?.label;
           const total = value === "ALL" ? summary?.actionableItems : summary?.workByTimeBucket[value];
-          return <button key={value} type="button" data-bucket={value} aria-pressed={bucket === value} onClick={() => selectBucket(value)}>
+          return <ButtonBar key={value} type="button" data-bucket={value} aria-pressed={bucket === value} onClick={() => selectBucket(value)}>
             {label}{total != null && <strong>{total.toLocaleString("vi-VN")}</strong>}
-          </button>;
+          </ButtonBar>;
         })}
       </SectionTabList>}
       {items.isPending && <p className={styles.notice} role="status">Đang tải công việc…</p>}
@@ -413,13 +414,7 @@ export function ActionItemsPanel({ role, compact = false, summary }: {
         </>
       )}
 
-      {(!queueView || page > 0 || items.data?.hasMore) && <footer className={styles.pagination}>
-        <span>Trang {page + 1}{items.data?.hasMore ? "+" : ""}</span>
-        <div>
-          <ButtonBar type="button" disabled={page === 0 || items.isFetching} onClick={() => setPage((current) => Math.max(0, current - 1))}>Trước</ButtonBar>
-          <ButtonBar type="button" disabled={!items.data?.hasMore || items.isFetching} onClick={() => setPage((current) => current + 1)}>Tiếp</ButtonBar>
-        </div>
-      </footer>}
+      {(!queueView || page > 0 || items.data?.hasMore) && <Pagination page={page} hasNext={Boolean(items.data?.hasMore)} isFetching={items.isFetching} ariaLabel="Phân trang công việc" onPageChange={setPage} hideWhenSinglePage={false} />}
       {items.data?.workflowAvailability.some((workflow) => !workflow.available) && (
         <details className={styles.availability}>
           <summary>Một số luồng hiện chưa khả dụng</summary>
