@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
@@ -187,8 +188,10 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
 
     return (
       <div className={embedded ? undefined : styles.pageContent}>
+        <div className={role === "technician" ? headingStyles.headingWithActionsEnd : undefined}>
         {!embedded && <BackButtonHeading title="Thu hồi máy" titleId="recall-page-title" className={styles.pageHeading} back={null} />}
         {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", disabled: list.isFetching, onClick: () => void refresh() }]} />}
+        </div>
         <section className={embedded ? undefined : styles.panel} aria-labelledby="recall-list-title">
           <div className={viewStyles.heading}><h2 id="recall-list-title">Danh sách lệnh thu hồi</h2>{role !== "technician" && refreshButton}</div>
           {list.isPending ? <p className={styles.notice} role="status">Đang tải lệnh thu hồi…</p> : null}
@@ -239,6 +242,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
 
   return (
     <div className={embedded ? undefined : styles.pageContent}>
+      <div className={role === "technician" ? headingStyles.headingWithActionsEnd : undefined}>
       {embedded ? <div className={viewStyles.heading}>
         <h2 id="recall-detail-title">Chi tiết thu hồi máy</h2>
         <ButtonBar type="button" onClick={() => setSelectedId("")}>Danh sách lệnh</ButtonBar>
@@ -252,6 +256,7 @@ export function RecallWorkOrdersScreen({ role, queryScopeRole, contractId, workO
         }}
       />}
       {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", disabled: list.isFetching || workOrder.isFetching, onClick: () => void refresh() }]} />}
+      </div>
       <RecallActions actions={[...buildRecallLegacyReviewActions({
         role: role === "operator" ? "admin" : role,
         workOrder: currentWorkOrder,

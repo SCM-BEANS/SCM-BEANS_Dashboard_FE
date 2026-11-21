@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { Panel } from "@/components/panel/panel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
@@ -236,10 +237,12 @@ export function TechnicianTasksTable({ display = "page" }: { display?: "page" | 
 
   return (
     <section className={shellStyles.pageContent} aria-labelledby="technician-tasks-title">
+      <div className={headingStyles.headingWithActionsEnd}>
       <header className={shellStyles.pageHeading}>
         <h1 id="technician-tasks-title">{T.NAVIGATION.TASKS}</h1>
       </header>
       <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: TECHNICIAN_WORK_ITEMS_QUERY_KEY }) }]} />
+      </div>
       <TableFilters
         showSubmit={false}
         toggleGroup={{

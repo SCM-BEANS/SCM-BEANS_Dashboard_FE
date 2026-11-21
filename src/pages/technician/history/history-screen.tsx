@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { useEffect, useState } from "react";
 import { TextLinkButton } from "@/components/button/text-link-button";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -142,6 +143,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
   return (
     <TechnicianShell pageTitle={title}>
       <section className={shellStyles.pageContent} aria-labelledby="technician-machine-history-title">
+        <div className={headingStyles.headingWithActionsEnd}>
         <BackButtonHeading
           back={machineId ? { label: "Lịch sử máy", fallbackHref: "/technician/history" } : null}
           title={title}
@@ -149,6 +151,7 @@ export function TechnicianMachineHistoryScreen({ sectionPath }: { sectionPath: s
           className={shellStyles.pageHeading}
         />
         <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ["dolores", "technician"] }) }]} />
+        </div>
         {isLoading ? <p className={shellStyles.pendingNotice} role="status">Đang tải lịch sử…</p> : null}
         {tickets.isError ? <p className={tableStyles.error} role="alert">{getApiErrorMessage(tickets.error)}</p> : null}
         {requests.isError ? <p className={tableStyles.error} role="alert">Không tải được danh sách yêu cầu bảo trì.</p> : null}

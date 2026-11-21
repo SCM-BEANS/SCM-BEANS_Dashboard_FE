@@ -23,6 +23,7 @@ import { REPAIR_WORKFLOW_MESSAGES as messages } from "@/text/repair-workflow/rep
 import type { BuybackWorkflowController, BuybackWorkflowRole } from "./buyback-workflow-controller";
 import styles from "../repair-workflow/repair-workflow.module.css";
 import adminStyles from "./buyback-admin.module.css";
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 
 export function BuybackWorkflowLayout({
   title,
@@ -32,6 +33,7 @@ export function BuybackWorkflowLayout({
   actionBarBackLabel = "Quay lại danh sách",
   children,
   className,
+  actions,
 }: {
   title: string;
   description?: string;
@@ -40,16 +42,17 @@ export function BuybackWorkflowLayout({
   actionBarBackLabel?: string;
   children: ReactNode;
   className?: string;
+  actions?: ReactNode;
 }) {
   return (
     <section className={`${styles.pageContent} ${className ?? ""}`} aria-labelledby="buyback-title">
-      <BackButtonHeading
+      <div className={actions ? headingStyles.headingWithActionsEnd : undefined}><BackButtonHeading
         title={title}
         titleId="buyback-title"
         description={description}
         className={styles.pageHeading}
         back={back ?? (actionBarBackHref ? { label: actionBarBackLabel, fallbackHref: actionBarBackHref } : null)}
-      />
+      />{actions}</div>
       {children}
     </section>
   );

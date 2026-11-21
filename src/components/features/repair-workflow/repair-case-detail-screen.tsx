@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { SectionTabList } from "@/components/tabs/section-tab-list";
 import { Pagination } from "@/components/pagination/pagination";
 import { Panel } from "@/components/panel/panel";
@@ -968,7 +969,7 @@ export function RepairCaseDetailScreen({
 
   const screen = (
     <div className={compactLayout ? `${styles.screen} ${styles.operatorWorkspace}` : styles.screen} data-screen="repair-case" data-role={role}>
-      <div className={compactLayout ? styles.casePageHeader : undefined}>
+      <div className={role === "technician" ? headingStyles.headingWithActionsEnd : compactLayout ? styles.casePageHeader : undefined}>
         {relatedOnly ? <div className={styles.pageHeading}>
           <TextLinkButton back href={caseHref}>Về hồ sơ sửa chữa</TextLinkButton>
           <BackButtonHeading
@@ -987,9 +988,9 @@ export function RepairCaseDetailScreen({
         {!relatedOnly && compactLayout && repairCase.isSuccess ? (
           <ButtonBar href={relatedHref}>Công việc liên quan &amp; chứng từ</ButtonBar>
         ) : null}
+      {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && (query.queryKey[1] === "repair-workflow" || query.queryKey.includes(caseId)) }) }]} />}
       </div>
 
-      {role === "technician" && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && (query.queryKey[1] === "repair-workflow" || query.queryKey.includes(caseId)) }) }]} />}
       {repairCase.isPending ? <p className={styles.notice} role="status">{M.CASE_LOADING}</p> : null}
       {repairCase.isError ? <QueryError label={M.CASE_NOT_FOUND} error={repairCase.error} onRetry={() => void repairCase.refetch()} /> : null}
       {repairCase.data && !repairCase.isError && (relatedOnly ? renderRelatedWork(repairCase.data) : (

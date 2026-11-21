@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { ButtonBar } from "@/components/button/button-bar";
 import { machineStatusLabel } from "@/components/machines/machine-status-labels";
 import { TextLinkButton } from "@/components/button/text-link-button";
@@ -36,10 +37,12 @@ export function MachineCheckTable() {
   const statuses = [...new Set((machines.data ?? []).map(machine => machine.status).filter(Boolean))];
   return (
     <section className={styles.pageContent} aria-labelledby="technician-machine-check-title">
+      <div className={headingStyles.headingWithActionsEnd}>
       <header className={styles.pageHeading}>
         <h1 id="technician-machine-check-title">Quản lý máy</h1>
       </header>
       <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && ((query.queryKey[1] === "machines" && query.queryKey[2] === "inventory") || (query.queryKey[1] === "profiles" && query.queryKey[2] === "owner-names")) }) }]} />
+      </div>
       <MachineListView labelledBy="technician-machine-check-title">
       <SectionTabList aria-label="Chọn danh sách máy"><ButtonBar type="button" aria-pressed="true">Danh sách máy</ButtonBar></SectionTabList>
       <Panel title={T.MACHINE_CHECK.TABLE_TITLE}>

@@ -1,11 +1,19 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useContext, useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { useRouter } from "next/router";
 import { ButtonBar } from "@/components/button/button-bar";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
 import type { PageAction } from "./page-action.types";
+import { PageActionsRegistryContext } from "./page-actions-registry";
 import styles from "./page-actions.module.css";
 
-export function PageActionsRenderer({ actions }: { actions: readonly PageAction[] }) {
+const emptyActions: readonly PageAction[] = [];
+const emptySnapshot = () => emptyActions;
+const noSubscription = () => () => {};
+
+export function PageActionsRenderer({ actions, lockWithRegistry = false }: { actions: readonly PageAction[]; lockWithRegistry?: boolean }) {
+  const contextRegistry = useContext(PageActionsRegistryContext);
+  const registry = lockWithRegistry ? contextRegistry : null;
+  const registeredActions = useSyncExternalStore(registry?.subscribe ?? noSubscription, registry?.getSnapshot ?? emptySnapshot, registry?.getSnapshot ?? emptySnapshot);
   const router = useRouter();
   const [mobile, setMobile] = useState(false);
   const [open, setOpen] = useState(false);
@@ -25,7 +33,7 @@ export function PageActionsRenderer({ actions }: { actions: readonly PageAction[
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
-  const pending = actions.some((action) => action.pending);
+  const pending = actions.some((action) => action.pending) || (lockWithRegistry && registeredActions.some((action) => action.pending));
   const primary = actions.reduce<PageAction | undefined>((winner, action) => {
     if (action.variant !== "primary") return winner;
     return !winner || (action.priority ?? 0) >= (winner.priority ?? 0) ? action : winner;

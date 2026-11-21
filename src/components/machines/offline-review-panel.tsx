@@ -19,16 +19,17 @@ const formatTime = (value: string | null) => value ? `${value.slice(11, 19)} ${v
 const formatDate = (value: string) => value ? value.split("-").reverse().join("/") : "…";
 type Page = { items: OfflineViolationReview[]; page: number; size: number; hasNext: boolean };
 
-export function OfflineReviewPanel({ page, detail, selectedId, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, showDateFilter = false, onDecide }: {
+export function OfflineReviewPanel({ page, detail, selectedId, status, machineId, machineLabels, canDecide, loading, detailLoading, error, detailError, onFilterChange, onPageChange, onSelect, showDateFilter = false, dateRange, onDecide }: {
   selectedId?: string;
   page?: Page; detail?: OfflineViolationReview; status: string; machineId?: string; machineLabels?: Record<string, string>; canDecide: boolean;
   loading?: boolean; detailLoading?: boolean; error?: string; detailError?: string;
   onFilterChange: (status: string) => void; onPageChange: (page: number) => void;
-  onSelect: (id: string | undefined) => void; showDateFilter?: boolean;
+  onSelect: (id: string | undefined) => void; showDateFilter?: boolean; dateRange?: { fromDate: string; toDate: string };
   onDecide?: (id: string, body: OfflineViolationReviewDecisionRequest, files: File[]) => Promise<void>;
 }) {
   const [dateDraft, setDateDraft] = useState(getDefaultOperationalRange);
-  const [dateFilter, setDateFilter] = useState(getDefaultOperationalRange);
+  const [internalDateFilter, setDateFilter] = useState(getDefaultOperationalRange);
+  const dateFilter = dateRange ?? internalDateFilter;
   const [dateError, setDateError] = useState("");
   const filteredItems = page?.items.filter((item) => {
     const detectedDate = item.detectedAt.slice(0, 10);

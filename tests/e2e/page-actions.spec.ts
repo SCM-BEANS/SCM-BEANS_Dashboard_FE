@@ -137,12 +137,13 @@ test("customer workflow and technician screens register page actions", async ({ 
   await expect(page.locator("[data-ui-page-actions]")).toHaveCount(0);
 });
 
-test("customer operational read screen hides the dock when it has no actions", async ({ page }) => {
+test("customer operational read screen keeps refresh in the heading and hides the empty dock", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await login(page, "owner");
   await mockApi(page);
   await page.goto(`/dashboard/machines/${machineId}/operations`);
 
   await expect(page.locator("main")).toBeVisible();
-  await expect(page.locator("[data-ui-page-actions]")).toHaveCount(0);
+  await expect(page.locator("main [data-action-id='refresh']")).toBeVisible();
+  await expect(page.locator("footer [data-ui-page-actions]")).toHaveCount(0);
 });

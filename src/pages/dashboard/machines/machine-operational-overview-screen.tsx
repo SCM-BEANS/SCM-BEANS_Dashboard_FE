@@ -13,7 +13,7 @@ import { TextLinkButton } from "@/components/button/text-link-button";
 import { MachineHealthPanel } from "@/components/machines/machine-health-panel";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
 import { MachineCleaningCompliancePanel } from "@/components/machines/machine-cleaning-compliance-panel";
-import { MachineMonitoringHeader, MachineProductionCharts, MachinePeriodFilter, MachineProductionSummary, MachineBrewHistoryTable, MachineCleaningHistoryTable } from "@/components/machines/operational-overview";
+import { getDefaultOperationalRange, MachineMonitoringHeader, MachineProductionCharts, MachinePeriodFilter, MachineProductionSummary, MachineBrewHistoryTable, MachineCleaningHistoryTable } from "@/components/machines/operational-overview";
 import { pollingInterval, usePageVisibility } from "@/components/machines/machine-heartbeat-visibility";
 import { SmartIotPanel } from "@/components/machines/smart-iot-panel";
 import { createTelemetryRange, TelemetryHistoryPanel, TelemetryRangeFilter, type TelemetryRange } from "@/components/machines/telemetry-history-panel";
@@ -59,6 +59,8 @@ function readQuery(query: Record<string, string | string[] | undefined>, today: 
 
 export function CustomerMachineOperationalOverviewScreen({ machineId }: { machineId: string }) {
   const queryClient = useQueryClient();
+  const [reviewRange, setReviewRange] = useState(getDefaultOperationalRange);
+  useEffect(() => setReviewRange(getDefaultOperationalRange()), [machineId]);
   const router = useRouter(), subject = authScopedQuerySubject("OWNER");
   const [today] = useState(getVietnamToday);
   const [defaultTelemetryRange] = useState(() => createTelemetryRange("24h"));
@@ -114,8 +116,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
 
   return <div className={shellStyles.pageContent}>
     <div className={styles.operationalOverview}>
-      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => { void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey.includes(subject) }); } }]} />
-      <MachineMonitoringHeader machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" trailing={state && machine.isSuccess && (state.tab === "brewing" || state.tab === "history" || state.tab === "cleaning") ? <MachinePeriodFilter fromDate={state.fromDate} toDate={state.toDate} error={filterError} onApply={(range) => {
+      <MachineMonitoringHeader actions={<PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => { void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey.includes(subject) }); } }]} />} machineLabel={machine.data?.serialNumber ?? undefined} backHref={PATH_CUSTOMER.MACHINE_DETAIL(machineId)} tabs={tabs} activeTab={state?.tab ?? "brewing"} onTabChange={(tab) => changeTab(tab as Tab)} idPrefix="owner-operations" trailing={machine.isSuccess && smartIot && state?.tab === "reviews" && reviewState && !reviewState.reviewId ? <MachinePeriodFilter query={reviewRange} onNavigate={(range) => { setReviewRange({ fromDate: range.fromDate!, toDate: range.toDate! }); navigate({ reviewPage: "0", reviewId: undefined }); }} /> : state && machine.isSuccess && (state.tab === "brewing" || state.tab === "history" || state.tab === "cleaning") ? <MachinePeriodFilter fromDate={state.fromDate} toDate={state.toDate} error={filterError} onApply={(range) => {
               if (!OwnerAnalyticsCalendarRangeSchema.safeParse(range).success) { setFilterError("Kiểm tra lại ngày bắt đầu và ngày kết thúc."); return false; }
               setFilterError("");
               navigate({ ...range, ...(range.fromDate !== state.fromDate || range.toDate !== state.toDate ? { brewPage: undefined, cleaningPage: undefined } : {}), ...(state.tab === "history" ? { recipeName: filterDraft.recipeName.trim() || undefined, brewPage: undefined } : state.tab === "cleaning" ? { cleaningType: filterDraft.cleaningType || undefined, cleaningStatus: filterDraft.cleaningStatus || undefined, cleaningPage: undefined } : {}) });
@@ -133,7 +134,7 @@ export function CustomerMachineOperationalOverviewScreen({ machineId }: { machin
           ? <MachineHealthPanel showRefresh={false} key={machineId} machineId={machineId} subject={subject} onOpenCleaning={() => navigate({ tab: "cleaning" })} />
           : <p className={styles.monitoringEmpty}>Đánh giá sức khỏe chỉ có cho máy Smart IoT.</p> : null}
         {state.tab === "health" ? null : state.tab === "reviews" ? (smartIot ? <>
-          {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel key={machineId} showDateFilter selectedId={reviewState?.reviewId}
+          {reviewFilterError ? <div className={styles.operationalOverviewError} role="alert"><p>{reviewFilterError}</p><ButtonBar onClick={() => navigate({ reviewId: undefined, reviewStatus: undefined, reviewPage: undefined, machineId: undefined })}>Đặt lại bộ lọc rà soát</ButtonBar></div> : <OfflineReviewPanel key={machineId} showDateFilter={false} dateRange={reviewRange} selectedId={reviewState?.reviewId}
             page={reviews.data} detail={reviewDetail.data} status={reviewState?.params.status ?? ""} machineId={machineId} canDecide={false}
             loading={reviewsEnabled && reviews.isPending} detailLoading={Boolean(reviewState?.reviewId) && reviewDetail.isPending}
             error={reviews.isError ? getApiErrorMessage(reviews.error) : undefined} detailError={reviewDetail.isError ? getApiErrorMessage(reviewDetail.error) : undefined}

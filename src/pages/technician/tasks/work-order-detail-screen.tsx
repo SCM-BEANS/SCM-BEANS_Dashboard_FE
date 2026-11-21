@@ -1,3 +1,4 @@
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { Panel } from "@/components/panel/panel";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -227,12 +228,14 @@ function TechnicianRepairCaseScreen({ repairCaseId }: { repairCaseId: string }) 
     <TechnicianShell pageTitle="Chi tiết sửa chữa">
       <section className={shellStyles.pageContent} aria-labelledby="technician-repair-case-title">
         <header className={shellStyles.pageHeading}>
+          <div className={headingStyles.headingWithActions}>
           <h1 id="technician-repair-case-title">Chi tiết sửa chữa</h1>
+            <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(repairCaseId) || (repairCase.data?.maintenanceTicketId && query.queryKey.includes(repairCase.data.maintenanceTicketId))) }) }]} />
+          </div>
           <div className={styles.backLink}>
             <TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>
         </header>
-        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(repairCaseId) || (repairCase.data?.maintenanceTicketId && query.queryKey.includes(repairCase.data.maintenanceTicketId))) }) }]} />
         {repairCase.isPending && <p className={shellStyles.pendingNotice} role="status">Đang tải hồ sơ sửa chữa…</p>}
         {repairCase.isError && <p className={shellStyles.errorNotice} role="alert">{getApiErrorMessage(repairCase.error)}</p>}
         {caseData ? (
@@ -493,11 +496,13 @@ function TechnicianRecallWorkOrderScreen({ recallWorkOrderId }: { recallWorkOrde
     <TechnicianShell pageTitle="Thu hồi máy">
       <section className={shellStyles.pageContent} aria-labelledby="technician-recall-title">
         <header className={shellStyles.pageHeading}>
+          <div className={headingStyles.headingWithActions}>
           <h1 id="technician-recall-title">Thu hồi máy theo hợp đồng</h1>
+            <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(recallWorkOrderId)) }) }]} />
+          </div>
           <p>Nhận máy từ Owner, ghi nhận chứng cứ và bàn giao vào kho theo đúng thứ tự.</p>
           <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
-        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(recallWorkOrderId)) }) }]} />
         {orderQuery.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải lệnh thu hồi…</p> : null}
         {orderQuery.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(orderQuery.error)}</p><ButtonBar type="button" onClick={() => void orderQuery.refetch()}>Tải lại</ButtonBar></div> : null}
         {order ? (
@@ -726,11 +731,13 @@ function TechnicianTerminationInspectionScreen({ maintenanceTicketId, terminatio
     <TechnicianShell pageTitle="Kiểm tra máy thu hồi">
       <section className={shellStyles.pageContent} aria-labelledby="termination-inspection-title">
         <header className={shellStyles.pageHeading}>
+          <div className={headingStyles.headingWithActions}>
           <h1 id="termination-inspection-title">Kiểm tra máy sau khi thu hồi</h1>
+            <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(maintenanceTicketId) || query.queryKey.includes(terminationCaseId)) }) }]} />
+          </div>
           <p>Ghi nhận chẩn đoán và kết quả kiểm tra cho hồ sơ chấm dứt hợp đồng.</p>
           <div className={styles.backLink}><TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton></div>
         </header>
-        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(maintenanceTicketId) || query.queryKey.includes(terminationCaseId)) }) }]} />
         {ticket.isPending || terminationCase.isPending ? <p className={shellStyles.pendingNotice} role="status">Đang tải phiếu kiểm tra…</p> : null}
         {ticket.isError ? <p className={styles.error} role="alert">Không tải được phiếu kiểm tra: {getApiErrorMessage(ticket.error)}</p> : null}
         {terminationCase.isError ? <p className={styles.error} role="alert">Không tải được hồ sơ chấm dứt: {getApiErrorMessage(terminationCase.error)}</p> : null}
@@ -1119,14 +1126,16 @@ export function TechnicianInstallationWorkOrderScreen({ workOrderId }: { workOrd
     <TechnicianShell pageTitle={messages.TASK_DETAIL_TITLE}>
       <section className={shellStyles.pageContent} aria-labelledby="technician-work-order-title">
         <header className={shellStyles.pageHeading}>
+          <div className={headingStyles.headingWithActions}>
           <h1 id="technician-work-order-title">{messages.TASK_DETAIL_TITLE}</h1>
+            <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(workOrderId)) }) }]} />
+          </div>
           <p>Thực hiện lắp đặt, tải minh chứng bàn giao và xác nhận người nhận theo trạng thái của lệnh.</p>
           <div className={styles.backLink}>
             <TextLinkButton back href={PATH_TECHNICIAN.TASKS}>Về danh sách công việc</TextLinkButton>
           </div>
         </header>
 
-        <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => Boolean(query.queryKey.includes(workOrderId)) }) }]} />
         {(details.isPending
           || (details.isError && repairCaseDetails.isPending)
           || (details.isError && repairCaseDetails.isError && recallWorkOrderDetails.isPending)

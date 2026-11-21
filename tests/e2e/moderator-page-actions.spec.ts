@@ -129,8 +129,8 @@ test("list actions omit placeholders and shortcuts", async ({ page }) => {
   await expect(createContract).toHaveAttribute("data-ui-button");
   await expect(pageActionBar(page)).toBeHidden();
   await page.goto("/moderator/machines");
-  await expect(pageActionBar(page).getByRole("link", { name: "Giám sát Smart IoT" })).toHaveAttribute("href", "/moderator/iot");
-  await expect(pageActionBar(page).locator('[data-action-id="machine-create"]')).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("link", { name: "Giám sát Smart IoT" })).toHaveAttribute("href", "/moderator/iot");
+  await expect(page.locator("footer [data-ui-page-actions]")).toHaveCount(0);
 });
 
 test("invoice lists expose export and customer creation uses the dock", async ({ page }) => {

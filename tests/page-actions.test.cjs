@@ -15,6 +15,7 @@ const rendererSource = fs.readFileSync('src/components/action-bar/page-actions-r
 const rendererCode = ts.transpileModule(rendererSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 const rendererModule = { exports: {} };
 const rendererMocks = {
+  './page-actions-registry': registryModule.exports,
   'next/router': { useRouter: () => ({ push: () => Promise.resolve(true) }) },
   '@/components/button/button-bar': { ButtonBar: ({ children, href, variant, holdToConfirm, ...props }) => React.createElement(href ? 'a' : 'button', { ...props, href, 'data-variant': variant, ...(holdToConfirm ? { 'data-hold-to-confirm': 'true' } : {}) }, children) },
   '@/components/notification-dialog/notification-dialog': { NotificationDialog: () => null },
@@ -104,6 +105,15 @@ test('pending action locks siblings and uses pending label', () => {
   const html = render([{ id: 'p', label: 'Save', pending: true, pendingLabel: 'Saving', variant: 'primary' }, { id: 's', label: 'Edit' }]);
   assert.match(html, /Saving/);
   assert.equal((html.match(/disabled=""/g) || []).length, 2);
+});
+test('inline refresh follows pending actions in the shared registry', () => {
+  const registry = new PageActionsRegistry();
+  registry.register('write', [{ id: 'save', label: 'Save', pending: true }]);
+  const element = React.createElement(registryModule.exports.PageActionsRegistryContext.Provider, { value: registry },
+    React.createElement(rendererModule.exports.PageActionsRenderer, { actions: [{ id: 'refresh', label: 'Refresh' }], lockWithRegistry: true }));
+  assert.match(renderToStaticMarkup(element), /data-action-id="refresh"[^>]*disabled=""/);
+  registry.unregister('write');
+  assert.doesNotMatch(renderToStaticMarkup(element), /disabled=""/);
 });
 test('empty actions render nothing', () => assert.equal(render([]), ''));
 test('page actions preserve hold-to-confirm on the shared button', () => {

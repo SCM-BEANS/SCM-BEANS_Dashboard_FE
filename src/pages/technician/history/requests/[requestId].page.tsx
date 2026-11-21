@@ -33,8 +33,8 @@ export default function TechnicianRequestPage({ requestId }: { requestId: string
     <section className={styles.pageContent}>
       <div className={styles.pageHeader}>
         <BackButtonHeading back={{ label: "Lịch sử máy", fallbackHref: PATH_TECHNICIAN.HISTORY }} title="Chi tiết yêu cầu kỹ thuật" titleId="technician-request-title" className={styles.pageHeading} />
-      </div>
       <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey.includes(requestId) && query.queryKey.includes("maintenance-request") }) }]} />
+      </div>
       {query.isPending ? <p role="status">Đang tải yêu cầu…</p> : null}
       {query.isError ? <div className={styles.notice} role="alert"><p>{getApiErrorMessage(query.error)}</p><ButtonBar onClick={() => void query.refetch()}>Thử lại</ButtonBar></div> : null}
       {request ? <Panel title="Thông tin yêu cầu" aria-label="Thông tin yêu cầu">

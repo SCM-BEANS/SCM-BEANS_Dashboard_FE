@@ -104,8 +104,8 @@ function TicketDetail({
         className={styles.pageHeading}
       />
       {ticket?.repairCaseId ? <TextLinkButton href={PATH_TECHNICIAN.TASK_REPAIR_CASE_DETAIL(ticket.repairCaseId)}>Hồ sơ sửa chữa</TextLinkButton> : null}
-      </div>
       {showRefresh && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ticketKey }) }]} />}
+      </div>
       {!validId ? <p className={styles.notice} role="alert">Mã ticket bảo trì không hợp lệ.</p> : null}
       {validId && ticketQuery.isPending ? <p className={styles.notice} role="status">Đang tải ticket…</p> : null}
       {validId && ticketQuery.isError ? (

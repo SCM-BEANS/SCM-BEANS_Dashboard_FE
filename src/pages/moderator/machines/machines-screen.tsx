@@ -26,7 +26,8 @@ import { TextLinkButton } from "@/components/button/text-link-button";
 import { MachineListView } from "@/components/machines/machine-list-view";
 import { MACHINE_STATUS_LABELS } from "@/components/machines/machine-status-labels";
 import { NotificationDialog } from "@/components/notification-dialog/notification-dialog";
-import { PageActions } from "@/components/action-bar/page-actions";
+import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { ButtonBar } from "@/components/button/button-bar";
 import { CreateMachineForm } from "@/pages/admin/machines/create-machine-form";
 import { CreateMachineModelForm } from "@/pages/admin/machines/create-machine-model-form";
@@ -318,9 +319,12 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
   return (
     <>
     <div className={styles.pageContent}>
-      <div className={adminStyles.summarySectionHeading}>
+      <div className={`${adminStyles.summarySectionHeading} ${headingStyles.headingWithActions}`}>
       <PageHeading title={title} />
-      <ButtonBar variant="primary" href={isMachineModelsView ? PATH_MODERATOR.NEW_MACHINE_MODEL : PATH_MODERATOR.NEW_MACHINE}>{isMachineModelsView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y"}</ButtonBar>
+      <PageActionsRenderer lockWithRegistry actions={[
+        { id: "iot", label: ADMIN_T.MACHINES.VIEW_IOT, variant: "secondary", href: PATH_MODERATOR.IOT },
+        { id: "create", label: isMachineModelsView ? "Th\u00eam m\u1eabu m\u00e1y" : "Th\u00eam m\u00e1y", variant: "primary", href: isMachineModelsView ? PATH_MODERATOR.NEW_MACHINE_MODEL : PATH_MODERATOR.NEW_MACHINE },
+      ]} />
       </div>
       <MachineListView label={title}>
       <div className={adminStyles.machineInventoryGroup}>
@@ -363,11 +367,6 @@ export function ModeratorMachinesScreen({ path }: { path: string }) {
       </div>
       </MachineListView>
     </div>
-    {!isCreateView && !isMachineModelDetail && (
-      <PageActions actions={[
-        { id: "iot", label: ADMIN_T.MACHINES.VIEW_IOT, variant: "secondary", priority: 0, href: PATH_MODERATOR.IOT },
-      ]} />
-    )}
     </>
   );
 }

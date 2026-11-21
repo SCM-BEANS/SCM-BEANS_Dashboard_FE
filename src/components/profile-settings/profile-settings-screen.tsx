@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { profilesApi } from "@/apis/profiles.api";
 import { PageActions } from "@/components/action-bar/page-actions";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { ButtonBar } from "@/components/button/button-bar";
 import { BackButtonHeading } from "@/components/navigation/back-button-heading";
 import { StatusBadge } from "@/components/status-badge/status-badge";
@@ -79,7 +80,7 @@ export function ProfileSettingsScreen({ roleLabel, showRefresh = false }: { role
 
   return (
     <div className={styles.pageContent}>
-      <BackButtonHeading
+      <div className={showRefresh ? headingStyles.headingWithActions : undefined}><BackButtonHeading
         title="Hồ sơ cá nhân"
         titleId="profile-settings-heading"
         description={`Thông tin tài khoản ${roleLabel} đang sử dụng.`}
@@ -88,6 +89,7 @@ export function ProfileSettingsScreen({ roleLabel, showRefresh = false }: { role
       />
 
       {showRefresh && <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", queryKey: ["dolores", "profiles", "me"] }) }]} />}
+      </div>
       <div className={styles.settingsLayout}>
         <nav className={styles.sectionNav} aria-label="Các mục hồ sơ">
           <h2>{T.NAV_TITLE}</h2>

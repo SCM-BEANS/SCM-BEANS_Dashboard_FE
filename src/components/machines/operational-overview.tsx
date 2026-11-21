@@ -16,15 +16,18 @@ import { operationalMonitoringMessages } from "@/text/operational-monitoring-mes
 
 export type OperationalDateRange = { fromDate: string; toDate: string };
 
-export function MachineMonitoringHeader({ machineLabel, backHref, backLabel = "Về hồ sơ máy", tabs, activeTab, onTabChange, idPrefix = "monitoring", trailing }: {
+export function MachineMonitoringHeader({ machineLabel, backHref, backLabel = "Về hồ sơ máy", tabs, activeTab, onTabChange, idPrefix = "monitoring", trailing, actions }: {
   machineLabel?: string; backHref: string; backLabel?: string;
   tabs: readonly { value: string; label: string }[]; activeTab: string;
-  onTabChange: (tab: string) => void; idPrefix?: string; trailing?: ReactNode;
+  onTabChange: (tab: string) => void; idPrefix?: string; trailing?: ReactNode; actions?: ReactNode;
 }) {
   return <>
     <header className={styles.operationalOverviewHeading}>
       <TextLinkButton back href={backHref}>{backLabel}</TextLinkButton>
+      <div className={styles.monitoringTitleRow}>
       <h1 id="machine-operational-overview-title">Giám sát vận hành <span className={styles.monitoringMachineName}>{machineLabel ?? "Máy đang xem"}</span></h1>
+        {actions && <div className={styles.monitoringActions}>{actions}</div>}
+      </div>
     </header>
     <MachineSectionTabs label="Dữ liệu vận hành máy" tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} idPrefix={idPrefix} trailing={trailing} />
   </>;

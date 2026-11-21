@@ -1,6 +1,6 @@
 .pageContent { composes: page from "../../heading/dashboard-page.module.css"; min-width: 0; padding-bottom: 40px; font-size: 14px; line-height: 1.55; }
 .pageHeading { composes: heading from "../../heading/dashboard-page.module.css"; min-width: 0; }
-.pageHeader { composes: headingWithActions from "../../heading/dashboard-page.module.css"; }
+.pageHeader { composes: headingWithActionsEnd from "../../heading/dashboard-page.module.css"; }
 .detailGrid {
   display: grid;
   min-width: 0;

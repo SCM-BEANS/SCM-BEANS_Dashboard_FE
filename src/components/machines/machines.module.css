@@ -217,9 +217,18 @@
   .monitoringChartToolbar > label { max-width: none; }
 }
 
+.monitoringTitleRow { composes: headingWithActions from "../heading/dashboard-page.module.css"; flex-wrap: nowrap; }
+
 .operationalOverviewHeading {
   display: grid;
   gap: 6px;
+}
+
+@media (max-width: 1023px) {
+  .operationalOverviewHeading:has(.monitoringActions) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .operationalOverviewHeading:has(.monitoringActions) .monitoringTitleRow { display: contents; }
+  .operationalOverviewHeading:has(.monitoringActions) h1 { grid-column: 1 / -1; grid-row: 2; }
+  .monitoringActions { grid-column: 2; grid-row: 1; }
 }
 
 .operationalOverviewHeading h1,

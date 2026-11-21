@@ -53,8 +53,8 @@ export function BuybackTechnicianScreen({ caseId }: { caseId?: string } = {}) {
       className={styles.operatorWorkspace}
       title="Đánh giá máy thu mua"
       back={caseId ? { label: "Về công việc", fallbackHref: listHref } : null}
+      actions={<PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && ((query.queryKey[1] === "technician" && typeof query.queryKey[2] === "string" && query.queryKey[2].startsWith("buyback")) || (query.queryKey[1] === "evidence" && query.queryKey.includes(workflow.detailId))) }) }]} />}
     >
-      <PageActionsRenderer actions={[{ id: "refresh", label: "Làm mới", onClick: () => void queryClient.refetchQueries({ type: "active", predicate: (query) => query.queryKey[0] === "dolores" && ((query.queryKey[1] === "technician" && typeof query.queryKey[2] === "string" && query.queryKey[2].startsWith("buyback")) || (query.queryKey[1] === "evidence" && query.queryKey.includes(workflow.detailId))) }) }]} />
       <BuybackCaseList workflow={workflow} />
       <BuybackDetailPanel workflow={workflow}>
         {caseData ? <>

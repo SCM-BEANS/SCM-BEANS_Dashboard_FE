@@ -15,6 +15,7 @@ import type { MachineCertificateStatus } from "@/schema/machine-certificates.sch
 import { useRouter } from "next/router";
 import { machinesApi } from "@/apis/machines.api";
 import { PageActionsRenderer } from "@/components/action-bar/page-actions-renderer";
+import headingStyles from "@/components/heading/dashboard-page.module.css";
 import { ButtonBar } from "@/components/button/button-bar";
 import { telemetryApi, TELEMETRY_POINTS_PAGE_SIZE } from "@/apis/telemetry.api";
 import { MachineHeartbeatPanel } from "@/components/machines/machine-heartbeat-panel";
@@ -342,7 +343,7 @@ export function TechnicianMachineDetailScreen() {
   return (
     <TechnicianShell pageTitle={T.MACHINE_CHECK.DETAIL_TITLE}>
       <section className={styles.pageContent}>
-        <div className={detailStyles.header}>
+        <div className={headingStyles.headingWithActionsEnd}>
           {heading(`Hồ sơ máy · ${device.serialNumber || "Chưa có số sê-ri"}`)}
           {actionBar()}
         </div>
